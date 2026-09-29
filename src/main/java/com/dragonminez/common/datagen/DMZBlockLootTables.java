@@ -95,6 +95,31 @@ public class DMZBlockLootTables extends BlockLootSubProvider {
 		this.dropSelf(MainBlocks.HELL_GROUND.get());
 		this.dropSelf(MainBlocks.HELL_STONE.get());
 		this.dropSelf(MainBlocks.HELL_DEEPSTONE.get());
+
+		//Reino Demoníaco
+		this.dropSelf(MainBlocks.MAKAI_STONE.get());
+		this.dropSelf(MainBlocks.MAKAI_STONE_STAIRS.get());
+		this.add(MainBlocks.MAKAI_STONE_SLAB.get(), block -> createSlabItemTable(MainBlocks.MAKAI_STONE_SLAB.get()));
+		this.dropSelf(MainBlocks.MAKAI_STONE_WALL.get());
+		this.dropSelf(MainBlocks.MAKAI_STRATA_STONE.get());
+		this.add(MainBlocks.MAKAI_GRASS_BLOCK.get(), block -> createSingleItemTableWithSilkTouch(block, MainBlocks.MAKAI_DIRT.get()));
+		this.dropSelf(MainBlocks.MAKAI_DIRT.get());
+		this.dropSelf(MainBlocks.LILAC_SAND.get());
+		this.dropSelf(MainBlocks.MAKAI_SAND.get());
+		this.dropSelf(MainBlocks.MAKAI_SHRUB.get());
+		this.dropSelf(MainBlocks.MAKAI_BUSH.get());
+		this.dropSelf(MainBlocks.DEMON_HORN.get());
+		this.dropSelf(MainBlocks.GAS_VENT.get());
+		this.dropSelf(MainBlocks.TURQUOISE_ROCK.get());
+		this.add(MainBlocks.MAJILITE_ORE.get(), block -> SingleOreDrop(MainBlocks.MAJILITE_ORE.get(), MainItems.MAJILITE.get()));
+		this.dropSelf(MainBlocks.DEMON_ROCK.get());
+		this.dropSelf(MainBlocks.DEMON_BRICKS.get());
+		this.dropSelf(MainBlocks.DEMON_BRICK_STAIRS.get());
+		this.add(MainBlocks.DEMON_BRICK_SLAB.get(), block -> createSlabItemTable(MainBlocks.DEMON_BRICK_SLAB.get()));
+		this.dropSelf(MainBlocks.DEMON_BRICK_WALL.get());
+		this.dropSelf(MainBlocks.DEMON_MAGMA_ROCK.get());
+		this.dropSelf(MainBlocks.RED_ASH.get());
+		this.dropSelf(MainBlocks.CRIMSON_CRYSTAL.get());
 		this.dropOther(MainBlocks.MIGHT_TREE_FRUIT_BLOCK.get(), MainItems.MIGHT_TREE_FRUIT.get());
 		//this.dropSelf(MainBlocks.GETE_FURNACE.get());
 		this.dropSelf(MainBlocks.GETE_ORE.get());

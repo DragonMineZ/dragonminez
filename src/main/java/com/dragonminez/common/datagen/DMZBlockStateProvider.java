@@ -133,6 +133,37 @@ public class DMZBlockStateProvider extends BlockStateProvider {
 		slabBlock(((SlabBlock) MainBlocks.ROCKY_COBBLESTONE_SLAB.get()), blockTexture(MainBlocks.ROCKY_COBBLESTONE.get()), blockTexture(MainBlocks.ROCKY_COBBLESTONE.get()));
 		wallBlock(((WallBlock) MainBlocks.ROCKY_COBBLESTONE_WALL.get()), blockTexture(MainBlocks.ROCKY_COBBLESTONE.get()));
 
+		//Reino Demoníaco
+		blockWithItem(MainBlocks.MAKAI_STONE);
+		stairsBlock(((StairBlock) MainBlocks.MAKAI_STONE_STAIRS.get()), blockTexture(MainBlocks.MAKAI_STONE.get()));
+		slabBlock(((SlabBlock) MainBlocks.MAKAI_STONE_SLAB.get()), blockTexture(MainBlocks.MAKAI_STONE.get()), blockTexture(MainBlocks.MAKAI_STONE.get()));
+		wallBlock(((WallBlock) MainBlocks.MAKAI_STONE_WALL.get()), blockTexture(MainBlocks.MAKAI_STONE.get()));
+		simpleBlockWithItem(MainBlocks.MAKAI_STRATA_STONE.get(), models().cubeColumn("makai_strata_stone",
+				blockTexture(MainBlocks.MAKAI_STRATA_STONE.get()), blockTexture(MainBlocks.MAKAI_STONE.get())));
+		grassBlock(MainBlocks.MAKAI_GRASS_BLOCK);
+		blockWithItem(MainBlocks.MAKAI_DIRT);
+		blockWithItem(MainBlocks.LILAC_SAND);
+		blockWithItem(MainBlocks.MAKAI_SAND);
+		simpleBlock(MainBlocks.MAKAI_SHRUB.get(), models().cross("makai_shrub", blockTexture(MainBlocks.MAKAI_SHRUB.get())).renderType("cutout"));
+		leavesBlock(MainBlocks.MAKAI_BUSH);
+		blockWithItem(MainBlocks.DEMON_HORN);
+		simpleBlockWithItem(MainBlocks.GAS_VENT.get(), models().cubeBottomTop("gas_vent",
+				modLoc("block/gas_vent_side"), blockTexture(MainBlocks.MAKAI_STONE.get()), modLoc("block/gas_vent_top")));
+		blockWithItem(MainBlocks.DARK_SEA_CLOUD);
+		blockWithItem(MainBlocks.TURQUOISE_ROCK);
+		blockWithItem(MainBlocks.MAJILITE_ORE);
+		blockWithItem(MainBlocks.DEMON_ROCK);
+		blockWithItem(MainBlocks.DEMON_BRICKS);
+		stairsBlock(((StairBlock) MainBlocks.DEMON_BRICK_STAIRS.get()), blockTexture(MainBlocks.DEMON_BRICKS.get()));
+		slabBlock(((SlabBlock) MainBlocks.DEMON_BRICK_SLAB.get()), blockTexture(MainBlocks.DEMON_BRICKS.get()), blockTexture(MainBlocks.DEMON_BRICKS.get()));
+		wallBlock(((WallBlock) MainBlocks.DEMON_BRICK_WALL.get()), blockTexture(MainBlocks.DEMON_BRICKS.get()));
+		blockWithItem(MainBlocks.DEMON_MAGMA_ROCK);
+		blockWithItem(MainBlocks.RED_ASH);
+		blockWithItem(MainBlocks.CRIMSON_CRYSTAL);
+		blockWithItem(MainBlocks.DEMON_REALM_CRUST);
+		simpleBlockWithItem(MainBlocks.LIGHT_SHIELD.get(), models().cubeAll("light_shield",
+				blockTexture(MainBlocks.LIGHT_SHIELD.get())).renderType("translucent"));
+
 		for (DragonBallSetDefinition setDefinition : DragonBallDefinitions.getBallSets()) {
 			DragonBallSetAssetDefinition assets = setDefinition.resolveAssetDefinition();
 			for (var entry : MainBlocks.getDragonBallBlocks(setDefinition.getId()).entrySet()) {

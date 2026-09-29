@@ -15,6 +15,7 @@ import com.dragonminez.common.racial.impl.MajinAbsorption;
 import com.dragonminez.common.racial.impl.NamekAssimilation;
 import com.dragonminez.common.racial.impl.SaiyanZenkai;
 import com.dragonminez.common.wish.WishManager;
+import com.dragonminez.server.world.feature.DemonRealmFeatures;
 import com.dragonminez.server.world.feature.OtherworldFeatures;
 import com.dragonminez.server.world.feature.OverworldFeatures;
 import com.dragonminez.server.world.feature.SacredKaiFeatures;
@@ -62,6 +63,7 @@ public class DMZCommon {
 		OtherworldFeatures.register(modEventBus);
 		OverworldFeatures.register(modEventBus);
 		SacredKaiFeatures.register(modEventBus);
+		DemonRealmFeatures.register(modEventBus);
 
 		MainGameRules.register();
 		MainDamageTypes.register();

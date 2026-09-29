@@ -284,6 +284,58 @@ public class DMZBlockTagGenerator extends BlockTagsProvider {
 				.add(MainBlocks.ROCKY_DIRT.get())
 				.add(MainBlocks.SACRED_PLANET_GRASS_BLOCK.get());
 
+		//Reino Demoníaco
+		this.tag(BlockTags.MINEABLE_WITH_PICKAXE)
+				.add(MainBlocks.MAKAI_STONE.get())
+				.add(MainBlocks.MAKAI_STONE_SLAB.get())
+				.add(MainBlocks.MAKAI_STONE_STAIRS.get())
+				.add(MainBlocks.MAKAI_STONE_WALL.get())
+				.add(MainBlocks.MAKAI_STRATA_STONE.get())
+				.add(MainBlocks.GAS_VENT.get())
+				.add(MainBlocks.TURQUOISE_ROCK.get())
+				.add(MainBlocks.MAJILITE_ORE.get())
+				.add(MainBlocks.DEMON_ROCK.get())
+				.add(MainBlocks.DEMON_BRICKS.get())
+				.add(MainBlocks.DEMON_BRICK_SLAB.get())
+				.add(MainBlocks.DEMON_BRICK_STAIRS.get())
+				.add(MainBlocks.DEMON_BRICK_WALL.get())
+				.add(MainBlocks.DEMON_MAGMA_ROCK.get())
+				.add(MainBlocks.CRIMSON_CRYSTAL.get())
+				.add(MainBlocks.DEMON_HORN.get());
+
+		this.tag(BlockTags.MINEABLE_WITH_SHOVEL)
+				.add(MainBlocks.MAKAI_GRASS_BLOCK.get())
+				.add(MainBlocks.MAKAI_DIRT.get())
+				.add(MainBlocks.LILAC_SAND.get())
+				.add(MainBlocks.MAKAI_SAND.get())
+				.add(MainBlocks.RED_ASH.get());
+
+		this.tag(BlockTags.MINEABLE_WITH_HOE)
+				.add(MainBlocks.MAKAI_BUSH.get());
+
+		this.tag(BlockTags.NEEDS_IRON_TOOL)
+				.add(MainBlocks.MAJILITE_ORE.get());
+
+		this.tag(BlockTags.SLABS)
+				.add(MainBlocks.MAKAI_STONE_SLAB.get())
+				.add(MainBlocks.DEMON_BRICK_SLAB.get());
+
+		this.tag(BlockTags.STAIRS)
+				.add(MainBlocks.MAKAI_STONE_STAIRS.get())
+				.add(MainBlocks.DEMON_BRICK_STAIRS.get());
+
+		this.tag(BlockTags.WALLS)
+				.add(MainBlocks.MAKAI_STONE_WALL.get())
+				.add(MainBlocks.DEMON_BRICK_WALL.get());
+
+		this.tag(BlockTags.DIRT)
+				.add(MainBlocks.MAKAI_DIRT.get())
+				.add(MainBlocks.MAKAI_GRASS_BLOCK.get());
+
+		this.tag(BlockTags.SAND)
+				.add(MainBlocks.LILAC_SAND.get())
+				.add(MainBlocks.MAKAI_SAND.get());
+
 		this.tag(BlockTags.COAL_ORES)
 				.add(MainBlocks.NAMEK_COAL_ORE.get())
 				.add(MainBlocks.NAMEK_DEEPSLATE_COAL.get());

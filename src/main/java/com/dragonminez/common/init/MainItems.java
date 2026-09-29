@@ -371,6 +371,7 @@ public final class MainItems {
 			() -> new DMZCuriosItem(new Item.Properties().stacksTo(1).fireResistant(), DMZCuriosItem.CurioType.HEAD_TECH));
 	public static final RegistryObject<Item> KIKONO_SHARD = regItem("kikono_shard");
 	public static final RegistryObject<Item> KIKONO_STICK = regItem("kikono_stick");
+	public static final RegistryObject<Item> MAJILITE = regItem("majilite");
 
 	// WEIGHTS
 	public static final RegistryObject<Item> WEIGHT_TURTLE_SHELL = ITEM_REGISTER.register("weight_turtle_shell", () -> new WeightItem(new Item.Properties().stacksTo(1), WeightItem.WeightType.TURTLE_SHELL));

@@ -1,13 +1,16 @@
 package com.dragonminez.common.datagen;
 
 import com.dragonminez.Reference;
+import com.dragonminez.server.world.biome.DemonRealmBiomes;
 import com.dragonminez.server.world.biome.HTCBiomes;
 import com.dragonminez.server.world.biome.NamekBiomes;
 import com.dragonminez.server.world.biome.OtherworldBiomes;
 import com.dragonminez.server.world.biome.OverworldBiomes;
+import com.dragonminez.server.world.dimension.DemonRealmDimension;
 import com.dragonminez.server.world.dimension.HTCDimension;
 import com.dragonminez.server.world.dimension.NamekDimension;
 import com.dragonminez.server.world.dimension.OtherworldDimension;
+import com.dragonminez.server.world.feature.DemonRealmFeatures;
 import com.dragonminez.server.world.feature.NamekConfiguredFeatures;
 import com.dragonminez.server.world.feature.NamekPlacedFeatures;
 import com.dragonminez.server.world.biome.SacredKaiBiomes;
@@ -40,6 +43,7 @@ public class DMZWorldGenProvider extends DatapackBuiltinEntriesProvider {
 				HTCDimension.bootstrap(context);
 				OtherworldDimension.bootstrap(context);
 				SacredKaiDimension.bootstrap(context);
+				DemonRealmDimension.bootstrap(context);
 			})
 			.add(Registries.BIOME, context -> {
 				NamekBiomes.bootstrap(context);
@@ -47,31 +51,39 @@ public class DMZWorldGenProvider extends DatapackBuiltinEntriesProvider {
 				OtherworldBiomes.bootstrap(context);
 				OverworldBiomes.bootstrap(context);
 				SacredKaiBiomes.bootstrap(context);
+				DemonRealmBiomes.bootstrap(context);
 			})
-			.add(Registries.NOISE, OtherworldGeneration::bootstrapNoiseParameters)
+			.add(Registries.NOISE, context -> {
+				OtherworldGeneration.bootstrapNoiseParameters(context);
+				DemonRealmGeneration.bootstrapNoiseParameters(context);
+			})
 			.add(Registries.NOISE_SETTINGS, context -> {
 				NamekGeneration.bootstrapNoise(context);
 				HTCGeneration.bootstrapNoise(context);
 				OtherworldGeneration.bootstrapNoise(context);
 				SacredKaiGeneration.bootstrapNoise(context);
+				DemonRealmGeneration.bootstrapNoise(context);
 			})
 			.add(Registries.LEVEL_STEM, context -> {
 				NamekGeneration.bootstrap(context);
 				HTCGeneration.bootstrap(context);
 				OtherworldGeneration.bootstrap(context);
 				SacredKaiGeneration.bootstrap(context);
+				DemonRealmGeneration.bootstrap(context);
 			})
 			.add(Registries.CONFIGURED_FEATURE, context -> {
 				NamekConfiguredFeatures.bootstrap(context);
 				OtherworldConfiguredFeatures.bootstrap(context);
 				OverworldConfiguredFeatures.bootstrap(context);
 				SacredKaiConfiguredFeatures.bootstrap(context);
+				DemonRealmFeatures.bootstrapConfigured(context);
 			})
 			.add(Registries.PLACED_FEATURE, context -> {
 				NamekPlacedFeatures.bootstrap(context);
 				OtherworldPlacedFeatures.bootstrap(context);
 				OverworldPlacedFeatures.bootstrap(context);
 				SacredKaiPlacedFeatures.bootstrap(context);
+				DemonRealmFeatures.bootstrapPlaced(context);
 			})
 			.add(Registries.PROCESSOR_LIST, DMZProcessorLists::bootstrap)
 			.add(Registries.TEMPLATE_POOL, DMZPools::bootstrap)
