@@ -29,7 +29,6 @@ public class KiWaveRenderer extends EntityRenderer<KiWaveEntity> {
 
     private static final float MUZZLE_FLAME_SCALE = 1.55F;
     private static final float DOUBLE_WAVE_BALL_SCALE = 0.82F;
-    /** Ticks of offset between the two orbs of a double wave, so they do not shed in mirror. */
     private static final float EMBER_PAIR_OFFSET = 6.5F;
     private static final float CHARGE_GROW_TICKS = 12.0F;
     private static final float CHARGE_RAYS_REACH = 11.0F;
