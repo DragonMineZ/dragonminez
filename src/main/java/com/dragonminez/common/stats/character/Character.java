@@ -73,6 +73,7 @@ public class Character {
 	private final Map<String, MasterLocation> interactedMasters = new HashMap<>();
 
 	private final Set<String> knownMinigames = new HashSet<>();
+	private final Map<String, Integer> minigameLearnRuns = new HashMap<>();
 
 	public void clearInteractedMasters() {
 		interactedMasters.clear();
@@ -88,6 +89,19 @@ public class Character {
 
 	public void removeKnownMinigame(String minigameId) {
 		if (minigameId != null) knownMinigames.remove(minigameId.toLowerCase());
+	}
+
+	public int getLearnRunsFor(String minigameId) {
+		return minigameId == null ? 0 : minigameLearnRuns.getOrDefault(minigameId.toLowerCase(), 0);
+	}
+
+	public int addMinigameLearnRun(String minigameId) {
+		if (minigameId == null) return 0;
+		return minigameLearnRuns.merge(minigameId.toLowerCase(), 1, Integer::sum);
+	}
+
+	public void clearMinigameLearnRuns(String minigameId) {
+		if (minigameId != null) minigameLearnRuns.remove(minigameId.toLowerCase());
 	}
 
 	public static final String GENDER_MALE = "male";
@@ -473,6 +487,10 @@ public class Character {
 		for (String minigame : knownMinigames) minigamesList.add(net.minecraft.nbt.StringTag.valueOf(minigame));
 		tag.put("KnownMinigames", minigamesList);
 
+		CompoundTag learnRunsTag = new CompoundTag();
+		for (Map.Entry<String, Integer> entry : minigameLearnRuns.entrySet()) learnRunsTag.putInt(entry.getKey(), entry.getValue());
+		tag.put("MinigameLearnRuns", learnRunsTag);
+
 		return tag;
 	}
 
@@ -549,6 +567,12 @@ public class Character {
 		if (tag.contains("KnownMinigames")) {
 			ListTag minigamesList = tag.getList("KnownMinigames", 8);
 			for (int i = 0; i < minigamesList.size(); i++) this.knownMinigames.add(minigamesList.getString(i));
+		}
+
+		this.minigameLearnRuns.clear();
+		if (tag.contains("MinigameLearnRuns")) {
+			CompoundTag learnRunsTag = tag.getCompound("MinigameLearnRuns");
+			for (String key : learnRunsTag.getAllKeys()) this.minigameLearnRuns.put(key, learnRunsTag.getInt(key));
 		}
 
 		updateOozaruCache();
@@ -789,6 +813,8 @@ public class Character {
 		this.interactedMasters.putAll(other.interactedMasters);
 		this.knownMinigames.clear();
 		this.knownMinigames.addAll(other.knownMinigames);
+		this.minigameLearnRuns.clear();
+		this.minigameLearnRuns.putAll(other.minigameLearnRuns);
 		updateOozaruCache();
 	}
 }

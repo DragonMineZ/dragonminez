@@ -47,6 +47,29 @@ public class ClientPacketHandler {
 		});
 	}
 
+	public static void handleMinigameStart(com.dragonminez.common.network.S2C.MinigameStartS2C message) {
+		if (Minecraft.getInstance().screen instanceof com.dragonminez.client.gui.character.minigames.BaseMinigameScreen screen
+				&& screen.acceptsStart(message)) {
+			screen.onServerStart(message);
+			return;
+		}
+		if (message.isAccepted()) {
+			com.dragonminez.common.network.NetworkHandler.sendToServer(new com.dragonminez.common.network.C2S.MinigameInputC2S(
+					message.getSessionId(), 0, 0, true, 0L, List.of()));
+		}
+	}
+
+	public static void handleOpenMinigame(String minigameId) {
+		Minecraft.getInstance().setScreen(com.dragonminez.client.gui.character.minigames.BaseMinigameScreen.create(minigameId,
+				com.dragonminez.common.training.MinigameOrigin.COMMAND));
+	}
+
+	public static void handleMinigameResult(com.dragonminez.common.network.S2C.MinigameResultS2C message) {
+		if (Minecraft.getInstance().screen instanceof com.dragonminez.client.gui.character.minigames.BaseMinigameScreen screen) {
+			screen.onServerResult(message);
+		}
+	}
+
 	public static void handleReviveTargets(List<com.dragonminez.common.network.S2C.ReviveTargetsS2C.Entry> entries) {
 		if (Minecraft.getInstance().screen instanceof com.dragonminez.client.gui.WishesScreen screen) {
 			screen.setReviveTargets(entries);

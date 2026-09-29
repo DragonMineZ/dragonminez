@@ -4,6 +4,7 @@ import com.dragonminez.Reference;
 import com.dragonminez.client.gui.buttons.TexturedTextButton;
 import com.dragonminez.client.gui.hair.HairEditorScreen;
 import com.dragonminez.client.gui.character.minigames.RythmGameScreen;
+import com.dragonminez.common.training.MinigameOrigin;
 import com.dragonminez.client.gui.character.minigames.UltimateChallenge;
 import com.dragonminez.client.util.TextUtil;
 import com.dragonminez.common.alignment.AlignmentBand;
@@ -375,7 +376,7 @@ public class MasterTextScreen extends Screen {
 					.message(tr("gui.dragonminez.button.popo.rythm"))
 					.onPress(btn -> {
 						if (Minecraft.getInstance().player.level().isClientSide()) {
-							Minecraft.getInstance().setScreen(new RythmGameScreen());
+							Minecraft.getInstance().setScreen(new RythmGameScreen(MinigameOrigin.MASTER));
 						}
 					})
 					.build());

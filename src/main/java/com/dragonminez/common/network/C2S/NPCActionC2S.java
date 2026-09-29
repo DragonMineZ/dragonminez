@@ -97,7 +97,6 @@ public class NPCActionC2S {
 					case "piccolo" -> handlePiccolo(player, data, packet.actionId, packet.value);
 					case "roshi" -> { if (packet.actionId == 2) giveWeight(player, packet.value, "message.dragonminez.roshi.weight_given", MainItems.WEIGHT_TURTLE_SHELL.get()); }
 					case "kingkai" -> { if (packet.actionId == 2) giveWeight(player, packet.value, "message.dragonminez.kingkai.weight_given", MainItems.WORKOUT_WEIGHTS.get()); }
-					case "oldkai" -> handleOldKai(player, data, packet.actionId);
 					case "babidi" -> handleBabidi(player, data, packet.actionId);
 				}
 				NetworkHandler.sendToTrackingEntityAndSelf(new StatsSyncS2C(player), player);
@@ -108,7 +107,7 @@ public class NPCActionC2S {
 
 	private static final double NPC_INTERACTION_RANGE = 8.0;
 
-	private static boolean isNpcInRange(ServerPlayer player, String npcName) {
+	public static boolean isNpcInRange(ServerPlayer player, String npcName) {
 		return player.serverLevel().getEntitiesOfClass(MastersEntity.class,
 						player.getBoundingBox().inflate(NPC_INTERACTION_RANGE),
 						npc -> npcName.equals(npc.getMasterName()))
@@ -273,25 +272,27 @@ public class NPCActionC2S {
 
 	private static final String OLDKAI_ZSWORD_COOLDOWN = "OldKaiZSword";
 
-	private static void handleOldKai(ServerPlayer player, StatsData data, int action) {
-		if (action == 1) {
-			if (data.getResources().getAlignment() > 61 && data.getSkills().getSkillLevel("potentialunlock") >= 10) {
-				data.getSkills().setSkillLevel("ultimate", 1);
-				player.sendSystemMessage(Component.translatable("message.dragonminez.oldkai.ultimate"));
-			}
+	public static boolean meetsOldKaiRequirements(StatsData data) {
+		return data.getResources().getAlignment() > 61 && data.getSkills().getSkillLevel("potentialunlock") >= 10;
+	}
 
-			if (data.getCooldowns().hasCooldown(OLDKAI_ZSWORD_COOLDOWN)) {
-				return;
-			}
-
-			ItemStack stack = new ItemStack(MainItems.Z_SWORD.get(), 1);
-			player.getInventory().add(stack);
-			if (!stack.isEmpty()) {
-				ItemEntity drop = player.drop(stack, false);
-				if (drop != null) drop.setNoPickUpDelay();
-			}
-			data.getCooldowns().addCooldown(OLDKAI_ZSWORD_COOLDOWN, Integer.MAX_VALUE);
+	public static void grantOldKaiChallengeReward(ServerPlayer player, StatsData data) {
+		if (meetsOldKaiRequirements(data)) {
+			data.getSkills().setSkillLevel("ultimate", 1);
+			player.sendSystemMessage(Component.translatable("message.dragonminez.oldkai.ultimate"));
 		}
+
+		if (data.getCooldowns().hasCooldown(OLDKAI_ZSWORD_COOLDOWN)) {
+			return;
+		}
+
+		ItemStack stack = new ItemStack(MainItems.Z_SWORD.get(), 1);
+		player.getInventory().add(stack);
+		if (!stack.isEmpty()) {
+			ItemEntity drop = player.drop(stack, false);
+			if (drop != null) drop.setNoPickUpDelay();
+		}
+		data.getCooldowns().addCooldown(OLDKAI_ZSWORD_COOLDOWN, Integer.MAX_VALUE);
 	}
 
 	private static void handleBabidi(ServerPlayer player, StatsData data, int action) {

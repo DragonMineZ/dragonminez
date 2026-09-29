@@ -26,7 +26,6 @@ import com.dragonminez.common.init.entities.ki.KiBarrierEntity;
 import com.dragonminez.common.init.entities.sagas.DBSagasEntity;
 import com.dragonminez.common.network.NetworkHandler;
 import com.dragonminez.common.network.PacketRateLimiter;
-import com.dragonminez.common.network.TrainingSessionTracker;
 import com.dragonminez.common.network.S2C.AppearanceSyncS2C;
 import com.dragonminez.common.network.S2C.SyncWeaponRegistryS2C;
 import com.dragonminez.common.spacepod.SpacePodDestinationRegistry;
@@ -215,7 +214,6 @@ public class ForgeCommonEvents {
 	@SubscribeEvent
 	public static void onPlayerLogout(PlayerEvent.PlayerLoggedOutEvent event) {
 		if (event.getEntity() instanceof ServerPlayer player) {
-			TrainingSessionTracker.end(player.getUUID());
 			PacketRateLimiter.clear(player.getUUID());
 			com.dragonminez.server.world.worldboss.WorldBossSessions.onPlayerLogout(player);
 			StatsProvider.get(StatsCapability.INSTANCE, player).ifPresent(data -> {
@@ -683,6 +681,7 @@ public class ForgeCommonEvents {
 		event.addListener(SpacePodDestinationRegistry.INSTANCE);
 		event.addListener(DragonDefinitionReloadListener.INSTANCE);
 		event.addListener(DragonWishRegistry.INSTANCE);
+		event.addListener(com.dragonminez.common.training.RhythmChartRegistry.INSTANCE);
 		event.addListener(new SimplePreparableReloadListener<Void>() {
 			@Override
 			protected Void prepare(ResourceManager resourceManager, ProfilerFiller profiler) {

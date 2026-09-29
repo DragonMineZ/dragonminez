@@ -49,6 +49,7 @@ public class GeneralUserConfig {
 	private Boolean tutorialsEnabled = true;
 	private List<String> tutorialsSeen = new ArrayList<>();
 	private Boolean showAccumulativeDamage = true;
+	private Integer rhythmAudioOffsetMs = 60;
 	private Boolean taiyokenInvertPalette = false;
 	private Boolean transformationOutlines = true;
 	private Boolean aura3DPersonal = false;

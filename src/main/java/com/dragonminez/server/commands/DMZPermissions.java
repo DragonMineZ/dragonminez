@@ -163,6 +163,10 @@ public class DMZPermissions {
 	public static final PermissionNode<Boolean> TAIL_SELF = register("dmztail.self", "Allows cutting/growing your own tail.", (player, uuid, context) -> true);
 	public static final PermissionNode<Boolean> TAIL_OTHERS = register("dmztail.others", "Allows cutting/growing other players' tails.", (player, uuid, context) -> false);
 
+	// Minigames
+	public static final PermissionNode<Boolean> MINIGAME_SELF = register("dmzminigame.self", "Allows opening or learning minigames for yourself via command.", (player, uuid, context) -> false);
+	public static final PermissionNode<Boolean> MINIGAME_OTHERS = register("dmzminigame.others", "Allows opening or teaching minigames to other players via command.", (player, uuid, context) -> false);
+
 	// Halo
 	public static final PermissionNode<Boolean> HALO_SELF = register("dmzhalo.self", "Allows toggling your own halo.", (player, uuid, context) -> false);
 	public static final PermissionNode<Boolean> HALO_OTHERS = register("dmzhalo.others", "Allows toggling other players' halos.", (player, uuid, context) -> false);

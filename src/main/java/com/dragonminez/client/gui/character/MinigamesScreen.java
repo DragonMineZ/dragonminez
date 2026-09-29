@@ -3,11 +3,8 @@ package com.dragonminez.client.gui.character;
 import com.dragonminez.Reference;
 import com.dragonminez.client.gui.buttons.CustomTextureButton;
 import com.dragonminez.client.gui.buttons.TexturedTextButton;
-import com.dragonminez.client.gui.character.minigames.ControlGameScreen;
-import com.dragonminez.client.gui.character.minigames.GravityGameScreen;
-import com.dragonminez.client.gui.character.minigames.MemoryGameScreen;
-import com.dragonminez.client.gui.character.minigames.PrecisionGameScreen;
-import com.dragonminez.client.gui.character.minigames.RythmGameScreen;
+import com.dragonminez.client.gui.character.minigames.BaseMinigameScreen;
+import com.dragonminez.common.training.MinigameOrigin;
 import com.dragonminez.common.network.NetworkHandler;
 import com.dragonminez.common.network.C2S.SummonPlayerShadowDummyC2S;
 import com.dragonminez.client.gui.character.util.BaseMenuScreen;
@@ -161,14 +158,7 @@ public class MinigamesScreen extends BaseMenuScreen {
 			NetworkHandler.sendToServer(new SummonPlayerShadowDummyC2S(shadowDummyPercent));
 			return;
 		}
-		switch (MINIGAMES[selectedIndex]) {
-			case "rhythm" -> this.minecraft.setScreen(new RythmGameScreen());
-			case "control" -> this.minecraft.setScreen(new ControlGameScreen());
-			case "memory" -> this.minecraft.setScreen(new MemoryGameScreen());
-			case "precision" -> this.minecraft.setScreen(new PrecisionGameScreen());
-			case "gravity" -> this.minecraft.setScreen(new GravityGameScreen());
-			default -> {}
-		}
+		this.minecraft.setScreen(BaseMinigameScreen.create(MINIGAMES[selectedIndex], MinigameOrigin.MENU));
 	}
 
 	@Override
@@ -257,12 +247,19 @@ public class MinigamesScreen extends BaseMenuScreen {
 		if (isShadowDummyEntry(selectedIndex)) {
 			renderShadowDummyPanel(graphics, rightPanelX, rightPanelY, centerY);
 		} else {
-			renderDescription(graphics, rightPanelX, rightPanelY);
-			if (!hasAccess(selectedIndex)) {
-				int hintY = rightPanelY + 213 - 28 + 6;
-				TextUtil.drawCenteredStringWithBorder(graphics, this.font,
-						tr("gui.dragonminez.minigames.learn").append(" ").append(tr("entity.dragonminez.questnpc." + master(selectedIndex))),
-						rightPanelX + 70, hintY, 0xFFFF7777);
+			if (hasAccess(selectedIndex)) {
+				renderDescription(graphics, rightPanelX, rightPanelY, 142);
+			} else {
+				TrainingConfig trainingConfig = ConfigManager.getTrainingConfig();
+				Component learnLine = tr("gui.dragonminez.minigames.learn").append(" ").append(tr("entity.dragonminez.questnpc." + master(selectedIndex)));
+				Component progressLine = tr("gui.dragonminez.minigames.learn_progress", clientLearnRuns(MINIGAMES[selectedIndex]),
+						Math.max(1, trainingConfig.getLearnRequiredRuns()), Math.max(1, trainingConfig.getLearnRequiredLevel()));
+				int wrapWidth = (int) (118 / 0.75f);
+				int blockHeight = (this.font.split(learnLine, wrapWidth).size() + this.font.split(progressLine, wrapWidth).size()) * 9 + 3;
+				int blockTop = rightPanelY + 213 - 12 - blockHeight;
+				renderDescription(graphics, rightPanelX, rightPanelY, Math.max(40, Math.min(142, blockTop - 4 - (rightPanelY + 40))));
+				int y = drawWrappedCentered(graphics, learnLine, rightPanelX, blockTop, 0xFFFF7777) + 3;
+				drawWrappedCentered(graphics, progressLine, rightPanelX, y, 0xFFFFAA55);
 			}
 		}
 	}
@@ -300,6 +297,12 @@ public class MinigamesScreen extends BaseMenuScreen {
 		return y;
 	}
 
+	private int clientLearnRuns(String minigameId) {
+		Minecraft mc = Minecraft.getInstance();
+		if (mc.player == null) return 0;
+		return StatsProvider.get(StatsCapability.INSTANCE, mc.player).map(d -> d.getCharacter().getLearnRunsFor(minigameId)).orElse(0);
+	}
+
 	private int clientShadowDummyKillCount() {
 		Minecraft mc = Minecraft.getInstance();
 		if (mc.player == null) return 0;
@@ -318,10 +321,10 @@ public class MinigamesScreen extends BaseMenuScreen {
 		return StatsProvider.get(StatsCapability.INSTANCE, mc.player).map(d -> d.getSkills().getSkillLevel(skill)).orElse(0);
 	}
 
-	private void renderDescription(GuiGraphics graphics, int panelX, int panelY) {
+	private void renderDescription(GuiGraphics graphics, int panelX, int panelY, int viewportHeight) {
 		int textX = panelX + 12;
 		int top = panelY + 40;
-		descViewportHeight = 142;
+		descViewportHeight = viewportHeight;
 		int wrapWidth = (int) (118 / 0.75f);
 
 		FormattedText desc = tr("gui.dragonminez.minigame." + MINIGAMES[selectedIndex] + ".desc");

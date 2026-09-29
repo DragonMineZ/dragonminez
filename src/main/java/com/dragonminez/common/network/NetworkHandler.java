@@ -732,6 +732,36 @@ public class NetworkHandler {
 				.encoder(ReviveTargetsS2C::encode)
 				.consumerMainThread(ReviveTargetsS2C::handle)
 				.add();
+
+		net.messageBuilder(MinigameStartC2S.class, id(), NetworkDirection.PLAY_TO_SERVER)
+				.decoder(MinigameStartC2S::new)
+				.encoder(MinigameStartC2S::encode)
+				.consumerMainThread(MinigameStartC2S::handle)
+				.add();
+
+		net.messageBuilder(MinigameInputC2S.class, id(), NetworkDirection.PLAY_TO_SERVER)
+				.decoder(MinigameInputC2S::new)
+				.encoder(MinigameInputC2S::encode)
+				.consumerMainThread(MinigameInputC2S::handle)
+				.add();
+
+		net.messageBuilder(MinigameStartS2C.class, id(), NetworkDirection.PLAY_TO_CLIENT)
+				.decoder(MinigameStartS2C::new)
+				.encoder(MinigameStartS2C::encode)
+				.consumerMainThread(MinigameStartS2C::handle)
+				.add();
+
+		net.messageBuilder(MinigameResultS2C.class, id(), NetworkDirection.PLAY_TO_CLIENT)
+				.decoder(MinigameResultS2C::new)
+				.encoder(MinigameResultS2C::encode)
+				.consumerMainThread(MinigameResultS2C::handle)
+				.add();
+
+		net.messageBuilder(OpenMinigameS2C.class, id(), NetworkDirection.PLAY_TO_CLIENT)
+				.decoder(OpenMinigameS2C::new)
+				.encoder(OpenMinigameS2C::encode)
+				.consumerMainThread(OpenMinigameS2C::handle)
+				.add();
 	}
 
 	public static <MSG> void sendToServer(MSG message) {

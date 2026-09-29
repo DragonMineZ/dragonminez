@@ -40,6 +40,7 @@ public class DMZServer {
 		RestoreCommand.register(dispatcher);
 		HairCommand.register(dispatcher);
 		ClassCommand.register(dispatcher);
+		MinigameCommand.register(dispatcher);
 
 		LogUtil.info(Env.SERVER, "DragonMineZ Commands Registered");
 	}

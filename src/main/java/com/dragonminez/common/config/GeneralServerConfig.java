@@ -370,6 +370,7 @@ public class GeneralServerConfig {
 		public List<TpBoost> getTpGainBoosts(TpSource source) {
 			if (tpGainBoosts == null) return Arrays.asList(TpBoost.values());
 			List<TpBoost> boosts = tpGainBoosts.get(source);
+			if (boosts == null) boosts = tpGainBoosts.containsKey(source) ? List.of() : defaultTpGainBoosts().get(source);
 			if (boosts == null) return List.of();
 			return boosts.stream().filter(Objects::nonNull).toList();
 		}
