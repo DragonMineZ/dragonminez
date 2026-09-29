@@ -30,14 +30,8 @@ public class WorldBossContributionHUD {
 	private static final float TEXT_SCALE = 0.75f;
 	private static final float BAR_HEIGHT = 4.0f;
 	private static final float PADDING = 4.0f;
-	private static final float FRAME = 1.5f;
 	private static final float PANEL_BOTTOM_PADDING = 2.0f;
 	private static final float HIDDEN_PREVIEW_ALPHA = 0.35f;
-	private static final float FRAME_ALPHA = 0.92f;
-	private static final float FILL_ALPHA = 0.62f;
-	private static final int FRAME_COLOR = 0x000000;
-	private static final int FILL_TOP_COLOR = 0x23262E;
-	private static final int FILL_BOTTOM_COLOR = 0x191C22;
 	private static final int TRACK_COLOR = 0x000000;
 	private static final int LOCAL_NAME_COLOR = 0xFFE066;
 	private static final int NAME_COLOR = 0xFFFFFF;
@@ -148,11 +142,8 @@ public class WorldBossContributionHUD {
 	}
 
 	private static void drawPanel(GuiGraphics guiGraphics, float panelHeight) {
-		HudRender.rect(guiGraphics, 0.0f, 0.0f, WIDTH, panelHeight, HudRender.argb(FRAME_ALPHA, FRAME_COLOR));
-		HudRender.rectVertical(guiGraphics, FRAME, FRAME, WIDTH - FRAME * 2.0f, panelHeight - FRAME * 2.0f,
-				HudRender.argb(FILL_ALPHA, FILL_TOP_COLOR), HudRender.argb(FILL_ALPHA, FILL_BOTTOM_COLOR));
-		HudRender.rect(guiGraphics, FRAME, FRAME, WIDTH - FRAME * 2.0f, HEADER_HEIGHT - FRAME - 2.0f, HudRender.argb(0.3f, TRACK_COLOR));
-		HudRender.rect(guiGraphics, FRAME, HEADER_HEIGHT - 2.0f, WIDTH - FRAME * 2.0f, 1.0f, HudRender.argb(0.75f, FRAME_COLOR));
+		HudRender.panel(guiGraphics, 0.0f, 0.0f, WIDTH, panelHeight, 1.0f);
+		HudRender.rect(guiGraphics, PADDING, HEADER_HEIGHT - 2.0f, WIDTH - PADDING * 2.0f, 1.0f, HudRender.argb(0.35f, TRACK_COLOR));
 	}
 
 	private static void drawHeader(GuiGraphics guiGraphics, boolean preview) {
@@ -160,9 +151,9 @@ public class WorldBossContributionHUD {
 		Component bossName = preview && bossKey.isEmpty()
 				? Component.translatable("gui.dragonminez.hud_editor.sample.boss_name")
 				: Component.translatable(bossKey);
-		HudRender.text(guiGraphics, bossName.getString(), PADDING, 3.5f, TEXT_SCALE, 0.0f, HEADER_COLOR, 1.0f);
+		HudRender.dmzText(guiGraphics, bossName.getString(), PADDING, 3.0f, TEXT_SCALE, 0.0f, HEADER_COLOR, 1.0f);
 		long elapsedTicks = preview && bossKey.isEmpty() ? 20L * 330L : ClientWorldBossContribution.elapsedTicks();
-		HudRender.text(guiGraphics, formatTicks(elapsedTicks), WIDTH - PADDING, 3.5f, TEXT_SCALE, 1.0f, TIMER_COLOR, 1.0f);
+		HudRender.dmzText(guiGraphics, formatTicks(elapsedTicks), WIDTH - PADDING, 3.0f, TEXT_SCALE, 1.0f, TIMER_COLOR, 1.0f);
 	}
 
 	private static void drawRow(GuiGraphics guiGraphics, Minecraft mc, RowView view, float row, float fill, float appear, boolean showPercent) {
@@ -181,14 +172,14 @@ public class WorldBossContributionHUD {
 		String name = entry.knockedOut()
 				? entry.name() + " " + Component.translatable("gui.dragonminez.worldboss.contribution.knocked_out").getString()
 				: entry.name();
-		HudRender.text(guiGraphics, rankLabel, PADDING, 1.0f, TEXT_SCALE, 0.0f, TIMER_COLOR, 1.0f);
-		float rankWidth = mc.font.width(rankLabel) * TEXT_SCALE;
-		HudRender.text(guiGraphics, name, PADDING + rankWidth + 3.0f, 1.0f, TEXT_SCALE, 0.0f, nameColor, 1.0f);
+		HudRender.dmzText(guiGraphics, rankLabel, PADDING, 1.0f, TEXT_SCALE, 0.0f, TIMER_COLOR, 1.0f);
+		float rankWidth = HudRender.dmzWidth(rankLabel, TEXT_SCALE);
+		HudRender.dmzText(guiGraphics, name, PADDING + rankWidth + 3.0f, 1.0f, TEXT_SCALE, 0.0f, nameColor, 1.0f);
 
 		String value = showPercent
 				? Math.round(entry.share() * 100.0f) + "%"
 				: NumberFormattingUtil.formatLargeNumber(entry.points());
-		HudRender.text(guiGraphics, value, WIDTH - PADDING, 1.0f, TEXT_SCALE, 1.0f, VALUE_COLOR, 1.0f);
+		HudRender.dmzText(guiGraphics, value, WIDTH - PADDING, 1.0f, TEXT_SCALE, 1.0f, VALUE_COLOR, 1.0f);
 
 		float barY = ROW_HEIGHT - BAR_HEIGHT - 2.0f;
 		float barWidth = WIDTH - PADDING * 2.0f;

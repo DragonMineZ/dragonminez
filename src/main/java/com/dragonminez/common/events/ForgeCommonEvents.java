@@ -238,7 +238,9 @@ public class ForgeCommonEvents {
 
 				data.getStatus().setDeathCount(data.getStatus().getDeathCount() + 1);
 				if (ConfigManager.getServerConfig().getWorldGen().getOtherworldActive()) {
-					if (data.getStatus().isAlive() || data.getStatus().getTempReturnTimer() > 0) {
+					if (data.getStatus().getTempReturnTimer() > 0) {
+						com.dragonminez.server.util.BabaReviveService.markRetryAfterDay(player, data);
+					} else if (data.getStatus().isAlive()) {
 						int cooldownSeconds = ConfigManager.getServerConfig().getGameplay().getReviveCooldownSeconds();
 						if (ConfigManager.getServerConfig().getGameplay().getBabaHardcoreEnabled()) {
 							double growth = ConfigManager.getServerConfig().getGameplay().getBabaHardcoreCooldownGrowth();
@@ -246,7 +248,10 @@ public class ForgeCommonEvents {
 						}
 						data.getCooldowns().addCooldown(Cooldowns.REVIVE_BABA, cooldownSeconds * 20);
 					}
+					com.dragonminez.server.util.BabaReviveService.requestSpiritArrival(player);
 					data.getStatus().setTempReturnTimer(0);
+					data.getCooldowns().removeCooldown(Cooldowns.BABA_KNOCKOUT);
+					data.getCooldowns().removeCooldown(Cooldowns.BABA_AGGRO_GRACE);
 					if (data.getStatus().isHasCreatedCharacter()) data.getStatus().setAlive(false);
 					if (!data.getStatus().isInKaioPlanet()) data.getStatus().setInKaioPlanet(true);
 				}

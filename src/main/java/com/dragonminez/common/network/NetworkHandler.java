@@ -720,6 +720,18 @@ public class NetworkHandler {
 				.encoder(TournamentPackets.RivalS2C::encode)
 				.consumerMainThread(TournamentPackets.RivalS2C::handle)
 				.add();
+
+		net.messageBuilder(RequestReviveTargetsC2S.class, id(), NetworkDirection.PLAY_TO_SERVER)
+				.decoder(RequestReviveTargetsC2S::new)
+				.encoder(RequestReviveTargetsC2S::encode)
+				.consumerMainThread(RequestReviveTargetsC2S::handle)
+				.add();
+
+		net.messageBuilder(ReviveTargetsS2C.class, id(), NetworkDirection.PLAY_TO_CLIENT)
+				.decoder(ReviveTargetsS2C::new)
+				.encoder(ReviveTargetsS2C::encode)
+				.consumerMainThread(ReviveTargetsS2C::handle)
+				.add();
 	}
 
 	public static <MSG> void sendToServer(MSG message) {

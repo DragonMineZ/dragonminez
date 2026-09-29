@@ -205,6 +205,7 @@ public class FormConfig {
 		private Double staminaDrain = 0.0;
 		private Double healthDrain = 0.0;
 		private Double otherworldTimeDrain = 1.0;
+		private Double otherworldTimeDrainMastered = 1.0;
 		private Double attackSpeed = 1.0;
 		private Double maxMastery = 100.0;
 		private Double masteryPerHitDealt = 0.01;
@@ -290,6 +291,17 @@ public class FormConfig {
 
 		public Double getOtherworldTimeDrain() {
 			return otherworldTimeDrain != null ? Math.max(0, otherworldTimeDrain) : 1.0;
+		}
+
+		public Double getOtherworldTimeDrainMastered() {
+			return otherworldTimeDrainMastered != null ? Math.max(0, otherworldTimeDrainMastered) : getOtherworldTimeDrain();
+		}
+
+		public double getOtherworldTimeDrainAt(double mastery) {
+			double max = getMaxMastery();
+			double ratio = max > 0 ? Math.max(0.0, Math.min(1.0, mastery / max)) : 1.0;
+			double base = getOtherworldTimeDrain();
+			return base + (getOtherworldTimeDrainMastered() - base) * ratio;
 		}
 
 		public Double getAttackSpeed() {

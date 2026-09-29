@@ -15,6 +15,7 @@ import com.dragonminez.common.init.entities.questnpc.QuestNPCEntity;
 import com.dragonminez.common.network.NetworkHandler;
 import com.dragonminez.common.network.S2C.StatsSyncS2C;
 import com.dragonminez.common.stats.character.Cooldowns;
+import com.dragonminez.server.util.BabaReviveService;
 import com.dragonminez.common.stats.StatsCapability;
 import com.dragonminez.common.stats.StatsData;
 import com.dragonminez.common.stats.StatsProvider;
@@ -27,7 +28,6 @@ import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
-import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.AABB;
 import net.minecraftforge.network.NetworkEvent;
 
@@ -159,6 +159,7 @@ public class NPCActionC2S {
 
 	private static void handleDende(ServerPlayer player, StatsData data, int action) {
 		if (action == 1) {
+			if (BabaReviveService.isHealingBlocked(data)) return;
 			player.setHealth(player.getMaxHealth());
 			data.getResources().setCurrentPoise(data.getMaxPoise());
 			data.getResources().setCurrentEnergy(data.getMaxEnergy());
@@ -178,28 +179,11 @@ public class NPCActionC2S {
 	}
 
 	private static void handleEnma(ServerPlayer player, StatsData data, int action) {
-		if (action == 1) {
-			if (data.getCooldowns().hasCooldown(Cooldowns.REVIVE_BABA)) {
-				int seconds = data.getCooldowns().getCooldown(Cooldowns.REVIVE_BABA) / 20;
-				player.sendSystemMessage(Component.translatable("gui.dragonminez.lines.enma.revive", player.getName(), seconds));
-				return;
-			}
-			ServerLevel targetLevel = player.server.getLevel(Level.OVERWORLD);
-			if (targetLevel == null) return;
-			if (player.getRespawnPosition() != null)
-				player.teleportTo(targetLevel, player.getRespawnPosition().getX(), player.getRespawnPosition().getY(), player.getRespawnPosition().getZ(), player.getYRot(), player.getXRot());
-			else
-				player.teleportTo(targetLevel, targetLevel.getSharedSpawnPos().getX(), targetLevel.getSharedSpawnPos().getY(), targetLevel.getSharedSpawnPos().getZ(), player.getYRot(), player.getXRot());
-		}
+		if (action == 1) BabaReviveService.handleEnmaReturn(player, data);
 	}
 
 	private static void handleBaba(ServerPlayer player, StatsData data, int action) {
-		if (action == 1) {
-			if (!data.getCooldowns().hasCooldown(Cooldowns.REVIVE_BABA)) {
-				data.getStatus().setAlive(true);
-				player.sendSystemMessage(Component.translatable("gui.dragonminez.lines.baba.revived"));
-			}
-		}
+		if (action == 1) BabaReviveService.handleBabaRevive(player, data);
 	}
 
 	private static void handlePopo(ServerPlayer player, StatsData data, int action) {
@@ -268,6 +252,7 @@ public class NPCActionC2S {
 
 	private static void handlePiccolo(ServerPlayer player, StatsData data, int action, int value) {
 		if (action == 1) {
+			if (BabaReviveService.isHealingBlocked(data)) return;
 			player.setHealth(player.getMaxHealth());
 			data.getResources().setCurrentPoise(data.getMaxPoise());
 			data.getResources().setCurrentEnergy(data.getMaxEnergy());

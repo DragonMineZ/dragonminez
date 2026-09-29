@@ -169,6 +169,14 @@ public class DragonBallPackResources implements PackResources {
 		return root.toString();
 	}
 
+	@Nullable
+	private static String bundledItemTexture(String registryName) {
+		String resource = "assets/" + Reference.MOD_ID + "/textures/item/" + registryName + ".png";
+		return DragonBallPackResources.class.getClassLoader().getResource(resource) != null
+			? Reference.MOD_ID + ":item/" + registryName
+			: null;
+	}
+
 	private String getChipTexture(DragonRadarDefinition radarDefinition) {
 		String source = radarDefinition.getChipModelItemId().orElse("dragonminez:t1_radar_chip");
 		ResourceLocation rl = ResourceLocation.tryParse(source);
@@ -233,7 +241,9 @@ public class DragonBallPackResources implements PackResources {
 		for (DragonRadarDefinition radarDefinition : getMergedRadars()) {
 			if (path.equals("models/item/" + radarDefinition.getItemRegistryName() + ".json")) {
 				DragonRadarAssetDefinition assets = radarDefinition.resolveAssetDefinition();
-				String texture = assets != null && assets.getItemTexturePath().isPresent()
+				String ownTexture = bundledItemTexture(radarDefinition.getItemRegistryName());
+				String texture = ownTexture != null ? ownTexture
+					: assets != null && assets.getItemTexturePath().isPresent()
 					? assets.getItemTexturePath().get()
 					: Reference.MOD_ID + ":item/dball_radar";
 				JsonObject root = new JsonObject();

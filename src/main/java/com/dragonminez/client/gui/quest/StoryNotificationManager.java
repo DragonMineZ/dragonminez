@@ -1,7 +1,6 @@
 package com.dragonminez.client.gui.quest;
 
-import com.dragonminez.client.gui.hud.QuestNoticeHUD;
-import com.dragonminez.client.util.KeyBinds;
+import com.dragonminez.client.gui.hud.NotificationHUD;
 import com.dragonminez.client.util.LocalizationUtil;
 import com.dragonminez.common.network.S2C.StoryToastS2C;
 import com.dragonminez.common.quest.Quest;
@@ -22,47 +21,27 @@ public final class StoryNotificationManager {
 		Minecraft mc = Minecraft.getInstance();
 		if (mc.player == null) return;
 
-		Component title;
-		Component description;
-		StoryToast.Tone tone;
+		Quest quest = QuestRegistry.getClientQuest(message.getQuestId());
+		Component questTitle = quest != null ? toComponent(quest.getTitle()) : Component.literal(message.getQuestId());
 
 		switch (message.getEventType()) {
-			case QUEST_STARTED -> {
-				Quest quest = QuestRegistry.getClientQuest(message.getQuestId());
-				title = Component.translatable("toast.dragonminez.story.quest_started.title");
-				description = quest != null
-						? toComponent(quest.getTitle())
-						: Component.literal(message.getQuestId());
-				tone = StoryToast.Tone.PROGRESS;
-			}
-			case QUEST_FAILED -> {
-				Quest quest = QuestRegistry.getClientQuest(message.getQuestId());
-				title = Component.translatable("toast.dragonminez.story.quest_failed.title");
-				description = quest != null
-						? Component.translatable("toast.dragonminez.story.quest_failed.desc", toComponent(quest.getTitle()))
-						: Component.translatable("toast.dragonminez.story.quest_failed.desc", Component.literal(message.getQuestId()));
-				tone = StoryToast.Tone.FAILURE;
-			}
-			case OBJECTIVE_COMPLETE -> {
-				Quest quest = QuestRegistry.getClientQuest(message.getQuestId());
-				title = Component.translatable("toast.dragonminez.story.objective_complete.title");
-				description = resolveObjectiveText(mc, message, quest);
-				tone = StoryToast.Tone.PROGRESS;
-			}
-			case QUEST_COMPLETE -> {
-				Quest quest = QuestRegistry.getClientQuest(message.getQuestId());
-				title = Component.translatable("toast.dragonminez.story.quest_complete.title");
-				description = quest != null
-						? Component.translatable("toast.dragonminez.story.quest_complete.desc", toComponent(quest.getTitle()))
-						: Component.translatable("toast.dragonminez.story.quest_complete.desc", Component.literal(message.getQuestId()));
-				tone = StoryToast.Tone.SUCCESS;
-			}
+			case QUEST_STARTED -> NotificationHUD.push(
+					Component.translatable("toast.dragonminez.story.quest_started.title"),
+					questTitle, null, null, NotificationHUD.PRIORITY_NORMAL);
+			case QUEST_FAILED -> NotificationHUD.push(
+					Component.translatable("toast.dragonminez.story.quest_failed.title"),
+					questTitle, Component.translatable("toast.dragonminez.story.quest_failed.hint"), null,
+					NotificationHUD.PRIORITY_HIGH);
+			case OBJECTIVE_COMPLETE -> NotificationHUD.push(
+					Component.translatable("toast.dragonminez.story.objective_complete.title"),
+					questTitle, resolveObjectiveText(mc, message, quest), null, NotificationHUD.PRIORITY_NORMAL);
+			case QUEST_COMPLETE -> NotificationHUD.push(
+					Component.translatable("toast.dragonminez.story.quest_complete.title"),
+					questTitle, Component.translatable("toast.dragonminez.story.quest_complete.hint"), null,
+					NotificationHUD.PRIORITY_HIGH);
 			default -> {
-				return;
 			}
 		}
-
-		QuestNoticeHUD.push(title, description, tone);
 	}
 
 	private static Component resolveObjectiveText(Minecraft mc, StoryToastS2C message, Quest quest) {
@@ -100,5 +79,3 @@ public final class StoryNotificationManager {
 		return LocalizationUtil.localizedOrReadable(raw);
 	}
 }
-
-

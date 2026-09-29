@@ -489,6 +489,7 @@ public class StatsEvents {
 				if (healStamina > maxStamina) healStamina = maxStamina;
 
 				if (hasCreatedChar) {
+					if (com.dragonminez.server.util.BabaReviveService.isHealingBlocked(data)) return;
 					if (!BioAndroidEvolution.isExplosionRecovering(data)) serverPlayer.setHealth(player.getHealth() + healHp);
 					data.getResources().addEnergy(healKi);
 					data.getResources().addStamina(healStamina);

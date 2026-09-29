@@ -10,11 +10,10 @@ import com.dragonminez.client.gui.hud.KiReserveHUD;
 import com.dragonminez.client.gui.hud.MinecraftHUD;
 import com.dragonminez.client.gui.hud.ModernHUD;
 import com.dragonminez.client.gui.hud.PartyHUD;
-import com.dragonminez.client.gui.hud.QuestNoticeHUD;
+import com.dragonminez.client.gui.hud.NotificationHUD;
 import com.dragonminez.client.gui.hud.RageMeterHUD;
 import com.dragonminez.client.gui.hud.ScouterHUD;
 import com.dragonminez.client.gui.hud.TechniqueHotbarHUD;
-import com.dragonminez.client.gui.hud.TrackedQuestHUD;
 import com.dragonminez.client.gui.hud.WorldBossContributionHUD;
 import com.dragonminez.client.gui.hud.XenoverseHUD;
 import com.dragonminez.client.gui.hud.layout.HudElement;
@@ -284,8 +283,7 @@ public class HudEditorScreen extends Screen {
 		graphics.fill(0, 0, this.width, this.height, DIM_COLOR);
 
 		if (extras) {
-			TrackedQuestHUD.render(graphics, partialTick, this.width, this.height);
-			QuestNoticeHUD.render(graphics, partialTick, this.width, this.height);
+			NotificationHUD.render(graphics, partialTick, this.width, this.height);
 			ScouterHUD.render(graphics, partialTick, this.width, this.height);
 			BabaReturnTimerHUD.render(graphics, partialTick, this.width, this.height);
 			WorldBossContributionHUD.render(graphics, partialTick, this.width, this.height);

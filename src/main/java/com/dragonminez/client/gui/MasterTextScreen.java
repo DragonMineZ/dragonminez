@@ -16,6 +16,7 @@ import com.dragonminez.common.stats.character.Cooldowns;
 import com.dragonminez.common.stats.StatsCapability;
 import com.dragonminez.common.stats.StatsData;
 import com.dragonminez.common.stats.StatsProvider;
+import com.dragonminez.server.util.BabaReviveService;
 import com.dragonminez.server.world.dimension.HTCDimension;
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.BufferBuilder;
@@ -41,11 +42,19 @@ public class MasterTextScreen extends Screen {
 			"textures/gui/menu/textmenu.png");
 	private static final ResourceLocation DMZ_FONT = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "smooth");
 
+	private static final int MAX_DIALOGUE_LINES = 4;
+	private static final int DIALOGUE_LINE_STEP = 11;
+
 	private final String masterName;
 	private Component currentDialogue;
 	private boolean secondFunc = false;
 	private boolean thirdFunc = false;
 	private EditBox weightBox;
+	private TexturedTextButton liveButton;
+	private int liveTicks;
+	private int dialogueScroll;
+	private int dialogueLineCount;
+	private Component renderedDialogue;
 
 	public MasterTextScreen(String masterName) {
 		super(Component.literal(masterName).withStyle(Style.EMPTY.withFont(ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "smooth"))));
@@ -236,11 +245,13 @@ public class MasterTextScreen extends Screen {
 				.build());
 	}
 
-	private void initEnma(int x, int y, StatsData stats) {
-		int cdTime = (int) (stats.getCooldowns().getCooldown(Cooldowns.REVIVE_BABA) / 20.0f);
-		this.currentDialogue = tr("gui.dragonminez.lines.enma.main", Minecraft.getInstance().player.getName(), cdTime);
+	private static boolean isTemporaryReviveEnabled() {
+		return ConfigManager.getServerConfig().getWorldGen().getOtherworldActive()
+				&& ConfigManager.getServerConfig().getGameplay().getBabaTemporaryRevive();
+	}
 
-		this.addRenderableWidget(new TexturedTextButton.Builder()
+	private void initEnma(int x, int y, StatsData stats) {
+		this.liveButton = new TexturedTextButton.Builder()
 				.position(x, y)
 				.size(74, 20)
 				.texture(BUTTONS_TEXTURE)
@@ -249,46 +260,93 @@ public class MasterTextScreen extends Screen {
 				.message(tr("gui.dragonminez.button.enma.earth"))
 				.onPress(b -> {
 					StatsProvider.get(StatsCapability.INSTANCE, Minecraft.getInstance().player).ifPresent(currentStats -> {
-						boolean hasCdNow = currentStats.getCooldowns().hasCooldown(Cooldowns.REVIVE_BABA);
-						if (hasCdNow) {
-							int seconds = (int) (currentStats.getCooldowns().getCooldown(Cooldowns.REVIVE_BABA) / 20.0f);
-							this.currentDialogue = tr("gui.dragonminez.lines.enma.revive", Minecraft.getInstance().player.getName(), seconds);
-						} else {
+						if (BabaReviveService.canEnmaReturn(currentStats)) {
 							NetworkHandler.sendToServer(new NPCActionC2S("enma", 1));
 							this.onClose();
+						} else {
+							updateEnma(currentStats);
 						}
 					});
 				})
-				.build());
+				.build();
+		this.addRenderableWidget(liveButton);
+		updateEnma(stats);
+	}
+
+	private void updateEnma(StatsData stats) {
+		Component playerName = Minecraft.getInstance().player.getName();
+		boolean temporary = isTemporaryReviveEnabled();
+		boolean canReturn = BabaReviveService.canEnmaReturn(stats);
+		if (stats.getStatus().isAlive()) {
+			setDialogue(tr("gui.dragonminez.lines.enma.main", playerName));
+		} else if (canReturn) {
+			setDialogue(tr("gui.dragonminez.lines.enma.main_temporary", playerName));
+		} else {
+			setDialogue(tr(temporary ? "gui.dragonminez.lines.enma.need_baba_temporary" : "gui.dragonminez.lines.enma.need_baba", playerName));
+		}
+		if (liveButton != null) liveButton.active = canReturn;
 	}
 
 	private void initBaba(int x, int y, StatsData stats) {
-		boolean hasCd = stats.getCooldowns().hasCooldown(Cooldowns.REVIVE_BABA);
-		int cdTime = hasCd ? (int) stats.getCooldowns().getCooldown(Cooldowns.REVIVE_BABA) / 20 : 0;
-		this.currentDialogue = tr("gui.dragonminez.lines.baba.main", Minecraft.getInstance().player.getName(), cdTime);
-
-		TexturedTextButton babaButton = new TexturedTextButton.Builder()
+		boolean temporary = isTemporaryReviveEnabled();
+		this.liveButton = new TexturedTextButton.Builder()
 				.position(x, y)
 				.size(74, 20)
 				.texture(BUTTONS_TEXTURE)
 				.textureCoords(0, 28, 0, 48)
 				.textureSize(74, 20)
-				.message(tr("gui.dragonminez.button.baba.revive"))
+				.message(tr(temporary ? "gui.dragonminez.button.baba.revive_temporary" : "gui.dragonminez.button.baba.revive"))
 				.onPress(b -> {
-					StatsProvider.get(StatsCapability.INSTANCE, Minecraft.getInstance().player).ifPresent(currentStats -> {
-						if (!currentStats.getCooldowns().hasCooldown(Cooldowns.REVIVE_BABA)) {
-							NetworkHandler.sendToServer(new NPCActionC2S("baba", 1));
-							this.onClose();
-						} else {
-							int seconds = (int) (currentStats.getCooldowns().getCooldown(Cooldowns.REVIVE_BABA) / 20.0f);
-							this.currentDialogue = tr("gui.dragonminez.lines.baba.main", Minecraft.getInstance().player.getName(), seconds);
-							refreshButtons();
-						}
-					});
+					NetworkHandler.sendToServer(new NPCActionC2S("baba", 1));
+					this.onClose();
 				})
 				.build();
-		babaButton.active = !hasCd;
-		this.addRenderableWidget(babaButton);
+		this.addRenderableWidget(liveButton);
+		updateBaba(stats);
+	}
+
+	private void updateBaba(StatsData stats) {
+		Component playerName = Minecraft.getInstance().player.getName();
+		boolean temporary = isTemporaryReviveEnabled();
+		boolean hasCd = stats.getCooldowns().hasCooldown(Cooldowns.REVIVE_BABA);
+		int cdTime = hasCd ? stats.getCooldowns().getCooldown(Cooldowns.REVIVE_BABA) / 20 : 0;
+		boolean canRevive;
+
+		if (stats.getStatus().isAlive()) {
+			setDialogue(tr("gui.dragonminez.lines.baba.already_alive", playerName));
+			canRevive = false;
+		} else if (temporary && BabaReviveService.isTempReviveActive(stats)) {
+			setDialogue(tr("gui.dragonminez.lines.baba.temporary_active", playerName));
+			canRevive = false;
+		} else if (hasCd) {
+			setDialogue(tr("gui.dragonminez.lines.baba.wait", cdTime));
+			canRevive = false;
+		} else if (temporary) {
+			int minutes = ConfigManager.getServerConfig().getGameplay().getBabaTempReturnSeconds() / 60;
+			setDialogue(tr("gui.dragonminez.lines.baba.main_temporary", playerName, minutes));
+			canRevive = true;
+		} else {
+			setDialogue(tr("gui.dragonminez.lines.baba.main", playerName));
+			canRevive = true;
+		}
+		if (liveButton != null) liveButton.active = canRevive;
+	}
+
+	private void setDialogue(Component dialogue) {
+		if (dialogue.getString().equals(this.currentDialogue.getString())) return;
+		this.currentDialogue = dialogue;
+		this.dialogueScroll = 0;
+	}
+
+	@Override
+	public void tick() {
+		super.tick();
+		if (!"baba".equals(masterName) && !"enma".equals(masterName)) return;
+		if (++liveTicks % 20 != 0) return;
+		StatsProvider.get(StatsCapability.INSTANCE, Minecraft.getInstance().player).ifPresent(stats -> {
+			if ("baba".equals(masterName)) updateBaba(stats);
+			else updateEnma(stats);
+		});
 	}
 
 	private void initPopo(int x, int y, StatsData stats) {
@@ -617,13 +675,42 @@ public class MasterTextScreen extends Screen {
 		TextUtil.drawStringWithBorder(graphics, this.font, tr("gui.dragonminez.lines." + masterName + ".name").withStyle(ChatFormatting.BOLD), centerX - 120, centerY - 87, 0xFFFFFF);
 
 		int maxTextWidth = 230;
-		int textY = centerY - 74;
+		int textTop = centerY - 74;
+		if (currentDialogue != renderedDialogue) {
+			renderedDialogue = currentDialogue;
+			dialogueScroll = 0;
+		}
 		var splitLines = this.font.split(currentDialogue, maxTextWidth);
-		for (var line : splitLines) {
-			TextUtil.drawStringWithBorder(graphics, this.font, line, centerX - 120, textY, 0xFFFFFF);
-			textY += this.font.lineHeight + 2;
+		dialogueLineCount = splitLines.size();
+		int maxScroll = Math.max(0, dialogueLineCount - MAX_DIALOGUE_LINES);
+		dialogueScroll = Math.max(0, Math.min(dialogueScroll, maxScroll));
+
+		int textY = textTop;
+		for (int i = dialogueScroll; i < Math.min(splitLines.size(), dialogueScroll + MAX_DIALOGUE_LINES); i++) {
+			TextUtil.drawStringWithBorder(graphics, this.font, splitLines.get(i), centerX - 120, textY, 0xFFFFFF);
+			textY += DIALOGUE_LINE_STEP;
+		}
+
+		if (maxScroll > 0) {
+			int trackX = centerX + 116;
+			int trackTop = textTop - 1;
+			int trackHeight = MAX_DIALOGUE_LINES * DIALOGUE_LINE_STEP;
+			graphics.fill(trackX, trackTop, trackX + 3, trackTop + trackHeight, 0xFF333333);
+			int thumbHeight = Math.max(8, trackHeight * MAX_DIALOGUE_LINES / dialogueLineCount);
+			int thumbY = trackTop + (trackHeight - thumbHeight) * dialogueScroll / maxScroll;
+			graphics.fill(trackX, thumbY, trackX + 3, thumbY + thumbHeight, 0xFFAAAAAA);
 		}
 		super.render(graphics, mouseX, mouseY, partialTick);
+	}
+
+	@Override
+	public boolean mouseScrolled(double mouseX, double mouseY, double delta) {
+		if (dialogueLineCount > MAX_DIALOGUE_LINES) {
+			int maxScroll = dialogueLineCount - MAX_DIALOGUE_LINES;
+			dialogueScroll = Math.max(0, Math.min(maxScroll, dialogueScroll - (int) Math.signum(delta)));
+			return true;
+		}
+		return super.mouseScrolled(mouseX, mouseY, delta);
 	}
 
 	private void refreshButtons() {

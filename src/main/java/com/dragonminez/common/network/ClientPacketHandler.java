@@ -10,8 +10,7 @@ import com.dragonminez.client.gui.InstantTransmissionScreen;
 import com.dragonminez.client.gui.character.CharacterCustomizationScreen;
 import com.dragonminez.client.gui.quest.QuestNPCDialogueScreen;
 import com.dragonminez.client.gui.quest.StoryNotificationManager;
-import com.dragonminez.client.gui.quest.StoryToast;
-import com.dragonminez.client.gui.hud.QuestNoticeHUD;
+import com.dragonminez.client.gui.hud.NotificationHUD;
 import com.dragonminez.client.clash.ClientBeamClashState;
 import com.dragonminez.client.render.effects.AuraModeState;
 import com.dragonminez.common.network.S2C.BeamClashStateS2C;
@@ -46,6 +45,12 @@ public class ClientPacketHandler {
 			if (skill == null || skill.getLevel() < 5) return;
 			Minecraft.getInstance().setScreen(new InstantTransmissionScreen(entries, skill.getLevel()));
 		});
+	}
+
+	public static void handleReviveTargets(List<com.dragonminez.common.network.S2C.ReviveTargetsS2C.Entry> entries) {
+		if (Minecraft.getInstance().screen instanceof com.dragonminez.client.gui.WishesScreen screen) {
+			screen.setReviveTargets(entries);
+		}
 	}
 
 	public static void handleStatsSyncPacket(int playerId, CompoundTag nbt) {
@@ -113,10 +118,12 @@ public class ClientPacketHandler {
 
 	public static void handlePartyInviteToastPacket(String inviterName) {
 		Minecraft mc = Minecraft.getInstance();
-		QuestNoticeHUD.push(
+		NotificationHUD.push(
 				Component.translatable("toast.dragonminez.party.invite.title"),
-				Component.translatable("toast.dragonminez.party.invite.desc", Component.literal(inviterName)),
-				StoryToast.Tone.INFO
+				Component.literal(inviterName),
+				Component.translatable("toast.dragonminez.party.invite.hint"),
+				null,
+				NotificationHUD.PRIORITY_NORMAL
 		);
 		if (mc.player != null) {
 			mc.player.playSound(net.minecraft.sounds.SoundEvents.NOTE_BLOCK_CHIME.value(), 1.0F, 1.2F);
@@ -128,11 +135,13 @@ public class ClientPacketHandler {
 		if (mc.player == null) {
 			return;
 		}
-		mc.getToasts().addToast(new StoryToast(
+		NotificationHUD.push(
 				Component.translatable("message.dragonminez.quest.start.failed_title"),
+				null,
 				message,
-				StoryToast.Tone.FAILURE
-		));
+				null,
+				NotificationHUD.PRIORITY_HIGH
+		);
 		mc.player.sendSystemMessage(message);
 	}
 

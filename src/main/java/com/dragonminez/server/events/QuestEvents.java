@@ -197,7 +197,7 @@ public class QuestEvents {
 		QuestService.syncQuestState(controller);
 	}
 
-	private static void handlePlayerQuestFailure(ServerPlayer deadPlayer) {
+	public static void handlePlayerQuestFailure(ServerPlayer deadPlayer) {
 		ServerPlayer controller = PartyManager.resolveQuestController(deadPlayer);
 		if (controller == null) {
 			return;

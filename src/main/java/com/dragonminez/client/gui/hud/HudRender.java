@@ -102,6 +102,86 @@ public final class HudRender {
 		}
 	}
 
+	public static final int PANEL_FILL_RGB = 0x141B25;
+	public static final float PANEL_FILL_ALPHA = 0.78f;
+	public static final int PANEL_FRAME_RGB = 0x070A0F;
+	public static final float PANEL_FRAME_ALPHA = 0.92f;
+	public static final float PANEL_FRAME_WIDTH = 1.0f;
+	private static final ResourceLocation DMZ_FONT = ResourceLocation.fromNamespaceAndPath(com.dragonminez.Reference.MOD_ID, "smooth");
+
+	public static void panel(GuiGraphics graphics, float x, float y, float width, float height, float alpha) {
+		panel(graphics, x, y, width, height, PANEL_FILL_RGB, alpha);
+	}
+
+	public static void panel(GuiGraphics graphics, float x, float y, float width, float height, int fillRgb, float alpha) {
+		float frame = PANEL_FRAME_WIDTH;
+		rect(graphics, x + frame, y + frame, width - frame * 2.0f, height - frame * 2.0f, argb(PANEL_FILL_ALPHA * alpha, fillRgb));
+		int frameColor = argb(PANEL_FRAME_ALPHA * alpha, PANEL_FRAME_RGB);
+		rect(graphics, x, y, width, frame, frameColor);
+		rect(graphics, x, y + height - frame, width, frame, frameColor);
+		rect(graphics, x, y + frame, frame, height - frame * 2.0f, frameColor);
+		rect(graphics, x + width - frame, y + frame, frame, height - frame * 2.0f, frameColor);
+	}
+
+	public static net.minecraft.network.chat.MutableComponent dmz(String text) {
+		return net.minecraft.network.chat.Component.literal(text).withStyle(net.minecraft.network.chat.Style.EMPTY.withFont(DMZ_FONT));
+	}
+
+	public static net.minecraft.network.chat.MutableComponent dmz(net.minecraft.network.chat.Component text) {
+		return text.copy().withStyle(net.minecraft.network.chat.Style.EMPTY.withFont(DMZ_FONT));
+	}
+
+	public static float dmzWidth(String text, float scale) {
+		return Minecraft.getInstance().font.width(dmz(text)) * scale;
+	}
+
+	public static void dmzText(GuiGraphics graphics, String text, float x, float y, float scale, float align, int rgb, float alpha) {
+		if (text == null || text.isEmpty()) return;
+		dmzText(graphics, dmz(text), x, y, scale, align, rgb, alpha);
+	}
+
+	public static void dmzText(GuiGraphics graphics, net.minecraft.network.chat.Component component, float x, float y, float scale, float align, int rgb, float alpha) {
+		int alphaChannel = Math.round(Mth.clamp(alpha, 0.0f, 1.0f) * alphaScale * 255.0f);
+		if (alphaChannel <= 3 || component == null) return;
+
+		Font font = Minecraft.getInstance().font;
+		int color = (alphaChannel << 24) | (rgb & 0xFFFFFF);
+		int border = alphaChannel << 24;
+		float offset = -font.width(component) * align;
+
+		graphics.pose().pushPose();
+		graphics.pose().translate(x, y, 0.0f);
+		graphics.pose().scale(scale, scale, 1.0f);
+		graphics.pose().translate(offset, 0.0f, 0.0f);
+		graphics.drawString(font, component, -1, 0, border, false);
+		graphics.drawString(font, component, 1, 0, border, false);
+		graphics.drawString(font, component, 0, -1, border, false);
+		graphics.drawString(font, component, 0, 1, border, false);
+		graphics.drawString(font, component, 0, 0, color, false);
+		graphics.pose().popPose();
+	}
+
+	public static void dmzText(GuiGraphics graphics, net.minecraft.util.FormattedCharSequence sequence, float x, float y, float scale, float align, int rgb, float alpha) {
+		int alphaChannel = Math.round(Mth.clamp(alpha, 0.0f, 1.0f) * alphaScale * 255.0f);
+		if (alphaChannel <= 3 || sequence == null) return;
+
+		Font font = Minecraft.getInstance().font;
+		int color = (alphaChannel << 24) | (rgb & 0xFFFFFF);
+		int border = alphaChannel << 24;
+		float offset = -font.width(sequence) * align;
+
+		graphics.pose().pushPose();
+		graphics.pose().translate(x, y, 0.0f);
+		graphics.pose().scale(scale, scale, 1.0f);
+		graphics.pose().translate(offset, 0.0f, 0.0f);
+		graphics.drawString(font, sequence, -1, 0, border, false);
+		graphics.drawString(font, sequence, 1, 0, border, false);
+		graphics.drawString(font, sequence, 0, -1, border, false);
+		graphics.drawString(font, sequence, 0, 1, border, false);
+		graphics.drawString(font, sequence, 0, 0, color, false);
+		graphics.pose().popPose();
+	}
+
 	public static void rect(GuiGraphics graphics, float x, float y, float width, float height, int color) {
 		gradient(graphics, x, y, width, height, color, color, color, color);
 	}

@@ -83,7 +83,7 @@ public final class MutantManager {
 		if (player == null || data == null || player.getServer() == null) return;
 		GeneralServerConfig.MutantConfig cfg = config();
 		if (cfg == null || !cfg.getEnabled()) return;
-		if (!data.getStatus().isHasCreatedCharacter() || !data.getStatus().isAlive()) return;
+		if (!data.getStatus().isHasCreatedCharacter()) return;
 
 		MutantSavedData saved = MutantSavedData.get(player.getServer());
 		if (saved.isHolder(player.getUUID()) || isMutant(data)) return;
@@ -108,7 +108,6 @@ public final class MutantManager {
 			StatsData data = StatsProvider.get(StatsCapability.INSTANCE, player).orElse(null);
 			if (data == null) continue;
 			if (!data.getStatus().isHasCreatedCharacter()) continue;
-			if (!data.getStatus().isAlive()) continue;
 			if (saved.isHolder(player.getUUID()) || isMutant(data)) continue;
 			candidates.add(player);
 		}

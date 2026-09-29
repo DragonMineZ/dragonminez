@@ -3,7 +3,6 @@ package com.dragonminez.client.util;
 import com.dragonminez.Env;
 import com.dragonminez.LogUtil;
 import com.dragonminez.Reference;
-import com.dragonminez.client.gui.quest.StoryToast;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.screens.TitleScreen;
 import net.minecraft.network.chat.Component;
@@ -96,11 +95,13 @@ public class VersionCheckerUtil {
 
 		String targetVersion = result.target() == null ? "unknown" : result.target().toString();
 		LogUtil.info(Env.CLIENT, "[DMZ-VERSION] Update available: {} -> {}", currentVersion, targetVersion);
-		Minecraft.getInstance().getToasts().addToast(new StoryToast(
+		com.dragonminez.client.gui.hud.NotificationHUD.push(
 				Component.translatable("toast.dragonminez.update.title"),
+				null,
 				Component.translatable("toast.dragonminez.update.desc", currentVersion, targetVersion),
-				StoryToast.Tone.INFO
-		));
+				null,
+				com.dragonminez.client.gui.hud.NotificationHUD.PRIORITY_LOW
+		);
 		updateToastShown = true;
 	}
 

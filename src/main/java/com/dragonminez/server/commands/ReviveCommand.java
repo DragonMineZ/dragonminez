@@ -1,10 +1,8 @@
 package com.dragonminez.server.commands;
 
-import com.dragonminez.common.network.NetworkHandler;
-import com.dragonminez.common.network.S2C.StatsSyncS2C;
-import com.dragonminez.common.stats.character.Cooldowns;
 import com.dragonminez.common.stats.StatsCapability;
 import com.dragonminez.common.stats.StatsProvider;
+import com.dragonminez.server.util.BabaReviveService;
 import com.mojang.brigadier.CommandDispatcher;
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.commands.Commands;
@@ -35,17 +33,7 @@ public class ReviveCommand {
 		int successCount = 0;
 
 		for (ServerPlayer player : targets) {
-			StatsProvider.get(StatsCapability.INSTANCE, player).ifPresent(data -> {
-				data.getCooldowns().removeCooldown(Cooldowns.REVIVE_BABA);
-				data.getStatus().setTempReturnTimer(0);
-				data.getStatus().setTempReturnsUsed(0);
-				if (!data.getStatus().isAlive()) {
-					data.getStatus().setAlive(true);
-					player.setHealth(player.getMaxHealth());
-					player.sendSystemMessage(Component.translatable("command.dragonminez.revive.target"));
-				}
-				NetworkHandler.sendToTrackingEntityAndSelf(new StatsSyncS2C(player), player);
-			});
+			StatsProvider.get(StatsCapability.INSTANCE, player).ifPresent(data -> BabaReviveService.reviveFully(player, data));
 			successCount++;
 		}
 
