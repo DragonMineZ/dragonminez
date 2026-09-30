@@ -285,11 +285,25 @@ public class SkinGathererProvider {
         String basePath = "textures/entity/races/namekian/bodytype_" + bodyType + "_";
         String fallbackPath = "textures/entity/races/namekian/bodytype_0_";
 
-        consumer.accept(DMZSkinLayer.getSafeTexture(getCachedTexture(basePath + "layer1.png"), getCachedTexture(fallbackPath + "layer1.png")), c1);
+        ResourceLocation layer1 = DMZSkinLayer.getSafeTexture(getCachedTexture(basePath + "layer1.png"), getCachedTexture(fallbackPath + "layer1.png"));
+        consumer.accept(layer1, c1);
+        emitShadowLayer(consumer, layer1, c1);
 
-        tryLoadOptionalLayerWithFallback(basePath + "layer2.png", fallbackPath + "layer2.png", c2, consumer);
-        tryLoadOptionalLayerWithFallback(basePath + "layer3.png", fallbackPath + "layer3.png", c3, consumer);
-        tryLoadOptionalLayerWithFallback(basePath + "layer4.png", fallbackPath + "layer4.png", hairColor, consumer);
+        emitShadowLayer(consumer, tryLoadOptionalLayerWithFallback(basePath + "layer2.png", fallbackPath + "layer2.png", c2, consumer), c2);
+        emitShadowLayer(consumer, tryLoadOptionalLayerWithFallback(basePath + "layer3.png", fallbackPath + "layer3.png", c3, consumer), c3);
+        emitShadowLayer(consumer, tryLoadOptionalLayerWithFallback(basePath + "layer4.png", fallbackPath + "layer4.png", hairColor, consumer), hairColor);
+    }
+
+    private void acceptWithShadow(BiConsumer<ResourceLocation, float[]> consumer, ResourceLocation layer, float[] color) {
+        consumer.accept(layer, color);
+        emitShadowLayer(consumer, layer, color);
+    }
+
+    private void emitShadowLayer(BiConsumer<ResourceLocation, float[]> consumer, ResourceLocation layer, float[] color) {
+        if (layer == null) return;
+        String path = layer.getPath();
+        ResourceLocation shadow = getCachedTexture(path.substring(0, path.length() - ".png".length()) + "_shadow.png");
+        if (DMZSkinLayer.getSafeTexture(shadow).equals(shadow)) emitTranslucentLayer(consumer, shadow, ColorUtils.skinShadowTone(color));
     }
 
 	protected void resolveBodyFrostDemon(Character character, String key, float[] b1, float[] b2, float[] b3, float[] hair, BiConsumer<ResourceLocation, float[]> consumer) {
@@ -306,24 +320,24 @@ public class SkinGathererProvider {
 		if (isBulky) {
 			prefix = key.equals("frostdemon_third") ? folder + "thirdform_bodytype_" + bodyType + "_" : folder + "bodytype_" + bodyType + "_";
 			fallbackPrefix = key.equals("frostdemon_third") ? folder + "thirdform_bodytype_0_" : folder + "bodytype_0_";
-			consumer.accept(DMZSkinLayer.getSafeTexture(getCachedTexture(prefix + "layer1.png"), getCachedTexture(fallbackPrefix + "layer1.png")), b1);
-			consumer.accept(DMZSkinLayer.getSafeTexture(getCachedTexture(prefix + "layer2.png"), getCachedTexture(fallbackPrefix + "layer2.png")), b2);
-			consumer.accept(DMZSkinLayer.getSafeTexture(getCachedTexture(prefix + "layer3.png"), getCachedTexture(fallbackPrefix + "layer3.png")), b3);
-			consumer.accept(DMZSkinLayer.getSafeTexture(getCachedTexture(prefix + "layer4.png"), getCachedTexture(fallbackPrefix + "layer4.png")), hair);
+			acceptWithShadow(consumer, DMZSkinLayer.getSafeTexture(getCachedTexture(prefix + "layer1.png"), getCachedTexture(fallbackPrefix + "layer1.png")), b1);
+			acceptWithShadow(consumer, DMZSkinLayer.getSafeTexture(getCachedTexture(prefix + "layer2.png"), getCachedTexture(fallbackPrefix + "layer2.png")), b2);
+			acceptWithShadow(consumer, DMZSkinLayer.getSafeTexture(getCachedTexture(prefix + "layer3.png"), getCachedTexture(fallbackPrefix + "layer3.png")), b3);
+			acceptWithShadow(consumer, DMZSkinLayer.getSafeTexture(getCachedTexture(prefix + "layer4.png"), getCachedTexture(fallbackPrefix + "layer4.png")), hair);
 			if (bodyType == 0)
-				consumer.accept(DMZSkinLayer.getSafeTexture(getCachedTexture(prefix + "layer5.png"), getCachedTexture(fallbackPrefix + "layer5.png")), DEFAULT_ORANGE_COLOR);
+				acceptWithShadow(consumer, DMZSkinLayer.getSafeTexture(getCachedTexture(prefix + "layer5.png"), getCachedTexture(fallbackPrefix + "layer5.png")), DEFAULT_ORANGE_COLOR);
 		} else {
 			prefix = key.equals("frostdemon_fifth") ? folder + "fifth_bodytype_" + bodyType + "_" : folder + "finalform_bodytype_" + bodyType + "_";
 			fallbackPrefix = key.equals("frostdemon_fifth") ? folder + "fifth_bodytype_0_" : folder + "finalform_bodytype_0_";
 
-			consumer.accept(DMZSkinLayer.getSafeTexture(getCachedTexture(prefix + "layer1.png"), getCachedTexture(fallbackPrefix + "layer1.png")), b1);
-			consumer.accept(DMZSkinLayer.getSafeTexture(getCachedTexture(prefix + "layer2.png"), getCachedTexture(fallbackPrefix + "layer2.png")), (bodyType == 0 || bodyType == 2) ? hair : b2);
+			acceptWithShadow(consumer, DMZSkinLayer.getSafeTexture(getCachedTexture(prefix + "layer1.png"), getCachedTexture(fallbackPrefix + "layer1.png")), b1);
+			acceptWithShadow(consumer, DMZSkinLayer.getSafeTexture(getCachedTexture(prefix + "layer2.png"), getCachedTexture(fallbackPrefix + "layer2.png")), (bodyType == 0 || bodyType == 2) ? hair : b2);
 			if (bodyType == 1) {
-				consumer.accept(DMZSkinLayer.getSafeTexture(getCachedTexture(prefix + "layer3.png"), getCachedTexture(fallbackPrefix + "layer3.png")), b3);
-				consumer.accept(DMZSkinLayer.getSafeTexture(getCachedTexture(prefix + "layer4.png"), getCachedTexture(fallbackPrefix + "layer4.png")), hair);
+				acceptWithShadow(consumer, DMZSkinLayer.getSafeTexture(getCachedTexture(prefix + "layer3.png"), getCachedTexture(fallbackPrefix + "layer3.png")), b3);
+				acceptWithShadow(consumer, DMZSkinLayer.getSafeTexture(getCachedTexture(prefix + "layer4.png"), getCachedTexture(fallbackPrefix + "layer4.png")), hair);
 			} else if (bodyType == 2) {
-				consumer.accept(DMZSkinLayer.getSafeTexture(getCachedTexture(prefix + "layer3.png"), getCachedTexture(fallbackPrefix + "layer3.png")), hair);
-				consumer.accept(DMZSkinLayer.getSafeTexture(getCachedTexture(prefix + "layer2.png"), getCachedTexture(fallbackPrefix + "layer2.png")), b2);
+				acceptWithShadow(consumer, DMZSkinLayer.getSafeTexture(getCachedTexture(prefix + "layer3.png"), getCachedTexture(fallbackPrefix + "layer3.png")), hair);
+				acceptWithShadow(consumer, DMZSkinLayer.getSafeTexture(getCachedTexture(prefix + "layer2.png"), getCachedTexture(fallbackPrefix + "layer2.png")), b2);
 			}
 		}
 
@@ -386,22 +400,22 @@ public class SkinGathererProvider {
 
         if ("janemba_super".equals(key)) {
             String path = "textures/entity/races/majin/janembasuper_0_male_";
-            consumer.accept(getCachedTexture(path + "layer1.png"), b1);
-            consumer.accept(getCachedTexture(path + "layer2.png"), b2);
-            consumer.accept(getCachedTexture(path + "layer3.png"), b3);
+            acceptWithShadow(consumer, getCachedTexture(path + "layer1.png"), b1);
+            acceptWithShadow(consumer, getCachedTexture(path + "layer2.png"), b2);
+            acceptWithShadow(consumer, getCachedTexture(path + "layer3.png"), b3);
             return;
         }
 
         if ("janemba_imperfect".equals(key)) {
             String path = "textures/entity/races/majin/janemba_0_male_";
-            consumer.accept(getCachedTexture(path + "layer1.png"), b1);
+            acceptWithShadow(consumer, getCachedTexture(path + "layer1.png"), b1);
             return;
         }
 
         if ("janemba_fat".equals(key)) {
             String path = "textures/entity/races/majin/janembafat_0_male_";
-            consumer.accept(getCachedTexture(path + "layer1.png"), b1);
-            consumer.accept(getCachedTexture(path + "layer2.png"), b2);
+            acceptWithShadow(consumer, getCachedTexture(path + "layer1.png"), b1);
+            acceptWithShadow(consumer, getCachedTexture(path + "layer2.png"), b2);
             return;
         }
 
@@ -422,10 +436,10 @@ public class SkinGathererProvider {
         String fallbackPath = "textures/entity/races/majin/bodytype_" + genderSuffix + "_0_";
 
         ResourceLocation l1 = DMZSkinLayer.getSafeTexture(getCachedTexture(basePath + "layer1.png"), getCachedTexture(fallbackPath + "layer1.png"));
-        if (l1 != null) consumer.accept(l1, b1);
+        if (l1 != null) acceptWithShadow(consumer, l1, b1);
 
-        tryLoadOptionalLayer(basePath + "layer2.png", b2, consumer);
-        tryLoadOptionalLayer(basePath + "layer3.png", b3, consumer);
+        emitShadowLayer(consumer, tryLoadOptionalLayer(basePath + "layer2.png", b2, consumer), b2);
+        emitShadowLayer(consumer, tryLoadOptionalLayer(basePath + "layer3.png", b3, consumer), b3);
 
         if (genderSuffix.equals("female") && (phase.equals("super") || phase.equals("ultra"))) {
             ResourceLocation tailLoc = getCachedTexture("textures/entity/races/tail1.png");
@@ -433,22 +447,27 @@ public class SkinGathererProvider {
         }
     }
 
-    private void tryLoadOptionalLayer(String path, float[] color, BiConsumer<ResourceLocation, float[]> consumer) {
+    private ResourceLocation tryLoadOptionalLayer(String path, float[] color, BiConsumer<ResourceLocation, float[]> consumer) {
         ResourceLocation loc = getCachedTexture(path);
         if (Minecraft.getInstance().getResourceManager().getResource(loc).isPresent()) {
             consumer.accept(loc, color);
+            return loc;
         }
+        return null;
     }
 
-    private void tryLoadOptionalLayerWithFallback(String path, String fallbackPath, float[] color, BiConsumer<ResourceLocation, float[]> consumer) {
+    private ResourceLocation tryLoadOptionalLayerWithFallback(String path, String fallbackPath, float[] color, BiConsumer<ResourceLocation, float[]> consumer) {
         ResourceLocation loc = getCachedTexture(path);
         ResourceLocation fallbackLoc = getCachedTexture(fallbackPath);
 
         if (Minecraft.getInstance().getResourceManager().getResource(loc).isPresent()) {
             consumer.accept(loc, color);
+            return loc;
         }
         else if (Minecraft.getInstance().getResourceManager().getResource(fallbackLoc).isPresent()) {
             consumer.accept(fallbackLoc, color);
+            return fallbackLoc;
         }
+        return null;
     }
 }
