@@ -685,6 +685,7 @@
   "gui.dragonminez.config.menuScaleMultiplier": "Menu Panel Scale",
   "gui.dragonminez.config.utilityMenuScaleMultiplier": "Utility Menu Scale",
   "gui.dragonminez.config.cameraMovementDuringFlight": "Camera Movement while Flying",
+  "gui.dragonminez.config.flightTurnSensitivity": "Flight Turn Sensitivity",
   "gui.dragonminez.config.overShoulderCamera": "Over Shoulder Camera",
   "gui.dragonminez.config.open": "Open »",
   "gui.dragonminez.overShoulder.title": "Over Shoulder Camera",

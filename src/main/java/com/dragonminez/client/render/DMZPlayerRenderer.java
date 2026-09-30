@@ -1,7 +1,7 @@
 package com.dragonminez.client.render;
 
 import com.dragonminez.client.events.FlySkillEvent;
-import com.dragonminez.client.flight.FlightRollHandler;
+import com.dragonminez.client.flight.FlightOrientationHandler;
 import com.dragonminez.client.animation.IPlayerAnimatable;
 import com.dragonminez.client.render.hair.HairRenderCapture;
 import com.dragonminez.client.render.hair.HairRenderContext;
@@ -23,6 +23,7 @@ import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
 import com.mojang.math.Axis;
 import net.minecraft.client.Minecraft;
+import net.minecraft.util.Mth;
 import net.minecraft.client.player.AbstractClientPlayer;
 import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.RenderType;
@@ -123,14 +124,18 @@ public class DMZPlayerRenderer<T extends AbstractClientPlayer & GeoAnimatable> e
 		}
 
 		if (FlySkillEvent.getInstance().isFlyingFast(entity)) {
-			float roll = entity == Minecraft.getInstance().player ? FlightRollHandler.getRoll(partialTick) : 0f;
-			float pitch = entity.getViewXRot(partialTick);
 			float pivotY = entity.getBbHeight() / 2f;
 			poseStack.translate(0, pivotY, 0);
-			poseStack.mulPose(Axis.YP.rotationDegrees(180 - entityYaw));
-			poseStack.mulPose(Axis.XP.rotationDegrees(-pitch));
-			poseStack.mulPose(Axis.ZP.rotationDegrees(roll));
-			poseStack.mulPose(Axis.YP.rotationDegrees(-(180 - entityYaw)));
+			if (entity == Minecraft.getInstance().player && FlightOrientationHandler.isActive()) {
+				float bodyYaw = Mth.rotLerp(partialTick, entity.yBodyRotO, entity.yBodyRot);
+				poseStack.mulPose(FlightOrientationHandler.getModelRotation());
+				poseStack.mulPose(Axis.YP.rotationDegrees(-(180 - bodyYaw)));
+			} else {
+				float pitch = entity.getViewXRot(partialTick);
+				poseStack.mulPose(Axis.YP.rotationDegrees(180 - entityYaw));
+				poseStack.mulPose(Axis.XP.rotationDegrees(-pitch));
+				poseStack.mulPose(Axis.YP.rotationDegrees(-(180 - entityYaw)));
+			}
 			poseStack.translate(0, -pivotY, 0);
 		}
 

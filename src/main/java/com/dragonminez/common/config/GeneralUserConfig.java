@@ -45,6 +45,7 @@ public class GeneralUserConfig {
 	private Float menuScaleMultiplier = DEFAULT_MENU_SCALE;
 	private Float utilityMenuScaleMultiplier = 1.0f;
 	private Boolean cameraMovementDuringFlight = true;
+	private Float flightTurnSensitivity = 0.75f;
 	@Getter(AccessLevel.NONE) @Setter(AccessLevel.NONE) private Boolean liveCrowdinTranslations = null;
 	private Boolean tutorialsEnabled = true;
 	private List<String> tutorialsSeen = new ArrayList<>();
@@ -107,6 +108,11 @@ public class GeneralUserConfig {
 	public List<String> getTutorialsSeen() {
 		if (tutorialsSeen == null) tutorialsSeen = new ArrayList<>();
 		return tutorialsSeen;
+	}
+
+	public Float getFlightTurnSensitivity() {
+		if (flightTurnSensitivity == null || !Float.isFinite(flightTurnSensitivity)) flightTurnSensitivity = 0.75f;
+		return Math.max(0.2f, Math.min(flightTurnSensitivity, 2.0f));
 	}
 
 	public Integer getOverShoulderMode() {

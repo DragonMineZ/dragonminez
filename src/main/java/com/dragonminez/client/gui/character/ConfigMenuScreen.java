@@ -147,6 +147,8 @@ public class ConfigMenuScreen extends BaseMenuScreen {
 		action(Category.INTERFACE, "config.resetTutorials", "gui.dragonminez.config.reset", TutorialManager::resetSeen);
 
 		toggle(Category.GAMEPLAY, "config.cameraMovementDuringFlight", userConfig.getCameraMovementDuringFlight(), userConfig::setCameraMovementDuringFlight);
+		number(Category.GAMEPLAY, "config.flightTurnSensitivity", ConfigType.FLOAT, userConfig.getFlightTurnSensitivity(),
+				0.2f, 2.0f, userConfig::setFlightTurnSensitivity);
 		action(Category.GAMEPLAY, "config.overShoulderCamera", "gui.dragonminez.config.open", () -> this.minecraft.setScreen(new OverShoulderCameraScreen(this)));
 		initializeDynamicGrowthOptions();
 

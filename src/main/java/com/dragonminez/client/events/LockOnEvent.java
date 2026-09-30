@@ -1,6 +1,7 @@
 package com.dragonminez.client.events;
 
 import com.dragonminez.Reference;
+import com.dragonminez.client.render.camera.OverShoulderCamera;
 import com.dragonminez.client.systems.kisense.KiSenseScan;
 import com.dragonminez.client.systems.taiyoken.TaiyokenBlindState;
 import com.dragonminez.common.init.MainSounds;
@@ -13,6 +14,7 @@ import com.mojang.blaze3d.vertex.*;
 import com.mojang.math.Axis;
 import lombok.Getter;
 import net.minecraft.client.Minecraft;
+import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.client.renderer.GameRenderer;
 import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.resources.ResourceLocation;
@@ -135,6 +137,12 @@ public class LockOnEvent {
 		double targetY = Mth.lerp(partialTick, lockedTarget.yo, lockedTarget.getY()) + lockedTarget.getBbHeight() * 0.5;
 		double targetZ = Mth.lerp(partialTick, lockedTarget.zo, lockedTarget.getZ());
 		Vec3 targetPos = new Vec3(targetX, targetY, targetZ);
+
+		if (OverShoulderCamera.isDecoupled() && player instanceof LocalPlayer localPlayer) {
+			OverShoulderCamera.steerToward(localPlayer, targetPos, partialTick, 0.15F);
+			return;
+		}
+
 		Vec3 playerPos = player.getEyePosition(partialTick);
 
 		double dX = targetPos.x - playerPos.x;

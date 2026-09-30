@@ -1,14 +1,13 @@
 package com.dragonminez.mixin.client;
 
 import com.dragonminez.client.clash.BeamClashCinematicCamera;
-import com.dragonminez.client.flight.FlightRollHandler;
+import com.dragonminez.client.flight.FlightOrientationHandler;
 import com.dragonminez.client.flight.RollCamera;
 import com.dragonminez.client.render.camera.OverShoulderCamera;
 import com.dragonminez.client.render.firstperson.dto.DMZCameraBuffer;
 import com.dragonminez.client.render.firstperson.dto.FirstPersonManager;
 import net.minecraft.client.Camera;
 import net.minecraft.client.player.LocalPlayer;
-import net.minecraft.util.Mth;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.level.BlockGetter;
 import net.minecraft.world.level.ClipContext;
@@ -37,24 +36,18 @@ public abstract class CameraMixin implements RollCamera {
 	@Shadow protected abstract void move(double x, double y, double z);
 
 	@Unique private float dragonminez$roll = 0F;
-	@Unique private float dragonminez$lastRoll = 0F;
-	@Unique private float dragonminez$tickDelta = 0F;
 
 	@Inject(method = "setup", at = @At("HEAD"))
-	private void dragonminez$captureTickDelta(BlockGetter level, Entity entity, boolean detached, boolean thirdPersonReverse, float partialTick, CallbackInfo ci) {
-		this.dragonminez$tickDelta = partialTick;
-		this.dragonminez$lastRoll = this.dragonminez$roll;
+	private void dragonminez$updateAim(BlockGetter level, Entity entity, boolean detached, boolean thirdPersonReverse, float partialTick, CallbackInfo ci) {
+		if (entity instanceof LocalPlayer player) {
+			OverShoulderCamera.beforeSetup(player, partialTick);
+			FlightOrientationHandler.frame(player);
+			this.dragonminez$roll = FlightOrientationHandler.getCameraRoll();
+		} else this.dragonminez$roll = 0F;
 	}
 
 	@Inject(method = "setup", at = @At("TAIL"))
 	private void dragonminez$modifyCamera(BlockGetter level, Entity entity, boolean detached, boolean thirdPersonReverse, float partialTick, CallbackInfo ci) {
-		if (FlightRollHandler.hasActiveRoll()) {
-			float newRoll = FlightRollHandler.getRoll(partialTick);
-			float delta = Mth.wrapDegrees(newRoll - this.dragonminez$lastRoll);
-			this.dragonminez$roll = this.dragonminez$lastRoll + delta;
-			dragonminez$rebaseRoll();
-		} else this.dragonminez$roll = Mth.lerp(0.1F, this.dragonminez$roll, 0F);
-
 		if (entity instanceof LocalPlayer clashPlayer && BeamClashCinematicCamera.isActive()) {
 			BeamClashCinematicCamera.Shot shot = BeamClashCinematicCamera.computeShot(level, clashPlayer, partialTick);
 			if (shot != null) {
@@ -103,22 +96,15 @@ public abstract class CameraMixin implements RollCamera {
 			at = @At(value = "INVOKE", target = "Lnet/minecraft/client/Camera;move(DDD)V", ordinal = 0)
 	)
 	private void dragonminez$shoulderSurf(Camera camera, double x, double y, double z, BlockGetter level, Entity entity, boolean detached, boolean thirdPersonReverse, float partialTick) {
-		Vec3 move = OverShoulderCamera.computeMove(camera, level, entity, thirdPersonReverse, x, y, z, partialTick);
+		if (!thirdPersonReverse && OverShoulderCamera.isDecoupled()) {
+			this.setRotation(OverShoulderCamera.getCameraYaw(), OverShoulderCamera.getCameraPitch());
+		}
+		Vec3 move = OverShoulderCamera.computeMove(camera, level, entity, thirdPersonReverse, x, y, z, partialTick, this.dragonminez$roll);
 		this.move(move.x, move.y, move.z);
 	}
 
 	@Override
 	public float dragonminez$getRoll() {
-		return Mth.lerp(dragonminez$tickDelta, dragonminez$lastRoll, dragonminez$roll);
-	}
-
-	@Unique
-	private void dragonminez$rebaseRoll() {
-		float wrapped = Mth.wrapDegrees(this.dragonminez$roll);
-		float offset = this.dragonminez$roll - wrapped;
-		if (offset != 0F) {
-			this.dragonminez$roll = wrapped;
-			this.dragonminez$lastRoll -= offset;
-		}
+		return this.dragonminez$roll;
 	}
 }

@@ -1,10 +1,12 @@
 package com.dragonminez.mixin.client;
 
 import com.dragonminez.Reference;
+import com.dragonminez.client.render.camera.OverShoulderCamera;
 import com.dragonminez.common.combat.util.Minecraft_DMZ;
 import com.dragonminez.common.stats.StatsCapability;
 import com.dragonminez.common.stats.StatsProvider;
 import com.mojang.blaze3d.systems.RenderSystem;
+import net.minecraft.client.CameraType;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Gui;
 import net.minecraft.client.gui.GuiGraphics;
@@ -13,6 +15,7 @@ import net.minecraft.resources.ResourceLocation;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
+import org.spongepowered.asm.mixin.injection.Redirect;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
 @Mixin(Gui.class)
@@ -36,6 +39,11 @@ public abstract class InGameHudMixin {
 		if (((Minecraft_DMZ) Minecraft.getInstance()).hasTargetsInReach()) RenderSystem.setShaderColor(1.0F, 0.0F, 0.0F, 1.0F);
 	}
 
+	@Redirect(method = "renderCrosshair", at = @At(value = "INVOKE", target = "Lnet/minecraft/client/CameraType;isFirstPerson()Z"))
+	private boolean dragonminez$shoulderCrosshair(CameraType cameraType) {
+		return cameraType.isFirstPerson() || OverShoulderCamera.isDecoupled();
+	}
+
 	@Inject(method = "renderCrosshair", at = @At("TAIL"))
 	private void dragonminez$post_renderCrosshair(GuiGraphics guiGraphics, CallbackInfo ci) {
 		RenderSystem.setShaderColor(1.0F, 1.0F, 1.0F, 1.0F);
@@ -51,7 +59,7 @@ public abstract class InGameHudMixin {
 
 	private static boolean dragonminez$crosshairVisible() {
 		Minecraft mc = Minecraft.getInstance();
-		if (!mc.options.getCameraType().isFirstPerson()) return false;
+		if (!mc.options.getCameraType().isFirstPerson() && !OverShoulderCamera.isDecoupled()) return false;
 		return mc.gameMode == null || mc.gameMode.getPlayerMode() != net.minecraft.world.level.GameType.SPECTATOR;
 	}
 }

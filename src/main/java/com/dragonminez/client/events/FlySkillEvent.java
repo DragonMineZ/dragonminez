@@ -4,7 +4,6 @@ import com.dragonminez.Reference;
 import com.dragonminez.client.clash.ClientBeamClashState;
 import com.dragonminez.client.flight.CombatFlightHandler;
 import com.dragonminez.client.flight.FlightOrientationHandler;
-import com.dragonminez.client.flight.FlightRollHandler;
 import com.dragonminez.client.util.KeyBinds;
 import com.dragonminez.common.config.ConfigManager;
 import com.dragonminez.common.init.EntityAttributes;
@@ -50,9 +49,11 @@ public class FlySkillEvent {
 	private static final float EXIT_DECELERATION = 0.08F;
 	private static final float SLOW_DESCENT_RATE = -0.02F;
 	private static final float TURN_SPEED_NORMAL = 0.15F;
-	private static final float TURN_SPEED_FAST = 0.3F;
+	private static final float TURN_SPEED_FAST = 0.6F;
+	private static final double TURN_REVERSAL_DOT = -0.2D;
 	private static final float BASE_ATTRIBUTE_FLY_SPEED = 0.35F;
 	private static final float FAST_FLYING_THRESHOLD = 0.55F;
+	private static final float FAST_FLYING_EXIT_THRESHOLD = 0.4F;
 	private static final double MIN_GROUND_CLEARANCE = 0.25D;
 
 	private static int kiConsumptionTicks = 0;
@@ -66,6 +67,11 @@ public class FlySkillEvent {
 	private static boolean wasFlyingSkillActive = false;
 	private static boolean pendingFlightDisable = false;
 	private static boolean wasSprintingInAir = false;
+	private static boolean fastFlight = false;
+	private static boolean wasStrafingLeft = false;
+	private static boolean wasStrafingRight = false;
+	private static long lastLeftTapTime = 0;
+	private static long lastRightTapTime = 0;
 	private static int lastFlightMode = Status.FLIGHT_SEARCH;
 
 	public static FlySkillEvent getInstance() {
@@ -308,21 +314,27 @@ public class FlySkillEvent {
 		}
 		wasSprintingInAir = canSprint;
 
-		if (!isFastFlight) FlightOrientationHandler.reset();
-
 		Vec3 lookDir = isFastFlight ? FlightOrientationHandler.getForwardVector(player) : player.getLookAngle();
 		Vec3 targetDirection = Vec3.ZERO;
 
 		if (isForward) targetDirection = targetDirection.add(lookDir);
 		if (isBack) targetDirection = targetDirection.add(lookDir.scale(-0.5));
-		if (isLeft) {
-			Vec3 leftDir = lookDir.yRot((float) Math.toRadians(90)).normalize();
-			targetDirection = targetDirection.add(new Vec3(leftDir.x, 0, leftDir.z).scale(0.7));
+		if (isFastFlight) {
+			Vec3 rightDir = FlightOrientationHandler.getRightVector(player);
+			if (isLeft) targetDirection = targetDirection.add(rightDir.scale(-0.7));
+			if (isRight) targetDirection = targetDirection.add(rightDir.scale(0.7));
+		} else {
+			if (isLeft) {
+				Vec3 leftDir = lookDir.yRot((float) Math.toRadians(90)).normalize();
+				targetDirection = targetDirection.add(new Vec3(leftDir.x, 0, leftDir.z).scale(0.7));
+			}
+			if (isRight) {
+				Vec3 rightDir = lookDir.yRot((float) Math.toRadians(-90)).normalize();
+				targetDirection = targetDirection.add(new Vec3(rightDir.x, 0, rightDir.z).scale(0.7));
+			}
 		}
-		if (isRight) {
-			Vec3 rightDir = lookDir.yRot((float) Math.toRadians(-90)).normalize();
-			targetDirection = targetDirection.add(new Vec3(rightDir.x, 0, rightDir.z).scale(0.7));
-		}
+
+		handleFastFlightManeuvers(isFastFlight, isLeft, isRight);
 
 		double currentSpeed = flightVector.length();
 
@@ -346,8 +358,13 @@ public class FlySkillEvent {
 				double minSpeed = ConfigManager.getCombatConfig().getCombatFlyBaseSpeed() * levelMultiplier * flySpeedScale;
 				double targetSpeed = Math.max(minSpeed, Math.min(currentSpeed + currentAccel, currentMaxSpeed));
 				Vec3 targetVelocity = targetDirection.scale(targetSpeed);
-				float turnSpeed = isFastFlight ? TURN_SPEED_FAST : TURN_SPEED_NORMAL;
-				flightVector = new Vec3(Mth.lerp(turnSpeed, flightVector.x, targetVelocity.x), Mth.lerp(turnSpeed, flightVector.y, targetVelocity.y), Mth.lerp(turnSpeed, flightVector.z, targetVelocity.z));
+				Vec3 currentDirection = currentSpeed > 0.001 ? flightVector.scale(1.0 / currentSpeed) : Vec3.ZERO;
+				if (isFastFlight && currentDirection.dot(targetDirection) > TURN_REVERSAL_DOT) {
+					Vec3 steered = currentDirection.lerp(targetDirection, TURN_SPEED_FAST).normalize();
+					flightVector = steered.scale(Mth.lerp(TURN_SPEED_FAST, currentSpeed, targetSpeed));
+				} else {
+					flightVector = new Vec3(Mth.lerp(TURN_SPEED_NORMAL, flightVector.x, targetVelocity.x), Mth.lerp(TURN_SPEED_NORMAL, flightVector.y, targetVelocity.y), Mth.lerp(TURN_SPEED_NORMAL, flightVector.z, targetVelocity.z));
+				}
 			}
 			hovering = Math.min(1F, hovering + 0.1F);
 		} else {
@@ -357,8 +374,6 @@ public class FlySkillEvent {
 				else flightVector = Vec3.ZERO;
 			} else flightVector = Vec3.ZERO;
 		}
-
-		FlightRollHandler.tick();
 
 		if (GravityLogic.isFlightHardStopped(player)) {
 			flightVector = Vec3.ZERO;
@@ -379,6 +394,23 @@ public class FlySkillEvent {
 			NetworkHandler.sendToServer(new FlyToggleC2S(false));
 			resetFlightState();
 		}
+	}
+
+	private static void handleFastFlightManeuvers(boolean isFastFlight, boolean isLeft, boolean isRight) {
+		long now = System.currentTimeMillis();
+		if (isFastFlight) {
+			FlightOrientationHandler.setStrafe((isRight ? 1F : 0F) - (isLeft ? 1F : 0F));
+			if (isLeft && !wasStrafingLeft) {
+				if (now - lastLeftTapTime <= DOUBLE_TAP_WINDOW_MS) FlightOrientationHandler.barrelRoll(-1F);
+				lastLeftTapTime = now;
+			}
+			if (isRight && !wasStrafingRight) {
+				if (now - lastRightTapTime <= DOUBLE_TAP_WINDOW_MS) FlightOrientationHandler.barrelRoll(1F);
+				lastRightTapTime = now;
+			}
+		}
+		wasStrafingLeft = isLeft;
+		wasStrafingRight = isRight;
 	}
 
 	private static float getFlySpeedScale(LocalPlayer player) {
@@ -480,12 +512,16 @@ public class FlySkillEvent {
 		pendingFlightDisable = false;
 		wasFlyingSkillActive = false;
 		wasSprintingInAir = false;
-		FlightRollHandler.reset();
+		fastFlight = false;
 		FlightOrientationHandler.reset();
 	}
 
 	private boolean isFlyingFast() {
-		return flightVector.length() > FAST_FLYING_THRESHOLD;
+		double speed = flightVector.length();
+		if (fastFlight) {
+			if (speed < FAST_FLYING_EXIT_THRESHOLD) fastFlight = false;
+		} else if (speed > FAST_FLYING_THRESHOLD) fastFlight = true;
+		return fastFlight;
 	}
 
 	public boolean isFlyingFast(AbstractClientPlayer player) {
