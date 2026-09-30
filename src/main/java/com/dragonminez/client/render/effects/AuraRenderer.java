@@ -603,11 +603,11 @@ public class AuraRenderer {
 
 		if (stats.getStatus().isActionCharging()) {
 			if (stats.getStatus().getSelectedAction() == ActionMode.STACK) {
-				nextForm = TransformationsHelper.getNextAvailableStackForm(stats);
+				nextForm = TransformationsHelper.presentNextStackForm(stats);
 				chargingStack = nextForm != null;
 			} else if (stats.getStatus().getSelectedAction() == ActionMode.FORM) {
 				if (!character.hasActiveStackForm()) {
-					nextForm = TransformationsHelper.getNextAvailableForm(stats);
+					nextForm = TransformationsHelper.presentNextForm(stats);
 					chargingNormal = nextForm != null;
 				}
 			}

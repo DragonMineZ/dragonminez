@@ -8,6 +8,7 @@ import com.dragonminez.common.network.S2C.StatsSyncS2C;
 import com.dragonminez.common.stats.StatsCapability;
 import com.dragonminez.common.stats.StatsData;
 import com.dragonminez.common.stats.StatsProvider;
+import com.dragonminez.common.util.FusionForms;
 import com.dragonminez.server.world.data.MutantSavedData;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.MinecraftServer;
@@ -33,7 +34,7 @@ public final class MutantManager {
 	}
 
 	public static boolean isMutant(StatsData data) {
-		return data != null && data.getEffects().hasEffect(EFFECT_NAME);
+		return FusionForms.hasAnyMutant(data);
 	}
 
 	public static void grant(ServerPlayer player, StatsData data) {

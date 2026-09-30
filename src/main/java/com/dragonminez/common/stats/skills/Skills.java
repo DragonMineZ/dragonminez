@@ -195,6 +195,18 @@ public class Skills {
 		if (skill != null) skill.setActive(!skill.isActive());
 	}
 
+	public void mergeMax(Skill other) {
+		String key = other.getName().toLowerCase();
+		Skill mine = skillMap.get(key);
+		if (mine == null) {
+			skillMap.put(key, new Skill(other.getName(), other.getLevel(), other.isActive(), other.getMaxLevel()));
+			return;
+		}
+		if (mine.getLevel() <= 0) mine.setActive(other.isActive());
+		mine.setMaxLevel(Math.max(mine.getMaxLevel(), other.getMaxLevel()));
+		mine.setLevel(Math.max(mine.getLevel(), other.getLevel()));
+	}
+
 	public Map<String, Skill> getAllSkills() {
 		return new HashMap<>(skillMap);
 	}

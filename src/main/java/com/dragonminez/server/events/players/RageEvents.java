@@ -13,6 +13,7 @@ import com.dragonminez.common.stats.StatsCapability;
 import com.dragonminez.common.stats.StatsData;
 import com.dragonminez.common.stats.StatsProvider;
 import com.dragonminez.common.util.FalseSuperSaiyanHelper;
+import com.dragonminez.common.util.FusionForms;
 import com.dragonminez.common.util.TransformationsHelper;
 import com.dragonminez.server.util.MutantManager;
 import net.minecraft.network.chat.Component;
@@ -133,7 +134,7 @@ public class RageEvents {
 			}
 
 			String group = data.getCharacter().getActiveFormGroup();
-			boolean inLegendary = data.getCharacter().hasActiveForm() && TransformationsHelper.isMutantLegendaryGroup(group);
+			boolean inLegendary = data.getCharacter().hasActiveForm() && TransformationsHelper.isMutantLegendaryGroup(group) && FusionForms.hasMutantFor(data, group);
 
 			if (!status.isRageActive() && resources.isRageFull() && inLegendary) {
 				status.setRageActive(true);

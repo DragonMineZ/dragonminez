@@ -6,6 +6,7 @@ import com.dragonminez.client.animation.AnimationCache;
 import com.dragonminez.common.config.migration.RacialConfigMigrator;
 import com.dragonminez.common.diagnostics.JsonLoadReport;
 import com.dragonminez.common.init.MainEntities;
+import com.dragonminez.common.util.FusionForms;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.JsonArray;
@@ -1547,6 +1548,11 @@ public class ConfigManager {
 	}
 	public static Map<String, FormConfig> getAllFormsForRace(String raceName) { return getAllForms().getOrDefault(raceName.toLowerCase(), new HashMap<>()); }
 	public static FormConfig getFormGroup(String raceName, String groupName) {
+		String qualifierRace = FusionForms.qualifierRace(groupName);
+		if (qualifierRace != null) {
+			raceName = qualifierRace;
+			groupName = FusionForms.baseGroup(groupName);
+		}
 		Map<String, FormConfig> raceForms = getAllFormsForRace(raceName);
 		return raceForms != null ? raceForms.get(groupName.toLowerCase()) : null;
 	}

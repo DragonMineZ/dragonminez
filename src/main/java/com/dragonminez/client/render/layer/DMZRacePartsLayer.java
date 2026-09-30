@@ -181,13 +181,13 @@ public class DMZRacePartsLayer<T extends AbstractClientPlayer & GeoAnimatable> e
 
 		if (stats.getStatus().isActionCharging()) {
 			if (stats.getStatus().getSelectedAction() == ActionMode.FORM) {
-				var nextForm = TransformationsHelper.getNextAvailableForm(stats);
+				var nextForm = TransformationsHelper.presentNextForm(stats);
 				if (nextForm != null && !nextForm.getHairColor().isEmpty()) {
 					float factor = Mth.clamp(stats.getResources().getActionCharge() / 100.0f, 0.0f, 1.0f);
 					accessoryColor = DMZSkinLayer.lerpColor(factor, accessoryColor, nextForm.getRgbHairColor());
 				}
 			} else if (stats.getStatus().getSelectedAction() == ActionMode.STACK) {
-				var nextForm = TransformationsHelper.getNextAvailableStackForm(stats);
+				var nextForm = TransformationsHelper.presentNextStackForm(stats);
 				if (nextForm != null && !nextForm.getHairColor().isEmpty()) {
 					float factor = Mth.clamp(stats.getResources().getActionCharge() / 100.0f, 0.0f, 1.0f);
 					accessoryColor = DMZSkinLayer.lerpColor(factor, accessoryColor, nextForm.getRgbHairColor());
@@ -308,13 +308,13 @@ public class DMZRacePartsLayer<T extends AbstractClientPlayer & GeoAnimatable> e
 
 					if (stats.getStatus().isActionCharging()) {
 						if (stats.getStatus().getSelectedAction() == ActionMode.FORM) {
-							var nextForm = TransformationsHelper.getNextAvailableForm(stats);
+							var nextForm = TransformationsHelper.presentNextForm(stats);
 							if (nextForm != null && !nextForm.getBodyColor2().isEmpty()) {
 								float factor = Mth.clamp(stats.getResources().getActionCharge() / 100.0f, 0.0f, 1.0f);
 								tailColor = DMZSkinLayer.lerpColor(factor, tailColor, nextForm.getRgbBodyColor2());
 							}
 						} else if (stats.getStatus().getSelectedAction() == ActionMode.STACK) {
-							var nextForm = TransformationsHelper.getNextAvailableStackForm(stats);
+							var nextForm = TransformationsHelper.presentNextStackForm(stats);
 							if (nextForm != null && !nextForm.getBodyColor2().isEmpty()) {
 								float factor = Mth.clamp(stats.getResources().getActionCharge() / 100.0f, 0.0f, 1.0f);
 								tailColor = DMZSkinLayer.lerpColor(factor, tailColor, nextForm.getRgbBodyColor2());
@@ -348,12 +348,12 @@ public class DMZRacePartsLayer<T extends AbstractClientPlayer & GeoAnimatable> e
 		if (stats.getStatus().isActionCharging()) {
 			float factor = Mth.clamp(stats.getResources().getActionCharge() / 100.0f, 0.0f, 1.0f);
 			if (stats.getStatus().getSelectedAction() == ActionMode.FORM) {
-				var nextForm = TransformationsHelper.getNextAvailableForm(stats);
+				var nextForm = TransformationsHelper.presentNextForm(stats);
 				if (nextForm != null && !nextForm.getBodyColor1().isEmpty()) {
 					color = DMZSkinLayer.lerpColor(factor, color, nextForm.getRgbBodyColor1());
 				}
 			} else if (stats.getStatus().getSelectedAction() == ActionMode.STACK) {
-				var nextForm = TransformationsHelper.getNextAvailableStackForm(stats);
+				var nextForm = TransformationsHelper.presentNextStackForm(stats);
 				if (nextForm != null && !nextForm.getBodyColor1().isEmpty()) {
 					color = DMZSkinLayer.lerpColor(factor, color, nextForm.getRgbBodyColor1());
 				}

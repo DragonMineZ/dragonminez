@@ -41,6 +41,7 @@ import com.dragonminez.server.events.players.actionmode.RacialModeHandler;
 import com.dragonminez.server.events.players.actionmode.StackFormModeHandler;
 import com.dragonminez.server.events.players.statuseffect.*;
 import com.dragonminez.server.util.BabaReviveService;
+import com.dragonminez.server.util.BeetleFusionTracker;
 import com.dragonminez.server.util.FusionLogic;
 import com.dragonminez.server.util.GravityLogic;
 import com.dragonminez.server.util.GravityStateSync;
@@ -268,18 +269,20 @@ public class TickHandler {
 						if (serverPlayer.distanceTo(other) > 20.0f) continue;
 						ItemStack otherHead = CuriosUtil.getFirstStackForItem(other, "head_tech", "pothala");
 						if (otherHead.getItem() == counterpart && PothalaPairItem.getPairId(otherHead) == pairId) {
-							startPotaraPose(serverPlayer, data, other, otherData);
+							FusionLogic.startPotaraPose(serverPlayer, data, other, otherData, false);
 							break;
 						}
 					}
 				}
 			}
 
+			if (serverPlayer.tickCount % 10 == 0) BeetleFusionTracker.tick(serverPlayer, data);
+
 			if (data.getStatus().getPotaraPoseTimer() > 0) {
 				UUID potaraPartnerUUID = data.getStatus().getPotaraPartnerUUID();
 				ServerPlayer potaraPartner = potaraPartnerUUID != null ? serverPlayer.getServer().getPlayerList().getPlayer(potaraPartnerUUID) : null;
 				if (potaraPartner == null || !potaraPartner.isAlive() || serverPlayer.distanceTo(potaraPartner) > 24.0f) {
-					clearPotaraPose(data);
+					FusionLogic.clearPotaraPose(data);
 					NetworkHandler.sendToTrackingEntityAndSelf(new StatsSyncS2C(serverPlayer), serverPlayer);
 				} else {
 					int elapsed = data.getStatus().getPotaraPoseTimer();
@@ -301,11 +304,13 @@ public class TickHandler {
 					data.getStatus().setPotaraPoseTimer(elapsed + 1);
 
 					if (data.getStatus().isPotaraLeader() && (dist < 1.4 || elapsed > 200)) {
-						clearPotaraPose(data);
+						boolean beetle = data.getStatus().isPotaraBeetle();
+						FusionLogic.clearPotaraPose(data);
 						StatsData partnerData = StatsProvider.get(StatsCapability.INSTANCE, potaraPartner).orElse(null);
 						if (partnerData != null) {
-							clearPotaraPose(partnerData);
-							FusionLogic.executePothala(serverPlayer, potaraPartner, data, partnerData);
+							FusionLogic.clearPotaraPose(partnerData);
+							if (beetle) FusionLogic.executeBeetle(serverPlayer, potaraPartner, data, partnerData);
+							else FusionLogic.executePothala(serverPlayer, potaraPartner, data, partnerData);
 						} else {
 							NetworkHandler.sendToTrackingEntityAndSelf(new StatsSyncS2C(serverPlayer), serverPlayer);
 						}
@@ -1059,23 +1064,6 @@ public class TickHandler {
 
 		CHARGING_CACHE.remove(playerId);
 		return null;
-	}
-
-	private static void clearPotaraPose(StatsData data) {
-		data.getStatus().setPotaraPoseTimer(0);
-		data.getStatus().setPotaraPartnerUUID(null);
-		data.getStatus().setPotaraLeader(false);
-	}
-
-	private static void startPotaraPose(ServerPlayer leader, StatsData leaderData, ServerPlayer partner, StatsData partnerData) {
-		leaderData.getStatus().setPotaraPoseTimer(1);
-		leaderData.getStatus().setPotaraPartnerUUID(partner.getUUID());
-		leaderData.getStatus().setPotaraLeader(true);
-		partnerData.getStatus().setPotaraPoseTimer(1);
-		partnerData.getStatus().setPotaraPartnerUUID(leader.getUUID());
-		partnerData.getStatus().setPotaraLeader(false);
-		NetworkHandler.sendToTrackingEntityAndSelf(new StatsSyncS2C(leader), leader);
-		NetworkHandler.sendToTrackingEntityAndSelf(new StatsSyncS2C(partner), partner);
 	}
 
 	private static Item pothalaLeftCounterpart(Item rightItem) {

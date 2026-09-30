@@ -9,6 +9,7 @@ import com.dragonminez.common.network.C2S.SelectFormC2S;
 import com.dragonminez.common.network.NetworkHandler;
 import com.dragonminez.common.stats.StatsData;
 import com.dragonminez.common.stats.extras.ActionMode;
+import com.dragonminez.common.util.FusionForms;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 
@@ -44,7 +45,7 @@ public class FormSelectNode extends AbstractRadialNode {
 	public Component label(StatsData stats) {
 		return stack
 				? Component.translatable("race.dragonminez.stack.form." + group + "." + form)
-				: Component.translatable("race.dragonminez." + race + ".form." + group + "." + form);
+				: Component.translatable(FusionForms.formTranslationKey(race, group, form));
 	}
 
 	@Override

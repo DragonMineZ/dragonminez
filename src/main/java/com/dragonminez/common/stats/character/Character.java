@@ -11,10 +11,13 @@ import com.dragonminez.common.hair.HairPresets;
 import com.dragonminez.common.hair.HairStyleSlot;
 import com.dragonminez.common.racial.RacialContext;
 import com.dragonminez.common.racial.RacialRegistry;
+import com.dragonminez.common.stats.FusedData;
 import com.dragonminez.common.stats.StatsData;
 import com.dragonminez.common.stats.extras.FormMasteries;
 import com.dragonminez.common.stats.extras.UsedForms;
 import com.dragonminez.common.init.MainSounds;
+import com.dragonminez.common.util.FusionAppearance;
+import com.dragonminez.common.util.FusionForms;
 import lombok.Getter;
 import lombok.Setter;
 import net.minecraft.core.BlockPos;
@@ -643,7 +646,30 @@ public class Character {
 
 	public FormConfig.FormData getActiveFormData() {
 		if (!hasActiveForm()) return null;
-		return ConfigManager.getForm(getRaceName(), activeFormGroup, activeForm);
+		FormConfig.FormData raw = ConfigManager.getForm(getRaceName(), activeFormGroup, activeForm);
+		return isFused() ? FusionAppearance.present(this, activeFormGroup, raw) : raw;
+	}
+
+	public boolean isFused() {
+		return statsData != null && statsData.getFusedData() != null;
+	}
+
+	public FormMasteries getFormMasteries() {
+		FusedData fused = statsData != null ? statsData.getFusedData() : null;
+		return fused != null ? fused.getFormMasteries() : formMasteries;
+	}
+
+	public FormMasteries getStackFormMasteries() {
+		FusedData fused = statsData != null ? statsData.getFusedData() : null;
+		return fused != null ? fused.getStackFormMasteries() : stackFormMasteries;
+	}
+
+	public FormMasteries getBaseFormMasteries() {
+		return formMasteries;
+	}
+
+	public FormMasteries getBaseStackFormMasteries() {
+		return stackFormMasteries;
 	}
 
 	public void gainMastery(String group, String form, double amount) {
@@ -660,7 +686,7 @@ public class Character {
 			if (entry == null) continue;
 			int dot = entry.indexOf('.');
 			if (dot <= 0 || dot >= entry.length() - 1) continue;
-			addMasteryResolved(entry.substring(0, dot), entry.substring(dot + 1), shared);
+			addMasteryResolved(FusionForms.qualifyLinkedGroup(group, entry.substring(0, dot)), entry.substring(dot + 1), shared);
 		}
 	}
 
@@ -677,7 +703,7 @@ public class Character {
 				? ConfigManager.getStackForm(group, form)
 				: ConfigManager.getForm(getRaceName(), group, form);
 		double maxMastery = formData != null ? formData.getMaxMastery() : 100.0;
-		(isStack ? stackFormMasteries : formMasteries).addMastery(group, form, amount, maxMastery);
+		(isStack ? getStackFormMasteries() : getFormMasteries()).addMastery(group, form, amount, maxMastery);
 	}
 
 	private FormConfig.FormData resolveFormData(String group, String form) {
@@ -727,7 +753,8 @@ public class Character {
 
 	public FormConfig.FormData getActiveStackFormData() {
 		if (!hasActiveStackForm()) return null;
-		return ConfigManager.getStackForm(activeStackFormGroup, activeStackForm);
+		FormConfig.FormData raw = ConfigManager.getStackForm(activeStackFormGroup, activeStackForm);
+		return isFused() ? FusionAppearance.present(this, activeStackFormGroup, raw) : raw;
 	}
 
 	public boolean areExtraHeadBonesEnabled() {

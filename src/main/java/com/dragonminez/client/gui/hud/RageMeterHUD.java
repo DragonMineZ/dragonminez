@@ -5,6 +5,7 @@ import com.dragonminez.client.gui.hud.layout.HudLayout;
 import com.dragonminez.common.stats.StatsCapability;
 import com.dragonminez.common.stats.StatsProvider;
 import com.dragonminez.common.util.FalseSuperSaiyanHelper;
+import com.dragonminez.common.util.FusionForms;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.util.Mth;
@@ -30,7 +31,7 @@ public class RageMeterHUD {
 
 		StatsProvider.get(StatsCapability.INSTANCE, mc.player).ifPresent(data -> {
 			if (!data.getStatus().isHasCreatedCharacter()) return;
-			boolean mutant = data.getEffects().hasEffect("mutant");
+			boolean mutant = FusionForms.hasAnyMutant(data);
 			boolean falseSaiyan = !mutant && FalseSuperSaiyanHelper.ownsRageBar(data);
 			boolean applicable = mutant || falseSaiyan;
 

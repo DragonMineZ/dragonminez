@@ -22,7 +22,7 @@ public class KiTechniqueReward extends QuestReward {
 		StatsProvider.get(StatsCapability.INSTANCE, player).ifPresent(data -> {
 			KiAttackData copy = new KiAttackData();
 			copy.load(template.save());
-			data.getTechniques().unlockTechnique(copy);
+			data.grantTechnique(copy);
 		});
 	}
 

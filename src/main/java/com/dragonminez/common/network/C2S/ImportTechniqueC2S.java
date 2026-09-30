@@ -6,6 +6,7 @@ import com.dragonminez.common.network.S2C.TechniqueImportResultS2C;
 import com.dragonminez.common.stats.StatsCapability;
 import com.dragonminez.common.stats.StatsProvider;
 import com.dragonminez.common.stats.techniques.KiAttackData;
+import net.minecraft.network.chat.Component;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraftforge.network.NetworkEvent;
@@ -42,6 +43,10 @@ public class ImportTechniqueC2S {
 			imported.calculateDerivedValues();
 			int tpCost = Math.max(0, Math.round(imported.getTpCost()));
 			StatsProvider.get(StatsCapability.INSTANCE, player).ifPresent(data -> {
+				if (data.getStatus().isFused() || data.getStatus().getFusionPartnerUUID() != null) {
+					player.displayClientMessage(Component.translatable("message.dragonminez.fusion.action_blocked"), true);
+					return;
+				}
 				if (data.getResources().getTrainingPoints() < tpCost) {
 					NetworkHandler.sendToPlayer(new TechniqueImportResultS2C(TechniqueImportResultS2C.Status.NOT_ENOUGH_TP, tpCost), player);
 					return;

@@ -4,6 +4,7 @@ import com.dragonminez.common.network.NetworkHandler;
 import com.dragonminez.common.network.S2C.ProgressionSyncS2C;
 import com.dragonminez.common.stats.StatsCapability;
 import com.dragonminez.common.stats.StatsProvider;
+import net.minecraft.network.chat.Component;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraftforge.network.NetworkEvent;
@@ -31,6 +32,11 @@ public class DeleteTechniqueC2S {
 			ServerPlayer player = context.getSender();
 			if (player != null) {
 				StatsProvider.get(StatsCapability.INSTANCE, player).ifPresent(data -> {
+					if (data.getStatus().isFused() || data.getStatus().getFusionPartnerUUID() != null) {
+						player.displayClientMessage(Component.translatable("message.dragonminez.fusion.action_blocked"), true);
+						NetworkHandler.sendToTrackingEntityAndSelf(new ProgressionSyncS2C(player), player);
+						return;
+					}
 					data.getTechniques().removeTechnique(techniqueId);
 					data.getSkills().removeSkill(techniqueId);
 					NetworkHandler.sendToTrackingEntityAndSelf(new ProgressionSyncS2C(player), player);

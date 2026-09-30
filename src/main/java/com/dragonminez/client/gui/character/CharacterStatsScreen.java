@@ -25,6 +25,7 @@ import com.dragonminez.common.stats.StatsProvider;
 import com.dragonminez.common.stats.character.SecondaryStatEffects;
 import com.dragonminez.common.stats.extras.DynamicGrowthMath;
 import com.dragonminez.common.stats.extras.DynamicGrowthStat;
+import com.dragonminez.common.util.FusionForms;
 import com.dragonminez.server.events.players.TickHandler;
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.DefaultVertexFormat;
@@ -480,7 +481,7 @@ public class CharacterStatsScreen extends BaseMenuScreen {
 
 		Component baseFormComponent = isBase
 				? tr("race.dragonminez.base")
-				: tr("race.dragonminez." + statsData.getCharacter().getRaceName() + ".form." + statsData.getCharacter().getActiveFormGroup() + "." + form);
+				: tr(FusionForms.formTranslationKey(statsData.getCharacter().getRaceName(), statsData.getCharacter().getActiveFormGroup(), form));
 
 		Component formComponent;
 		if (!isBase) {

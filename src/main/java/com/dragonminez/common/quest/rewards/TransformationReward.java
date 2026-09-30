@@ -86,8 +86,8 @@ public class TransformationReward extends QuestReward {
 		int targetLevel = formData != null && formData.getUnlockOnSkillLevel() != null
 				? formData.getUnlockOnSkillLevel() : 0;
 
-		if (!data.getSkills().hasSkill(skillName) || data.getSkills().getSkillLevel(skillName) < targetLevel) {
-			data.getSkills().setSkillLevel(skillName, targetLevel);
+		if (!data.getBaseSkills().hasSkill(skillName) || data.getBaseSkills().getSkillLevel(skillName) < targetLevel) {
+			data.grantSkillLevel(skillName, targetLevel);
 		}
 	}
 

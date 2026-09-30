@@ -58,6 +58,7 @@ public class Status {
 	private int evasionLockTicks;
 	private UUID potaraPartnerUUID;
 	private boolean potaraLeader;
+	private boolean potaraBeetle;
 	private CompoundTag originalAppearance;
 	private boolean androidUpgraded;
 	private boolean renderKatana;
@@ -115,6 +116,7 @@ public class Status {
 		this.evasionLockTicks = 0;
 		this.potaraPartnerUUID = null;
 		this.potaraLeader = false;
+		this.potaraBeetle = false;
 		this.originalAppearance = new CompoundTag();
 		this.androidUpgraded = false;
 		this.renderKatana = false;
@@ -172,6 +174,7 @@ public class Status {
 		this.evasionLockTicks = 0;
 		this.potaraPartnerUUID = null;
 		this.potaraLeader = false;
+		this.potaraBeetle = false;
 		this.originalAppearance = new CompoundTag();
 		this.androidUpgraded = false;
 		this.renderKatana = false;
@@ -253,6 +256,7 @@ public class Status {
 		tag.putInt("EvasionLockTicks", evasionLockTicks);
 		if (potaraPartnerUUID != null) tag.putUUID("PotaraPartnerUUID", potaraPartnerUUID);
 		tag.putBoolean("PotaraLeader", potaraLeader);
+		tag.putBoolean("PotaraBeetle", potaraBeetle);
 		tag.put("OriginalAppearance", originalAppearance);
 		tag.putBoolean("AndroidUpgraded", androidUpgraded);
 		tag.putBoolean("RenderKatana", renderKatana);
@@ -317,6 +321,7 @@ public class Status {
 		this.evasionLockTicks = tag.getInt("EvasionLockTicks");
 		this.potaraPartnerUUID = tag.hasUUID("PotaraPartnerUUID") ? tag.getUUID("PotaraPartnerUUID") : null;
 		this.potaraLeader = tag.getBoolean("PotaraLeader");
+		this.potaraBeetle = tag.getBoolean("PotaraBeetle");
 		if (tag.contains("OriginalAppearance")) this.originalAppearance = tag.getCompound("OriginalAppearance");
 		else this.originalAppearance = new CompoundTag();
 		this.androidUpgraded = tag.getBoolean("AndroidUpgraded");
@@ -380,6 +385,7 @@ public class Status {
 		this.evasionLockTicks = other.evasionLockTicks;
 		this.potaraPartnerUUID = other.potaraPartnerUUID;
 		this.potaraLeader = other.potaraLeader;
+		this.potaraBeetle = other.potaraBeetle;
 		this.originalAppearance = other.originalAppearance.copy();
 		this.androidUpgraded = other.androidUpgraded;
 		this.renderKatana = other.renderKatana;

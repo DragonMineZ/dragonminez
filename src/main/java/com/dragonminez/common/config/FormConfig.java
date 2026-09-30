@@ -1,5 +1,6 @@
 package com.dragonminez.common.config;
 
+import com.dragonminez.common.util.FusionForms;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
@@ -366,7 +367,7 @@ public class FormConfig {
 
 		public boolean isIncompatibleWith(String groupId, String formId) {
 			if (groupId == null || formId == null) return false;
-			String key = (groupId + "." + formId).toLowerCase();
+			String key = (FusionForms.baseGroup(groupId) + "." + formId).toLowerCase();
 			for (String entry : getIncompatibleWith()) {
 				if (entry != null && entry.trim().toLowerCase().equals(key)) return true;
 			}

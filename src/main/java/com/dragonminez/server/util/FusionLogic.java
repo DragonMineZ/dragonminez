@@ -1,12 +1,14 @@
 package com.dragonminez.server.util;
 
 import com.dragonminez.common.config.ConfigManager;
+import com.dragonminez.common.config.FormConfig;
 import com.dragonminez.common.events.DMZEvent;
 import com.dragonminez.common.init.MainEffects;
 import com.dragonminez.common.init.MainSounds;
 import com.dragonminez.common.network.NetworkHandler;
 import com.dragonminez.common.network.S2C.StatsSyncS2C;
 import com.dragonminez.common.quest.PartyManager;
+import com.dragonminez.common.stats.FusedData;
 import com.dragonminez.common.stats.character.Cooldowns;
 import com.dragonminez.common.stats.StatsCapability;
 import com.dragonminez.common.stats.StatsData;
@@ -20,6 +22,8 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.GameType;
 import net.minecraftforge.common.MinecraftForge;
 import com.dragonminez.common.util.CuriosUtil;
+import com.dragonminez.common.util.FusionForms;
+import com.dragonminez.common.util.TransformationsHelper;
 
 import java.awt.*;
 import java.util.UUID;
@@ -115,6 +119,47 @@ public class FusionLogic {
 		damageEarring(partner);
 	}
 
+	public static void executeBeetle(ServerPlayer leader, ServerPlayer partner, StatsData lData, StatsData pData) {
+		if (lData.getStatus().isFused() || pData.getStatus().isFused() ||
+				lData.getStatus().getFusionPartnerUUID() != null || pData.getStatus().getFusionPartnerUUID() != null) return;
+
+		int lvl1 = lData.getStats().getTotalStats();
+		int lvl2 = pData.getStats().getTotalStats();
+
+		DMZEvent.FusionEvent event = new DMZEvent.FusionEvent(leader, partner, DMZEvent.FusionEvent.FusionType.BEETLE);
+		if (MinecraftForge.EVENT_BUS.post(event)) return;
+
+		int FUSION_DURATION = ConfigManager.getServerConfig().getGameplay().getFusionDurationSeconds() * 20;
+
+		applyFusion(leader, partner, lData, pData, "BEETLE", lvl1, lvl2);
+		lData.getStatus().setFusionTimer(FUSION_DURATION);
+		leader.addEffect(new MobEffectInstance(MainEffects.FUSED.get(), FUSION_DURATION, 0, false, false));
+		partner.addEffect(new MobEffectInstance(MainEffects.FUSED.get(), FUSION_DURATION, 0, false, false));
+		leader.displayClientMessage(Component.translatable("message.dragonminez.fusion.success", partner.getDisplayName()), true);
+		partner.displayClientMessage(Component.translatable("message.dragonminez.fusion.success", leader.getDisplayName()), true);
+		leader.level().playSound(null, leader.getX(), leader.getY(), leader.getZ(), MainSounds.FUSION.get(), SoundSource.PLAYERS, 1.0F, 1.0F);
+	}
+
+	public static void startPotaraPose(ServerPlayer leader, StatsData leaderData, ServerPlayer partner, StatsData partnerData, boolean beetle) {
+		leaderData.getStatus().setPotaraPoseTimer(1);
+		leaderData.getStatus().setPotaraPartnerUUID(partner.getUUID());
+		leaderData.getStatus().setPotaraLeader(true);
+		leaderData.getStatus().setPotaraBeetle(beetle);
+		partnerData.getStatus().setPotaraPoseTimer(1);
+		partnerData.getStatus().setPotaraPartnerUUID(leader.getUUID());
+		partnerData.getStatus().setPotaraLeader(false);
+		partnerData.getStatus().setPotaraBeetle(beetle);
+		NetworkHandler.sendToTrackingEntityAndSelf(new StatsSyncS2C(leader), leader);
+		NetworkHandler.sendToTrackingEntityAndSelf(new StatsSyncS2C(partner), partner);
+	}
+
+	public static void clearPotaraPose(StatsData data) {
+		data.getStatus().setPotaraPoseTimer(0);
+		data.getStatus().setPotaraPartnerUUID(null);
+		data.getStatus().setPotaraLeader(false);
+		data.getStatus().setPotaraBeetle(false);
+	}
+
 	private static void applyFusion(ServerPlayer leader, ServerPlayer partner, StatsData lData, StatsData pData, String type, int lvl1, int lvl2) {
 		CompoundTag original = new CompoundTag();
 		lData.getCharacter().saveAppearance(original);
@@ -143,6 +188,7 @@ public class FusionLogic {
 
 		mixAppearance(lData, pData);
 		calculateAndApplyStats(lData, pData, type, lvl1, lvl2);
+		lData.setFusedData(FusedData.build(lData, pData));
 		PartyManager.beginFusionParty(leader, partner);
 
 		NetworkHandler.sendToTrackingEntityAndSelf(new StatsSyncS2C(leader), leader);
@@ -163,6 +209,12 @@ public class FusionLogic {
 		StatsData partnerData = !isLeader ? data : (partnerRef != null ? StatsProvider.get(StatsCapability.INSTANCE, partnerRef).orElse(null) : null);
 
 		if (leaderData != null) {
+			FusedData fused = leaderData.getFusedData();
+			if (fused != null) {
+				fused.reconcileInto(leaderData, partnerData);
+				leaderData.setFusedData(null);
+				revertUnownedForms(leaderRef, leaderData);
+			}
 			leaderData.getBonusStats().removeAllBonuses("FusionBonus");
 
 			CompoundTag original = leaderData.getStatus().getOriginalAppearance();
@@ -200,6 +252,35 @@ public class FusionLogic {
 				NetworkHandler.sendToTrackingEntityAndSelf(new StatsSyncS2C(partnerRef), partnerRef);
 			}
 		}
+	}
+
+	private static void revertUnownedForms(ServerPlayer leader, StatsData data) {
+		var character = data.getCharacter();
+		if (character.hasActiveStackForm() && !containsForm(TransformationsHelper.getUnlockedStackForms(data, character.getActiveStackFormGroup()), character.getActiveStackForm())) {
+			character.clearActiveStackForm(leader, false);
+		}
+		if (character.hasActiveForm()) {
+			String group = character.getActiveFormGroup();
+			boolean owned = !FusionForms.isQualified(group)
+					&& containsForm(TransformationsHelper.getUnlockedForms(data, character.getRaceName(), group), character.getActiveForm());
+			if (!owned) {
+				TransformationsHelper.revertToBaseForm(leader, data, false);
+				if (leader != null && !character.hasActiveForm()) leader.removeEffect(MainEffects.TRANSFORMED.get());
+			}
+		}
+		if (FusionForms.isQualified(character.getSelectedFormGroup())) {
+			character.setSelectedFormGroup("");
+			character.setSelectedForm("");
+		}
+		if (FusionForms.isQualified(character.getPreviousFormGroup())) character.clearPreviousFormRecord();
+		if (leader != null) leader.refreshDimensions();
+	}
+
+	private static boolean containsForm(java.util.List<FormConfig.FormData> forms, String formName) {
+		for (FormConfig.FormData form : forms) {
+			if (form.getName().equalsIgnoreCase(formName)) return true;
+		}
+		return false;
 	}
 
 	private static void clearFusionState(StatsData data) {

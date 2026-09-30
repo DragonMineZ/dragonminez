@@ -150,8 +150,8 @@ public class NPCActionC2S {
 
 	private static void handleGuru(ServerPlayer player, StatsData data, int action) {
 		if (action == 1) {
-			if (data.getResources().getAlignment() >= 50 && data.getSkills().getSkillLevel("potentialunlock") == 10) {
-				data.getSkills().addSkillLevel("potentialunlock", 1);
+			if (data.getResources().getAlignment() >= 50 && data.getBaseSkills().getSkillLevel("potentialunlock") == 10) {
+				data.grantSkillLevel("potentialunlock", 11);
 			}
 		}
 	}
@@ -234,6 +234,11 @@ public class NPCActionC2S {
 				return;
 			}
 
+			if (data.getStatus().isFused() || data.getStatus().getFusionPartnerUUID() != null) {
+				player.sendSystemMessage(Component.translatable("message.dragonminez.fusion.action_blocked"));
+				return;
+			}
+
 			data.getStatus().setAndroidUpgraded(true);
 
 			data.getSkills().setSkillLevel("androidforms", 1);
@@ -273,12 +278,12 @@ public class NPCActionC2S {
 	private static final String OLDKAI_ZSWORD_COOLDOWN = "OldKaiZSword";
 
 	public static boolean meetsOldKaiRequirements(StatsData data) {
-		return data.getResources().getAlignment() > 61 && data.getSkills().getSkillLevel("potentialunlock") >= 10;
+		return data.getResources().getAlignment() > 61 && data.getBaseSkills().getSkillLevel("potentialunlock") >= 10;
 	}
 
 	public static void grantOldKaiChallengeReward(ServerPlayer player, StatsData data) {
 		if (meetsOldKaiRequirements(data)) {
-			data.getSkills().setSkillLevel("ultimate", 1);
+			data.grantSkillLevel("ultimate", 1);
 			player.sendSystemMessage(Component.translatable("message.dragonminez.oldkai.ultimate"));
 		}
 

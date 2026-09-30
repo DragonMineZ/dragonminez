@@ -144,7 +144,7 @@ public final class WorldBossRewards {
 			TechniqueData technique = PredefinedTechniques.copyOf(skill.getSkill());
 			if (technique != null) {
 				StatsProvider.get(StatsCapability.INSTANCE, player).ifPresent(data -> {
-					if (!data.getTechniques().getUnlockedTechniques().containsKey(technique.getId())) data.getTechniques().unlockTechnique(technique);
+					if (!data.getBaseTechniques().getUnlockedTechniques().containsKey(technique.getId())) data.grantTechnique(technique);
 				});
 			}
 			return skill.getLevel();

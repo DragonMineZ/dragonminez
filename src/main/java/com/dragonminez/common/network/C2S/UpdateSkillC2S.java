@@ -11,6 +11,7 @@ import com.dragonminez.common.stats.techniques.EvasionAttackData;
 import com.dragonminez.common.stats.techniques.KiAttackData;
 import com.dragonminez.common.stats.techniques.PredefinedTechniques;
 import com.dragonminez.common.stats.techniques.StrikeAttackData;
+import net.minecraft.network.chat.Component;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraftforge.network.NetworkEvent;
@@ -50,6 +51,10 @@ public class UpdateSkillC2S {
 			ServerPlayer player = ctx.get().getSender();
 			if (player != null) {
 				StatsProvider.get(StatsCapability.INSTANCE, player).ifPresent(data -> {
+					if (action != SkillAction.TOGGLE && (data.getStatus().isFused() || data.getStatus().getFusionPartnerUUID() != null)) {
+						player.displayClientMessage(Component.translatable("message.dragonminez.fusion.action_blocked"), true);
+						return;
+					}
 					Skill skill = data.getSkills().getSkill(skillName);
 					boolean raceAllowed = isSkillAllowedForPlayerRace(data, skillName);
 					switch (action) {

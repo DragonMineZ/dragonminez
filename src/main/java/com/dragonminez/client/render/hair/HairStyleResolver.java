@@ -188,7 +188,7 @@ public final class HairStyleResolver {
 
 		if (stats.getStatus().getSelectedAction() == ActionMode.FORM) {
 			String group = character.getSelectedFormGroup();
-			nextForm = TransformationsHelper.getNextAvailableForm(stats);
+			nextForm = TransformationsHelper.presentNextForm(stats);
 			if (nextForm == null) return false;
 			target = styleForForm(player, character, group, nextForm.getName());
 			targetRgb = rgbForForm(character, group, nextForm.getName());
@@ -197,7 +197,7 @@ public final class HairStyleResolver {
 			mastery = (int) character.getFormMasteries().getMastery(masteryGroup, nextForm.getName());
 		} else if (stats.getStatus().getSelectedAction() == ActionMode.STACK) {
 			String group = character.getSelectedStackFormGroup();
-			nextForm = TransformationsHelper.getNextAvailableStackForm(stats);
+			nextForm = TransformationsHelper.presentNextStackForm(stats);
 			if (nextForm == null) return false;
 			target = styleForStackForm(player, character, group, nextForm.getName(), from);
 			targetRgb = rgbForStackForm(group, nextForm.getName(), hairFrom);

@@ -21,8 +21,8 @@ public class SkillWish extends Wish {
 	public void grant(ServerPlayer player) {
 		StatsProvider.get(StatsCapability.INSTANCE, player).ifPresent(data -> {
 			if (!data.getStatus().isHasCreatedCharacter()) return;
-			if (data.getSkills().getSkillLevel(skill) >= level) return;
-			data.getSkills().setSkillLevel(skill, level);
+			if (data.getBaseSkills().getSkillLevel(skill) >= level) return;
+			data.grantSkillLevel(skill, level);
 			NetworkHandler.sendToTrackingEntityAndSelf(new ProgressionSyncS2C(player), player);
 		});
 	}

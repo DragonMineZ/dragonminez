@@ -152,8 +152,8 @@ public class SkinGathererProvider {
 
 		if (stats.getStatus().isActionCharging()) {
 			FormConfig.FormData nextForm = null;
-			if (stats.getStatus().getSelectedAction() == ActionMode.FORM) nextForm = TransformationsHelper.getNextAvailableForm(stats);
-			else if (stats.getStatus().getSelectedAction() == ActionMode.STACK) nextForm = TransformationsHelper.getNextAvailableStackForm(stats);
+			if (stats.getStatus().getSelectedAction() == ActionMode.FORM) nextForm = TransformationsHelper.presentNextForm(stats);
+			else if (stats.getStatus().getSelectedAction() == ActionMode.STACK) nextForm = TransformationsHelper.presentNextStackForm(stats);
 
 			if (nextForm != null) {
 				float factor = Mth.clamp(stats.getResources().getActionCharge() / 100.0f, 0.0f, 1.0f);

@@ -81,7 +81,9 @@ public final class MainItems {
 	public static final RegistryObject<Item> MEDI_BUG_ANT = ITEM_REGISTER.register("medi_bug_ant",
 			() -> new FoodItem(2, 1.2f, 64));
 	public static final RegistryObject<Item> MEDI_BUG_BEETLE = ITEM_REGISTER.register("medi_bug_beetle",
-			() -> new FoodItem(2, 1.2f, 64));
+			MediBugBeetleItem::new);
+	public static final RegistryObject<Item> MEDI_BUG_BEETLE_PAIR = ITEM_REGISTER.register("medi_bug_beetle_pair",
+			() -> new MediBugBeetlePairItem(new Item.Properties().stacksTo(1), () -> MEDI_BUG_BEETLE.get()));
 	public static final RegistryObject<Item> MEDI_BUG_RHINO = ITEM_REGISTER.register("medi_bug_rhino",
 			() -> new FoodItem(2, 1.2f, 64));
 	public static final RegistryObject<Item> MEDI_BUG_WORM = ITEM_REGISTER.register("medi_bug_worm",

@@ -264,7 +264,7 @@ public abstract class DMZEvent extends Event {
 		}
 
 		public enum FusionType {
-			METAMORU, POTHALA, ABSORPTION, ASSIMILATION
+			METAMORU, POTHALA, ABSORPTION, ASSIMILATION, BEETLE
 		}
 	}
 

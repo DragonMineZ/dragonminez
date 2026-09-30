@@ -5,6 +5,7 @@ import com.dragonminez.common.network.S2C.ProgressionSyncS2C;
 import com.dragonminez.common.stats.StatsCapability;
 import com.dragonminez.common.stats.StatsProvider;
 import com.dragonminez.common.stats.techniques.KiAttackData;
+import net.minecraft.network.chat.Component;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.util.Mth;
@@ -98,6 +99,11 @@ public class CreateTechniqueC2S {
 			if (player == null) return;
 
 			StatsProvider.get(StatsCapability.INSTANCE, player).ifPresent(data -> {
+				if (data.getStatus().isFused() || data.getStatus().getFusionPartnerUUID() != null) {
+					player.displayClientMessage(Component.translatable("message.dragonminez.fusion.action_blocked"), true);
+					NetworkHandler.sendToTrackingEntityAndSelf(new ProgressionSyncS2C(player), player);
+					return;
+				}
 				KiAttackData technique = new KiAttackData();
 				String safeName = (name == null || name.trim().isEmpty()) ? "New Skill" : name.trim();
 				if (safeName.length() > MAX_NAME_LENGTH) safeName = safeName.substring(0, MAX_NAME_LENGTH);

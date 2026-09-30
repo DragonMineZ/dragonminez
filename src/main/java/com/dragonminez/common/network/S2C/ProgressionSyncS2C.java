@@ -1,6 +1,7 @@
 package com.dragonminez.common.network.S2C;
 
 import com.dragonminez.common.network.ClientPacketHandler;
+import com.dragonminez.common.stats.FusedData;
 import com.dragonminez.common.stats.StatsCapability;
 import com.dragonminez.common.stats.StatsProvider;
 import net.minecraft.nbt.CompoundTag;
@@ -22,8 +23,9 @@ public class ProgressionSyncS2C {
 		StatsProvider.get(StatsCapability.INSTANCE, player).ifPresent(data -> {
 			this.nbt.put("Stats", data.getStats().save());
 			this.nbt.put("BonusStats", data.getBonusStats().save());
-			this.nbt.put("Skills", data.getSkills().save());
-			this.nbt.put("Techniques", data.getTechniques().save());
+			this.nbt.put("Skills", data.getBaseSkills().save());
+			this.nbt.put("Techniques", data.getBaseTechniques().save());
+			if (data.getFusedData() != null) this.nbt.put(FusedData.NBT_KEY, data.getFusedData().save());
 			this.nbt.put("PlayerQuestData", data.getPlayerQuestData().serializeNBT());
 		});
 	}

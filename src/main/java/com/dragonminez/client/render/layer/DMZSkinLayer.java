@@ -216,13 +216,13 @@ public class DMZSkinLayer<T extends AbstractClientPlayer & GeoAnimatable> extend
 		float[] finalTint = currentTint;
 		if (stats.getStatus().isActionCharging()) {
 			if (stats.getStatus().getSelectedAction() == ActionMode.FORM) {
-				var nextForm = TransformationsHelper.getNextAvailableForm(stats);
+				var nextForm = TransformationsHelper.presentNextForm(stats);
 				if (nextForm != null && !nextForm.getHairColor().isEmpty()) {
 					float chargeProgress = Mth.clamp(stats.getResources().getActionCharge() / 100.0f, 0.0f, 1.0f);
 					finalTint = lerpColor(chargeProgress, currentTint, nextForm.getRgbHairColor());
 				}
 			} else if (stats.getStatus().getSelectedAction() == ActionMode.STACK) {
-				var nextForm = TransformationsHelper.getNextAvailableStackForm(stats);
+				var nextForm = TransformationsHelper.presentNextStackForm(stats);
 				if (nextForm != null && !nextForm.getHairColor().isEmpty()) {
 					float chargeProgress = Mth.clamp(stats.getResources().getActionCharge() / 100.0f, 0.0f, 1.0f);
 					finalTint = lerpColor(chargeProgress, currentTint, nextForm.getRgbHairColor());
@@ -336,7 +336,7 @@ public class DMZSkinLayer<T extends AbstractClientPlayer & GeoAnimatable> extend
 
 		if (stats.getStatus().isActionCharging()) {
 			if (stats.getStatus().getSelectedAction() == ActionMode.FORM) {
-				var nextForm = TransformationsHelper.getNextAvailableForm(stats);
+				var nextForm = TransformationsHelper.presentNextForm(stats);
 				if (nextForm != null) {
 					float factor = Mth.clamp(stats.getResources().getActionCharge() / 100.0f, 0.0f, 1.0f);
 					if (!nextForm.getEye1Color().isEmpty())
@@ -351,7 +351,7 @@ public class DMZSkinLayer<T extends AbstractClientPlayer & GeoAnimatable> extend
 						hair = lerpColor(factor, hair, nextForm.getRgbHairColor());
 				}
 			} else if (stats.getStatus().getSelectedAction() == ActionMode.STACK) {
-				var nextForm = TransformationsHelper.getNextAvailableStackForm(stats);
+				var nextForm = TransformationsHelper.presentNextStackForm(stats);
 				if (nextForm != null) {
 					float factor = Mth.clamp(stats.getResources().getActionCharge() / 100.0f, 0.0f, 1.0f);
 					if (!nextForm.getEye1Color().isEmpty())
@@ -602,8 +602,8 @@ public class DMZSkinLayer<T extends AbstractClientPlayer & GeoAnimatable> extend
 		float chargeFraction = 0.0f;
 		FormConfig.FormData nextForm = null;
 		if (stats.getStatus().isActionCharging()) {
-			if (stats.getStatus().getSelectedAction() == ActionMode.FORM) nextForm = TransformationsHelper.getNextAvailableForm(stats);
-			else if (stats.getStatus().getSelectedAction() == ActionMode.STACK) nextForm = TransformationsHelper.getNextAvailableStackForm(stats);
+			if (stats.getStatus().getSelectedAction() == ActionMode.FORM) nextForm = TransformationsHelper.presentNextForm(stats);
+			else if (stats.getStatus().getSelectedAction() == ActionMode.STACK) nextForm = TransformationsHelper.presentNextStackForm(stats);
 
 			if (nextForm != null && Boolean.TRUE.equals(nextForm.hasCustomModel())) {
 				targetModel = nextForm.getCustomModel().toLowerCase();

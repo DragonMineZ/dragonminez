@@ -18,7 +18,9 @@ import com.dragonminez.common.stats.character.*;
 import com.dragonminez.common.stats.character.Character;
 import com.dragonminez.common.stats.extras.DynamicGrowthData;
 import com.dragonminez.common.stats.skills.Skills;
+import com.dragonminez.common.stats.techniques.TechniqueData;
 import com.dragonminez.common.stats.techniques.Techniques;
+import com.dragonminez.common.util.FusionForms;
 import com.dragonminez.common.util.TransformationsHelper;
 import com.dragonminez.common.util.lists.StackForms;
 import com.dragonminez.server.util.GravityLogic;
@@ -62,6 +64,7 @@ public class StatsData {
 	private final Techniques techniques;
 	private final DynamicGrowthData dynamicGrowth;
 	private final RacialData racialData;
+	private FusedData fusedData;
 
 	private boolean hasInitializedHealth = false;
 	private boolean isDataLoaded = false;
@@ -85,6 +88,38 @@ public class StatsData {
 		this.techniques = new Techniques();
 		this.dynamicGrowth = new DynamicGrowthData();
 		this.racialData = new RacialData();
+	}
+
+	public Skills getSkills() {
+		return fusedData != null ? fusedData.getSkills() : skills;
+	}
+
+	public Techniques getTechniques() {
+		return fusedData != null ? fusedData.getTechniques() : techniques;
+	}
+
+	public Skills getBaseSkills() {
+		return skills;
+	}
+
+	public Techniques getBaseTechniques() {
+		return techniques;
+	}
+
+	public void setFusedData(FusedData fusedData) {
+		this.fusedData = fusedData;
+	}
+
+	public void grantSkillLevel(String name, int level) {
+		skills.setSkillLevel(name, level);
+		if (fusedData != null && fusedData.getSkills().getSkillLevel(name) < level) fusedData.getSkills().setSkillLevel(name, level);
+	}
+
+	public void grantTechnique(TechniqueData technique) {
+		if (fusedData != null && !fusedData.getTechniques().getUnlockedTechniques().containsKey(technique.getId())) {
+			fusedData.getTechniques().unlockTechnique(Techniques.copyOf(technique));
+		}
+		techniques.unlockTechnique(technique);
 	}
 
 	public boolean hasInitializedHealth() {
@@ -116,7 +151,7 @@ public class StatsData {
 	}
 
 	public int getMaxPowerRelease() {
-		int potentialUnlockLevel = skills.hasSkill("potentialunlock") ? skills.getSkillLevel("potentialunlock") : 0;
+		int potentialUnlockLevel = getSkills().hasSkill("potentialunlock") ? getSkills().getSkillLevel("potentialunlock") : 0;
 		int base = 50 + (potentialUnlockLevel * 5);
 
 		double racialMultiplier = com.dragonminez.common.racial.RacialRegistry.forPlayer(this)
@@ -345,7 +380,7 @@ public class StatsData {
 		int totalEnchLvl = TickHandler.getTotalArmorEnchantmentLevel(MainEnchants.RESISTANCE_RECOVERY.get(), player);
 		double enchMult = TickHandler.getRecoveryMultiplier(totalEnchLvl);
 
-		int meditationLevel = skills.getSkillLevel("meditation");
+		int meditationLevel = getSkills().getSkillLevel("meditation");
 		double meditationBonus = meditationLevel > 0 ? 1.0 + (meditationLevel * TickHandler.MEDITATION_BONUS_PER_LEVEL) : 1.0;
 
 		double adjustedStaminaDrain = getAdjustedStaminaDrain();
@@ -399,7 +434,7 @@ public class StatsData {
 		int totalEnchLvl = TickHandler.getTotalArmorEnchantmentLevel(MainEnchants.ENERGY_RECOVERY.get(), player);
 		double enchMult = TickHandler.getRecoveryMultiplier(totalEnchLvl);
 
-		int meditationLevel = skills.getSkillLevel("meditation");
+		int meditationLevel = getSkills().getSkillLevel("meditation");
 		double meditationBonus = meditationLevel > 0 ? 1.0 + (meditationLevel * TickHandler.MEDITATION_BONUS_PER_LEVEL) : 1.0;
 
 		double kiConductivityMult = TickHandler.getRecoveryMultiplier(TickHandler.getTotalArmorEnchantmentLevel(MainEnchants.KI_CONDUCTIVITY.get(), player));
@@ -409,7 +444,7 @@ public class StatsData {
 		double energyChange = 0;
 
 		if (activeCharging) {
-			int kiBoostLevel = skills.getSkillLevel("kiboost");
+			int kiBoostLevel = getSkills().getSkillLevel("kiboost");
 			double kiBoostMult = 1.0 + (kiBoostLevel * 0.25);
 			double regenAmount = PotionEffectHelper.applyKiRegenMultiplier(player, baseRegenPerSecond * 1.5) * androidRegenMult * kiBoostMult;
 			if (regenAmount < 1.0) regenAmount = 1.0;
@@ -872,7 +907,7 @@ public class StatsData {
 
 	private double applyMutantFormPowerModifier(String groupName, FormConfig.FormData formData, double multiplier) {
 		if (multiplier <= 1.0) return multiplier;
-		if (!effects.hasEffect("mutant")) return multiplier;
+		if (!FusionForms.hasMutantFor(this, groupName)) return multiplier;
 
 		var mutantConfig = ConfigManager.getServerConfig() != null ? ConfigManager.getServerConfig().getMutant() : null;
 		if (mutantConfig == null) return multiplier;
@@ -924,7 +959,7 @@ public class StatsData {
 
 	private FormConfig.FormData getBestUltimateBaseForm() {
 		String raceName = character.getRaceName();
-		Map<String, FormConfig> groups = ConfigManager.getAllFormsForRace(raceName);
+		Map<String, FormConfig> groups = FusionForms.allFormGroups(this);
 		if (groups == null || groups.isEmpty()) return null;
 
 		FormConfig.FormData best = null;
@@ -961,7 +996,7 @@ public class StatsData {
 
 	private Object[] getBestUltimateBaseFormWithGroup() {
 		String raceName = character.getRaceName();
-		Map<String, FormConfig> groups = ConfigManager.getAllFormsForRace(raceName);
+		Map<String, FormConfig> groups = FusionForms.allFormGroups(this);
 		if (groups == null || groups.isEmpty()) return new Object[]{null, null};
 
 		FormConfig.FormData best = null;
@@ -1768,6 +1803,7 @@ public class StatsData {
 		nbt.put("Techniques",  techniques.save());
 		nbt.put("DynamicGrowth", dynamicGrowth.save());
 		nbt.put("RacialData", racialData.save());
+		if (fusedData != null) nbt.put(FusedData.NBT_KEY, fusedData.save());
 		nbt.putBoolean("HasInitializedHealth", hasInitializedHealth);
 		return nbt;
 	}
@@ -1790,6 +1826,8 @@ public class StatsData {
 		if (nbt.contains("DynamicGrowth")) dynamicGrowth.load(nbt.getCompound("DynamicGrowth"));
 		if (nbt.contains("RacialData")) racialData.load(nbt.getCompound("RacialData"));
 		else migrateRacialDataFromLegacy();
+		if (nbt.contains(FusedData.NBT_KEY)) fusedData = FusedData.fromTag(nbt.getCompound(FusedData.NBT_KEY));
+		else if (nbt.contains("Skills")) fusedData = null;
 		if (nbt.contains("HasInitializedHealth")) hasInitializedHealth = nbt.getBoolean("HasInitializedHealth");
 		if (character.getRaceName() != null && !character.getRaceName().isEmpty()) updateTransformationSkillLimits(character.getRaceName());
 		this.isDataLoaded = true;
@@ -1809,6 +1847,7 @@ public class StatsData {
 		this.techniques.copyFrom(other.techniques);
 		this.dynamicGrowth.copyFrom(other.dynamicGrowth);
 		this.racialData.copyFrom(other.racialData);
+		this.fusedData = other.fusedData != null ? other.fusedData.copy() : null;
 		this.hasInitializedHealth = other.hasInitializedHealth;
 		if (character.getRaceName() != null && !character.getRaceName().isEmpty())
 			updateTransformationSkillLimits(character.getRaceName());

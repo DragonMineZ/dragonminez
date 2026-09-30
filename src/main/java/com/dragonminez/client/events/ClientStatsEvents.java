@@ -23,6 +23,7 @@ import com.dragonminez.common.stats.extras.ActionMode;
 import com.dragonminez.common.stats.skills.Skill;
 import com.dragonminez.common.stats.techniques.*;
 import com.dragonminez.common.util.BetaWhitelist;
+import com.dragonminez.common.util.FusionForms;
 import com.dragonminez.common.util.TransformationsHelper;
 import com.dragonminez.server.events.players.StatsEvents;
 import com.dragonminez.server.util.GravityLogic;
@@ -482,7 +483,7 @@ public class ClientStatsEvents {
 			FormConfig.FormData blocked = TransformationsHelper.getNextFormCandidate(data);
 			if (blocked != null) {
 				String group = character.hasActiveForm() ? character.getActiveFormGroup() : character.getSelectedFormGroup();
-				Component formName = Component.translatable("race.dragonminez." + character.getRaceName() + ".form." + group + "." + blocked.getName());
+				Component formName = Component.translatable(FusionForms.formTranslationKey(character.getRaceName(), group, blocked.getName()));
 				localPlayer.displayClientMessage(Component.translatable("message.dragonminez.form.no_mastery", blocked.getUnlockOnMastery().intValue(), formName), true);
 			}
 		}

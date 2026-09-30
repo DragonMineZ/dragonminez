@@ -63,6 +63,7 @@ public class DMZItemModelProvider extends ItemModelProvider {
 		simpleItem(MainItems.SENZU_BEAN_BAG);
 		simpleItem(MainItems.MEDI_BUG_ANT);
 		simpleItem(MainItems.MEDI_BUG_BEETLE);
+		simpleItem(MainItems.MEDI_BUG_BEETLE_PAIR);
 		simpleItem(MainItems.MEDI_BUG_RHINO);
 		simpleItem(MainItems.MEDI_BUG_WORM);
 		simpleItem(MainItems.RED_CAPSULE);

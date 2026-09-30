@@ -97,6 +97,18 @@ public class Techniques {
 		return true;
 	}
 
+	public static TechniqueData copyOf(TechniqueData source) {
+		TechniqueData clone = source instanceof KiAttackData ? new KiAttackData()
+				: source instanceof EvasionAttackData ? new EvasionAttackData()
+				: source instanceof ReviveTechniqueData ? new ReviveTechniqueData() : new StrikeAttackData();
+		clone.load(source.save());
+		return clone;
+	}
+
+	public boolean isFormLoadoutGranted(String techniqueId) {
+		return formLoadoutGranted.contains(techniqueId);
+	}
+
 	public void unlockTechnique(TechniqueData data) {
 		if (!unlockedTechniques.containsKey(data.getId()) && unlockedTechniques.size() >= MAX_UNLOCKED_TECHNIQUES) return;
 		unlockedTechniques.put(data.getId(), data);
@@ -368,12 +380,7 @@ public class Techniques {
 		System.arraycopy(other.equippedSlots, 0, this.equippedSlots, 0, SLOT_COUNT);
 		this.unlockedTechniques.clear();
 		for (Map.Entry<String, TechniqueData> entry : other.unlockedTechniques.entrySet()) {
-			TechniqueData source = entry.getValue();
-			TechniqueData clone = source instanceof KiAttackData ? new KiAttackData()
-					: source instanceof EvasionAttackData ? new EvasionAttackData()
-					: source instanceof ReviveTechniqueData ? new ReviveTechniqueData() : new StrikeAttackData();
-			clone.load(source.save());
-			this.unlockedTechniques.put(entry.getKey(), clone);
+			this.unlockedTechniques.put(entry.getKey(), copyOf(entry.getValue()));
 		}
 		this.reviveDisplacedTechnique = other.reviveDisplacedTechnique;
 		this.formLoadoutActive = other.formLoadoutActive;
