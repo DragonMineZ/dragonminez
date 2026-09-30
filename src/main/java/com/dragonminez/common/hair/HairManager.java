@@ -7,19 +7,17 @@ import com.dragonminez.common.stats.character.Character;
 import java.util.Locale;
 
 public final class HairManager {
-	private static final String[] DEFAULT_HAIR_RACES = {"human", "saiyan"};
+	private static final String[] DEFAULT_HAIR_RACES = {"human", "saiyan", "majin"};
 
 	private HairManager() {}
 
 	public static boolean canUseHair(Character character) {
 		if (character == null) return false;
 		String race = character.getRace().toLowerCase(Locale.ROOT);
-		String gender = character.getGender().toLowerCase(Locale.ROOT);
 
 		for (String defaultRace : DEFAULT_HAIR_RACES) {
 			if (race.equals(defaultRace)) return true;
 		}
-		if (race.equals("majin") && gender.equals("female")) return true;
 
 		RaceCharacterConfig config = ConfigManager.getRaceCharacter(race);
 		if (config != null && config.getHeadBones() != null) {

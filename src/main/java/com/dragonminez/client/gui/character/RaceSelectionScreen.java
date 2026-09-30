@@ -502,22 +502,22 @@ public class RaceSelectionScreen extends ScaledScreen {
 			character.setBodyType(config.getDefaultBodyType());
 			character.setHairId(config.getDefaultHairType());
 
-			if (HairManager.canUseHair(character)) {
-				character.setActiveHeadBone("hair");
-				character.setRenderHairBase(true);
-			} else if (config.getHeadBones() != null && config.getHeadBones().length > 0) {
-				String firstExtraBone = "";
-				if (character.areExtraHeadBonesEnabled()) {
-					for (String bone : config.getHeadBones()) {
-						if (bone != null && !bone.isEmpty() && !bone.equals("hair")) {
-							firstExtraBone = bone;
-							break;
-						}
+			String firstExtraBone = "";
+			if (config.getHeadBones() != null && character.areExtraHeadBonesEnabled()) {
+				for (String bone : config.getHeadBones()) {
+					if (bone != null && !bone.isEmpty() && !bone.equals("hair")) {
+						firstExtraBone = bone;
+						break;
 					}
 				}
-				character.setActiveHeadBone(firstExtraBone);
+			}
+
+			if (HairManager.canUseHair(character)) {
+				if (firstExtraBone.isEmpty()) character.setActiveHeadBone("hair");
+				else character.setActiveHeadBone(character.getHairId() > 0 ? firstExtraBone + "+hair" : firstExtraBone);
+				character.setRenderHairBase(true);
 			} else {
-				character.setActiveHeadBone("");
+				character.setActiveHeadBone(firstExtraBone);
 			}
 
 			character.setEyesType(config.getDefaultEyesType());

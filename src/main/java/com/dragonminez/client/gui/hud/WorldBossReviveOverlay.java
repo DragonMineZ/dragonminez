@@ -2,7 +2,7 @@ package com.dragonminez.client.gui.hud;
 
 import com.dragonminez.Reference;
 import com.dragonminez.client.gui.hud.layout.HudLayout;
-import com.dragonminez.client.systems.worldboss.ClientWorldBossPlayerState;
+import com.dragonminez.client.systems.worldboss.ClientWorldBossState;
 import com.mojang.blaze3d.systems.RenderSystem;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
@@ -35,13 +35,13 @@ public class WorldBossReviveOverlay {
 		Minecraft mc = Minecraft.getInstance();
 		if (mc.options.renderDebug || mc.player == null) return;
 
-		boolean casting = ClientWorldBossPlayerState.isCasting();
+		boolean casting = ClientWorldBossState.Player.isCasting();
 		float alpha = ALPHA.update(casting ? 1.0f : 0.0f);
 		if (alpha <= 0.01f) {
 			if (!casting) PROGRESS.snap(0.0f);
 			return;
 		}
-		float progress = PROGRESS.update(casting ? Mth.clamp(ClientWorldBossPlayerState.castProgress(), 0.0f, 1.0f) : PROGRESS.value());
+		float progress = PROGRESS.update(casting ? Mth.clamp(ClientWorldBossState.Player.castProgress(), 0.0f, 1.0f) : PROGRESS.value());
 
 		float barWidth = BAR_WIDTH * SCALE;
 		float x = (width - barWidth) / 2.0f;
@@ -66,7 +66,7 @@ public class WorldBossReviveOverlay {
 		Font font = mc.font;
 		int alphaChannel = Math.max(4, Math.round(alpha * 255.0f));
 		int color = (alphaChannel << 24) | (TEXT_COLOR & 0xFFFFFF);
-		MutableComponent label = Component.translatable("gui.dragonminez.worldboss.revive.casting", ClientWorldBossPlayerState.castTargetName())
+		MutableComponent label = Component.translatable("gui.dragonminez.worldboss.revive.casting", ClientWorldBossState.Player.castTargetName())
 				.withStyle(Style.EMPTY.withFont(DMZ_FONT));
 		MutableComponent percent = Component.literal(Math.round(progress * 100.0f) + "%").withStyle(Style.EMPTY.withFont(DMZ_FONT));
 		int percentY = Math.round(y) - 4 - font.lineHeight;

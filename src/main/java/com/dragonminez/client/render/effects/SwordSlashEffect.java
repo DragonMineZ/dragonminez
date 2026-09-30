@@ -44,6 +44,7 @@ public final class SwordSlashEffect {
 	private static final float TRAIL_SPACING = 0.9F;
 	private static final int FADE_IN_TICKS = 2;
 	private static final int FADE_OUT_TICKS = 5;
+	private static final float DARK_EDGE_LUMINANCE = 0.3F;
 
 	private static final class Slash {
 		final double x, y, z;
@@ -52,12 +53,14 @@ public final class SwordSlashEffect {
 		final float roll;
 		final float radius;
 		final float[] color;
+		final float[] core;
+		final boolean darkEdge;
 		final int lifetime;
 		final float yaw;
 		final float pitch;
 		int age;
 
-		private Slash(double x, double y, double z, Vec3 dir, float speed, float roll, float radius, float[] color, int lifetime) {
+		private Slash(double x, double y, double z, Vec3 dir, float speed, float roll, float radius, float[] color, float[] core, int lifetime) {
 			this.x = x;
 			this.y = y;
 			this.z = z;
@@ -66,6 +69,8 @@ public final class SwordSlashEffect {
 			this.roll = roll;
 			this.radius = radius;
 			this.color = color;
+			this.core = core;
+			this.darkEdge = 0.2126F * color[0] + 0.7152F * color[1] + 0.0722F * color[2] < DARK_EDGE_LUMINANCE;
 			this.lifetime = lifetime;
 			this.yaw = (float) Math.toDegrees(Math.atan2(-dir.x, dir.z));
 			this.pitch = (float) -Math.toDegrees(Math.asin(Mth.clamp(dir.y, -1.0D, 1.0D)));
@@ -77,11 +82,12 @@ public final class SwordSlashEffect {
 	private SwordSlashEffect() {}
 
 	public static void spawn(double x, double y, double z, double dx, double dy, double dz,
-							 float speed, float roll, float radius, int color, int lifetime) {
+							 float speed, float roll, float radius, int color, int coreColor, int lifetime) {
 		Vec3 dir = new Vec3(dx, dy, dz);
 		if (dir.lengthSqr() < 1.0E-6 || radius <= 0.0F || lifetime <= 0) return;
 		if (SLASHES.size() >= MAX_SLASHES) SLASHES.remove(0);
-		SLASHES.add(new Slash(x, y, z, dir.normalize(), speed, roll, radius, ColorUtils.rgbIntToFloat(color), lifetime));
+		SLASHES.add(new Slash(x, y, z, dir.normalize(), speed, roll, radius,
+				ColorUtils.rgbIntToFloat(color), ColorUtils.rgbIntToFloat(coreColor), lifetime));
 	}
 
 	@SubscribeEvent
@@ -172,19 +178,34 @@ public final class SwordSlashEffect {
 		float r = slash.color[0];
 		float g = slash.color[1];
 		float b = slash.color[2];
+		float cr = slash.core[0];
+		float cg = slash.core[1];
+		float cb = slash.core[2];
 
 		float boost = bloom ? 1.5F : 1.0F;
 		float glow = radius * GLOW * (bloom ? 2.2F : 1.0F);
 		float thickness = radius * THICKNESS;
+		boolean drawEdges = !(bloom && slash.darkEdge);
 
-		strip(pose, radius, radius + glow, 0.0F, 0.0F, r, g, b, 0.85F * alpha * boost, r, g, b, 0.0F);
-		strip(pose, radius - thickness * 0.5F, radius, 0.0F, 0.0F, 1.0F, 1.0F, 1.0F, alpha * boost, 1.0F, 0.92F, 0.92F, alpha * boost);
-		strip(pose, radius - thickness, radius - thickness * 0.5F, 0.0F, 0.0F, r, g, b, 0.55F * alpha * boost, 1.0F, 1.0F, 1.0F, alpha * boost);
-		strip(pose, radius - thickness * 1.9F, radius - thickness, 0.0F, 0.0F, r * 0.6F, g * 0.6F, b * 0.6F, 0.0F, r, g, b, 0.55F * alpha * boost);
+		if (drawEdges) {
+			edgeBlend(slash.darkEdge);
+			strip(pose, radius, radius + glow, 0.0F, 0.0F, r, g, b, 0.85F * alpha * boost, r, g, b, 0.0F);
+			strip(pose, radius - thickness * 1.9F, radius - thickness, 0.0F, 0.0F, r * 0.6F, g * 0.6F, b * 0.6F, 0.0F, r, g, b, 0.55F * alpha * boost);
+			edgeBlend(false);
+		}
+
+		strip(pose, radius - thickness * 0.5F, radius, 0.0F, 0.0F, cr, cg, cb, alpha * boost, cr, cg * 0.92F, cb * 0.92F, alpha * boost);
+		strip(pose, radius - thickness, radius - thickness * 0.5F, 0.0F, 0.0F, r, g, b, 0.55F * alpha * boost, cr, cg, cb, alpha * boost);
 
 		float ribbon = radius * RIBBON * (bloom ? 1.6F : 1.0F);
-		strip(pose, radius - thickness * 0.4F, radius - thickness * 0.4F, 0.0F, ribbon, 1.0F, 0.9F, 0.9F, 0.75F * alpha * boost, r, g, b, 0.0F);
-		strip(pose, radius - thickness * 0.4F, radius - thickness * 0.4F, 0.0F, -ribbon, 1.0F, 0.9F, 0.9F, 0.75F * alpha * boost, r, g, b, 0.0F);
+		strip(pose, radius - thickness * 0.4F, radius - thickness * 0.4F, 0.0F, ribbon, cr, cg * 0.9F, cb * 0.9F, 0.75F * alpha * boost, r, g, b, 0.0F);
+		strip(pose, radius - thickness * 0.4F, radius - thickness * 0.4F, 0.0F, -ribbon, cr, cg * 0.9F, cb * 0.9F, 0.75F * alpha * boost, r, g, b, 0.0F);
+	}
+
+	private static void edgeBlend(boolean normal) {
+		RenderSystem.blendFunc(com.mojang.blaze3d.platform.GlStateManager.SourceFactor.SRC_ALPHA,
+				normal ? com.mojang.blaze3d.platform.GlStateManager.DestFactor.ONE_MINUS_SRC_ALPHA
+						: com.mojang.blaze3d.platform.GlStateManager.DestFactor.ONE);
 	}
 
 	private static void strip(Matrix4f pose, float innerRadius, float outerRadius, float innerLift, float outerLift,

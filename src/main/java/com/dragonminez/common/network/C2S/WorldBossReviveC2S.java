@@ -1,7 +1,7 @@
 package com.dragonminez.common.network.C2S;
 
 import com.dragonminez.common.network.PacketRateLimiter;
-import com.dragonminez.server.world.worldboss.WorldBossSessions;
+import com.dragonminez.server.world.worldboss.WorldBossManager;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraftforge.network.NetworkEvent;
@@ -29,7 +29,7 @@ public class WorldBossReviveC2S {
 			ServerPlayer player = context.getSender();
 			if (player == null) return;
 			if (!PacketRateLimiter.allow(player.getUUID(), "worldboss_revive", player.level().getGameTime(), 10L)) return;
-			WorldBossSessions.requestRevive(player, targetEntityId);
+			WorldBossManager.requestRevive(player, targetEntityId);
 		});
 		context.setPacketHandled(true);
 	}

@@ -6,6 +6,7 @@ import com.dragonminez.common.init.*;
 import com.dragonminez.common.init.particles.KiLightningParticle;
 import com.dragonminez.common.init.particles.KiSheddingParticle;
 import com.dragonminez.common.init.particles.KiTrailParticle;
+import com.dragonminez.server.events.players.combat.KiTechniqueHandler;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.particle.Particle;
 import net.minecraft.core.BlockPos;
@@ -428,6 +429,19 @@ public class KiWaveEntity extends AbstractKiProjectile {
         this.setupKiMasenkoPlayer(owner, damage, speed, size, 0xFFFFFF);
     }
 
+    public void setupHeatDomePlayer(LivingEntity owner, float damage, float speed, float size) {
+        this.setKiRenderType(0);
+        this.setSize(size);
+        this.setCastSize(KiTechniqueHandler.HeatDome.CHARGE_SPHERE_SIZE);
+        this.setKiDamage(damage);
+        this.setKiSpeed(speed);
+        this.setFiring(false);
+        this.setMaxLife(99999);
+        this.setCastWave(0);
+        this.setCastOffsets(0.0F, 0.0F, 0.0F);
+        updatePositionRelativeToOwner(owner, true);
+    }
+
     public void fireHability(int finalMaxLife) {
         this.setFiring(true);
         this.setMaxLife(this.tickCount + finalMaxLife);
@@ -435,12 +449,37 @@ public class KiWaveEntity extends AbstractKiProjectile {
 
         if (this.getOwner() instanceof LivingEntity livingOwner) {
             updatePositionRelativeToOwner(livingOwner, false);
+            if (!this.level().isClientSide && this.isHeatDome()) {
+                KiTechniqueHandler.HeatDome.launchTarget(livingOwner, this);
+            }
         }
 
         if (this.getOwner() instanceof Player) this.triggerAnimationPacket("_fire");
     }
 
+    private boolean isHeatDome() {
+        return KiTechniqueHandler.HeatDome.is(this.getTechniqueId());
+    }
+
+    private void updateHeatDomePosition(LivingEntity owner, boolean isCasting) {
+        double y = isCasting
+                ? ownerCastCenterY(owner)
+                : owner.getY() + owner.getBbHeight() + KiTechniqueHandler.HeatDome.BEAM_HEAD_OFFSET * ownerScaleOf(owner);
+        this.setPos(owner.getX(), y, owner.getZ());
+
+        float yaw = owner.getYRot();
+        this.entityData.set(FIXED_YAW, yaw);
+        this.entityData.set(FIXED_PITCH, -90.0F);
+        this.setYRot(yaw);
+        this.setXRot(-90.0F);
+    }
+
     private void updatePositionRelativeToOwner(LivingEntity owner, boolean isCasting) {
+        if (this.isHeatDome()) {
+            this.updateHeatDomePosition(owner, isCasting);
+            return;
+        }
+
         Vec3 look = owner.getLookAngle();
         Vec3 newPos;
 

@@ -89,16 +89,18 @@ public class DMZPlayerArmorLayer<T extends AbstractClientPlayer & GeoAnimatable>
                 boolean isOozaru = character.isOozaruCached() || logicKey.contains("oozaru");
 
                 boolean isBuffed = logicKey.contains("buffed") || logicKey.contains("frostdemon_fp") || logicKey.contains("majin_ultra")
-                        || logicKey.contains("namekian_orange") || logicKey.contains("bioandroid_ultra") || logicKey.contains("ssj4d") || logicKey.contains("ssj4gt")
+                        || logicKey.contains("namekian_orange") || logicKey.startsWith("bioandroid") || logicKey.contains("ssj4d") || logicKey.contains("ssj4gt")
                         || logicKey.contains("frostdemon_fifth") || logicKey.contains("frostdemon_metalcore") || logicKey.contains("namekian_buffed")
-                        || logicKey.contains("4arms") || logicKey.contains("bioandroid_xeno") || logicKey.contains("janemba_super")
-                        || logicKey.equals("janemba_fat");
+                        || logicKey.contains("4arms") || logicKey.contains("janemba_super")
+                        || logicKey.equals("janemba_fat") || logicKey.equals("frostdemon_second");
                 boolean isDbzArmor = stack.getItem() instanceof DbzArmorTextured;
 
 				boolean isRestrictedMajin = (isMajin && bodyType != 2) || logicKey.equals("janemba_imperfect");
                 boolean isCustomModel = SkinGathererProvider.modelFamily(logicKey).equals("custom");
 
-                if (isRestrictedMajin || isFemaleHumanOrSaiyan || isOozaru) {
+                if (isOozaru) {
+                    if (isDbzArmor && !isArmored) return null;
+                } else if (isRestrictedMajin || isFemaleHumanOrSaiyan) {
                     if (!isArmored) return null;
                 } else if (isBuffed || isCustomModel) {
                     if (isDbzArmor) return null;

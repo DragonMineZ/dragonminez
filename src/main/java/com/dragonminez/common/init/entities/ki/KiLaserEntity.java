@@ -6,6 +6,7 @@ import com.dragonminez.common.init.MainEntities;
 import com.dragonminez.common.init.MainParticles;
 import com.dragonminez.common.init.MainSounds;
 import com.dragonminez.common.init.particles.KiLightningParticle;
+import com.dragonminez.server.events.players.combat.KiTechniqueHandler;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.particle.Particle;
 import net.minecraft.core.BlockPos;
@@ -24,7 +25,9 @@ import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.HitResult;
 import net.minecraft.world.phys.Vec3;
 
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 public class KiLaserEntity extends AbstractKiProjectile{
 
@@ -38,6 +41,14 @@ public class KiLaserEntity extends AbstractKiProjectile{
     private static final EntityDataAccessor<Float> OFFSET_Z = SynchedEntityData.defineId(KiLaserEntity.class, EntityDataSerializers.FLOAT);
 
     private static final float MAX_RANGE = 250.0F;
+    private static final int CHAIN_SHOT_LIFE_TICKS = 10;
+    private static final float CHAIN_SHOT_MIN_SPEED = 8.0F;
+
+    private boolean chainShot = false;
+    private int pendingFireTick = -1;
+    private int pendingFireLife = 0;
+    private boolean chainStarted = false;
+    private final Set<Integer> chainHitIds = new HashSet<>();
 
     public KiLaserEntity(EntityType<? extends Projectile> pEntityType, Level pLevel) {
         super(pEntityType, pLevel);
@@ -208,8 +219,51 @@ public class KiLaserEntity extends AbstractKiProjectile{
         this.setupKiDodonpaPlayer(owner, damage, speed, 0xFFFFFF);
     }
 
+    public void setupEmperorChainShot(LivingEntity owner, float damage, float speed, int color, int colorBorder, int colorOutline, float size, int armorPenetration, int kiType) {
+        this.setupKiLaserPlayer(owner, damage, speed, color, colorBorder, colorOutline, size);
+        this.setKiType(kiType);
+        this.setTechniqueId(KiTechniqueHandler.EmperorDeathBeam.TECHNIQUE_ID);
+        this.setArmorPenetration(armorPenetration);
+        this.chainShot = true;
+        this.chainStarted = true;
+
+        float yaw = owner.getYRot();
+        float pitch = owner.getXRot();
+        this.entityData.set(FIXED_YAW, yaw);
+        this.entityData.set(FIXED_PITCH, pitch);
+        this.setYRot(yaw);
+        this.setXRot(pitch);
+        this.setKiSpeed(Math.max(speed * 3.0F, CHAIN_SHOT_MIN_SPEED));
+        this.fireHability(CHAIN_SHOT_LIFE_TICKS);
+    }
+
+    private void startEmperorChain() {
+        if (this.chainStarted || this.isHeal() || this.level().isClientSide) return;
+        if (!KiTechniqueHandler.EmperorDeathBeam.is(this.getTechniqueId())) return;
+        if (!(this.getOwner() instanceof LivingEntity owner)) return;
+        this.chainStarted = true;
+        KiTechniqueHandler.EmperorDeathBeam.start(owner, this);
+    }
+
 
     public void fireHability(int finalMaxLife) {
+        if (this.pendingFireTick >= 0) return;
+
+        int delay = this.level().isClientSide ? 0 : KiTechniqueHandler.getFireDelayTicks(this.getTechniqueId());
+        if (delay > 0) {
+            this.pendingFireTick = this.tickCount + delay;
+            this.pendingFireLife = finalMaxLife;
+            if (this.getOwner() instanceof Player player) {
+                this.triggerAnimationPacket("_fire");
+                KiTechniqueHandler.onLaserFired(player, this.getTechniqueId());
+            }
+            return;
+        }
+
+        this.startFiring(finalMaxLife, true);
+    }
+
+    private void startFiring(int finalMaxLife, boolean triggerAnimation) {
         this.setFiring(true);
         this.setMaxLife(this.tickCount + finalMaxLife);
         this.setFireTick(this.tickCount);
@@ -224,7 +278,10 @@ public class KiLaserEntity extends AbstractKiProjectile{
             this.level().playSound(null, this.getX(), this.getY(), this.getZ(), fireSound, SoundSource.PLAYERS, 0.7F, 1.0F + (this.random.nextFloat() * 0.2F));
         }
 
-        if (this.getOwner() instanceof Player) this.triggerAnimationPacket("_fire");
+        if (triggerAnimation && this.getOwner() instanceof Player player) {
+            this.triggerAnimationPacket("_fire");
+            KiTechniqueHandler.onLaserFired(player, this.getTechniqueId());
+        }
     }
 
 
@@ -282,6 +339,12 @@ public class KiLaserEntity extends AbstractKiProjectile{
     @Override
     public void tick() {
         this.baseTick();
+
+        if (this.pendingFireTick >= 0 && !this.level().isClientSide && this.tickCount >= this.pendingFireTick) {
+            int life = this.pendingFireLife;
+            this.pendingFireTick = -1;
+            this.startFiring(life, false);
+        }
 
         if (!this.isFiring() && this.getMaxLife() != 99999 && this.tickCount >= this.getCastTime()) {
             this.fireHability(this.getMaxLife() - this.tickCount);
@@ -538,11 +601,13 @@ public class KiLaserEntity extends AbstractKiProjectile{
         List<LivingEntity> targets = MultipartTargeting.collectTargets(this.level(), searchBox);
 
         int hitInterval = 10;
+        boolean chainShot = this.chainShot;
 
         for (LivingEntity target : targets) {
             if (!this.shouldDamage(target)) continue;
             if (target.is(this.getOwner())) continue;
-            if (target.invulnerableTime > 0) continue;
+            if (chainShot && this.chainHitIds.contains(target.getId())) continue;
+            if (target.invulnerableTime > 0 && !chainShot) continue;
 
             float hitPrecision = this.getSize() / 3.0F;
             boolean beamHit = false;
@@ -555,11 +620,16 @@ public class KiLaserEntity extends AbstractKiProjectile{
             }
 
             if (beamHit) {
+                if (chainShot) {
+                    this.chainHitIds.add(target.getId());
+                    target.invulnerableTime = 0;
+                }
                 boolean wasHit = this.applyDamageOrHeal(target, this.getDamagePerHit());
 
                 if (wasHit) {
                     this.onSuccessfulHit(target);
                     target.invulnerableTime = hitInterval;
+                    this.startEmperorChain();
 
                     if (this.level() instanceof net.minecraft.server.level.ServerLevel serverLevel) {
                         double colorData = (double) this.getColor();
@@ -584,7 +654,10 @@ public class KiLaserEntity extends AbstractKiProjectile{
             if (this.shouldDamage(target)) {
                 if (MultipartTargeting.withinRadius(target, pos, radius)) {
                     boolean wasHit = this.applyDamageOrHeal(target, this.getKiDamage());
-                    if (wasHit) this.onSuccessfulHit(target);
+                    if (wasHit) {
+                        this.onSuccessfulHit(target);
+                        this.startEmperorChain();
+                    }
                 }
             }
         }

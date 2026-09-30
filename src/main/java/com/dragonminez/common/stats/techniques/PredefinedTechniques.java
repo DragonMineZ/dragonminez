@@ -23,7 +23,11 @@ public class PredefinedTechniques {
 			"blue_hurricane",
 			"dimensional_punch",
 			"dimensional_sword_attack",
-			"spirit_breaking_cannon"
+			"spirit_breaking_cannon",
+			"grab",
+			"shining_sword_attack",
+			"combo_meteor",
+			"meteor_burst"
 	);
 	public static final List<String> EVASION_IDS = java.util.List.of(
 			"taiyoken",
@@ -43,11 +47,15 @@ public class PredefinedTechniques {
 		registerKi("final_flash", "technique.dragonminez.final_flash", "Vegeta", KiAttackData.KiType.WAVE, 2.50F, 0xFFFCD6, 0xFFEB52, 0xF5C020, 0.7F, 1.2F, 10, "ki.finalflash");
 		registerKi("kamehameha", "technique.dragonminez.kamehameha", "Goku", KiAttackData.KiType.WAVE, 2.00F, 0xEDF4FF, 0x29D8FF, 0x0077FF, 0.6F, 1.2F, 10, "ki.kameha");
 		registerKi("galick_gun", "technique.dragonminez.galick_gun", "Vegeta", KiAttackData.KiType.WAVE, 2.00F, 0xFAE5FF, 0xA63EF0, 0x7106BD, 0.6F, 1.2F, 10, "ki.galick");
+		registerKi("heat_dome", "technique.dragonminez.heat_dome", "Trunks", KiAttackData.KiType.WAVE, 2.25F, 0xFFF6C2, 0xFFD23F, 0xF29E0C, 1.0F, 1.8F, 12, "ki.cupula");
+		registerKi("kikoho", "technique.dragonminez.kikoho", "Tien", KiAttackData.KiType.LASER, 2.00F, 0xFFFBD6, 0xFFE45C, 0xF2A900, 0.9F, 1.8F, 12, "ki.kikohu");
+		registerKi("neo_kikoho", "technique.dragonminez.neo_kikoho", "Tien", KiAttackData.KiType.MEDIUM_BALL, 2.50F, 0xFFF4B0, 0xFFB22E, 0xFF6F00, 0.9F, 1.6F, 15, "ki.neo_kikohu");
 		registerKi("masenko", "technique.dragonminez.masenko", "Gohan", KiAttackData.KiType.WAVE, 1.50F, 0xFFFC85, 0xFCE062, 0xFFFFFF, 0.4F, 1.2F, 10, "ki.masenko");
 		registerKi("kienzan", "technique.dragonminez.kienzan", "Krilin", KiAttackData.KiType.DISK, 1.50F, 0xFFFB7D, 0xFFEA00, 0xFFFFFF, 1.0F, 1.5F, 10, "ki.kienzan");
 		registerKi("kienzan_doble", "technique.dragonminez.double_kienzan", "Krilin", KiAttackData.KiType.DISK, 1.75F, 0xFF00AA, 0xFF00AA, 0xA30070, 1.0F, 1.5F, 10, "ki.kienzandoble");
 		registerKi("death_beam", "technique.dragonminez.death_beam", "Frieza", KiAttackData.KiType.LASER, 0.75F, 0xFF59FF, 0xD859FF, 0x9238F2, 0.5F, 2.0F, 10, "ki.laser");
-		registerKi("emperor_death_beam", "technique.dragonminez.emperor_death_beam", "Frieza", KiAttackData.KiType.LASER, 1.25F, 0xCE10E3, 0xCE10E3, 0x9238F2, 0.6F, 2.0F, 10, "ki.emperor_laser");
+		registerKi("emperor_death_beam", "technique.dragonminez.emperor_death_beam", "Frieza", KiAttackData.KiType.LASER, 1.25F, 0xFF6B6B, 0xFF1A1A, 0xB00000, 0.6F, 2.0F, 10, "ki.emperor_laser");
+		registerKi("dodonpa", "technique.dragonminez.dodonpa", "Tien", KiAttackData.KiType.LASER, 1.00F, 0xFFF7B0, 0xFFE657, 0xF5B800, 0.5F, 2.5F, 8, "ki.dodonpa");
 		registerKi("makkanko", "technique.dragonminez.makkankosanpo", "Piccolo", KiAttackData.KiType.BEAM, 0.75F, 0xFFE657, 0xF5A627, 0x8B17CF, 1.0F, 2.0F, 20, "ki.makkako");
 		registerKi("ki_barrage", "technique.dragonminez.barrage", "Vegeta", KiAttackData.KiType.BARRAGE, 1.00F, 0xFFFF00, 0xFFFF00, 0xC8A000, 0.4F, 1.5F, 10, "ki.barrage");
 		registerKi("final_explosion", "technique.dragonminez.final_explosion", "Vegeta", KiAttackData.KiType.EXPLOSION, 2.25F, 0xFFFA99, 0xFCF56A, 0xFFFFFC, 25.0F, 0.0F, 10, "ki.explosion");
@@ -56,6 +64,7 @@ public class PredefinedTechniques {
 		registerKi("fake_moon", "technique.dragonminez.fake_moon", "Vegeta", KiAttackData.KiType.MEDIUM_BALL, 0.00F, 0xF5F3D0, 0xFFFFFF, 0xFFFFFF, 2.0F, 0.8F, 45, "ki.bigbang");
 		registerKi("assault_rain", "technique.dragonminez.assault_rain", "Super Buu", KiAttackData.KiType.BARRAGE, 1.00F, 0xFFB8F4, 0x8A2BE2, 0xFF38D4, 0.4F, 1.5F, 15, "ki.assault_rain");
 		registerKi("blaster_meteor", "technique.dragonminez.blaster_meteor", "Broly", KiAttackData.KiType.BARRAGE, 1.00F, 0x9DFF8A, 0x3DF54A, 0x0FBF1B, 0.4F, 1.5F, 15, "ki.blaster_meteor");
+		registerKi("kill_driver", "technique.dragonminez.kill_driver", "Turles", KiAttackData.KiType.DISK, 2.25F, 0xFFF3A0, 0xFFC400, 0xE08A00, 1.0F, 1.2F, 12, "ki.kill_driver");
 		registerEvasion("taiyoken", 0.00F, 30, 900, false);
 		registerEvasion("rage_scream", 1.2F, 60, 80, true);
 		registerEvasion("afterimage", 0.00F, 60, 200, false);
@@ -75,6 +84,10 @@ public class PredefinedTechniques {
 		registerStrike("skp.dimensional_punch", 2.4f, 70);
 		registerStrike("skp.dimensional_sword_attack", 2.6f, 41);
 		registerStrike("skp.spirit_breaking_cannon", 2.2f, 47);
+		registerStrike("skp.grab", 1.6f, 35);
+		registerStrike("skp.shining_sword_attack", 2.4f, 66);
+		registerStrike("skp.combo_meteor", 2.2f, 90);
+		registerStrike("skp.meteor_burst", 2.6f, 120);
 	}
 
 	public static boolean isPredefinedTechniqueId(String techniqueId) {

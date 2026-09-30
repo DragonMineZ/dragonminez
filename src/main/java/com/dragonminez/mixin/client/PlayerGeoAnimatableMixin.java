@@ -830,6 +830,7 @@ public abstract class PlayerGeoAnimatableMixin implements GeoAnimatable, IPlayer
 		this.dragonminez$currentKiAnim = animationName;
 		this.dragonminez$kiAnimHold = hold;
 		this.dragonminez$kiAnimTicks = 0;
+		if (animationName != null && animationName.endsWith("_fire")) this.dragonminez$lastKiCtlAnim = null;
 	}
 
 	@Override

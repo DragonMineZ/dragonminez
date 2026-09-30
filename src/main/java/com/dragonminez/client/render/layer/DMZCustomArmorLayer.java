@@ -40,7 +40,6 @@ public class DMZCustomArmorLayer<T extends AbstractClientPlayer & GeoAnimatable>
 
     private static final ResourceLocation MAJIN_ARMOR_MODEL = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "geo/armor/armormajinfat.geo.json");
     private static final ResourceLocation MAJIN_SLIM_ARMOR_MODEL = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "geo/armor/armormajinslim.geo.json");
-    private static final ResourceLocation OOZARU_ARMOR_MODEL = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "geo/armor/armoroozaru.geo.json");
 
     private static final Set<String> SLIM_SUPPORTED_MODELS = Set.of(
             "majin_evil", "majin_kid", "majin_super", "majin_ultra", "majin", "saiyan", "human", "ssj4gt", "ssj4d"
@@ -66,7 +65,7 @@ public class DMZCustomArmorLayer<T extends AbstractClientPlayer & GeoAnimatable>
         if (ctx.isDbzArmor()) {
             ResourceLocation texture = getDbzArmorTexture((DbzArmorTextured) stack.getItem(), stack);
             float translateY = resolveCustomArmorTranslateY(ctx);
-            float inflation = ctx.isOozaruTarget() ? 1.021f : 1.035f;
+            float inflation = 1.045f;
 
             poseStack.pushPose();
             poseStack.translate(0, translateY, 0);
@@ -104,7 +103,7 @@ public class DMZCustomArmorLayer<T extends AbstractClientPlayer & GeoAnimatable>
             return;
         }
 
-        ResourceLocation targetModelLoc = ctx.isOozaruTarget() ? OOZARU_ARMOR_MODEL : (ctx.isSlimTarget() ? MAJIN_SLIM_ARMOR_MODEL : MAJIN_ARMOR_MODEL);
+        ResourceLocation targetModelLoc = ctx.isSlimTarget() ? MAJIN_SLIM_ARMOR_MODEL : MAJIN_ARMOR_MODEL;
         BakedGeoModel vanillaArmorModel = getGeoModel().getBakedModel(targetModelLoc);
         if (vanillaArmorModel == null) return;
 
@@ -180,26 +179,24 @@ public class DMZCustomArmorLayer<T extends AbstractClientPlayer & GeoAnimatable>
         boolean isDbzArmor = stack.getItem() instanceof DbzArmorTextured;
         boolean isPothala = stack.getDescriptionId().contains("pothala");
         if (isPothala || (!isVanilla && !isDbzArmor)) {
-            return new ArmorRenderContext(false, false, false, false, isDbzArmor);
+            return new ArmorRenderContext(false, false, false, isDbzArmor);
         }
 
         boolean shouldRender = false;
         boolean isSlimTarget = false;
-        boolean isOozaruTarget = false;
         boolean isMajinGordoTarget = false;
 
         if (character.isOozaruCached() || logicKey.equals("oozaru")) {
-            shouldRender = true;
-            isOozaruTarget = true;
+            if (isDbzArmor) shouldRender = true;
         }
         else if (SLIM_SUPPORTED_MODELS.contains(logicKey) && gender.equals(Character.GENDER_FEMALE)) {
             shouldRender = true;
             isSlimTarget = true;
         }
         else if (logicKey.contains("buffed") || logicKey.contains("frostdemon_fp") || logicKey.contains("majin_ultra")
-                || logicKey.contains("namekian_orange") || logicKey.contains("bioandroid_ultra") || logicKey.contains("ssj4gt") || logicKey.contains("ssj4d")
+                || logicKey.contains("namekian_orange") || logicKey.startsWith("bioandroid") || logicKey.contains("ssj4gt") || logicKey.contains("ssj4d")
                 || logicKey.contains("frostdemon_fifth") || logicKey.contains("frostdemon_metalcore") || logicKey.contains("namekian_buffed")
-                || logicKey.contains("4arms") || logicKey.contains("bioandroid_xeno") || logicKey.equals("janemba_super")) {
+                || logicKey.contains("4arms") || logicKey.equals("janemba_super") || logicKey.equals("frostdemon_second")) {
             if (isDbzArmor) shouldRender = true;
         }
         else if (logicKey.equals("majin") && gender.equals(Character.GENDER_MALE) && bodyType != 2) {
@@ -218,11 +215,11 @@ public class DMZCustomArmorLayer<T extends AbstractClientPlayer & GeoAnimatable>
             if (isDbzArmor) shouldRender = true;
         }
 
-        return new ArmorRenderContext(shouldRender, isSlimTarget, isOozaruTarget, isMajinGordoTarget, isDbzArmor);
+        return new ArmorRenderContext(shouldRender, isSlimTarget, isMajinGordoTarget, isDbzArmor);
     }
 
     private float resolveCustomArmorTranslateY(ArmorRenderContext ctx) {
-        if (ctx.isOozaruTarget() || ctx.isMajinGordoTarget()) return 0.03f;
+        if (ctx.isMajinGordoTarget()) return 0.03f;
         return 0.001f;
     }
 
@@ -287,7 +284,7 @@ public class DMZCustomArmorLayer<T extends AbstractClientPlayer & GeoAnimatable>
         targetBone.setScaleY(inflation);
         targetBone.setScaleZ(inflation);
 
-        Vector3f centre = ArmorPieceInflation.cubeCentreFromPivot(targetBone);
+        Vector3f centre = ArmorPieceInflation.cubeTopCentreFromPivot(targetBone);
         if (centre != null) {
             float k = 1f - inflation;
             targetBone.setPosX(-k * centre.x);
@@ -363,7 +360,7 @@ public class DMZCustomArmorLayer<T extends AbstractClientPlayer & GeoAnimatable>
         return ResourceLocation.parse(ForgeHooksClient.getArmorTexture(entity, stack, textureLocation, slot, type));
     }
 
-    private record ArmorRenderContext(boolean shouldRender, boolean isSlimTarget, boolean isOozaruTarget,
+    private record ArmorRenderContext(boolean shouldRender, boolean isSlimTarget,
                                       boolean isMajinGordoTarget, boolean isDbzArmor) {
     }
 

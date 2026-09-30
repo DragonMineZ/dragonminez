@@ -16,6 +16,8 @@ uniform float Time;
 uniform float Seed;
 uniform float Alpha;
 uniform vec3 Color;
+uniform vec3 InnerColor;
+uniform float Dark;
 uniform vec3 DepthParams;
 uniform float BloomIntensity;
 uniform float BloomPass;
@@ -33,6 +35,9 @@ const float EROSION = 0.16;
 const float RIM_ALPHA = 0.40;
 const float CORE_WHITE = 0.45;
 const float OCCLUSION_FADE = 0.75;
+const float INK_LOW = 0.40;
+const float INK_HIGH = 0.48;
+const float INK_SHADE = 0.35;
 
 void main() {
     vec2 frag = texCoord * ScreenSize;
@@ -56,7 +61,8 @@ void main() {
     if (self) {
         float rim = (1.0 - smoothstep(0.50, 0.90, near)) * RIM_ALPHA * Alpha;
         rim *= 0.70 + 0.30 * fine;
-        fragColor = vec4(mix(bright, hot, 0.5), BloomPass > 0.5 ? rim * BloomIntensity * 0.5 : rim);
+        vec3 rimColor = Dark > 0.5 ? InnerColor : mix(bright, hot, 0.5);
+        fragColor = vec4(rimColor, BloomPass > 0.5 ? rim * BloomIntensity * 0.5 : rim);
         return;
     }
 
@@ -71,14 +77,30 @@ void main() {
     float heat = smoothstep(0.20, 0.62, shaped);
     float core = smoothstep(0.30, 0.50, near);
 
-    vec3 color = mix(Color * 0.92, bright, heat);
-    color = mix(color, hot, max(core, smoothstep(0.75, 1.0, heat) * 0.6));
-    float alpha = flame * mix(0.78, 1.0, heat) * Alpha;
+    vec3 color;
+    float alpha;
+    float ink = 0.0;
+    if (Dark > 0.5) {
+        ink = smoothstep(INK_LOW, INK_HIGH, near);
+        color = mix(Color, InnerColor, heat * heat);
+        color = mix(color, InnerColor * 1.15, core * 0.35);
+        color = mix(color, Color * INK_SHADE, ink);
+        alpha = max(flame * mix(0.85, 1.0, heat), ink) * Alpha;
+    } else {
+        color = mix(Color * 0.92, bright, heat);
+        color = mix(color, hot, max(core, smoothstep(0.75, 1.0, heat) * 0.6));
+        alpha = flame * mix(0.78, 1.0, heat) * Alpha;
+    }
 
     if (DepthParams.z > 0.0) {
         float ndc = texture(SceneDepth, texCoord).r * 2.0 - 1.0;
         float sceneDistance = DepthParams.y / (ndc + DepthParams.x);
         alpha *= smoothstep(DepthParams.z - OCCLUSION_FADE, DepthParams.z, sceneDistance);
+    }
+
+    if (Dark > 0.5 && BloomPass > 0.5) {
+        fragColor = vec4(InnerColor, clamp(alpha * heat * (1.0 - ink) * BloomIntensity, 0.0, 1.0));
+        return;
     }
 
     fragColor = vec4(color, BloomPass > 0.5 ? clamp(alpha * BloomIntensity, 0.0, 1.0) : alpha);

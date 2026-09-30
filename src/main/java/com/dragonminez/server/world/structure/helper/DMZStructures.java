@@ -3,6 +3,7 @@ package com.dragonminez.server.world.structure.helper;
 import com.dragonminez.Reference;
 import com.dragonminez.common.init.MainTags;
 import com.dragonminez.server.world.structure.TallJigsawStructure;
+import com.dragonminez.server.world.structure.tree.TreeOfMightStructure;
 import net.minecraft.core.HolderGetter;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.data.worldgen.BootstapContext;
@@ -33,7 +34,7 @@ public class DMZStructures {
 			PICCOLO_HOUSE = createKey("piccolo_house"), OLDKAI_PILLAR = createKey("oldkai_pillar"),
 			YAMCHA_HOUSE = createKey("yamcha_house"), TRUNKS_SHIP = createKey("trunks_ship"),
 			VEGETA_POD = createKey("vegeta_pod"),
-			BABA_PALACE = createKey("baba_palace");
+			BABA_PALACE = createKey("baba_palace"), TREE_OF_MIGHT = createKey("tree_of_might");
 
 	public static void bootstrap(BootstapContext<Structure> context) {
 		HolderGetter<Biome> biomes = context.lookup(Registries.BIOME);
@@ -254,6 +255,15 @@ public class DMZStructures {
 				ConstantHeight.of(VerticalAnchor.absolute(1)),
 				false,
 				Heightmap.Types.WORLD_SURFACE_WG
+		));
+
+		context.register(TREE_OF_MIGHT, new TreeOfMightStructure(
+				new Structure.StructureSettings(
+						biomes.getOrThrow(BiomeTags.IS_OVERWORLD),
+						Map.of(),
+						GenerationStep.Decoration.SURFACE_STRUCTURES,
+						TerrainAdjustment.NONE
+				)
 		));
 	}
 

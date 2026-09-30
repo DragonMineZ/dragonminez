@@ -24,6 +24,7 @@ in vec3 vViewDir;
 in vec3 vLocalPos;
 in vec2 vUv;
 in float vAlpha;
+in float vInside;
 out vec4 fragColor;
 
 const float CORE_LEVEL    = 0.58;
@@ -215,14 +216,15 @@ void main() {
         float n = clamp(fbm(p * 4.3 + vec3(0.0, bt * 0.8, bt * 0.35)) * FBM_MAX_INV, 0.0, 1.0);
         blotchBand = min(floor(n * BLOTCH_STEPS), BLOTCH_STEPS - 1.0) / (BLOTCH_STEPS - 1.0);
 
-        col = mix(col, colorBorder, (1.0 - blotchBand) * 0.55 * orbInner);
-        col *= mix(1.0, mix(0.52, 1.32, blotchBand), orbInner);
+        float blotchAmt = orbInner * (1.0 - vInside);
+        col = mix(col, colorBorder, (1.0 - blotchBand) * 0.55 * blotchAmt);
+        col *= mix(1.0, mix(0.74, 1.32, blotchBand), blotchAmt);
     }
 
     vec3 finalColor = col;
 
     float edgeCoord = (shapeMode > 0.5 || orbMode > 0.5) ? g : (g + wobOutline + edgeBite);
-    float finalAlpha = alphaMult * smoothstep(0.0, EDGE_FADE, edgeCoord);
+    float finalAlpha = alphaMult * smoothstep(0.0, EDGE_FADE, edgeCoord) * (1.0 - vInside * 0.5);
 
     if (texBlend > 0.0) {
         vec2 animUv = vec2(fract(vUv.x + time * 0.2), fract(vUv.y - time * 0.5));
@@ -238,8 +240,10 @@ void main() {
         if (flameMode > 0.5) bloomA = (halo * 0.80 + toCore * 0.65 + hot * 0.50) * alphaMult * globalAlpha;
         // Dark patches glow less, so the blotches stay readable out at the rim instead of
         // being washed flat by the halo.
-        if (blotchMode > 0.5) bloomA *= mix(0.55, 1.15, blotchBand);
-        fragColor = vec4(finalColor, bloomA * vAlpha);
+        if (blotchMode > 0.5) bloomA *= mix(0.8, 1.15, blotchBand);
+        bloomA *= 1.0 - vInside * 0.75;
+        vec3 bloomCol = mix(finalColor, colorBorder, 0.35);
+        fragColor = vec4(bloomCol, bloomA * vAlpha);
         return;
     }
 

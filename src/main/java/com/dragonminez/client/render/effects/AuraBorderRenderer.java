@@ -70,6 +70,7 @@ public final class AuraBorderRenderer {
 		float intensity;
 		long lastNanos;
 		float[] color = {1.0f, 1.0f, 1.0f};
+		float[] innerColor;
 	}
 
 	private record Request(Entity entity, int index, State state, float partialTick) {}
@@ -92,6 +93,10 @@ public final class AuraBorderRenderer {
 	}
 
 	public static MultiBufferSource begin(Entity entity, MultiBufferSource source, float[] color, float partialTick) {
+		return begin(entity, source, color, null, partialTick);
+	}
+
+	public static MultiBufferSource begin(Entity entity, MultiBufferSource source, float[] color, float[] innerColor, float partialTick) {
 		if (!capturing || !isAvailable() || IrisCompat.isRenderingShadowPass()) return source;
 		Minecraft mc = Minecraft.getInstance();
 		if (entity == mc.getCameraEntity() && mc.options.getCameraType().isFirstPerson()) return source;
@@ -105,7 +110,10 @@ public final class AuraBorderRenderer {
 			STATES.put(id, state);
 		}
 		advance(state, color != null);
-		if (color != null) state.color = color.clone();
+		if (color != null) {
+			state.color = color.clone();
+			state.innerColor = innerColor != null ? innerColor.clone() : null;
+		}
 		if (state.intensity <= 0.001f) {
 			if (color == null) STATES.remove(id);
 			return source;
@@ -333,6 +341,9 @@ public final class AuraBorderRenderer {
 		flameShader.safeGetUniform("Seed").set(seed);
 		flameShader.safeGetUniform("Alpha").set(placement.alpha());
 		flameShader.safeGetUniform("Color").set(state.color[0], state.color[1], state.color[2]);
+		float[] inner = state.innerColor != null ? state.innerColor : state.color;
+		flameShader.safeGetUniform("InnerColor").set(inner[0], inner[1], inner[2]);
+		flameShader.safeGetUniform("Dark").set(state.innerColor != null ? 1.0f : 0.0f);
 		flameShader.safeGetUniform("DepthParams").set(placement.depthScale(), placement.depthOffset(), depthReadable ? placement.occlusionDepth() : 0.0f);
 		flameShader.safeGetUniform("BloomIntensity").set(BLOOM_INTENSITY);
 

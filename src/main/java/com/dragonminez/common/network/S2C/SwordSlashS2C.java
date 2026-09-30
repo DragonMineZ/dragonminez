@@ -16,10 +16,11 @@ public class SwordSlashS2C {
 	private final float roll;
 	private final float radius;
 	private final int color;
+	private final int coreColor;
 	private final int lifetime;
 
 	public SwordSlashS2C(double x, double y, double z, float dx, float dy, float dz,
-						 float speed, float roll, float radius, int color, int lifetime) {
+						 float speed, float roll, float radius, int color, int coreColor, int lifetime) {
 		this.x = x;
 		this.y = y;
 		this.z = z;
@@ -30,6 +31,7 @@ public class SwordSlashS2C {
 		this.roll = roll;
 		this.radius = radius;
 		this.color = color;
+		this.coreColor = coreColor;
 		this.lifetime = lifetime;
 	}
 
@@ -44,6 +46,7 @@ public class SwordSlashS2C {
 		this.roll = buf.readFloat();
 		this.radius = buf.readFloat();
 		this.color = buf.readInt();
+		this.coreColor = buf.readInt();
 		this.lifetime = buf.readVarInt();
 	}
 
@@ -58,12 +61,13 @@ public class SwordSlashS2C {
 		buf.writeFloat(roll);
 		buf.writeFloat(radius);
 		buf.writeInt(color);
+		buf.writeInt(coreColor);
 		buf.writeVarInt(lifetime);
 	}
 
 	public void handle(Supplier<NetworkEvent.Context> ctx) {
 		ctx.get().enqueueWork(() -> DistExecutor.unsafeRunWhenOn(Dist.CLIENT,
-				() -> () -> SwordSlashEffect.spawn(x, y, z, dx, dy, dz, speed, roll, radius, color, lifetime)));
+				() -> () -> SwordSlashEffect.spawn(x, y, z, dx, dy, dz, speed, roll, radius, color, coreColor, lifetime)));
 		ctx.get().setPacketHandled(true);
 	}
 }

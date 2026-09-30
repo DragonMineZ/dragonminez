@@ -1,33 +1,28 @@
 package com.dragonminez.client.init.entities.renderer.ki;
 
 import com.dragonminez.Reference;
-import com.dragonminez.client.render.effects.AuraRenderer;
+import com.dragonminez.client.render.effects.LightningBoltRenderer;
 import com.dragonminez.client.render.shader.DMZShaders;
 import com.dragonminez.client.render.shader.EffectBloomRenderer;
 import com.dragonminez.client.render.util.AuraMeshFactory;
 import com.dragonminez.client.render.util.KiEmberRenderer;
 import com.dragonminez.client.render.util.KiMeshFactory;
-import com.dragonminez.client.render.util.ModRenderTypes;
 import com.dragonminez.client.render.util.PlayerEffectQueue;
 import com.dragonminez.common.init.entities.ki.KiWaveEntity;
-import com.mojang.blaze3d.systems.RenderSystem;
+import com.dragonminez.server.events.players.combat.KiTechniqueHandler;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexBuffer;
 import com.mojang.math.Axis;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.MultiBufferSource;
-import net.minecraft.client.renderer.RenderType;
 import net.minecraft.client.renderer.ShaderInstance;
 import net.minecraft.client.renderer.entity.EntityRenderer;
 import net.minecraft.client.renderer.entity.EntityRendererProvider;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.Mth;
 import net.minecraft.world.phys.Vec3;
-import org.joml.Matrix3f;
 import org.joml.Matrix4f;
-import org.lwjgl.opengl.GL11;
 
-import java.util.Random;
 
 public class KiWaveRenderer extends EntityRenderer<KiWaveEntity> {
     private static final ResourceLocation TEXTURE_WAVE_CORE = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "textures/entity/ki/kiwave.png");
@@ -41,6 +36,10 @@ public class KiWaveRenderer extends EntityRenderer<KiWaveEntity> {
     private static final float CHARGE_RAYS_INTENSITY = 0.9F;
     private static final float CHARGE_RAYS_BLOOM = 0.35F;
     private static final float CHARGE_RAYS_FIRST_PERSON = 0.3F;
+    private static final float BALL_LIGHTNING_RADIUS = 0.9F;
+    private static final float BALL_LIGHTNING_SPEED = 1.5F;
+    private static final float HEAT_DOME_SPHERE_ALPHA = 0.85F;
+    private static final float HEAT_DOME_SPHERE_ALPHA_FIRST_PERSON = 0.35F;
 
     public KiWaveRenderer(EntityRendererProvider.Context pContext) {
         super(pContext);
@@ -61,7 +60,9 @@ public class KiWaveRenderer extends EntityRenderer<KiWaveEntity> {
             float fadeAlpha = 1.0F;
 
             int maxLife = entity.getMaxLife();
-            int fadeTicks = 20;
+            int fireTick = entity.getFireTick();
+            int firingWindow = fireTick >= 0 ? maxLife - fireTick : maxLife;
+            int fadeTicks = Math.max(1, Math.min(20, firingWindow / 2));
 
             if (entity.tickCount >= maxLife - fadeTicks) {
                 fadeAlpha = (maxLife - exactAge) / (float) fadeTicks;
@@ -70,16 +71,22 @@ public class KiWaveRenderer extends EntityRenderer<KiWaveEntity> {
 
             int renderType = entity.getKiRenderType();
 
+            if (!entity.isFiring() && KiTechniqueHandler.HeatDome.is(entity.getTechniqueId())) {
+                renderHeatDomeSphere(entity, exactAge, stack, proj, auraColor, borderColor, fadeAlpha);
+                stack.popPose();
+                return;
+            }
+
             switch (renderType) {
                 case 1:
                 case 2:
-                    KiRenderWaveBrightness(entity, exactAge, stack, proj, auraColor, borderColor, fadeAlpha, buffer);
+                    KiRenderWaveBrightness(entity, exactAge, stack, proj, auraColor, borderColor, fadeAlpha);
                     break;
                 case 3:
-                    KiRenderWaveDouble(entity, exactAge, stack, proj, auraColor, borderColor, fadeAlpha, buffer, true);
+                    KiRenderWaveDouble(entity, exactAge, stack, proj, auraColor, borderColor, fadeAlpha, true);
                     break;
                 case 5:
-                    KiRenderWaveDouble(entity, exactAge, stack, proj, auraColor, borderColor, fadeAlpha, buffer, false);
+                    KiRenderWaveDouble(entity, exactAge, stack, proj, auraColor, borderColor, fadeAlpha, false);
                     break;
                 default:
                     KiRenderWave(entity, exactAge, stack, proj, auraColor, borderColor, fadeAlpha);
@@ -94,6 +101,43 @@ public class KiWaveRenderer extends EntityRenderer<KiWaveEntity> {
         float ramp = castTime > 0.1F ? castTime : CHARGE_GROW_TICKS;
         float t = Mth.clamp(ageInTicks / ramp, 0.0F, 1.0F);
         return t * t * (3.0F - 2.0F * t);
+    }
+
+    private void renderHeatDomeSphere(KiWaveEntity entity, float ageInTicks, PoseStack poseStack, Matrix4f proj, float[] auraColor, float[] borderColor, float fadeAlpha) {
+        ShaderInstance shader = DMZShaders.ki3dShader;
+        if (shader == null) return;
+
+        float scale = entity.getCastSize() * 1.5F * chargeScale(entity, ageInTicks);
+        if (scale <= 0.01F) return;
+
+        float alpha = HEAT_DOME_SPHERE_ALPHA;
+        Minecraft mc = Minecraft.getInstance();
+        if (mc.options.getCameraType().isFirstPerson() && mc.getCameraEntity() == mc.player && entity.getOwner() == mc.player) alpha = HEAT_DOME_SPHERE_ALPHA_FIRST_PERSON;
+
+        float[] outlineColor = entity.getRgbColorOutline();
+        shader.safeGetUniform("colorCore").set(auraColor[0], auraColor[1], auraColor[2]);
+        shader.safeGetUniform("colorBorder").set(borderColor[0], borderColor[1], borderColor[2]);
+        shader.safeGetUniform("colorOutline").set(outlineColor[0], outlineColor[1], outlineColor[2]);
+        shader.safeGetUniform("time").set(ageInTicks / 20.0f);
+        shader.safeGetUniform("ProjMat").set(proj);
+        shader.safeGetUniform("blotchMode").set(0.0f);
+        shader.safeGetUniform("flameMode").set(0.0f);
+        shader.safeGetUniform("orbMode").set(0.0f);
+        shader.safeGetUniform("zCut").set(-1.0f);
+
+        VertexBuffer mesh = KiMeshFactory.getSphereMesh();
+        mesh.bind();
+
+        poseStack.pushPose();
+        poseStack.scale(scale, scale, scale);
+        shader.safeGetUniform("ModelViewMat").set(poseStack.last().pose());
+        shader.safeGetUniform("alphaMult").set(alpha * fadeAlpha);
+        shader.apply();
+        mesh.drawWithShader(poseStack.last().pose(), proj, shader);
+        poseStack.popPose();
+
+        VertexBuffer.unbind();
+        shader.clear();
     }
 
     private void KiRenderWave(KiWaveEntity entity, float ageInTicks, PoseStack poseStack, Matrix4f proj, float[] auraColor, float[] borderColor, float fadeAlpha) {
@@ -199,7 +243,7 @@ public class KiWaveRenderer extends EntityRenderer<KiWaveEntity> {
         shader.clear();
     }
 
-    private void KiRenderWaveBrightness(KiWaveEntity entity, float ageInTicks, PoseStack poseStack, Matrix4f proj, float[] auraColor, float[] borderColor, float fadeAlpha, MultiBufferSource buffer) {
+    private void KiRenderWaveBrightness(KiWaveEntity entity, float ageInTicks, PoseStack poseStack, Matrix4f proj, float[] auraColor, float[] borderColor, float fadeAlpha) {
         float targetCastSize = entity.getCastSize();
         float finalSize = entity.getSize();
 
@@ -230,6 +274,8 @@ public class KiWaveRenderer extends EntityRenderer<KiWaveEntity> {
 
             if (entity.getKiRenderType() == 1) {
                 renderChargeRays(entity, poseStack, proj, auraColor, borderColor, ageInTicks, startBallScale, fadeAlpha);
+            } else if (entity.getKiRenderType() == 2) {
+                renderGalickLightning(poseStack, proj, entity, 0, borderColor, fadeAlpha, ageInTicks, startBallScale);
             }
 
             poseStack.popPose();
@@ -244,16 +290,17 @@ public class KiWaveRenderer extends EntityRenderer<KiWaveEntity> {
 
         float tubeLength = Math.max(length, 0.1F);
         renderKiCylinderWithShader(entity, poseStack, proj, auraColor, borderColor, ageInTicks, width, tubeLength, fadeAlpha, width * 1.5F, width * 2.5F);
-
-        if (entity.getKiRenderType() == 2) {
-            renderGalickLightning(poseStack, entity, buffer, borderColor, fadeAlpha, ageInTicks, width, isFiring);
-        }
         poseStack.popPose();
+
+        boolean galick = entity.getKiRenderType() == 2;
 
         poseStack.pushPose();
         Vec3 startPosSphere = dir.scale(0.1D);
         poseStack.translate(startPosSphere.x, startPosSphere.y, startPosSphere.z);
         renderMuzzleFlame(entity, poseStack, proj, auraColor, borderColor, ageInTicks, width * 1.5F * MUZZLE_FLAME_SCALE, currentWidth * 1.5F * MUZZLE_FLAME_SCALE, fadeAlpha, back, 1.0F);
+        if (galick) {
+            renderGalickLightning(poseStack, proj, entity, 0, borderColor, fadeAlpha, ageInTicks, currentWidth * 1.5F * MUZZLE_FLAME_SCALE);
+        }
         poseStack.popPose();
 
         poseStack.pushPose();
@@ -266,6 +313,10 @@ public class KiWaveRenderer extends EntityRenderer<KiWaveEntity> {
         renderKiSphereWithShader(entity, poseStack, proj, auraColor, borderColor, ageInTicks, fadeAlpha, false);
         poseStack.popPose();
 
+        if (galick) {
+            renderGalickLightning(poseStack, proj, entity, 1, borderColor, fadeAlpha, ageInTicks, currentWidth * 2.5F);
+        }
+
         // Embers ride the steady radius, not the breathing one, so the cloud does not throb with it.
         float endEmberScale = currentWidth * 2.5F;
         poseStack.scale(endEmberScale, endEmberScale, endEmberScale);
@@ -275,7 +326,7 @@ public class KiWaveRenderer extends EntityRenderer<KiWaveEntity> {
         poseStack.popPose();
     }
 
-    private void KiRenderWaveDouble(KiWaveEntity entity, float ageInTicks, PoseStack poseStack, Matrix4f proj, float[] auraColor, float[] borderColor, float fadeAlpha, MultiBufferSource buffer, boolean withLightning) {
+    private void KiRenderWaveDouble(KiWaveEntity entity, float ageInTicks, PoseStack poseStack, Matrix4f proj, float[] auraColor, float[] borderColor, float fadeAlpha, boolean withLightning) {
         float targetCastSize = entity.getCastSize();
         float finalSize = entity.getSize();
 
@@ -310,6 +361,9 @@ public class KiWaveRenderer extends EntityRenderer<KiWaveEntity> {
             poseStack.scale(startBallScale, startBallScale, startBallScale);
             renderKiSphereWithShader(entity, poseStack, proj, auraColor, borderColor, ageInTicks, fadeAlpha, true);
             poseStack.popPose();
+            if (withLightning) {
+                renderGalickLightning(poseStack, proj, entity, 2, borderColor, fadeAlpha, ageInTicks, startBallScale);
+            }
             poseStack.scale(startBallScale, startBallScale, startBallScale);
             renderEmbers(entity, poseStack, proj, auraColor, borderColor, ageInTicks, fadeAlpha, back, KiEmberRenderer.CHARGE_BACKDRAFT);
             poseStack.popPose();
@@ -322,6 +376,9 @@ public class KiWaveRenderer extends EntityRenderer<KiWaveEntity> {
             poseStack.scale(startBallScale, startBallScale, startBallScale);
             renderKiSphereWithShader(entity, poseStack, proj, auraColor, borderColor, ageInTicks, fadeAlpha, true);
             poseStack.popPose();
+            if (withLightning) {
+                renderGalickLightning(poseStack, proj, entity, 3, borderColor, fadeAlpha, ageInTicks, startBallScale);
+            }
             poseStack.scale(startBallScale, startBallScale, startBallScale);
             renderEmbers(entity, poseStack, proj, auraColor, borderColor, ageInTicks + EMBER_PAIR_OFFSET, fadeAlpha, back, KiEmberRenderer.CHARGE_BACKDRAFT);
             poseStack.popPose();
@@ -336,15 +393,15 @@ public class KiWaveRenderer extends EntityRenderer<KiWaveEntity> {
         poseStack.mulPose(Axis.YP.rotationDegrees(-yaw));
         poseStack.mulPose(Axis.XP.rotationDegrees(pitch));
         renderKiCylinderWithShader(entity, poseStack, proj, auraColor, borderColor, ageInTicks, width, length, fadeAlpha, width * 1.8F, width * 2.5F);
-        if (withLightning) {
-            renderGalickLightning(poseStack, entity, buffer, borderColor, fadeAlpha, ageInTicks, width, isFiring);
-        }
         poseStack.popPose();
 
         poseStack.pushPose();
         Vec3 startPos = dir.scale(0.1D);
         poseStack.translate(startPos.x, startPos.y, startPos.z);
         renderMuzzleFlame(entity, poseStack, proj, auraColor, borderColor, ageInTicks, width * 1.5F * MUZZLE_FLAME_SCALE * DOUBLE_WAVE_BALL_SCALE, currentWidth * 1.5F * MUZZLE_FLAME_SCALE * DOUBLE_WAVE_BALL_SCALE, fadeAlpha, back, 1.0F);
+        if (withLightning) {
+            renderGalickLightning(poseStack, proj, entity, 0, borderColor, fadeAlpha, ageInTicks, currentWidth * 1.5F * MUZZLE_FLAME_SCALE * DOUBLE_WAVE_BALL_SCALE);
+        }
         poseStack.popPose();
 
         poseStack.pushPose();
@@ -357,6 +414,10 @@ public class KiWaveRenderer extends EntityRenderer<KiWaveEntity> {
         renderKiSphereWithShader(entity, poseStack, proj, auraColor, borderColor, ageInTicks, fadeAlpha, false);
         poseStack.popPose();
 
+        if (withLightning) {
+            renderGalickLightning(poseStack, proj, entity, 1, borderColor, fadeAlpha, ageInTicks, currentWidth * 2.5F * DOUBLE_WAVE_BALL_SCALE);
+        }
+
         float endEmberScale = currentWidth * 2.5F * DOUBLE_WAVE_BALL_SCALE;
         poseStack.scale(endEmberScale, endEmberScale, endEmberScale);
         renderEmbers(entity, poseStack, proj, auraColor, borderColor, ageInTicks, fadeAlpha, back, 1.0F);
@@ -365,53 +426,10 @@ public class KiWaveRenderer extends EntityRenderer<KiWaveEntity> {
         poseStack.popPose();
     }
 
-    private void renderGalickLightning(PoseStack poseStack, KiWaveEntity entity, MultiBufferSource buffer, float[] color, float alpha, float ageInTicks, float dynamicWidth, boolean isFiring) {
-        ShaderInstance shader = DMZShaders.lightningShader;
-        VertexBuffer mesh = AuraRenderer.getLightningMesh();
-
-        if (shader == null || mesh == null) return;
-
-        boolean depthTest = GL11.glIsEnabled(GL11.GL_DEPTH_TEST);
-        shader.safeGetUniform("time").set(ageInTicks / 20.0f);
-        shader.safeGetUniform("speedModifier").set(isFiring ? 2.5f : 1.5f);
-        shader.safeGetUniform("color1").set(1.0f, 1.0f, 1.0f);
-        shader.safeGetUniform("color2").set(color[0], color[1], color[2]);
-        shader.safeGetUniform("alp1").set(alpha);
-        shader.safeGetUniform("alp2").set(0.1f * alpha);
-        shader.safeGetUniform("projectionMatrix").set(RenderSystem.getProjectionMatrix());
-
-        RenderType lightningType = ModRenderTypes.getCustomLightning(ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "textures/entity/races/null.png"));
-        lightningType.setupRenderState();
-
-        shader.apply();
-        mesh.bind();
-
-        Random seededRand = new Random((long) (entity.getId() + ((int)ageInTicks * 5)));
-        float baseScale = dynamicWidth * (isFiring ? 2.2f : 1.8f);
-
-        for (int i = 0; i < (isFiring ? 6 : 4); i++) {
-            poseStack.pushPose();
-            poseStack.translate(0.0D, isFiring ? -0.2D : -0.3D, 0.0D);
-
-            poseStack.mulPose(Axis.XP.rotationDegrees(seededRand.nextFloat() * 360));
-            poseStack.mulPose(Axis.YP.rotationDegrees(seededRand.nextFloat() * 360));
-            poseStack.mulPose(Axis.ZP.rotationDegrees(seededRand.nextFloat() * 360));
-
-            float individualScale = baseScale * (0.8f + seededRand.nextFloat() * 0.4f);
-            poseStack.scale(individualScale, individualScale, individualScale);
-
-            shader.safeGetUniform("modelMatrix").set(poseStack.last().pose());
-            shader.safeGetUniform("normalMatrix").set(new Matrix4f(new Matrix3f(poseStack.last().normal())));
-            shader.apply();
-
-            mesh.drawWithShader(poseStack.last().pose(), com.mojang.blaze3d.systems.RenderSystem.getProjectionMatrix(), shader);
-            poseStack.popPose();
-        }
-
-        VertexBuffer.unbind();
-        shader.clear();
-        lightningType.clearRenderState();
-        EffectBloomRenderer.restoreKiState(depthTest);
+    private void renderGalickLightning(PoseStack poseStack, Matrix4f proj, KiWaveEntity entity, int slot, float[] color, float alpha, float ageInTicks, float ballRadius) {
+        if (ballRadius <= 0.05F) return;
+        LightningBoltRenderer.drawSphereKiPass(poseStack.last().pose(), proj, entity.getId() * 4 + slot, ageInTicks,
+                ballRadius * BALL_LIGHTNING_RADIUS, color, BALL_LIGHTNING_SPEED, alpha);
     }
 
     private void renderChargeRays(KiWaveEntity entity, PoseStack poseStack, Matrix4f proj, float[] coreColor, float[] borderColor, float ageInTicks, float ballRadius, float alphaMultiplier) {
@@ -423,7 +441,7 @@ public class KiWaveRenderer extends EntityRenderer<KiWaveEntity> {
         float pulse = 0.85F + 0.15F * (float) Math.sin(ageInTicks * 0.9F);
         float intensity = CHARGE_RAYS_INTENSITY * charge * pulse * alphaMultiplier;
         if (EffectBloomRenderer.bloomPass) intensity *= CHARGE_RAYS_BLOOM;
-        if (mc.options.getCameraType().isFirstPerson() && entity.getOwner() == mc.player) intensity *= CHARGE_RAYS_FIRST_PERSON;
+        if (mc.options.getCameraType().isFirstPerson() && mc.getCameraEntity() == mc.player && entity.getOwner() == mc.player) intensity *= CHARGE_RAYS_FIRST_PERSON;
         if (intensity <= 0.004F) return;
 
         float rayScale = Math.max(ballRadius * CHARGE_RAYS_REACH, CHARGE_RAYS_MIN_REACH);

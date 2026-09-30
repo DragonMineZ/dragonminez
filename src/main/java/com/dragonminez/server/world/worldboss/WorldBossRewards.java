@@ -30,16 +30,44 @@ import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 
 public final class WorldBossRewards {
 	private static final Gson GSON = new GsonBuilder().create();
 	public static final String RESULTS_COMMAND = "/dmzworldboss results";
+	private static final long RESULTS_RETENTION_MILLIS = 30L * 60L * 1000L;
 
 	private record Resolved(GeneralServerConfig.WorldBossRewardEntry entry, QuestReward reward, String json) {}
 
+	private record StoredResults(WorldBossResults results, long storedAt) {}
+
+	private static final Map<UUID, StoredResults> RESULTS_BY_PLAYER = new HashMap<>();
+	private static StoredResults latestResults;
+
 	private WorldBossRewards() {}
+
+	public static void storeResults(WorldBossResults results) {
+		StoredResults stored = new StoredResults(results, System.currentTimeMillis());
+		latestResults = stored;
+		for (WorldBossResults.PlayerEntry entry : results.players()) RESULTS_BY_PLAYER.put(entry.id(), stored);
+	}
+
+	public static WorldBossResults getResults(UUID playerId) {
+		long now = System.currentTimeMillis();
+		RESULTS_BY_PLAYER.entrySet().removeIf(entry -> now - entry.getValue().storedAt() > RESULTS_RETENTION_MILLIS);
+		StoredResults stored = RESULTS_BY_PLAYER.get(playerId);
+		if (stored == null) stored = latestResults;
+		if (stored == null || now - stored.storedAt() > RESULTS_RETENTION_MILLIS) return null;
+		return stored.results();
+	}
+
+	public static void clearResults() {
+		RESULTS_BY_PLAYER.clear();
+		latestResults = null;
+	}
 
 	public static List<QuestReward> previewRewards(String bossKey) {
 		List<QuestReward> rewards = new ArrayList<>();

@@ -23,8 +23,11 @@ public class DMZCloudsRenderer {
 	private boolean generateClouds = true;
 
 	public void render(PoseStack poseStack, Matrix4f projectionMatrix, float partialTick, double camX, double camY, double camZ, Vec3 customColor) {
+		this.render(poseStack, projectionMatrix, partialTick, camX, camY, camZ, customColor, Minecraft.getInstance().level.effects().getCloudHeight());
+	}
+
+	public void render(PoseStack poseStack, Matrix4f projectionMatrix, float partialTick, double camX, double camY, double camZ, Vec3 customColor, float cloudHeight) {
 		Minecraft mc = Minecraft.getInstance();
-		float cloudHeight = mc.level.effects().getCloudHeight();
 
 		if (Float.isNaN(cloudHeight)) {
 			return;

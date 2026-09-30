@@ -4,6 +4,7 @@ import com.dragonminez.common.combat.logic.player.TargetHelper;
 import com.dragonminez.common.init.MainSounds;
 import com.dragonminez.common.init.entities.ki.*;
 import com.dragonminez.common.stats.StatsData;
+import com.dragonminez.server.events.players.combat.KiTechniqueHandler;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.util.Mth;
@@ -69,10 +70,42 @@ public class TechniqueDispatcher {
                     } else if (activeKi instanceof KiAreaEntity area) {
                         area.setKiDamage(realDamage);
                         area.fireHability(maxLife);
+                    } else if (activeKi instanceof KillDriverEntity ring) {
+                        ring.setKiDamage(realDamage);
+                        ring.fireHability(maxLife);
                     }
                 }
                 return true;
             }
+        }
+
+        if (KiTechniqueHandler.KillDriver.is(data.getId())) {
+            if (!isInitialSpawn) return true;
+
+            KillDriverEntity ring = new KillDriverEntity(level, owner);
+            ring.setupPlayer(owner, realDamage, kiSpeed, data.getColorInterior(), data.getColorExterior(),
+                    data.getColorOutline(), KiTechniqueHandler.KillDriver.radiusScale(castSize));
+            ring.setTechniqueId(data.getId());
+            ring.setArmorPenetration(data.getArmorPenetration());
+            ring.setHeal(isHeal);
+            ring.setLockTarget(homingTargetId);
+
+            if (!level.isClientSide) level.addFreshEntity(ring);
+            return true;
+        }
+
+        if (KiTechniqueHandler.TriBeam.is(data.getId())) {
+            KiBlastEntity triBeam = new KiBlastEntity(level, owner);
+            triBeam.setupTriBeamPlayer(owner, realDamage, kiSpeed, data.getColorInterior(), data.getColorExterior(),
+                    data.getColorOutline(), castSize, KiTechniqueHandler.TriBeam.isNeo(data.getId()));
+            triBeam.setKiType(kiTypeOrdinal);
+            triBeam.setTechniqueId(data.getId());
+            triBeam.setArmorPenetration(data.getArmorPenetration());
+            triBeam.setHeal(isHeal);
+            triBeam.setHomingTarget(homingTargetId);
+
+            if (!level.isClientSide) level.addFreshEntity(triBeam);
+            return true;
         }
 
         switch (data.getKiType()) {
@@ -172,6 +205,9 @@ public class TechniqueDispatcher {
                 } else if ("masenko".equals(data.getId())) {
                     wave.setupKiMasenkoPlayer(owner, realDamage, kiSpeed, castSize);
                     wave.setColors(data.getColorInterior(), data.getColorExterior(), data.getColorOutline());
+                } else if (KiTechniqueHandler.HeatDome.is(data.getId())) {
+                    wave.setupHeatDomePlayer(owner, realDamage, kiSpeed, castSize);
+                    wave.setColors(data.getColorInterior(), data.getColorExterior(), data.getColorOutline());
                 } else if ("mouth_blast".equals(data.getId())) {
                     wave.setupMouthBlastPlayer(owner, realDamage, kiSpeed, data.getColorInterior(), data.getColorExterior(), castSize);
                     wave.setColorOutline(data.getColorOutline());
@@ -195,8 +231,14 @@ public class TechniqueDispatcher {
                 break;
             case LASER:
                 KiLaserEntity laser = new KiLaserEntity(level, owner);
-                laser.setupKiLaserPlayer(owner, realDamage, kiSpeed, data.getColorInterior(), data.getColorExterior(), castSize);
-                laser.setColorOutline(data.getColorOutline());
+                if (KiTechniqueHandler.EmperorDeathBeam.is(data.getId())) {
+                    KiAttackData emperor = PredefinedTechniques.REGISTRY.getOrDefault(data.getId(), data);
+                    laser.setupKiLaserPlayer(owner, realDamage, kiSpeed, emperor.getColorInterior(), emperor.getColorExterior(),
+                            emperor.getColorOutline(), castSize * KiTechniqueHandler.EmperorDeathBeam.SIZE_MULTIPLIER);
+                } else {
+                    laser.setupKiLaserPlayer(owner, realDamage, kiSpeed, data.getColorInterior(), data.getColorExterior(), castSize);
+                    laser.setColorOutline(data.getColorOutline());
+                }
                 laser.setKiType(kiTypeOrdinal);
                 laser.setTechniqueId(data.getId());
                 laser.setArmorPenetration(data.getArmorPenetration());

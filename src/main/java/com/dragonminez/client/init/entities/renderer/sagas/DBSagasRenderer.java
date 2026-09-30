@@ -81,7 +81,8 @@ public class DBSagasRenderer<T extends DBSagasEntity> extends GeoEntityRenderer<
             renderSource = maskBufferSource;
         }
 
-        MultiBufferSource borderSource = AuraBorderRenderer.begin(entity, renderSource, SagaSupervillainLayer.borderColor(entity), partialTick);
+        MultiBufferSource borderSource = AuraBorderRenderer.begin(entity, renderSource, SagaSupervillainLayer.borderColor(entity),
+                SagaSupervillainLayer.borderInnerColor(entity), partialTick);
         try {
             super.render(entity, entityYaw, partialTick, poseStack, borderSource, packedLight);
         } finally {

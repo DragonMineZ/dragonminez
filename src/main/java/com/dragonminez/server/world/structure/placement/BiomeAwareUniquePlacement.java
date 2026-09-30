@@ -29,19 +29,27 @@ public class BiomeAwareUniquePlacement extends StructurePlacement {
 							.fieldOf("valid_biomes")
 							.forGetter(BiomeAwareUniquePlacement::getValidBiomes),
 					Rotation.CODEC.optionalFieldOf("rotation", Rotation.NONE)
-							.forGetter(BiomeAwareUniquePlacement::getRotation)
+							.forGetter(BiomeAwareUniquePlacement::getRotation),
+					Codec.intRange(0, 30_000_000).optionalFieldOf("min_distance_from_spawn", 0)
+							.forGetter(BiomeAwareUniquePlacement::getMinDistanceFromSpawn)
 			)).apply(instance, BiomeAwareUniquePlacement::new));
 
 	private final HolderSet<Biome> validBiomes;
 	private final Rotation rotation;
+	private final int minDistanceFromSpawn;
 
 	private static Field biomeSourceField = null;
 
-	public BiomeAwareUniquePlacement(Vec3i locateOffset, FrequencyReductionMethod frequencyReductionMethod, float frequency, int salt, Optional<ExclusionZone> exclusionZone, HolderSet<Biome> validBiomes, Rotation rotation) {
+	public BiomeAwareUniquePlacement(Vec3i locateOffset, FrequencyReductionMethod frequencyReductionMethod, float frequency, int salt, Optional<ExclusionZone> exclusionZone, HolderSet<Biome> validBiomes, Rotation rotation, int minDistanceFromSpawn) {
 		super(locateOffset, frequencyReductionMethod, frequency, salt, exclusionZone);
 		this.validBiomes = validBiomes;
 		this.rotation = rotation;
+		this.minDistanceFromSpawn = minDistanceFromSpawn;
 		StructureSpawnPlanner.register(this);
+	}
+
+	public BiomeAwareUniquePlacement(Vec3i locateOffset, FrequencyReductionMethod frequencyReductionMethod, float frequency, int salt, Optional<ExclusionZone> exclusionZone, HolderSet<Biome> validBiomes, Rotation rotation) {
+		this(locateOffset, frequencyReductionMethod, frequency, salt, exclusionZone, validBiomes, rotation, 0);
 	}
 
 	public int placementSalt() {
@@ -49,7 +57,7 @@ public class BiomeAwareUniquePlacement extends StructurePlacement {
 	}
 
 	public BiomeAwareUniquePlacement(Vec3i locateOffset, FrequencyReductionMethod frequencyReductionMethod, float frequency, int salt, Optional<ExclusionZone> exclusionZone, HolderSet<Biome> validBiomes) {
-		this(locateOffset, frequencyReductionMethod, frequency, salt, exclusionZone, validBiomes, Rotation.NONE);
+		this(locateOffset, frequencyReductionMethod, frequency, salt, exclusionZone, validBiomes, Rotation.NONE, 0);
 	}
 
 	private BiomeSource getBiomeSourceReflection(ChunkGeneratorStructureState state) {

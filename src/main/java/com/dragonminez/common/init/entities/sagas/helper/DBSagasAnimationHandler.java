@@ -2,6 +2,7 @@ package com.dragonminez.common.init.entities.sagas.helper;
 
 import com.dragonminez.common.init.entities.sagas.DBSagasEntity;
 import com.dragonminez.common.init.entities.sagas.DBSagasEntity.LocomotionMode;
+import com.dragonminez.common.init.entities.worldboss.AllWorldBossesEntity;
 import net.minecraft.world.entity.ai.attributes.Attributes;
 import software.bernie.geckolib.core.animatable.GeoAnimatable;
 import software.bernie.geckolib.core.animation.AnimationController;
@@ -16,7 +17,7 @@ public class DBSagasAnimationHandler {
 
         if (entity.isInSleepPose()) {
             event.getController().setAnimationSpeed(1.0D);
-            return event.setAndContinue(DBSagasAnimations.ANIM_BOSS_SLEEP);
+            return event.setAndContinue(entity.getSleepAnimation());
         }
 
         if (entity.getBossAbility() >= 0) {
@@ -252,6 +253,13 @@ public class DBSagasAnimationHandler {
         if (ability == 2) return event.setAndContinue(DBSagasAnimations.ANIM_BOSS_SPECIAL2);
         if (ability == 3) return event.setAndContinue(DBSagasAnimations.ANIM_BOSS_SPECIAL3);
         if (ability == 5) return event.setAndContinue(DBSagasAnimations.ANIM_BOSS_CUTS);
+        if (ability == 6) return event.setAndContinue(DBSagasAnimations.ANIM_BOSS2_SPECIAL1);
+        if (ability == 7) {
+            boolean thrown = entity.getBossAbilityTicks() >= AllWorldBossesEntity.Turles.KILL_DRIVER_THROW_TICK;
+            return event.setAndContinue(thrown ? DBSagasAnimations.ANIM_KILL_DRIVER_FIRE : DBSagasAnimations.ANIM_KILL_DRIVER_CAST);
+        }
+        if (ability == 8) return event.setAndContinue(DBSagasAnimations.ANIM_METEOR_BURST);
+        if (ability == 9) return event.setAndContinue(DBSagasAnimations.ANIM_BOSS_GRAB);
 
         event.getController().forceAnimationReset();
         return PlayState.STOP;

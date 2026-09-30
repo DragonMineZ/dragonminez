@@ -143,6 +143,12 @@ public class DMZBiomeTagGenerator extends BiomeTagsProvider {
 				.add(Biomes.SUNFLOWER_PLAINS)
 				.addTag(BiomeTags.HAS_VILLAGE_PLAINS);
 
+		this.tag(MainTags.Biomes.IS_SWAMPLIKE)
+				.replace(false)
+				.add(Biomes.SWAMP)
+				.add(Biomes.MANGROVE_SWAMP)
+				.addOptionalTag(forge("is_swamp"));
+
 		this.tag(MainTags.Biomes.IS_DESERTLIKE)
 				.replace(false)
 				.addTag(BiomeTags.HAS_VILLAGE_DESERT)

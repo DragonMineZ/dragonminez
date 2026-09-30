@@ -1,6 +1,6 @@
 package com.dragonminez.common.network.S2C;
 
-import com.dragonminez.client.systems.worldboss.ClientWorldBossContribution;
+import com.dragonminez.client.systems.worldboss.ClientWorldBossState;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.fml.DistExecutor;
@@ -69,7 +69,7 @@ public class WorldBossContributionS2C {
 
 	public void handle(Supplier<NetworkEvent.Context> ctx) {
 		ctx.get().enqueueWork(() -> DistExecutor.unsafeRunWhenOn(Dist.CLIENT,
-				() -> () -> ClientWorldBossContribution.accept(bossKey, bossNameKey, elapsedTicks, finished, cleared, entries)));
+				() -> () -> ClientWorldBossState.Contribution.accept(bossKey, bossNameKey, elapsedTicks, finished, cleared, entries)));
 		ctx.get().setPacketHandled(true);
 	}
 }

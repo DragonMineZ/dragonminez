@@ -309,6 +309,16 @@ public class DMZRecipeProvider extends RecipeProvider implements IConditionBuild
 				.unlockedBy(getHasName(MainBlocks.ROCKY_COBBLESTONE.get()), has(MainBlocks.ROCKY_COBBLESTONE.get()))
 				.group(Reference.MOD_ID).save(pWriter);
 
+		buildingSet(pWriter, MainBlocks.MAKAI_STONE.get(), MainBlocks.MAKAI_STONE_SLAB.get(), MainBlocks.MAKAI_STONE_STAIRS.get(), MainBlocks.MAKAI_STONE_WALL.get());
+		buildingSet(pWriter, MainBlocks.DEMON_BRICKS.get(), MainBlocks.DEMON_BRICK_SLAB.get(), MainBlocks.DEMON_BRICK_STAIRS.get(), MainBlocks.DEMON_BRICK_WALL.get());
+
+		ShapedRecipeBuilder.shaped(RecipeCategory.BUILDING_BLOCKS, MainBlocks.DEMON_BRICKS.get(), 4)
+				.pattern("##")
+				.pattern("##")
+				.define('#', MainBlocks.DEMON_ROCK.get())
+				.unlockedBy(getHasName(MainBlocks.DEMON_ROCK.get()), has(MainBlocks.DEMON_ROCK.get()))
+				.group(Reference.MOD_ID).save(pWriter);
+
 		ShapedRecipeBuilder.shaped(RecipeCategory.REDSTONE, MainItems.RADAR_PIECE.get(), 1)
 				.pattern("SIS")
 				.pattern("IRI")
@@ -626,5 +636,26 @@ public class DMZRecipeProvider extends RecipeProvider implements IConditionBuild
 				.requires(MainItems.NAMEK_MOSS.get(), 4).requires(ingredient, 2)
 				.unlockedBy(getHasName(MainItems.NAMEK_MOSS.get()), has(MainItems.NAMEK_MOSS.get())).group(Reference.MOD_ID)
 				.save(w, ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, id));
+	}
+
+	private void buildingSet(Consumer<FinishedRecipe> w, ItemLike base, ItemLike slab, ItemLike stairs, ItemLike wall) {
+		ShapedRecipeBuilder.shaped(RecipeCategory.BUILDING_BLOCKS, slab, 6)
+				.pattern("###")
+				.define('#', base)
+				.unlockedBy(getHasName(base), has(base))
+				.group(Reference.MOD_ID).save(w);
+		ShapedRecipeBuilder.shaped(RecipeCategory.BUILDING_BLOCKS, stairs, 4)
+				.pattern("#  ")
+				.pattern("## ")
+				.pattern("###")
+				.define('#', base)
+				.unlockedBy(getHasName(base), has(base))
+				.group(Reference.MOD_ID).save(w);
+		ShapedRecipeBuilder.shaped(RecipeCategory.BUILDING_BLOCKS, wall, 6)
+				.pattern("###")
+				.pattern("###")
+				.define('#', base)
+				.unlockedBy(getHasName(base), has(base))
+				.group(Reference.MOD_ID).save(w);
 	}
 }

@@ -149,7 +149,7 @@ public class PlayerEffectsRenderHandler {
 
 		var kiAttacks = PlayerEffectQueue.getAndClearKiAttacks();
 		if (!kiAttacks.isEmpty()) {
-			float kiAlpha = isFirstPerson ? 0.35f : 0.85f;
+			float kiAlpha = isFirstPerson && mc.getCameraEntity() == mc.player ? 0.35f : 0.85f;
 			if (DMZShaders.ki3dShader != null) DMZShaders.ki3dShader.safeGetUniform("globalAlpha").set(kiAlpha);
 
 			RenderSystem.depthMask(false);

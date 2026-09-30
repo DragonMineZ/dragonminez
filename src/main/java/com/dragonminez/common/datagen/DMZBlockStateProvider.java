@@ -5,9 +5,11 @@ import com.dragonminez.common.dragonball.DragonBallDefinitions;
 import com.dragonminez.common.dragonball.DragonBallSetAssetDefinition;
 import com.dragonminez.common.dragonball.DragonBallSetDefinition;
 import com.dragonminez.common.init.MainBlocks;
+import net.minecraft.core.Direction;
 import net.minecraft.data.PackOutput;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.level.block.*;
+import net.minecraftforge.client.model.generators.BlockModelBuilder;
 import net.minecraftforge.client.model.generators.BlockStateProvider;
 import net.minecraftforge.client.model.generators.ConfiguredModel;
 import net.minecraftforge.client.model.generators.ModelFile;
@@ -40,6 +42,10 @@ public class DMZBlockStateProvider extends BlockStateProvider {
 		blockWithItem(MainBlocks.HELL_GROUND);
 		blockWithItem(MainBlocks.HELL_STONE);
 		blockWithItem(MainBlocks.HELL_DEEPSTONE);
+		blockWithItem(MainBlocks.MIGHT_TREE_WOOD);
+		blockWithItem(MainBlocks.MIGHT_TREE_LEAVES);
+		rootBlock(MainBlocks.MIGHT_TREE_ROOT);
+		fruitBlock(MainBlocks.MIGHT_TREE_FRUIT_BLOCK);
 
 		//Madera de Namek
 		blockWithItem(MainBlocks.NAMEK_AJISSA_PLANKS);
@@ -127,6 +133,37 @@ public class DMZBlockStateProvider extends BlockStateProvider {
 		slabBlock(((SlabBlock) MainBlocks.ROCKY_COBBLESTONE_SLAB.get()), blockTexture(MainBlocks.ROCKY_COBBLESTONE.get()), blockTexture(MainBlocks.ROCKY_COBBLESTONE.get()));
 		wallBlock(((WallBlock) MainBlocks.ROCKY_COBBLESTONE_WALL.get()), blockTexture(MainBlocks.ROCKY_COBBLESTONE.get()));
 
+		//Reino Demoníaco
+		blockWithItem(MainBlocks.MAKAI_STONE);
+		stairsBlock(((StairBlock) MainBlocks.MAKAI_STONE_STAIRS.get()), blockTexture(MainBlocks.MAKAI_STONE.get()));
+		slabBlock(((SlabBlock) MainBlocks.MAKAI_STONE_SLAB.get()), blockTexture(MainBlocks.MAKAI_STONE.get()), blockTexture(MainBlocks.MAKAI_STONE.get()));
+		wallBlock(((WallBlock) MainBlocks.MAKAI_STONE_WALL.get()), blockTexture(MainBlocks.MAKAI_STONE.get()));
+		simpleBlockWithItem(MainBlocks.MAKAI_STRATA_STONE.get(), models().cubeColumn("makai_strata_stone",
+				blockTexture(MainBlocks.MAKAI_STRATA_STONE.get()), blockTexture(MainBlocks.MAKAI_STONE.get())));
+		grassBlock(MainBlocks.MAKAI_GRASS_BLOCK);
+		blockWithItem(MainBlocks.MAKAI_DIRT);
+		blockWithItem(MainBlocks.LILAC_SAND);
+		blockWithItem(MainBlocks.MAKAI_SAND);
+		simpleBlock(MainBlocks.MAKAI_SHRUB.get(), models().cross("makai_shrub", blockTexture(MainBlocks.MAKAI_SHRUB.get())).renderType("cutout"));
+		leavesBlock(MainBlocks.MAKAI_BUSH);
+		blockWithItem(MainBlocks.DEMON_HORN);
+		simpleBlockWithItem(MainBlocks.GAS_VENT.get(), models().cubeBottomTop("gas_vent",
+				modLoc("block/gas_vent_side"), blockTexture(MainBlocks.MAKAI_STONE.get()), modLoc("block/gas_vent_top")));
+		blockWithItem(MainBlocks.DARK_SEA_CLOUD);
+		blockWithItem(MainBlocks.TURQUOISE_ROCK);
+		blockWithItem(MainBlocks.MAJILITE_ORE);
+		blockWithItem(MainBlocks.DEMON_ROCK);
+		blockWithItem(MainBlocks.DEMON_BRICKS);
+		stairsBlock(((StairBlock) MainBlocks.DEMON_BRICK_STAIRS.get()), blockTexture(MainBlocks.DEMON_BRICKS.get()));
+		slabBlock(((SlabBlock) MainBlocks.DEMON_BRICK_SLAB.get()), blockTexture(MainBlocks.DEMON_BRICKS.get()), blockTexture(MainBlocks.DEMON_BRICKS.get()));
+		wallBlock(((WallBlock) MainBlocks.DEMON_BRICK_WALL.get()), blockTexture(MainBlocks.DEMON_BRICKS.get()));
+		blockWithItem(MainBlocks.DEMON_MAGMA_ROCK);
+		blockWithItem(MainBlocks.RED_ASH);
+		blockWithItem(MainBlocks.CRIMSON_CRYSTAL);
+		blockWithItem(MainBlocks.DEMON_REALM_CRUST);
+		simpleBlockWithItem(MainBlocks.LIGHT_SHIELD.get(), models().cubeAll("light_shield",
+				blockTexture(MainBlocks.LIGHT_SHIELD.get())).renderType("translucent"));
+
 		for (DragonBallSetDefinition setDefinition : DragonBallDefinitions.getBallSets()) {
 			DragonBallSetAssetDefinition assets = setDefinition.resolveAssetDefinition();
 			for (var entry : MainBlocks.getDragonBallBlocks(setDefinition.getId()).entrySet()) {
@@ -164,6 +201,48 @@ public class DMZBlockStateProvider extends BlockStateProvider {
 		simpleBlockWithItem(blockRegistryObject.get(), models().singleTexture(ForgeRegistries.BLOCKS.getKey(blockRegistryObject.get()).getPath(),
 				ResourceLocation.parse("minecraft:block/leaves"), "all", blockTexture(blockRegistryObject.get())).renderType("cutout"));
 	}
+	private void rootBlock(RegistryObject<Block> blockRegistryObject) {
+		String path = ForgeRegistries.BLOCKS.getKey(blockRegistryObject.get()).getPath();
+		ResourceLocation side = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "block/" + path);
+		ResourceLocation end = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "block/" + path + "_top");
+		ModelFile model = models().withExistingParent(path, ResourceLocation.parse("minecraft:block/block"))
+				.texture("particle", side)
+				.texture("side", side)
+				.texture("end", end)
+				.element().from(4, 0, 4).to(12, 16, 12)
+				.face(Direction.NORTH).uvs(4, 0, 12, 16).texture("#side").end()
+				.face(Direction.SOUTH).uvs(4, 0, 12, 16).texture("#side").end()
+				.face(Direction.EAST).uvs(4, 0, 12, 16).texture("#side").end()
+				.face(Direction.WEST).uvs(4, 0, 12, 16).texture("#side").end()
+				.face(Direction.UP).uvs(4, 4, 12, 12).texture("#end").cullface(Direction.UP).end()
+				.face(Direction.DOWN).uvs(4, 4, 12, 12).texture("#end").cullface(Direction.DOWN).end()
+				.end();
+		simpleBlockWithItem(blockRegistryObject.get(), model);
+	}
+
+	private void fruitBlock(RegistryObject<Block> blockRegistryObject) {
+		String path = ForgeRegistries.BLOCKS.getKey(blockRegistryObject.get()).getPath();
+		ResourceLocation skin = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "block/" + path);
+		ResourceLocation top = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "block/" + path + "_top");
+		ResourceLocation stem = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "block/might_tree_root");
+		BlockModelBuilder model = models().withExistingParent(path, ResourceLocation.parse("minecraft:block/block"))
+				.texture("particle", skin)
+				.texture("skin", skin)
+				.texture("top", top)
+				.texture("stem", stem);
+		int[][] boxes = {{2, 3, 3, 14, 13, 13}, {3, 3, 2, 13, 13, 14}, {3, 2, 3, 13, 14, 13}};
+		for (int[] box : boxes) {
+			model.element().from(box[0], box[1], box[2]).to(box[3], box[4], box[5])
+					.allFaces((direction, face) -> face.texture(direction.getAxis() == Direction.Axis.Y ? "#top" : "#skin")
+							.emissivity(12, 12))
+					.end();
+		}
+		model.element().from(7, 14, 7).to(9, 16, 9)
+				.allFaces((direction, face) -> face.texture("#stem"))
+				.end();
+		simpleBlock(blockRegistryObject.get(), model);
+	}
+
 	private void saplingBlock(RegistryObject<Block> blockRegistryObject) {
 		simpleBlock(blockRegistryObject.get(),
 				models().cross(ForgeRegistries.BLOCKS.getKey(blockRegistryObject.get()).getPath(), blockTexture(blockRegistryObject.get())).renderType("cutout"));

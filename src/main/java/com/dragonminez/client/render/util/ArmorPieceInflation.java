@@ -46,6 +46,26 @@ public final class ArmorPieceInflation {
 
 	@Nullable
 	public static Vector3f cubeCentreFromPivot(GeoBone bone) {
+		float[] b = cubeBounds(bone);
+		if (b == null) return null;
+		return new Vector3f(
+				(b[0] + b[3]) * 8f - bone.getPivotX(),
+				(b[1] + b[4]) * 8f - bone.getPivotY(),
+				(b[2] + b[5]) * 8f - bone.getPivotZ());
+	}
+
+	@Nullable
+	public static Vector3f cubeTopCentreFromPivot(GeoBone bone) {
+		float[] b = cubeBounds(bone);
+		if (b == null) return null;
+		return new Vector3f(
+				(b[0] + b[3]) * 8f - bone.getPivotX(),
+				b[4] * 16f - bone.getPivotY(),
+				(b[2] + b[5]) * 8f - bone.getPivotZ());
+	}
+
+	@Nullable
+	private static float[] cubeBounds(GeoBone bone) {
 		float minX = Float.MAX_VALUE, minY = Float.MAX_VALUE, minZ = Float.MAX_VALUE;
 		float maxX = -Float.MAX_VALUE, maxY = -Float.MAX_VALUE, maxZ = -Float.MAX_VALUE;
 		boolean any = false;
@@ -62,9 +82,6 @@ public final class ArmorPieceInflation {
 			}
 		}
 		if (!any) return null;
-		return new Vector3f(
-				(minX + maxX) * 8f - bone.getPivotX(),
-				(minY + maxY) * 8f - bone.getPivotY(),
-				(minZ + maxZ) * 8f - bone.getPivotZ());
+		return new float[]{minX, minY, minZ, maxX, maxY, maxZ};
 	}
 }

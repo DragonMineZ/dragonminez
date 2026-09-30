@@ -18,6 +18,8 @@
     { "name": "Seed", "type": "float", "count": 1, "values": [ 0.0 ] },
     { "name": "Alpha", "type": "float", "count": 1, "values": [ 1.0 ] },
     { "name": "Color", "type": "float", "count": 3, "values": [ 1.0, 1.0, 1.0 ] },
+    { "name": "InnerColor", "type": "float", "count": 3, "values": [ 1.0, 1.0, 1.0 ] },
+    { "name": "Dark", "type": "float", "count": 1, "values": [ 0.0 ] },
     { "name": "DepthParams", "type": "float", "count": 3, "values": [ -1.0, -0.1, 0.0 ] },
     { "name": "BloomIntensity", "type": "float", "count": 1, "values": [ 1.0 ] },
     { "name": "BloomPass", "type": "float", "count": 1, "values": [ 0.0 ] }

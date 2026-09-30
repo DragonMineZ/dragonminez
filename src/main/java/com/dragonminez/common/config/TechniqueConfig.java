@@ -66,6 +66,7 @@ public class TechniqueConfig {
 			case "blue_hurricane" -> 260;
 			case "wolf_fang", "gum_punch" -> 140;
 			case "oozaru_slam" -> 120;
+			case "meteor_burst" -> 600;
 			default -> 160;
 		};
 	}

@@ -67,6 +67,7 @@ import software.bernie.geckolib.core.animatable.instance.AnimatableInstanceCache
 import software.bernie.geckolib.core.animatable.instance.SingletonAnimatableInstanceCache;
 import software.bernie.geckolib.core.animation.AnimatableManager;
 import software.bernie.geckolib.core.animation.AnimationController;
+import software.bernie.geckolib.core.animation.RawAnimation;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -333,6 +334,7 @@ public abstract class DBSagasEntity extends Monster implements GeoEntity, ITextu
     public static final String HURT_ANIM_TOP = "hurt_top";
     public static final String HURT_ANIM_TOP2 = "hurt_top2";
     public static final String HURT_ANIM_DOWN = "hurt_down";
+    public static final String HURT_ANIM_GRABBED = "grabbed";
 
     @Getter @Setter
     private boolean isAttacking = false;
@@ -1486,6 +1488,7 @@ public abstract class DBSagasEntity extends Monster implements GeoEntity, ITextu
                 .triggerableAnim(HURT_ANIM_TOP, DBSagasAnimations.ANIM_HURT_TOP)
                 .triggerableAnim(HURT_ANIM_TOP2, DBSagasAnimations.ANIM_HURT_TOP2)
                 .triggerableAnim(HURT_ANIM_DOWN, DBSagasAnimations.ANIM_HURT_DOWN)
+                .triggerableAnim(HURT_ANIM_GRABBED, DBSagasAnimations.ANIM_HURT_GRABBED)
                 .receiveTriggeredAnimations());
         controllers.add(new AnimationController<>(this, "tail_controller", 5, DBSagasAnimationHandler::tailPredicate));
         controllers.add(new AnimationController<>(this, "cape_controller", 5, DBSagasAnimationHandler::capePredicate));
@@ -1831,6 +1834,14 @@ public abstract class DBSagasEntity extends Monster implements GeoEntity, ITextu
 
     public int getBossAbilityTicks() {
         return 0;
+    }
+
+    public RawAnimation getSleepAnimation() {
+        return DBSagasAnimations.ANIM_BOSS_SLEEP;
+    }
+
+    public boolean usesFullVolleyPalette() {
+        return false;
     }
 
     public String getQuestTeam() {
@@ -2291,7 +2302,13 @@ public abstract class DBSagasEntity extends Monster implements GeoEntity, ITextu
 
     public OutlineStyle getOutlineStyle() {return null;}
 
+    public boolean showsSupervillainAura() {return this.isSupervillain();}
+
+    public SupervillainPalette getSupervillainPalette() {return null;}
+
     public int getNamekDragonBallStars() {return 0;}
 
     public record OutlineStyle(int primaryColor, int secondaryColor, float thickness) {}
+
+    public record SupervillainPalette(int tint, float tintAlpha, int flameInner, int flameOuter) {}
 }

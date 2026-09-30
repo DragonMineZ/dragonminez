@@ -7,6 +7,7 @@ import net.minecraft.world.item.ArmorItem;
 import net.minecraft.world.item.BlockItem;
 import net.minecraft.world.item.CreativeModeTab;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.Items;
 import net.minecraft.world.level.block.LiquidBlock;
 import net.minecraftforge.eventbus.api.IEventBus;
 import net.minecraftforge.registries.DeferredRegister;
@@ -25,6 +26,7 @@ public final class MainTabs {
 					.title(Component.translatable("itemGroup.dragonminez.blocks"))
 					.displayItems((parameters, output) -> MainBlocks.BLOCK_REGISTER.getEntries().forEach((block) -> {
 						if (block.getId().getPath().endsWith("_crop")) return; // cultivos sin item propio
+						if (block.get().asItem() == Items.AIR) return;
 						if (!block.getId().getPath().startsWith("namek_")) {
 							if (!block.getId().getPath().startsWith("sacred_")) {
 								if (!block.getId().getPath().endsWith("_flower")) {

@@ -136,7 +136,7 @@ public class MainEntities {
                 SHADOW_DUMMY, MINI_BUU, SAGA_OGRE_RED, SAGA_OGRE_BLUE, MINI_JANEMBA_STAMPEDE,
 
                 // WORLD BOSSES
-                WORLDBOSS_JANEMBA_FAT, WORLDBOSS_SUPER_JANEMBA, WORLDBOSS_MINI_JANEMBA
+                WORLDBOSS_JANEMBA_FAT, WORLDBOSS_SUPER_JANEMBA, WORLDBOSS_MINI_JANEMBA, WORLDBOSS_TURLES
         );
     }
 
@@ -1399,6 +1399,13 @@ public class MainEntities {
                             .clientTrackingRange(10)
                             .fireImmune()
                             .build(ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "worldboss_mini_janemba").toString()));
+    public static final RegistryObject<EntityType<AllWorldBossesEntity.Turles>> WORLDBOSS_TURLES =
+            ENTITY_TYPES.register("worldboss_turles",
+                    () -> EntityType.Builder.of(AllWorldBossesEntity.Turles::new, MobCategory.MONSTER)
+                            .sized(0.6f, 2.0f)
+                            .clientTrackingRange(16)
+                            .fireImmune()
+                            .build(ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "worldboss_turles").toString()));
 
     // Hirudegarn
     public static final RegistryObject<EntityType<SagaMoviesEntity.HirudegarnEntity>> SAGA_HIRUDEGARN =
@@ -1925,6 +1932,15 @@ public class MainEntities {
                     .updateInterval(1)
                     .fireImmune()
                     .build("ki_disc")
+    );
+    public static final RegistryObject<EntityType<KillDriverEntity>> KILL_DRIVER = ENTITY_TYPES.register("kill_driver",
+            () -> EntityType.Builder.<KillDriverEntity>of(KillDriverEntity::new, MobCategory.MISC)
+                    .sized(0.5F, 0.5F)
+                    .clientTrackingRange(64)
+                    .updateInterval(1)
+                    .fireImmune()
+                    .noSave()
+                    .build(ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "kill_driver").toString())
     );
     public static final RegistryObject<EntityType<KiBarrierEntity>> KI_BARRIER = ENTITY_TYPES.register("ki_barrier",
             () -> EntityType.Builder.<KiBarrierEntity>of(KiBarrierEntity::new, MobCategory.MISC)

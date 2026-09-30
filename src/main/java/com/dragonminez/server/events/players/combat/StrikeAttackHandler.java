@@ -20,6 +20,7 @@ import com.dragonminez.common.init.entities.ki.OzaruFistEntity;
 import com.dragonminez.common.init.entities.ki.SPBlueHurricaneEntity;
 import com.dragonminez.common.init.entities.ki.SPDragonFistEntity;
 import com.dragonminez.common.init.entities.sagas.DBSagasEntity;
+import com.dragonminez.common.init.item.weapons.BraveSwordItem;
 import com.dragonminez.common.combat.logic.player.TargetHelper;
 import com.dragonminez.common.network.NetworkHandler;
 import com.dragonminez.common.network.S2C.ClawSlashVfxS2C;
@@ -40,6 +41,7 @@ import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundEvent;
+import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraftforge.entity.PartEntity;
 import net.minecraft.world.entity.ai.attributes.Attributes;
@@ -84,7 +86,48 @@ public class StrikeAttackHandler {
 	private static final String HURT_TOP2_ANIM = "base.hurt_top2";
 	private static final String HURT_DOWN_ANIM = "base.hurt_down";
 	private static final String SPIRIT_CANNON_ID = "spirit_breaking_cannon";
-	private static final java.util.Set<String> POSE_DRIVEN_STRIKES = java.util.Set.of(SPIRIT_CANNON_ID);
+	private static final String GRAB_ID = "grab";
+	private static final String METEOR_BURST_ID = MeteorBurstCombo.TECHNIQUE_ID;
+	private static final double METEOR_BURST_KI_RATIO = 1.5;
+	private static final java.util.Set<String> POSE_DRIVEN_STRIKES = java.util.Set.of(SPIRIT_CANNON_ID, GRAB_ID, "combo_meteor", METEOR_BURST_ID);
+	private static final String SHINING_SWORD_ID = "shining_sword_attack";
+	private static final String COMBO_METEOR_ID = "combo_meteor";
+	private static final java.util.Set<String> NO_ENGAGE_DAMAGE_STRIKES = java.util.Set.of(GRAB_ID, SHINING_SWORD_ID, COMBO_METEOR_ID, METEOR_BURST_ID);
+	private static final int[] COMBO_METEOR_HIT_TICKS = {5, 8, 13, 18, 22, 26, 30, 38, 43, 47, 51, 55, 58, 65, 69, 72};
+	private static final int COMBO_METEOR_SMASH_TICK = 79;
+	private static final int COMBO_METEOR_FINAL_POSE_TICK = 80;
+	private static final int COMBO_METEOR_END_TICK = 90;
+	private static final int COMBO_METEOR_LIFT_START_TICK = 60;
+	private static final int COMBO_METEOR_LIFT_END_TICK = 72;
+	private static final double COMBO_METEOR_LIFT_HEIGHT = 1.6;
+	private static final double COMBO_METEOR_GAP = 0.6;
+	private static final double COMBO_METEOR_SMASH_SPEED = 2.2;
+	private static final double COMBO_METEOR_SMASH_FORWARD = 0.4;
+	private static final int[] SHINING_SWORD_CUT_TICKS = {6, 13, 22, 28, 35};
+	private static final int SHINING_SWORD_BLAST_TICK = 50;
+	private static final int SHINING_SWORD_SLASH_COLOR = 0x5CCBFF;
+	private static final int SHINING_SWORD_SLASH_CORE_COLOR = 0xE8FBFF;
+	private static final float SHINING_SWORD_SLASH_SCALE = 1.8F;
+	private static final double SHINING_SWORD_SLASH_SPEED = 1.2;
+	private static final double SHINING_SWORD_SLASH_RANGE = 8.0;
+	private static final double SHINING_SWORD_SLASH_HIT_RADIUS = 2.0;
+	private static final int SHINING_SWORD_BLAST_COLOR = 0xFFF6C8;
+	private static final int SHINING_SWORD_BLAST_BORDER = 0xFFB230;
+	private static final int SHINING_SWORD_BLAST_OUTLINE = 0xFF6A00;
+	private static final float SHINING_SWORD_BLAST_SIZE = 2.2F;
+	private static final float SHINING_SWORD_BLAST_SPEED = 0.6F;
+	private static final int SHINING_SWORD_BLAST_LIFE = 12;
+	private static final double SHINING_SWORD_BLAST_KNOCKBACK = 2.0;
+	public static final String GRABBED_ANIM = "skp.grabbed";
+	public static final int GRAB_HOLD_TICK = 5;
+	private static final int GRAB_LIFT_TICKS = 7;
+	public static final int GRAB_RELEASE_TICK = 29;
+	private static final double GRAB_HOLD_GAP = 0.35;
+	private static final double GRAB_LIFT_HEIGHT = 0.6;
+	public static final double GRAB_THROW_FORCE = 1.4;
+	public static final double GRAB_THROW_LIFT = 0.5;
+	private static final float GRAB_SPIN_SIGN = -1.0F;
+	private static final float[][] GRAB_SPIN_KEYS = {{0.4167F, 0.0F}, {0.625F, -75.0F}, {1.3333F, -690.0F}, {1.5F, -745.0F}, {1.625F, -720.0F}};
 	private static final int SPIRIT_CANNON_KNEE_TICK = 6;
 	private static final int SPIRIT_CANNON_UPPERCUT_TICK = 13;
 	private static final int SPIRIT_CANNON_LAUNCH_TICK = 24;
@@ -114,9 +157,10 @@ public class StrikeAttackHandler {
 	private static final int[] DIM_SLASH_TICKS = {8, 20, 32};
 	private static final double DIM_SLASH_RANGE = 40.0;
 	private static final double DIM_SLASH_SPEED = 1.2;
-	private static final double DIM_SLASH_HIT_RADIUS = 2.2;
-	private static final float DIM_SLASH_SCALE = 2.8F;
-	private static final int DIM_SLASH_COLOR = 0xFF1E2D;
+	private static final double DIM_SLASH_HIT_RADIUS = 6.6;
+	private static final float DIM_SLASH_SCALE = 8.4F;
+	private static final int DIM_SLASH_COLOR = 0x7A0000;
+	private static final int DIM_SLASH_CORE_COLOR = 0xFF5A4A;
 	private static final int SLAM_IMPACT_TICK = 2;
 	private static final int SLAM_DURATION_TICKS = 15;
 	private static final float SLAM_SHAKE_RADIUS = 6.0F;
@@ -171,6 +215,7 @@ public class StrikeAttackHandler {
 	private static final Map<UUID, Integer> STRIKE_ANCHOR_PART = new HashMap<>();
 	private static final Map<UUID, HurtPose> STRIKE_HURT_VICTIM = new HashMap<>();
 	private static final Map<UUID, Boolean> FLINCH_SIDE = new HashMap<>();
+	private static final Map<UUID, MeteorBurstCombo.State> METEOR_BURSTS = new HashMap<>();
 
 	public static void requestStrike(ServerPlayer player, int preferredTargetId) {
 		if (player.level().isClientSide) return;
@@ -182,7 +227,10 @@ public class StrikeAttackHandler {
 			TechniqueData selected = stats.getTechniques().getSelectedTechnique();
 			if (!(selected instanceof StrikeAttackData strike)) return;
 
-			if (stats.getSkills().getSkillLevel("kicontrol") <= 0 || stats.getResources().getPowerRelease() < 5 || (!player.getMainHandItem().isEmpty() && !DIM_SLASH_ID.equals(strike.getId()))) return;
+			if (stats.getSkills().getSkillLevel("kicontrol") <= 0 || stats.getResources().getPowerRelease() < 5) return;
+			if (requiresBraveSword(strike.getId())) {
+				if (!(player.getMainHandItem().getItem() instanceof BraveSwordItem)) return;
+			} else if (!player.getMainHandItem().isEmpty() && !DIM_SLASH_ID.equals(strike.getId())) return;
 
 			String cooldownKey = getTechniqueCooldownKey(strike.getId());
 			if (stats.getCooldowns().hasCooldown(cooldownKey)) return;
@@ -255,6 +303,10 @@ public class StrikeAttackHandler {
 			}
 		});
 	}
+	public static boolean requiresBraveSword(String strikeId) {
+		return SHINING_SWORD_ID.equals(strikeId);
+	}
+
 	public static boolean interrupt(ServerPlayer player) {
 		if (player == null || player.level().isClientSide) return false;
 
@@ -311,6 +363,7 @@ public class StrikeAttackHandler {
 		}
 		STRIKE_HURT_VICTIM.remove(id);
 		FLINCH_SIDE.remove(id);
+		releaseMeteorBurst(id);
 	}
 
 	@SubscribeEvent
@@ -396,6 +449,11 @@ public class StrikeAttackHandler {
 
 		if (DIM_SLASH_ID.equals(active.techniqueId())) {
 			processDimensionalSlash(player, active);
+			return;
+		}
+
+		if (METEOR_BURST_ID.equals(active.techniqueId())) {
+			processMeteorBurst(player, active);
 			return;
 		}
 
@@ -530,6 +588,21 @@ public class StrikeAttackHandler {
             return;
         }
 
+
+		if (GRAB_ID.equals(active.techniqueId())) {
+			processGrab(player, target, active);
+			return;
+		}
+
+		if (SHINING_SWORD_ID.equals(active.techniqueId())) {
+			processShiningSword(player, target, active);
+			return;
+		}
+
+		if (COMBO_METEOR_ID.equals(active.techniqueId())) {
+			processComboMeteor(player, target, active);
+			return;
+		}
 
 		if ("meteor".equals(active.techniqueId())) {
 			if (target instanceof ServerPlayer targetPlayer) {
@@ -1176,7 +1249,7 @@ public class StrikeAttackHandler {
 			MinecraftForge.EVENT_BUS.post(
 					new DMZEvent.StrikeAttackFireEvent(player, stats, strike, target));
 
-			applyStrikeDamage(player, target, perHitDamage, pending.techniqueId(), false);
+			if (!NO_ENGAGE_DAMAGE_STRIKES.contains(pending.techniqueId())) applyStrikeDamage(player, target, perHitDamage, pending.techniqueId(), false);
 			//teleportToTargetFront(player, target);
 			setStrikeLocked(player, true);
 			setStrikeLocked(target, true);
@@ -1196,6 +1269,340 @@ public class StrikeAttackHandler {
 			}
 			playStrikeAnimation(player, pending.animationId());
 		});
+	}
+
+	private static void processGrab(ServerPlayer player, LivingEntity target, ActiveStrike active) {
+		int nextTick = active.ticksElapsed() + 1;
+
+		player.invulnerableTime = 20;
+		player.fallDistance = 0.0F;
+		freezeEntity(player);
+
+		if (nextTick < GRAB_HOLD_TICK) {
+			target.invulnerableTime = 20;
+			freezeEntity(target);
+		} else if (nextTick < GRAB_RELEASE_TICK) {
+			target.invulnerableTime = 20;
+			target.fallDistance = 0.0F;
+			if (nextTick == GRAB_HOLD_TICK) {
+				playVictimHurtPose(player, target, GRABBED_ANIM, DBSagasEntity.HURT_ANIM_GRABBED);
+				if (!(target instanceof ServerPlayer)) {
+					target.addEffect(new MobEffectInstance(MainEffects.STUN.get(), GRAB_RELEASE_TICK - GRAB_HOLD_TICK, 0, false, false, true));
+				}
+				player.level().playSound(null, target.getX(), target.getY(), target.getZ(),
+						MainSounds.GOLPE2.get(), SoundSource.PLAYERS, 1.0F, 0.8F);
+			}
+			holdGrabVictim(player, target, nextTick);
+		} else if (nextTick == GRAB_RELEASE_TICK) {
+			throwGrabVictim(player, target, active);
+		}
+
+		if (nextTick >= active.durationTicks()) {
+			endStrike(player, target, active);
+			return;
+		}
+		ACTIVE.put(player.getUUID(), active.withTicksElapsed(nextTick));
+	}
+
+	private static void processComboMeteor(ServerPlayer player, LivingEntity target, ActiveStrike active) {
+		int nextTick = active.ticksElapsed() + 1;
+
+		player.invulnerableTime = 20;
+		player.fallDistance = 0.0F;
+		freezeEntity(player);
+
+		if (nextTick < COMBO_METEOR_SMASH_TICK) {
+			faceStrikeTarget(player, target);
+			target.fallDistance = 0.0F;
+			if (nextTick == 1 && !(target instanceof ServerPlayer)) {
+				target.addEffect(new MobEffectInstance(MainEffects.STUN.get(), COMBO_METEOR_SMASH_TICK, 0, false, false, true));
+			}
+			holdComboMeteorVictim(player, target, nextTick);
+		}
+
+		for (int i = 0; i < COMBO_METEOR_HIT_TICKS.length; i++) {
+			if (COMBO_METEOR_HIT_TICKS[i] != nextTick) continue;
+			target.invulnerableTime = 0;
+			applyStrikeDamage(player, target, active.totalDamage() * (1.0 - FINAL_HIT_RATIO) / COMBO_METEOR_HIT_TICKS.length, COMBO_METEOR_ID, false);
+			playComboMeteorFlinch(player, target, i);
+			player.level().playSound(null, target.getX(), target.getY(), target.getZ(), comboMeteorPunchSound(i),
+					SoundSource.PLAYERS, 1.0F, 0.9F + player.getRandom().nextFloat() * 0.3F);
+		}
+
+		if (nextTick == COMBO_METEOR_SMASH_TICK) {
+			comboMeteorSmash(player, target, active);
+			playComboMeteorFlinch(player, target, COMBO_METEOR_HIT_TICKS.length);
+		}
+		if (nextTick == COMBO_METEOR_FINAL_POSE_TICK) {
+			playVictimHurtPose(player, target, HURT_TOP2_ANIM, DBSagasEntity.HURT_ANIM_TOP2);
+		}
+
+		if (nextTick >= COMBO_METEOR_END_TICK) {
+			endStrike(player, target, active);
+			return;
+		}
+		ACTIVE.put(player.getUUID(), active.withTicksElapsed(nextTick));
+	}
+
+	private static void holdComboMeteorVictim(ServerPlayer player, LivingEntity target, int tick) {
+		Vec3 forward = Vec3.directionFromRotation(0.0F, player.getYRot());
+		double gap = player.getBbWidth() * 0.5 + target.getBbWidth() * 0.5 + COMBO_METEOR_GAP;
+		double lift = tick < COMBO_METEOR_LIFT_START_TICK ? 0.0 : COMBO_METEOR_LIFT_HEIGHT
+				* Math.min(1.0, (tick - COMBO_METEOR_LIFT_START_TICK) / (double) (COMBO_METEOR_LIFT_END_TICK - COMBO_METEOR_LIFT_START_TICK));
+		placeHeldVictim(target, player.getX() + forward.x * gap, player.getY() + lift, player.getZ() + forward.z * gap, player.getYRot() + 180.0F);
+	}
+
+	private static void playComboMeteorFlinch(ServerPlayer player, LivingEntity target, int hitIndex) {
+		boolean left = hitIndex % 2 == 0;
+		playVictimHurtPose(player, target, left ? HURT_LEFT_ANIM : HURT_RIGHT_ANIM,
+				left ? DBSagasEntity.HURT_ANIM_LEFT : DBSagasEntity.HURT_ANIM_RIGHT);
+	}
+
+	private static SoundEvent comboMeteorPunchSound(int index) {
+		SoundEvent[] punches = {
+				MainSounds.GOLPE1.get(), MainSounds.GOLPE2.get(), MainSounds.GOLPE3.get(),
+				MainSounds.GOLPE4.get(), MainSounds.GOLPE5.get(), MainSounds.GOLPE6.get()
+		};
+		return punches[Math.floorMod(index, punches.length)];
+	}
+
+	private static void comboMeteorSmash(ServerPlayer player, LivingEntity target, ActiveStrike active) {
+		Vec3 forward = Vec3.directionFromRotation(0.0F, player.getYRot()).normalize();
+
+		setStrikeLocked(target, false);
+		if (!(target instanceof ServerPlayer)) target.removeEffect(MainEffects.STUN.get());
+		target.invulnerableTime = 0;
+		applyStrikeDamage(player, target, active.finalDamage(), COMBO_METEOR_ID, true);
+		grantKillXpIfNeeded(player, target, COMBO_METEOR_ID);
+
+		player.level().playSound(null, target.getX(), target.getY(), target.getZ(),
+				MainSounds.CRITICO1.get(), SoundSource.PLAYERS, 2.0F, 0.9F);
+
+		if (!target.isAlive()) return;
+		KnockbackHelper.apply(target, new Vec3(forward.x * COMBO_METEOR_SMASH_FORWARD, -COMBO_METEOR_SMASH_SPEED, forward.z * COMBO_METEOR_SMASH_FORWARD));
+		MomentumImpactHandler.registerCollisionImpact(target, MomentumImpactHandler.CollisionImpactType.GROUND,
+				(float) (active.totalDamage() * IMPACT_DAMAGE_RATIO), new Vec3(0.0, -1.0, 0.0));
+	}
+
+	private static void processMeteorBurst(ServerPlayer player, ActiveStrike active) {
+		int nextTick = active.ticksElapsed() + 1;
+		LivingEntity target = active.targetId() == null ? null : resolveLiving(player, active.targetId());
+
+		boolean stunned = player.hasEffect(MainEffects.STUN.get())
+				|| StatsProvider.get(StatsCapability.INSTANCE, player).map(stats -> stats.getStatus().isKnockedDown()).orElse(false);
+		if (!player.isAlive() || stunned) {
+			endStrike(player, target, active, true);
+			return;
+		}
+
+		player.invulnerableTime = 20;
+		player.fallDistance = 0.0F;
+
+		MeteorBurstCombo.State state = METEOR_BURSTS.computeIfAbsent(player.getUUID(), id -> new MeteorBurstCombo.State());
+		if (!MeteorBurstCombo.tick((ServerLevel) player.level(), new PlayerMeteorBurst(player, target, active), state, nextTick)) {
+			endStrike(player, target, active, true);
+			return;
+		}
+		if (nextTick >= active.durationTicks()) {
+			endStrike(player, target, active);
+			return;
+		}
+		ACTIVE.put(player.getUUID(), active.withTicksElapsed(nextTick));
+	}
+
+	private static void releaseMeteorBurst(UUID playerId) {
+		MeteorBurstCombo.State state = METEOR_BURSTS.remove(playerId);
+		if (state != null) MeteorBurstCombo.release(state);
+	}
+
+	private record PlayerMeteorBurst(ServerPlayer player, LivingEntity target, ActiveStrike active) implements MeteorBurstCombo.Performer {
+
+		@Override
+		public LivingEntity self() {
+			return this.player;
+		}
+
+		@Override
+		public void place(Vec3 position, float yaw) {
+			this.player.connection.teleport(position.x, position.y, position.z, yaw, this.player.getXRot());
+			this.player.setYHeadRot(yaw);
+			this.player.setDeltaMovement(Vec3.ZERO);
+			this.player.hurtMarked = true;
+			this.player.fallDistance = 0.0F;
+		}
+
+		@Override
+		public boolean isInterrupted() {
+			return false;
+		}
+
+		@Override
+		public float strikeBudget() {
+			return (float) this.active.totalDamage();
+		}
+
+		@Override
+		public float kiBudget() {
+			double configMultiplier = Math.max(0.0, ConfigManager.getTechniqueConfig().getStrikeConfig(METEOR_BURST_ID).getDamageMultiplier());
+			return StatsProvider.get(StatsCapability.INSTANCE, this.player)
+					.map(stats -> (float) (stats.getKiDamage() * METEOR_BURST_KI_RATIO * configMultiplier)).orElse(0.0F);
+		}
+
+		@Override
+		public void strikeHit(LivingEntity victim, float amount, boolean lethal) {
+			applyStrikeDamage(this.player, victim, amount, METEOR_BURST_ID, lethal);
+			if (lethal) grantKillXpIfNeeded(this.player, victim, METEOR_BURST_ID);
+		}
+
+		@Override
+		public void kiHit(LivingEntity victim, float amount, boolean lethal) {
+			double modifier = StatsProvider.get(StatsCapability.INSTANCE, this.player).map(stats -> stats.getKiAttackDamageModifier()).orElse(1.0);
+			float damage = (float) (amount * modifier);
+			if (!lethal && victim.getHealth() - damage <= 1.0F) damage = Math.max(0.01F, victim.getHealth() - 1.0F);
+			if (damage <= 0.0F) return;
+			victim.hurt(MainDamageTypes.kiblast(this.player.level(), this.player, this.player), damage);
+			if (lethal) grantKillXpIfNeeded(this.player, victim, METEOR_BURST_ID);
+		}
+
+		@Override
+		public boolean canHitArea(LivingEntity entity) {
+			return TargetHelper.getRelation(this.player, entity) == TargetHelper.Relation.HOSTILE;
+		}
+	}
+
+	private static void processShiningSword(ServerPlayer player, LivingEntity target, ActiveStrike active) {
+		int nextTick = active.ticksElapsed() + 1;
+
+		player.invulnerableTime = 20;
+		player.fallDistance = 0.0F;
+		freezeEntity(player);
+
+		if (nextTick < SHINING_SWORD_BLAST_TICK) {
+			faceStrikeTarget(player, target);
+			freezeEntity(target);
+			if (nextTick == 1 && !(target instanceof ServerPlayer)) {
+				target.addEffect(new MobEffectInstance(MainEffects.STUN.get(), SHINING_SWORD_BLAST_TICK, 0, false, false, true));
+			}
+		}
+
+		for (int i = 0; i < SHINING_SWORD_CUT_TICKS.length; i++) {
+			if (SHINING_SWORD_CUT_TICKS[i] == nextTick) launchShiningSwordSlash(player, target, active, i);
+		}
+
+		if (nextTick == SHINING_SWORD_BLAST_TICK) shiningSwordBlast(player, target, active);
+
+		if (nextTick >= active.durationTicks()) {
+			endStrike(player, target, active);
+			return;
+		}
+		ACTIVE.put(player.getUUID(), active.withTicksElapsed(nextTick));
+	}
+
+	private static void launchShiningSwordSlash(ServerPlayer player, LivingEntity target, ActiveStrike active, int index) {
+		if (!(player.level() instanceof ServerLevel serverLevel)) return;
+
+		Vec3 look = player.getLookAngle();
+		Vec3 origin = player.getEyePosition().add(0.0, -0.35, 0.0).add(look.scale(0.8));
+		Vec3 aim = target != null && target.isAlive() ? target.getBoundingBox().getCenter().subtract(origin) : look;
+
+		double damage = active.totalDamage() * (1.0 - FINAL_HIT_RATIO) / SHINING_SWORD_CUT_TICKS.length;
+		com.dragonminez.common.combat.util.SwordSlashManager.launch(serverLevel, player, origin, aim,
+				com.dragonminez.common.combat.util.SwordSlashManager.rollFor(index), SHINING_SWORD_SLASH_SCALE, SHINING_SWORD_SLASH_COLOR,
+				SHINING_SWORD_SLASH_CORE_COLOR, SHINING_SWORD_SLASH_SPEED, SHINING_SWORD_SLASH_RANGE, SHINING_SWORD_SLASH_HIT_RADIUS, victim -> {
+					if ((victim.isAlliedTo(player) && !TargetHelper.isTournamentRival(player, victim))
+							|| !TargetHelper.canAttack(player, victim, SHINING_SWORD_SLASH_RANGE + 4.0)) return false;
+					victim.invulnerableTime = 0;
+					applyStrikeDamage(player, victim, damage, SHINING_SWORD_ID, false);
+					return true;
+				});
+
+		serverLevel.playSound(null, player.getX(), player.getY(), player.getZ(),
+				MainSounds.KI_BEAM_FIRE.get(), SoundSource.PLAYERS, 1.2F, 1.8F + player.getRandom().nextFloat() * 0.2F);
+	}
+
+	private static void shiningSwordBlast(ServerPlayer player, LivingEntity target, ActiveStrike active) {
+		if (!(player.level() instanceof ServerLevel serverLevel)) return;
+
+		faceStrikeTarget(player, target);
+		KiWaveEntity blast = new KiWaveEntity(serverLevel, player);
+		blast.setupKiWavePlayer(player, 0.0F, SHINING_SWORD_BLAST_SPEED, SHINING_SWORD_BLAST_COLOR,
+				SHINING_SWORD_BLAST_BORDER, SHINING_SWORD_BLAST_OUTLINE, SHINING_SWORD_BLAST_SIZE);
+		blast.setKiRenderType(1);
+		Vec3 hands = player.position().add(0.0, player.getBbHeight() * 0.6, 0.0).add(player.getLookAngle().scale(0.8));
+		blast.setPos(hands.x, hands.y, hands.z);
+		blast.setFiring(true);
+		blast.setMaxLife(SHINING_SWORD_BLAST_LIFE);
+		blast.setBlockDestructionEnabled(false);
+		serverLevel.addFreshEntity(blast);
+		serverLevel.playSound(null, player.getX(), player.getY(), player.getZ(),
+				MainSounds.KI_EXPLOSION_IMPACT.get(), SoundSource.PLAYERS, 2.0F, 1.1F);
+
+		if (!(target instanceof ServerPlayer)) target.removeEffect(MainEffects.STUN.get());
+		target.invulnerableTime = 0;
+		applyStrikeDamage(player, target, active.finalDamage(), SHINING_SWORD_ID, true);
+		grantKillXpIfNeeded(player, target, SHINING_SWORD_ID);
+		if (!target.isAlive()) return;
+
+		Vec3 dir = Vec3.directionFromRotation(0.0F, player.getYRot()).normalize();
+		setStrikeLocked(target, false);
+		KnockbackHelper.apply(target, new Vec3(dir.x * SHINING_SWORD_BLAST_KNOCKBACK, 0.4, dir.z * SHINING_SWORD_BLAST_KNOCKBACK));
+		playStrikeKnockbackAnimation(target);
+		MomentumImpactHandler.registerCollisionImpact(target, MomentumImpactHandler.CollisionImpactType.WALL,
+				(float) (active.totalDamage() * IMPACT_DAMAGE_RATIO), dir);
+	}
+
+	public static void holdGrabVictim(LivingEntity player, LivingEntity target, int tick) {
+		float spinYaw = player.getYRot() - GRAB_SPIN_SIGN * grabSpinDegrees(tick / 20.0F);
+		Vec3 dir = Vec3.directionFromRotation(0.0F, spinYaw);
+		double gap = player.getBbWidth() * 0.5 + target.getBbWidth() * 0.5 + GRAB_HOLD_GAP;
+		double lift = GRAB_LIFT_HEIGHT * Math.min(1.0, (tick - GRAB_HOLD_TICK) / (double) GRAB_LIFT_TICKS);
+
+		placeHeldVictim(target, player.getX() + dir.x * gap, player.getY() + lift, player.getZ() + dir.z * gap, spinYaw + 180.0F);
+	}
+
+	public static void placeHeldVictim(LivingEntity target, double x, double y, double z, float faceYaw) {
+		target.setDeltaMovement(Vec3.ZERO);
+		if (target instanceof ServerPlayer targetPlayer) {
+			targetPlayer.connection.teleport(x, y, z, faceYaw, targetPlayer.getXRot());
+		} else {
+			target.setPos(x, y, z);
+			target.setYRot(faceYaw);
+			target.setYHeadRot(faceYaw);
+			target.yBodyRot = faceYaw;
+		}
+		target.hurtMarked = true;
+	}
+
+	private static float grabSpinDegrees(float seconds) {
+		if (seconds <= GRAB_SPIN_KEYS[0][0]) return GRAB_SPIN_KEYS[0][1];
+		for (int i = 1; i < GRAB_SPIN_KEYS.length; i++) {
+			float[] prev = GRAB_SPIN_KEYS[i - 1];
+			float[] next = GRAB_SPIN_KEYS[i];
+			if (seconds <= next[0]) {
+				float t = (seconds - prev[0]) / (next[0] - prev[0]);
+				return prev[1] + (next[1] - prev[1]) * t;
+			}
+		}
+		return GRAB_SPIN_KEYS[GRAB_SPIN_KEYS.length - 1][1];
+	}
+
+	private static void throwGrabVictim(ServerPlayer player, LivingEntity target, ActiveStrike active) {
+		Vec3 dir = Vec3.directionFromRotation(0.0F, player.getYRot()).normalize();
+
+		setStrikeLocked(target, false);
+		if (!(target instanceof ServerPlayer)) target.removeEffect(MainEffects.STUN.get());
+		target.invulnerableTime = 0;
+		applyStrikeDamage(player, target, active.totalDamage(), GRAB_ID, true);
+		grantKillXpIfNeeded(player, target, GRAB_ID);
+
+		player.level().playSound(null, target.getX(), target.getY(), target.getZ(),
+				MainSounds.CRITICO1.get(), SoundSource.PLAYERS, 2.0F, 1.0F);
+
+		if (!target.isAlive()) return;
+		KnockbackHelper.apply(target, new Vec3(dir.x * GRAB_THROW_FORCE, GRAB_THROW_LIFT, dir.z * GRAB_THROW_FORCE));
+		playStrikeKnockbackAnimation(target);
+		MomentumImpactHandler.registerCollisionImpact(target, MomentumImpactHandler.CollisionImpactType.WALL,
+				(float) (active.totalDamage() * IMPACT_DAMAGE_RATIO), dir);
 	}
 
 	private static void startTargetlessStrike(ServerPlayer player, com.dragonminez.common.stats.StatsData stats, StrikeAttackData strike, PendingStrike pending, boolean lockPlayer) {
@@ -1467,7 +1874,7 @@ public class StrikeAttackHandler {
 		String techniqueId = active.techniqueId();
 
 		com.dragonminez.common.combat.util.SwordSlashManager.launch(serverLevel, player, origin, aim,
-				com.dragonminez.common.combat.util.SwordSlashManager.rollFor(index), DIM_SLASH_SCALE, DIM_SLASH_COLOR,
+				com.dragonminez.common.combat.util.SwordSlashManager.rollFor(index), DIM_SLASH_SCALE, DIM_SLASH_COLOR, DIM_SLASH_CORE_COLOR,
 				DIM_SLASH_SPEED, DIM_SLASH_RANGE, DIM_SLASH_HIT_RADIUS, victim -> {
 					if ((victim.isAlliedTo(player) && !TargetHelper.isTournamentRival(player, victim)) || !TargetHelper.canAttack(player, victim, DIM_SLASH_RANGE + 8.0)) return false;
 					applyStrikeDamage(player, victim, damage, techniqueId, false);
@@ -1630,6 +2037,7 @@ public class StrikeAttackHandler {
 		stopVictimAnimation(player, target, active.targetId());
 		stopStrikeHurtAnimation(player);
 		FLINCH_SIDE.remove(player.getUUID());
+		releaseMeteorBurst(player.getUUID());
 
 		StatsProvider.get(StatsCapability.INSTANCE, player).ifPresent(stats -> {
 			String cooldownKey = getTechniqueCooldownKey(active.techniqueId());
@@ -1868,7 +2276,7 @@ public class StrikeAttackHandler {
 	}
 
 	private static void spawnHitShockwave(ServerPlayer player, LivingEntity target, String techniqueId, boolean isFinalHit) {
-		if (OOZARU_SLAM_ID.equals(techniqueId)) return;
+		if (OOZARU_SLAM_ID.equals(techniqueId) || SHINING_SWORD_ID.equals(techniqueId)) return;
 
 		float sizeFactor = Math.max(1.0F, target.getBbHeight() / 1.8F);
 		float scale = (isFinalHit ? SHOCKWAVE_FINAL_SCALE : SHOCKWAVE_HIT_SCALE) * sizeFactor;
@@ -2050,7 +2458,7 @@ public class StrikeAttackHandler {
 		);
 	}
 
-	private static void setStrikeLocked(LivingEntity entity, boolean locked) {
+	public static void setStrikeLocked(LivingEntity entity, boolean locked) {
 		if (entity instanceof ServerPlayer serverPlayer) {
 			StatsProvider.get(StatsCapability.INSTANCE, serverPlayer).ifPresent(stats -> {
 				stats.getStatus().setStrikeLocked(locked);

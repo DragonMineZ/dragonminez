@@ -29,6 +29,7 @@ import com.mojang.blaze3d.systems.RenderSystem;
 import net.minecraft.ChatFormatting;
 import com.dragonminez.common.util.DMZTextPlaceholders;
 import com.dragonminez.client.systems.worldboss.ClientWorldBossState;
+import com.dragonminez.common.init.entities.worldboss.WorldBossEntity;
 import net.minecraft.core.BlockPos;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
@@ -173,7 +174,7 @@ public class QuestNPCDialogueScreen extends ScaledScreen {
 				})
 				.build());
 
-		if (isHellOgre() && ClientWorldBossState.isLairKnown()) {
+		if (isHellOgre() && ClientWorldBossState.isLairKnown(WorldBossEntity.JANEMBA)) {
 			this.addRenderableWidget(new TexturedTextButton.Builder()
 					.position(panelX + 8, btnY)
 					.size(74, 20)
@@ -182,7 +183,7 @@ public class QuestNPCDialogueScreen extends ScaledScreen {
 					.textureSize(74, 20)
 					.message(tr("gui.dragonminez.npc.show_location"))
 					.onPress(btn -> {
-						BlockPos lair = ClientWorldBossState.getLair();
+						BlockPos lair = ClientWorldBossState.getLair(WorldBossEntity.JANEMBA);
 						overrideLine = tr("dialogue.dragonminez.story.sidequest." + npcId + ".location",
 								lair.getX(), lair.getZ());
 						dialogueScroll = 0.0F;
@@ -713,7 +714,7 @@ public class QuestNPCDialogueScreen extends ScaledScreen {
 		String stage = getDialogueStage();
 		if (isHellOgre() && "boss_respawning".equals(stage)) {
 			return ph(tr("dialogue.dragonminez.story.sidequest." + npcId + ".boss_respawning",
-					formatRespawn(ClientWorldBossState.getRespawnTicksRemaining())));
+					formatRespawn(ClientWorldBossState.getRespawnTicksRemaining(WorldBossEntity.JANEMBA))));
 		}
 		String npcLine = "dialogue.dragonminez.story.sidequest." + npcId + "." + stage;
 		MutableComponent line = I18n.exists(npcLine) ? tr(npcLine)
@@ -742,7 +743,7 @@ public class QuestNPCDialogueScreen extends ScaledScreen {
 
 	private String getDialogueStage() {
 		if (isHellOgre()) {
-			return ClientWorldBossState.getRespawnTicksRemaining() > 0L ? "boss_respawning" : "boss_alive";
+			return ClientWorldBossState.getRespawnTicksRemaining(WorldBossEntity.JANEMBA) > 0L ? "boss_respawning" : "boss_alive";
 		}
 		if (!turnInQuestIds.isEmpty()) return "complete";
 		if (!offerableQuestIds.isEmpty()) return "offer";
