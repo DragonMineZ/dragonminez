@@ -2,15 +2,20 @@ package com.dragonminez.client.gui.character.minigames;
 
 import com.dragonminez.Reference;
 import com.dragonminez.client.gui.hud.HudRender;
+import com.dragonminez.client.gui.tutorial.TutorialManager;
 import com.dragonminez.client.util.KeyBinds;
 import com.dragonminez.client.util.TextUtil;
 import com.dragonminez.common.config.ConfigManager;
 import com.dragonminez.common.config.TrainingConfig;
 import com.dragonminez.common.network.S2C.MinigameStartS2C;
+import com.dragonminez.common.stats.StatsCapability;
+import com.dragonminez.common.stats.StatsProvider;
+import com.dragonminez.common.training.BuiltinSongs;
 import com.dragonminez.common.training.MinigameEvent;
 import com.dragonminez.common.training.MinigameLogic;
 import com.dragonminez.common.training.MinigameLogics;
 import com.dragonminez.common.training.MinigameOrigin;
+import com.dragonminez.common.training.RhythmAutoCharter;
 import com.dragonminez.common.training.RhythmChart;
 import com.dragonminez.common.training.RhythmLogic;
 import com.mojang.blaze3d.platform.InputConstants;
@@ -31,11 +36,15 @@ import net.minecraftforge.registries.ForgeRegistries;
 import org.lwjgl.glfw.GLFW;
 
 import java.util.ArrayList;
+import java.util.Comparator;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Random;
+import java.util.Set;
 
 public class RythmGameScreen extends BaseMinigameScreen {
 	private static final int[] LANE_COLORS = {0x5AD0E8, 0x6FD08A, 0xE8C75A, 0xB07CE8};
@@ -53,9 +62,22 @@ public class RythmGameScreen extends BaseMinigameScreen {
 	private static final int KEY_W = 36, KEY_H = 22;
 	private static final int NOTE_W = 36, NOTE_H = 12;
 
-	private static int rememberedTrack = -1;
+	private static int rememberedTrack = 0;
+	private static int rememberedDifficulty = RhythmLogic.DIFFICULTY_NORMAL;
+	private static int rememberedVariant = RhythmChart.VARIANT_INSTRUMENTAL;
+	private static final int[] DIFFICULTY_COLORS = {0x7CFD8A, 0xD2D7F1, 0xFFB347, 0xFF5E5E};
+	private static final int LIST_ROW_H = 12, LIST_ROWS = 12, LIST_W = 172, DETAIL_W = 192, PANEL_GAP = 10;
+	private static final int PANEL_W = LIST_W + PANEL_GAP + DETAIL_W;
+	private static final int PANEL_H = 12 + LIST_ROWS * LIST_ROW_H + 2 + 4;
+	private static final int DIFFICULTY_W = 45, DIFFICULTY_H = 14, DIFFICULTY_GAP = 2;
+	private static final int VARIANT_W = 92, VARIANT_H = 14;
+	private static final String[] TITLE_PREFIXES = {"dragon ball z kai", "dragon ball super", "dragon ball gt", "dragon ball z", "dragon ball daima", "dragon ball",
+			"dbz kai", "dbgt", "dbz", "dbs", "db", "saint seiya", "one piece", "naruto shippuden", "naruto", "bleach", "jojo's bizarre adventure", "jojo",
+			"ost", "opening", "ending", "op", "ed", "theme", "the"};
 
-	private record Track(String itemId, Component name) {}
+	private enum Kind { FREE, BUILTIN, DISC }
+
+	private record Track(String key, Component name, Component subtitle, String sortKey, int durationMs, Kind kind, boolean learned) {}
 
 	private final List<Track> tracks = new ArrayList<>();
 	private final List<float[]> sparks = new ArrayList<>();
@@ -70,9 +92,23 @@ public class RythmGameScreen extends BaseMinigameScreen {
 	private int glowTick = -100;
 
 	private float cx, topY, hitY, vpY, bottomWidth;
-	private float[] dropdownButton;
-	private boolean dropdownOpen;
-	private int dropdownScroll;
+	private int listScroll;
+	private float[] listBox;
+	private float[] playRect;
+	private float[] calibrateRect;
+	private final float[][] difficultyButtons = new float[RhythmLogic.DIFFICULTY_COUNT][];
+	private final float[][] variantButtons = new float[2][];
+	private int difficulty = rememberedDifficulty;
+	private int variant = rememberedVariant;
+	private String selectedItem = "";
+	private RhythmChart selectedChart;
+	private int recommended = -1;
+	private String analyzingItem;
+	private volatile int analysisPhase;
+	private boolean analysisFailed;
+	private long analysisStartNanos;
+	private long analysisDoneNanos;
+	private final SmoothValue analysisShown = new SmoothValue();
 	private final long[] keyHitNanos = new long[RhythmLogic.LANES];
 	private final long[] keyMissNanos = new long[RhythmLogic.LANES];
 	private long boardEventNanos;
@@ -84,6 +120,9 @@ public class RythmGameScreen extends BaseMinigameScreen {
 	private int shownCombo;
 	private boolean boardMiss;
 	private float boardStrength;
+	private int restShownSeconds = -1;
+	private long restPopNanos;
+	private boolean calibrationPrompted;
 
 	public RythmGameScreen() {
 		this(MinigameOrigin.MENU);
@@ -112,52 +151,236 @@ public class RythmGameScreen extends BaseMinigameScreen {
 
 	private void buildTracks() {
 		tracks.clear();
-		tracks.add(new Track("", tr("gui.dragonminez.minigame.rhythm.free")));
+		tracks.add(new Track("", tr("gui.dragonminez.minigame.rhythm.free"), tr("gui.dragonminez.minigame.rhythm.free_subtitle"), "", 0, Kind.FREE, false));
+		for (BuiltinSongs.Song song : BuiltinSongs.ALL) {
+			tracks.add(new Track(song.key(), dmz(song.title()), dmz(song.artist()), "", song.durationMs(), Kind.BUILTIN, false));
+		}
 		Minecraft mc = Minecraft.getInstance();
+		Set<String> learned = mc.player == null ? Set.of()
+				: StatsProvider.get(StatsCapability.INSTANCE, mc.player).map(d -> (Set<String>) new HashSet<>(d.getCharacter().getLearnedSongs())).orElse(Set.of());
 		Map<String, Track> discs = new LinkedHashMap<>();
 		boolean requireDisc = ConfigManager.getTrainingConfig().getRhythm().isRequireDiscInInventory();
 		if (requireDisc && mc.player != null) {
-			for (ItemStack stack : mc.player.getInventory().items) addDisc(discs, stack.getItem());
-			for (ItemStack stack : mc.player.getInventory().offhand) addDisc(discs, stack.getItem());
+			for (ItemStack stack : mc.player.getInventory().items) addDisc(discs, stack.getItem(), learned);
+			for (ItemStack stack : mc.player.getInventory().offhand) addDisc(discs, stack.getItem(), learned);
+			for (String key : learned) {
+				ResourceLocation id = ResourceLocation.tryParse(key);
+				if (id != null) addDisc(discs, ForgeRegistries.ITEMS.getValue(id), learned);
+			}
 		} else if (!requireDisc) {
-			for (Item item : ForgeRegistries.ITEMS) addDisc(discs, item);
+			for (Item item : ForgeRegistries.ITEMS) addDisc(discs, item, learned);
 		}
-		tracks.addAll(discs.values());
-		trackIndex = rememberedTrack < tracks.size() ? rememberedTrack : -1;
+		List<Track> sorted = new ArrayList<>(discs.values());
+		sorted.sort(Comparator.comparing(Track::sortKey).thenComparing(t -> t.name().getString().toLowerCase(Locale.ROOT)));
+		tracks.addAll(sorted);
+		trackIndex = rememberedTrack >= 0 && rememberedTrack < tracks.size() ? rememberedTrack : 0;
 		if (isChallenge()) trackIndex = 0;
-		dropdownOpen = false;
-		dropdownScroll = 0;
+		ensureVisible();
+		syncSelection(true);
 	}
 
-	private static void addDisc(Map<String, Track> discs, Item item) {
+	private void addDisc(Map<String, Track> discs, Item item, Set<String> learned) {
 		if (!(item instanceof RecordItem record)) return;
 		ResourceLocation id = ForgeRegistries.ITEMS.getKey(item);
 		if (id == null || discs.containsKey(id.toString())) return;
-		discs.put(id.toString(), new Track(id.toString(), record.getDisplayName()));
+		String key = id.toString();
+		boolean isLearned = learned.contains(key);
+		String[] info = parseDiscInfo(id.getNamespace(), record.getDisplayName().getString());
+		Component name = dmz(info[0]);
+		String credit = info[1] != null && info[2] != null ? info[1] + " - " + info[2] : info[1] != null ? info[1] : info[2];
+		Component subtitle = credit == null ? tr("gui.dragonminez.minigame.rhythm.music_disc") : dmz(credit);
+		discs.put(key, new Track(key, name, subtitle, sortKey(info[0]), record.getLengthInTicks() * 50, Kind.DISC, isLearned));
+	}
+
+	static String[] parseDiscInfo(String namespace, String displayName) {
+		String text = displayName.trim();
+		if (text.regionMatches(true, 0, "Music Disc - ", 0, 13)) text = text.substring(13).trim();
+		String artist = null;
+		int by = text.lastIndexOf(" by ");
+		if (by > 0) {
+			artist = text.substring(by + 4).trim();
+			text = text.substring(0, by).trim();
+		}
+		String source = null;
+		String title = text;
+		int sep = text.lastIndexOf(" - ");
+		if (sep > 0) {
+			source = text.substring(0, sep).trim();
+			title = text.substring(sep + 3).trim();
+		}
+		if ("minecraft".equals(namespace) && source != null && artist == null) {
+			artist = source;
+			source = "Minecraft";
+		}
+		if (title.isEmpty()) title = displayName;
+		return new String[]{title, artist, source};
+	}
+
+	static String sortKey(String displayName) {
+		String text = displayName.toLowerCase(Locale.ROOT).trim();
+		text = text.replaceAll("\\[[^\\]]*\\]", " ").replaceAll("\\([^)]*\\)", " ").replaceAll("\\s+", " ").trim();
+		String[] parts = text.split("\\s+[-\u2013\u2014|:]\\s+");
+		String core = text;
+		for (int i = parts.length - 1; i >= 0; i--) {
+			String part = parts[i].trim();
+			if (part.length() >= 3) {
+				core = part;
+				break;
+			}
+		}
+		int by = core.indexOf(" by ");
+		if (by > 2) core = core.substring(0, by);
+		boolean changed = true;
+		while (changed) {
+			changed = false;
+			String stripped = core.replaceFirst("^\\d+[.)\\s-]+", "").replaceAll("^[^\\p{L}\\p{N}]+", "");
+			if (!stripped.equals(core)) {
+				core = stripped;
+				changed = true;
+			}
+			for (String prefix : TITLE_PREFIXES) {
+				if (core.startsWith(prefix + " ") && core.length() > prefix.length() + 1) {
+					core = core.substring(prefix.length() + 1).trim();
+					changed = true;
+				}
+			}
+		}
+		return core.isEmpty() ? text : core;
+	}
+
+	private String trackKey(int index) {
+		return index < 0 || index >= tracks.size() ? "" : tracks.get(index).key();
+	}
+
+	private Track selectedTrack() {
+		return trackIndex < 0 || trackIndex >= tracks.size() ? null : tracks.get(trackIndex);
+	}
+
+	private void selectTrack(int index) {
+		if (index < 0 || index >= tracks.size()) return;
+		trackIndex = index;
+		rememberedTrack = index;
+		ensureVisible();
+		syncSelection(false);
+	}
+
+	private void syncSelection(boolean keepChoices) {
+		String key = trackKey(trackIndex);
+		if (key.equals(selectedItem) && (selectedChart != null || key.isEmpty() || analysisFailed || key.equals(analyzingItem))) return;
+		selectedItem = key;
+		selectedChart = null;
+		recommended = -1;
+		analysisFailed = false;
+		if (key.isEmpty()) return;
+		RhythmChart cached = RhythmClientCharts.cached(key);
+		if (cached != null) {
+			onChartReady(key, cached, keepChoices);
+			return;
+		}
+		ResourceLocation soundId = soundFor(selectedTrack());
+		if (soundId == null) {
+			analysisFailed = true;
+			return;
+		}
+		analyzingItem = key;
+		analysisPhase = RhythmAutoCharter.PHASE_ANALYZING;
+		analysisStartNanos = System.nanoTime();
+		analysisShown.snap(0f);
+		RhythmClientCharts.analyze(key, soundId, phase -> analysisPhase = phase).thenAccept(chart -> Minecraft.getInstance().execute(() -> {
+			if (!key.equals(analyzingItem)) return;
+			analyzingItem = null;
+			if (!key.equals(selectedItem)) return;
+			if (chart == null) {
+				analysisFailed = true;
+				playMiss();
+			} else {
+				onChartReady(key, chart, keepChoices);
+				analysisDoneNanos = System.nanoTime();
+				playHit(true);
+			}
+		}));
+	}
+
+	private static ResourceLocation soundFor(Track track) {
+		if (track == null || track.kind() == Kind.FREE) return null;
+		if (track.kind() == Kind.BUILTIN) {
+			BuiltinSongs.Song song = BuiltinSongs.find(track.key());
+			return song == null ? null : ResourceLocation.tryParse(song.sound());
+		}
+		ResourceLocation id = ResourceLocation.tryParse(track.key());
+		Item item = id == null ? null : ForgeRegistries.ITEMS.getValue(id);
+		return item instanceof RecordItem record ? record.getSound().getLocation() : null;
+	}
+
+	private void onChartReady(String key, RhythmChart chart, boolean keepChoices) {
+		selectedItem = key;
+		selectedChart = chart;
+		if (!chart.hasVocals()) variant = RhythmChart.VARIANT_INSTRUMENTAL;
+		else if (!keepChoices) variant = RhythmChart.VARIANT_INSTRUMENTAL;
+		refreshRecommendation(!keepChoices);
+	}
+
+	private void refreshRecommendation(boolean adopt) {
+		if (selectedChart == null) return;
+		recommended = RhythmLogic.recommendedDifficulty(selectedChart, ConfigManager.getTrainingConfig().getRhythm(), variant);
+		if (adopt) {
+			difficulty = recommended;
+			rememberedDifficulty = difficulty;
+		}
+	}
+
+	private boolean isAnalyzing() {
+		return trackIndex > 0 && analyzingItem != null && analyzingItem.equals(selectedItem);
+	}
+
+	@Override
+	protected boolean canPlay() {
+		return isChallenge() || trackIndex <= 0 || selectedChart != null;
+	}
+
+	private Component difficultyName(int index) {
+		return tr("gui.dragonminez.minigame.rhythm.difficulty." + RhythmLogic.clampDifficulty(index));
+	}
+
+	private Component variantName(int index) {
+		return tr("gui.dragonminez.minigame.rhythm.variant." + RhythmChart.clampVariant(index));
+	}
+
+	private static String multiplierText(double value) {
+		String text = String.format(Locale.ROOT, "%.2f", value);
+		while (text.endsWith("0")) text = text.substring(0, text.length() - 1);
+		if (text.endsWith(".")) text = text.substring(0, text.length() - 1);
+		return text;
+	}
+
+	private static String durationText(int durationMs) {
+		int seconds = Math.max(0, durationMs / 1000);
+		return String.format(Locale.ROOT, "%d:%02d", seconds / 60, seconds % 60);
 	}
 
 	@Override
 	protected String startOption() {
-		activeTrack = tracks.isEmpty() ? null : tracks.get(Math.max(0, trackIndex));
-		return activeTrack == null ? "" : activeTrack.itemId();
+		activeTrack = selectedTrack();
+		if (activeTrack == null || activeTrack.kind() == Kind.FREE) return "";
+		RhythmChart cached = RhythmClientCharts.cached(activeTrack.key());
+		return RhythmLogic.buildOption(activeTrack.key(), difficulty, variant, cached == null ? "" : cached.audioHash);
 	}
 
 	@Override
 	protected byte[] startPayload() {
-		if (activeTrack == null || activeTrack.itemId().isEmpty()) return null;
-		RhythmChart cached = RhythmClientCharts.cached(activeTrack.itemId());
+		if (activeTrack == null || activeTrack.kind() == Kind.FREE) return null;
+		RhythmChart cached = RhythmClientCharts.cached(activeTrack.key());
 		return cached == null ? null : cached.encode();
 	}
 
 	@Override
 	protected boolean handleStartRejection(MinigameStartS2C message) {
 		if (!"gui.dragonminez.minigame.reject.no_chart".equals(message.getRejectKey())) return false;
-		if (activeTrack == null || activeTrack.itemId().isEmpty() || RhythmClientCharts.cached(activeTrack.itemId()) != null) return false;
-		ResourceLocation id = ResourceLocation.tryParse(activeTrack.itemId());
-		Item item = id == null ? null : ForgeRegistries.ITEMS.getValue(id);
-		if (!(item instanceof RecordItem record)) return false;
-		String itemId = activeTrack.itemId();
-		RhythmClientCharts.analyze(itemId, record).thenAccept(chart -> Minecraft.getInstance().execute(() -> {
+		if (activeTrack == null || activeTrack.kind() == Kind.FREE || RhythmClientCharts.cached(activeTrack.key()) != null) return false;
+		ResourceLocation soundId = soundFor(activeTrack);
+		if (soundId == null) return false;
+		String key = activeTrack.key();
+		RhythmClientCharts.analyze(key, soundId, phase -> analysisPhase = phase).thenAccept(chart -> Minecraft.getInstance().execute(() -> {
 			if (Minecraft.getInstance().screen != this || !isPreparing()) return;
 			if (chart == null) rejectWith("gui.dragonminez.minigame.reject.analysis_failed");
 			else retryStart();
@@ -173,50 +396,98 @@ public class RythmGameScreen extends BaseMinigameScreen {
 	@Override
 	protected boolean onReadyKey(int keyCode) {
 		if (isChallenge()) return false;
-		int dir = 0;
-		if (keyCode == GLFW.GLFW_KEY_LEFT || keyCode == GLFW.GLFW_KEY_A || keyCode == GLFW.GLFW_KEY_UP) dir = -1;
-		if (keyCode == GLFW.GLFW_KEY_RIGHT || keyCode == GLFW.GLFW_KEY_D || keyCode == GLFW.GLFW_KEY_DOWN) dir = 1;
-		if (dir == 0) return false;
-		if (tracks.size() <= 1) {
-			trackIndex = 0;
-			playMiss();
-			return true;
+		switch (keyCode) {
+			case GLFW.GLFW_KEY_UP -> {
+				if (tracks.size() > 1) selectTrack(Math.floorMod(trackIndex - 1, tracks.size()));
+				playHit(false);
+				return true;
+			}
+			case GLFW.GLFW_KEY_DOWN -> {
+				if (tracks.size() > 1) selectTrack(Math.floorMod(trackIndex + 1, tracks.size()));
+				playHit(false);
+				return true;
+			}
+			case GLFW.GLFW_KEY_LEFT, GLFW.GLFW_KEY_RIGHT -> {
+				if (selectedChart == null || trackIndex <= 0) return true;
+				setDifficulty(Math.floorMod(difficulty + (keyCode == GLFW.GLFW_KEY_RIGHT ? 1 : -1), RhythmLogic.DIFFICULTY_COUNT));
+				return true;
+			}
+			case GLFW.GLFW_KEY_TAB -> {
+				if (selectedChart != null && selectedChart.hasVocals()) setVariant(1 - variant);
+				return true;
+			}
+			default -> {
+				return false;
+			}
 		}
-		trackIndex = trackIndex < 0 ? (dir > 0 ? 0 : tracks.size() - 1) : Math.floorMod(trackIndex + dir, tracks.size());
-		rememberedTrack = trackIndex;
-		ensureVisible();
+	}
+
+	private void setDifficulty(int value) {
+		if (difficulty == value) return;
+		difficulty = value;
+		rememberedDifficulty = value;
+		playHit(value == recommended);
+	}
+
+	private void setVariant(int value) {
+		value = RhythmChart.clampVariant(value);
+		if (variant == value) return;
+		variant = value;
+		rememberedVariant = value;
+		refreshRecommendation(false);
 		playHit(false);
-		return true;
 	}
 
 	@Override
 	protected boolean onReadyClick(double mouseX, double mouseY) {
 		if (isChallenge()) return false;
 		float x = readyToUiX(mouseX), y = readyToUiY(mouseY);
-		if (insideRect(dropdownButton, x, y)) {
-			dropdownOpen = !dropdownOpen;
-			ensureVisible();
-			playHit(false);
-			return true;
-		}
-		if (dropdownOpen) {
-			int row = rowAt(x, y);
-			if (row >= 0) {
-				trackIndex = row;
-				rememberedTrack = row;
+		int row = rowAt(x, y);
+		if (row >= 0) {
+			if (row != trackIndex) {
+				selectTrack(row);
 				playHit(true);
 			}
-			dropdownOpen = false;
 			return true;
+		}
+		if (insideRect(calibrateRect, x, y)) {
+			playHit(false);
+			Minecraft.getInstance().setScreen(new RhythmCalibrationScreen(this));
+			return true;
+		}
+		if (insideRect(playRect, x, y)) {
+			if (!canPlay()) {
+				playMiss();
+				return true;
+			}
+			playUi(net.minecraft.sounds.SoundEvents.UI_BUTTON_CLICK.value(), 1.0f, 0.5f);
+			requestStart();
+			return true;
+		}
+		if (selectedChart != null && trackIndex > 0) {
+			for (int i = 0; i < difficultyButtons.length; i++) {
+				if (insideRect(difficultyButtons[i], x, y)) {
+					setDifficulty(i);
+					return true;
+				}
+			}
+			if (selectedChart.hasVocals()) {
+				for (int i = 0; i < variantButtons.length; i++) {
+					if (insideRect(variantButtons[i], x, y)) {
+						setVariant(i);
+						return true;
+					}
+				}
+			}
 		}
 		return false;
 	}
 
 	@Override
 	public boolean mouseScrolled(double mouseX, double mouseY, double delta) {
-		if (isReady() && dropdownOpen) {
-			int max = Math.max(0, tracks.size() - DROPDOWN_ROWS);
-			dropdownScroll = Math.max(0, Math.min(max, dropdownScroll - (int) Math.signum(delta)));
+		if (isReady() && !isChallenge() && insideRect(listBox, readyToUiX(mouseX), readyToUiY(mouseY))) {
+			int max = Math.max(0, tracks.size() - LIST_ROWS);
+			listScroll = Math.max(0, Math.min(max, listScroll - (int) Math.signum(delta)));
 			return true;
 		}
 		return super.mouseScrolled(mouseX, mouseY, delta);
@@ -224,18 +495,16 @@ public class RythmGameScreen extends BaseMinigameScreen {
 
 	private void ensureVisible() {
 		if (trackIndex < 0) return;
-		if (trackIndex < dropdownScroll) dropdownScroll = trackIndex;
-		if (trackIndex >= dropdownScroll + DROPDOWN_ROWS) dropdownScroll = trackIndex - DROPDOWN_ROWS + 1;
+		if (trackIndex < listScroll) listScroll = trackIndex;
+		if (trackIndex >= listScroll + LIST_ROWS) listScroll = trackIndex - LIST_ROWS + 1;
 	}
 
 	private int rowAt(float x, float y) {
-		if (dropdownButton == null) return -1;
-		float left = dropdownButton[0], width = dropdownButton[2];
-		float top = dropdownButton[1] + dropdownButton[3] + 1;
-		if (x < left || x > left + width || y < top) return -1;
-		int row = (int) ((y - top) / DROPDOWN_ROW_H);
-		if (row >= Math.min(DROPDOWN_ROWS, tracks.size())) return -1;
-		int index = row + dropdownScroll;
+		if (listBox == null) return -1;
+		if (x < listBox[0] || x > listBox[0] + listBox[2] || y < listBox[1] || y > listBox[1] + listBox[3]) return -1;
+		int row = (int) ((y - listBox[1] - 1) / LIST_ROW_H);
+		if (row < 0 || row >= Math.min(LIST_ROWS, tracks.size())) return -1;
+		int index = row + listScroll;
 		return index < tracks.size() ? index : -1;
 	}
 
@@ -244,59 +513,204 @@ public class RythmGameScreen extends BaseMinigameScreen {
 	}
 
 	@Override
-	protected int readyExtraHeight() {
-		if (isChallenge()) return 0;
-		return tracks.size() <= 1 ? 42 : 31;
-	}
-
-	@Override
-	protected void renderReadyExtra(GuiGraphics graphics, int x, int y) {
-		float width = 200, height = 16;
-		dropdownButton = new float[]{x - width / 2f, y, width, height};
+	protected boolean renderReadyCustom(GuiGraphics graphics) {
+		if (isChallenge()) return false;
+		int centerX = this.width / 2;
+		int centerY = this.height / 2;
+		float scale = Math.min(1f, Math.min((this.height - 44f) / (PANEL_H + 32f), (this.width - 16f) / (PANEL_W + 32f)));
+		readyScale = scale;
 		float mx = readyToUiX(guiMouseX()), my = readyToUiY(guiMouseY());
-		boolean hover = insideRect(dropdownButton, mx, my);
-		drawDropdownBox(graphics, dropdownButton[0], dropdownButton[1], width, height, hover ? 0xF0183824 : 0xF0102818);
-		Component label = trackIndex < 0 ? tr("gui.dragonminez.minigame.rhythm.select_song") : dmz("♪ ").append(tracks.get(trackIndex).name());
-		TextUtil.drawCenteredStringWithBorder(graphics, this.font, fit(label, (int) width - 26), x - 6, (int) y + 4, trackIndex < 0 ? 0xFFFFFFFF : 0xFFFFD700);
-		TextUtil.drawCenteredStringWithBorder(graphics, this.font, dmz(dropdownOpen ? "▲" : "▼"), (int) (x + width / 2f - 9), (int) y + 4, 0xFFD2D7F1);
-		TextUtil.drawCenteredStringWithBorder(graphics, this.font, tr("gui.dragonminez.minigame.rhythm.select"), x, (int) y + 20, 0xFF888888);
-		if (tracks.size() <= 1) {
-			TextUtil.drawCenteredStringWithBorder(graphics, this.font, tr("gui.dragonminez.minigame.rhythm.no_discs"), x, (int) y + 31, 0xFFFFAA55);
-		}
-		if (dropdownOpen) drawDropdownList(graphics, mx, my);
+		graphics.pose().pushPose();
+		graphics.pose().translate(centerX, centerY, 0);
+		graphics.pose().scale(scale, scale, 1f);
+		graphics.pose().translate(-centerX, -centerY, 0);
+		drawNpcPanel(graphics, centerX, centerY, PANEL_W, PANEL_H);
+		int left = centerX - PANEL_W / 2;
+		int top = centerY - PANEL_H / 2;
+		drawSongList(graphics, left, top, mx, my);
+		drawDetails(graphics, left + LIST_W + PANEL_GAP, top, mx, my);
+		graphics.pose().popPose();
+		return true;
 	}
 
-	private void drawDropdownList(GuiGraphics graphics, float mx, float my) {
-		float left = dropdownButton[0], width = dropdownButton[2];
-		float top = dropdownButton[1] + dropdownButton[3] + 1;
-		int rows = Math.min(DROPDOWN_ROWS, tracks.size());
+	private void drawSongList(GuiGraphics graphics, int left, int top, float mx, float my) {
+		TextUtil.drawStringWithBorder(graphics, this.font, tr("gui.dragonminez.minigame.rhythm.songs"), left + 2, top, 0xFFFFD700);
+		Integer offset = ConfigManager.getUserConfig().getRhythmAudioOffsetMs();
+		Component hint = tr("gui.dragonminez.minigame.rhythm.calibrate_link", offset == null ? 0 : offset);
+		float hintScale = 0.7f;
+		float hintW = this.font.width(hint) * hintScale;
+		calibrateRect = new float[]{left + LIST_W - 2 - hintW, top, hintW, 8};
+		boolean hintHover = insideRect(calibrateRect, mx, my);
 		graphics.pose().pushPose();
-		graphics.pose().translate(0, 0, 200);
-		drawDropdownBox(graphics, left, top, width, rows * DROPDOWN_ROW_H + 2, 0xF8081410);
+		graphics.pose().translate(left + LIST_W - 2, top + 2, 0);
+		graphics.pose().scale(hintScale, hintScale, 1f);
+		TextUtil.drawStringWithBorder(graphics, this.font, hint, -this.font.width(hint), 0, hintHover ? 0xFFFFD700 : 0xFF909AC3);
+		graphics.pose().popPose();
+		int rows = Math.min(LIST_ROWS, tracks.size());
+		float boxTop = top + 12;
+		float boxH = LIST_ROWS * LIST_ROW_H + 2;
+		listBox = new float[]{left, boxTop, LIST_W, boxH};
+		drawMenuBox(graphics, left, boxTop, LIST_W, boxH, 0xF0081410);
 		int hoverRow = rowAt(mx, my);
 		for (int i = 0; i < rows; i++) {
-			int index = i + dropdownScroll;
-			float rowY = top + 1 + i * DROPDOWN_ROW_H;
-			if (index == hoverRow) {
-				rectF(graphics, left + 2, rowY, width - 4, DROPDOWN_ROW_H, 0x40FFFFFF);
+			int index = i + listScroll;
+			Track track = tracks.get(index);
+			float rowY = boxTop + 1 + i * LIST_ROW_H;
+			boolean selected = index == trackIndex;
+			if (selected) {
+				rectF(graphics, left + 2, rowY, LIST_W - 8, LIST_ROW_H, 0x50D2D7F1);
+				graphics.flush();
+			} else if (index == hoverRow) {
+				rectF(graphics, left + 2, rowY, LIST_W - 8, LIST_ROW_H, 0x28FFFFFF);
 				graphics.flush();
 			}
-			Track track = tracks.get(index);
-			Component name = index == 0 ? track.name() : dmz("♪ ").append(track.name());
-			int color = index == trackIndex ? 0xFFFFD700 : 0xFFE0E4F4;
-			TextUtil.drawStringWithBorder(graphics, this.font, fit(name, (int) width - 16), (int) left + 6, (int) rowY + 3, color);
+			String prefix = track.kind() == Kind.BUILTIN ? "\u2605 " : track.kind() == Kind.DISC ? "\u266A " : "";
+			int prefixColor = track.kind() == Kind.BUILTIN ? 0xFFFFD700 : track.learned() ? 0xFF7CFD8A : 0xFFB0B8D8;
+			int textX = left + 6;
+			if (!prefix.isEmpty()) {
+				TextUtil.drawStringWithBorder(graphics, this.font, dmz(prefix), textX, (int) rowY + 2, prefixColor);
+				textX += this.font.width(dmz(prefix));
+			}
+			String duration = track.kind() == Kind.FREE ? "" : durationText(track.durationMs());
+			int durationW = duration.isEmpty() ? 0 : this.font.width(dmz(duration)) + 4;
+			int color = selected ? 0xFFFFD700 : 0xFFE0E4F4;
+			TextUtil.drawStringWithBorder(graphics, this.font, fit(track.name(), LIST_W - 16 - (textX - left) - durationW), textX, (int) rowY + 2, color);
+			if (!duration.isEmpty()) {
+				TextUtil.drawStringWithBorder(graphics, this.font, dmz(duration), left + LIST_W - 8 - (durationW - 4), (int) rowY + 2, selected ? 0xFFD2D7F1 : 0xFF808898);
+			}
 		}
-		if (tracks.size() > DROPDOWN_ROWS) {
-			float trackH = rows * DROPDOWN_ROW_H;
-			float thumbH = Math.max(8, trackH * DROPDOWN_ROWS / tracks.size());
-			float thumbY = top + 1 + (trackH - thumbH) * dropdownScroll / Math.max(1, tracks.size() - DROPDOWN_ROWS);
-			rectF(graphics, left + width - 4, thumbY, 2, thumbH, 0xFFD2D7F1);
+		if (tracks.size() > LIST_ROWS) {
+			float trackH = LIST_ROWS * LIST_ROW_H;
+			float thumbH = Math.max(8, trackH * LIST_ROWS / tracks.size());
+			float thumbY = boxTop + 1 + (trackH - thumbH) * listScroll / Math.max(1, tracks.size() - LIST_ROWS);
+			rectF(graphics, left + LIST_W - 4, thumbY, 2, thumbH, 0xFFD2D7F1);
 			graphics.flush();
 		}
-		graphics.pose().popPose();
 	}
 
-	private void drawDropdownBox(GuiGraphics graphics, float x, float y, float w, float h, int fill) {
+	private void drawDetails(GuiGraphics graphics, int x, int top, float mx, float my) {
+		Track track = selectedTrack();
+		if (track == null) return;
+		Component title = track.kind() == Kind.BUILTIN ? dmz("\u2605 ").append(track.name()) : track.name();
+		TextUtil.drawStringWithBorder(graphics, this.font, fit(title, DETAIL_W), x, top, 0xFFFFD700);
+		TextUtil.drawStringWithBorder(graphics, this.font, fit(track.subtitle(), DETAIL_W), x, top + 11, 0xFFB0B8D8);
+		int y = top + 22;
+		if (track.kind() != Kind.FREE) {
+			String info = durationText(track.durationMs());
+			if (selectedChart != null && selectedChart.bpm > 0) info += "  \u2022  " + Math.round(selectedChart.bpm) + " BPM";
+			Component infoLine = dmz(info);
+			if (track.learned()) infoLine = infoLine.copy().append(dmz("  \u2022  ")).append(tr("gui.dragonminez.minigame.rhythm.learned_tag").copy().withStyle(style -> style.withColor(0x7CFD8A)));
+			TextUtil.drawStringWithBorder(graphics, this.font, infoLine, x, y, 0xFFD2D7F1);
+			y += 14;
+		}
+		TrainingConfig.RhythmConfig cfg = ConfigManager.getTrainingConfig().getRhythm();
+		if (track.kind() == Kind.FREE) {
+			for (var line : this.font.split(tr("gui.dragonminez.minigame.rhythm.free_desc"), DETAIL_W)) {
+				TextUtil.drawStringWithBorder(graphics, this.font, line, x, y, 0xFFB0B0B0);
+				y += 10;
+			}
+		} else if (selectedChart != null) {
+			drawChartOptions(graphics, x, y, mx, my, cfg);
+		} else if (analysisFailed) {
+			for (var line : this.font.split(tr("gui.dragonminez.minigame.reject.analysis_failed"), DETAIL_W)) {
+				TextUtil.drawStringWithBorder(graphics, this.font, line, x, y, 0xFFFF5555);
+				y += 10;
+			}
+		} else {
+			drawAnalysisStatus(graphics, x, y);
+		}
+
+		float buttonX = x + DETAIL_W - BUTTON_W;
+		float buttonY = top + PANEL_H - BUTTON_H - 4;
+		playRect = new float[]{buttonX, buttonY, BUTTON_W, BUTTON_H};
+		Component label = isAnalyzing() ? phaseLabel(true) : tr("gui.dragonminez.minigame.play");
+		drawMenuButton(graphics, playRect, label, canPlay() ? 1f : 0.45f);
+		if (track.kind() == Kind.DISC && !track.learned()) {
+			float hintScale = 0.7f;
+			int hintWidth = (int) ((DETAIL_W - BUTTON_W - 8) / hintScale);
+			var lines = this.font.split(tr("gui.dragonminez.minigame.rhythm.learn_hint", Math.round(cfg.getLearnSongAccuracy() * 100)), hintWidth);
+			graphics.pose().pushPose();
+			graphics.pose().translate(x, buttonY + 3, 0);
+			graphics.pose().scale(hintScale, hintScale, 1f);
+			int hy = 0;
+			for (int i = 0; i < Math.min(2, lines.size()); i++) {
+				TextUtil.drawStringWithBorder(graphics, this.font, lines.get(i), 0, hy, 0xFF909AC3);
+				hy += 10;
+			}
+			graphics.pose().popPose();
+		}
+	}
+
+	private Component phaseLabel(boolean shortForm) {
+		int phase = Math.max(0, Math.min(RhythmAutoCharter.PHASE_COUNT - 1, analysisPhase));
+		float elapsed = secondsSince(analysisStartNanos);
+		String dots = ".".repeat(1 + (int) (elapsed * 3) % 3);
+		return tr("gui.dragonminez.minigame.rhythm." + (shortForm ? "phase_short." : "phase.") + phase).copy().append(dmz(dots));
+	}
+
+	private void drawAnalysisStatus(GuiGraphics graphics, int x, int y) {
+		int phase = Math.max(0, Math.min(RhythmAutoCharter.PHASE_COUNT - 1, analysisPhase));
+		float elapsed = secondsSince(analysisStartNanos);
+		float pulse = 0.85f + 0.15f * (float) Math.sin(elapsed * 6.0);
+		TextUtil.drawStringWithBorder(graphics, this.font, phaseLabel(false), x, y, withAlpha(0xFFD700, pulse));
+		float target = Math.min(0.97f, (phase + 0.6f) / RhythmAutoCharter.PHASE_COUNT + Math.min(0.12f, elapsed * 0.004f));
+		float shown = analysisShown.update(target, 2.0f);
+		drawBarH(graphics, SHEET, x, y + 13, DETAIL_W - 4, shown, FILL_CYAN);
+		for (var line : this.font.split(tr("gui.dragonminez.minigame.rhythm.analysis_note"), DETAIL_W)) {
+			y += 10;
+			TextUtil.drawStringWithBorder(graphics, this.font, line, x, y + 18, 0xFF808898);
+		}
+	}
+
+	private void drawChartOptions(GuiGraphics graphics, int x, int y, float mx, float my, TrainingConfig.RhythmConfig cfg) {
+		float appear = analysisDoneNanos == 0 ? 1f : Math.min(1f, secondsSince(analysisDoneNanos) / 0.35f);
+		float lift = (1f - appear) * 6f;
+		Component recommendedLine = tr("gui.dragonminez.minigame.rhythm.recommended",
+				difficultyName(recommended).copy().withStyle(style -> style.withColor(DIFFICULTY_COLORS[Math.max(0, recommended)])));
+		TextUtil.drawStringWithBorder(graphics, this.font, recommendedLine, x, (int) (y - lift), withAlpha(0xFFFFFF, appear));
+		float rowY = y + 12 + lift;
+		for (int i = 0; i < RhythmLogic.DIFFICULTY_COUNT; i++) {
+			float bx = x + i * (DIFFICULTY_W + DIFFICULTY_GAP);
+			difficultyButtons[i] = new float[]{bx, rowY, DIFFICULTY_W, DIFFICULTY_H};
+			drawChoice(graphics, difficultyButtons[i], difficultyName(i), DIFFICULTY_COLORS[i], i == difficulty, insideRect(difficultyButtons[i], mx, my), appear);
+			if (i == recommended) {
+				graphics.pose().pushPose();
+				graphics.pose().translate(bx + DIFFICULTY_W - 3, rowY - 4, 0);
+				graphics.pose().scale(0.7f, 0.7f, 1f);
+				TextUtil.drawCenteredStringWithBorder(graphics, this.font, dmz("\u2605"), 0, 0, withAlpha(0xFFD700, appear));
+				graphics.pose().popPose();
+			}
+		}
+		float nextY = rowY + DIFFICULTY_H + 6;
+		if (selectedChart != null && selectedChart.hasVocals()) {
+			for (int i = 0; i < 2; i++) {
+				float bx = x + i * (VARIANT_W + DIFFICULTY_GAP);
+				variantButtons[i] = new float[]{bx, nextY, VARIANT_W, VARIANT_H};
+				drawChoice(graphics, variantButtons[i], variantName(i), i == RhythmChart.VARIANT_VOCAL ? 0xF2A6FF : 0x7CE8FF, i == variant, insideRect(variantButtons[i], mx, my), appear);
+			}
+			nextY += VARIANT_H + 6;
+		} else {
+			variantButtons[0] = null;
+			variantButtons[1] = null;
+		}
+		double mult = cfg.getDifficulty(difficulty).getRewardMultiplier();
+		Component multLine = tr("gui.dragonminez.minigame.rhythm.tp_mult", multiplierText(mult));
+		int multColor = mult > 1.0 ? 0x7CFD8A : mult < 1.0 ? 0xFFB347 : 0xD2D7F1;
+		TextUtil.drawStringWithBorder(graphics, this.font, multLine, x, (int) nextY, withAlpha(multColor, appear));
+	}
+
+	private void drawChoice(GuiGraphics graphics, float[] rect, Component label, int tint, boolean selected, boolean hover, float appear) {
+		float bx = rect[0], by = rect[1], w = rect[2], h = rect[3];
+		int fill = selected ? withAlpha(darken(tint, 0.55f), 0.95f * appear) : withAlpha(0x0C1A14, (hover ? 0.95f : 0.85f) * appear);
+		rectF(graphics, bx, by, w, h, fill);
+		outlineF(graphics, bx - 1, by - 1, w + 2, h + 2, 1f, withAlpha(0x0C0C12, appear));
+		outlineF(graphics, bx, by, w, h, 1f, withAlpha(selected ? tint : hover ? 0xD2D7F1 : 0x909AC3, appear));
+		graphics.flush();
+		int color = selected ? withAlpha(0xFFFFFF, appear) : withAlpha(hover ? brighten(tint, 0.3f) : tint, 0.9f * appear);
+		TextUtil.drawCenteredStringWithBorder(graphics, this.font, fit(label, (int) w - 4), (int) (bx + w / 2f), (int) by + 3, color);
+	}
+
+	private void drawMenuBox(GuiGraphics graphics, float x, float y, float w, float h, int fill) {
 		rectF(graphics, x, y, w, h, fill);
 		outlineF(graphics, x - 1, y - 1, w + 2, h + 2, 1f, 0xFF0C0C12);
 		outlineF(graphics, x, y, w, h, 1f, 0xFF909AC3);
@@ -316,7 +730,7 @@ public class RythmGameScreen extends BaseMinigameScreen {
 	protected MinigameLogic createLogic(MinigameStartS2C message) {
 		RhythmChart chart = message.getPayload().length > 0 ? RhythmChart.decode(message.getPayload()) : null;
 		if (chart == null || message.getOption().isEmpty()) activeTrack = tracks.isEmpty() ? null : tracks.get(0);
-		return MinigameLogics.create(minigameId, ConfigManager.getTrainingConfig(), message.getSeed(), chart);
+		return MinigameLogics.create(minigameId, ConfigManager.getTrainingConfig(), message.getSeed(), chart, RhythmLogic.optionDifficulty(message.getOption()), RhythmLogic.optionVariant(message.getOption()));
 	}
 
 	@Override
@@ -362,6 +776,11 @@ public class RythmGameScreen extends BaseMinigameScreen {
 	@Override
 	public void tick() {
 		super.tick();
+		if (!calibrationPrompted && isReady() && !isChallenge() && !TutorialManager.hasSeen(TutorialManager.RHYTHM_CALIBRATION)) {
+			calibrationPrompted = true;
+			Minecraft.getInstance().setScreen(new RhythmCalibrationScreen(this, true));
+			return;
+		}
 		if (logic == null) return;
 		RhythmLogic r = rhythm();
 		if (isPlaying() && r.chart() != null && !musicStarted) {
@@ -568,6 +987,7 @@ public class RythmGameScreen extends BaseMinigameScreen {
 		drawCenterTexts(graphics, r);
 		drawHealth(graphics, r);
 		if (now < 0) drawCountdown(graphics, now);
+		else if (r.isResting()) drawRestCountdown(graphics, r);
 		graphics.pose().popPose();
 
 		drawTopBar(graphics, r, now);
@@ -586,9 +1006,10 @@ public class RythmGameScreen extends BaseMinigameScreen {
 	private void drawKeyCap(GuiGraphics graphics, int lane, RhythmLogic r) {
 		float laneWidth = bottomWidth / RhythmLogic.LANES;
 		float k = laneWidth * 0.82f / KEY_W;
-		boolean held = r.isInputHeld(lane);
-		float sinceHit = secondsSince(keyHitNanos[lane]);
-		float sinceMiss = secondsSince(keyMissNanos[lane]);
+		boolean disabled = r.isResting();
+		boolean held = !disabled && r.isInputHeld(lane);
+		float sinceHit = disabled ? 99f : secondsSince(keyHitNanos[lane]);
+		float sinceMiss = disabled ? 99f : secondsSince(keyMissNanos[lane]);
 		int state = sinceHit < 0.12f ? 2 : held ? 1 : 0;
 		float pop = sinceHit < 0.5f ? 1f + 0.16f * (float) Math.exp(-sinceHit * 14.0) : 1f;
 		float shake = sinceMiss < 0.4f ? 2f * (float) Math.exp(-sinceMiss * 12.0) * (float) Math.sin(sinceMiss * 70.0) : 0f;
@@ -610,13 +1031,15 @@ public class RythmGameScreen extends BaseMinigameScreen {
 		if (sinceMiss < 0.35f) {
 			float red = sinceMiss / 0.35f;
 			RenderSystem.setShaderColor(1f, 0.45f + 0.55f * red, 0.45f + 0.55f * red, 1f);
+		} else if (disabled) {
+			RenderSystem.setShaderColor(0.42f, 0.44f, 0.5f, 1f);
 		}
 		HudRender.blit(graphics, SHEET, 0, 0, state * KEY_W, lane * KEY_H, KEY_W, KEY_H, SHEET_SIZE, SHEET_SIZE);
 		RenderSystem.setShaderColor(1f, 1f, 1f, 1f);
 		graphics.pose().popPose();
 
 		float pressOffset = state == 0 ? 0 : 3;
-		int letterColor = state == 2 ? 0xFF1A2230 : 0xFFFFFFFF;
+		int letterColor = disabled ? 0xFF6A6E7A : state == 2 ? 0xFF1A2230 : 0xFFFFFFFF;
 		float textScale = Math.max(1f, k * 0.75f);
 		graphics.pose().pushPose();
 		graphics.pose().translate(centerX, centerY + (pressOffset - 3.5f) * k * pop, 0);
@@ -646,7 +1069,11 @@ public class RythmGameScreen extends BaseMinigameScreen {
 	}
 
 	private void drawTopBar(GuiGraphics graphics, RhythmLogic r, double now) {
-		Component title = activeTrack != null && r.chart() != null ? activeTrack.name() : tr("gui.dragonminez.minigame.rhythm.free");
+		Component title = tr("gui.dragonminez.minigame.rhythm.free");
+		if (activeTrack != null && r.chart() != null) {
+			title = activeTrack.name().copy().append(dmz("  •  ")).append(difficultyName(r.difficultyIndex()).copy().withStyle(style -> style.withColor(DIFFICULTY_COLORS[r.difficultyIndex()])));
+			if (r.variant() == RhythmChart.VARIANT_VOCAL) title = title.copy().append(dmz("  •  ")).append(variantName(r.variant()).copy().withStyle(style -> style.withColor(0xF2A6FF)));
+		}
 		int barTop = (int) topY - 22;
 		TextUtil.drawCenteredStringWithBorder(graphics, this.font, dmz("♪ ").append(title), (int) cx, barTop, 0xFFFFFFFF);
 		float barW = 220f;
@@ -708,6 +1135,29 @@ public class RythmGameScreen extends BaseMinigameScreen {
 		drawLegend(graphics, "gui.dragonminez.minigame.legend.level", edgeX(0, 1f) - 14.5f, y - 9);
 	}
 
+	private void drawRestCountdown(GuiGraphics graphics, RhythmLogic r) {
+		int seconds = Math.max(1, (int) Math.ceil(r.restRemainingMs() / 1000.0));
+		if (seconds != restShownSeconds) {
+			restShownSeconds = seconds;
+			restPopNanos = System.nanoTime();
+		}
+		float since = secondsSince(restPopNanos);
+		float pop = 1f + 0.35f * (float) Math.exp(-since * 9.0);
+		float midY = yFor(0.7f);
+		rectF(graphics, cx - 30, midY - 30, 60, 60, 0x00000000);
+		disc(graphics, cx, midY, 24, 0x90101828);
+		ring(graphics, cx, midY, 24, 2, 0xC0D2D7F1);
+		float frac = (float) Math.max(0.0, Math.min(1.0, (r.restRemainingMs() % 1000) / 1000.0));
+		ring(graphics, cx, midY, 27, 1, withAlpha(0xFFFFFF, 0.25f + 0.5f * frac));
+		graphics.flush();
+		graphics.pose().pushPose();
+		graphics.pose().translate(cx, midY, 0);
+		graphics.pose().scale(2.2f * pop, 2.2f * pop, 1f);
+		TextUtil.drawCenteredStringWithBorder(graphics, this.font, dmz(String.valueOf(seconds)), 0, -4, 0xFFFFFFFF);
+		graphics.pose().popPose();
+		TextUtil.drawCenteredStringWithBorder(graphics, this.font, tr("gui.dragonminez.minigame.rhythm.rest"), (int) cx, (int) midY - 40, 0xFFD2D7F1);
+	}
+
 	private void drawCountdown(GuiGraphics graphics, double now) {
 		int seconds = (int) Math.ceil(-now / 1000.0);
 		float midY = yFor(0.7f);
@@ -733,6 +1183,14 @@ public class RythmGameScreen extends BaseMinigameScreen {
 		colors.add(0xFFFFD700);
 		lines.add(tr("gui.dragonminez.minigame.rhythm.stats", hits, r.judgedNotes(), r.misses(), String.format("%.1f%%", acc * 100), r.maxCombo()));
 		colors.add(0xFFB8E8FF);
+		if (r.chart() != null) {
+			lines.add(tr("gui.dragonminez.minigame.rhythm.difficulty_result", difficultyName(r.difficultyIndex()), multiplierText(r.songDifficulty().getRewardMultiplier())));
+			colors.add(0xFF000000 | DIFFICULTY_COLORS[r.difficultyIndex()]);
+		}
+		if (finalResult() != null && finalResult().isSongLearned()) {
+			lines.add(tr("gui.dragonminez.minigame.rhythm.song_learned"));
+			colors.add(0xFF7CFD8A);
+		}
 	}
 
 	private static int brighten(int rgb, float amount) {

@@ -78,6 +78,8 @@ public final class MinigameSessionManager {
 		boolean invalid;
 		boolean desyncLogged;
 
+		String track = "";
+
 		Session(int id, String minigameId, MinigameOrigin origin, int challengeStage, MinigameLogic logic, long now, boolean knownAtStart, boolean mentor) {
 			this.id = id;
 			this.minigameId = minigameId;
@@ -153,32 +155,40 @@ public final class MinigameSessionManager {
 					reject(player, id, origin, challengeStage, "gui.dragonminez.minigame.reject.challenge");
 					return;
 				}
-				targetLevels = Math.max(1, config.getChallengeTargetLevels());
+				targetLevels = Math.max(1, config.getChallengeTargetLevels(id));
 			}
 		}
 
 		RhythmChart chart = null;
-		String track = option == null ? "" : option;
+		String track = RhythmLogic.optionTrack(option);
+		int difficulty = RhythmLogic.optionDifficulty(option);
+		int variant = RhythmLogic.optionVariant(option);
 		if (RhythmLogic.ID.equals(id) && !track.isEmpty() && origin != MinigameOrigin.CHALLENGE) {
 			String problem = null;
-			ResourceLocation itemId = ResourceLocation.tryParse(track);
+			BuiltinSongs.Song song = BuiltinSongs.find(track);
+			ResourceLocation itemId = song == null ? ResourceLocation.tryParse(track) : null;
 			Item item = itemId == null ? null : ForgeRegistries.ITEMS.getValue(itemId);
-			if (!(item instanceof RecordItem record)) {
+			String soundId = song != null ? song.sound() : item instanceof RecordItem record ? record.getSound().getLocation().toString() : null;
+			int lengthMs = song != null ? song.durationMs() : item instanceof RecordItem record ? record.getLengthInTicks() * 50 : 0;
+			if (soundId == null) {
 				problem = "gui.dragonminez.minigame.reject.no_chart";
 			} else {
-				String soundId = record.getSound().getLocation().toString();
 				chart = RhythmChartRegistry.find(track, soundId);
+				String clientHash = RhythmLogic.optionHash(option);
+				if (chart != null && !chart.matchesAudio(clientHash)) chart = null;
 				if (chart == null && payload != null && payload.length > 0) {
 					RhythmChart generated = RhythmChart.decode(payload);
-					String invalid = RhythmAutoCharter.validate(generated, record.getLengthInTicks() * 50);
+					String invalid = RhythmAutoCharter.validate(generated, lengthMs);
 					if (invalid == null) {
-						chart = new RhythmChart("auto:" + track, track, soundId, generated.bpm, generated.durationMs, generated.notes);
+						chart = new RhythmChart("auto:" + track, track, soundId, generated.bpm, generated.durationMs, generated.notes, generated.vocalNotes, generated.audioHash);
 					} else {
 						LogUtil.warn(Env.SERVER, "Rejected generated rhythm chart for {} from {}: {}", track, player.getGameProfile().getName(), invalid);
 					}
 				}
+				if (chart != null && chart.hasVocals() && RhythmAutoCharter.validateNotes(chart.vocalNotes, chart.durationMs) != null) chart = chart.withoutVocals();
 				if (chart == null) problem = "gui.dragonminez.minigame.reject.no_chart";
-				else if (config.getRhythm().isRequireDiscInInventory() && !player.getInventory().hasAnyMatching(stack -> stack.is(item))) {
+				else if (song == null && config.getRhythm().isRequireDiscInInventory() && !data.getCharacter().isSongLearned(track)
+						&& !player.getInventory().hasAnyMatching(stack -> stack.is(item))) {
 					problem = "gui.dragonminez.minigame.reject.no_disc";
 				}
 			}
@@ -186,20 +196,23 @@ public final class MinigameSessionManager {
 				reject(player, id, origin, challengeStage, problem);
 				return;
 			}
+			variant = chart.effectiveVariant(variant);
 		} else {
 			track = "";
 		}
 
 		long seed = player.getRandom().nextLong() ^ System.nanoTime();
-		MinigameLogic logic = MinigameLogics.create(id, config, seed, chart);
+		MinigameLogic logic = MinigameLogics.create(id, config, seed, chart, difficulty, variant);
 		if (targetLevels > 0) logic.setTargetLevelsCleared(targetLevels);
 		int sessionId = nextSessionId++;
 		if (nextSessionId <= 0) nextSessionId = 1;
-		SESSIONS.put(uuid, new Session(sessionId, id, origin, challengeStage, logic, now, known, mentor));
+		Session created = new Session(sessionId, id, origin, challengeStage, logic, now, known, mentor);
+		created.track = track;
+		SESSIONS.put(uuid, created);
 
 		NetworkHandler.sendToPlayer(new MinigameStartS2C(true, sessionId, seed, id, origin, challengeStage, targetLevels, mentor, known,
 				data.getCharacter().getLearnRunsFor(id), Math.max(1, config.getLearnRequiredRuns()), Math.max(1, config.getLearnRequiredLevel()), "",
-				track, chart == null ? null : chart.encode()), player);
+				chart == null ? "" : RhythmLogic.buildOption(track, difficulty, variant), chart == null ? null : chart.encode()), player);
 		startAnimation(player);
 	}
 
@@ -278,7 +291,7 @@ public final class MinigameSessionManager {
 			int tp = (int) Math.floor(computeReward(data, session));
 			NetworkHandler.sendToPlayer(new MinigameResultS2C(session.id, false, false, tp, logic.levelsCleared(), logic.tickCount(),
 					(float) logic.performance(), (float) logic.rewardRate(), session.mentor, data.getCharacter().getLearnRunsFor(session.minigameId),
-					Math.max(1, ConfigManager.getTrainingConfig().getLearnRequiredRuns()), false, false, MinigameResultS2C.CHALLENGE_NONE), player);
+					Math.max(1, ConfigManager.getTrainingConfig().getLearnRequiredRuns()), false, false, MinigameResultS2C.CHALLENGE_NONE, false), player);
 		});
 	}
 
@@ -311,6 +324,7 @@ public final class MinigameSessionManager {
 		int tp = 0;
 		boolean learnedNow = false;
 		boolean learnRunCounted = false;
+		boolean songLearned = false;
 
 		if (session.origin == MinigameOrigin.CHALLENGE) {
 			challengeOutcome = resolveChallenge(player, data, session);
@@ -333,13 +347,20 @@ public final class MinigameSessionManager {
 				}
 				NetworkHandler.sendToTrackingEntityAndSelf(new StatsSyncS2C(player), player);
 			}
+			if (logic instanceof RhythmLogic rhythm && rhythm.chart() != null && rhythm.isSongCompleted() && rhythm.health() > 0
+					&& session.track != null && !session.track.isEmpty() && !BuiltinSongs.isBuiltin(session.track)
+					&& rhythm.accuracy() >= config.getRhythm().getLearnSongAccuracy() && !data.getCharacter().isSongLearned(session.track)) {
+				data.getCharacter().addLearnedSong(session.track);
+				songLearned = true;
+				NetworkHandler.sendToTrackingEntityAndSelf(new StatsSyncS2C(player), player);
+			}
 		}
 
 		if (!notify) return;
 		int runs = learnedNow ? Math.max(1, config.getLearnRequiredRuns()) : data.getCharacter().getLearnRunsFor(session.minigameId);
 		NetworkHandler.sendToPlayer(new MinigameResultS2C(session.id, true, session.invalid, tp, logic.levelsCleared(), logic.tickCount(),
 				(float) logic.performance(), (float) logic.rewardRate(), session.mentor, runs, Math.max(1, config.getLearnRequiredRuns()),
-				learnedNow, learnRunCounted, challengeOutcome), player);
+				learnedNow, learnRunCounted, challengeOutcome, songLearned), player);
 	}
 
 	private static int resolveChallenge(ServerPlayer player, StatsData data, Session session) {

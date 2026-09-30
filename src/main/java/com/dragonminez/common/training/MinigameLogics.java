@@ -19,8 +19,16 @@ public final class MinigameLogics {
 	}
 
 	public static MinigameLogic create(String id, TrainingConfig config, long seed, RhythmChart chart) {
+		return create(id, config, seed, chart, RhythmLogic.DIFFICULTY_NORMAL);
+	}
+
+	public static MinigameLogic create(String id, TrainingConfig config, long seed, RhythmChart chart, int difficulty) {
+		return create(id, config, seed, chart, difficulty, RhythmChart.VARIANT_INSTRUMENTAL);
+	}
+
+	public static MinigameLogic create(String id, TrainingConfig config, long seed, RhythmChart chart, int difficulty, int variant) {
 		return switch (id) {
-			case RhythmLogic.ID -> new RhythmLogic(config, seed, chart);
+			case RhythmLogic.ID -> new RhythmLogic(config, seed, chart, difficulty, variant);
 			case KiControlLogic.ID -> new KiControlLogic(config, seed);
 			case MemoryLogic.ID -> new MemoryLogic(config, seed);
 			case PrecisionLogic.ID -> new PrecisionLogic(config, seed);

@@ -14,6 +14,8 @@ public final class MainSounds {
 			DeferredRegister.create(ForgeRegistries.SOUND_EVENTS, Reference.MOD_ID);
 
 	public static final RegistryObject<SoundEvent> GOLPE1 = registerSoundEvent("punch1");
+	public static final RegistryObject<SoundEvent> MINIGAME_SONG_ILL_FORGET = registerSoundEvent("minigame.ill_forget_about_you_in_time");
+	public static final RegistryObject<SoundEvent> MINIGAME_SONG_OH_YEAH = registerSoundEvent("minigame.oh_yeah");
 	public static final RegistryObject<SoundEvent> GOLPE2 = registerSoundEvent("punch2");
 	public static final RegistryObject<SoundEvent> GOLPE3 = registerSoundEvent("punch3");
 	public static final RegistryObject<SoundEvent> GOLPE4 = registerSoundEvent("punch4");

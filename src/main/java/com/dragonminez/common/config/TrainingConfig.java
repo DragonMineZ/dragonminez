@@ -20,7 +20,7 @@ public class TrainingConfig {
 	private double mentorBonus = 0.25;
 	private int learnRequiredLevel = 5;
 	private int learnRequiredRuns = 3;
-	private int challengeTargetLevels = 5;
+	private int challengeTargetLevels = 10;
 
 	private RhythmConfig rhythm = new RhythmConfig();
 	private ControlConfig control = new ControlConfig();
@@ -33,6 +33,11 @@ public class TrainingConfig {
 		double perMinute = tpPerMinuteCoefficient * Math.pow(tpc, rewardCostExponent);
 		double multiplier = settings != null ? settings.getRewardMultiplier() : 1.0;
 		return Math.max(0.0, perMinute * multiplier);
+	}
+
+	public int getChallengeTargetLevels(String minigameId) {
+		MinigameSettings settings = getSettings(minigameId);
+		return settings.getChallengeTargetLevels() > 0 ? settings.getChallengeTargetLevels() : challengeTargetLevels;
 	}
 
 	public MinigameSettings getSettings(String minigameId) {
@@ -54,12 +59,13 @@ public class TrainingConfig {
 		protected boolean unlockedByDefault = false;
 		protected String masterName = "a master";
 		protected int difficultyCapLevel = 20;
+		protected int challengeTargetLevels = 0;
 	}
 
 	@Getter
 	@NoArgsConstructor
 	public static class RhythmConfig extends MinigameSettings {
-		{ masterName = "popo"; difficultyCapLevel = 10; }
+		{ masterName = "popo"; difficultyCapLevel = 10; challengeTargetLevels = 6; }
 
 		private boolean requireDiscInInventory = true;
 		private int baseTravelMs = 1700;
@@ -69,6 +75,12 @@ public class TrainingConfig {
 		private int goodWindowMs = 115;
 		private int holdReleaseGraceMs = 140;
 		private int densityTierEveryLevels = 2;
+		private double recommendedMaxNotesPerSecond = 3.0;
+		private double learnSongAccuracy = 0.75;
+		private SongDifficulty easy = new SongDifficulty(0.20, 0.42, 1700, 1400, 0.8);
+		private SongDifficulty normal = new SongDifficulty(0.35, 0.65, 1550, 1150, 1.1);
+		private SongDifficulty hard = new SongDifficulty(0.55, 0.88, 1350, 950, 1.25);
+		private SongDifficulty expert = new SongDifficulty(0.75, 1.0, 1150, 780, 1.45);
 
 		private double progressMax = 100.0;
 		private double progressOnLevelUp = 20.0;
@@ -89,7 +101,34 @@ public class TrainingConfig {
 		private double freeMaxBpm = 160.0;
 		private double freeHoldChance = 0.12;
 		private double freeChordChance = 0.06;
-		private double songRewardMultiplier = 1.15;
+		private double songRewardMultiplier = 1.05;
+
+		public SongDifficulty getDifficulty(int index) {
+			return switch (index) {
+				case 0 -> easy;
+				case 2 -> hard;
+				case 3 -> expert;
+				default -> normal;
+			};
+		}
+	}
+
+	@Getter
+	@NoArgsConstructor
+	public static class SongDifficulty {
+		private double startIntensity = 0.35;
+		private double endIntensity = 0.65;
+		private int startTravelMs = 1550;
+		private int endTravelMs = 1150;
+		private double rewardMultiplier = 1.0;
+
+		public SongDifficulty(double startIntensity, double endIntensity, int startTravelMs, int endTravelMs, double rewardMultiplier) {
+			this.startIntensity = startIntensity;
+			this.endIntensity = endIntensity;
+			this.startTravelMs = startTravelMs;
+			this.endTravelMs = endTravelMs;
+			this.rewardMultiplier = rewardMultiplier;
+		}
 	}
 
 	@Getter
@@ -146,19 +185,21 @@ public class TrainingConfig {
 
 		private int outerRingRadius = 40;
 		private int targetRadius = 14;
-		private double baseRingSpeed = 0.5;
-		private double ringSpeedPerLevel = 0.045;
-		private int spawnIntervalTicks = 12;
+		private double baseRingSpeed = 0.42;
+		private double ringSpeedPerLevel = 0.03;
+		private int spawnIntervalTicks = 16;
 		private int maxCircles = 3;
-		private int perfectWindow = 4;
-		private int goodWindow = 11;
+		private int startingMaxCircles = 2;
+		private int maxCirclesFullLevel = 8;
+		private int perfectWindow = 5;
+		private int goodWindow = 13;
 		private int perfectPoints = 2;
 		private int goodPoints = 1;
 		private int missPenalty = 2;
 		private int fadeOutTicks = 20;
 		private int startingScore = 6;
 		private double burstChance = 0.5;
-		private int scorePerLevel = 14;
+		private int scorePerLevel = 12;
 		private int loseMissThreshold = 5;
 		private int loseMissWindow = 10;
 	}

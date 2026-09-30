@@ -30,10 +30,11 @@ public class MinigameResultS2C {
 	private final boolean learnedNow;
 	private final boolean learnRunCounted;
 	private final int challengeOutcome;
+	private final boolean songLearned;
 
 	public MinigameResultS2C(int sessionId, boolean finalResult, boolean invalid, int tpEarned, int levelsCleared, int ticksPlayed,
 							 float performance, float rewardRate, boolean mentorBonus, int learnRuns, int learnRequiredRuns,
-							 boolean learnedNow, boolean learnRunCounted, int challengeOutcome) {
+							 boolean learnedNow, boolean learnRunCounted, int challengeOutcome, boolean songLearned) {
 		this.sessionId = sessionId;
 		this.finalResult = finalResult;
 		this.invalid = invalid;
@@ -48,6 +49,7 @@ public class MinigameResultS2C {
 		this.learnedNow = learnedNow;
 		this.learnRunCounted = learnRunCounted;
 		this.challengeOutcome = challengeOutcome;
+		this.songLearned = songLearned;
 	}
 
 	public MinigameResultS2C(FriendlyByteBuf buf) {
@@ -65,6 +67,7 @@ public class MinigameResultS2C {
 		this.learnedNow = buf.readBoolean();
 		this.learnRunCounted = buf.readBoolean();
 		this.challengeOutcome = buf.readByte();
+		this.songLearned = buf.readBoolean();
 	}
 
 	public void encode(FriendlyByteBuf buf) {
@@ -82,6 +85,7 @@ public class MinigameResultS2C {
 		buf.writeBoolean(learnedNow);
 		buf.writeBoolean(learnRunCounted);
 		buf.writeByte(challengeOutcome);
+		buf.writeBoolean(songLearned);
 	}
 
 	public void handle(Supplier<NetworkEvent.Context> ctx) {

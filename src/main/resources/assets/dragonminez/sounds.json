@@ -1185,5 +1185,21 @@
         "stream": true
       }
     ]
+  },
+  "minigame.ill_forget_about_you_in_time": {
+    "sounds": [
+      {
+        "name": "dragonminez:minigame/ill_forget_about_you_in_time",
+        "stream": true
+      }
+    ]
+  },
+  "minigame.oh_yeah": {
+    "sounds": [
+      {
+        "name": "dragonminez:minigame/oh_yeah",
+        "stream": true
+      }
+    ]
   }
 }

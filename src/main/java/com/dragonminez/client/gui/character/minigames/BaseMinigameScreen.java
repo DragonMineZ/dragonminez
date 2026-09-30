@@ -49,7 +49,7 @@ public abstract class BaseMinigameScreen extends Screen {
 	private static final int VERIFY_TIMEOUT_TICKS = 100;
 	private static final int MOUSE_KEY_BASE = -1000;
 	private static final ResourceLocation BUTTONS = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "textures/gui/buttons/characterbuttons.png");
-	private static final int BUTTON_W = 74, BUTTON_H = 20;
+	protected static final int BUTTON_W = 74, BUTTON_H = 20;
 	private static final float PAUSE_FADE = 0.3f;
 	private static final float PAUSE_CLOSE = 0.25f;
 	private static final float COUNTDOWN_SECONDS = 3f;
@@ -96,7 +96,7 @@ public abstract class BaseMinigameScreen extends Screen {
 	private float[] playButton;
 	private float[] resumeButton;
 	private float[] finishButton;
-	private float readyScale = 1f;
+	protected float readyScale = 1f;
 
 	protected float fieldScale = 1f;
 	protected float fieldLeft;
@@ -205,7 +205,7 @@ public abstract class BaseMinigameScreen extends Screen {
 		playMiss();
 	}
 
-	private void requestStart() {
+	protected void requestStart() {
 		stage = Stage.CONNECTING;
 		waitTicks = 0;
 		NetworkHandler.sendToServer(new MinigameStartC2S(minigameId, effectiveOrigin(), challenge != null ? challengeStage : 0, challenge != null ? "" : startOption(), challenge != null ? null : startPayload()));
@@ -404,7 +404,7 @@ public abstract class BaseMinigameScreen extends Screen {
 		switch (stage) {
 			case READY -> {
 				if (keyCode == GLFW.GLFW_KEY_ESCAPE) quitToHub();
-				else if (!onReadyKey(keyCode) && isConfirmKey(keyCode)) requestStart();
+				else if (!onReadyKey(keyCode) && isConfirmKey(keyCode) && canPlay()) requestStart();
 				return true;
 			}
 			case CONNECTING, PREPARING, VERIFYING -> {
@@ -451,6 +451,10 @@ public abstract class BaseMinigameScreen extends Screen {
 			case READY -> {
 				if (onReadyClick(mouseX, mouseY)) return true;
 				if (inside(playButton, readyToUiX(mouseX), readyToUiY(mouseY))) {
+					if (!canPlay()) {
+						playMiss();
+						return true;
+					}
 					playUi(SoundEvents.UI_BUTTON_CLICK.value(), 1.0f, 0.5f);
 					requestStart();
 				}
@@ -498,7 +502,7 @@ public abstract class BaseMinigameScreen extends Screen {
 		return keyCode == GLFW.GLFW_KEY_ENTER || keyCode == GLFW.GLFW_KEY_KP_ENTER || keyCode == GLFW.GLFW_KEY_SPACE;
 	}
 
-	private static boolean inside(float[] rect, double x, double y) {
+	protected static boolean inside(float[] rect, double x, double y) {
 		return rect != null && x >= rect[0] && x <= rect[0] + rect[2] && y >= rect[1] && y <= rect[1] + rect[3];
 	}
 
@@ -648,7 +652,7 @@ public abstract class BaseMinigameScreen extends Screen {
 		graphics.pose().popPose();
 	}
 
-	private void drawNpcPanel(GuiGraphics graphics, int cx, int cy, int contentW, int contentH) {
+	protected void drawNpcPanel(GuiGraphics graphics, int cx, int cy, int contentW, int contentH) {
 		int padding = 16;
 		int panelW = contentW + padding * 2;
 		int panelH = contentH + padding * 2;
@@ -664,6 +668,10 @@ public abstract class BaseMinigameScreen extends Screen {
 
 	private void renderReadyOverlay(GuiGraphics graphics) {
 		graphics.fill(0, 0, this.width, this.height, 0xBB000000);
+		if (renderReadyCustom(graphics)) {
+			playButton = null;
+			return;
+		}
 		int cx = this.width / 2;
 		int cy = this.height / 2;
 		int wrapWidth = Math.max(120, Math.min(260, this.width - 90));
@@ -687,19 +695,23 @@ public abstract class BaseMinigameScreen extends Screen {
 		readyScale = scale;
 		float buttonY = y + (extra > 0 ? extra + 2 : 0) + 6;
 		playButton = new float[]{cx - BUTTON_W / 2f, buttonY, BUTTON_W, BUTTON_H};
-		drawMenuButton(graphics, playButton, "gui.dragonminez.minigame.play", 1f);
+		drawMenuButton(graphics, playButton, "gui.dragonminez.minigame.play", canPlay() ? 1f : 0.35f);
 		if (extra > 0) renderReadyExtra(graphics, cx, y + 2);
 		graphics.pose().popPose();
 	}
 
-	private void drawMenuButton(GuiGraphics graphics, float[] rect, String key, float alpha) {
-		boolean hover = inside(rect, readyToUiX(guiMouseX()), readyToUiY(guiMouseY()));
+	protected void drawMenuButton(GuiGraphics graphics, float[] rect, String key, float alpha) {
+		drawMenuButton(graphics, rect, tr(key), alpha);
+	}
+
+	protected void drawMenuButton(GuiGraphics graphics, float[] rect, Component label, float alpha) {
+		boolean hover = alpha > 0.5f && inside(rect, readyToUiX(guiMouseX()), readyToUiY(guiMouseY()));
 		RenderSystem.setShaderColor(1f, 1f, 1f, alpha);
 		RenderSystem.enableBlend();
 		HudRender.blit(graphics, BUTTONS, rect[0], rect[1], 0, hover ? 48 : 28, BUTTON_W, BUTTON_H, 256, 256);
 		RenderSystem.setShaderColor(1f, 1f, 1f, 1f);
 		int color = fadeColor(hover ? 0xFFFFD700 : 0xFFFFFFFF, alpha);
-		TextUtil.drawCenteredStringWithBorder(graphics, this.font, tr(key), (int) (rect[0] + rect[2] / 2f), (int) (rect[1] + 6), color);
+		TextUtil.drawCenteredStringWithBorder(graphics, this.font, label, (int) (rect[0] + rect[2] / 2f), (int) (rect[1] + 6), color);
 	}
 
 	private void renderPauseOverlay(GuiGraphics graphics) {
@@ -1094,6 +1106,18 @@ public abstract class BaseMinigameScreen extends Screen {
 		graphics.pose().scale(0.75f, 0.75f, 1f);
 		TextUtil.drawCenteredStringWithBorder(graphics, this.font, tr(key), 0, 0, 0xFFB8C0DC);
 		graphics.pose().popPose();
+	}
+
+	protected boolean canPlay() {
+		return true;
+	}
+
+	protected boolean renderReadyCustom(GuiGraphics graphics) {
+		return false;
+	}
+
+	protected MinigameResultS2C finalResult() {
+		return finalInfo;
 	}
 
 	protected int readyExtraHeight() {

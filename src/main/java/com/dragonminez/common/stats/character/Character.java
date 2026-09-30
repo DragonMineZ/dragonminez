@@ -77,6 +77,7 @@ public class Character {
 
 	private final Set<String> knownMinigames = new HashSet<>();
 	private final Map<String, Integer> minigameLearnRuns = new HashMap<>();
+	private final Set<String> learnedSongs = new HashSet<>();
 
 	public void clearInteractedMasters() {
 		interactedMasters.clear();
@@ -105,6 +106,18 @@ public class Character {
 
 	public void clearMinigameLearnRuns(String minigameId) {
 		if (minigameId != null) minigameLearnRuns.remove(minigameId.toLowerCase());
+	}
+
+	public boolean isSongLearned(String track) {
+		return track != null && learnedSongs.contains(track);
+	}
+
+	public void addLearnedSong(String track) {
+		if (track != null && !track.isEmpty()) learnedSongs.add(track);
+	}
+
+	public Set<String> getLearnedSongs() {
+		return java.util.Collections.unmodifiableSet(learnedSongs);
 	}
 
 	public static final String GENDER_MALE = "male";
@@ -494,6 +507,10 @@ public class Character {
 		for (Map.Entry<String, Integer> entry : minigameLearnRuns.entrySet()) learnRunsTag.putInt(entry.getKey(), entry.getValue());
 		tag.put("MinigameLearnRuns", learnRunsTag);
 
+		ListTag songsList = new ListTag();
+		for (String song : learnedSongs) songsList.add(net.minecraft.nbt.StringTag.valueOf(song));
+		tag.put("LearnedSongs", songsList);
+
 		return tag;
 	}
 
@@ -576,6 +593,12 @@ public class Character {
 		if (tag.contains("MinigameLearnRuns")) {
 			CompoundTag learnRunsTag = tag.getCompound("MinigameLearnRuns");
 			for (String key : learnRunsTag.getAllKeys()) this.minigameLearnRuns.put(key, learnRunsTag.getInt(key));
+		}
+
+		this.learnedSongs.clear();
+		if (tag.contains("LearnedSongs")) {
+			ListTag songsList = tag.getList("LearnedSongs", 8);
+			for (int i = 0; i < songsList.size(); i++) this.learnedSongs.add(songsList.getString(i));
 		}
 
 		updateOozaruCache();
@@ -842,6 +865,8 @@ public class Character {
 		this.knownMinigames.addAll(other.knownMinigames);
 		this.minigameLearnRuns.clear();
 		this.minigameLearnRuns.putAll(other.minigameLearnRuns);
+		this.learnedSongs.clear();
+		this.learnedSongs.addAll(other.learnedSongs);
 		updateOozaruCache();
 	}
 }

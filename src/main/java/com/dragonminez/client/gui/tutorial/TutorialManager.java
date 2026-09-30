@@ -25,6 +25,7 @@ public final class TutorialManager {
 	public static final String SKILLS_FORMS = "skills_forms";
 	public static final String QUEST_DIFFICULTY = "quest_difficulty";
 	public static final String QUEST_MENU = "quest_menu";
+	public static final String RHYTHM_CALIBRATION = "rhythm_calibration";
 
 	private static final int KEY_ESCAPE = 256;
 	private static final int KEY_ENTER = 257;

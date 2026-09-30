@@ -44,9 +44,10 @@ public class PrecisionLogic extends MinigameLogic {
 
 	@Override
 	protected void tickGame() {
-		if (--spawnTimer <= 0 && countActive() < cfg.getMaxCircles()) {
+		int maxCircles = maxCirclesNow();
+		if (--spawnTimer <= 0 && countActive() < maxCircles) {
 			spawnCircle();
-			if (countActive() < cfg.getMaxCircles() && random.nextDouble() < cfg.getBurstChance()) spawnCircle();
+			if (countActive() < maxCircles && random.nextDouble() < cfg.getBurstChance()) spawnCircle();
 			spawnTimer = cfg.getSpawnIntervalTicks();
 		}
 
@@ -61,6 +62,12 @@ public class PrecisionLogic extends MinigameLogic {
 			c.ringRadius -= (float) speed;
 			if (c.ringRadius <= cfg.getTargetRadius() - cfg.getGoodWindow()) missCircle(c);
 		}
+	}
+
+	private int maxCirclesNow() {
+		int full = Math.max(1, cfg.getMaxCirclesFullLevel());
+		double t = Math.min(1.0, difficulty() / (double) full);
+		return (int) Math.round(cfg.getStartingMaxCircles() + (cfg.getMaxCircles() - cfg.getStartingMaxCircles()) * t);
 	}
 
 	private int countActive() {

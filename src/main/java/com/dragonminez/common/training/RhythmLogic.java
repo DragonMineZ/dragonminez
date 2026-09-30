@@ -16,6 +16,15 @@ public class RhythmLogic extends MinigameLogic {
 	private static final int FREE_FIRST_NOTE_MS = 800;
 	private static final double PERFORMANCE_WEIGHT = 0.06;
 
+	public static final int DIFFICULTY_EASY = 0;
+	public static final int DIFFICULTY_NORMAL = 1;
+	public static final int DIFFICULTY_HARD = 2;
+	public static final int DIFFICULTY_EXPERT = 3;
+	public static final int DIFFICULTY_COUNT = 4;
+	private static final char OPTION_SEPARATOR = '|';
+	public static final int REST_MIN_MS = 3000;
+	private static final int REST_SETTLE_MS = 300;
+
 	public enum NoteState { PENDING, HOLDING, DONE }
 
 	public static final int JUDGE_MISS = 0;
@@ -24,12 +33,15 @@ public class RhythmLogic extends MinigameLogic {
 
 	private final TrainingConfig.RhythmConfig cfg;
 	private final RhythmChart chart;
+	private final int difficultyIndex;
+	private final int variant;
+	private final List<RhythmChart.Note> chartNotes;
+	private final TrainingConfig.SongDifficulty songDifficulty;
 	private final List<Note> notes = new ArrayList<>();
 	private final int[] laneJudgeTick = new int[LANES];
 	private final int[] laneJudge = new int[LANES];
 
 	private static final double[] FREE_NOTES_PER_BEAT = {0.425, 0.85, 1.30, 1.66};
-	private final double[] chartTierDensity = {0.0, 0.0, 0.0, 0.0};
 	private int chartIndex;
 	private double freeStepTimeMs = FREE_FIRST_NOTE_MS;
 	private int freeStep;
@@ -46,23 +58,118 @@ public class RhythmLogic extends MinigameLogic {
 	private int holdsCompleted;
 	private int lastJudgement = -1;
 	private int lastJudgementTick = -100;
+	private double lastSpawnedEndMs = Double.NEGATIVE_INFINITY;
+	private boolean resting;
+	private int restRemainingMs;
+	private boolean songCompleted;
 
 	public RhythmLogic(TrainingConfig config, long seed, RhythmChart chart) {
+		this(config, seed, chart, DIFFICULTY_NORMAL);
+	}
+
+	public RhythmLogic(TrainingConfig config, long seed, RhythmChart chart, int difficulty) {
+		this(config, seed, chart, difficulty, RhythmChart.VARIANT_INSTRUMENTAL);
+	}
+
+	public RhythmLogic(TrainingConfig config, long seed, RhythmChart chart, int difficulty, int variant) {
 		super(config, config.getRhythm(), seed);
 		this.cfg = config.getRhythm();
 		this.chart = chart;
+		this.variant = chart == null ? RhythmChart.VARIANT_INSTRUMENTAL : chart.effectiveVariant(variant);
+		this.chartNotes = chart == null ? List.of() : chart.notesFor(this.variant);
+		this.difficultyIndex = clampDifficulty(difficulty);
+		this.songDifficulty = cfg.getDifficulty(difficultyIndex);
 		this.health = cfg.getStartingHealth();
 		for (int i = 0; i < LANES; i++) laneJudgeTick[i] = -100;
-		if (chart != null && !chart.notes.isEmpty()) {
-			int first = chart.notes.get(0).timeMs();
-			int last = chart.notes.get(chart.notes.size() - 1).timeMs();
-			double seconds = Math.max(10.0, (last - first) / 1000.0);
-			for (int tier = 0; tier < 4; tier++) {
-				int count = 0;
-				for (RhythmChart.Note note : chart.notes) if (note.tier() <= tier) count++;
-				chartTierDensity[tier] = count / seconds;
-			}
+	}
+
+	public static int clampDifficulty(int difficulty) {
+		return Math.max(0, Math.min(DIFFICULTY_COUNT - 1, difficulty));
+	}
+
+	public static String buildOption(String item, int difficulty) {
+		return buildOption(item, difficulty, RhythmChart.VARIANT_INSTRUMENTAL);
+	}
+
+	public static String buildOption(String item, int difficulty, int variant) {
+		return buildOption(item, difficulty, variant, "");
+	}
+
+	public static String buildOption(String item, int difficulty, int variant, String audioHash) {
+		if (item == null || item.isEmpty()) return "";
+		String option = item + OPTION_SEPARATOR + clampDifficulty(difficulty) + OPTION_SEPARATOR + RhythmChart.clampVariant(variant);
+		return audioHash == null || audioHash.isEmpty() ? option : option + OPTION_SEPARATOR + audioHash;
+	}
+
+	public static String optionHash(String option) {
+		if (option == null) return "";
+		String[] parts = option.split("\\|");
+		return parts.length < 4 ? "" : parts[3].trim();
+	}
+
+	public static int optionVariant(String option) {
+		if (option == null) return RhythmChart.VARIANT_INSTRUMENTAL;
+		String[] parts = option.split("\\|");
+		if (parts.length < 3) return RhythmChart.VARIANT_INSTRUMENTAL;
+		try {
+			return RhythmChart.clampVariant(Integer.parseInt(parts[2].trim()));
+		} catch (NumberFormatException e) {
+			return RhythmChart.VARIANT_INSTRUMENTAL;
 		}
+	}
+
+	public static String optionTrack(String option) {
+		if (option == null) return "";
+		int sep = option.indexOf(OPTION_SEPARATOR);
+		return sep < 0 ? option : option.substring(0, sep);
+	}
+
+	public static int optionDifficulty(String option) {
+		if (option == null) return DIFFICULTY_NORMAL;
+		String[] parts = option.split("\\|");
+		if (parts.length < 2) return DIFFICULTY_NORMAL;
+		try {
+			return clampDifficulty(Integer.parseInt(parts[1].trim()));
+		} catch (NumberFormatException e) {
+			return DIFFICULTY_NORMAL;
+		}
+	}
+
+	public static int recommendedDifficulty(RhythmChart chart, TrainingConfig.RhythmConfig cfg) {
+		return recommendedDifficulty(chart, cfg, RhythmChart.VARIANT_INSTRUMENTAL);
+	}
+
+	public static int recommendedDifficulty(RhythmChart chart, TrainingConfig.RhythmConfig cfg, int variant) {
+		if (chart == null) return DIFFICULTY_NORMAL;
+		double limit = Math.max(0.5, cfg.getRecommendedMaxNotesPerSecond());
+		for (int d = DIFFICULTY_COUNT - 1; d > 0; d--) {
+			if (chart.densityAt(cfg.getDifficulty(d).getEndIntensity(), variant) <= limit) return d;
+		}
+		return DIFFICULTY_EASY;
+	}
+
+	public int variant() {
+		return variant;
+	}
+
+	public boolean isResting() {
+		return resting;
+	}
+
+	public int restRemainingMs() {
+		return restRemainingMs;
+	}
+
+	public boolean isSongCompleted() {
+		return songCompleted;
+	}
+
+	public int difficultyIndex() {
+		return difficultyIndex;
+	}
+
+	public TrainingConfig.SongDifficulty songDifficulty() {
+		return songDifficulty;
 	}
 
 	@Override
@@ -81,7 +188,14 @@ public class RhythmLogic extends MinigameLogic {
 	@Override
 	public double rewardRate() {
 		double rate = super.rewardRate();
-		return chart != null ? rate * Math.max(0.0, cfg.getSongRewardMultiplier()) : rate;
+		if (chart == null) return rate;
+		return rate * Math.max(0.0, cfg.getSongRewardMultiplier()) * Math.max(0.0, songDifficulty.getRewardMultiplier());
+	}
+
+	public double intensity() {
+		if (chart == null) return (allowedTier() + 1) / 4.0;
+		double start = songDifficulty.getStartIntensity();
+		return start + (songDifficulty.getEndIntensity() - start) * songProgress();
 	}
 
 	public static double songTimeMs(int tick, float frac) {
@@ -92,11 +206,21 @@ public class RhythmLogic extends MinigameLogic {
 		return songTimeMs(tickCount(), 0f);
 	}
 
+	public double songProgress() {
+		if (chart == null || chart.durationMs <= 0) return 0.0;
+		return Math.max(0.0, Math.min(1.0, songTimeMs() / chart.durationMs));
+	}
+
 	public int travelMs() {
+		if (chart != null) {
+			double start = songDifficulty.getStartTravelMs();
+			return (int) Math.round(start + (songDifficulty.getEndTravelMs() - start) * songProgress());
+		}
 		return Math.max(cfg.getMinTravelMs(), cfg.getBaseTravelMs() - difficulty() * cfg.getTravelMsDecreasePerLevel());
 	}
 
 	public int allowedTier() {
+		if (chart != null) return Math.max(0, Math.min(3, (int) Math.floor(intensity() * 4.0)));
 		int every = Math.max(1, cfg.getDensityTierEveryLevels());
 		return Math.min(3, difficulty() / every);
 	}
@@ -126,23 +250,52 @@ public class RhythmLogic extends MinigameLogic {
 		}
 		if (isFinished()) return;
 
-		if (chart != null && chartIndex >= chart.notes.size() && now > chart.durationMs + SONG_END_GRACE_MS) {
+		if (chart != null) updateRest(now);
+
+		if (chart != null && chartIndex >= chartNotes.size() && now > chart.durationMs + SONG_END_GRACE_MS) {
 			boolean pending = false;
 			for (Note note : notes) if (note.state != NoteState.DONE) pending = true;
-			if (!pending) complete();
+			if (!pending) {
+				songCompleted = true;
+				complete();
+			}
 		}
+	}
+
+	private void updateRest(double now) {
+		resting = false;
+		restRemainingMs = 0;
+		if (lastSpawnedEndMs == Double.NEGATIVE_INFINITY || now < lastSpawnedEndMs + REST_SETTLE_MS) return;
+		for (Note note : notes) if (note.state != NoteState.DONE) return;
+		double intensity = intensity();
+		int next = -1;
+		for (int i = chartIndex; i < chartNotes.size(); i++) {
+			if (chartNotes.get(i).level() <= intensity) {
+				next = chartNotes.get(i).timeMs();
+				break;
+			}
+		}
+		if (next < 0 || next - lastSpawnedEndMs < REST_MIN_MS) return;
+		double visibleAt = next - travelMs();
+		if (visibleAt <= now) return;
+		resting = true;
+		restRemainingMs = (int) Math.ceil(visibleAt - now);
 	}
 
 	private void spawnNotes(double now) {
 		int travel = travelMs();
-		int tier = allowedTier();
 		if (chart != null) {
-			while (chartIndex < chart.notes.size() && chart.notes.get(chartIndex).timeMs() - travel <= now + MS_PER_TICK) {
-				RhythmChart.Note n = chart.notes.get(chartIndex++);
-				if (n.tier() <= tier) notes.add(new Note(n.timeMs(), n.lane(), n.lengthMs(), travel));
+			double intensity = intensity();
+			while (chartIndex < chartNotes.size() && chartNotes.get(chartIndex).timeMs() - travel <= now + MS_PER_TICK) {
+				RhythmChart.Note n = chartNotes.get(chartIndex++);
+				if (n.level() <= intensity) {
+					notes.add(new Note(n.timeMs(), n.lane(), n.lengthMs(), travel));
+					lastSpawnedEndMs = Math.max(lastSpawnedEndMs, n.timeMs() + n.lengthMs());
+				}
 			}
 			return;
 		}
+		int tier = allowedTier();
 		while (freeStepTimeMs - travel <= now + MS_PER_TICK) generateFreeStep(travel, tier);
 	}
 
@@ -200,7 +353,7 @@ public class RhythmLogic extends MinigameLogic {
 
 	@Override
 	protected void onKeyDown(int key, float frac) {
-		if (key < 0 || key >= LANES) return;
+		if (key < 0 || key >= LANES || resting) return;
 		double pressMs = songTimeMs(tickCount(), frac);
 		Note best = null;
 		double bestDist = Double.MAX_VALUE;
@@ -251,8 +404,8 @@ public class RhythmLogic extends MinigameLogic {
 	}
 
 	private double currentDensity() {
+		if (chart != null) return Math.max(0.3, chart.densityAt(intensity(), variant));
 		int tier = allowedTier();
-		if (chart != null) return Math.max(0.3, chartTierDensity[tier]);
 		double bpm = Math.min(cfg.getFreeMaxBpm(), cfg.getFreeBaseBpm() + difficulty() * cfg.getFreeBpmPerLevel());
 		return FREE_NOTES_PER_BEAT[tier] * bpm / 60.0;
 	}
@@ -365,7 +518,7 @@ public class RhythmLogic extends MinigameLogic {
 
 	@Override
 	protected long gameChecksum() {
-		return notes.size() * 31L + Math.round(progress * 1000.0) + Math.round(health * 100000.0) * 7L + combo * 13L;
+		return notes.size() * 31L + Math.round(progress * 1000.0) + Math.round(health * 100000.0) * 7L + combo * 13L + (resting ? 17L : 0L);
 	}
 
 	public static final class Note {

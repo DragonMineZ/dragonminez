@@ -2,6 +2,7 @@ package com.dragonminez.client.gui.character.minigames;
 
 import com.dragonminez.Env;
 import com.dragonminez.LogUtil;
+import com.dragonminez.Reference;
 import com.dragonminez.common.training.RhythmAutoCharter;
 import com.dragonminez.common.training.RhythmChart;
 import com.google.gson.Gson;
@@ -15,7 +16,6 @@ import net.minecraft.client.sounds.WeighedSoundEvents;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.packs.resources.Resource;
 import net.minecraft.util.RandomSource;
-import net.minecraft.world.item.RecordItem;
 import net.minecraftforge.fml.loading.FMLPaths;
 import org.lwjgl.stb.STBVorbis;
 import org.lwjgl.system.MemoryStack;
@@ -35,34 +35,39 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.function.IntConsumer;
 
 final class RhythmClientCharts {
-	private static final int GENERATOR_VERSION = 2;
+	private static final int GENERATOR_VERSION = 6;
 	private static final Gson GSON = new GsonBuilder().create();
 	private static final Map<String, RhythmChart> CACHE = new ConcurrentHashMap<>();
 
 	private RhythmClientCharts() {}
 
-	static RhythmChart cached(String itemId) {
-		return itemId == null ? null : CACHE.get(itemId);
+	static RhythmChart cached(String key) {
+		return key == null ? null : CACHE.get(key);
 	}
 
 	private static Path chartFolder() {
 		return FMLPaths.GAMEDIR.get().resolve("dragonminez").resolve("rhythm_charts");
 	}
 
-	private static Path chartFile(String itemId) {
-		return chartFolder().resolve(itemId.replace(':', '_').replaceAll("[^a-zA-Z0-9_.-]", "_") + ".json");
+	private static String fileStem(String key) {
+		return key.replace(':', '_').replaceAll("[^a-zA-Z0-9_.-]", "_");
 	}
 
-	static CompletableFuture<RhythmChart> analyze(String itemId, RecordItem record) {
-		ResourceLocation soundId = record.getSound().getLocation();
+	private static Path chartFile(String key) {
+		return chartFolder().resolve(fileStem(key) + ".json");
+	}
+
+	static CompletableFuture<RhythmChart> analyze(String key, ResourceLocation soundId, IntConsumer phase) {
 		WeighedSoundEvents events = Minecraft.getInstance().getSoundManager().getSoundEvent(soundId);
 		if (events == null) return CompletableFuture.completedFuture(null);
 		Sound sound = events.getSound(RandomSource.create());
 		ResourceLocation file = sound.getPath();
 		return CompletableFuture.supplyAsync(() -> {
 			try {
+				if (phase != null) phase.accept(RhythmAutoCharter.PHASE_ANALYZING);
 				Optional<Resource> resource = Minecraft.getInstance().getResourceManager().getResource(file);
 				if (resource.isEmpty()) return null;
 				byte[] bytes;
@@ -71,35 +76,63 @@ final class RhythmClientCharts {
 				}
 				String audioHash = HexFormat.of().formatHex(MessageDigest.getInstance("SHA-1").digest(bytes));
 
-				RhythmChart stored = readStored(itemId, audioHash);
+				RhythmChart bundled = readBundled(key, audioHash);
+				if (bundled != null) {
+					CACHE.put(key, bundled);
+					return bundled;
+				}
+
+				RhythmChart stored = readStored(key, audioHash);
 				if (stored != null) {
-					CACHE.put(itemId, stored);
+					CACHE.put(key, stored);
 					return stored;
 				}
 
-				float[] mono = decode(bytes);
-				if (mono == null) return null;
-				RhythmChart chart = RhythmAutoCharter.generate("auto:" + itemId, itemId, soundId.toString(), mono);
+				float[][] channels = decode(bytes);
+				if (channels == null) return null;
+				RhythmChart chart = RhythmAutoCharter.generate("auto:" + key, key, soundId.toString(), channels[0], channels[1], phase);
 				if (chart != null && RhythmAutoCharter.validate(chart, 0) == null) {
-					CACHE.put(itemId, chart);
-					writeStored(itemId, audioHash, chart);
+					chart = chart.withAudioHash(audioHash);
+					CACHE.put(key, chart);
+					writeStored(key, audioHash, chart);
 					return chart;
 				}
 			} catch (Exception e) {
-				LogUtil.warn(Env.CLIENT, "Could not analyze music disc {}: {}", itemId, e.getMessage());
+				LogUtil.warn(Env.CLIENT, "Could not analyze song {}: {}", key, e.getMessage());
 			}
 			return null;
 		}, Util.backgroundExecutor());
 	}
 
-	private static RhythmChart readStored(String itemId, String audioHash) {
-		Path path = chartFile(itemId);
+	private static RhythmChart readBundled(String key, String audioHash) {
+		ResourceLocation location = ResourceLocation.tryBuild(Reference.MOD_ID, "rhythm_charts/" + fileStem(key).toLowerCase(java.util.Locale.ROOT) + ".json");
+		if (location == null) return null;
+		try {
+			Optional<Resource> resource = Minecraft.getInstance().getResourceManager().getResource(location);
+			if (resource.isEmpty()) return null;
+			try (InputStream in = resource.get().open()) {
+				JsonObject root = JsonParser.parseString(new String(in.readAllBytes(), StandardCharsets.UTF_8)).getAsJsonObject();
+				RhythmChart chart = RhythmChart.fromJson("auto:" + key, root);
+				if (!chart.matchesAudio(audioHash)) {
+					LogUtil.info(Env.CLIENT, "Bundled rhythm chart for {} ignored: the song audio was replaced by a resource pack", key);
+					return null;
+				}
+				return RhythmAutoCharter.validate(chart, 0) == null ? chart : null;
+			}
+		} catch (Exception e) {
+			LogUtil.warn(Env.CLIENT, "Ignoring bundled rhythm chart {}: {}", location, e.getMessage());
+			return null;
+		}
+	}
+
+	private static RhythmChart readStored(String key, String audioHash) {
+		Path path = chartFile(key);
 		if (!Files.isRegularFile(path)) return null;
 		try {
 			JsonObject root = JsonParser.parseString(Files.readString(path, StandardCharsets.UTF_8)).getAsJsonObject();
 			if (!root.has("generator") || root.get("generator").getAsInt() != GENERATOR_VERSION) return null;
 			if (!root.has("audioHash") || !audioHash.equals(root.get("audioHash").getAsString())) return null;
-			RhythmChart chart = RhythmChart.fromJson("auto:" + itemId, root);
+			RhythmChart chart = RhythmChart.fromJson("auto:" + key, root).withAudioHash(audioHash);
 			return RhythmAutoCharter.validate(chart, 0) == null ? chart : null;
 		} catch (Exception e) {
 			LogUtil.warn(Env.CLIENT, "Ignoring unreadable rhythm chart {}: {}", path.getFileName(), e.getMessage());
@@ -107,20 +140,20 @@ final class RhythmClientCharts {
 		}
 	}
 
-	private static void writeStored(String itemId, String audioHash, RhythmChart chart) {
+	private static void writeStored(String key, String audioHash, RhythmChart chart) {
 		try {
 			Files.createDirectories(chartFolder());
 			JsonObject root = new JsonObject();
 			root.addProperty("generator", GENERATOR_VERSION);
 			root.addProperty("audioHash", audioHash);
 			chart.toJson().entrySet().forEach(entry -> root.add(entry.getKey(), entry.getValue()));
-			Files.writeString(chartFile(itemId), GSON.toJson(root), StandardCharsets.UTF_8);
+			Files.writeString(chartFile(key), GSON.toJson(root), StandardCharsets.UTF_8);
 		} catch (Exception e) {
-			LogUtil.warn(Env.CLIENT, "Could not save rhythm chart for {}: {}", itemId, e.getMessage());
+			LogUtil.warn(Env.CLIENT, "Could not save rhythm chart for {}: {}", key, e.getMessage());
 		}
 	}
 
-	private static float[] decode(byte[] bytes) {
+	private static float[][] decode(byte[] bytes) {
 		ByteBuffer data = MemoryUtil.memAlloc(bytes.length);
 		try (MemoryStack stack = MemoryStack.stackPush()) {
 			data.put(bytes).flip();
@@ -131,13 +164,19 @@ final class RhythmClientCharts {
 			try {
 				int ch = Math.max(1, channels.get(0));
 				int frames = pcm.remaining() / ch;
-				float[] mono = new float[frames];
-				for (int i = 0; i < frames; i++) {
-					float sum = 0;
-					for (int c = 0; c < ch; c++) sum += pcm.get(i * ch + c);
-					mono[i] = sum / (ch * 32768f);
+				int sourceRate = rate.get(0);
+				if (ch >= 2) {
+					float[] left = new float[frames];
+					float[] right = new float[frames];
+					for (int i = 0; i < frames; i++) {
+						left[i] = pcm.get(i * ch) / 32768f;
+						right[i] = pcm.get(i * ch + 1) / 32768f;
+					}
+					return new float[][]{RhythmAutoCharter.resample(left, sourceRate), RhythmAutoCharter.resample(right, sourceRate)};
 				}
-				return RhythmAutoCharter.resample(mono, rate.get(0));
+				float[] mono = new float[frames];
+				for (int i = 0; i < frames; i++) mono[i] = pcm.get(i) / 32768f;
+				return new float[][]{RhythmAutoCharter.resample(mono, sourceRate), null};
 			} finally {
 				LibCStdlib.free(pcm);
 			}
