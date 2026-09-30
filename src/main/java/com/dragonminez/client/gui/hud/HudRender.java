@@ -140,6 +140,11 @@ public final class HudRender {
 		dmzText(graphics, dmz(text), x, y, scale, align, rgb, alpha);
 	}
 
+	private static net.minecraft.util.FormattedCharSequence uncolored(net.minecraft.util.FormattedCharSequence sequence) {
+		return sink -> sequence.accept((index, style, codePoint) ->
+				sink.accept(index, style.withColor((net.minecraft.network.chat.TextColor) null), codePoint));
+	}
+
 	public static void dmzText(GuiGraphics graphics, net.minecraft.network.chat.Component component, float x, float y, float scale, float align, int rgb, float alpha) {
 		int alphaChannel = Math.round(Mth.clamp(alpha, 0.0f, 1.0f) * alphaScale * 255.0f);
 		if (alphaChannel <= 3 || component == null) return;
@@ -153,10 +158,11 @@ public final class HudRender {
 		graphics.pose().translate(x, y, 0.0f);
 		graphics.pose().scale(scale, scale, 1.0f);
 		graphics.pose().translate(offset, 0.0f, 0.0f);
-		graphics.drawString(font, component, -1, 0, border, false);
-		graphics.drawString(font, component, 1, 0, border, false);
-		graphics.drawString(font, component, 0, -1, border, false);
-		graphics.drawString(font, component, 0, 1, border, false);
+		net.minecraft.util.FormattedCharSequence outline = uncolored(component.getVisualOrderText());
+		graphics.drawString(font, outline, -1, 0, border, false);
+		graphics.drawString(font, outline, 1, 0, border, false);
+		graphics.drawString(font, outline, 0, -1, border, false);
+		graphics.drawString(font, outline, 0, 1, border, false);
 		graphics.drawString(font, component, 0, 0, color, false);
 		graphics.pose().popPose();
 	}
@@ -174,10 +180,10 @@ public final class HudRender {
 		graphics.pose().translate(x, y, 0.0f);
 		graphics.pose().scale(scale, scale, 1.0f);
 		graphics.pose().translate(offset, 0.0f, 0.0f);
-		graphics.drawString(font, sequence, -1, 0, border, false);
-		graphics.drawString(font, sequence, 1, 0, border, false);
-		graphics.drawString(font, sequence, 0, -1, border, false);
-		graphics.drawString(font, sequence, 0, 1, border, false);
+		graphics.drawString(font, uncolored(sequence), -1, 0, border, false);
+		graphics.drawString(font, uncolored(sequence), 1, 0, border, false);
+		graphics.drawString(font, uncolored(sequence), 0, -1, border, false);
+		graphics.drawString(font, uncolored(sequence), 0, 1, border, false);
 		graphics.drawString(font, sequence, 0, 0, color, false);
 		graphics.pose().popPose();
 	}

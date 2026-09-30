@@ -59,6 +59,7 @@ public abstract class PlayerGeoAnimatableMixin implements GeoAnimatable, IPlayer
 	@Unique private int dragonminez$landingTicks = 0;
 	@Unique private boolean dragonminez$wasEating = false;
 	@Unique private static final double WALK_SPEED_BASELINE = 0.2158;
+	@Unique private static final double FROZEN_SPEED_EPSILON = 0.01;
 	@Unique private static final double RUN_SPEED_BASELINE = 0.2806;
 	@Unique private static final int LANDING_ANIM_TICKS = 13;
 	@Unique private static final float FALL_TRIGGER_DISTANCE = 4.5F;
@@ -302,7 +303,7 @@ public abstract class PlayerGeoAnimatableMixin implements GeoAnimatable, IPlayer
 		IPlayerAnimatable animatable = (IPlayerAnimatable) this;
 		if (dragonminez$dashAnimTicks > 0) return PlayState.STOP;
 
-		boolean isMoving = dragonminez$isActuallyMoving(player);
+		boolean movedRecently = dragonminez$isActuallyMoving(player);
 		dragonminez$currentPoseAnim = CombatAnimationResolver.resolvePlayerPose(player);
 
 		StatsData data = StatsProvider.get(StatsCapability.INSTANCE, player).orElse(null);
@@ -331,6 +332,7 @@ public abstract class PlayerGeoAnimatableMixin implements GeoAnimatable, IPlayer
 		var nextStackFormConfig = TransformationsHelper.getNextAvailableStackForm(data);
 		String nextForm = nextFormConfig != null ? nextFormConfig.getName().toLowerCase() : "";
 		boolean isTransforming = data.getStatus().isActionCharging();
+		boolean isMoving = movedRecently && !((isChargingKi || isTransforming) && dragonminez$horizSpeed < FROZEN_SPEED_EPSILON);
 		ActionMode actionMode = data.getStatus().getSelectedAction();
 
 		if (isKnockedDown) return state.setAndContinue(KNOCKBACK_HORIZONTAL);
