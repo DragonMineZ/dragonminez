@@ -4,13 +4,16 @@ import com.dragonminez.Env;
 import com.dragonminez.LogUtil;
 import com.dragonminez.client.render.hair.HairRenderContext;
 import com.mojang.blaze3d.platform.Lighting;
+import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.math.Axis;
+import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.PlayerFaceRenderer;
 import net.minecraft.client.player.AbstractClientPlayer;
 import net.minecraft.client.renderer.LightTexture;
 import org.joml.Matrix4f;
+import org.lwjgl.opengl.GL11;
 import org.joml.Quaternionf;
 import org.joml.Vector3f;
 import software.bernie.geckolib.cache.object.GeoBone;
@@ -86,6 +89,7 @@ public final class HeadPortraitRenderer {
 		} finally {
 			active = false;
 			pose.popPose();
+			RenderSystem.clear(GL11.GL_DEPTH_BUFFER_BIT, Minecraft.ON_OSX);
 			graphics.disableScissor();
 			Lighting.setupFor3DItems();
 		}
