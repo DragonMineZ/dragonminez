@@ -12,6 +12,7 @@ import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 
 import java.util.HashMap;
+import java.util.Locale;
 import java.util.Map;
 
 @OnlyIn(Dist.CLIENT)
@@ -24,6 +25,7 @@ public class TextureCounter {
     private static final Map<String, Integer> NOSE_TYPE_CACHE = new HashMap<>();
     private static final Map<String, Integer> MOUTH_TYPE_CACHE = new HashMap<>();
     private static final Map<String, Integer> TATTOO_TYPE_CACHE = new HashMap<>();
+    private static final Map<String, Integer> OWN_FACE_CACHE = new HashMap<>();
 
     public static ResourceLocation cache(String namespace, String path) {
         return CACHE.computeIfAbsent(namespace + ":" + path, ResourceLocation::new);
@@ -52,7 +54,7 @@ public class TextureCounter {
     public static int getMaxEyesTypes(String race) {
         String normalizedRace = normalizeRace(race);
         if (EYES_TYPE_CACHE.containsKey(normalizedRace)) return EYES_TYPE_CACHE.get(normalizedRace);
-        int count = countFaceTextures(normalizedRace, "eye");
+        int count = maxFaceIndex(normalizedRace, "eye");
         EYES_TYPE_CACHE.put(normalizedRace, count);
         return count;
     }
@@ -60,7 +62,7 @@ public class TextureCounter {
     public static int getMaxNoseTypes(String race) {
         String normalizedRace = normalizeRace(race);
         if (NOSE_TYPE_CACHE.containsKey(normalizedRace)) return NOSE_TYPE_CACHE.get(normalizedRace);
-        int count = countFaceTextures(normalizedRace, "nose");
+        int count = maxFaceIndex(normalizedRace, "nose");
         NOSE_TYPE_CACHE.put(normalizedRace, count);
         return count;
     }
@@ -68,9 +70,43 @@ public class TextureCounter {
     public static int getMaxMouthTypes(String race) {
         String normalizedRace = normalizeRace(race);
         if (MOUTH_TYPE_CACHE.containsKey(normalizedRace)) return MOUTH_TYPE_CACHE.get(normalizedRace);
-        int count = countFaceTextures(normalizedRace, "mouth");
+        int count = maxFaceIndex(normalizedRace, "mouth");
         MOUTH_TYPE_CACHE.put(normalizedRace, count);
         return count;
+    }
+
+    public static String faceRaceKey(Character character) {
+        String race = character.getRaceName().toLowerCase(Locale.ROOT);
+        RaceCharacterConfig config = ConfigManager.getRaceCharacter(race);
+        if (config != null && config.hasCustomModel()) return config.getCustomModel().toLowerCase(Locale.ROOT);
+        return race;
+    }
+
+    public static int toHumanFaceIndex(Character character, String type, int value) {
+        int start = getHumanFaceStart(faceRaceKey(character), type);
+        return start >= 0 && value >= start ? value - start : -1;
+    }
+
+    public static int getHumanFaceStart(String race, String type) {
+        String normalizedRace = normalizeRace(race);
+        if (usesHumanFaces(normalizedRace)) return -1;
+        return Math.max(1, ownFaceCount(normalizedRace, type));
+    }
+
+    private static int maxFaceIndex(String race, String type) {
+        int humanCount = ownFaceCount("human", type);
+        if (usesHumanFaces(race)) return Math.max(0, humanCount - 1);
+        return getHumanFaceStart(race, type) + humanCount - 1;
+    }
+
+    private static boolean usesHumanFaces(String race) {
+        RaceCharacterConfig config = ConfigManager.getRaceCharacter(race);
+        if (config != null && !config.hasCustomModel() && !SkinGathererProvider.isBuiltInRace(race)) return true;
+        return SkinGathererProvider.modelFamily(race).equals("human");
+    }
+
+    private static int ownFaceCount(String race, String type) {
+        return OWN_FACE_CACHE.computeIfAbsent(race + ":" + type, key -> countFaceTextures(race, type));
     }
 
     public static int getMaxTattooTypes(String race) {
@@ -159,19 +195,17 @@ public class TextureCounter {
                 if (resourceManager.getResource(location).isPresent()) count++;
                 else break;
             }
-            return count;
+            return count + 1;
         }
 
         boolean isHumanoid = race.equals("human") || race.equals("saiyan");
         String raceFolder = isHumanoid ? "humansaiyan" : race;
         String prefix = raceFolder + "_";
 
-        RaceCharacterConfig config = ConfigManager.getRaceCharacter(race);
-
-        boolean isCustomLayered = !isHumanoid && config != null && Boolean.TRUE.equals(config.getIsLayered()) && !race.equals("namekian") && !race.equals("frostdemon") && !race.equals("bioandroid") && !race.equals("majin");
-
-        if (isCustomLayered) {
-            raceFolder = race;
+        if (!isHumanoid && !SkinGathererProvider.isBuiltInRace(race)) {
+            String owner = findLayeredModelOwner(race);
+            if (owner == null) return 0;
+            raceFolder = owner;
             prefix = race + "_";
         }
 
@@ -185,7 +219,17 @@ public class TextureCounter {
             else break;
         }
 
-        return count > 0 ? count - 1 : 0;
+        return count;
+    }
+
+    private static String findLayeredModelOwner(String model) {
+        for (Map.Entry<String, RaceCharacterConfig> entry : ConfigManager.getAllRaceCharacters().entrySet()) {
+            RaceCharacterConfig config = entry.getValue();
+            if (config != null && Boolean.TRUE.equals(config.getIsLayered()) && config.hasCustomModel() && config.getCustomModel().equalsIgnoreCase(model)) {
+                return entry.getKey().toLowerCase(Locale.ROOT);
+            }
+        }
+        return null;
     }
 
     private static int countTattooTextures() {
@@ -224,6 +268,7 @@ public class TextureCounter {
         NOSE_TYPE_CACHE.clear();
         MOUTH_TYPE_CACHE.clear();
         TATTOO_TYPE_CACHE.clear();
+        OWN_FACE_CACHE.clear();
         DMZSkinLayer.clearValidatedTexturesCache();
     }
 }
