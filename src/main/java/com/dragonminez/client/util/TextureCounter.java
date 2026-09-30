@@ -138,8 +138,9 @@ public class TextureCounter {
             int startIndex = usesVanillaSkin ? 1 : 0;
 
             String basePath = getBasePathForBodyType(race, gender);
+            String suffix = isHumanoid ? "_layer1.png" : ".png";
             for (int i = startIndex; i <= 100; i++) {
-                ResourceLocation location = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, basePath + i + ".png");
+                ResourceLocation location = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, basePath + i + suffix);
                 if (resourceManager.getResource(location).isPresent()) count++;
                 else break;
             }

@@ -156,4 +156,37 @@ public class ColorUtils {
         };
     }
 
+    private static final float SKIN_BASE_SATURATION = 0.5f;
+    private static final float SKIN_SHADOW_SATURATION = 1.7f;
+    private static final float SKIN_SHADOW_VALUE = 0.95f;
+    private static final float SKIN_REFERENCE_SATURATION = 0.21f;
+    private static final float SKIN_SHADOW_COMPENSATION = 0.15f;
+
+    public static float[] skinBaseTone(float[] color) {
+        return selfSaturate(color, SKIN_BASE_SATURATION, 1.0f);
+    }
+
+    public static float[] skinShadowTone(float[] color) {
+        float max = Math.max(color[0], Math.max(color[1], color[2]));
+        float min = Math.min(color[0], Math.min(color[1], color[2]));
+        float saturation = max <= 0.0f ? 0.0f : (max - min) / max;
+        float missing = Math.max(0.0f, 1.0f - skinSaturationGain(saturation) / skinSaturationGain(SKIN_REFERENCE_SATURATION));
+        return selfSaturate(color, SKIN_SHADOW_SATURATION, SKIN_SHADOW_VALUE * (1.0f - SKIN_SHADOW_COMPENSATION * missing));
+    }
+
+    private static float skinSaturationGain(float saturation) {
+        float keep = 1.0f - saturation;
+        return (float) (Math.pow(keep, 1.0f + SKIN_BASE_SATURATION) - Math.pow(keep, 1.0f + SKIN_SHADOW_SATURATION));
+    }
+
+    public static float[] selfSaturate(float[] color, float strength, float value) {
+        float max = Math.max(color[0], Math.max(color[1], color[2]));
+        if (max <= 0.0f) return new float[]{0.0f, 0.0f, 0.0f};
+        return new float[]{
+                color[0] * (float) Math.pow(color[0] / max, strength) * value,
+                color[1] * (float) Math.pow(color[1] / max, strength) * value,
+                color[2] * (float) Math.pow(color[2] / max, strength) * value
+        };
+    }
+
 }

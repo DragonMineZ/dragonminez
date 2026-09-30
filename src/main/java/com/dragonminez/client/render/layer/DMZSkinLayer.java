@@ -123,6 +123,11 @@ public class DMZSkinLayer<T extends AbstractClientPlayer & GeoAnimatable> extend
 			}
 
 			@Override
+			public void translucent(ResourceLocation texture, float[] color) {
+				renderLayerWholeModel(model, poseStack, bufferSource, animatable, RenderType.entityTranslucent(texture), color[0], color[1], color[2], 1.0f, partialTick, packedLight, packedOverlay, alpha, true);
+			}
+
+			@Override
 			public void fading(String layerId, ResourceLocation texture, float[] color, float targetAlpha) {
 				fadingLayers.add(new BodyLayerFadeTracker.FadingLayer(layerId, texture, color, targetAlpha));
 			}

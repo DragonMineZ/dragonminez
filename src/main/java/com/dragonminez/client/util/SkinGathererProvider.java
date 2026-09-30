@@ -60,6 +60,10 @@ public class SkinGathererProvider {
 			base(texture, color);
 		}
 
+		default void translucent(ResourceLocation texture, float[] color) {
+			base(texture, color);
+		}
+
 		void fading(String layerId, ResourceLocation texture, float[] color, float targetAlpha);
 
 		default void fading(String layerId, ResourceLocation texture, float[] color) {
@@ -85,6 +89,11 @@ public class SkinGathererProvider {
 
 	private void emitOverlayLayer(BiConsumer<ResourceLocation, float[]> consumer, ResourceLocation texture, float[] color) {
 		if (consumer instanceof BodyLayerSink sink) sink.overlay(texture, color);
+		else consumer.accept(texture, color);
+	}
+
+	private void emitTranslucentLayer(BiConsumer<ResourceLocation, float[]> consumer, ResourceLocation texture, float[] color) {
+		if (consumer instanceof BodyLayerSink sink) sink.translucent(texture, color);
 		else consumer.accept(texture, color);
 	}
 
@@ -253,10 +262,14 @@ public class SkinGathererProvider {
 		int bodyType = character.getBodyType();
         String gender = character.getGender().toLowerCase().trim();
         String genderPart = (gender.equals(Character.GENDER_FEMALE)) ? "_female" : "_male";
-		String path = "textures/entity/races/humansaiyan/bodytype" + genderPart + "_" + bodyType + ".png";
-		String fallbackPath = "textures/entity/races/humansaiyan/bodytype" + genderPart + "_0.png";
+		String basePath = "textures/entity/races/humansaiyan/bodytype" + genderPart + "_" + bodyType + "_";
+		String fallbackPath = "textures/entity/races/humansaiyan/bodytype" + genderPart + "_0_";
 
-		consumer.accept(DMZSkinLayer.getSafeTexture(getCachedTexture(path), getCachedTexture(fallbackPath)), bodyColor);
+		ResourceLocation shadowLayer = getCachedTexture(basePath + "layer2.png");
+		boolean shaded = DMZSkinLayer.getSafeTexture(shadowLayer).equals(shadowLayer);
+
+		consumer.accept(DMZSkinLayer.getSafeTexture(getCachedTexture(basePath + "layer1.png"), getCachedTexture(fallbackPath + "layer1.png")), shaded ? ColorUtils.skinBaseTone(bodyColor) : bodyColor);
+		if (shaded) emitTranslucentLayer(consumer, shadowLayer, ColorUtils.skinShadowTone(bodyColor));
 	}
 
 	protected void resolveBodyOozaru(float[] bodyColor, float[] bodyColor2, BiConsumer<ResourceLocation, float[]> consumer) {
