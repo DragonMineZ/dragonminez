@@ -420,6 +420,7 @@ public class DMZSkinLayer<T extends AbstractClientPlayer & GeoAnimatable> extend
 		String eyeBase = "humansaiyan_eye_" + character.getEyesType();
         var legendaryGroup = character.getActiveFormGroup().equals("legendaryforms");
 		float[] white = {1.0f, 1.0f, 1.0f};
+		float[] skinBase = ColorUtils.skinBaseTone(skin);
 
 		boolean isMajin = animatable.hasEffect(MainEffects.MAJIN.get());
 
@@ -430,7 +431,7 @@ public class DMZSkinLayer<T extends AbstractClientPlayer & GeoAnimatable> extend
 
 		boolean isSsj3 = (character.hasActiveStackForm() && character.getActiveStackFormData() != null && character.getActiveStackFormData().getHairType().equalsIgnoreCase("ssj3")) ||
 				(character.hasActiveForm() && character.getActiveFormData() != null && character.getActiveFormData().getHairType().equalsIgnoreCase("ssj3"));
-		if (isSsj3) renderColoredLayer(model, poseStack, animatable, bufferSource, folder + "ssj3eyebrows_eye_" + character.getEyesType() + ".png", skin, pt, pl, po, alpha);
+		if (isSsj3) renderColoredLayer(model, poseStack, animatable, bufferSource, folder + "ssj3eyebrows_eye_" + character.getEyesType() + ".png", skinBase, pt, pl, po, alpha);
 
 		String ssj4Eyes = folder + "ssj4_eyes_" + character.getEyesType() + ".png";
 		if (isMajin) {
@@ -446,8 +447,8 @@ public class DMZSkinLayer<T extends AbstractClientPlayer & GeoAnimatable> extend
 
         }
 
-        renderColoredLayer(model, poseStack, animatable, bufferSource, folder + "humansaiyan_nose_" + character.getNoseType() + ".png", skin, pt, pl, po, alpha, false);
-        renderColoredLayer(model, poseStack, animatable, bufferSource, folder + "humansaiyan_mouth_" + character.getMouthType() + ".png", skin, pt, pl, po, alpha, false);
+        renderColoredLayer(model, poseStack, animatable, bufferSource, folder + "humansaiyan_nose_" + character.getNoseType() + ".png", skinBase, pt, pl, po, alpha, false);
+        renderColoredLayer(model, poseStack, animatable, bufferSource, folder + "humansaiyan_mouth_" + character.getMouthType() + ".png", skinBase, pt, pl, po, alpha, false);
 	}
 
 	private void renderNamekianFace(BakedGeoModel model, PoseStack poseStack, T animatable, MultiBufferSource bufferSource, Character character, float[] eye1, float[] eye2, float[] skin, float pt, int pl, int po, float alpha) {
