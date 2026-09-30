@@ -152,11 +152,8 @@ public class WorldBossContributionHUD {
 				? Component.translatable("gui.dragonminez.hud_editor.sample.boss_name")
 				: Component.translatable(bossKey);
 		HudRender.dmzText(guiGraphics, bossName.getString(), PADDING, 3.0f, TEXT_SCALE, 0.0f, HEADER_COLOR, 1.0f);
-		long elapsedTicks = preview && bossKey.isEmpty() ? 20L * 330L : ClientWorldBossContribution.elapsedTicks();
-		HudRender.dmzText(guiGraphics, formatTicks(elapsedTicks), WIDTH - PADDING, 3.0f, TEXT_SCALE, 1.0f, TIMER_COLOR, 1.0f);
-		HudRender.text(guiGraphics, bossName.getString(), PADDING, 3.5f, TEXT_SCALE, 0.0f, HEADER_COLOR, 1.0f);
 		long elapsedTicks = preview && bossKey.isEmpty() ? 20L * 330L : ClientWorldBossState.Contribution.elapsedTicks();
-		HudRender.text(guiGraphics, formatTicks(elapsedTicks), WIDTH - PADDING, 3.5f, TEXT_SCALE, 1.0f, TIMER_COLOR, 1.0f);
+		HudRender.dmzText(guiGraphics, formatTicks(elapsedTicks), WIDTH - PADDING, 3.0f, TEXT_SCALE, 1.0f, TIMER_COLOR, 1.0f);
 	}
 
 	private static void drawRow(GuiGraphics guiGraphics, Minecraft mc, RowView view, float row, float fill, float appear, boolean showPercent) {

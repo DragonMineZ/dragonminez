@@ -815,10 +815,9 @@ public class CombatEvent {
 						}
 
 						boolean worldBossKnockout = !racialCancelled && victim instanceof ServerPlayer bossVictim
-								&& com.dragonminez.server.world.worldboss.WorldBossSessions.tryKnockOut(bossVictim, stats, event.getSource());
+								&& com.dragonminez.server.world.worldboss.WorldBossManager.tryKnockOut(bossVictim, stats, event.getSource());
 						boolean babaKnockout = !racialCancelled && !worldBossKnockout && victim instanceof ServerPlayer babaVictim
 								&& com.dragonminez.server.util.BabaReviveService.tryKnockOut(babaVictim, stats, event.getSource());
-								&& com.dragonminez.server.world.worldboss.WorldBossManager.tryKnockOut(bossVictim, stats, event.getSource());
 
 						if (racialCancelled || worldBossKnockout || babaKnockout) {
 							finalDamage = Math.max(0.0F, victim.getHealth() - 1.0F);
