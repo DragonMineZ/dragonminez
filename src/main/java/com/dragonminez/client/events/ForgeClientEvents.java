@@ -59,6 +59,11 @@ public class ForgeClientEvents {
 	}
 
 	@SubscribeEvent
+	public static void onComputeFogColor(ViewportEvent.ComputeFogColor event) {
+		CustomSpecialEffects.OtherWorldEffects.adjustFogColor(event);
+	}
+
+	@SubscribeEvent
 	public static void RenderHealthBar(RenderGuiOverlayEvent.Pre event) {
 		if (Minecraft.getInstance().player != null) {
 			if (isHasCreatedCharacterCache) {

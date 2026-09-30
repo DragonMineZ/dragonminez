@@ -36,7 +36,7 @@ public class OtherworldBiomes {
 						.waterColor(4214155)
 						.waterFogColor(4214120)
 						.skyColor(0xBE55AA)
-						.grassColorOverride(0xDCF2FF)
+						.grassColorOverride(0x7ACB45)
 						.foliageColorOverride(0xDCF2FF)
 						.fogColor(0xCE7EBD)
 						.ambientMoodSound(AmbientMoodSettings.LEGACY_CAVE_SETTINGS)

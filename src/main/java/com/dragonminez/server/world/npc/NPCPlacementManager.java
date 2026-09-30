@@ -7,6 +7,7 @@ import com.dragonminez.common.alignment.NpcDispositionService;
 import com.dragonminez.common.diagnostics.JsonKeys;
 import com.dragonminez.common.diagnostics.JsonLoadReport;
 import com.dragonminez.common.init.entities.questnpc.QuestNPCEntity;
+import com.dragonminez.server.world.dimension.OtherworldTournamentGrounds;
 import com.dragonminez.server.world.structure.helper.DMZStructures;
 import com.dragonminez.server.world.structure.helper.StructureLocator;
 import com.google.gson.Gson;
@@ -116,6 +117,10 @@ public final class NPCPlacementManager {
 
 		for (NPCPlacement placement : placements) {
 			if (!placement.enabled() || !placement.dimension().equals(level.dimension())) {
+				continue;
+			}
+			if (OtherworldTournamentGrounds.ANNOUNCER_PLACEMENT_ID.equals(placement.id())
+					&& !OtherworldTournamentGrounds.isBuilt(level)) {
 				continue;
 			}
 			spawnOrUpdate(level, placement);
@@ -386,6 +391,8 @@ public final class NPCPlacementManager {
 		addManualMaster(placements, "master_enma", "dragonminez:master_enma", "dragonminez:otherworld", false, 0.5, 150, 17.5, false, 180);
 		addManualMaster(placements, "master_baba", "dragonminez:master_uranai", "dragonminez:otherworld", false, 9.5, 150, 3.5, false, 180);
 		addManualMaster(placements, "master_toribot", "dragonminez:master_toribot", "dragonminez:otherworld", false, 50.5, 298, 1030.5, false, 180);
+		addManualMaster(placements, "master_grandkai", "dragonminez:master_grandkai", "dragonminez:otherworld", false, -30.5, 150, 12.5, false, 180);
+		addManualMaster(placements, "master_otherworld_announcer", "dragonminez:master_otherworld_announcer", "dragonminez:otherworld", false, -25.5, 352, -1164.5, false, 0);
 		addManualQuestNPC(placements, "npc_hell_ogre", "hell_ogre", "dragonminez:otherworld", 9.5, 150, 16.5, 200);
 
 		// Quest NPCs (TALK_TO / quest-giver / turn-in targets) are no longer spawned at runtime here:
@@ -507,7 +514,8 @@ public final class NPCPlacementManager {
 		}
 
 		return switch (placement.id()) {
-			case "master_kaiosama", "master_enma", "master_baba", "master_toribot", "npc_hell_ogre" -> true;
+			case "master_kaiosama", "master_enma", "master_baba", "master_toribot", "master_grandkai",
+				 "master_otherworld_announcer", "npc_hell_ogre" -> true;
 			default -> false;
 		};
 	}

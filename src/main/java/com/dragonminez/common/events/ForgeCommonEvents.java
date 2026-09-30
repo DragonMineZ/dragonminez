@@ -519,6 +519,7 @@ public class ForgeCommonEvents {
 			com.dragonminez.server.world.structure.placement.StructureRepairManager.tick(serverLevel);
 			com.dragonminez.server.world.tournament.Tournament.Manager.tick(serverLevel);
 			com.dragonminez.server.world.worldboss.WorldBossManager.tick(serverLevel);
+			com.dragonminez.server.world.dimension.OtherworldTournamentGrounds.tick(serverLevel);
 		} catch (Throwable ignored) {
 		}
 	}

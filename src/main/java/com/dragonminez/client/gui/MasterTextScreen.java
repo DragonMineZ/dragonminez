@@ -84,6 +84,8 @@ public class MasterTextScreen extends Screen {
 				case "kingkai" -> initWeightService(buttonX, buttonY, "kingkai");
 				case "oldkai" -> initOldKai(buttonX, buttonY, stats);
 				case "babidi" -> initBabidi(buttonX, buttonY, stats);
+				case "grandkai" -> initGrandKai(buttonX, buttonY);
+				case "otherworld_announcer" -> initOtherworldAnnouncer(buttonX, buttonY);
 			}
 		});
 	}
@@ -506,6 +508,36 @@ public class MasterTextScreen extends Screen {
 	}
 
 	private void initToribot(int x, int y, StatsData stats) {
+	}
+
+	private void initGrandKai(int x, int y) {
+		this.addRenderableWidget(new TexturedTextButton.Builder()
+				.position(x, y)
+				.size(74, 20)
+				.texture(BUTTONS_TEXTURE)
+				.textureCoords(0, 28, 0, 48)
+				.textureSize(74, 20)
+				.message(tr("gui.dragonminez.button.grandkai.tournament"))
+				.onPress(b -> {
+					NetworkHandler.sendToServer(new NPCActionC2S("grandkai", 1));
+					this.onClose();
+				})
+				.build());
+	}
+
+	private void initOtherworldAnnouncer(int x, int y) {
+		this.addRenderableWidget(new TexturedTextButton.Builder()
+				.position(x, y)
+				.size(74, 20)
+				.texture(BUTTONS_TEXTURE)
+				.textureCoords(0, 28, 0, 48)
+				.textureSize(74, 20)
+				.message(tr("gui.dragonminez.button.otherworld_announcer.return"))
+				.onPress(b -> {
+					NetworkHandler.sendToServer(new NPCActionC2S("otherworld_announcer", 1));
+					this.onClose();
+				})
+				.build());
 	}
 
 	private void initPiccolo(int x, int y, StatsData stats) {

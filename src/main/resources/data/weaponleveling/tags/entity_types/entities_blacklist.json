@@ -50,6 +50,14 @@
       "required": false
     },
     {
+      "id": "dragonminez:master_grandkai",
+      "required": false
+    },
+    {
+      "id": "dragonminez:master_otherworld_announcer",
+      "required": false
+    },
+    {
       "id": "dragonminez:master_piccolo",
       "required": false
     },

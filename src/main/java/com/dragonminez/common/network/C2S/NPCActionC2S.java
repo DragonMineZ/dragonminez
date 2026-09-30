@@ -16,6 +16,7 @@ import com.dragonminez.common.network.NetworkHandler;
 import com.dragonminez.common.network.S2C.StatsSyncS2C;
 import com.dragonminez.common.stats.character.Cooldowns;
 import com.dragonminez.server.util.BabaReviveService;
+import com.dragonminez.server.world.dimension.OtherworldTournamentGrounds;
 import com.dragonminez.common.stats.StatsCapability;
 import com.dragonminez.common.stats.StatsData;
 import com.dragonminez.common.stats.StatsProvider;
@@ -98,6 +99,8 @@ public class NPCActionC2S {
 					case "roshi" -> { if (packet.actionId == 2) giveWeight(player, packet.value, "message.dragonminez.roshi.weight_given", MainItems.WEIGHT_TURTLE_SHELL.get()); }
 					case "kingkai" -> { if (packet.actionId == 2) giveWeight(player, packet.value, "message.dragonminez.kingkai.weight_given", MainItems.WORKOUT_WEIGHTS.get()); }
 					case "babidi" -> handleBabidi(player, data, packet.actionId);
+					case "grandkai" -> { if (packet.actionId == 1) OtherworldTournamentGrounds.teleportFromGrandKai(player); }
+					case "otherworld_announcer" -> { if (packet.actionId == 1) OtherworldTournamentGrounds.teleportBackToGrandKai(player); }
 				}
 				NetworkHandler.sendToTrackingEntityAndSelf(new StatsSyncS2C(player), player);
 			});

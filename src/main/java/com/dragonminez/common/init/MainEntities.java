@@ -52,7 +52,7 @@ public class MainEntities {
                 MASTER_KARIN, MASTER_GOKU, MASTER_KAIOSAMA, MASTER_ROSHI, MASTER_URANAI, MASTER_ENMA, MASTER_DENDE,
                 MASTER_GERO, MASTER_POPO, MASTER_GURU, MASTER_TORIBOT, MASTER_PICCOLO, MASTER_GOHAN, MASTER_BABIDI,
                 MASTER_OLDKAI, MASTER_CELL, MASTER_VEGETA, MASTER_FRIEZA, MASTER_TRUNKS, MASTER_YAMCHA, MASTER_KRILLIN,
-                MASTER_BEERUS, MASTER_WHIS, MASTER_URANAI_EARTH
+                MASTER_BEERUS, MASTER_WHIS, MASTER_URANAI_EARTH, MASTER_GRANDKAI, MASTER_OTHERWORLD_ANNOUNCER
         );
     }
 
@@ -285,6 +285,16 @@ public class MainEntities {
                     () -> EntityType.Builder.of(AllMastersEntity.MasterWhis::new, MobCategory.CREATURE)
                             .sized(0.8f, 2.0f)
                             .build(ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "master_whis").toString()));
+    public static final RegistryObject<EntityType<AllMastersEntity.MasterGrandKaiEntity>> MASTER_GRANDKAI =
+            ENTITY_TYPES.register("master_grandkai",
+                    () -> EntityType.Builder.of(AllMastersEntity.MasterGrandKaiEntity::new, MobCategory.CREATURE)
+                            .sized(0.8f, 1.8f)
+                            .build(ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "master_grandkai").toString()));
+    public static final RegistryObject<EntityType<AllMastersEntity.MasterOtherworldAnnouncerEntity>> MASTER_OTHERWORLD_ANNOUNCER =
+            ENTITY_TYPES.register("master_otherworld_announcer",
+                    () -> EntityType.Builder.of(AllMastersEntity.MasterOtherworldAnnouncerEntity::new, MobCategory.CREATURE)
+                            .sized(0.8f, 2.0f)
+                            .build(ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "master_otherworld_announcer").toString()));
 
     public static final RegistryObject<EntityType<Dino1Entity>> DINOSAUR1 =
             ENTITY_TYPES.register("dino1",

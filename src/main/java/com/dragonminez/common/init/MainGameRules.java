@@ -2,6 +2,7 @@ package com.dragonminez.common.init;
 
 import com.dragonminez.common.compat.WorldGuardCompat;
 import com.dragonminez.common.init.MainTags;
+import com.dragonminez.server.world.dimension.OtherworldTournamentGrounds;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.SectionPos;
 import net.minecraft.core.Holder;
@@ -47,7 +48,13 @@ public class MainGameRules {
 	}
 
 	private static boolean isInMasterStructure(Level level, BlockPos pos) {
-		return isInsideTaggedStructure(level, pos, MainTags.Structures.KI_GRIEFING_PROTECTED);
+		return isInsideTaggedStructure(level, pos, MainTags.Structures.KI_GRIEFING_PROTECTED)
+				|| OtherworldTournamentGrounds.isProtected(level, pos);
+	}
+
+	public static boolean isInBuildProtectedArea(Level level, BlockPos pos) {
+		return isInsideTaggedStructure(level, pos, MainTags.Structures.BUILD_PROTECTED)
+				|| OtherworldTournamentGrounds.isProtected(level, pos);
 	}
 
 	public static boolean isInsideTaggedStructure(Level level, BlockPos pos, TagKey<Structure> tag) {
@@ -67,7 +74,7 @@ public class MainGameRules {
 	public static boolean canModifyBlock(Level level, BlockPos pos, Player player) {
 		if (player != null && (player.isCreative() || player.isSpectator())) return true;
 		if (level.getGameRules().getBoolean(ALLOW_BUILDING_IN_ARENA_STRUCTURES)) return true;
-		return !isInsideTaggedStructure(level, pos, MainTags.Structures.BUILD_PROTECTED);
+		return !isInBuildProtectedArea(level, pos);
 	}
 
 	public static KiGriefGate griefGate(Level level, BoundingBox area, Entity source) {
@@ -95,6 +102,8 @@ public class MainGameRules {
 				}
 			}
 		}
+		BoundingBox grounds = OtherworldTournamentGrounds.protectedBounds(level);
+		if (grounds != null && grounds.intersects(area)) boxes.add(grounds);
 		return boxes;
 	}
 

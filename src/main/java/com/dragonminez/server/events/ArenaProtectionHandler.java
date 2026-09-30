@@ -2,7 +2,6 @@ package com.dragonminez.server.events;
 
 import com.dragonminez.Reference;
 import com.dragonminez.common.init.MainGameRules;
-import com.dragonminez.common.init.MainTags;
 import com.dragonminez.server.world.tournament.Tournament;
 import net.minecraft.core.BlockPos;
 import net.minecraft.network.chat.Component;
@@ -81,8 +80,7 @@ public class ArenaProtectionHandler {
 		if (level.isClientSide()) return;
 		if (level.getGameRules().getBoolean(MainGameRules.ALLOW_BUILDING_IN_ARENA_STRUCTURES)) return;
 
-		if (MainGameRules.isInsideTaggedStructure(level, entity.blockPosition(),
-				MainTags.Structures.BUILD_PROTECTED)) {
+		if (MainGameRules.isInBuildProtectedArea(level, entity.blockPosition())) {
 			event.setResult(Event.Result.DENY);
 		}
 	}

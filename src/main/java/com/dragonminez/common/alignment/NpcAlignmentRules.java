@@ -140,6 +140,8 @@ public final class NpcAlignmentRules {
 		addRule(npcs, "enma", TargetHelper.Relation.NEUTRAL, null, null, null, null);
 		addRule(npcs, "baba", TargetHelper.Relation.NEUTRAL, null, null, null, null);
 		addRule(npcs, "toribot", TargetHelper.Relation.NEUTRAL, null, null, null, null);
+		addRule(npcs, "grandkai", TargetHelper.Relation.NEUTRAL, null, null, null, null);
+		addRule(npcs, "otherworld_announcer", TargetHelper.Relation.NEUTRAL, null, null, null, null);
 		addRule(npcs, "bulma", TargetHelper.Relation.FRIENDLY, 41, null, 25, null);
 		addRule(npcs, "krillin", TargetHelper.Relation.FRIENDLY, 41, null, 25, null);
 		addRule(npcs, "yamcha", TargetHelper.Relation.FRIENDLY, 41, null, 25, null);

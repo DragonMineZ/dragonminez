@@ -232,6 +232,22 @@ public class AllMastersEntity {
         }
     }
 
+    public static class MasterGrandKaiEntity extends MastersEntity {
+        public MasterGrandKaiEntity(EntityType<? extends PathfinderMob> pEntityType, Level pLevel) {
+            super(pEntityType, pLevel);
+            this.setPersistenceRequired();
+            this.masterName = "grandkai";
+        }
+    }
+
+    public static class MasterOtherworldAnnouncerEntity extends MastersEntity {
+        public MasterOtherworldAnnouncerEntity(EntityType<? extends PathfinderMob> pEntityType, Level pLevel) {
+            super(pEntityType, pLevel);
+            this.setPersistenceRequired();
+            this.masterName = "otherworld_announcer";
+        }
+    }
+
 
 
 
