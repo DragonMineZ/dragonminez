@@ -95,6 +95,14 @@ public class ClientPacketHandler {
 		}
 	}
 
+	public static void handleSkinPixelsSync(int playerId, CompoundTag tag) {
+		var clientLevel = Minecraft.getInstance().level;
+		if (clientLevel == null) return;
+		if (clientLevel.getEntity(playerId) instanceof Player player) {
+			StatsProvider.get(StatsCapability.INSTANCE, player).ifPresent(data -> data.getCharacter().getSkinPixels().load(tag));
+		}
+	}
+
 	public static void handleTechniqueChargeSync(int playerId, float percent, boolean charging) {
 		var clientLevel = Minecraft.getInstance().level;
 		if (clientLevel == null) return;

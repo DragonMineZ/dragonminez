@@ -774,6 +774,18 @@ public class NetworkHandler {
 				.encoder(OpenMinigameS2C::encode)
 				.consumerMainThread(OpenMinigameS2C::handle)
 				.add();
+
+		net.messageBuilder(UpdateSkinPixelsC2S.class, id(), NetworkDirection.PLAY_TO_SERVER)
+				.decoder(UpdateSkinPixelsC2S::decode)
+				.encoder(UpdateSkinPixelsC2S::encode)
+				.consumerMainThread(UpdateSkinPixelsC2S::handle)
+				.add();
+
+		net.messageBuilder(SkinPixelsSyncS2C.class, id(), NetworkDirection.PLAY_TO_CLIENT)
+				.decoder(SkinPixelsSyncS2C::decode)
+				.encoder(SkinPixelsSyncS2C::encode)
+				.consumerMainThread(SkinPixelsSyncS2C::handle)
+				.add();
 	}
 
 	public static <MSG> void sendToServer(MSG message) {

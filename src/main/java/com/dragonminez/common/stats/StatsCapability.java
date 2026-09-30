@@ -10,6 +10,7 @@ import com.dragonminez.common.racial.RacialRegistry;
 import com.dragonminez.common.stats.character.Cooldowns;
 import com.dragonminez.server.events.players.TickHandler;
 import com.dragonminez.common.network.S2C.ResourceSyncS2C;
+import com.dragonminez.common.network.S2C.SkinPixelsSyncS2C;
 import com.dragonminez.common.network.S2C.StatsSyncS2C;
 import com.dragonminez.common.network.S2C.SyncQuestRegistryS2C;
 import com.dragonminez.common.network.S2C.SyncServerConfigS2C;
@@ -123,6 +124,7 @@ public class StatsCapability {
 				data.getSkills().setSkillActive("kisense", false);
 				RacialRegistry.forPlayer(data).ifPresent(ability -> ability.onLogin(new RacialContext(serverPlayer, data)));
 				NetworkHandler.sendToTrackingEntityAndSelf(new StatsSyncS2C(serverPlayer), serverPlayer);
+				syncSkinPixels(serverPlayer, data);
 			});
 		}
 		event.getEntity().refreshDimensions();
@@ -168,8 +170,21 @@ public class StatsCapability {
 				RacialRegistry.forPlayer(data).ifPresent(ability -> ability.onDimensionChange(new RacialContext(serverPlayer, data)));
 
 				NetworkHandler.sendToTrackingEntityAndSelf(new StatsSyncS2C(serverPlayer), serverPlayer);
+				syncSkinPixels(serverPlayer, data);
 			});
 		}
+	}
+
+	@SubscribeEvent
+	public static void onStartTracking(PlayerEvent.StartTracking event) {
+		if (!(event.getTarget() instanceof ServerPlayer target) || !(event.getEntity() instanceof ServerPlayer viewer)) return;
+		StatsProvider.get(INSTANCE, target).ifPresent(data -> {
+			if (!data.getCharacter().getSkinPixels().isEmpty()) NetworkHandler.sendToPlayer(new SkinPixelsSyncS2C(target), viewer);
+		});
+	}
+
+	public static void syncSkinPixels(ServerPlayer player, StatsData data) {
+		if (!data.getCharacter().getSkinPixels().isEmpty()) NetworkHandler.sendToTrackingEntityAndSelf(new SkinPixelsSyncS2C(player), player);
 	}
 
 	private static void markCurrentDimensionVisited(ServerPlayer player, StatsData data) {

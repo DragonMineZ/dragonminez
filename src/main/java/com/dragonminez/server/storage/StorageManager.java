@@ -125,6 +125,7 @@ public class StorageManager {
 			TransformationsHelper.ensureSelectedStackFormDefault(stats);
 
 			NetworkHandler.sendToTrackingEntityAndSelf(new StatsSyncS2C(player), player);
+			StatsCapability.syncSkinPixels(player, stats);
 			LogUtil.info(Env.SERVER, "Async data loaded for: " + player.getName().getString());
 		});
 	}

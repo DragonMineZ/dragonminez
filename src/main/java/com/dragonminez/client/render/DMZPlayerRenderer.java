@@ -5,6 +5,7 @@ import com.dragonminez.client.flight.FlightOrientationHandler;
 import com.dragonminez.client.animation.IPlayerAnimatable;
 import com.dragonminez.client.render.hair.HairRenderCapture;
 import com.dragonminez.client.render.hair.HairRenderContext;
+import com.dragonminez.client.render.util.SkinPaintContext;
 import com.dragonminez.client.render.layer.*;
 import com.dragonminez.client.systems.BioSwellRenderState;
 import com.dragonminez.client.render.shader.TransformationPostShaderManager;
@@ -184,9 +185,11 @@ public class DMZPlayerRenderer<T extends AbstractClientPlayer & GeoAnimatable> e
 	public void applyRenderLayers(PoseStack poseStack, T animatable, BakedGeoModel model, RenderType renderType, MultiBufferSource bufferSource, VertexConsumer buffer, float partialTick, int packedLight, int packedOverlay) {
 		boolean portrait = HeadPortraitRenderer.isActive() || editorHeadOnly();
 		boolean armOnly = DimensionalFistEffect.isRenderingArm();
+		boolean paint = SkinPaintContext.active();
 		for (GeoRenderLayer<T> renderLayer : getRenderLayers()) {
 			if (armOnly && !(renderLayer instanceof DMZSkinLayer<?>)) continue;
 			if (portrait && !isPortraitLayer(renderLayer)) continue;
+			if (paint && !isPaintLayer(renderLayer)) continue;
 			renderLayer.render(poseStack, animatable, model, renderType, bufferSource, buffer, partialTick, packedLight, packedOverlay);
 		}
 	}
@@ -196,6 +199,12 @@ public class DMZPlayerRenderer<T extends AbstractClientPlayer & GeoAnimatable> e
 		if (DimensionalFistEffect.isRenderingArm()) {
 			for (GeoRenderLayer<T> renderLayer : getRenderLayers()) {
 				if (renderLayer instanceof DMZSkinLayer<?>) renderLayer.preRender(poseStack, animatable, model, renderType, bufferSource, buffer, partialTick, packedLight, packedOverlay);
+			}
+			return;
+		}
+		if (SkinPaintContext.active()) {
+			for (GeoRenderLayer<T> renderLayer : getRenderLayers()) {
+				if (isPaintLayer(renderLayer)) renderLayer.preRender(poseStack, animatable, model, renderType, bufferSource, buffer, partialTick, packedLight, packedOverlay);
 			}
 			return;
 		}
@@ -211,6 +220,12 @@ public class DMZPlayerRenderer<T extends AbstractClientPlayer & GeoAnimatable> e
 	@Override
 	public void applyRenderLayersForBone(PoseStack poseStack, T animatable, GeoBone bone, RenderType renderType, MultiBufferSource bufferSource, VertexConsumer buffer, float partialTick, int packedLight, int packedOverlay) {
 		if (DimensionalFistEffect.isRenderingArm()) return;
+		if (SkinPaintContext.active()) {
+			for (GeoRenderLayer<T> renderLayer : getRenderLayers()) {
+				if (isPaintLayer(renderLayer)) renderLayer.renderForBone(poseStack, animatable, bone, renderType, bufferSource, buffer, partialTick, packedLight, packedOverlay);
+			}
+			return;
+		}
 		if (!HeadPortraitRenderer.isActive() && !editorHeadOnly()) {
 			super.applyRenderLayersForBone(poseStack, animatable, bone, renderType, bufferSource, buffer, partialTick, packedLight, packedOverlay);
 			return;
@@ -218,6 +233,11 @@ public class DMZPlayerRenderer<T extends AbstractClientPlayer & GeoAnimatable> e
 		for (GeoRenderLayer<T> renderLayer : getRenderLayers()) {
 			if (isPortraitLayer(renderLayer)) renderLayer.renderForBone(poseStack, animatable, bone, renderType, bufferSource, buffer, partialTick, packedLight, packedOverlay);
 		}
+	}
+
+	private static boolean isPaintLayer(GeoRenderLayer<?> renderLayer) {
+		if (SkinPaintContext.picking()) return renderLayer instanceof DMZSkinLayer<?>;
+		return isPortraitLayer(renderLayer);
 	}
 
 	private static boolean isPortraitLayer(GeoRenderLayer<?> renderLayer) {

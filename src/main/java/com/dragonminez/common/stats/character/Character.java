@@ -125,6 +125,8 @@ public class Character {
 
 	public static final String CLASS_WARRIOR = "warrior";
 
+	public static final int TATTOO_CUSTOM = -1;
+
 	private int hairId;
 	private final EnumMap<HairStyleSlot, CustomHair> hairStyles = createEmptyHairStyles();
 	private String activeHeadBone = "";
@@ -133,6 +135,7 @@ public class Character {
 	private int noseType;
 	private int mouthType;
 	private int tattooType;
+	private final SkinPixels skinPixels = new SkinPixels();
 	private float boobScale = 1.0f;
 	private String bodyColor;
 	private String bodyColor2;
@@ -459,6 +462,7 @@ public class Character {
 		tag.putInt("NoseType", noseType);
 		tag.putInt("MouthType", mouthType);
 		tag.putInt("TattooType", tattooType);
+		tag.put(SkinPixels.NBT_KEY, skinPixels.save());
 		tag.putFloat("BoobScale", boobScale);
 		saveAppearance(tag);
 		tag.putString("SelectedMaster",  safeString(selectedMaster));
@@ -535,6 +539,7 @@ public class Character {
 		this.noseType = tag.getInt("NoseType");
 		this.mouthType = tag.getInt("MouthType");
 		this.tattooType = tag.getInt("TattooType");
+		if (tag.contains(SkinPixels.NBT_KEY, 10)) skinPixels.load(tag.getCompound(SkinPixels.NBT_KEY));
 		this.boobScale = tag.contains("BoobScale") ? tag.getFloat("BoobScale") : 1.0f;
 		setBodyColor(tag.getString("BodyColor"));
 		setBodyColor2(tag.getString("BodyColor2"));
@@ -827,6 +832,7 @@ public class Character {
 		this.noseType = other.noseType;
 		this.mouthType = other.mouthType;
 		this.tattooType = other.tattooType;
+		this.skinPixels.copyFrom(other.skinPixels);
 		this.boobScale = other.boobScale;
 		setBodyColor(other.bodyColor);
 		setBodyColor2(other.bodyColor2);

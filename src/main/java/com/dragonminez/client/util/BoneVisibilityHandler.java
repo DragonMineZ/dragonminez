@@ -62,12 +62,14 @@ public class BoneVisibilityHandler {
 		boolean hasLeggings = !legsStack.isEmpty();
 
 		boolean isStandardBody = (isSaiyan || isHuman) && (bodyType == 0 || bodyType == 1);
-		hideBone(model, "body_layer", hasChestplate || (isStandardBody && !player.isModelPartShown(PlayerModelPart.JACKET)));
-		hideBone(model, "right_arm_layer", hasChestplate || (isStandardBody && !player.isModelPartShown(PlayerModelPart.RIGHT_SLEEVE)));
-		hideBone(model, "left_arm_layer", hasChestplate || (isStandardBody && !player.isModelPartShown(PlayerModelPart.LEFT_SLEEVE)));
-		hideBone(model, "right_leg_layer", hasLeggings || (isStandardBody && !player.isModelPartShown(PlayerModelPart.RIGHT_PANTS_LEG)));
-		hideBone(model, "left_leg_layer", hasLeggings || (isStandardBody && !player.isModelPartShown(PlayerModelPart.LEFT_PANTS_LEG)));
-		hideBone(model, "hat_layer", (isStandardBody && !player.isModelPartShown(PlayerModelPart.HAT)));
+		boolean paint = com.dragonminez.client.render.util.SkinPaintContext.active();
+		boolean paintHide = paint && !com.dragonminez.client.render.util.SkinPaintContext.showOverlay();
+		hideBone(model, "body_layer", paint ? paintHide : hasChestplate || (isStandardBody && !player.isModelPartShown(PlayerModelPart.JACKET)));
+		hideBone(model, "right_arm_layer", paint ? paintHide : hasChestplate || (isStandardBody && !player.isModelPartShown(PlayerModelPart.RIGHT_SLEEVE)));
+		hideBone(model, "left_arm_layer", paint ? paintHide : hasChestplate || (isStandardBody && !player.isModelPartShown(PlayerModelPart.LEFT_SLEEVE)));
+		hideBone(model, "right_leg_layer", paint ? paintHide : hasLeggings || (isStandardBody && !player.isModelPartShown(PlayerModelPart.RIGHT_PANTS_LEG)));
+		hideBone(model, "left_leg_layer", paint ? paintHide : hasLeggings || (isStandardBody && !player.isModelPartShown(PlayerModelPart.LEFT_PANTS_LEG)));
+		hideBone(model, "hat_layer", paint ? paintHide : (isStandardBody && !player.isModelPartShown(PlayerModelPart.HAT)));
 
 		hideBone(model, "boobas", isCape || !isFemale);
 

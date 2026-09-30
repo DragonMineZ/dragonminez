@@ -3,6 +3,7 @@ package com.dragonminez.common.network.S2C;
 import com.dragonminez.common.network.ClientPacketHandler;
 import com.dragonminez.common.stats.StatsCapability;
 import com.dragonminez.common.stats.StatsProvider;
+import com.dragonminez.common.stats.character.SkinPixels;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.server.level.ServerPlayer;
@@ -23,6 +24,7 @@ public class StatsSyncS2C {
 
         StatsProvider.get(StatsCapability.INSTANCE, player).ifPresent(data -> {
             this.nbt.merge(data.save());
+            this.nbt.getCompound("Character").remove(SkinPixels.NBT_KEY);
         });
     }
 

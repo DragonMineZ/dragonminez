@@ -9,6 +9,7 @@ import com.dragonminez.client.render.hair.HairEntityState;
 import com.dragonminez.client.render.hair.HairMeshBuilder;
 import com.dragonminez.client.render.hair.HairRenderCapture;
 import com.dragonminez.client.render.hair.HairRenderContext;
+import com.dragonminez.client.render.util.SkinPaintContext;
 import com.dragonminez.client.render.hair.HairSimulation;
 import com.dragonminez.client.render.hair.HairStyleResolver;
 import com.dragonminez.client.render.shader.TransformationMaskBufferSource;
@@ -113,6 +114,7 @@ public class DMZHairLayer<T extends AbstractClientPlayer & GeoAnimatable> extend
 
 	private boolean prepare(T animatable) {
 		if (!shouldRenderHair(animatable)) return false;
+		if (!SkinPaintContext.showHair()) return false;
 		StatsData stats = StatsProvider.get(StatsCapability.INSTANCE, animatable).orElse(null);
 		if (stats == null) return false;
 		Character character = stats.getCharacter();

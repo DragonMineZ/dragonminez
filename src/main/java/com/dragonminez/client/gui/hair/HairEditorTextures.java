@@ -11,36 +11,36 @@ import net.minecraft.client.renderer.GameRenderer;
 import net.minecraft.resources.ResourceLocation;
 import org.joml.Matrix4f;
 
-final class HairEditorTextures {
-	static final ResourceLocation MENU_BIG = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "textures/gui/menu/menubig.png");
-	static final ResourceLocation MENU_SMALL = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "textures/gui/menu/menusmall.png");
-	static final ResourceLocation BUTTONS = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "textures/gui/buttons/characterbuttons.png");
+public final class HairEditorTextures {
+	public static final ResourceLocation MENU_BIG = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "textures/gui/menu/menubig.png");
+	public static final ResourceLocation MENU_SMALL = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "textures/gui/menu/menusmall.png");
+	public static final ResourceLocation BUTTONS = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "textures/gui/buttons/characterbuttons.png");
 
-	static final Sprite PANEL = new Sprite(MENU_BIG, 0, 0, 141, 213, 8);
-	static final Sprite SMALL_PANEL = new Sprite(MENU_SMALL, 0, 0, 141, 94, 8);
-	static final Sprite TITLE_PLATE = new Sprite(MENU_BIG, 142, 22, 107, 21, 5);
-	static final Sprite BUTTON = new Sprite(BUTTONS, 0, 28, 74, 20, 4);
-	static final Sprite BUTTON_HOVER = new Sprite(BUTTONS, 0, 48, 74, 20, 4);
-	static final Sprite BUTTON_ACTIVE = new Sprite(BUTTONS, 0, 68, 150, 20, 3);
-	static final Sprite BUTTON_ACCENT = new Sprite(BUTTONS, 0, 88, 150, 20, 3);
-	static final Sprite FIELD = new Sprite(BUTTONS, 0, 108, 107, 18, 3);
-	static final Sprite FIELD_EDITING = new Sprite(BUTTONS, 0, 126, 107, 18, 3);
-	static final Sprite IMPORT = new Sprite(BUTTONS, 162, 0, 20, 20, 0);
-	static final Sprite IMPORT_HOVER = new Sprite(BUTTONS, 162, 20, 20, 20, 0);
-	static final Sprite EXPORT = new Sprite(BUTTONS, 182, 0, 20, 20, 0);
-	static final Sprite EXPORT_HOVER = new Sprite(BUTTONS, 182, 20, 20, 20, 0);
+	public static final Sprite PANEL = new Sprite(MENU_BIG, 0, 0, 141, 213, 8);
+	public static final Sprite SMALL_PANEL = new Sprite(MENU_SMALL, 0, 0, 141, 94, 8);
+	public static final Sprite TITLE_PLATE = new Sprite(MENU_BIG, 142, 22, 107, 21, 5);
+	public static final Sprite BUTTON = new Sprite(BUTTONS, 0, 28, 74, 20, 4);
+	public static final Sprite BUTTON_HOVER = new Sprite(BUTTONS, 0, 48, 74, 20, 4);
+	public static final Sprite BUTTON_ACTIVE = new Sprite(BUTTONS, 0, 68, 150, 20, 3);
+	public static final Sprite BUTTON_ACCENT = new Sprite(BUTTONS, 0, 88, 150, 20, 3);
+	public static final Sprite FIELD = new Sprite(BUTTONS, 0, 108, 107, 18, 3);
+	public static final Sprite FIELD_EDITING = new Sprite(BUTTONS, 0, 126, 107, 18, 3);
+	public static final Sprite IMPORT = new Sprite(BUTTONS, 162, 0, 20, 20, 0);
+	public static final Sprite IMPORT_HOVER = new Sprite(BUTTONS, 162, 20, 20, 20, 0);
+	public static final Sprite EXPORT = new Sprite(BUTTONS, 182, 0, 20, 20, 0);
+	public static final Sprite EXPORT_HOVER = new Sprite(BUTTONS, 182, 20, 20, 20, 0);
 
 	private static final float ATLAS_SIZE = 256.0f;
 
-	record Sprite(ResourceLocation texture, int u, int v, int width, int height, int border) {}
+	public record Sprite(ResourceLocation texture, int u, int v, int width, int height, int border) {}
 
 	private HairEditorTextures() {}
 
-	static void draw(GuiGraphics graphics, Sprite sprite, int x, int y, int width, int height) {
+	public static void draw(GuiGraphics graphics, Sprite sprite, int x, int y, int width, int height) {
 		draw(graphics, sprite, x, y, width, height, 1.0f, 1.0f, 1.0f, 1.0f);
 	}
 
-	static void draw(GuiGraphics graphics, Sprite sprite, int x, int y, int width, int height, float red, float green, float blue, float alpha) {
+	public static void draw(GuiGraphics graphics, Sprite sprite, int x, int y, int width, int height, float red, float green, float blue, float alpha) {
 		if (width <= 0 || height <= 0) return;
 		int borderX = Math.min(sprite.border(), width / 2);
 		int borderY = Math.min(sprite.border(), height / 2);

@@ -9,6 +9,8 @@ import com.dragonminez.Reference;
 import com.dragonminez.client.render.shader.TransformationMaskBufferSource;
 import com.dragonminez.client.render.util.BoneRenderState;
 import com.dragonminez.client.render.util.ModRenderTypes;
+import com.dragonminez.client.render.util.SkinPixelTextures;
+import com.dragonminez.client.render.util.SkinPaintContext;
 import com.dragonminez.client.util.ColorUtils;
 import com.dragonminez.client.util.SkinGathererProvider;
 import com.dragonminez.client.util.TextureCounter;
@@ -18,6 +20,7 @@ import com.dragonminez.common.hair.HairManager;
 import com.dragonminez.common.init.MainEffects;
 import com.dragonminez.common.stats.*;
 import com.dragonminez.common.stats.character.Character;
+import com.dragonminez.common.stats.character.SkinPixels;
 import com.dragonminez.common.stats.extras.ActionMode;
 import com.dragonminez.common.util.TransformationsHelper;
 import com.dragonminez.common.util.lists.BioAndroidForms;
@@ -42,6 +45,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.function.Function;
 
 public class DMZSkinLayer<T extends AbstractClientPlayer & GeoAnimatable> extends GeoRenderLayer<T> {
 	public static boolean PREVIEW_MODE = false;
@@ -84,6 +88,13 @@ public class DMZSkinLayer<T extends AbstractClientPlayer & GeoAnimatable> extend
 
 		var player = (AbstractClientPlayer) animatable;
 		if (player == null) return;
+
+		if (SkinPaintContext.picking()) {
+			ResourceLocation pick = SkinPaintContext.pickTexture();
+			if (pick != null) renderLayerWholeModel(model, poseStack, bufferSource, animatable, ModRenderTypes.skinPaintPick(pick), 1.0f, 1.0f, 1.0f, 1.0f, partialTick, packedLight, packedOverlay, 1.0f, false);
+			bufferSource.getBuffer(renderType);
+			return;
+		}
 
 		if (player.hasEffect(MainEffects.CANDY.get())) return;
 
@@ -164,12 +175,15 @@ public class DMZSkinLayer<T extends AbstractClientPlayer & GeoAnimatable> extend
 
 		if (maskBuffer != null) maskBuffer.setMaskCaptureEnabled(false);
 		renderHair(poseStack, animatable, model, bufferSource, player, stats, partialTick, packedLight, packedOverlay, alpha);
+		renderSkinPixelHair(model, poseStack, animatable, bufferSource, player, stats, partialTick, packedLight, packedOverlay, alpha);
+		renderPaintOverlays(model, poseStack, animatable, bufferSource, partialTick, packedLight, packedOverlay);
 		if (maskBuffer != null) maskBuffer.setMaskCaptureBlocked(true);
 		SkinGathererProvider.INSTANCE.gatherTattooLayers(player, stats, partialTick, overlayConsumer);
 		SkinGathererProvider.INSTANCE.gatherEffectLayers(player, stats, partialTick, overlayConsumer);
-		renderWounds(model, poseStack, animatable, bufferSource, player, partialTick, packedLight, packedOverlay, alpha);
+		if (!SkinPaintContext.active()) renderWounds(model, poseStack, animatable, bufferSource, player, partialTick, packedLight, packedOverlay, alpha);
 		if (maskBuffer != null) maskBuffer.setMaskCaptureBlocked(false);
 		renderFace(poseStack, animatable, model, bufferSource, player, stats, partialTick, packedLight, packedOverlay, headAlpha);
+		renderPaintHighlight(model, poseStack, animatable, bufferSource, partialTick, packedLight, packedOverlay);
 		if (maskBuffer != null) maskBuffer.setMaskCaptureEnabled(true);
 
 		bufferSource.getBuffer(renderType);
@@ -197,6 +211,7 @@ public class DMZSkinLayer<T extends AbstractClientPlayer & GeoAnimatable> extend
 		int hairId = character.getHairId();
 
 		if (!HairManager.canUseHair(character)) return;
+		if (!SkinPaintContext.showHair()) return;
 		if (raceName.equals("saiyan") && (Objects.equals(currentForm, SaiyanForms.OOZARU) || Objects.equals(currentForm, SaiyanForms.GOLDEN_OOZARU))) return;
 		CustomHair editingBase = HairEditSession.resolve(player.getUUID(), HairStyleSlot.BASE);
 		if (editingBase != null) {
@@ -292,10 +307,11 @@ public class DMZSkinLayer<T extends AbstractClientPlayer & GeoAnimatable> extend
 		if (isOozaruForm || finalFaceKey.equals("oozaru")) return;
 
 		boolean isHumanoidModel = finalFaceKey.equals("human") || finalFaceKey.equals("saiyan") || finalFaceKey.contains("ssj4d") || finalFaceKey.contains("ssj4gt") || finalFaceKey.equals("buffed") || finalFaceKey.equals("buffedg3") || finalFaceKey.equals("4arms");
-		if (isHumanoidModel && bodyType == 0) return;
-
 		var raceConfig = ConfigManager.getRaceCharacter(raceName);
-		if (raceConfig != null && Boolean.TRUE.equals(raceConfig.getUseVanillaSkin()) && bodyType == 0) return;
+		if (bodyType == 0 && (isHumanoidModel || (raceConfig != null && Boolean.TRUE.equals(raceConfig.getUseVanillaSkin())))) {
+			if (SkinGathererProvider.rendersPlayerSkin(character)) renderSkinPixelEyes(model, poseStack, animatable, bufferSource, player, stats, partialTick, packedLight, packedOverlay, alpha);
+			return;
+		}
 
 		model.getBone("head").ifPresent(headBone -> {
 			BoneRenderState saved = BoneRenderState.capture(headBone);
@@ -596,6 +612,100 @@ public class DMZSkinLayer<T extends AbstractClientPlayer & GeoAnimatable> extend
         if(bodytype == 1) skin = b2;
         renderFaceFeature(model, poseStack, animatable, bufferSource, character, "nose", character.getNoseType(), folder + "majin_nose_" + character.getNoseType() + ".png", skin, pt, pl, po, alpha);
         renderFaceFeature(model, poseStack, animatable, bufferSource, character, "mouth", character.getMouthType(), folder + "majin_mouth_" + character.getMouthType() + ".png", skin, pt, pl, po, alpha);
+	}
+
+	private void renderPaintOverlays(BakedGeoModel model, PoseStack poseStack, T animatable, MultiBufferSource bufferSource, float pt, int pl, int po) {
+		if (!SkinPaintContext.active()) return;
+		for (SkinPaintContext.Overlay overlay : SkinPaintContext.overlays()) renderPaintOverlay(model, poseStack, animatable, bufferSource, overlay, pt, pl, po);
+	}
+
+	private void renderPaintHighlight(BakedGeoModel model, PoseStack poseStack, T animatable, MultiBufferSource bufferSource, float pt, int pl, int po) {
+		if (!SkinPaintContext.active()) return;
+		renderPaintOverlay(model, poseStack, animatable, bufferSource, SkinPaintContext.highlight(), pt, pl, po);
+	}
+
+	private void renderPaintOverlay(BakedGeoModel model, PoseStack poseStack, T animatable, MultiBufferSource bufferSource, SkinPaintContext.Overlay overlay, float pt, int pl, int po) {
+		if (overlay == null || overlay.texture() == null || overlay.alpha() <= 0.001f) return;
+		RenderType type = overlay.alpha() < 1.0f ? ModRenderTypes.skinOverlayTranslucent(overlay.texture()) : ModRenderTypes.skinOverlayCutout(overlay.texture());
+		float[] rgb = overlay.rgb();
+		renderLayerWholeModel(model, poseStack, bufferSource, animatable, type, rgb[0], rgb[1], rgb[2], 1.0f, pt, pl, po, overlay.alpha(), false);
+	}
+
+	private record PixelPaint(float[] rgb, float alpha) {}
+
+	private PixelPaint resolvePixelPaint(StatsData stats, Function<FormConfig.FormData, String> hex, Function<FormConfig.FormData, float[]> rgb) {
+		var character = stats.getCharacter();
+		float[] base = null;
+		FormConfig.FormData form = character.hasActiveForm() ? character.getActiveFormData() : null;
+		if (form != null && hex.apply(form) != null && !hex.apply(form).isEmpty()) base = rgb.apply(form);
+		FormConfig.FormData stack = character.hasActiveStackForm() ? character.getActiveStackFormData() : null;
+		if (stack != null && hex.apply(stack) != null && !hex.apply(stack).isEmpty()) base = rgb.apply(stack);
+
+		float[] target = null;
+		float progress = 0.0f;
+		if (stats.getStatus().isActionCharging()) {
+			FormConfig.FormData next = null;
+			if (stats.getStatus().getSelectedAction() == ActionMode.FORM) next = TransformationsHelper.presentNextForm(stats);
+			else if (stats.getStatus().getSelectedAction() == ActionMode.STACK) next = TransformationsHelper.presentNextStackForm(stats);
+			if (next != null && hex.apply(next) != null && !hex.apply(next).isEmpty()) {
+				target = rgb.apply(next);
+				progress = Mth.clamp(stats.getResources().getActionCharge() / 100.0f, 0.0f, 1.0f);
+			}
+		}
+		if (base == null && target == null) return null;
+		if (base != null && target != null) return new PixelPaint(lerpColor(progress, base, target), 1.0f);
+		if (base != null) return new PixelPaint(base, 1.0f);
+		return progress > 0.001f ? new PixelPaint(target, progress) : null;
+	}
+
+	private void renderSkinPixelHair(BakedGeoModel model, PoseStack poseStack, T animatable, MultiBufferSource bufferSource, AbstractClientPlayer player, StatsData stats, float pt, int pl, int po, float alpha) {
+		var character = stats.getCharacter();
+		SkinPixels pixels = character.getSkinPixels();
+		if (!pixels.hasHairMarks() || !SkinGathererProvider.rendersPlayerSkin(character)) return;
+		PixelPaint paint = resolvePixelPaint(stats, FormConfig.FormData::getHairColor, FormConfig.FormData::getRgbHairColor);
+		if (paint == null) return;
+		ResourceLocation mask = SkinPixelTextures.hairMask(player, pixels);
+		if (mask == null) return;
+		renderMaskLayer(model, poseStack, animatable, bufferSource, mask, applyColorTint(paint.rgb(), stats), pt, pl, po, alpha * paint.alpha());
+	}
+
+	private void renderSkinPixelEyes(BakedGeoModel model, PoseStack poseStack, T animatable, MultiBufferSource bufferSource, AbstractClientPlayer player, StatsData stats, float pt, int pl, int po, float alpha) {
+		var character = stats.getCharacter();
+		SkinPixels pixels = character.getSkinPixels();
+		if (!pixels.hasEyeMarks()) return;
+		PixelPaint iris = resolvePixelPaint(stats, FormConfig.FormData::getEye1Color, FormConfig.FormData::getRgbEye1Color);
+		PixelPaint brow = resolvePixelPaint(stats, FormConfig.FormData::getHairColor, FormConfig.FormData::getRgbHairColor);
+		if (iris == null && brow == null) return;
+		ResourceLocation scleraMask = iris != null ? SkinPixelTextures.eyeMask(player, pixels, SkinPixels.MARK_SCLERA) : null;
+		ResourceLocation irisMask = iris != null ? SkinPixelTextures.eyeMask(player, pixels, SkinPixels.MARK_IRIS) : null;
+		ResourceLocation browMask = brow != null ? SkinPixelTextures.eyeMask(player, pixels, SkinPixels.MARK_BROW) : null;
+		if (scleraMask == null && irisMask == null && browMask == null) return;
+
+		model.getBone("head").ifPresent(headBone -> {
+			BoneRenderState saved = BoneRenderState.capture(headBone);
+
+			float faceInflation = 0.002f;
+			headBone.setPosZ(headBone.getPosZ() - faceInflation);
+			headBone.setScaleX(headBone.getScaleX() + faceInflation);
+			headBone.setScaleY(headBone.getScaleY() + faceInflation);
+			headBone.setScaleZ(headBone.getScaleZ() + faceInflation);
+
+			List<GeoBone> hiddenBones = hideAllTopLevelAndKeepHead(model, headBone);
+			try {
+				if (scleraMask != null) renderMaskLayer(model, poseStack, animatable, bufferSource, scleraMask, applyColorTint(WHITE, stats), pt, pl, po, alpha * iris.alpha());
+				if (irisMask != null) renderMaskLayer(model, poseStack, animatable, bufferSource, irisMask, applyColorTint(iris.rgb(), stats), pt, pl, po, alpha * iris.alpha());
+				if (browMask != null) renderMaskLayer(model, poseStack, animatable, bufferSource, browMask, applyColorTint(brow.rgb(), stats), pt, pl, po, alpha * brow.alpha());
+			} finally {
+				restoreHiddenBones(hiddenBones);
+				saved.restore();
+			}
+		});
+	}
+
+	private void renderMaskLayer(BakedGeoModel model, PoseStack poseStack, T animatable, MultiBufferSource bufferSource, ResourceLocation mask, float[] rgb, float pt, int pl, int po, float alpha) {
+		if (alpha <= 0.001f) return;
+		RenderType renderType = alpha < 1.0f ? ModRenderTypes.skinOverlayTranslucent(mask) : ModRenderTypes.skinOverlayCutout(mask);
+		renderLayerWholeModel(model, poseStack, bufferSource, animatable, renderType, rgb[0], rgb[1], rgb[2], 1.0f, pt, pl, po, alpha, false);
 	}
 
 	private void renderLayerWholeModel(BakedGeoModel model, PoseStack poseStack, MultiBufferSource bufferSource, T animatable, RenderType renderType, float r, float g, float b, float scaleInflation, float partialTick, int packedLight, int packedOverlay, float alpha, boolean applyTransformationTint) {

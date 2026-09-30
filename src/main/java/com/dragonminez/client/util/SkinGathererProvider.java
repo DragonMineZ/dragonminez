@@ -7,6 +7,8 @@ import com.dragonminez.common.config.FormConfig;
 import com.dragonminez.common.config.RaceCharacterConfig;
 import com.dragonminez.common.stats.extras.ActionMode;
 import com.dragonminez.common.stats.character.Character;
+import com.dragonminez.common.stats.character.SkinPixels;
+import com.dragonminez.client.render.util.SkinPixelTextures;
 import com.dragonminez.common.stats.StatsData;
 import com.dragonminez.common.util.TransformationsHelper;
 import com.dragonminez.common.util.lists.FrostDemonForms;
@@ -46,6 +48,36 @@ public class SkinGathererProvider {
 		if (k.startsWith("human") || k.startsWith("saiyan") || k.contains("ssj4d") || k.contains("ssj4gt")
 				|| k.startsWith("buffed") || k.equals("4arms")) return "human";
 		return "custom";
+	}
+
+	public static boolean isHumanoidKey(String logicKey) {
+		return logicKey.equals("human") || logicKey.equals("saiyan") || logicKey.contains("ssj4d")
+				|| logicKey.contains("ssj4gt") || logicKey.equals("buffed") || logicKey.equals("buffedg3") || logicKey.equals("4arms");
+	}
+
+	public static boolean rendersPlayerSkin(Character character) {
+		if (character == null || character.getBodyType() != 0) return false;
+		String raceName = character.getRaceName().toLowerCase();
+		RaceCharacterConfig raceConfig = ConfigManager.getRaceCharacter(raceName);
+		if (raceConfig == null) return false;
+
+		String raceCustomModel = raceConfig.getCustomModel() != null ? raceConfig.getCustomModel().toLowerCase() : "";
+		String formCustomModel = "";
+		if (character.hasActiveStackForm() && character.getActiveStackFormData() != null && character.getActiveStackFormData().hasCustomModel()) {
+			formCustomModel = character.getActiveStackFormData().getCustomModel().toLowerCase();
+		} else if (character.hasActiveForm() && character.getActiveFormData() != null && character.getActiveFormData().hasCustomModel()) {
+			formCustomModel = character.getActiveFormData().getCustomModel().toLowerCase();
+		}
+		String key = formCustomModel.isEmpty() ? raceCustomModel : formCustomModel;
+		if (key.isEmpty()) key = isBuiltInRace(raceName) ? raceName : "human";
+		String logicKey = key.equals("human_slim") || key.equals("majin_slim") || key.equals("base_slim") ? raceName : key;
+
+		String currentForm = character.getActiveForm();
+		boolean isOozaruForm = raceName.equals("saiyan") && (Objects.equals(currentForm, SaiyanForms.OOZARU) || Objects.equals(currentForm, SaiyanForms.GOLDEN_OOZARU));
+		if (logicKey.equals("oozaru") || isOozaruForm) return false;
+		if (isHumanoidKey(logicKey)) return true;
+		if (isBuiltInRace(raceName) || !modelFamily(logicKey).equals("custom")) return false;
+		return Boolean.TRUE.equals(raceConfig.getUseVanillaSkin());
 	}
 
 	public interface BodyLayerSink extends BiConsumer<ResourceLocation, float[]> {
@@ -192,8 +224,7 @@ public class SkinGathererProvider {
 		boolean isSSJ4Active = currentForm != null && (currentForm.contains("supersaiyan4") || currentForm.contains("ssj4"));
 		boolean renderSaiyanTail = (isSaiyanLogic || hasSaiyanTail) && (isSSJ4Active || (stats.getStatus().isTailVisible() && character.isHasSaiyanTail()));
 
-		boolean isHumanoid = logicKey.equals("human") || logicKey.equals("saiyan") || logicKey.contains("ssj4d")
-				|| logicKey.contains("ssj4gt") || logicKey.equals("buffed") || logicKey.equals("buffedg3") || logicKey.equals("4arms");
+		boolean isHumanoid = isHumanoidKey(logicKey);
 
 		if (isHumanoid && bodyType == 0) {
 			consumer.accept(player.getSkinTextureLocation(), WHITE_COLOR);
@@ -247,7 +278,14 @@ public class SkinGathererProvider {
 
 	public void gatherTattooLayers(AbstractClientPlayer player, StatsData stats, float partialTick, BiConsumer<ResourceLocation, float[]> consumer) {
 		int tattooType = stats.getCharacter().getTattooType();
-		if (tattooType == 0) return;
+		if (tattooType == Character.TATTOO_CUSTOM) {
+			SkinPixels pixels = stats.getCharacter().getSkinPixels();
+			if (!pixels.hasTattoo()) return;
+			ResourceLocation custom = SkinPixelTextures.tattoo(player, pixels);
+			if (custom != null) consumer.accept(custom, WHITE_COLOR);
+			return;
+		}
+		if (tattooType <= 0) return;
 
 		consumer.accept(DMZSkinLayer.getSafeTexture(getCachedTexture("textures/entity/races/tattoos/tattoo_" + tattooType + ".png")), WHITE_COLOR);
 	}

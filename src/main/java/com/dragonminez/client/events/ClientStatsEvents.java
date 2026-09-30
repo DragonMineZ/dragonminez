@@ -44,6 +44,7 @@ import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.entity.player.Player;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.client.event.ClientPlayerNetworkEvent;
+import com.dragonminez.client.render.util.SkinPixelTextures;
 import net.minecraftforge.client.event.ComputeFovModifierEvent;
 import net.minecraftforge.client.event.InputEvent;
 import net.minecraftforge.client.event.MovementInputUpdateEvent;
@@ -656,6 +657,7 @@ public class ClientStatsEvents {
 		KiSenseScan.clear();
 		CombatIndicators.clear();
 		StatsCapability.clearClientCache();
+		SkinPixelTextures.clear();
 	}
 
 	private static float[] getBodyScale(StatsData stats) {

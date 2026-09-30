@@ -312,6 +312,19 @@ public class ModRenderTypes extends RenderType {
                     .setLayeringState(SKIN_OVERLAY_LAYERING)
                     .createCompositeState(true)));
 
+    private static final Function<ResourceLocation, RenderType> SKIN_PAINT_PICK = Util.memoize((pLocation) ->
+            create("dmz_skin_paint_pick", DefaultVertexFormat.NEW_ENTITY, VertexFormat.Mode.QUADS, 256, false, false, CompositeState.builder()
+                    .setShaderState(RENDERTYPE_ENERGY_SWIRL_SHADER)
+                    .setTexturingState(DEFAULT_TEXTURING)
+                    .setTextureState(new TextureStateShard(pLocation, false, false))
+                    .setTransparencyState(NO_TRANSPARENCY)
+                    .setCullState(NO_CULL)
+                    .setLightmapState(LIGHTMAP)
+                    .setOverlayState(OVERLAY)
+                    .setWriteMaskState(COLOR_DEPTH_WRITE)
+                    .setDepthTestState(LEQUAL_DEPTH_TEST)
+                    .createCompositeState(false)));
+
     private static final Function<ResourceLocation, RenderType> SCOUTER_LENS = Util.memoize((pLocation) ->
             create("dmz_scouter_lens", DefaultVertexFormat.NEW_ENTITY, VertexFormat.Mode.QUADS, 256, true, true, CompositeState.builder()
                     .setShaderState(RENDERTYPE_ENTITY_TRANSLUCENT_CULL_SHADER)
@@ -376,6 +389,7 @@ public class ModRenderTypes extends RenderType {
     public static RenderType scouterLens(ResourceLocation pLocation) { return SCOUTER_LENS.apply(pLocation); }
     public static RenderType skinOverlayCutout(ResourceLocation pLocation) { return SKIN_OVERLAY_CUTOUT.apply(pLocation); }
     public static RenderType skinOverlayTranslucent(ResourceLocation pLocation) { return SKIN_OVERLAY_TRANSLUCENT.apply(pLocation); }
+    public static RenderType skinPaintPick(ResourceLocation pLocation) { return SKIN_PAINT_PICK.apply(pLocation); }
     public static RenderType lightning(ResourceLocation pLocation) { return LIGHTNING.apply(pLocation); }
     public static RenderType kiblast(ResourceLocation pLocation) { return KI_BLAST.apply(pLocation); }
     public static RenderType ki_rendertype(ResourceLocation pLocation) { return KI_RENDERTYPE.apply(pLocation); }

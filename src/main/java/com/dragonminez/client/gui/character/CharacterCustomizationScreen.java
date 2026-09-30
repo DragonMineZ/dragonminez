@@ -3,6 +3,8 @@ package com.dragonminez.client.gui.character;
 import com.dragonminez.Reference;
 import com.dragonminez.client.events.ForgeClientEvents;
 import com.dragonminez.client.gui.hair.HairEditorScreen;
+import com.dragonminez.client.gui.character.pixel.PixelEditorScreen;
+import com.dragonminez.client.util.SkinGathererProvider;
 import com.dragonminez.client.gui.buttons.ColorSlider;
 import com.dragonminez.client.gui.buttons.CustomTextureButton;
 import com.dragonminez.client.gui.buttons.TexturedTextButton;
@@ -233,6 +235,7 @@ public class CharacterCustomizationScreen extends ScaledScreen {
 			case PRESET -> initPresetTab(top);
 			case HAIR -> initHairTab(top);
 			case EYES -> initEyesTab(top);
+			case BODY -> initBodyTab(top);
 			case AURA_CLASS -> initAuraClassTab(top);
 		}
 	}
@@ -278,9 +281,11 @@ public class CharacterCustomizationScreen extends ScaledScreen {
 	private void initHairTab(int top) {
 		int y = top + 28;
 		addRenderableWidget(createColorButton(LEFT_PANEL_X + 60, y - 18, "hairColor"));
+		boolean skinPixels = SkinGathererProvider.rendersPlayerSkin(character);
+		if (skinPixels) addRenderableWidget(createPixelEditIcon(LEFT_PANEL_X + LEFT_PANEL_WIDTH - 32, getUiHeight() - 40, PixelEditorScreen.Mode.HAIR));
 		if (HairManager.canUseHair(character)) {
 			addRenderableWidget(new TexturedTextButton.Builder()
-					.position(LEFT_PANEL_X + 33, getUiHeight() - 40)
+					.position(skinPixels ? LEFT_PANEL_X + 22 : LEFT_PANEL_X + 33, getUiHeight() - 40)
 					.size(74, 20)
 					.texture(BUTTONS_TEXTURE)
 					.textureCoords(0, 28, 0, 48)
@@ -333,6 +338,52 @@ public class CharacterCustomizationScreen extends ScaledScreen {
 				})
 				.build());
 		addRenderableWidget(createColorButton(LEFT_PANEL_X + 85, y + 2, "eye2Color"));
+		if (SkinGathererProvider.rendersPlayerSkin(character)) addRenderableWidget(createPixelEditButton(LEFT_PANEL_X + 33, getUiHeight() - 40, PixelEditorScreen.Mode.EYES));
+	}
+
+	private void initBodyTab(int top) {
+		if (character.getTattooType() == Character.TATTOO_CUSTOM) addRenderableWidget(createPixelEditButton(LEFT_PANEL_X + 33, getUiHeight() - 40, PixelEditorScreen.Mode.TATTOO));
+	}
+
+	private TexturedTextButton createPixelEditButton(int x, int y, PixelEditorScreen.Mode mode) {
+		return new TexturedTextButton.Builder()
+				.position(x, y)
+				.size(74, 20)
+				.texture(BUTTONS_TEXTURE)
+				.textureCoords(0, 28, 0, 48)
+				.textureSize(74, 20)
+				.message(tr(mode == PixelEditorScreen.Mode.TATTOO ? "gui.dragonminez.customization.edit" : "gui.dragonminez.customization.edit_pixels"))
+				.onPress(btn -> openPixelEditor(mode))
+				.build();
+	}
+
+	private CustomTextureButton createPixelEditIcon(int x, int y, PixelEditorScreen.Mode mode) {
+		return new CustomTextureButton.Builder()
+				.position(x, y)
+				.size(20, 20)
+				.texture(BUTTONS_TEXTURE)
+				.textureCoords(202, 0, 202, 20)
+				.textureSize(20, 20)
+				.message(Component.empty())
+				.onPress(btn -> openPixelEditor(mode))
+				.build();
+	}
+
+	private void openPixelEditor(PixelEditorScreen.Mode mode) {
+		hideColorPicker();
+		if (this.minecraft != null) this.minecraft.setScreen(new PixelEditorScreen(this, character, mode));
+	}
+
+	private int tattooGridMax() {
+		return Math.max(1, TextureCounter.getMaxTattooTypes(getEffectiveModelBase())) + 1;
+	}
+
+	private int tattooTypeForGridValue(int value) {
+		return value == tattooGridMax() ? Character.TATTOO_CUSTOM : value;
+	}
+
+	private int tattooGridValueForType(int type) {
+		return type == Character.TATTOO_CUSTOM ? tattooGridMax() : type;
 	}
 
 	private void initAuraClassTab(int top) {
@@ -621,7 +672,25 @@ public class CharacterCustomizationScreen extends ScaledScreen {
 
 	private void renderBodyText(GuiGraphics graphics, int centerX, int top) {
 		TextUtil.drawCenteredStringWithBorder(graphics, this.font, tr("gui.dragonminez.customization.tattoo"), centerX, top + 2, 0xFF9B9B);
-		renderPreviewGrid(graphics, tattooBar, top + 30, 0, Math.max(1, TextureCounter.getMaxTattooTypes(getEffectiveModelBase())), character.getTattooType(), PreviewRenderMode.TATTOO_ONLY, false, PREVIEW_GRID_VISIBLE_ROWS, tattooPreviewScrollRows);
+		renderPreviewGrid(graphics, tattooBar, top + 30, 0, tattooGridMax(), tattooGridValueForType(character.getTattooType()), PreviewRenderMode.TATTOO_ONLY, false, PREVIEW_GRID_VISIBLE_ROWS, tattooPreviewScrollRows);
+		int[] customCard = previewCardPosition(top + 30, 0, tattooGridMax(), tattooGridMax(), PREVIEW_GRID_VISIBLE_ROWS, tattooPreviewScrollRows);
+		if (customCard != null) {
+			graphics.pose().pushPose();
+			graphics.pose().translate(0.0D, 0.0D, 400.0D);
+			TextUtil.drawCenteredStringWithBorder(graphics, this.font, tr("gui.dragonminez.customization.tattoo.custom"), customCard[0] + PREVIEW_CARD_WIDTH / 2, customCard[1] + PREVIEW_CARD_HEIGHT - 11, 0xFFE8D0A1);
+			graphics.pose().popPose();
+		}
+	}
+
+	private int[] previewCardPosition(int startY, int minValue, int maxValue, int value, int visibleRows, int scrollRows) {
+		if (value < minValue || value > maxValue) return null;
+		int startX = LEFT_PANEL_X + (LEFT_PANEL_WIDTH - (PREVIEW_GRID_COLUMNS * PREVIEW_CARD_WIDTH + (PREVIEW_GRID_COLUMNS - 1) * PREVIEW_CARD_GAP)) / 2;
+		int firstIndex = Mth.clamp(scrollRows, 0, getMaxScrollRows(minValue, maxValue, visibleRows)) * PREVIEW_GRID_COLUMNS;
+		int index = value - minValue - firstIndex;
+		if (index < 0 || index >= PREVIEW_GRID_COLUMNS * visibleRows) return null;
+		int col = index % PREVIEW_GRID_COLUMNS;
+		int row = index / PREVIEW_GRID_COLUMNS;
+		return new int[]{startX + col * (PREVIEW_CARD_WIDTH + PREVIEW_CARD_GAP), startY + row * (PREVIEW_CARD_HEIGHT + PREVIEW_CARD_GAP)};
 	}
 
 	private void renderAuraClassText(GuiGraphics graphics, int centerX, int top, int mouseX, int mouseY) {
@@ -1022,7 +1091,7 @@ public class CharacterCustomizationScreen extends ScaledScreen {
 				}
 			}
 			case BODY -> {
-				int maxTattoo = Math.max(1, TextureCounter.getMaxTattooTypes(getEffectiveModelBase()));
+				int maxTattoo = tattooGridMax();
 				if (tryScrollGrid(uiMouseX, uiMouseY, top + 30, 0, maxTattoo, PREVIEW_GRID_VISIBLE_ROWS, direction, tattooPreviewScrollRows)) {
 					tattooPreviewScrollRows = clampScrollRows(0, maxTattoo, PREVIEW_GRID_VISIBLE_ROWS, tattooPreviewScrollRows + direction);
 					return true;
@@ -1338,8 +1407,9 @@ public class CharacterCustomizationScreen extends ScaledScreen {
 	}
 
 	private void setTattooFromPreview(int value) {
-		if (character.getTattooType() == value) return;
-		character.setTattooType(value);
+		int type = tattooTypeForGridValue(value);
+		if (character.getTattooType() == type) return;
+		character.setTattooType(type);
 		syncCharacter();
 		refreshScreenWidgets();
 	}
@@ -1678,7 +1748,7 @@ public class CharacterCustomizationScreen extends ScaledScreen {
 			case EYES -> handlePreviewGridSelection(uiMouseX, uiMouseY, top + 30, 0, Math.max(1, TextureCounter.getMaxEyesTypes(getEffectiveModelBase())), PREVIEW_GRID_VISIBLE_ROWS, eyesPreviewScrollRows, this::setEyesFromPreview);
 			case FACE -> handlePreviewGridSelection(uiMouseX, uiMouseY, top + 20, 0, Math.max(1, TextureCounter.getMaxNoseTypes(getEffectiveModelBase())), 1, nosePreviewScrollRows, this::setNoseFromPreview)
 					|| handlePreviewGridSelection(uiMouseX, uiMouseY, top + 94, 0, Math.max(1, TextureCounter.getMaxMouthTypes(getEffectiveModelBase())), 2, mouthPreviewScrollRows, this::setMouthFromPreview);
-			case BODY -> handlePreviewGridSelection(uiMouseX, uiMouseY, top + 30, 0, Math.max(1, TextureCounter.getMaxTattooTypes(getEffectiveModelBase())), PREVIEW_GRID_VISIBLE_ROWS, tattooPreviewScrollRows, this::setTattooFromPreview);
+			case BODY -> handlePreviewGridSelection(uiMouseX, uiMouseY, top + 30, 0, tattooGridMax(), PREVIEW_GRID_VISIBLE_ROWS, tattooPreviewScrollRows, this::setTattooFromPreview);
 			default -> false;
 		};
 	}
@@ -1891,7 +1961,7 @@ public class CharacterCustomizationScreen extends ScaledScreen {
 				character.setNoseType(0);
 				character.setMouthType(value);
 			}
-			case TATTOO_ONLY -> character.setTattooType(value);
+			case TATTOO_ONLY -> character.setTattooType(tattooTypeForGridValue(value));
 		}
 
 		Quaternionf pose = (new Quaternionf()).rotateZ((float) Math.PI);
