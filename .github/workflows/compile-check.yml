@@ -1,0 +1,53 @@
+name: Compile Check
+
+# Failsafe for the build gate: dev jars are only built when staff approve them in Discord, so every
+# feature-branch push (and every PR) still gets compiled and tested here. main is covered by gradle.yml.
+on:
+  push:
+    branches-ignore:
+      - main
+    paths:
+      - '**.java'
+      - 'src/main/resources/**'
+      - 'src/generated/resources/**'
+      - 'build.gradle.kts'
+      - 'settings.gradle'
+      - 'gradle.properties'
+      - 'gradle/**'
+      - '.github/workflows/compile-check.yml'
+  pull_request:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: compile-check-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  compile-and-test:
+    name: Compile and test
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Validate Gradle wrapper
+        uses: gradle/actions/wrapper-validation@v6
+
+      - name: Set up JDK 17 Temurin
+        uses: actions/setup-java@v5
+        with:
+          java-version: '17'
+          distribution: temurin
+
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v6
+
+      - name: Make gradlew executable
+        run: chmod +x ./gradlew
+
+      # `build` compiles everything and runs the test task.
+      - name: Compile and test
+        run: ./gradlew build --build-cache
