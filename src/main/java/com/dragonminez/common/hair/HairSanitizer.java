@@ -67,17 +67,23 @@ public final class HairSanitizer {
 			adjustments++;
 		}
 
-		for (HairSegmentOverride override : strand.getOverrides()) {
-			float widthScaleLimit = maxWidth / strand.getWidth();
-			float depthScaleLimit = maxWidth / strand.getDepth();
-			if (override.getWidthScale() > widthScaleLimit) {
-				override.setWidthScale(widthScaleLimit);
+		float widthScaleLimit = maxWidth / strand.getWidth();
+		float depthScaleLimit = maxWidth / strand.getDepth();
+		float widthScale = 1.0f;
+		float depthScale = 1.0f;
+		for (int k = 0; k < strand.getSegments(); k++) {
+			HairSegmentOverride override = strand.getOverride(k);
+			if (override == null) continue;
+			if (widthScale * override.getWidthScale() > widthScaleLimit) {
+				override.setWidthScale(widthScaleLimit / widthScale);
 				adjustments++;
 			}
-			if (override.getDepthScale() > depthScaleLimit) {
-				override.setDepthScale(depthScaleLimit);
+			if (depthScale * override.getDepthScale() > depthScaleLimit) {
+				override.setDepthScale(depthScaleLimit / depthScale);
 				adjustments++;
 			}
+			widthScale *= override.getWidthScale();
+			depthScale *= override.getDepthScale();
 		}
 
 		HairPoseBuilder.buildGeometry(strand, face, index, scratch);

@@ -235,6 +235,30 @@ public class HairStrand {
 		return overrides.values();
 	}
 
+	public void convertAbsoluteSegmentScales() {
+		float lengthScale = 1.0f;
+		float widthScale = 1.0f;
+		float depthScale = 1.0f;
+		for (int k = 0; k < segments; k++) {
+			HairSegmentOverride existing = overrides.get(k);
+			float absoluteLength = existing != null ? existing.getLengthScale() : 1.0f;
+			float absoluteWidth = existing != null ? existing.getWidthScale() : 1.0f;
+			float absoluteDepth = existing != null ? existing.getDepthScale() : 1.0f;
+			if (existing == null && lengthScale == 1.0f && widthScale == 1.0f && depthScale == 1.0f) continue;
+			HairSegmentOverride override = getOrCreateOverride(k);
+			override.setLengthScale(absoluteLength / lengthScale);
+			override.setWidthScale(absoluteWidth / widthScale);
+			override.setDepthScale(absoluteDepth / depthScale);
+			if (override.isIdentity()) {
+				overrides.remove(k);
+				continue;
+			}
+			lengthScale *= override.getLengthScale();
+			widthScale *= override.getWidthScale();
+			depthScale *= override.getDepthScale();
+		}
+	}
+
 	public void makeVisibleWithDefaults() {
 		if (isVisible()) return;
 		segments = DEFAULT_SEGMENTS;

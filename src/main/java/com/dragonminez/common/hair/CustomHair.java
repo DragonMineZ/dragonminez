@@ -11,7 +11,8 @@ import java.util.Map;
 import java.util.concurrent.atomic.AtomicLong;
 
 public class CustomHair {
-	public static final int VERSION = 6;
+	public static final int VERSION = 7;
+	private static final int FIRST_SEGMENT_OVERRIDE_VERSION = 6;
 	public static final int FRONT_STRANDS = 4;
 	public static final int SIDE_STRANDS = 16;
 
@@ -252,12 +253,13 @@ public class CustomHair {
 				if (index < 0 || index >= strands.length) continue;
 
 				HairStrand strand;
-				if (version >= VERSION) {
+				if (version >= FIRST_SEGMENT_OVERRIDE_VERSION) {
 					strand = new HairStrand();
 					strand.load(strandTag);
 				} else {
 					strand = HairLegacyMigrator.migrateStrand(face, index, strandTag);
 				}
+				if (version < VERSION) strand.convertAbsoluteSegmentScales();
 				strand.setId(face.strandId(index));
 				strands[index] = strand;
 			}

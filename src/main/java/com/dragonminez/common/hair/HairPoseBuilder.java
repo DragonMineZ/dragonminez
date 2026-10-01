@@ -97,15 +97,23 @@ public final class HairPoseBuilder {
 		float bendZ = segments > 1 ? strand.getBendZ() / joints * HairMath.DEG_TO_RAD : 0.0f;
 		float twist = segments > 1 ? strand.getTwist() / joints * HairMath.DEG_TO_RAD : 0.0f;
 
+		float lengthScale = 1.0f;
+		float widthScale = 1.0f;
+		float depthScale = 1.0f;
 		for (int k = 0; k < segments; k++) {
 			float param = out.params[k];
 			HairSegmentOverride override = strand.getOverride(k);
 			float weight = (float) Math.pow(strand.getLengthRatio(), param) / totalWeight;
 			float taperFactor = (float) Math.pow(strand.getTaper(), Math.pow(param, strand.getTaperCurve()));
+			if (override != null) {
+				lengthScale *= override.getLengthScale();
+				widthScale *= override.getWidthScale();
+				depthScale *= override.getDepthScale();
+			}
 
-			out.lengths[k] = strand.getLength() * weight * HairMath.PIXEL * (override != null ? override.getLengthScale() : 1.0f);
-			out.widths[k] = strand.getWidth() * taperFactor * HairMath.PIXEL * (override != null ? override.getWidthScale() : 1.0f);
-			out.depths[k] = strand.getDepth() * taperFactor * HairMath.PIXEL * (override != null ? override.getDepthScale() : 1.0f);
+			out.lengths[k] = strand.getLength() * weight * HairMath.PIXEL * lengthScale;
+			out.widths[k] = strand.getWidth() * taperFactor * HairMath.PIXEL * widthScale;
+			out.depths[k] = strand.getDepth() * taperFactor * HairMath.PIXEL * depthScale;
 
 			Quaternionf relative = out.relativeRotations[k].identity();
 			if (k > 0) relative.rotateX(bendX).rotateY(bendY).rotateZ(bendZ).rotateY(twist);
