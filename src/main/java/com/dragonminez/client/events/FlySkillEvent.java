@@ -18,6 +18,7 @@ import com.dragonminez.common.stats.StatsCapability;
 import com.dragonminez.common.stats.StatsData;
 import com.dragonminez.common.stats.techniques.TechniqueDispatcher;
 import com.dragonminez.common.stats.StatsProvider;
+import com.dragonminez.client.render.shader.ClientGravityState;
 import com.dragonminez.server.util.GravityLogic;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.player.AbstractClientPlayer;
@@ -375,11 +376,11 @@ public class FlySkillEvent {
 			} else flightVector = Vec3.ZERO;
 		}
 
-		if (GravityLogic.isFlightHardStopped(player)) {
+		if (GravityLogic.isFlightHardStopped(ClientGravityState.getNetGravity())) {
 			flightVector = Vec3.ZERO;
 			player.setDeltaMovement(0, -1.5, 0);
 		} else {
-			double flyFactor = GravityLogic.getFlyFactor(player);
+			double flyFactor = GravityLogic.getFlyFactor(ClientGravityState.getNetGravity());
 			if (flyFactor < 1.0) flightVector = flightVector.scale(flyFactor);
 		}
 

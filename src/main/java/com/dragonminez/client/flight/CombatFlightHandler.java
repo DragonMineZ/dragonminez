@@ -7,6 +7,7 @@ import com.dragonminez.common.network.C2S.CombatFlyImpulseC2S;
 import com.dragonminez.common.network.NetworkHandler;
 import com.dragonminez.client.events.FlySkillEvent;
 import com.dragonminez.common.stats.StatsData;
+import com.dragonminez.client.render.shader.ClientGravityState;
 import com.dragonminez.server.util.GravityLogic;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.player.LocalPlayer;
@@ -116,14 +117,14 @@ public class CombatFlightHandler {
 			combined = velocity.add(burstVelocity);
 		}
 
-		if (GravityLogic.isFlightHardStopped(player)) {
+		if (GravityLogic.isFlightHardStopped(ClientGravityState.getNetGravity())) {
 			velocity = Vec3.ZERO;
 			burstVelocity = Vec3.ZERO;
 			player.setDeltaMovement(0, -1.5, 0);
 			return;
 		}
 
-		double flyFactor = GravityLogic.getFlyFactor(player);
+		double flyFactor = GravityLogic.getFlyFactor(ClientGravityState.getNetGravity());
 		if (flyFactor < 1.0) {
 			velocity = velocity.scale(flyFactor);
 			burstVelocity = burstVelocity.scale(flyFactor);
