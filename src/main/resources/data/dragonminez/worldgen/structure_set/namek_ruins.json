@@ -1,0 +1,17 @@
+{
+  "placement": {
+    "type": "minecraft:random_spread",
+    "salt": 63918274,
+    "spacing": 40,
+    "separation": 20,
+    "spread_type": "linear",
+    "exclusion_zone": {
+      "other_set": "dragonminez:village_ajissa",
+      "chunk_count": 6
+    }
+  },
+  "structures": [{
+    "structure": "dragonminez:namek_ruins",
+    "weight": 1
+  }]
+}

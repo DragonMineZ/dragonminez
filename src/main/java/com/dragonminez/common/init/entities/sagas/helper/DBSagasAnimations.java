@@ -154,6 +154,8 @@ public class DBSagasAnimations {
     public static final RawAnimation ANIM_BLASTER_METEOR_FIRE = RawAnimation.begin().thenLoop("ki.blaster_meteor_fire");
     public static final RawAnimation ANIM_WOLF_FANG = RawAnimation.begin().thenPlay("skp.wolf_fang");
     public static final RawAnimation ANIM_DRAGON_FIST = RawAnimation.begin().thenPlay("skp.dragon_fist");
+    public static final RawAnimation ANIM_OOZARU_FIST = RawAnimation.begin().thenPlay("skp.oozaru_fist");
+    public static final RawAnimation ANIM_OOZARU_SLAM = RawAnimation.begin().thenPlay("skp.oozaru_slam");
     public static final RawAnimation ANIM_GUM_PUNCH = RawAnimation.begin().thenPlay("skp.gum_punch");
     public static final RawAnimation ANIM_SLEEP_RECOVERY = RawAnimation.begin().thenPlay("evs.sleep_recovery");
     public static final RawAnimation ANIM_RAGE_SCREAM = RawAnimation.begin().thenLoop("evs.rage_scream");

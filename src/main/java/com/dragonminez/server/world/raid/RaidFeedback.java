@@ -1,9 +1,17 @@
 package com.dragonminez.server.world.raid;
 
 import net.minecraft.core.BlockPos;
+import com.dragonminez.common.config.RaidDefinition;
 import com.dragonminez.common.init.MainEffects;
 import com.dragonminez.common.network.NetworkHandler;
 import com.dragonminez.common.network.S2C.RaidMusicS2C;
+import com.dragonminez.common.network.S2C.ResourceSyncS2C;
+import com.dragonminez.common.stats.StatsCapability;
+import com.dragonminez.common.stats.StatsProvider;
+import net.minecraft.network.protocol.game.ClientboundSetSubtitleTextPacket;
+import net.minecraft.network.protocol.game.ClientboundSetTitleTextPacket;
+import net.minecraft.network.protocol.game.ClientboundSetTitlesAnimationPacket;
+import net.minecraft.server.MinecraftServer;
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.nbt.CompoundTag;
@@ -20,8 +28,14 @@ import net.minecraft.world.item.DyeColor;
 import net.minecraft.world.item.FireworkRocketItem;
 
 import java.util.List;
+import java.util.Set;
+import java.util.UUID;
 
 public final class RaidFeedback {
+
+	private static final int DEFEAT_FADE_IN = 10;
+	private static final int DEFEAT_STAY = 70;
+	private static final int DEFEAT_FADE_OUT = 20;
 
 	private static final int VICTORY_ROCKETS = 6;
 	private static final double ROCKET_SPREAD = 5.0D;
@@ -31,6 +45,36 @@ public final class RaidFeedback {
 	private static final int HERO_DURATION_TICKS = 20 * 60 * 10;
 
 	private RaidFeedback() {}
+
+	public static void mourn(MinecraftServer server, Set<UUID> participants, RaidDefinition.Defeat defeat) {
+		String title = defeat != null ? defeat.titleOr(RaidDefinition.Defeat.DEFAULT_TITLE) : RaidDefinition.Defeat.DEFAULT_TITLE;
+		String subtitle = defeat != null ? defeat.getSubtitle() : null;
+		int alignment = defeat != null ? defeat.alignmentOr(0) : 0;
+
+		for (UUID id : participants) {
+			ServerPlayer player = server.getPlayerList().getPlayer(id);
+			if (player == null) continue;
+
+			player.connection.send(new ClientboundSetTitlesAnimationPacket(DEFEAT_FADE_IN, DEFEAT_STAY, DEFEAT_FADE_OUT));
+			if (subtitle != null && !subtitle.isBlank()) {
+				player.connection.send(new ClientboundSetSubtitleTextPacket(Component.translatable(subtitle)));
+			}
+			player.connection.send(new ClientboundSetTitleTextPacket(Component.translatable(title)));
+			player.playNotifySound(SoundEvents.BEACON_DEACTIVATE, SoundSource.PLAYERS, 1.0F, 0.6F);
+
+			if (alignment != 0) applyAlignment(player, alignment);
+		}
+	}
+
+	private static void applyAlignment(ServerPlayer player, int amount) {
+		StatsProvider.get(StatsCapability.INSTANCE, player).ifPresent(data -> {
+			int before = data.getResources().getAlignment();
+			data.getResources().addAlignment(amount);
+			int change = data.getResources().getAlignment() - before;
+			NetworkHandler.sendToTrackingEntityAndSelf(new ResourceSyncS2C(player), player);
+			if (change < 0) player.sendSystemMessage(Component.translatable("raid.dragonminez.defeat.alignment", -change));
+		});
+	}
 
 	public static void announce(ServerPlayer player, String translationKey) {
 		if (translationKey == null || translationKey.isBlank()) return;

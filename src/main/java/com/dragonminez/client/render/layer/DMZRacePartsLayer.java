@@ -1,5 +1,6 @@
 package com.dragonminez.client.render.layer;
 
+import com.dragonminez.client.init.entities.renderer.sagas.SaiyanInvaderRenderer;
 import com.dragonminez.Reference;
 import com.dragonminez.client.render.HeadPortraitRenderer;
 import com.dragonminez.client.render.firstperson.dto.FirstPersonManager;
@@ -431,6 +432,10 @@ public class DMZRacePartsLayer<T extends AbstractClientPlayer & GeoAnimatable> e
 	}
 
 	private void renderAccessories(PoseStack poseStack, T animatable, BakedGeoModel playerModel, MultiBufferSource bufferSource, float partialTick, int packedLight) {
+		if (animatable instanceof SaiyanInvaderRenderer.Puppet puppet) {
+			renderScouter(poseStack, animatable, playerModel, bufferSource, partialTick, packedLight, puppet.getScouter());
+			return;
+		}
 		for (int i = 0; i < getCuriosSlotSize(animatable, "head_tech"); i++) {
 			ItemStack headTechStack = getRenderableCurio(animatable, "head_tech", i);
 			renderPothala(poseStack, animatable,  playerModel, bufferSource, partialTick, packedLight, headTechStack);

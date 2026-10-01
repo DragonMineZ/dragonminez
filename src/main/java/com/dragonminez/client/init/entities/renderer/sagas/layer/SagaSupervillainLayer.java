@@ -29,6 +29,14 @@ public class SagaSupervillainLayer<T extends DBSagasEntity> extends GeoRenderLay
 		return palette != null ? ColorUtils.rgbIntToFloat(palette.flameOuter()) : BORDER_COLOR;
 	}
 
+	public static float[] tintColor(DBSagasEntity entity) {
+		if (!entity.showsSupervillainAura() || entity.isSpectator() || entity.isInvisible()) return null;
+		DBSagasEntity.SupervillainPalette palette = entity.getSupervillainPalette();
+		float[] tint = palette != null ? ColorUtils.rgbIntToFloat(palette.tint()) : TINT;
+		float alpha = palette != null ? palette.tintAlpha() : TINT_ALPHA;
+		return new float[]{tint[0], tint[1], tint[2], alpha};
+	}
+
 	public static float[] borderInnerColor(DBSagasEntity entity) {
 		if (!entity.showsSupervillainAura() || entity.isSpectator() || entity.isInvisible()) return null;
 		DBSagasEntity.SupervillainPalette palette = entity.getSupervillainPalette();

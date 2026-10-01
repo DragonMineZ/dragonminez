@@ -44,6 +44,11 @@ public final class DMZRendererCache {
 		POV_RENDERERS.clear();
 	}
 
+	public static void evict(UUID playerId) {
+		TP_RENDERERS.remove(playerId);
+		POV_RENDERERS.remove(playerId);
+	}
+
 	@Nullable
 	public static DMZPlayerRenderer<?> getRenderer(Player player) {
 		if (context == null || !(player instanceof AbstractClientPlayer acp)) return null;

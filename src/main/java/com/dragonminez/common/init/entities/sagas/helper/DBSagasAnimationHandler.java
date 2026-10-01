@@ -13,7 +13,10 @@ import software.bernie.geckolib.core.object.PlayState;
 public class DBSagasAnimationHandler {
 
     public static <T extends GeoAnimatable> PlayState walkPredicate(AnimationState<T> event) {
-        DBSagasEntity entity = (DBSagasEntity) event.getAnimatable();
+        return walkPredicate(event, (DBSagasEntity) event.getAnimatable());
+    }
+
+    public static <T extends GeoAnimatable> PlayState walkPredicate(AnimationState<T> event, DBSagasEntity entity) {
 
         if (entity.isInSleepPose()) {
             event.getController().setAnimationSpeed(1.0D);
@@ -97,7 +100,10 @@ public class DBSagasAnimationHandler {
     }
 
     public static <T extends GeoAnimatable> PlayState skillPredicate(AnimationState<T> event) {
-        DBSagasEntity entity = (DBSagasEntity) event.getAnimatable();
+        return skillPredicate(event, (DBSagasEntity) event.getAnimatable());
+    }
+
+    public static <T extends GeoAnimatable> PlayState skillPredicate(AnimationState<T> event, DBSagasEntity entity) {
 
         if (entity.isComboing()) {
             int comboId = entity.getComboId();
@@ -156,6 +162,9 @@ public class DBSagasAnimationHandler {
                 case 31: return event.setAndContinue(DBSagasAnimations.ANIM_BOSS_SPECIAL1);
                 case 32: return event.setAndContinue(DBSagasAnimations.ANIM_BOSS_DESTRUCTION);
                 case 33: return event.setAndContinue(kiClip(entity, skill, DBSagasAnimations.ANIM_SOUL_PUNISHER_CAST, DBSagasAnimations.ANIM_SOUL_PUNISHER_FIRE));
+                case 34: return event.setAndContinue(kiClip(entity, skill, DBSagasAnimations.ANIM_BIGBANG_CAST, DBSagasAnimations.ANIM_BIGBANG_FIRE));
+                case 35: return event.setAndContinue(DBSagasAnimations.ANIM_OOZARU_FIST);
+                case 36: return event.setAndContinue(DBSagasAnimations.ANIM_OOZARU_SLAM);
                 default: return event.setAndContinue(DBSagasAnimations.ANIM_KIWAVE);
             }
         }
@@ -173,7 +182,10 @@ public class DBSagasAnimationHandler {
     }
 
     public static <T extends GeoAnimatable> PlayState attackPredicate(AnimationState<T> event) {
-        DBSagasEntity entity = (DBSagasEntity) event.getAnimatable();
+        return attackPredicate(event, (DBSagasEntity) event.getAnimatable());
+    }
+
+    public static <T extends GeoAnimatable> PlayState attackPredicate(AnimationState<T> event, DBSagasEntity entity) {
 
         if (entity.isCasting() || entity.isTransforming() || entity.isComboing() ||
                 entity.isEvading() || entity.isZanzoken()) {
@@ -232,7 +244,10 @@ public class DBSagasAnimationHandler {
     }
 
     public static <T extends GeoAnimatable> PlayState evasionPredicate(AnimationState<T> event) {
-        DBSagasEntity entity = (DBSagasEntity) event.getAnimatable();
+        return evasionPredicate(event, (DBSagasEntity) event.getAnimatable());
+    }
+
+    public static <T extends GeoAnimatable> PlayState evasionPredicate(AnimationState<T> event, DBSagasEntity entity) {
 
         if (entity.isZanzoken()) {
             event.getController().forceAnimationReset();
@@ -267,7 +282,10 @@ public class DBSagasAnimationHandler {
     }
 
     public static <T extends GeoAnimatable> PlayState hurtPredicate(AnimationState<T> event) {
-        DBSagasEntity entity = (DBSagasEntity) event.getAnimatable();
+        return hurtPredicate(event, (DBSagasEntity) event.getAnimatable());
+    }
+
+    public static <T extends GeoAnimatable> PlayState hurtPredicate(AnimationState<T> event, DBSagasEntity entity) {
 
         if (entity.isDeadOrDying() || entity.isInSleepPose() || entity.getBossAbility() >= 0
                 || entity.isCasting() || entity.isComboing() || entity.isTransforming()

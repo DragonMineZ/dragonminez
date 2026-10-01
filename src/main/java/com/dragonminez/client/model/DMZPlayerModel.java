@@ -2,6 +2,7 @@ package com.dragonminez.client.model;
 
 import com.dragonminez.Reference;
 import com.dragonminez.client.animation.IPlayerAnimatable;
+import com.dragonminez.client.init.entities.renderer.sagas.SaiyanInvaderRenderer;
 import com.dragonminez.client.render.util.RenderUtil;
 import com.dragonminez.common.config.ConfigManager;
 import com.dragonminez.common.config.RaceCharacterConfig;
@@ -78,6 +79,16 @@ public class DMZPlayerModel<T extends AbstractClientPlayer & GeoAnimatable> exte
         ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "animations/entity/races/transf.animation.json"),
         ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "animations/entity/races/skp.animation.json"),
         ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "animations/entity/races/evs.animation.json")
+    };
+
+    private static final ResourceLocation PUPPET_ANIM_PRIMARY = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "animations/entity/sagas/saga_base.animation.json");
+    private static final ResourceLocation[] PUPPET_ANIM_FALLBACKS = {
+        ANIM_PRIMARY,
+        ANIM_FALLBACKS[0],
+        ANIM_FALLBACKS[1],
+        ANIM_FALLBACKS[2],
+        ANIM_FALLBACKS[3],
+        ANIM_FALLBACKS[4]
     };
 
     private final ResourceLocation textureLocation;
@@ -263,11 +274,13 @@ public class DMZPlayerModel<T extends AbstractClientPlayer & GeoAnimatable> exte
 
     @Override
     public ResourceLocation getAnimationResource(T t) {
+        if (t instanceof SaiyanInvaderRenderer.Puppet) return PUPPET_ANIM_PRIMARY;
         return ANIM_PRIMARY;
     }
 
     @Override
     public ResourceLocation[] getAnimationResourceFallbacks(T t) {
+        if (t instanceof SaiyanInvaderRenderer.Puppet) return PUPPET_ANIM_FALLBACKS;
         return ANIM_FALLBACKS;
     }
 

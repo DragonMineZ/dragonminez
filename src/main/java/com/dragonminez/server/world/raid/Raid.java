@@ -39,9 +39,11 @@ import net.minecraft.world.level.levelgen.Heightmap;
 import net.minecraft.world.phys.AABB;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 
@@ -53,6 +55,7 @@ public class Raid {
 	private static final int SKY_SPAWN_HEIGHT = 22;
 	private static final int GLOW_INTERVAL_TICKS = 200;
 	private static final int GLOW_DURATION_TICKS = 200;
+	private static final int LEASH_GRACE_TICKS = 15 * 20;
 
 	@Getter
 	private final UUID raidId;
@@ -76,6 +79,7 @@ public class Raid {
 
 	private ServerBossEvent bossEvent;                  // transient, rebuilt on demand / after load
 	private final Set<UUID> musicListeners = new HashSet<>();
+	private final Map<UUID, Integer> outsideTicks = new HashMap<>();
 
 	public Raid(UUID raidId, String typeId, ResourceKey<Level> dimension, BlockPos center,
 				Set<UUID> participants, Difficulty difficulty) {
@@ -119,6 +123,7 @@ public class Raid {
 		}
 
 		ensureBossEvent(type);
+		updateLeash(level, type);
 
 		List<ServerPlayer> active = resolveActiveParticipants(level, type);
 		refreshBossPlayers(active);
@@ -290,6 +295,22 @@ public class Raid {
 			if (!spawn.canTransformOr(true)) saga.setTransformationDisabled(true);
 			saga.setRaidDormant(spawn.isDormantUntilEscortDead());
 		}
+
+		CompoundTag data = mob.getPersistentData();
+		boolean transformStats = false;
+		if (spawn.getTransformHealth() != null) {
+			data.putDouble("dmz_quest_tf_hp_abs", Math.max(1.0D, spawn.getTransformHealth()));
+			transformStats = true;
+		}
+		if (spawn.getTransformMeleeDamage() != null) {
+			data.putDouble("dmz_quest_tf_melee_abs", Math.max(0.0D, spawn.getTransformMeleeDamage()));
+			transformStats = true;
+		}
+		if (spawn.getTransformKiDamage() != null) {
+			data.putDouble("dmz_quest_tf_ki_abs", Math.max(0.0D, spawn.getTransformKiDamage()));
+			transformStats = true;
+		}
+		if (transformStats) data.putString("dmz_difficulty", difficulty.name());
 	}
 	private void applyStats(Mob mob, RaidDefinition.Spawn spawn) {
 		if (!spawn.hasAbsoluteStats()) return;
@@ -350,10 +371,32 @@ public class Raid {
 			if (player.level() != level) continue;         // different dimension -> left
 			if (player.isSpectator()) continue;
 			if (!player.isAlive() || player.isDeadOrDying()) continue; // dead -> out
-			if (player.distanceToSqr(cx, cy, cz) > leashSqr) continue;  // too far -> left
+			if (player.distanceToSqr(cx, cy, cz) > leashSqr
+					&& outsideTicks.getOrDefault(id, 0) >= LEASH_GRACE_TICKS) continue;
 			active.add(player);
 		}
 		return active;
+	}
+
+	private void updateLeash(ServerLevel level, RaidType type) {
+		double leashSqr = type.getLeashDistance() * type.getLeashDistance();
+		double cx = center.getX() + 0.5, cy = center.getY() + 0.5, cz = center.getZ() + 0.5;
+		MinecraftServer server = level.getServer();
+
+		for (UUID id : participants) {
+			ServerPlayer player = server.getPlayerList().getPlayer(id);
+			if (player == null || player.level() != level || player.isSpectator()
+					|| !player.isAlive() || player.isDeadOrDying()
+					|| player.distanceToSqr(cx, cy, cz) <= leashSqr) {
+				outsideTicks.remove(id);
+				continue;
+			}
+
+			int ticks = outsideTicks.merge(id, 1, Integer::sum);
+			if (ticks > LEASH_GRACE_TICKS || (ticks - 1) % 20 != 0) continue;
+			int secondsLeft = (LEASH_GRACE_TICKS - ticks + 1 + 19) / 20;
+			player.displayClientMessage(Component.translatable("raid.dragonminez.leash_warning", secondsLeft), true);
+		}
 	}
 
 	private LivingEntity nearestParticipant(ServerLevel level, RaidType type) {
@@ -444,6 +487,8 @@ public class Raid {
 		clearBossEvent();
 		stopMusic(level);
 		discardRemainingMobs(level);
+		outsideTicks.clear();
+		RaidFeedback.mourn(level.getServer(), participants, type() != null ? type().getDefinition().getDefeat() : null);
 		LogUtil.info(Env.SERVER, "Raid {} ended (all participants died or left)", raidId);
 	}
 

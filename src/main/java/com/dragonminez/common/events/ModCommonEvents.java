@@ -97,6 +97,9 @@ public class ModCommonEvents {
         var ogres = List.of(MainEntities.SAGA_OGRE_RED, MainEntities.SAGA_OGRE_BLUE);
         for (var ogre : ogres) event.put(ogre.get(), SagaOgreEntity.createAttributes().build());
         event.put(MainEntities.MINI_JANEMBA_STAMPEDE.get(), MiniJanembaStampedeEntity.createAttributes().build());
+        event.put(MainEntities.SAGA_SAIYAN_SOLDIER.get(), DBSagasEntity.createAttributes().build());
+        event.put(MainEntities.SAGA_SAIYAN_ELITE.get(), DBSagasEntity.createAttributes().build());
+        event.put(MainEntities.SAGA_SAIYAN_OOZARU.get(), SagaSaiyanInvadersEntity.Oozaru.createAttributes().build());
 
 
         AttributeSupplier defaultSagaAttributes = DBSagasEntity.createAttributes().build();

@@ -152,7 +152,10 @@ public abstract class DBSagasEntity extends Monster implements GeoEntity, ITextu
         BLASTER_METEOR(30, SkillRole.ZONING, Tier.STRONG, 0x9DFF8A, 0x3DF54A, 0x0FBF1B),
         DIMENSIONAL_PUNCH(31, SkillRole.ZONING, Tier.STRONG, 0xC451FF, 0xC451FF, -1),
         DESTRUCTION_BALLS(32, SkillRole.RANGED_TRAVEL, Tier.STRONG, 0xC77DFF, 0x5A189A, 0x0B0014),
-        SOUL_PUNISHER(33, SkillRole.RANGED_TRAVEL, Tier.STRONG, 0xFFFFFF, 0xFFFFFF, 0xFFFFFF);
+        SOUL_PUNISHER(33, SkillRole.RANGED_TRAVEL, Tier.STRONG, 0xFFFFFF, 0xFFFFFF, 0xFFFFFF),
+        KI_MEDIUM_BALL(34, SkillRole.RANGED_TRAVEL, Tier.MEDIUM, 0xFFF1C2, 0xFFB52E, 0xC46A00),
+        OOZARU_FIST(35, SkillRole.AOE_BURST, Tier.STRONG),
+        OOZARU_SLAM(36, SkillRole.AOE_BURST, Tier.STRONG);
 
         private final int id;
         private final SkillRole role;
@@ -1056,9 +1059,18 @@ public abstract class DBSagasEntity extends Monster implements GeoEntity, ITextu
                     }
 
                     if (this.castTimer == 1) {
-                        if (skill != 7 && skill != 13 && skill != 22 && skill != 23 && skill != 25 && skill != 31 && skill != 32) {
+                        if (skill != 7 && skill != 13 && skill != 22 && skill != 23 && skill != 25 && skill != 31 && skill != 32
+                                && skill != 35 && skill != 36) {
                             executeSkillEffect(skill);
                         }
+                    }
+
+                    if (skill == 35) {
+                        SkillManager.tickOozaruFist(this, this.getTarget(), this.castTimer);
+                    }
+
+                    if (skill == 36) {
+                        SkillManager.tickOozaruSlam(this, this.castTimer);
                     }
 
                     if (skill == 23 && this.castTimer == SkillManager.DRAGON_FIST_WINDUP) {

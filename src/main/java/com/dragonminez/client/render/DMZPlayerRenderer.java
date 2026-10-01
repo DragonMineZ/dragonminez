@@ -1,5 +1,6 @@
 package com.dragonminez.client.render;
 
+import com.dragonminez.client.init.entities.renderer.sagas.SaiyanInvaderRenderer;
 import com.dragonminez.client.events.FlySkillEvent;
 import com.dragonminez.client.flight.FlightOrientationHandler;
 import com.dragonminez.client.animation.IPlayerAnimatable;
@@ -332,6 +333,7 @@ public class DMZPlayerRenderer<T extends AbstractClientPlayer & GeoAnimatable> e
 	@Override
 	public boolean shouldShowName(T animatable) {
 		if (HeadPortraitRenderer.isActive()) return false;
+		if (animatable instanceof SaiyanInvaderRenderer.Puppet) return false;
 		if (animatable == Minecraft.getInstance().getCameraEntity()) return false;
 		return super.shouldShowName(animatable);
 	}

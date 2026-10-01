@@ -19,7 +19,10 @@ import net.minecraft.tags.BiomeTags;
 import net.minecraft.world.level.biome.Biome;
 import net.minecraft.world.level.block.Rotation;
 import net.minecraft.world.level.levelgen.structure.Structure;
+import net.minecraft.world.level.levelgen.structure.BuiltinStructureSets;
 import net.minecraft.world.level.levelgen.structure.StructureSet;
+import net.minecraft.world.level.levelgen.structure.placement.RandomSpreadStructurePlacement;
+import net.minecraft.world.level.levelgen.structure.placement.RandomSpreadType;
 import net.minecraft.world.level.levelgen.structure.placement.StructurePlacement;
 
 import java.util.Optional;
@@ -33,7 +36,8 @@ public class DMZStructureSets {
 			PICCOLO_HOUSE = createKey("piccolo_house"), OLDKAI_PILLAR = createKey("oldkai_pillar"),
 			YAMCHA_HOUSE = createKey("yamcha_house"), TRUNKS_SHIP = createKey("trunks_ship"),
 			VEGETA_POD = createKey("vegeta_pod"),
-			BABA_PALACE = createKey("baba_palace"), TREE_OF_MIGHT = createKey("tree_of_might");
+			BABA_PALACE = createKey("baba_palace"), TREE_OF_MIGHT = createKey("tree_of_might"),
+			SAIYAN_CRATER = createKey("saiyan_crater");
 
 	public static void bootstrap(BootstapContext<StructureSet> context) {
 		HolderGetter<Structure> structures = context.lookup(Registries.STRUCTURE);
@@ -92,9 +96,27 @@ public class DMZStructureSets {
 				77889900, biomes.getOrThrow(MainTags.Biomes.IS_ROCKYBIOME));
 		unique(context, TREE_OF_MIGHT, structures.getOrThrow(DMZStructures.TREE_OF_MIGHT),
 				TREE_OF_MIGHT_SALT, biomes.getOrThrow(MainTags.Biomes.IS_SWAMPLIKE), TREE_OF_MIGHT_MIN_DISTANCE);
+
+		HolderGetter<StructureSet> sets = context.lookup(Registries.STRUCTURE_SET);
+		context.register(SAIYAN_CRATER, new StructureSet(
+				structures.getOrThrow(DMZStructures.SAIYAN_CRATER),
+				new RandomSpreadStructurePlacement(
+						Vec3i.ZERO,
+						StructurePlacement.FrequencyReductionMethod.DEFAULT,
+						1.0f,
+						SAIYAN_CRATER_SALT,
+						Optional.of(new StructurePlacement.ExclusionZone(sets.getOrThrow(BuiltinStructureSets.VILLAGES), 6)),
+						SAIYAN_CRATER_SPACING,
+						SAIYAN_CRATER_SEPARATION,
+						RandomSpreadType.LINEAR
+				)
+		));
 	}
 
 	public static final int TREE_OF_MIGHT_SALT = 28475016;
+	private static final int SAIYAN_CRATER_SALT = 51738264;
+	private static final int SAIYAN_CRATER_SPACING = 40;
+	private static final int SAIYAN_CRATER_SEPARATION = 20;
 	private static final int TREE_OF_MIGHT_MIN_DISTANCE = 1000;
 
 	private static void unique(BootstapContext<StructureSet> context, ResourceKey<StructureSet> key,

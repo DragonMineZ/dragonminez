@@ -239,6 +239,10 @@ public class ModClientEvents {
             event.registerEntityRenderer((EntityType) sagaEntity.get(), context -> new DBSagasRenderer(context));
         }
 
+        event.registerEntityRenderer(MainEntities.SAGA_SAIYAN_SOLDIER.get(), context -> new SaiyanInvaderRenderer<>(context, 0.4F));
+        event.registerEntityRenderer(MainEntities.SAGA_SAIYAN_ELITE.get(), context -> new SaiyanInvaderRenderer<>(context, 0.4F));
+        event.registerEntityRenderer(MainEntities.SAGA_SAIYAN_OOZARU.get(), context -> new SaiyanInvaderRenderer<>(context, 2.0F));
+
         regRender(event, SagaSaibamanRenderer::new,
                 MainEntities.SAGA_SAIBAMAN, MainEntities.SAGA_SAIBAMAN2, MainEntities.SAGA_SAIBAMAN3,
                 MainEntities.SAGA_SAIBAMAN4, MainEntities.SAGA_SAIBAMAN5, MainEntities.SAGA_SAIBAMAN6);

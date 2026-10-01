@@ -30,6 +30,7 @@ public class RaidDefinition {
 
 	private List<Wave> waves = new ArrayList<>();
 	private Rewards rewards;
+	private Defeat defeat;
 
 	public boolean isEnabled() { return enabled == null || enabled; }
 
@@ -79,6 +80,11 @@ public class RaidDefinition {
 		private Integer preparationSeconds;
 		private String omenMessage;
 		private String startMessage;
+		private String announceMessage;
+		private Double health;
+		private Double meleeDamage;
+		private Double kiDamage;
+		private Integer aiTier;
 
 		public double spawnChanceOr(double fallback) {
 			return spawnChance != null ? Math.max(0.0D, Math.min(1.0D, spawnChance)) : fallback;
@@ -123,6 +129,9 @@ public class RaidDefinition {
 		private Integer textureVariant;
 		private Boolean canTransform;
 		private Boolean dormantUntilEscortDead;
+		private Double transformHealth;
+		private Double transformMeleeDamage;
+		private Double transformKiDamage;
 
 		public int countOr(int fallback) { return count != null ? Math.max(0, count) : fallback; }
 
@@ -147,6 +156,25 @@ public class RaidDefinition {
 
 		public float trainingPointsOr(float fallback) {
 			return trainingPoints != null ? Math.max(0.0F, trainingPoints) : fallback;
+		}
+	}
+
+	@Getter
+	@Setter
+	@NoArgsConstructor
+	public static class Defeat {
+		public static final String DEFAULT_TITLE = "raid.dragonminez.defeat.title";
+
+		private String title;
+		private String subtitle;
+		private Integer alignment;
+
+		public String titleOr(String fallback) {
+			return title != null && !title.isBlank() ? title : fallback;
+		}
+
+		public int alignmentOr(int fallback) {
+			return alignment != null ? alignment : fallback;
 		}
 	}
 

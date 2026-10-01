@@ -15,6 +15,8 @@ import net.minecraftforge.registries.ForgeRegistries;
 @OnlyIn(Dist.CLIENT)
 public final class RaidMusicManager {
 
+	private static final float MUSIC_VOLUME = 0.5F;
+
 	private static SoundInstance current;
 
 	private RaidMusicManager() {}
@@ -37,7 +39,7 @@ public final class RaidMusicManager {
 			return;
 		}
 
-		current = new SimpleSoundInstance(event.getLocation(), SoundSource.PLAYERS, 1.0F, 1.0F,
+		current = new SimpleSoundInstance(event.getLocation(), SoundSource.PLAYERS, MUSIC_VOLUME, 1.0F,
 				SoundInstance.createUnseededRandom(), false, 0,
 				SoundInstance.Attenuation.NONE, 0.0D, 0.0D, 0.0D, true);
 		mc.getSoundManager().play(current);

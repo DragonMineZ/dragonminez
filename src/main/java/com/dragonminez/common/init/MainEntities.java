@@ -712,6 +712,22 @@ public class MainEntities {
                             .sized(6.5f, 10.0f)
                             .clientTrackingRange(32)
                             .build(ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "saga_ozaru").toString()));
+    public static final RegistryObject<EntityType<SagaSaiyanInvadersEntity.Soldier>> SAGA_SAIYAN_SOLDIER =
+            ENTITY_TYPES.register("saga_saiyan_soldier",
+                    () -> EntityType.Builder.of(SagaSaiyanInvadersEntity.Soldier::new, MobCategory.MONSTER)
+                            .sized(0.6f, 1.8f)
+                            .build(ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "saga_saiyan_soldier").toString()));
+    public static final RegistryObject<EntityType<SagaSaiyanInvadersEntity.Elite>> SAGA_SAIYAN_ELITE =
+            ENTITY_TYPES.register("saga_saiyan_elite",
+                    () -> EntityType.Builder.of(SagaSaiyanInvadersEntity.Elite::new, MobCategory.MONSTER)
+                            .sized(0.6f, 1.8f)
+                            .build(ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "saga_saiyan_elite").toString()));
+    public static final RegistryObject<EntityType<SagaSaiyanInvadersEntity.Oozaru>> SAGA_SAIYAN_OOZARU =
+            ENTITY_TYPES.register("saga_saiyan_oozaru",
+                    () -> EntityType.Builder.of(SagaSaiyanInvadersEntity.Oozaru::new, MobCategory.MONSTER)
+                            .sized(2.6f, 4.0f)
+                            .clientTrackingRange(32)
+                            .build(ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "saga_saiyan_oozaru").toString()));
 
     /*
     FRIEZA SAGA ENTITIES

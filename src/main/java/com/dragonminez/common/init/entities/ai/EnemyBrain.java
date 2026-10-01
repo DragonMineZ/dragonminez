@@ -8,6 +8,7 @@ import com.dragonminez.common.init.entities.sagas.DBSagasEntity.KiSkillType;
 import com.dragonminez.common.init.entities.sagas.DBSagasEntity.LocomotionMode;
 import com.dragonminez.common.init.entities.sagas.DBSagasEntity.SkillRole;
 import com.dragonminez.common.init.entities.sagas.DBSagasEntity.Tier;
+import com.dragonminez.common.init.entities.sagas.helper.SkillManager;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.util.Mth;
 import net.minecraft.util.RandomSource;
@@ -798,6 +799,8 @@ public final class EnemyBrain {
             case 7 -> Math.min(16.0D, Math.max(8.0D, 5.0D * (Math.max(this.self.getBbWidth(), this.self.getBbHeight()) / 1.8D)));
             case 5 -> 5.0D + Math.max(1.0F, skill.size) * 1.5D;
             case 12 -> 7.0D;
+            case 35 -> SkillManager.oozaruFistReach(this.self);
+            case 36 -> SkillManager.oozaruSlamRadius(this.self);
             default -> 6.0D;
         };
     }
