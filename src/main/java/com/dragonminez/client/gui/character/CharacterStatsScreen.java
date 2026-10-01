@@ -453,7 +453,7 @@ public class CharacterStatsScreen extends BaseMenuScreen {
 		TextUtil.drawCenteredStringWithBorder(graphics, this.font, tr("gui.dragonminez.character_stats.info").withStyle(style -> style.withBold(true)), 85, titleY, 0xFBC51C, 0x000000);
 
 		int level = statsData.getLevel();
-		float tps = statsData.getResources().getTrainingPoints();
+		double tps = statsData.getResources().getTrainingPoints();
 		String characterClass = statsData.getCharacter().getCharacterClass();
 		String form = statsData.getCharacter().getActiveForm();
 		String stackForm = statsData.getCharacter().getActiveStackForm();
