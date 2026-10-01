@@ -8,6 +8,7 @@ import com.dragonminez.common.stats.StatsProvider;
 import com.dragonminez.common.wish.Wish;
 import com.dragonminez.common.wish.WishManager;
 import io.netty.handler.codec.DecoderException;
+import com.dragonminez.server.storage.StorageManager;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
@@ -60,7 +61,7 @@ public class GrantWishC2S {
 	public void handle(Supplier<NetworkEvent.Context> context) {
 		context.get().enqueueWork(() -> {
 			ServerPlayer player = context.get().getSender();
-			if (player == null) return;
+			if (player == null || StorageManager.isLoadPending(player)) return;
 			ServerLevel level = player.serverLevel();
 			DragonWishEntity dragon = level.getEntitiesOfClass(DragonWishEntity.class,
 							player.getBoundingBox().inflate(50.0),

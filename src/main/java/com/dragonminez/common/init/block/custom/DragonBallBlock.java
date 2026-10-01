@@ -167,6 +167,14 @@ public class DragonBallBlock extends BaseEntityBlock implements EntityBlock {
 		return serverLevel.addFreshEntity(dragon);
 	}
 
+	@Override
+	public void onRemove(BlockState state, Level level, BlockPos pos, BlockState newState, boolean movedByPiston) {
+		if (level instanceof ServerLevel serverLevel && !state.is(newState.getBlock())) {
+			DragonBallsHandler.onDragonBallRemoved(serverLevel, state.getBlock(), pos.immutable());
+		}
+		super.onRemove(state, level, pos, newState, movedByPiston);
+	}
+
 	private boolean areAllDragonBallsNearby(Level level, BlockPos pos, DragonBallSetDefinition setDefinition) {
 		Set<DragonBallType> foundBalls = new HashSet<>();
 		int radius = setDefinition.getSummonRadius();

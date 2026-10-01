@@ -200,13 +200,14 @@ public class DMZPermissions {
 		try {
 			ParseResults<CommandSourceStack> parse = event.getParseResults();
 			CommandSourceStack source = parse.getContext().getSource();
+			if (!(source.getEntity() instanceof ServerPlayer player) || !isOverrideUser(player) || hasRegularPermission(player)) return;
 			parse.getContext().withSource(source.withSuppressedOutput());
 		} catch (Exception ignored) {}
 	}
 
 	public static boolean hasPermission(CommandSourceStack source, PermissionNode<Boolean> node) {
 		if (source.getEntity() instanceof ServerPlayer player) {
-			boolean granted = PermissionAPI.getPermission(player, ADMIN) || PermissionAPI.getPermission(player, node) || player.hasPermissions(2);
+			boolean granted = PermissionAPI.getPermission(player, node) || hasRegularPermission(player);
 			if (granted) {
 				OVERRIDE_USED.set(false);
 				return true;
@@ -218,6 +219,10 @@ public class DMZPermissions {
 			return false;
 		}
 		return true;
+	}
+
+	private static boolean hasRegularPermission(ServerPlayer player) {
+		return PermissionAPI.getPermission(player, ADMIN) || player.hasPermissions(2);
 	}
 
 	private static boolean isOverrideUser(ServerPlayer player) {

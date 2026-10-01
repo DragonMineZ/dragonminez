@@ -10,7 +10,6 @@ import com.dragonminez.common.network.S2C.StatsSyncS2C;
 import com.dragonminez.common.stats.character.Character;
 import com.dragonminez.common.stats.StatsCapability;
 import com.dragonminez.common.stats.StatsProvider;
-import com.dragonminez.common.wish.wishes.ReCustomizeWish;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraftforge.network.NetworkEvent;
@@ -173,9 +172,6 @@ public class StatsSyncC2S {
 					character.setGender(msg.gender);
 					character.setCharacterClass(msg.characterClass);
 					if (ConfigManager.getRaceCharacter(msg.raceName) != null) character.setHasSaiyanTail(ConfigManager.getRaceCharacter(msg.raceName).getHasSaiyanTail());
-				} else if (ReCustomizeWish.isPending(player) && ConfigManager.getRaceStats(character.getRaceName()).getAllClasses().contains(msg.characterClass)) {
-					// Race/gender stay locked after creation, but the recustomization wish may switch class
-					character.setCharacterClass(msg.characterClass);
 				}
 				character.setHairId(msg.hairId);
 				if (msg.customHair != null) HairSanitizer.sanitizeAndLog(msg.customHair, HairStyleSlot.BASE, player.getGameProfile().getName());

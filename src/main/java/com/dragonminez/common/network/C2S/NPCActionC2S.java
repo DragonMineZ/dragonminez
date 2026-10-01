@@ -20,6 +20,7 @@ import com.dragonminez.server.world.dimension.OtherworldTournamentGrounds;
 import com.dragonminez.common.stats.StatsCapability;
 import com.dragonminez.common.stats.StatsData;
 import com.dragonminez.common.stats.StatsProvider;
+import com.dragonminez.server.storage.StorageManager;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerLevel;
@@ -66,7 +67,7 @@ public class NPCActionC2S {
 		NetworkEvent.Context context = ctx.get();
 		context.enqueueWork(() -> {
 			ServerPlayer player = context.getSender();
-			if (player == null) return;
+			if (player == null || StorageManager.isLoadPending(player)) return;
 			if (!PacketRateLimiter.allow(player.getUUID(), "npc_action", player.level().getGameTime(), 4L)) return;
 
 			StatsProvider.get(StatsCapability.INSTANCE, player).ifPresent(data -> {
@@ -294,7 +295,7 @@ public class NPCActionC2S {
 		player.sendSystemMessage(Component.translatable(messageKey, weight));
 	}
 
-	private static final String OLDKAI_ZSWORD_COOLDOWN = "OldKaiZSword";
+	private static final String OLDKAI_ZSWORD_COOLDOWN = Cooldowns.OLDKAI_ZSWORD;
 
 	public static boolean meetsOldKaiRequirements(StatsData data) {
 		return data.getResources().getAlignment() > 61 && data.getBaseSkills().getSkillLevel("potentialunlock") >= 10;

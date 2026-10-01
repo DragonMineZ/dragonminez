@@ -15,6 +15,7 @@ import net.minecraft.server.level.ServerPlayer;
 import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.server.ServerLifecycleHooks;
 
+import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.*;
 
@@ -23,6 +24,7 @@ public class StorageManager {
 	private static ScheduledExecutorService autoSaveScheduler;
 	private static ExecutorService dbExecutor;
 	private static final ConcurrentHashMap<UUID, CompletableFuture<Void>> saveChains = new ConcurrentHashMap<>();
+	private static final Set<UUID> pendingLoads = ConcurrentHashMap.newKeySet();
 
 	public static void init() {
 		GeneralServerConfig.StorageConfig.StorageType type = ConfigManager.getServerConfig().getStorage().getStorageType();
@@ -92,19 +94,39 @@ public class StorageManager {
 		if (activeStorage == null) return;
 
 		final UUID uuid = player.getUUID();
+		final IDataStorage storage = activeStorage;
+		pendingLoads.add(uuid);
 
-		CompletableFuture.supplyAsync(() -> activeStorage.loadData(uuid), dbExecutor)
-				.thenAccept(loadedData -> {
-					ServerLifecycleHooks.getCurrentServer().execute(() -> {
-						if (loadedData != null && player.connection != null) {
-							applyLoadedData(player, loadedData);
+		CompletableFuture<Void> previousSave = saveChains.getOrDefault(uuid, CompletableFuture.completedFuture(null));
+		previousSave.exceptionally(ex -> null)
+				.thenApplyAsync(ignored -> storage.loadData(uuid), dbExecutor)
+				.whenComplete((loadedData, ex) -> {
+					if (ex != null) LogUtil.error(Env.SERVER, "Error loading data async for " + player.getName().getString(), ex);
+					var server = ServerLifecycleHooks.getCurrentServer();
+					if (server == null) {
+						pendingLoads.remove(uuid);
+						return;
+					}
+					server.execute(() -> {
+						try {
+							if (ex == null && loadedData != null && isCurrentOnlinePlayer(player)) {
+								applyLoadedData(player, loadedData);
+							}
+						} finally {
+							pendingLoads.remove(uuid);
 						}
 					});
-				})
-				.exceptionally(ex -> {
-					LogUtil.error(Env.SERVER, "Error loading data async for " + player.getName().getString(), ex);
-					return null;
 				});
+	}
+
+	public static boolean isLoadPending(ServerPlayer player) {
+		return pendingLoads.contains(player.getUUID());
+	}
+
+	private static boolean isCurrentOnlinePlayer(ServerPlayer player) {
+		if (player.hasDisconnected()) return false;
+		var server = ServerLifecycleHooks.getCurrentServer();
+		return server != null && server.getPlayerList().getPlayer(player.getUUID()) == player;
 	}
 
 	private static void applyLoadedData(ServerPlayer player, CompoundTag loadedData) {
@@ -132,6 +154,8 @@ public class StorageManager {
 
 	public static void savePlayer(ServerPlayer player) {
 		if (activeStorage == null) return;
+
+		if (pendingLoads.contains(player.getUUID())) return;
 
 		StatsProvider.get(StatsCapability.INSTANCE, player).ifPresent(stats -> {
 			if (!stats.isDataLoaded() && !stats.getStatus().isHasCreatedCharacter()) return;
@@ -163,11 +187,14 @@ public class StorageManager {
 	}
 
 	private static void performAutoSave() {
-		if (ServerLifecycleHooks.getCurrentServer() == null || activeStorage == null) return;
+		var server = ServerLifecycleHooks.getCurrentServer();
+		if (server == null || activeStorage == null) return;
 
-		LogUtil.info(Env.SERVER, "Auto-Saving data...");
-		for (ServerPlayer player : ServerLifecycleHooks.getCurrentServer().getPlayerList().getPlayers()) {
-			savePlayer(player);
-		}
+		server.execute(() -> {
+			LogUtil.info(Env.SERVER, "Auto-Saving data...");
+			for (ServerPlayer player : server.getPlayerList().getPlayers()) {
+				savePlayer(player);
+			}
+		});
 	}
 }

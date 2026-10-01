@@ -1,5 +1,6 @@
 package com.dragonminez.common.init.item.farming;
 
+import com.dragonminez.common.stats.character.Cooldowns;
 import com.dragonminez.common.init.MainEffects;
 import com.dragonminez.common.stats.StatsCapability;
 import com.dragonminez.common.stats.StatsData;
@@ -28,10 +29,16 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.ArrayList;
+import java.util.Set;
 import java.util.function.Supplier;
 
 
 public class StatPlantItem extends Item {
+
+	private static final Set<String> CLEANSE_KEPT_COOLDOWNS = Set.of(
+			Cooldowns.OLDKAI_ZSWORD, Cooldowns.SENZU_KARIN, Cooldowns.KAMI_BLESS, Cooldowns.REVIVE_BABA,
+			Cooldowns.ZENKAI, Cooldowns.ZENKAI_TEMP_BUFF, Cooldowns.MAJIN_REVIVE_CD, Cooldowns.FUSION_CD,
+			Cooldowns.KNOCKDOWN_INVULN);
 
 	public enum StatType {
 		STR, SKP, RES, VIT, PWR, ENE, MASTERY
@@ -143,7 +150,7 @@ public class StatPlantItem extends Item {
 	}
 
 	private void cleanse(ServerPlayer player, StatsData data) {
-		data.getCooldowns().clearCooldowns();
+		data.getCooldowns().clearCooldownsExcept(CLEANSE_KEPT_COOLDOWNS, "Active");
 		// Efectos vanilla dañinos.
 		for (MobEffectInstance instance : new ArrayList<>(player.getActiveEffects())) {
 			if (instance.getEffect().getCategory() == MobEffectCategory.HARMFUL) {

@@ -13,6 +13,7 @@ import com.dragonminez.common.stats.techniques.EvasionAttackData;
 import com.dragonminez.common.stats.techniques.KiAttackData;
 import com.dragonminez.common.stats.techniques.PredefinedTechniques;
 import com.dragonminez.common.stats.techniques.StrikeAttackData;
+import com.dragonminez.server.storage.StorageManager;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.server.level.ServerPlayer;
@@ -56,7 +57,7 @@ public class UpdateSkillC2S {
 	public void handle(Supplier<NetworkEvent.Context> ctx) {
 		ctx.get().enqueueWork(() -> {
 			ServerPlayer player = ctx.get().getSender();
-			if (player != null) {
+			if (player != null && !StorageManager.isLoadPending(player)) {
 				StatsProvider.get(StatsCapability.INSTANCE, player).ifPresent(data -> {
 					if (action != SkillAction.TOGGLE && (data.getStatus().isFused() || data.getStatus().getFusionPartnerUUID() != null)) {
 						player.displayClientMessage(Component.translatable("message.dragonminez.fusion.action_blocked"), true);

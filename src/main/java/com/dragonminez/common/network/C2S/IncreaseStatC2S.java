@@ -6,6 +6,7 @@ import com.dragonminez.common.stats.StatsCapability;
 import com.dragonminez.common.stats.StatsData;
 import com.dragonminez.common.stats.StatsProvider;
 import com.dragonminez.server.events.players.StatsEvents;
+import com.dragonminez.server.storage.StorageManager;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.ai.attributes.AttributeModifier;
@@ -43,7 +44,7 @@ public class IncreaseStatC2S {
 	public static void handle(IncreaseStatC2S msg, Supplier<NetworkEvent.Context> ctx) {
 		ctx.get().enqueueWork(() -> {
 			ServerPlayer player = ctx.get().getSender();
-			if (player == null) return;
+			if (player == null || StorageManager.isLoadPending(player)) return;
 
 			StatsProvider.get(StatsCapability.INSTANCE, player).ifPresent(data -> {
 				String statNameStr = msg.statType.name();

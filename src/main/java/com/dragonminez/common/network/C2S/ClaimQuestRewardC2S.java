@@ -1,6 +1,7 @@
 package com.dragonminez.common.network.C2S;
 
 import com.dragonminez.common.quest.QuestService;
+import com.dragonminez.server.storage.StorageManager;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraftforge.network.NetworkEvent;
@@ -26,7 +27,7 @@ public class ClaimQuestRewardC2S {
 		NetworkEvent.Context context = contextSupplier.get();
 		context.enqueueWork(() -> {
 			ServerPlayer player = context.getSender();
-			if (player != null) {
+			if (player != null && !StorageManager.isLoadPending(player)) {
 				QuestService.claimRewards(player, questId);
 			}
 		});

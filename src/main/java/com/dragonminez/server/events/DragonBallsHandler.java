@@ -246,15 +246,14 @@ public class DragonBallsHandler {
 		syncRadar(level);
 	}
 
-	@SubscribeEvent
-	public static void onBlockBreak(BlockEvent.BreakEvent event) {
-		Block block = event.getState().getBlock();
+	public static void onDragonBallRemoved(ServerLevel level, Block block, BlockPos pos) {
 		DragonBallSetDefinition definition = DragonBallDefinitions.getBallSetForBlock(block);
-		if (definition == null || !(event.getLevel() instanceof ServerLevel level)) return;
+		if (definition == null) return;
 		Integer star = definition.getStarForBlock(block);
 		if (star == null) return;
 		DragonBallSavedData data = DragonBallSavedData.get(level);
-		data.getActiveBalls(definition.getId()).get(star).remove(event.getPos());
+		List<BlockPos> positions = data.getActiveBalls(definition.getId()).get(star);
+		if (positions == null || !positions.remove(pos)) return;
 		data.setDirty();
 		syncRadar(level);
 	}

@@ -23,10 +23,6 @@ public class ReCustomizeWish extends Wish {
 		NetworkHandler.sendToPlayer(new OpenRecustomizeS2C(), player);
 	}
 
-	public static boolean isPending(ServerPlayer player) {
-		return PENDING.contains(player.getUUID());
-	}
-
 	public static boolean consume(ServerPlayer player) {
 		return PENDING.remove(player.getUUID());
 	}

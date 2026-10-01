@@ -5,6 +5,7 @@ import com.dragonminez.LogUtil;
 import com.dragonminez.common.network.NetworkHandler;
 import com.dragonminez.common.network.S2C.QuestActionFeedbackS2C;
 import com.dragonminez.common.quest.QuestService;
+import com.dragonminez.server.storage.StorageManager;
 import net.minecraft.ChatFormatting;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.network.chat.Component;
@@ -46,7 +47,7 @@ public class QuestActionC2S {
 		NetworkEvent.Context context = contextSupplier.get();
 		context.enqueueWork(() -> {
 			ServerPlayer player = context.getSender();
-			if (player == null) {
+			if (player == null || StorageManager.isLoadPending(player)) {
 				return;
 			}
 
