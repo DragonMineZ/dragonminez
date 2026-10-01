@@ -15,7 +15,6 @@ import net.minecraft.server.level.ServerPlayer;
 import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.server.ServerLifecycleHooks;
 
-import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.*;
 
@@ -24,7 +23,8 @@ public class StorageManager {
 	private static ScheduledExecutorService autoSaveScheduler;
 	private static ExecutorService dbExecutor;
 	private static final ConcurrentHashMap<UUID, CompletableFuture<Void>> saveChains = new ConcurrentHashMap<>();
-	private static final Set<UUID> pendingLoads = ConcurrentHashMap.newKeySet();
+	private static final ConcurrentHashMap<UUID, Object> pendingLoads = new ConcurrentHashMap<>();
+	private static final long LOAD_TIMEOUT_SECONDS = 30L;
 
 	public static void init() {
 		GeneralServerConfig.StorageConfig.StorageType type = ConfigManager.getServerConfig().getStorage().getStorageType();
@@ -95,32 +95,34 @@ public class StorageManager {
 
 		final UUID uuid = player.getUUID();
 		final IDataStorage storage = activeStorage;
-		pendingLoads.add(uuid);
+		final Object loadToken = new Object();
+		pendingLoads.put(uuid, loadToken);
 
 		CompletableFuture<Void> previousSave = saveChains.getOrDefault(uuid, CompletableFuture.completedFuture(null));
 		previousSave.exceptionally(ex -> null)
 				.thenApplyAsync(ignored -> storage.loadData(uuid), dbExecutor)
+				.orTimeout(LOAD_TIMEOUT_SECONDS, TimeUnit.SECONDS)
 				.whenComplete((loadedData, ex) -> {
 					if (ex != null) LogUtil.error(Env.SERVER, "Error loading data async for " + player.getName().getString(), ex);
 					var server = ServerLifecycleHooks.getCurrentServer();
 					if (server == null) {
-						pendingLoads.remove(uuid);
+						pendingLoads.remove(uuid, loadToken);
 						return;
 					}
 					server.execute(() -> {
 						try {
-							if (ex == null && loadedData != null && isCurrentOnlinePlayer(player)) {
+							if (ex == null && loadedData != null && pendingLoads.get(uuid) == loadToken && isCurrentOnlinePlayer(player)) {
 								applyLoadedData(player, loadedData);
 							}
 						} finally {
-							pendingLoads.remove(uuid);
+							pendingLoads.remove(uuid, loadToken);
 						}
 					});
 				});
 	}
 
 	public static boolean isLoadPending(ServerPlayer player) {
-		return pendingLoads.contains(player.getUUID());
+		return pendingLoads.containsKey(player.getUUID());
 	}
 
 	private static boolean isCurrentOnlinePlayer(ServerPlayer player) {
@@ -155,7 +157,7 @@ public class StorageManager {
 	public static void savePlayer(ServerPlayer player) {
 		if (activeStorage == null) return;
 
-		if (pendingLoads.contains(player.getUUID())) return;
+		if (pendingLoads.containsKey(player.getUUID())) return;
 
 		StatsProvider.get(StatsCapability.INSTANCE, player).ifPresent(stats -> {
 			if (!stats.isDataLoaded() && !stats.getStatus().isHasCreatedCharacter()) return;

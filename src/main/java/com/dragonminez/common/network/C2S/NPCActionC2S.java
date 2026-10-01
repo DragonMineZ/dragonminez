@@ -33,6 +33,7 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.phys.AABB;
 import net.minecraftforge.network.NetworkEvent;
 
+import java.util.Set;
 import java.util.function.Supplier;
 
 public class NPCActionC2S {
@@ -112,6 +113,7 @@ public class NPCActionC2S {
 
 	private static final double NPC_INTERACTION_RANGE = 8.0;
 	private static final double POPO_DUMMY_CLEANUP_RANGE = 128.0;
+	private static final String TAG_POPO_SPAR = "dmz_popo_spar";
 
 	public static boolean isNpcInRange(ServerPlayer player, String npcName) {
 		return player.serverLevel().getEntitiesOfClass(MastersEntity.class,
@@ -133,8 +135,7 @@ public class NPCActionC2S {
 
 	private static void handleKarin(ServerPlayer player, StatsData data, int action) {
 		if (action == 1) {
-			if (player.getInventory().contains(new ItemStack(MainItems.NUBE_ITEM.get()))
-					|| player.getInventory().contains(new ItemStack(MainItems.NUBE_NEGRA_ITEM.get()))) return;
+			if (player.getInventory().hasAnyOf(Set.of(MainItems.NUBE_ITEM.get(), MainItems.NUBE_NEGRA_ITEM.get()))) return;
 			if (data.getResources().getAlignment() > 50) {
 				player.addItem(new ItemStack(MainItems.NUBE_ITEM.get()));
 			} else {
@@ -210,6 +211,7 @@ public class NPCActionC2S {
 			shadowDummy.setPos(player.getX(), player.getY(), player.getZ());
 			shadowDummy.copyStatsFromPlayer(player);
 			shadowDummy.getPersistentData().putString("dmz_quest_owner", player.getStringUUID());
+			shadowDummy.getPersistentData().putBoolean(TAG_POPO_SPAR, true);
 			if (level.addFreshEntity(shadowDummy)) {
 				LogUtil.info(Env.SERVER, "Shadow clone spawned for player {} at master {} ({}, {}, {})",
 						playerName, master, (int) player.getX(), (int) player.getY(), (int) player.getZ());
@@ -224,7 +226,7 @@ public class NPCActionC2S {
 		String owner = player.getStringUUID();
 		player.serverLevel().getEntitiesOfClass(ShadowDummyEntity.class, player.getBoundingBox().inflate(POPO_DUMMY_CLEANUP_RANGE),
 						dummy -> owner.equals(dummy.getPersistentData().getString("dmz_quest_owner"))
-								&& !dummy.getPersistentData().getBoolean(SummonPlayerShadowDummyC2S.TAG_PLAYER_SHADOW))
+								&& dummy.getPersistentData().getBoolean(TAG_POPO_SPAR))
 				.forEach(ShadowDummyEntity::discard);
 	}
 

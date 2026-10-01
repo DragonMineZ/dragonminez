@@ -18,11 +18,11 @@ import java.util.function.Supplier;
 
 public class StatsSyncC2S {
 
-	private static final int RACE_NAME_CAP = 32;
+	private static final int RACE_NAME_CAP = 64;
 	private static final int GENDER_CAP = 16;
-	private static final int CLASS_NAME_CAP = 32;
+	private static final int CLASS_NAME_CAP = 64;
 	private static final int BONE_NAME_CAP = 64;
-	private static final int COLOR_CAP = 8;
+	private static final int COLOR_CAP = 16;
 
 	private final String raceName;
 	private final String gender;
