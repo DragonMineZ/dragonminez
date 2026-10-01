@@ -1,6 +1,8 @@
 package com.dragonminez.server.commands;
 
 import com.dragonminez.Reference;
+import com.dragonminez.server.world.dimension.OtherworldDimension;
+import com.dragonminez.server.world.dimension.OtherworldTournamentGrounds;
 import com.dragonminez.server.world.structure.helper.StructureLocator;
 import com.mojang.brigadier.CommandDispatcher;
 import com.mojang.brigadier.arguments.StringArgumentType;
@@ -17,13 +19,19 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.level.levelgen.structure.Structure;
 
+import java.util.stream.Stream;
+
 public class LocateCommand {
+
+	public static final String OTHERWORLD_TOURNAMENT = "otherworld_tournament";
 
 	private static final SuggestionProvider<CommandSourceStack> SUGGESTIONS = (context, builder) ->
 			SharedSuggestionProvider.suggest(
-					context.getSource().registryAccess().registryOrThrow(Registries.STRUCTURE).keySet().stream()
-							.filter(id -> id.getNamespace().equals(Reference.MOD_ID))
-							.map(ResourceLocation::getPath),
+					Stream.concat(
+							context.getSource().registryAccess().registryOrThrow(Registries.STRUCTURE).keySet().stream()
+									.filter(id -> id.getNamespace().equals(Reference.MOD_ID))
+									.map(ResourceLocation::getPath),
+							Stream.of(OTHERWORLD_TOURNAMENT)),
 					builder);
 
 	public static void register(CommandDispatcher<CommandSourceStack> dispatcher) {
@@ -38,6 +46,9 @@ public class LocateCommand {
 		ResourceLocation id = name.indexOf(':') >= 0
 				? ResourceLocation.tryParse(name)
 				: ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, name);
+		if (id != null && id.getNamespace().equals(Reference.MOD_ID) && id.getPath().equals(OTHERWORLD_TOURNAMENT)) {
+			return locateOtherworldTournament(source);
+		}
 		if (id == null || !source.registryAccess().registryOrThrow(Registries.STRUCTURE).containsKey(id)) {
 			source.sendFailure(Component.translatable("command.dragonminez.locate.invalid", name));
 			return 0;
@@ -56,8 +67,22 @@ public class LocateCommand {
 			return 0;
 		}
 
+		return sendFound(source, level, from, foundPos, structName, (int) source.getPosition().y);
+	}
+
+	private static int locateOtherworldTournament(CommandSourceStack source) {
+		ServerLevel level = source.getLevel();
+		if (!level.dimension().equals(OtherworldDimension.OTHERWORLD_KEY)) {
+			source.sendFailure(Component.translatable("command.dragonminez.locate.wrong_dimension"));
+			return 0;
+		}
+		BlockPos ring = OtherworldTournamentGrounds.RING_CENTER;
+		return sendFound(source, level, BlockPos.containing(source.getPosition()), ring, OTHERWORLD_TOURNAMENT, ring.getY());
+	}
+
+	private static int sendFound(CommandSourceStack source, ServerLevel level, BlockPos from, BlockPos foundPos,
+								 String structName, int tpY) {
 		int distance = StructureLocator.getDistanceTo(from, foundPos);
-		int tpY = (int) source.getPosition().y;
 		Component coordComponent = ComponentUtils.wrapInSquareBrackets(
 				Component.literal(foundPos.getX() + ", ~, " + foundPos.getZ())
 		).withStyle(style -> style

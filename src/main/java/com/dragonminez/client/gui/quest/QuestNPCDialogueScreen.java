@@ -308,6 +308,20 @@ public class QuestNPCDialogueScreen extends ScaledScreen {
 							.message(tr("gui.dragonminez.npc.services"))
 							.onPress(btn -> openMasterScreen())
 							.build());
+					if (TOURNAMENT_MASTERS.contains(npcId)) {
+						this.addRenderableWidget(new TexturedTextButton.Builder()
+								.position(getUiWidth() / 2 - 74, btnY)
+								.size(74, 20)
+								.texture(BUTTONS_TEXTURE)
+								.textureCoords(0, 28, 0, 48)
+								.textureSize(74, 20)
+								.message(tr("gui.dragonminez.npc.tournament"))
+								.onPress(btn -> NetworkHandler.sendToServer(
+										new com.dragonminez.common.network.TournamentPackets.ActionC2S(
+												com.dragonminez.common.network.TournamentPackets.ActionC2S.Action.OPEN_BRACKET,
+												entityId)))
+								.build());
+					}
 				}
 			}
 		}

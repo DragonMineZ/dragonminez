@@ -702,6 +702,10 @@
       "required": false
     },
     {
+      "id": "dragonminez:saga_gogeta_ssj",
+      "required": false
+    },
+    {
       "id": "dragonminez:saga_a18_gt",
       "required": false
     },

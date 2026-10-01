@@ -582,7 +582,7 @@ public class TournamentBracketScreen extends ScaledScreen {
 		if (pendingFocus) {
 			pendingFocus = false;
 			if (!data.isGauntlet() && verticalScroll && maxScroll > 0.0f) {
-				int focusRow = data.isCompleted() ? qualifierRounds() + 2 : data.getRound();
+				int focusRow = data.isCompleted() ? qualifierRounds() + challengers().size() : data.getRound();
 				float rowCentre = (rowY(focusRow, size[1]) + SLOT / 2.0f) * scale;
 				targetScroll = Mth.clamp(rowCentre - contentHeight / 2.0f, 0.0f, maxScroll);
 				if (!data.isRevealed()) targetScroll = 0.0f;
@@ -639,7 +639,7 @@ public class TournamentBracketScreen extends ScaledScreen {
 
 	private float[] treeSize() {
 		int seeds = Math.max(2, data.getSeeds().size());
-		int rows = qualifierRounds() + 3;
+		int rows = qualifierRounds() + challengers().size() + 1;
 		float width = LABEL_MARGIN + seeds * TREE_PITCH + TREE_PITCH * 1.5f + SLOT;
 		float height = rows * ROW_PITCH + 6;
 		return new float[]{width, height};
@@ -702,27 +702,37 @@ public class TournamentBracketScreen extends ScaledScreen {
 		float trunkCx = treeCentreX(q, 0);
 		float challengerCx = trunkCx + TREE_PITCH * 1.5f + SLOT / 2.0f;
 
-		String qualified = q == 0 ? data.getSeeds().isEmpty() ? "" : data.getSeeds().get(0) : winnerOf(q - 1, 0);
-		String semiWinner = winnerOf(q, 0);
-		String finalWinner = winnerOf(q + 1, 0);
+		List<String> challengers = challengers();
+		String survivor = q == 0 ? data.getSeeds().isEmpty() ? "" : data.getSeeds().get(0) : winnerOf(q - 1, 0);
+		for (int i = 0; i < challengers.size(); i++) {
+			int round = q + i;
+			String winner = winnerOf(round, 0);
+			float y = rowY(round, height);
+			boolean now = playing && currentRound == round;
+			drawChallengerRow(graphics, y, trunkCx, challengerCx, survivor, challengers.get(i), winner, now, rowY(round + 1, height));
+			drawRowLabel(graphics, tr(challengerLabel(i, challengers.size())), y, now);
+			survivor = winner;
+		}
+		float topY = rowY(q + challengers.size(), height);
 
-		float semiY = rowY(q, height);
-		float finalY = rowY(q + 1, height);
-		float topY = rowY(q + 2, height);
-
-		boolean semiNow = playing && currentRound == q;
-		boolean finalNow = playing && currentRound == q + 1;
-
-		drawChallengerRow(graphics, semiY, trunkCx, challengerCx, qualified, data.getSemifinalist(), semiWinner, semiNow, finalY);
-		drawRowLabel(graphics, tr("tournament.dragonminez.round.semi"), semiY, semiNow);
-
-		drawChallengerRow(graphics, finalY, trunkCx, challengerCx, semiWinner, data.getChampion(), finalWinner, finalNow, topY);
-		drawRowLabel(graphics, tr("tournament.dragonminez.round.final"), finalY, finalNow);
-
-		String crown = data.isCompleted() ? finalWinner : "";
+		String crown = data.isCompleted() ? survivor : "";
 		drawSlot(graphics, trunkCx - SLOT / 2.0f, topY, crown, crown.isEmpty() ? SlotState.CROWN : SlotState.PLAYER);
 		TextUtil.drawCenteredStringWithBorder(graphics, font, txt("★"), Math.round(trunkCx), Math.round(topY) - 11, TITLE_COLOR);
 		drawRowLabel(graphics, tr("tournament.dragonminez.round.champion"), topY, data.isCompleted());
+	}
+
+	private List<String> challengers() {
+		List<String> challengers = new ArrayList<>(3);
+		challengers.add(data.getSemifinalist());
+		if (!data.getFinalist().isEmpty()) challengers.add(data.getFinalist());
+		challengers.add(data.getChampion());
+		return challengers;
+	}
+
+	private static String challengerLabel(int index, int count) {
+		if (index == 0) return "tournament.dragonminez.round.semi";
+		if (index == count - 1 && count > 2) return "tournament.dragonminez.round.title";
+		return "tournament.dragonminez.round.final";
 	}
 
 	private void drawChallengerRow(GuiGraphics graphics, float y, float trunkCx, float challengerCx, String trunkId,
@@ -773,8 +783,7 @@ public class TournamentBracketScreen extends ScaledScreen {
 
 	private List<String> gauntletCard() {
 		List<String> card = new ArrayList<>(data.getSeeds());
-		card.add(data.getSemifinalist());
-		card.add(data.getChampion());
+		card.addAll(challengers());
 		return card;
 	}
 
@@ -833,8 +842,10 @@ public class TournamentBracketScreen extends ScaledScreen {
 
 			int round = rounds.get(i);
 			if (round >= 0) {
-				MutableComponent label = round >= card.size() - 1 ? tr("tournament.dragonminez.round.final")
-						: round == card.size() - 2 ? tr("tournament.dragonminez.round.semi")
+				int challenger = round - data.getSeeds().size();
+				int challengerCount = card.size() - data.getSeeds().size();
+				MutableComponent label = challenger >= 0
+						? tr(challengerLabel(Math.min(challenger, challengerCount - 1), challengerCount))
 						: tr("tournament.dragonminez.round.qualifier", round + 1);
 				TextUtil.drawCenteredStringWithBorder(graphics, font, label, Math.round(x + SLOT / 2.0f), Math.round(top) - 12,
 						state == SlotState.CURRENT ? TITLE_COLOR : MUTED_COLOR);

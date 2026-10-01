@@ -15,6 +15,7 @@ import com.dragonminez.common.network.TournamentPackets;
 import com.dragonminez.common.quest.PartyManager;
 import com.dragonminez.common.stats.StatsCapability;
 import com.dragonminez.common.stats.StatsProvider;
+import com.dragonminez.server.world.dimension.OtherworldTournamentGrounds;
 import com.dragonminez.server.world.raid.RaidFeedback;
 import net.minecraft.ChatFormatting;
 import net.minecraft.core.BlockPos;
@@ -77,6 +78,7 @@ public final class Tournament {
 		public static final String HIDDEN_SLOT = "?";
 		public static final int SOURCE_SEMIFINALIST = -1;
 		public static final int SOURCE_CHAMPION = -2;
+		public static final int SOURCE_FINALIST = -3;
 		public static final int SOURCE_UNKNOWN = Integer.MIN_VALUE;
 		private static final String PLAYER_PREFIX = "@player:";
 
@@ -108,6 +110,7 @@ public final class Tournament {
 		private final List<List<String>> winners = new ArrayList<>();
 
 		private String semifinalist = "";
+		private String finalist = "";
 		private String champion = "";
 		private final Map<String, Integer> sources = new HashMap<>();
 
@@ -125,7 +128,7 @@ public final class Tournament {
 		public static String resolveFighter(String entityId, Set<String> used, Random random) {
 			if (entityId == null || entityId.isBlank()) return "";
 			if (!entityId.startsWith("#")) {
-				used.add(entityId);
+				used.add(FighterIdentity.of(entityId));
 				return entityId;
 			}
 			ResourceLocation tagId = ResourceLocation.tryParse(entityId.substring(1));
@@ -141,11 +144,13 @@ public final class Tournament {
 				LogUtil.warn(Env.SERVER, "Tournament fighter tag '{}' is empty or unknown", entityId);
 				return "";
 			}
-			List<String> fresh = new ArrayList<>(members);
-			fresh.removeAll(used);
-			List<String> pool = fresh.isEmpty() ? members : fresh;
-			String picked = pool.get(random.nextInt(pool.size()));
-			used.add(picked);
+			List<String> fresh = new ArrayList<>();
+			for (String member : members) {
+				if (!used.contains(FighterIdentity.of(member))) fresh.add(member);
+			}
+			if (fresh.isEmpty()) return "";
+			String picked = fresh.get(random.nextInt(fresh.size()));
+			used.add(FighterIdentity.of(picked));
 			return picked;
 		}
 
@@ -157,6 +162,10 @@ public final class Tournament {
 			Set<String> used = new HashSet<>();
 			bracket.semifinalist = resolveFighter(def.getSemifinalist().getEntityId(), used, random);
 			bracket.setSource(bracket.semifinalist, SOURCE_SEMIFINALIST);
+			if (def.hasFinalist()) {
+				bracket.finalist = resolveFighter(def.getFinalist().getEntityId(), used, random);
+				bracket.setSource(bracket.finalist, SOURCE_FINALIST);
+			}
 			bracket.champion = resolveFighter(def.getChampion().getEntityId(), used, random);
 			bracket.setSource(bracket.champion, SOURCE_CHAMPION);
 
@@ -211,6 +220,8 @@ public final class Tournament {
 		public boolean isCompleted() { return completed; }
 		public List<String> getSeeds() { return Collections.unmodifiableList(seeds); }
 		public String getSemifinalist() { return semifinalist; }
+		public String getFinalist() { return finalist; }
+		public boolean hasFinalist() { return !finalist.isEmpty(); }
 		public String getChampion() { return champion; }
 		public TournamentDefinition.Format getFormat() { return format; }
 
@@ -238,8 +249,9 @@ public final class Tournament {
 		}
 
 		public int semiRound() { return qualifierRounds(); }
-		public int finalRound() { return qualifierRounds() + 1; }
-		public int totalRounds() { return qualifierRounds() + 2; }
+		public int finalistRound() { return hasFinalist() ? qualifierRounds() + 1 : -1; }
+		public int finalRound() { return qualifierRounds() + (hasFinalist() ? 2 : 1); }
+		public int totalRounds() { return finalRound() + 1; }
 
 		public boolean isQualifierRound(int r) { return r < qualifierRounds(); }
 
@@ -253,6 +265,7 @@ public final class Tournament {
 
 		public String currentOpponent() {
 			if (round == semiRound()) return semifinalist;
+			if (round == finalistRound()) return finalist;
 			if (round == finalRound()) return champion;
 			if (!isQualifierRound(round)) return "";
 			return round < seeds.size() ? seeds.get(round) : "";
@@ -303,8 +316,9 @@ public final class Tournament {
 				String survivor = qualified.isEmpty() ? slotAt(0, 0) : qualified.get(0);
 				return new String[]{survivor, semifinalist};
 			}
-			List<String> semi = winnersOf(semiRound());
-			return new String[]{semi.isEmpty() ? "" : semi.get(0), champion};
+			List<String> previous = winnersOf(r - 1);
+			String survivor = previous.isEmpty() ? "" : previous.get(0);
+			return new String[]{survivor, r == finalistRound() ? finalist : champion};
 		}
 
 		public void recordWinner(int r, String slot) {
@@ -343,6 +357,7 @@ public final class Tournament {
 			tag.putBoolean("eliminated", eliminated);
 			tag.putBoolean("completed", completed);
 			tag.putString("semifinalist", semifinalist);
+			tag.putString("finalist", finalist);
 			tag.putString("champion", champion);
 
 			ListTag sourceList = new ListTag();
@@ -390,6 +405,7 @@ public final class Tournament {
 			bracket.eliminated = tag.getBoolean("eliminated");
 			bracket.completed = tag.getBoolean("completed");
 			bracket.semifinalist = tag.getString("semifinalist");
+			bracket.finalist = tag.getString("finalist");
 			bracket.champion = tag.getString("champion");
 
 			ListTag sourceList = tag.getList("sources", Tag.TAG_COMPOUND);
@@ -757,6 +773,19 @@ public final class Tournament {
 
 		private RingAnchor() {}
 
+		public record Area(BoundingBox box, Rotation rotation) {}
+
+		@Nullable
+		public static Area areaAt(ServerLevel level, BlockPos pos) {
+			StructureStart start = arenaAt(level, pos);
+			if (start != null) return new Area(start.getBoundingBox(), rotationOf(start));
+			BoundingBox grounds = OtherworldTournamentGrounds.protectedBounds(level);
+			if (grounds != null && OtherworldTournamentGrounds.isBuilt(level) && grounds.isInside(pos)) {
+				return new Area(grounds, Rotation.NONE);
+			}
+			return null;
+		}
+
 		@Nullable
 		public static StructureStart arenaAt(ServerLevel level, BlockPos pos) {
 			var registry = level.registryAccess().registryOrThrow(Registries.STRUCTURE);
@@ -1005,9 +1034,13 @@ public final class Tournament {
 
 		private static String replacementFighter(@Nullable TournamentDefinition def, Bracket bracket) {
 			if (def == null) return "";
-			Set<String> taken = new HashSet<>(bracket.getSeeds());
-			taken.add(bracket.getSemifinalist());
-			taken.add(bracket.getChampion());
+			Set<String> taken = new HashSet<>();
+			for (String seed : bracket.getSeeds()) {
+				if (!seed.isEmpty() && !Bracket.isPlayerSlot(seed)) taken.add(FighterIdentity.of(seed));
+			}
+			taken.add(FighterIdentity.of(bracket.getSemifinalist()));
+			taken.add(FighterIdentity.of(bracket.getFinalist()));
+			taken.add(FighterIdentity.of(bracket.getChampion()));
 			Set<Integer> drawn = new HashSet<>();
 			for (String seed : bracket.getSeeds()) {
 				int source = bracket.sourceOf(seed);
@@ -1026,8 +1059,7 @@ public final class Tournament {
 				int index = pool.get(RANDOM.nextInt(pool.size()));
 				Set<String> used = new HashSet<>(taken);
 				String resolved = Bracket.resolveFighter(def.getContenders().get(index).getEntityId(), used, RANDOM);
-				if (resolved.isEmpty()) continue;
-				if (taken.contains(resolved) && attempt < pool.size()) continue;
+				if (resolved.isEmpty() || taken.contains(FighterIdentity.of(resolved))) continue;
 				bracket.setSource(resolved, index);
 				return resolved;
 			}
@@ -1787,7 +1819,9 @@ public final class Tournament {
 		}
 
 		private static Component roundName(Bracket bracket, int round) {
-			if (round == bracket.finalRound()) return Component.translatable("tournament.dragonminez.round.final");
+			if (round == bracket.finalRound()) return Component.translatable(bracket.hasFinalist()
+					? "tournament.dragonminez.round.title" : "tournament.dragonminez.round.final");
+			if (round == bracket.finalistRound()) return Component.translatable("tournament.dragonminez.round.final");
 			if (round == bracket.semiRound()) return Component.translatable("tournament.dragonminez.round.semi");
 			return Component.translatable("tournament.dragonminez.round.qualifier", round + 1);
 		}
@@ -2082,10 +2116,12 @@ public final class Tournament {
 			int source = bracket != null ? bracket.sourceOf(slot) : Bracket.SOURCE_UNKNOWN;
 			if (source == Bracket.SOURCE_CHAMPION) return def.getChampion();
 			if (source == Bracket.SOURCE_SEMIFINALIST) return def.getSemifinalist();
+			if (source == Bracket.SOURCE_FINALIST) return def.getFinalist();
 			if (source >= 0 && source < def.getContenders().size()) return def.getContenders().get(source);
 
 			if (slot.equals(def.getChampion().getEntityId())) return def.getChampion();
 			if (slot.equals(def.getSemifinalist().getEntityId())) return def.getSemifinalist();
+			if (def.hasFinalist() && slot.equals(def.getFinalist().getEntityId())) return def.getFinalist();
 			for (TournamentDefinition.Fighter fighter : def.getContenders()) {
 				if (slot.equals(fighter.getEntityId())) return fighter;
 			}
@@ -2119,6 +2155,7 @@ public final class Tournament {
 
 			if (mob instanceof DBSagasEntity saga) {
 				saga.setAiTierById(fighter.aiTierOr(2));
+				if (fighter.isHalo()) saga.setCharacterAlive(false);
 				saga.setTransformationDisabled(true);
 			}
 			mob.setTarget(target);
@@ -2381,6 +2418,7 @@ public final class Tournament {
 					seeds,
 					winners,
 					bracket != null ? bracket.getSemifinalist() : previewId(def.getSemifinalist()),
+					bracket != null ? bracket.getFinalist() : def.hasFinalist() ? previewId(def.getFinalist()) : "",
 					bracket != null ? bracket.getChampion() : previewId(def.getChampion()),
 					bracket != null ? bracket.getRound() : 0,
 					eliminated || (bracket != null && bracket.isEliminated()),
@@ -2430,7 +2468,8 @@ public final class Tournament {
 			if (bracket == null) {
 				for (TournamentDefinition.Fighter fighter : def.getContenders()) putStats(stats, previewId(fighter), fighter, 0);
 				putStats(stats, previewId(def.getSemifinalist()), def.getSemifinalist(), 1);
-				putStats(stats, previewId(def.getChampion()), def.getChampion(), 2);
+				if (def.hasFinalist()) putStats(stats, previewId(def.getFinalist()), def.getFinalist(), 2);
+				putStats(stats, previewId(def.getChampion()), def.getChampion(), def.hasFinalist() ? 3 : 2);
 				return stats;
 			}
 
@@ -2439,6 +2478,9 @@ public final class Tournament {
 				putStats(stats, seed, Manager.fighterFor(def, bracket, seed), bracket.getRound());
 			}
 			putStats(stats, bracket.getSemifinalist(), Manager.fighterFor(def, bracket, bracket.getSemifinalist()), bracket.semiRound());
+			if (bracket.hasFinalist()) {
+				putStats(stats, bracket.getFinalist(), Manager.fighterFor(def, bracket, bracket.getFinalist()), bracket.finalistRound());
+			}
 			putStats(stats, bracket.getChampion(), Manager.fighterFor(def, bracket, bracket.getChampion()), bracket.finalRound());
 			return stats;
 		}
@@ -2459,18 +2501,16 @@ public final class Tournament {
 			if (def == null) return null;
 
 			ServerLevel level = player.serverLevel();
-			StructureStart start = RingAnchor.arenaAt(level, npc.blockPosition());
-			if (start == null) start = RingAnchor.arenaAt(level, player.blockPosition());
-			if (start == null) return null;
-
-			BoundingBox box = start.getBoundingBox();
+			RingAnchor.Area area = RingAnchor.areaAt(level, npc.blockPosition());
+			if (area == null) area = RingAnchor.areaAt(level, player.blockPosition());
+			if (area == null) return null;
 
 			TournamentDefinition.RingOffset ring = def.getRing();
 			if (ring != null && ring.isExplicit()) {
-				return RingAnchor.toWorld(box, RingAnchor.rotationOf(start), ring.x(), ring.y(), ring.z());
+				return RingAnchor.toWorld(area.box(), area.rotation(), ring.x(), ring.y(), ring.z());
 			}
 
-			return groundInFrontOf(level, npc, ring != null ? ring.radius() : 4, box);
+			return groundInFrontOf(level, npc, ring != null ? ring.radius() : 4, area.box());
 		}
 
 		private static BlockPos groundInFrontOf(ServerLevel level, MastersEntity npc, int distance, BoundingBox box) {

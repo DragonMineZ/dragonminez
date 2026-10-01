@@ -31,6 +31,7 @@ public class MainTags {
 		public static final TagKey<EntityType<?>> NPC_SUPERSAIYAN4 = create("npc_supersaiyan4");
 		public static final TagKey<EntityType<?>> NPC_GINYUFORCE = create("npc_ginyuforce");
 		public static final TagKey<EntityType<?>> NPC_CELLSAGA = create("npc_cellsaga");
+		public static final TagKey<EntityType<?>> Z_FIGHTERS_CELL = create("z_fighters_cell");
 		public static final TagKey<EntityType<?>> NPC_SAIYANSAGA = create("npc_saiyansaga");
 		public static final TagKey<EntityType<?>> NPC_FRIEZASAGA = create("npc_friezasaga");
 		public static final TagKey<EntityType<?>> NPC_FRIEZAFORMS = create("npc_friezaforms");

@@ -105,7 +105,7 @@ public class MainEntities {
                 SAGA_A14, SAGA_A15, SAGA_A13, SAGA_SUPER_A13,
                 SAGA_PARAGUS, SAGA_BROLY_BASE, SAGA_BROLY_SSJ_RESTRICTED, SAGA_BROLY_SSJ, SAGA_BROLY_LSSJ,
                 SAGA_ZANGYA, SAGA_GOKUA, SAGA_BIDO, SAGA_BUJIN, SAGA_BOJACK, SAGA_BOJACK_FP,
-                SAGA_BIO_BROLY, SAGA_BIO_BROLY_GIANT, SAGA_PAIKUHAN, SAGA_JANEMBA_FAT, SAGA_SUPER_JANEMBA,
+                SAGA_BIO_BROLY, SAGA_BIO_BROLY_GIANT, SAGA_PAIKUHAN, SAGA_JANEMBA_FAT, SAGA_SUPER_JANEMBA, SAGA_GOGETA_SSJ,
                 SAGA_HIRUDEGARN, SAGA_HIRUDEGARN_INCOMPLETE_1, SAGA_HIRUDEGARN_INCOMPLETE_2, SAGA_SUPER_HIRUDEGARN,
 
                 // SAGA GT
@@ -1386,6 +1386,11 @@ public class MainEntities {
                     () -> EntityType.Builder.of(SagaMoviesEntity.SuperJanembaEntity::new, MobCategory.MONSTER)
                             .sized(0.6f, 2.0f)
                             .build(ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "saga_super_janemba").toString()));
+    public static final RegistryObject<EntityType<SagaMoviesEntity.GogetaSSJEntity>> SAGA_GOGETA_SSJ =
+            ENTITY_TYPES.register("saga_gogeta_ssj",
+                    () -> EntityType.Builder.of(SagaMoviesEntity.GogetaSSJEntity::new, MobCategory.MONSTER)
+                            .sized(0.6f, 1.8f)
+                            .build(ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "saga_gogeta_ssj").toString()));
 
     // World bosses
     public static final RegistryObject<EntityType<AllWorldBossesEntity.JanembaFat>> WORLDBOSS_JANEMBA_FAT =

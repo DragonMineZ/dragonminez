@@ -18,7 +18,8 @@ public class TournamentDefinition {
 
 	public static final Map<String, String> HOST_NPCS = Map.of(
 			"baba_earth", "baba",
-			"cell", "cell"
+			"cell", "cell",
+			"otherworld_announcer", "otherworld"
 	);
 
 	public static final int CONTENDER_COUNT = 1;
@@ -49,6 +50,7 @@ public class TournamentDefinition {
 	private RingOffset ring;
 	private Fighter champion;
 	private Fighter semifinalist;
+	private Fighter finalist;
 	private List<Fighter> contenders = new ArrayList<>();
 
 	private Rewards rewards;
@@ -108,6 +110,10 @@ public class TournamentDefinition {
 		return lethal != null && lethal;
 	}
 
+	public boolean hasFinalist() {
+		return finalist != null && finalist.isUsable();
+	}
+
 	public boolean isUsable() {
 		return champion != null && champion.isUsable()
 				&& semifinalist != null && semifinalist.isUsable()
@@ -146,6 +152,11 @@ public class TournamentDefinition {
 		private Double kiDamage;
 		private Integer aiTier;
 		private Double perRoundScaling;
+		private Boolean halo;
+
+		public boolean isHalo() {
+			return halo != null && halo;
+		}
 
 		public boolean isUsable() {
 			return entityId != null && !entityId.isBlank();
@@ -186,7 +197,9 @@ public class TournamentDefinition {
 
 		public static final String BABA = "baba";
 		public static final String CELL = "cell";
-		public static final String CELL_POOL = "#dragonminez:npc_cellsaga";
+		public static final String CELL_POOL = "#dragonminez:z_fighters_cell";
+		public static final String OTHERWORLD = "otherworld";
+		public static final String BUU_POOL = "#dragonminez:npc_buusaga";
 
 		private Defaults() {}
 
@@ -194,6 +207,7 @@ public class TournamentDefinition {
 			Map<String, TournamentDefinition> defaults = new LinkedHashMap<>();
 			defaults.put(BABA, baba());
 			defaults.put(CELL, cell());
+			defaults.put(OTHERWORLD, otherworld());
 			return defaults;
 		}
 
@@ -239,6 +253,58 @@ public class TournamentDefinition {
 
 			TournamentDefinition.Rewards rewards = new TournamentDefinition.Rewards();
 			rewards.setTrainingPoints(1000000);
+			rewards.setAlignment(10);
+			def.setRewards(rewards);
+
+			return def;
+		}
+
+		private static TournamentDefinition otherworld() {
+			TournamentDefinition def = new TournamentDefinition();
+			def.setConfigVersion(CURRENT_VERSION);
+			def.setDisplayName("tournament.dragonminez.otherworld");
+			def.setEnabled(true);
+			def.setDifficultyStars(5);
+			def.setFormat(TournamentDefinition.Format.BRACKET);
+			def.setQualifierSlots(8);
+			def.setLethal(false);
+			def.setReentryCooldownSeconds(90 * 60);
+			def.setMatchTimeoutSeconds(480);
+			def.setNextRoundSeconds(30);
+			def.setRulesAcceptSeconds(60);
+			def.setReturnSeconds(15);
+			def.setArrivalSeconds(60);
+
+			TournamentDefinition.RingOffset ring = new TournamentDefinition.RingOffset();
+			ring.setX(110);
+			ring.setY(98);
+			ring.setZ(110);
+			ring.setRadius(8);
+			def.setRing(ring);
+
+			def.setSemifinalist(fighter("dragonminez:saga_paikuhan", "entity.dragonminez.saga_paikuhan",
+					805000.0D, 33600.0D, 30600.0D, 3, 1.0D));
+			TournamentDefinition.Fighter goku = fighter("dragonminez:saga_goku_end_ssj", "entity.dragonminez.saga_goku_end_ssj",
+					900000.0D, 37800.0D, 34200.0D, 3, 1.0D);
+			goku.setHalo(true);
+			def.setFinalist(goku);
+			def.setChampion(fighter("dragonminez:saga_gogeta_ssj", "entity.dragonminez.saga_gogeta_ssj",
+					1330000.0D, 55800.0D, 50700.0D, 4, 1.0D));
+
+			def.setContenders(List.of(
+					fighter(BUU_POOL, BUU_POOL, 238000.0D, 9900.0D, 8840.0D, 2, 1.08D),
+					fighter(BUU_POOL, BUU_POOL, 273000.0D, 11400.0D, 10370.0D, 2, 1.08D),
+					fighter(BUU_POOL, BUU_POOL, 308000.0D, 12900.0D, 11730.0D, 2, 1.08D),
+					fighter(BUU_POOL, BUU_POOL, 343000.0D, 14400.0D, 12920.0D, 2, 1.08D),
+					fighter(BUU_POOL, BUU_POOL, 402500.0D, 16800.0D, 15300.0D, 3, 1.08D),
+					fighter(BUU_POOL, BUU_POOL, 472500.0D, 19800.0D, 17850.0D, 3, 1.08D),
+					fighter(BUU_POOL, BUU_POOL, 507500.0D, 21300.0D, 19380.0D, 3, 1.08D),
+					fighter(BUU_POOL, BUU_POOL, 542500.0D, 22800.0D, 20740.0D, 3, 1.08D),
+					fighter(BUU_POOL, BUU_POOL, 612500.0D, 25800.0D, 23460.0D, 3, 1.08D)
+			));
+
+			TournamentDefinition.Rewards rewards = new TournamentDefinition.Rewards();
+			rewards.setTrainingPoints(3000000);
 			rewards.setAlignment(10);
 			def.setRewards(rewards);
 

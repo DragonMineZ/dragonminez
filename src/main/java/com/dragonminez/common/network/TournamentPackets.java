@@ -49,6 +49,7 @@ public final class TournamentPackets {
 		private final List<String> seeds;
 		private final List<List<String>> winners;
 		private final String semifinalist;
+		private final String finalist;
 		private final String champion;
 		private final int round;
 		private final boolean eliminated;
@@ -70,8 +71,8 @@ public final class TournamentPackets {
 
 		public OpenBracketS2C(String tournamentId, String displayName, int difficultyStars, boolean gauntlet, boolean lethal,
 							  Phase phase, int phaseSeconds, boolean revealed,
-							  List<String> seeds, List<List<String>> winners, String semifinalist, String champion,
-							  int round, boolean eliminated, boolean completed,
+							  List<String> seeds, List<List<String>> winners, String semifinalist, String finalist,
+							  String champion, int round, boolean eliminated, boolean completed,
 							  boolean signUp, boolean lockedByOther, boolean partyLeader, int cooldownSeconds,
 							  int npcEntityId, boolean push, Map<String, FighterStats> stats, List<Member> members,
 							  Map<String, String> slotNames, String activeSlot, String rivalSlot, MemberState myState,
@@ -87,6 +88,7 @@ public final class TournamentPackets {
 			this.seeds = seeds == null ? new ArrayList<>() : seeds;
 			this.winners = winners == null ? new ArrayList<>() : winners;
 			this.semifinalist = semifinalist == null ? "" : semifinalist;
+			this.finalist = finalist == null ? "" : finalist;
 			this.champion = champion == null ? "" : champion;
 			this.round = round;
 			this.eliminated = eliminated;
@@ -124,6 +126,7 @@ public final class TournamentPackets {
 				for (String id : roundWinners) buf.writeUtf(id);
 			}
 			buf.writeUtf(msg.semifinalist);
+			buf.writeUtf(msg.finalist);
 			buf.writeUtf(msg.champion);
 			buf.writeVarInt(msg.round);
 			buf.writeBoolean(msg.eliminated);
@@ -191,6 +194,7 @@ public final class TournamentPackets {
 				winners.add(roundWinners);
 			}
 			String semifinalist = buf.readUtf();
+			String finalist = buf.readUtf();
 			String champion = buf.readUtf();
 			int round = buf.readVarInt();
 			boolean eliminated = buf.readBoolean();
@@ -225,7 +229,7 @@ public final class TournamentPackets {
 					buf.readVarInt(), buf.readVarInt(), buf.readVarInt(), buf.readInt(), buf.readVarInt(), buf.readVarInt());
 
 			return new OpenBracketS2C(tournamentId, displayName, stars, gauntlet, lethal, phase, phaseSeconds, revealed,
-					seeds, winners, semifinalist, champion, round, eliminated, completed, signUp, lockedByOther,
+					seeds, winners, semifinalist, finalist, champion, round, eliminated, completed, signUp, lockedByOther,
 					partyLeader, cooldown, npcId, push, stats, members, slotNames, activeSlot, rivalSlot, myState, myReady, rules);
 		}
 

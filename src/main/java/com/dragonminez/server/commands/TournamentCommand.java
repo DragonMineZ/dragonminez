@@ -15,7 +15,6 @@ import net.minecraft.core.Vec3i;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
-import net.minecraft.world.level.levelgen.structure.StructureStart;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.Collection;
@@ -77,13 +76,13 @@ public class TournamentCommand {
 		ServerLevel level = player.serverLevel();
 		BlockPos pos = player.blockPosition();
 
-		StructureStart start = Tournament.RingAnchor.arenaAt(level, pos);
-		if (start == null) {
+		Tournament.RingAnchor.Area area = Tournament.RingAnchor.areaAt(level, pos);
+		if (area == null) {
 			ctx.getSource().sendFailure(Component.translatable("command.dragonminez.tournament.ring.no_structure"));
 			return 0;
 		}
 
-		Vec3i offset = Tournament.RingAnchor.toTemplate(start.getBoundingBox(), Tournament.RingAnchor.rotationOf(start), pos);
+		Vec3i offset = Tournament.RingAnchor.toTemplate(area.box(), area.rotation(), pos);
 		int offsetX = offset.getX();
 		int offsetY = offset.getY();
 		int offsetZ = offset.getZ();
@@ -93,7 +92,7 @@ public class TournamentCommand {
 			return 0;
 		}
 
-		String rotationName = Tournament.RingAnchor.rotationOf(start).name();
+		String rotationName = area.rotation().name();
 		ctx.getSource().sendSuccess(() -> Component.translatable("command.dragonminez.tournament.ring.success",
 				tournamentId, offsetX, offsetY, offsetZ, rotationName), true);
 		return 1;

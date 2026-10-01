@@ -899,6 +899,26 @@ public class SagaMoviesEntity {
         }
     }
 
+    public static class GogetaSSJEntity extends DBSagasEntity {
+        public GogetaSSJEntity(EntityType<? extends Monster> pEntityType, Level pLevel) {
+            super(pEntityType, pLevel);
+            this.setCanFly(true);
+            this.setDBZStyle(0);
+            this.setAuraColor(0xFFE657);
+            this.setKiBlastSpeed(2.2f);
+            this.setAllowedCombos(120, ComboType.AIR, ComboType.KI_CHARGE_ATTACK, ComboType.METEOR_COMBINATION, ComboType.BASIC);
+            this.addKiSkill(KiSkillType.KI_VOLLEY, 200, 1.6F, 0xFFE657, 0xFFE657);
+            this.addKiSkill(KiSkillType.BIG_BANG, 260, 1.9F, 0xE3FFFF, 0xE3FFFF);
+            this.addKiSkill(KiSkillType.KAMEHAMEHA, 320, 2.6F, 0xFFFFFF, 0x40C4FF, 0x0D47A1);
+
+            this.setWildSense(true, 60);
+            this.setZanzoken(3, 120);
+            this.setEvade(true, 40);
+            this.getAttribute(Attributes.MOVEMENT_SPEED).setBaseValue(0.34D);
+            this.setDefaultMovementSpeed(0.34D);
+        }
+    }
+
 
     public static class HirudegarnEntity extends DBSagasEntity {
         public HirudegarnEntity(EntityType<? extends Monster> pEntityType, Level pLevel) {
