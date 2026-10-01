@@ -31,13 +31,13 @@ public class NumberFormattingUtil {
         return COMPACT_NUMBER_FORMATTER.format(largeNumber / scales[i]) + suffixes[i];
     }
 
-    public static boolean shouldUseScientificForm(float value) {
-        if (!Float.isFinite(value)) return false;
+    public static boolean shouldUseScientificForm(double value) {
+        if (!Double.isFinite(value)) return false;
         return Math.floor(Math.abs(value)) >= 999_999_999d;
     }
 
-    public static String formatScientificNumber(float value) {
-        if (Float.isNaN(value) || Float.isInfinite(value)) return String.valueOf(value);
+    public static String formatScientificNumber(double value) {
+        if (Double.isNaN(value) || Double.isInfinite(value)) return String.valueOf(value);
         return shouldUseScientificForm(value) ? SCIENTIFIC_FORMATTER.format(value) : FULL_TPS_FORMATTER.format(value);
     }
 

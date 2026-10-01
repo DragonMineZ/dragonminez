@@ -27,7 +27,7 @@ public abstract class LocalPlayerMixin {
 			float healthLoss = currentHealth - pHealth;
 			if (healthLoss <= 0) return;
 
-			double expectedDrain = Math.round(data.getAdjustedHealthDrain());
+			double expectedDrain = Math.round(data.getEffectiveHealthDrain());
 
 			if (healthLoss <= (expectedDrain + 2.0f)) {
 				self.setHealth(pHealth);

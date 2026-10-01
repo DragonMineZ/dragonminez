@@ -3,6 +3,7 @@ package com.dragonminez.common.network.C2S;
 import com.dragonminez.common.network.NetworkHandler;
 import com.dragonminez.common.network.S2C.ProgressionSyncS2C;
 import com.dragonminez.common.stats.StatsCapability;
+import com.dragonminez.common.stats.StatsData;
 import com.dragonminez.common.stats.StatsProvider;
 import com.dragonminez.common.stats.techniques.KiAttackData;
 import com.dragonminez.common.stats.techniques.TechniqueData;
@@ -10,11 +11,15 @@ import com.dragonminez.common.stats.techniques.TechniqueDispatcher;
 import com.dragonminez.common.stats.techniques.Techniques;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.entity.Entity;
 import net.minecraftforge.network.NetworkEvent;
 
 import java.util.function.Supplier;
 
 public class TechniqueChargeC2S {
+
+	private static final double LOCK_RANGE_MARGIN = 8.0;
+
 	public enum Action { START, SET_HOLDING }
 
 	private final Action action;
@@ -88,7 +93,7 @@ public class TechniqueChargeC2S {
 							}
 							data.getTechniques().selectSlot(msg.slot);
 							data.getTechniques().startTechniqueCharge(kiAttack.getId());
-							data.getTechniques().setHomingTargetId(msg.targetId);
+							data.getTechniques().setHomingTargetId(validLockTarget(player, data, msg.targetId));
 							net.minecraftforge.common.MinecraftForge.EVENT_BUS.post(
 									new com.dragonminez.common.events.DMZEvent.KiAttackCastEvent(player, data, kiAttack));
 						} else {
@@ -107,5 +112,16 @@ public class TechniqueChargeC2S {
 		});
 
 		ctx.get().setPacketHandled(true);
+	}
+
+	private static int validLockTarget(ServerPlayer player, StatsData data, int targetId) {
+		if (targetId < 0) return -1;
+		int kiSense = data.getSkills().getSkillLevel("kisense");
+		if (kiSense <= 0) return -1;
+		Entity target = player.serverLevel().getEntity(targetId);
+		if (target == null || target == player) return -1;
+		double maxRange = 15.0 + 5.0 * kiSense + LOCK_RANGE_MARGIN;
+		if (data.getStatus().isAndroidUpgraded()) maxRange += 25.0;
+		return player.distanceToSqr(target) <= maxRange * maxRange ? targetId : -1;
 	}
 }

@@ -5,6 +5,7 @@ import com.dragonminez.LogUtil;
 import com.dragonminez.common.network.NetworkHandler;
 import com.dragonminez.common.network.S2C.QuestActionFeedbackS2C;
 import com.dragonminez.common.quest.QuestService;
+import com.dragonminez.server.storage.StorageManager;
 import net.minecraft.ChatFormatting;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.network.chat.Component;
@@ -32,21 +33,21 @@ public class QuestActionC2S {
 
 	public QuestActionC2S(FriendlyByteBuf buffer) {
 		this.actionType = buffer.readEnum(ActionType.class);
-		this.questId = buffer.readUtf();
-		this.npcId = buffer.readUtf();
+		this.questId = buffer.readUtf(256);
+		this.npcId = buffer.readUtf(256);
 	}
 
 	public void encode(FriendlyByteBuf buffer) {
 		buffer.writeEnum(actionType);
-		buffer.writeUtf(questId);
-		buffer.writeUtf(npcId);
+		buffer.writeUtf(questId, 256);
+		buffer.writeUtf(npcId, 256);
 	}
 
 	public void handle(Supplier<NetworkEvent.Context> contextSupplier) {
 		NetworkEvent.Context context = contextSupplier.get();
 		context.enqueueWork(() -> {
 			ServerPlayer player = context.getSender();
-			if (player == null) {
+			if (player == null || StorageManager.isLoadPending(player)) {
 				return;
 			}
 

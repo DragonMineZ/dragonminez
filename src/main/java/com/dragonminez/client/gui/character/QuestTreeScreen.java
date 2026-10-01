@@ -1189,7 +1189,7 @@ public class QuestTreeScreen extends BaseMenuScreen {
 		if (isCompleted) {
 			boolean hasUnclaimedRewards = false;
 			for (int i = 0; i < selectedQuest.getRewards().size(); i++) {
-				if (!selectedQuest.getRewards().get(i).isUnlockedFor(questData.getDifficulty())) {
+				if (!selectedQuest.getRewards().get(i).isUnlockedFor(questData.getQuestDifficulty(selectedKey))) {
 					continue;
 				}
 				if (!isRewardClaimed(questData, currentSaga, selectedQuest, i)) {
@@ -1322,7 +1322,7 @@ public class QuestTreeScreen extends BaseMenuScreen {
 			Quest quest = QuestRegistry.getClientQuest(questKey);
 			if (quest == null || quest.getClaimMode() == Quest.ClaimMode.NPC_ONLY) continue;
 			for (int i = 0; i < quest.getRewards().size(); i++) {
-				if (!quest.getRewards().get(i).isUnlockedFor(questData.getDifficulty())) {
+				if (!quest.getRewards().get(i).isUnlockedFor(questData.getQuestDifficulty(questKey))) {
 					continue;
 				}
 				if (!questData.isRewardClaimed(questKey, i)) {
@@ -3790,8 +3790,9 @@ public class QuestTreeScreen extends BaseMenuScreen {
 		PlayerQuestData pqd = statsData.getPlayerQuestData();
 		boolean isCompleted = isQuestCompleted(pqd, saga, quest);
 		if (isCompleted) {
+			Difficulty questDifficulty = pqd.getQuestDifficulty(questProgressKey(saga, quest));
 			for (int i = 0; i < quest.getRewards().size(); i++) {
-				if (!quest.getRewards().get(i).isUnlockedFor(pqd.getDifficulty())) {
+				if (!quest.getRewards().get(i).isUnlockedFor(questDifficulty)) {
 					continue;
 				}
 				if (!isRewardClaimed(pqd, saga, quest, i)) {

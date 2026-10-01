@@ -18,6 +18,12 @@ import java.util.function.Supplier;
 
 public class StatsSyncC2S {
 
+	private static final int RACE_NAME_CAP = 64;
+	private static final int GENDER_CAP = 16;
+	private static final int CLASS_NAME_CAP = 64;
+	private static final int BONE_NAME_CAP = 64;
+	private static final int COLOR_CAP = 16;
+
 	private final String raceName;
 	private final String gender;
 	private final String characterClass;
@@ -63,9 +69,9 @@ public class StatsSyncC2S {
 	}
 
 	public static void encode(StatsSyncC2S msg, FriendlyByteBuf buf) {
-		buf.writeUtf(msg.raceName);
-		buf.writeUtf(msg.gender);
-		buf.writeUtf(msg.characterClass);
+		buf.writeUtf(msg.raceName, RACE_NAME_CAP);
+		buf.writeUtf(msg.gender, GENDER_CAP);
+		buf.writeUtf(msg.characterClass, CLASS_NAME_CAP);
 		buf.writeInt(msg.hairId);
 		boolean hasCustomHair = msg.customHair != null;
 		buf.writeBoolean(hasCustomHair);
@@ -78,21 +84,21 @@ public class StatsSyncC2S {
 		buf.writeInt(msg.mouthType);
 		buf.writeInt(msg.tattooType);
 		buf.writeFloat(msg.boobScale);
-		buf.writeUtf(msg.activeHeadBone);
-		buf.writeUtf(msg.hairColor);
-		buf.writeUtf(msg.bodyColor);
-		buf.writeUtf(msg.bodyColor2);
-		buf.writeUtf(msg.bodyColor3);
-		buf.writeUtf(msg.eye1Color);
-		buf.writeUtf(msg.eye2Color);
-		buf.writeUtf(msg.auraColor);
+		buf.writeUtf(msg.activeHeadBone, BONE_NAME_CAP);
+		buf.writeUtf(msg.hairColor, COLOR_CAP);
+		buf.writeUtf(msg.bodyColor, COLOR_CAP);
+		buf.writeUtf(msg.bodyColor2, COLOR_CAP);
+		buf.writeUtf(msg.bodyColor3, COLOR_CAP);
+		buf.writeUtf(msg.eye1Color, COLOR_CAP);
+		buf.writeUtf(msg.eye2Color, COLOR_CAP);
+		buf.writeUtf(msg.auraColor, COLOR_CAP);
 		buf.writeBoolean(msg.renderHairBase);
 	}
 
 	public static StatsSyncC2S decode(FriendlyByteBuf buf) {
-		String raceName = buf.readUtf();
-		String gender = buf.readUtf();
-		String characterClass = buf.readUtf();
+		String raceName = buf.readUtf(RACE_NAME_CAP);
+		String gender = buf.readUtf(GENDER_CAP);
+		String characterClass = buf.readUtf(CLASS_NAME_CAP);
 		int hairId = buf.readInt();
 		CustomHair customHair = null;
 		if (buf.readBoolean()) {
@@ -104,14 +110,14 @@ public class StatsSyncC2S {
 		int mouthType = buf.readInt();
 		int tattooType = buf.readInt();
 		float boobScale = buf.readFloat();
-		String activeHeadBone = buf.readUtf();
-		String hairColor = buf.readUtf();
-		String bodyColor = buf.readUtf();
-		String bodyColor2 = buf.readUtf();
-		String bodyColor3 = buf.readUtf();
-		String eye1Color = buf.readUtf();
-		String eye2Color = buf.readUtf();
-		String auraColor = buf.readUtf();
+		String activeHeadBone = buf.readUtf(BONE_NAME_CAP);
+		String hairColor = buf.readUtf(COLOR_CAP);
+		String bodyColor = buf.readUtf(COLOR_CAP);
+		String bodyColor2 = buf.readUtf(COLOR_CAP);
+		String bodyColor3 = buf.readUtf(COLOR_CAP);
+		String eye1Color = buf.readUtf(COLOR_CAP);
+		String eye2Color = buf.readUtf(COLOR_CAP);
+		String auraColor = buf.readUtf(COLOR_CAP);
 		boolean renderHairBase = buf.readBoolean();
 
 		return new StatsSyncC2S(
@@ -166,9 +172,6 @@ public class StatsSyncC2S {
 					character.setGender(msg.gender);
 					character.setCharacterClass(msg.characterClass);
 					if (ConfigManager.getRaceCharacter(msg.raceName) != null) character.setHasSaiyanTail(ConfigManager.getRaceCharacter(msg.raceName).getHasSaiyanTail());
-				} else if (ConfigManager.getRaceStats(character.getRaceName()).getAllClasses().contains(msg.characterClass)) {
-					// Race/gender stay locked after creation, but the recustomization wish may switch class
-					character.setCharacterClass(msg.characterClass);
 				}
 				character.setHairId(msg.hairId);
 				if (msg.customHair != null) HairSanitizer.sanitizeAndLog(msg.customHair, HairStyleSlot.BASE, player.getGameProfile().getName());

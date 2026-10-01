@@ -1,5 +1,7 @@
 package com.dragonminez.common.network.C2S;
 
+import com.dragonminez.Env;
+import com.dragonminez.LogUtil;
 import com.dragonminez.common.hair.HairStyleSlot;
 import com.dragonminez.common.hair.HairSanitizer;
 import com.dragonminez.common.config.ConfigManager;
@@ -153,13 +155,23 @@ public class CreateCharacterC2S {
 			ServerPlayer player = ctx.get().getSender();
 			if (player == null) return;
 
+			if (!ConfigManager.isRaceLoaded(msg.raceName)) {
+				LogUtil.warn(Env.COMMON, "Rejected CreateCharacterC2S from '{}': unknown race '{}'", player.getGameProfile().getName(), msg.raceName);
+				StatsProvider.get(StatsCapability.INSTANCE, player).ifPresent(data ->
+						NetworkHandler.sendToTrackingEntityAndSelf(new StatsSyncS2C(player), player));
+				return;
+			}
+
 			StatsProvider.get(StatsCapability.INSTANCE, player).ifPresent(data -> {
 				if (!data.getStatus().isHasCreatedCharacter()) {
 					if (msg.customHair != null) HairSanitizer.sanitizeAndLog(msg.customHair, HairStyleSlot.BASE, player.getGameProfile().getName());
+					float safeBoobScale = Float.isFinite(msg.boobScale) ? msg.boobScale : 1.0f;
 					data.initializeWithRaceAndClass(msg.raceName, msg.className, msg.gender,
-							msg.hairId, msg.customHair, msg.bodyType, msg.eyesType, msg.noseType, msg.mouthType, msg.tattooType, msg.boobScale,
+							msg.hairId, msg.customHair, msg.bodyType, msg.eyesType, msg.noseType, msg.mouthType, msg.tattooType, safeBoobScale,
 							msg.activeHeadBone, msg.hairColor, msg.bodyColor, msg.bodyColor2, msg.bodyColor3,
 							msg.eye1Color, msg.eye2Color, msg.auraColor);
+					Character character = data.getCharacter();
+					if (!character.canHaveGender() || !Character.GENDER_FEMALE.equals(character.getGender())) character.setGender(Character.GENDER_MALE);
 					data.getCharacter().setSelectedFormGroup(TransformationsHelper.getGroupWithFirstAvailableForm(data));
 					data.getCharacter().setSelectedForm(TransformationsHelper.getFirstAvailableForm(data));
 					data.getCharacter().setSelectedStackFormGroup(TransformationsHelper.getGroupWithFirstAvailableStackForm(data));

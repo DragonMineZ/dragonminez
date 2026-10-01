@@ -2,6 +2,7 @@ package com.dragonminez.common.dialogue;
 
 import com.dragonminez.common.init.entities.MastersEntity;
 import com.dragonminez.common.network.NetworkHandler;
+import com.dragonminez.common.network.PacketRateLimiter;
 import com.dragonminez.common.network.S2C.OpenDialogueNodeS2C;
 import com.dragonminez.common.network.S2C.OpenQuestNPCDialogueS2C;
 import com.dragonminez.common.network.S2C.StatsSyncS2C;
@@ -15,10 +16,18 @@ import net.minecraft.world.entity.Entity;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
+import java.util.UUID;
+import java.util.concurrent.ConcurrentHashMap;
 
 public final class DialogueService {
 
 	private static final double MAX_NPC_DISTANCE_SQR = 10.0 * 10.0;
+	private static final long CHOICE_MIN_INTERVAL_TICKS = 4L;
+	private static final Map<UUID, ActiveNode> ACTIVE_NODES = new ConcurrentHashMap<>();
+
+	private record ActiveNode(String npcId, int entityId, String nodeId) {
+	}
 
 	private DialogueService() {
 	}
@@ -37,6 +46,10 @@ public final class DialogueService {
 		DialogueTree tree = DialogueRegistry.getTree(npcId);
 		if (tree == null || !isNearMatchingNpc(player, npcId, entityId)) return;
 
+		ActiveNode active = ACTIVE_NODES.get(player.getUUID());
+		if (active == null || active.entityId() != entityId || !active.npcId().equals(tree.getNpcId()) || !active.nodeId().equals(nodeId)) return;
+		if (!PacketRateLimiter.allow(player.getUUID(), "dialogue_choice", player.level().getGameTime(), CHOICE_MIN_INTERVAL_TICKS)) return;
+
 		DialogueTree.DialogueNode node = tree.getNode(nodeId);
 		if (node == null || choiceIndex < 0 || choiceIndex >= node.getChoices().size()) return;
 
@@ -44,6 +57,7 @@ public final class DialogueService {
 			DialogueTree.DialogueChoice choice = node.getChoices().get(choiceIndex);
 			if (!QuestAvailabilityChecker.arePrerequisitesMet(choice.getConditions(), data)) return;
 
+			ACTIVE_NODES.remove(player.getUUID(), active);
 			boolean openedQuests = false;
 			for (DialogueAction action : choice.getActions()) {
 				if (action.getType() == DialogueAction.Type.OPEN_QUESTS) {
@@ -65,6 +79,7 @@ public final class DialogueService {
 	private static void sendNode(ServerPlayer player, StatsData data, DialogueTree tree, String nodeId, int entityId) {
 		DialogueTree.DialogueNode node = tree.getNode(nodeId);
 		if (node == null) {
+			ACTIVE_NODES.remove(player.getUUID());
 			NetworkHandler.sendToPlayer(OpenDialogueNodeS2C.close(tree.getNpcId(), entityId), player);
 			return;
 		}
@@ -80,9 +95,14 @@ public final class DialogueService {
 			}
 		}
 
+		ACTIVE_NODES.put(player.getUUID(), new ActiveNode(tree.getNpcId(), entityId, node.getId()));
 		NetworkHandler.sendToPlayer(
 				new OpenDialogueNodeS2C(tree.getNpcId(), entityId, node.getId(), node.getLine(), choiceTexts, choiceIndices),
 				player);
+	}
+
+	public static void clear(UUID uuid) {
+		ACTIVE_NODES.remove(uuid);
 	}
 
 	private static void openQuestScreen(ServerPlayer player, StatsData data, String npcId, int entityId) {

@@ -821,6 +821,8 @@ public class Character {
 	}
 
 	public void copyFrom(Character other) {
+		if (other.formsUsedBefore != null) this.formsUsedBefore.copyFrom(other.formsUsedBefore);
+		if (other.stackFormsUsedBefore != null) this.stackFormsUsedBefore.copyFrom(other.stackFormsUsedBefore);
 		this.race = other.race;
 		this.gender = other.gender;
 		this.characterClass = other.characterClass;

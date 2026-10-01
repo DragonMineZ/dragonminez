@@ -95,9 +95,12 @@ public class DragonWishEntity extends Mob implements GeoEntity {
 		return super.mobInteract(player, hand);
 	}
 
+	private boolean despawnHandled = false;
+
 	@Override
 	public void remove(@NonNull RemovalReason reason) {
-		if (!this.level().isClientSide && reason == RemovalReason.DISCARDED) {
+		if (!this.level().isClientSide && reason.shouldDestroy() && !this.despawnHandled) {
+			this.despawnHandled = true;
 			onDespawn();
 		}
 		super.remove(reason);

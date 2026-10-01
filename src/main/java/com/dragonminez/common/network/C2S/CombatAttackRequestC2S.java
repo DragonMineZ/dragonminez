@@ -27,13 +27,16 @@ import com.google.common.collect.Multimap;
 import net.minecraft.world.entity.ai.attributes.Attribute;
 import io.netty.handler.codec.DecoderException;
 
+import java.util.Arrays;
+import java.util.Map;
 import java.util.UUID;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Supplier;
 
 @Getter
 public class CombatAttackRequestC2S {
 
-	private static final int MAX_ENTITY_IDS = 64;
+	public static final int MAX_ENTITY_IDS = 64;
 
 	private final int comboCount;
 	private final boolean isSneaking;
@@ -89,12 +92,25 @@ public class CombatAttackRequestC2S {
 
 	private static final String LAST_MELEE_ATTACK_TIME_TAG = "dmz_last_melee_attack_time";
 	private static final int ATTACK_RATE_TOLERANCE_TICKS = 2;
+	private static final Map<UUID, int[]> LAST_COMBO = new ConcurrentHashMap<>();
+
+	public static void clearCombo(UUID uuid) {
+		LAST_COMBO.remove(uuid);
+	}
+
+	private static int resolveComboCount(ServerPlayer player, int requested) {
+		int[] last = LAST_COMBO.get(player.getUUID());
+		int effective = 0;
+		if (requested > 0 && last != null && requested - 1 == last[0]) effective = last[1] + 1;
+		LAST_COMBO.put(player.getUUID(), new int[]{requested, effective});
+		return effective;
+	}
 
 	public static void processAttackRequest(ServerPlayer player, CombatAttackRequestC2S request) {
 		player.server.execute(() -> {
-			int comboCount = request.getComboCount();
+			if (player.isDeadOrDying() || player.isSpectator()) return;
 			int selectedSlot = request.getSelectedSlot();
-			int[] entityIds = request.getEntityIds();
+			int[] entityIds = Arrays.stream(request.getEntityIds()).distinct().toArray();
 
 			if (selectedSlot != player.getInventory().selected) {
 				LogUtil.warn(Env.SERVER, "Player {} tried to attack with mismatched selected slot", player.getName().getString());
@@ -107,6 +123,7 @@ public class CombatAttackRequestC2S {
 			if (lastAttackTime > 0 && gameTime - lastAttackTime < minInterval) return;
 			player.getPersistentData().putLong(LAST_MELEE_ATTACK_TIME_TAG, gameTime);
 
+			int comboCount = resolveComboCount(player, request.getComboCount());
 			((PlayerAttackProperties) player).setComboCount(comboCount);
 
 			var hand = PlayerAttackHelper.getCurrentAttack(player, comboCount);

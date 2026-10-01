@@ -1,5 +1,6 @@
 package com.dragonminez.common.racial.capture;
 
+import com.dragonminez.common.config.ConfigManager;
 import com.dragonminez.common.network.NetworkHandler;
 import com.dragonminez.common.network.S2C.RacialRequestS2C;
 import com.dragonminez.common.racial.impl.NamekAssimilation;
@@ -10,6 +11,8 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerPlayer;
 
 public final class CaptureRequest {
+
+	private static final double MAX_ACCEPT_DISTANCE = 16.0;
 
 	private CaptureRequest() {
 	}
@@ -46,8 +49,14 @@ public final class CaptureRequest {
 				return;
 			}
 
-			StatsProvider.get(StatsCapability.INSTANCE, requester).ifPresent(requesterData ->
-					NamekAssimilation.applyAssimilation(requester, requesterData, target));
+			if (!requester.isAlive() || !target.isAlive() || requester.level() != target.level()
+					|| requester.distanceToSqr(target) > MAX_ACCEPT_DISTANCE * MAX_ACCEPT_DISTANCE) return;
+
+			StatsProvider.get(StatsCapability.INSTANCE, requester).ifPresent(requesterData -> {
+				int maxAssimilations = ConfigManager.getServerConfig().getRacialSkills().getNamekian().getAssimilationAmount();
+				if (requesterData.getRacialData().getAssimilations().size() >= maxAssimilations) return;
+				NamekAssimilation.applyAssimilation(requester, requesterData, target);
+			});
 		});
 	}
 }

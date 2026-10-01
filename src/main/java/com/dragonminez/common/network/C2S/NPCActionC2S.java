@@ -12,7 +12,7 @@ import com.dragonminez.common.init.item.WeightItem;
 import com.dragonminez.common.init.entities.MastersEntity;
 import com.dragonminez.common.init.entities.ShadowDummyEntity;
 import com.dragonminez.common.init.entities.questnpc.QuestNPCEntity;
-import com.dragonminez.common.network.NetworkHandler;
+import com.dragonminez.common.network.PacketRateLimiter;
 import com.dragonminez.common.network.S2C.StatsSyncS2C;
 import com.dragonminez.common.stats.character.Cooldowns;
 import com.dragonminez.server.util.BabaReviveService;
@@ -20,6 +20,7 @@ import com.dragonminez.server.world.dimension.OtherworldTournamentGrounds;
 import com.dragonminez.common.stats.StatsCapability;
 import com.dragonminez.common.stats.StatsData;
 import com.dragonminez.common.stats.StatsProvider;
+import com.dragonminez.server.storage.StorageManager;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerLevel;
@@ -32,6 +33,7 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.phys.AABB;
 import net.minecraftforge.network.NetworkEvent;
 
+import java.util.Set;
 import java.util.function.Supplier;
 
 public class NPCActionC2S {
@@ -51,13 +53,13 @@ public class NPCActionC2S {
 	}
 
 	public NPCActionC2S(FriendlyByteBuf buf) {
-		this.npcName = buf.readUtf();
+		this.npcName = buf.readUtf(64);
 		this.actionId = buf.readInt();
 		this.value = buf.readInt();
 	}
 
 	public void toBytes(FriendlyByteBuf buf) {
-		buf.writeUtf(this.npcName);
+		buf.writeUtf(this.npcName, 64);
 		buf.writeInt(this.actionId);
 		buf.writeInt(this.value);
 	}
@@ -66,7 +68,8 @@ public class NPCActionC2S {
 		NetworkEvent.Context context = ctx.get();
 		context.enqueueWork(() -> {
 			ServerPlayer player = context.getSender();
-			if (player == null) return;
+			if (player == null || StorageManager.isLoadPending(player)) return;
+			if (!PacketRateLimiter.allow(player.getUUID(), "npc_action", player.level().getGameTime(), 4L)) return;
 
 			StatsProvider.get(StatsCapability.INSTANCE, player).ifPresent(data -> {
 				boolean shadowDummySpar = "popo".equals(packet.npcName) && packet.actionId == 1;
@@ -102,13 +105,15 @@ public class NPCActionC2S {
 					case "grandkai" -> { if (packet.actionId == 1) OtherworldTournamentGrounds.teleportFromGrandKai(player); }
 					case "otherworld_announcer" -> { if (packet.actionId == 1) OtherworldTournamentGrounds.teleportBackToGrandKai(player); }
 				}
-				NetworkHandler.sendToTrackingEntityAndSelf(new StatsSyncS2C(player), player);
+				StatsSyncS2C.sendRequested(player);
 			});
 		});
 		context.setPacketHandled(true);
 	}
 
 	private static final double NPC_INTERACTION_RANGE = 8.0;
+	private static final double POPO_DUMMY_CLEANUP_RANGE = 128.0;
+	private static final String TAG_POPO_SPAR = "dmz_popo_spar";
 
 	public static boolean isNpcInRange(ServerPlayer player, String npcName) {
 		return player.serverLevel().getEntitiesOfClass(MastersEntity.class,
@@ -130,6 +135,7 @@ public class NPCActionC2S {
 
 	private static void handleKarin(ServerPlayer player, StatsData data, int action) {
 		if (action == 1) {
+			if (player.getInventory().hasAnyOf(Set.of(MainItems.NUBE_ITEM.get(), MainItems.NUBE_NEGRA_ITEM.get()))) return;
 			if (data.getResources().getAlignment() > 50) {
 				player.addItem(new ItemStack(MainItems.NUBE_ITEM.get()));
 			} else {
@@ -169,6 +175,8 @@ public class NPCActionC2S {
 		} else if (action == 2) {
 			data.resetPlayerProgress(player, null, false, true);
 		} else if (action == 3) {
+			var raceCharacter = ConfigManager.getRaceCharacter(data.getCharacter().getRace());
+			if (raceCharacter == null || !raceCharacter.getHasSaiyanTail()) return;
 			data.getCharacter().setHasSaiyanTail(!data.getCharacter().isHasSaiyanTail());
 		} else if (action == 4) {
 			if (AlignmentBand.fromValue(data.getResources().getAlignment()) != AlignmentBand.GOOD) return;
@@ -190,6 +198,8 @@ public class NPCActionC2S {
 
 	private static void handlePopo(ServerPlayer player, StatsData data, int action) {
 		if (action == 1) {
+			if (!PacketRateLimiter.allow(player.getUUID(), "popo_spar", player.level().getGameTime(), 40L)) return;
+			discardPopoDummies(player);
 			String master = resolveNearestMasterName(player);
 			String playerName = player.getGameProfile().getName();
 			ServerLevel level = player.serverLevel();
@@ -201,6 +211,7 @@ public class NPCActionC2S {
 			shadowDummy.setPos(player.getX(), player.getY(), player.getZ());
 			shadowDummy.copyStatsFromPlayer(player);
 			shadowDummy.getPersistentData().putString("dmz_quest_owner", player.getStringUUID());
+			shadowDummy.getPersistentData().putBoolean(TAG_POPO_SPAR, true);
 			if (level.addFreshEntity(shadowDummy)) {
 				LogUtil.info(Env.SERVER, "Shadow clone spawned for player {} at master {} ({}, {}, {})",
 						playerName, master, (int) player.getX(), (int) player.getY(), (int) player.getZ());
@@ -209,6 +220,14 @@ public class NPCActionC2S {
 				LogUtil.warn(Env.SERVER, "Shadow clone FAILED to spawn (addFreshEntity rejected, e.g. protected/spawn-blocked area) for player {} at master {}", playerName, master);
 			}
 		}
+	}
+
+	private static void discardPopoDummies(ServerPlayer player) {
+		String owner = player.getStringUUID();
+		player.serverLevel().getEntitiesOfClass(ShadowDummyEntity.class, player.getBoundingBox().inflate(POPO_DUMMY_CLEANUP_RANGE),
+						dummy -> owner.equals(dummy.getPersistentData().getString("dmz_quest_owner"))
+								&& dummy.getPersistentData().getBoolean(TAG_POPO_SPAR))
+				.forEach(ShadowDummyEntity::discard);
 	}
 
 	private static String resolveNearestMasterName(ServerPlayer player) {
@@ -278,7 +297,7 @@ public class NPCActionC2S {
 		player.sendSystemMessage(Component.translatable(messageKey, weight));
 	}
 
-	private static final String OLDKAI_ZSWORD_COOLDOWN = "OldKaiZSword";
+	private static final String OLDKAI_ZSWORD_COOLDOWN = Cooldowns.OLDKAI_ZSWORD;
 
 	public static boolean meetsOldKaiRequirements(StatsData data) {
 		return data.getResources().getAlignment() > 61 && data.getBaseSkills().getSkillLevel("potentialunlock") >= 10;

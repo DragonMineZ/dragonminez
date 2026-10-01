@@ -1,5 +1,7 @@
 package com.dragonminez.common.stats.techniques;
 
+import com.dragonminez.Env;
+import com.dragonminez.LogUtil;
 import com.dragonminez.common.config.ConfigManager;
 import com.dragonminez.common.config.TechniqueConfig;
 import com.dragonminez.common.stats.StatsData;
@@ -38,7 +40,9 @@ public class KiAttackData extends TechniqueData {
 	public enum AffectedStat { STR, SKP, DEF, STM_REGEN, HP_REGEN, ENE_REGEN, PWR }
 
 	private static final int MAX_IMPORT_NBT_BYTES = 64 * 1024;
-	private static final int MAX_IMPORT_CODE_LENGTH = 16 * 1024;
+	public static final int MAX_IMPORT_CODE_LENGTH = 16 * 1024;
+	private static final int MAX_IMPORT_TEXT_LENGTH = 64;
+	private static final int MAX_IMPORT_ALLOWED_RACES = 32;
 
 	public static final int MIN_SECONDARY_INTENSITY = 5;
 	public static final int MAX_SECONDARY_INTENSITY = 50;
@@ -181,7 +185,7 @@ public class KiAttackData extends TechniqueData {
 	}
 
 	public void setSecondaryIntensity(float value) {
-		this.secondaryIntensity = value <= 0 ? 0 : Mth.clamp(value, MIN_SECONDARY_INTENSITY, MAX_SECONDARY_INTENSITY);
+		this.secondaryIntensity = !Float.isFinite(value) || value <= 0 ? 0 : Mth.clamp(value, MIN_SECONDARY_INTENSITY, MAX_SECONDARY_INTENSITY);
 	}
 
 	public void setSecondaryDuration(int value) {
@@ -484,7 +488,7 @@ public class KiAttackData extends TechniqueData {
 			attack.sanitizeImportedStats();
 			return attack;
 		} catch (Exception e) {
-			e.printStackTrace();
+			LogUtil.debug(Env.COMMON, "Failed to import technique code: {}", e.toString());
 			return null;
 		}
 	}
@@ -496,6 +500,15 @@ public class KiAttackData extends TechniqueData {
 		this.armorPenLevel = 0;
 		this.castTimeLevel = 0;
 		this.cooldownLevel = 0;
+
+		if (this.name != null && this.name.length() > MAX_IMPORT_TEXT_LENGTH) this.name = this.name.substring(0, MAX_IMPORT_TEXT_LENGTH);
+		if (this.author != null && this.author.length() > MAX_IMPORT_TEXT_LENGTH) this.author = this.author.substring(0, MAX_IMPORT_TEXT_LENGTH);
+		List<String> races = new ArrayList<>();
+		for (String race : this.allowedRaces) {
+			if (races.size() >= MAX_IMPORT_ALLOWED_RACES) break;
+			if (race != null && !race.isEmpty() && race.length() <= MAX_IMPORT_TEXT_LENGTH) races.add(race);
+		}
+		this.allowedRaces = races;
 
 		KiType resolvedType = this.kiType != null ? this.kiType : KiType.SMALL_BALL;
 		float[] normalized = normalizeStatsForType(resolvedType, this.damageMultiplier, this.size, this.speed, this.armorPenetration);
@@ -605,17 +618,21 @@ public class KiAttackData extends TechniqueData {
 
 	public static float[] normalizeStatsForType(KiType type, float damage, float size, float speed, int armorPen) {
 		KiType resolvedType = type != null ? type : KiType.SMALL_BALL;
-		float normalizedDamage = Mth.clamp(damage, getMinDamageForType(resolvedType), getMaxDamageForType(resolvedType));
+		float normalizedDamage = Mth.clamp(finiteOr(damage, getMinDamageForType(resolvedType)), getMinDamageForType(resolvedType), getMaxDamageForType(resolvedType));
 		float normalizedSize = usesCustomSize(resolvedType)
-				? Mth.clamp(size, getMinSizeForType(resolvedType), getMaxSizeForType(resolvedType))
+				? Mth.clamp(finiteOr(size, getMinSizeForType(resolvedType)), getMinSizeForType(resolvedType), getMaxSizeForType(resolvedType))
 				: getDefaultSizeForType(resolvedType);
 		float normalizedSpeed = usesCustomSpeed(resolvedType)
-				? Mth.clamp(speed, getMinSpeedForType(resolvedType), getMaxSpeedForType(resolvedType))
+				? Mth.clamp(finiteOr(speed, getMinSpeedForType(resolvedType)), getMinSpeedForType(resolvedType), getMaxSpeedForType(resolvedType))
 				: getDefaultSpeedForType(resolvedType);
 		float normalizedArmorPen = usesCustomArmorPen(resolvedType)
 				? Mth.clamp(armorPen, 0, getMaxArmorPenForType(resolvedType))
 				: getDefaultArmorPenForType(resolvedType);
 		return new float[]{normalizedDamage, normalizedSize, normalizedSpeed, normalizedArmorPen};
+	}
+
+	private static float finiteOr(float value, float fallback) {
+		return Float.isFinite(value) ? value : fallback;
 	}
 
 	public static boolean usesCustomSize(KiType type) {

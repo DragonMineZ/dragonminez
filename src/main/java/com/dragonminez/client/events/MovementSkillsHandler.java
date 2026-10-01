@@ -3,6 +3,7 @@ package com.dragonminez.client.events;
 import com.dragonminez.Reference;
 import com.dragonminez.common.stats.StatsCapability;
 import com.dragonminez.common.stats.StatsProvider;
+import com.dragonminez.client.render.shader.ClientGravityState;
 import com.dragonminez.server.util.GravityLogic;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.player.LocalPlayer;
@@ -97,7 +98,7 @@ public class MovementSkillsHandler {
 				float blocksToAdd = targetBlocks - 1.25f;
 				float baseBoost = blocksToAdd * 0.18f;
 
-				baseBoost *= (float) GravityLogic.getJumpFactor(player);
+				baseBoost *= (float) GravityLogic.getJumpFactor(ClientGravityState.getNetGravity());
 
 				player.setDeltaMovement(player.getDeltaMovement().add(0, baseBoost, 0));
 				hasAppliedBaseBoost = true;
@@ -129,7 +130,7 @@ public class MovementSkillsHandler {
 		// descent for everyone (independent of the jump skill). Skipped while flying / in creative
 		// flight / in water / on a ladder.
 		if (!isOnGround && !isFlying[0] && !player.getAbilities().flying && !player.isInWater() && !player.onClimbable()) {
-			double fallExtra = GravityLogic.getFallExtra(player);
+			double fallExtra = GravityLogic.getFallExtra(ClientGravityState.getNetGravity());
 			if (fallExtra > 0) player.setDeltaMovement(player.getDeltaMovement().add(0, -fallExtra, 0));
 		}
 	}

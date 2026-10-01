@@ -1,6 +1,7 @@
 package com.dragonminez.common.network.C2S;
 
 import com.dragonminez.common.network.NetworkHandler;
+import com.dragonminez.common.network.PacketRateLimiter;
 import com.dragonminez.common.network.S2C.ProgressionSyncS2C;
 import com.dragonminez.common.network.S2C.TechniqueImportResultS2C;
 import com.dragonminez.common.stats.StatsCapability;
@@ -33,6 +34,7 @@ public class ImportTechniqueC2S {
 		context.enqueueWork(() -> {
 			ServerPlayer player = context.getSender();
 			if (player == null) return;
+			if (!PacketRateLimiter.allow(player.getUUID(), "import_technique", player.level().getGameTime(), 20)) return;
 
 			KiAttackData imported = KiAttackData.importFromCode(code);
 			if (imported == null) {

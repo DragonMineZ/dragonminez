@@ -85,6 +85,11 @@ public class LockOnEvent {
 		Player player = mc.player;
 		if (player == null || lockedTarget == null) return;
 
+		if (lockedTarget.level() != mc.level) {
+			unlock();
+			return;
+		}
+
 		if (com.dragonminez.client.systems.taiyoken.TaiyokenBlindState.isActive()) {
 			unlock();
 			return;
@@ -131,6 +136,10 @@ public class LockOnEvent {
 		Minecraft mc = Minecraft.getInstance();
 		Player player = mc.player;
 		if (player == null || lockedTarget == null) return;
+		if (lockedTarget.level() != mc.level) {
+			unlock();
+			return;
+		}
 
 		float partialTick = event.renderTickTime;
 		double targetX = Mth.lerp(partialTick, lockedTarget.xo, lockedTarget.getX());

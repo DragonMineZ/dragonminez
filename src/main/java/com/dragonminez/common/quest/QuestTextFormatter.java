@@ -144,11 +144,11 @@ public final class QuestTextFormatter {
 		return switch (condition.getType()) {
 			case SAGA_QUEST -> Component.translatable(
 					"gui.dragonminez.quests.requirement.complete_saga",
-					resolveSagaQuestName(condition.getSagaId(), condition.getQuestId())
+					resolveSagaQuestName(condition.getSagaId(), condition.getQuestId(), isClientContext(context))
 			);
 			case QUEST -> Component.translatable(
 					"gui.dragonminez.quests.requirement.complete_quest",
-					resolveQuestName(condition.getRequiredQuestId())
+					resolveQuestName(condition.getRequiredQuestId(), isClientContext(context))
 			);
 			case STAT -> Component.translatable(
 					"gui.dragonminez.quests.requirement.stat",
@@ -442,14 +442,18 @@ public final class QuestTextFormatter {
 		return Component.translatable("gui.dragonminez.quests.requirement.alignment");
 	}
 
-	private static Component resolveSagaQuestName(String sagaId, Integer questId) {
+	private static boolean isClientContext(RequirementContext context) {
+		return context != null && context.level() != null && context.level().isClientSide;
+	}
+
+	private static Component resolveSagaQuestName(String sagaId, Integer questId, boolean clientSide) {
 		if (sagaId == null || questId == null) {
 			return Component.literal("?");
 		}
 
-		Saga saga = QuestRegistry.getSaga(sagaId);
+		Saga saga = clientSide ? QuestRegistry.getClientSaga(sagaId) : QuestRegistry.getSaga(sagaId);
 		if (saga == null) {
-			saga = QuestRegistry.getClientSaga(sagaId);
+			saga = clientSide ? QuestRegistry.getSaga(sagaId) : QuestRegistry.getClientSaga(sagaId);
 		}
 		if (saga != null) {
 			Quest quest = saga.getQuestById(questId);
@@ -460,14 +464,14 @@ public final class QuestTextFormatter {
 		return Component.literal(humanizeIdentifier(sagaId) + " " + questId);
 	}
 
-	private static Component resolveQuestName(String questId) {
+	private static Component resolveQuestName(String questId, boolean clientSide) {
 		if (questId == null || questId.isBlank()) {
 			return Component.literal("?");
 		}
 
-		Quest quest = QuestRegistry.getQuest(questId);
+		Quest quest = clientSide ? QuestRegistry.getClientQuest(questId) : QuestRegistry.getQuest(questId);
 		if (quest == null) {
-			quest = QuestRegistry.getClientQuest(questId);
+			quest = clientSide ? QuestRegistry.getQuest(questId) : QuestRegistry.getClientQuest(questId);
 		}
 		if (quest != null) {
 			return displayText(quest.getTitle());

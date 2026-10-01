@@ -14,6 +14,7 @@ import com.dragonminez.common.stats.StatsData;
 import com.dragonminez.common.stats.extras.DynamicGrowthData;
 import com.dragonminez.common.stats.extras.DynamicGrowthMath;
 import com.dragonminez.common.stats.extras.DynamicGrowthStat;
+import com.dragonminez.server.events.players.StatsEvents;
 import net.minecraft.ChatFormatting;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerPlayer;
@@ -160,9 +161,10 @@ public final class DynamicGrowthService {
 				if (newMaxStamina > oldMaxStamina) data.getResources().addStamina(newMaxStamina - oldMaxStamina);
 			}
 			case VIT -> {
-				float oldMaxHealth = data.getMaxHealth();
+				float oldMaxHealth = player.getMaxHealth();
 				data.getStats().addVitality(1);
-				float newMaxHealth = data.getMaxHealth();
+				StatsEvents.applyHealthBonus(player);
+				float newMaxHealth = player.getMaxHealth();
 				if (newMaxHealth > oldMaxHealth) player.heal(newMaxHealth - oldMaxHealth);
 			}
 			case ENE -> {

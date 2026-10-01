@@ -793,7 +793,7 @@ public class SkillsMenuScreen extends BaseMenuScreen {
 		int rightPanelY = centerY - 105;
 
 		int cost = getUpgradeCost(selectedSkill, skill.getLevel());
-		float currentTPS = statsData.getResources().getTrainingPoints();
+		double currentTPS = statsData.getResources().getTrainingPoints();
 		boolean canUpgrade = !skill.isMaxLevel() && currentTPS >= cost;
 		if (cost == -1 || cost == Integer.MAX_VALUE) return;
 
@@ -1383,7 +1383,7 @@ public class SkillsMenuScreen extends BaseMenuScreen {
 	private void attemptTechniqueImport() {
 		if (statsData == null || techniqueImportBox == null) return;
 		String code = techniqueImportBox.getValue() != null ? techniqueImportBox.getValue().trim() : "";
-		if (code.isEmpty()) {
+		if (code.isEmpty() || code.length() > KiAttackData.MAX_IMPORT_CODE_LENGTH) {
 			setActionStatus(tr("gui.dragonminez.skills.status.invalid_code"), 0xFF5555);
 			return;
 		}

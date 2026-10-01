@@ -18,6 +18,7 @@ import com.dragonminez.common.stats.StatsCapability;
 import com.dragonminez.common.stats.StatsData;
 import com.dragonminez.common.stats.techniques.TechniqueDispatcher;
 import com.dragonminez.common.stats.StatsProvider;
+import com.dragonminez.client.render.shader.ClientGravityState;
 import com.dragonminez.server.util.GravityLogic;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.player.AbstractClientPlayer;
@@ -55,9 +56,6 @@ public class FlySkillEvent {
 	private static final float FAST_FLYING_THRESHOLD = 0.55F;
 	private static final float FAST_FLYING_EXIT_THRESHOLD = 0.4F;
 	private static final double MIN_GROUND_CLEARANCE = 0.25D;
-
-	private static int kiConsumptionTicks = 0;
-	private static final int KI_CONSUMPTION_INTERVAL = 20;
 
 	private static long pendingGroundActivationStartTime = 0;
 	private static boolean pendingGroundActivation = false;
@@ -133,7 +131,7 @@ public class FlySkillEvent {
 
 					if (!flySkill.isActive()) {
 
-						if (data.getResources().getCurrentEnergy() < energyCost) return;
+						if (!player.isCreative() && !player.isSpectator() && data.getResources().getCurrentEnergy() < energyCost) return;
 
 						if (player.onGround()) {
 							pendingGroundActivation = true;
@@ -185,7 +183,7 @@ public class FlySkillEvent {
 			int flyLevel = flySkill.getLevel();
 			double energyCostPercent = getActivationEnergyPercent(flyLevel);
 			int energyCost = (int) Math.ceil(ConfigManager.getCombatConfig().getBaselineFormDrain() * energyCostPercent);
-			if (data.getResources().getCurrentEnergy() < energyCost) return;
+			if (!player.isCreative() && !player.isSpectator() && data.getResources().getCurrentEnergy() < energyCost) return;
 
 			if (player.onGround()) {
 				pendingGroundActivation = true;
@@ -276,7 +274,6 @@ public class FlySkillEvent {
 					}
 					CombatFlightHandler.handle(player, data, movementRestricted);
 				} else handleFlightMovement(player, data.getSkills().getSkillLevel("fly"), data.getResources().getFlightSpeedLimit(), movementRestricted);
-				handleKiConsumption(player, data, flySkill);
 			} else if (!pendingFlightDisable) {
 				resetFlightState();
 				CombatFlightHandler.reset();
@@ -375,11 +372,11 @@ public class FlySkillEvent {
 			} else flightVector = Vec3.ZERO;
 		}
 
-		if (GravityLogic.isFlightHardStopped(player)) {
+		if (GravityLogic.isFlightHardStopped(ClientGravityState.getNetGravity())) {
 			flightVector = Vec3.ZERO;
 			player.setDeltaMovement(0, -1.5, 0);
 		} else {
-			double flyFactor = GravityLogic.getFlyFactor(player);
+			double flyFactor = GravityLogic.getFlyFactor(ClientGravityState.getNetGravity());
 			if (flyFactor < 1.0) flightVector = flightVector.scale(flyFactor);
 		}
 
@@ -477,29 +474,6 @@ public class FlySkillEvent {
 		if (hovering < 1F) hovering = Math.min(1F, hovering + 0.1F);
 	}
 
-	private static void handleKiConsumption(LocalPlayer player, StatsData data, Skill flySkill) {
-		kiConsumptionTicks++;
-		if (kiConsumptionTicks >= KI_CONSUMPTION_INTERVAL) {
-			kiConsumptionTicks = 0;
-
-			int flyLevel = flySkill.getLevel();
-			float maxEnergy = data.getMaxEnergy();
-
-			boolean isFastFlight = INSTANCE.isFlyingFast(player);
-			boolean isSprintFlight = player.isSprinting() && isFastFlight;
-			double basePercent = 0.03;
-			double energyCostPercent = Math.max(0.002, basePercent - (flyLevel * 0.005));
-			energyCostPercent *= getFlyCostMultiplier(flyLevel);
-			if (isSprintFlight) energyCostPercent *= 2.0;
-			int energyCost = (int) Math.ceil(maxEnergy * energyCostPercent);
-
-			if (data.getResources().getCurrentEnergy() <= energyCost) {
-				NetworkHandler.sendToServer(new FlyToggleC2S(false));
-				resetFlightState();
-			}
-		}
-	}
-
 	public static void injectKnockback(Vec3 knockback) {
 		flightVector = flightVector.add(knockback);
 	}
@@ -508,7 +482,6 @@ public class FlySkillEvent {
 		flightVector = Vec3.ZERO;
 		verticalHover = 0;
 		hovering = 0F;
-		kiConsumptionTicks = 0;
 		pendingFlightDisable = false;
 		wasFlyingSkillActive = false;
 		wasSprintingInAir = false;
@@ -540,14 +513,7 @@ public class FlySkillEvent {
 	}
 
 	private static double getActivationEnergyPercent(int flyLevel) {
-		double basePercent = Math.max(0.01, 0.04 - (flyLevel * 0.003));
-		return basePercent * getFlyCostMultiplier(flyLevel);
-	}
-
-	private static float getFlyCostMultiplier(int flyLevel) {
-		int clampedLevel = Mth.clamp(flyLevel, 1, 10);
-		float t = (clampedLevel - 1) / (float) (10 - 1);
-		return Mth.lerp(t, 4.0F, 1.0F);
+		return Math.max(0.01, 0.04 - (flyLevel * 0.003));
 	}
 
 	private static double getGroundDistance(LocalPlayer player) {

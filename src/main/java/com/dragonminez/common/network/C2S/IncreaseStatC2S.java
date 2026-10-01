@@ -6,6 +6,7 @@ import com.dragonminez.common.stats.StatsCapability;
 import com.dragonminez.common.stats.StatsData;
 import com.dragonminez.common.stats.StatsProvider;
 import com.dragonminez.server.events.players.StatsEvents;
+import com.dragonminez.server.storage.StorageManager;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.ai.attributes.AttributeModifier;
@@ -43,13 +44,13 @@ public class IncreaseStatC2S {
 	public static void handle(IncreaseStatC2S msg, Supplier<NetworkEvent.Context> ctx) {
 		ctx.get().enqueueWork(() -> {
 			ServerPlayer player = ctx.get().getSender();
-			if (player == null) return;
+			if (player == null || StorageManager.isLoadPending(player)) return;
 
 			StatsProvider.get(StatsCapability.INSTANCE, player).ifPresent(data -> {
 				String statNameStr = msg.statType.name();
 
 				int pendingAP = data.getResources().getPendingAttributePoints();
-				float availableTPs = data.getResources().getTrainingPoints();
+				double availableTPs = data.getResources().getTrainingPoints();
 				if (pendingAP <= 0 && availableTPs <= 0) return;
 
 				int maxStats = data.getConfiguredMaxValue();
@@ -72,7 +73,7 @@ public class IncreaseStatC2S {
 						int tpStats = data.calculateStatIncrease(remainingCap, availableTPs, maxStats);
 						if (tpStats > 0) {
 							int tpCost = data.calculateRecursiveCost(tpStats, maxStats);
-							if (tpCost <= availableTPs) {
+							if (tpCost < Integer.MAX_VALUE && tpCost <= availableTPs) {
 								increaseStat(data, player, statNameStr, tpStats);
 								data.getResources().removeTrainingPoints(tpCost);
 								changed = true;

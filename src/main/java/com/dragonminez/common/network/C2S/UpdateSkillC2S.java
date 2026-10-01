@@ -1,7 +1,9 @@
 package com.dragonminez.common.network.C2S;
 
+import com.dragonminez.common.alignment.NpcDispositionService;
 import com.dragonminez.common.config.ConfigManager;
-import com.dragonminez.common.network.NetworkHandler;
+import com.dragonminez.common.init.entities.MastersEntity;
+import com.dragonminez.common.init.entities.questnpc.QuestNPCEntity;
 import com.dragonminez.common.network.S2C.StatsSyncS2C;
 import com.dragonminez.common.stats.skills.Skill;
 import com.dragonminez.common.stats.StatsCapability;
@@ -11,14 +13,20 @@ import com.dragonminez.common.stats.techniques.EvasionAttackData;
 import com.dragonminez.common.stats.techniques.KiAttackData;
 import com.dragonminez.common.stats.techniques.PredefinedTechniques;
 import com.dragonminez.common.stats.techniques.StrikeAttackData;
+import com.dragonminez.server.storage.StorageManager;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.phys.AABB;
 import net.minecraftforge.network.NetworkEvent;
 
+import java.util.List;
+import java.util.Map;
 import java.util.function.Supplier;
 
 public class UpdateSkillC2S {
+
+	private static final double MASTER_SHOP_RANGE = 10.0;
 
 	public enum SkillAction {
 		TOGGLE, UPGRADE, PURCHASE
@@ -35,13 +43,13 @@ public class UpdateSkillC2S {
 	}
 
 	public UpdateSkillC2S(FriendlyByteBuf buf) {
-		this.skillName = buf.readUtf();
+		this.skillName = buf.readUtf(128);
 		this.action = buf.readEnum(SkillAction.class);
 		this.cost = buf.readInt();
 	}
 
 	public void encode(FriendlyByteBuf buf) {
-		buf.writeUtf(this.skillName);
+		buf.writeUtf(this.skillName, 128);
 		buf.writeEnum(this.action);
 		buf.writeInt(this.cost);
 	}
@@ -49,7 +57,7 @@ public class UpdateSkillC2S {
 	public void handle(Supplier<NetworkEvent.Context> ctx) {
 		ctx.get().enqueueWork(() -> {
 			ServerPlayer player = ctx.get().getSender();
-			if (player != null) {
+			if (player != null && !StorageManager.isLoadPending(player)) {
 				StatsProvider.get(StatsCapability.INSTANCE, player).ifPresent(data -> {
 					if (action != SkillAction.TOGGLE && (data.getStatus().isFused() || data.getStatus().getFusionPartnerUUID() != null)) {
 						player.displayClientMessage(Component.translatable("message.dragonminez.fusion.action_blocked"), true);
@@ -80,6 +88,7 @@ public class UpdateSkillC2S {
 
 						case PURCHASE:
 							if (!raceAllowed) break;
+							if (!isOfferedByNearbyMaster(player, skillName)) break;
 							boolean isFormSkillPurchase = ConfigManager.getSkillsConfig().getFormSkills().contains(skillName.toLowerCase());
 							int effectiveCost;
 							if (isFormSkillPurchase) {
@@ -101,7 +110,7 @@ public class UpdateSkillC2S {
 							}
 							break;
 					}
-					NetworkHandler.sendToTrackingEntityAndSelf(new StatsSyncS2C(player), player);
+					StatsSyncS2C.sendRequested(player);
 				});
 			}
 		});
@@ -124,6 +133,25 @@ public class UpdateSkillC2S {
 		java.util.List<Integer> costs = skillCosts.getCosts();
 		if (currentLevel >= costs.size() || costs.get(currentLevel) == null) return -1;
 		return Math.max(0, costs.get(currentLevel));
+	}
+
+	private static boolean isOfferedByNearbyMaster(ServerPlayer player, String skillName) {
+		AABB range = player.getBoundingBox().inflate(MASTER_SHOP_RANGE);
+		for (MastersEntity master : player.serverLevel().getEntitiesOfClass(MastersEntity.class, range)) {
+			if (offersSkill(player, master.getMasterName(), skillName)) return true;
+		}
+		for (QuestNPCEntity npc : player.serverLevel().getEntitiesOfClass(QuestNPCEntity.class, range)) {
+			if (offersSkill(player, npc.getNpcId(), skillName)) return true;
+		}
+		return false;
+	}
+
+	private static boolean offersSkill(ServerPlayer player, String npcName, String skillName) {
+		if (npcName == null || npcName.isBlank()) return false;
+		if (NpcDispositionService.getServiceBlocker(player, npcName) != null) return false;
+		Map<String, List<String>> offerings = ConfigManager.getSkillsConfig().getSkillOfferings();
+		List<String> offered = offerings.getOrDefault(npcName.toLowerCase(), offerings.get("default"));
+		return offered != null && (offered.contains(skillName) || offered.contains(skillName.toLowerCase()));
 	}
 
 	private static boolean isMasterOnlyFormSkill(StatsData data, String skillName) {

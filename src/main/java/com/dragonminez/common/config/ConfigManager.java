@@ -18,6 +18,7 @@ import net.minecraft.world.entity.EntityType;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.fml.loading.FMLEnvironment;
 import net.minecraftforge.fml.loading.FMLPaths;
+import net.minecraftforge.fml.util.thread.EffectiveSide;
 import net.minecraftforge.registries.RegistryObject;
 
 import java.io.IOException;
@@ -1180,7 +1181,7 @@ public class ConfigManager {
 
 	public static RaceStatsConfig getRaceStats(String raceName) {
 		String key = raceName != null ? raceName.toLowerCase() : "human";
-		if (serverSyncActive) {
+		if (useServerSync()) {
 			Map<String, RaceStatsConfig> synced = SERVER_SYNCED_STATS != null ? SERVER_SYNCED_STATS : Collections.emptyMap();
 			RaceStatsConfig config = synced.getOrDefault(key, synced.get("human"));
 			return config != null ? config : createDefaultStatsConfig();
@@ -1191,7 +1192,7 @@ public class ConfigManager {
 
 	public static RaceCharacterConfig getRaceCharacter(String raceName) {
 		String key = raceName != null ? raceName.toLowerCase() : "human";
-		if (serverSyncActive) {
+		if (useServerSync()) {
 			Map<String, RaceCharacterConfig> synced = SERVER_SYNCED_CHARACTER != null ? SERVER_SYNCED_CHARACTER : Collections.emptyMap();
 			RaceCharacterConfig config = synced.getOrDefault(key, synced.get("human"));
 			return config != null ? config : createDefaultCharacterConfig(key, false);
@@ -1202,7 +1203,7 @@ public class ConfigManager {
 
 	public static List<String> getLoadedRaces() {
 		List<String> races;
-		if (serverSyncActive) races = SERVER_SYNCED_CHARACTER != null ? new ArrayList<>(SERVER_SYNCED_CHARACTER.keySet()) : new ArrayList<>();
+		if (useServerSync()) races = SERVER_SYNCED_CHARACTER != null ? new ArrayList<>(SERVER_SYNCED_CHARACTER.keySet()) : new ArrayList<>();
 		else races = new ArrayList<>(LOADED_RACES);
 
 		races.sort((r1, r2) -> {
@@ -1224,20 +1225,20 @@ public class ConfigManager {
 	public static List<String> getDefaultRaces() { return Arrays.asList(DEFAULT_RACES); }
 	public static boolean isRaceLoaded(String raceName) {
 		if (raceName == null) return false;
-		if (serverSyncActive) return SERVER_SYNCED_CHARACTER != null && SERVER_SYNCED_CHARACTER.containsKey(raceName.toLowerCase());
+		if (useServerSync()) return SERVER_SYNCED_CHARACTER != null && SERVER_SYNCED_CHARACTER.containsKey(raceName.toLowerCase());
 		return LOADED_RACES.stream().anyMatch(r -> r.equalsIgnoreCase(raceName));
 	}
 	public static GeneralUserConfig getUserConfig() { return userConfig != null ? userConfig : new GeneralUserConfig(); }
 	public static GeneralServerConfig getServerConfig() {
-		if (serverSyncActive && SERVER_SYNCED_GENERAL_SERVER != null) return SERVER_SYNCED_GENERAL_SERVER;
+		if (useServerSync() && SERVER_SYNCED_GENERAL_SERVER != null) return SERVER_SYNCED_GENERAL_SERVER;
 		return serverConfig != null ? serverConfig : new GeneralServerConfig();
 	}
 	public static CombatConfig getCombatConfig() {
-		if (serverSyncActive && SERVER_SYNCED_COMBAT != null) return SERVER_SYNCED_COMBAT;
+		if (useServerSync() && SERVER_SYNCED_COMBAT != null) return SERVER_SYNCED_COMBAT;
 		return combatConfig != null ? combatConfig : new CombatConfig();
 	}
 	public static TrainingConfig getTrainingConfig() {
-		if (serverSyncActive && SERVER_SYNCED_TRAINING != null) return SERVER_SYNCED_TRAINING;
+		if (useServerSync() && SERVER_SYNCED_TRAINING != null) return SERVER_SYNCED_TRAINING;
 		return trainingConfig != null ? trainingConfig : new TrainingConfig();
 	}
 	private static void loadHudLayoutConfig() {
@@ -1534,16 +1535,20 @@ public class ConfigManager {
 		serverSyncActive = false;
 	}
 
+	private static boolean useServerSync() {
+		return serverSyncActive && EffectiveSide.get().isClient();
+	}
+
 	public static Map<String, RaceStatsConfig> getAllRaceStats() {
-		if (serverSyncActive) return SERVER_SYNCED_STATS != null ? SERVER_SYNCED_STATS : new HashMap<>();
+		if (useServerSync()) return SERVER_SYNCED_STATS != null ? SERVER_SYNCED_STATS : new HashMap<>();
 		return new HashMap<>(RACE_STATS);
 	}
 	public static Map<String, RaceCharacterConfig> getAllRaceCharacters() {
-		if (serverSyncActive) return SERVER_SYNCED_CHARACTER != null ? SERVER_SYNCED_CHARACTER : new HashMap<>();
+		if (useServerSync()) return SERVER_SYNCED_CHARACTER != null ? SERVER_SYNCED_CHARACTER : new HashMap<>();
 		return new HashMap<>(RACE_CHARACTER);
 	}
 	public static Map<String, Map<String, FormConfig>> getAllForms() {
-		if (serverSyncActive) return SERVER_SYNCED_FORMS != null ? SERVER_SYNCED_FORMS : new HashMap<>();
+		if (useServerSync()) return SERVER_SYNCED_FORMS != null ? SERVER_SYNCED_FORMS : new HashMap<>();
 		return RACE_FORMS;
 	}
 	public static Map<String, FormConfig> getAllFormsForRace(String raceName) { return getAllForms().getOrDefault(raceName.toLowerCase(), new HashMap<>()); }
@@ -1561,7 +1566,7 @@ public class ConfigManager {
 		return group != null ? group.getForm(formName) : null;
 	}
 	public static Map<String, FormConfig> getAllStackForms() {
-		if (serverSyncActive) return SERVER_SYNCED_STACK_FORMS != null ? SERVER_SYNCED_STACK_FORMS : new HashMap<>();
+		if (useServerSync()) return SERVER_SYNCED_STACK_FORMS != null ? SERVER_SYNCED_STACK_FORMS : new HashMap<>();
 		return STACK_FORMS;
 	}
 	public static FormConfig getStackFormGroup(String groupName) {
@@ -1573,15 +1578,15 @@ public class ConfigManager {
 		return group != null ? group.getForm(formName) : null;
 	}
 	public static SkillsConfig getSkillsConfig() {
-		if (serverSyncActive && SERVER_SYNCED_SKILLS != null) return SERVER_SYNCED_SKILLS;
+		if (useServerSync() && SERVER_SYNCED_SKILLS != null) return SERVER_SYNCED_SKILLS;
 		return skillsConfig != null ? skillsConfig : new SkillsConfig();
 	}
 	public static TechniqueConfig getTechniqueConfig() {
-		if (serverSyncActive && SERVER_SYNCED_TECHNIQUES != null) return SERVER_SYNCED_TECHNIQUES;
+		if (useServerSync() && SERVER_SYNCED_TECHNIQUES != null) return SERVER_SYNCED_TECHNIQUES;
 		return techniqueConfig != null ? techniqueConfig : new TechniqueConfig();
 	}
 	public static EntitiesConfig getEntitiesConfig() {
-		if (serverSyncActive) return SERVER_SYNCED_ENTITIES;
+		if (useServerSync()) return SERVER_SYNCED_ENTITIES;
 		return entitiesConfig;
 	}
 	public static EntitiesConfig.EntityStats getEntityStats(String registryName) {

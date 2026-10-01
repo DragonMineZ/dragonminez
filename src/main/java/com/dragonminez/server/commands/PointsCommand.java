@@ -82,8 +82,8 @@ public class PointsCommand {
 		if (normalizedAmount == null) return 0;
 		for (ServerPlayer player : targets) {
 			StatsProvider.get(StatsCapability.INSTANCE, player).ifPresent(data -> {
-				float currentPoints = data.getResources().getTrainingPoints();
-				float newPoints = Math.min(Float.MAX_VALUE - 1, currentPoints + normalizedAmount);
+				double currentPoints = data.getResources().getTrainingPoints();
+				double newPoints = currentPoints + normalizedAmount;
 				data.getResources().setTrainingPoints(newPoints);
 				NetworkHandler.sendToTrackingEntityAndSelf(new ResourceSyncS2C(player), player);
 			});
@@ -103,8 +103,8 @@ public class PointsCommand {
 		if (normalizedAmount == null) return 0;
 		for (ServerPlayer player : targets) {
 			StatsProvider.get(StatsCapability.INSTANCE, player).ifPresent(data -> {
-				float currentPoints = data.getResources().getTrainingPoints();
-				float newPoints = Math.max(0, currentPoints - normalizedAmount);
+				double currentPoints = data.getResources().getTrainingPoints();
+				double newPoints = Math.max(0, currentPoints - normalizedAmount);
 				data.getResources().setTrainingPoints(newPoints);
 				NetworkHandler.sendToTrackingEntityAndSelf(new ResourceSyncS2C(player), player);
 			});

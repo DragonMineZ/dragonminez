@@ -490,7 +490,9 @@ public class QuestNPCDialogueScreen extends ScaledScreen {
 		List<FormattedCharSequence> rewLines = new ArrayList<>();
 		PlayerQuestData questData = StatsProvider.get(StatsCapability.INSTANCE, Minecraft.getInstance().player)
 				.map(StatsData::getPlayerQuestData).orElse(null);
-		Difficulty difficulty = questData != null ? questData.getDifficulty() : Difficulty.NORMAL;
+		Difficulty difficulty = questData == null ? Difficulty.NORMAL
+				: questData.getQuestStatus(selected.questId()) != PlayerQuestData.QuestStatus.NOT_STARTED
+				? questData.getQuestDifficulty(selected.questId()) : questData.getDifficulty();
 		boolean tiered = QuestTextFormatter.hasRewardTiers(selected.quest.getRewards());
 		for (QuestTextFormatter.RewardGroup group : QuestTextFormatter.groupRewardsByDifficulty(selected.quest.getRewards(), false)) {
 			List<QuestReward> tierRewards = group.rewards();
@@ -502,7 +504,7 @@ public class QuestNPCDialogueScreen extends ScaledScreen {
 			}
 			for (QuestReward reward : tierRewards) {
 				double rewardMultiplier = questData != null
-						? questData.rewardMultiplierFor(reward)
+						? questData.rewardMultiplierFor(reward, difficulty)
 						: difficulty.questRewardMultiplier();
 				Component rewText = txt("  ").append(reward.getDescription(rewardMultiplier))
 						.withStyle(tierLocked ? ChatFormatting.DARK_GRAY : ChatFormatting.GREEN);

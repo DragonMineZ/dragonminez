@@ -307,36 +307,33 @@ public class GravityLogic {
 		return baseCurve * cfg().getPenaltyCurveFactor();
 	}
 
-	public static double getJumpFactor(Player player) {
+	public static double getJumpFactor(double pGravity) {
 		GeneralServerConfig.GravityConfig config = cfg();
 		if (!config.getPhysicalEnabled()) return 1.0;
-		double pGravity = getPenalizationGravity(player);
 		if (pGravity <= 0) return 1.0;
 		if (pGravity >= config.getHardStopThreshold()) return 1.0 - config.getMaxJumpPenalty();
 		double penalty = Math.min(config.getMaxJumpPenalty(), getGeneralPenaltyFactor(pGravity));
 		return 1.0 - penalty;
 	}
 
-	public static double getFlyFactor(Player player) {
+	public static double getFlyFactor(double pGravity) {
 		GeneralServerConfig.GravityConfig config = cfg();
 		if (!config.getPhysicalEnabled()) return 1.0;
-		double pGravity = getPenalizationGravity(player);
 		if (pGravity <= 0) return 1.0;
 		if (pGravity >= config.getHardStopThreshold()) return 0.0;
 		double penalty = Math.min(config.getMaxFlyPenalty(), getGeneralPenaltyFactor(pGravity));
 		return 1.0 - penalty;
 	}
 
-	public static boolean isFlightHardStopped(Player player) {
+	public static boolean isFlightHardStopped(double pGravity) {
 		GeneralServerConfig.GravityConfig config = cfg();
 		if (!config.getPhysicalEnabled()) return false;
-		return getPenalizationGravity(player) >= config.getHardStopThreshold();
+		return pGravity >= config.getHardStopThreshold();
 	}
 
-	public static double getFallExtra(Player player) {
+	public static double getFallExtra(double pGravity) {
 		GeneralServerConfig.GravityConfig config = cfg();
 		if (!config.getPhysicalEnabled()) return 0.0;
-		double pGravity = getPenalizationGravity(player);
 		if (pGravity <= 0) return 0.0;
 		return Math.min(config.getMaxExtraFall(), pGravity * config.getExtraFallPerGravity());
 	}

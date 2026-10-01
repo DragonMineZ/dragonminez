@@ -160,7 +160,11 @@ public class PlayerQuestData {
     }
 
     public double rewardMultiplierFor(QuestReward reward) {
-        double multiplier = difficulty.questRewardMultiplier();
+        return rewardMultiplierFor(reward, difficulty);
+    }
+
+    public double rewardMultiplierFor(QuestReward reward, Difficulty rewardDifficulty) {
+        double multiplier = rewardDifficulty.questRewardMultiplier();
         return reward instanceof TPSReward ? multiplier * tpRewardMultiplier() : multiplier;
     }
 

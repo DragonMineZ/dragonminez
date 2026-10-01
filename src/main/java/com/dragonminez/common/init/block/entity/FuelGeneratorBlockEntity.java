@@ -4,6 +4,8 @@ import com.dragonminez.common.init.MainBlockEntities;
 import com.dragonminez.common.init.block.custom.FuelGeneratorBlock;
 import com.dragonminez.common.init.menu.menutypes.FuelGeneratorMenu;
 import com.dragonminez.server.energy.StarEnergyStorage;
+import net.minecraft.world.Containers;
+import net.minecraft.world.SimpleContainer;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.nbt.CompoundTag;
@@ -231,5 +233,12 @@ public class FuelGeneratorBlockEntity extends BlockEntity implements MenuProvide
 	@Override
 	public AbstractContainerMenu createMenu(int pContainerId, Inventory pPlayerInventory, Player pPlayer) {
 		return new FuelGeneratorMenu(pContainerId, pPlayerInventory, this, this.data);
+	}
+
+	public void drops() {
+		if (this.level == null) return;
+		SimpleContainer inventory = new SimpleContainer(itemHandler.getSlots());
+		for (int i = 0; i < itemHandler.getSlots(); i++) inventory.setItem(i, itemHandler.getStackInSlot(i));
+		Containers.dropContents(this.level, this.worldPosition, inventory);
 	}
 }

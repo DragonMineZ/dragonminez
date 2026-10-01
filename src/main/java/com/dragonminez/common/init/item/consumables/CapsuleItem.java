@@ -73,13 +73,15 @@ public class CapsuleItem extends Item {
 					var capsuleComponent = Component.empty();
 					String statSeparator = ConfigManager.getServerConfig().getGameplay().getCapsules().getStatSeparator();
 					String[] split = values.getStats().split(separator);
+					boolean[] anyApplied = {false};
 					for (int i = 0; i < split.length; i++) {
 						String statName = split[i];
-						capsuleComponent.append(applyCapsuleStats(capsule, data, statName));
+						capsuleComponent.append(applyCapsuleStats(data, statName, anyApplied));
 						if (i < split.length - 1) {
 							capsuleComponent.append(Component.literal(statSeparator).withStyle(ChatFormatting.GRAY));
 						}
 					}
+					if (anyApplied[0]) capsule.shrink(1);
 					pPlayer.displayClientMessage(capsuleComponent, true);
 				} else {
 					pPlayer.displayClientMessage(Component.translatable("error.dmz.createcharacter").withStyle(ChatFormatting.RED), true);
@@ -91,14 +93,14 @@ public class CapsuleItem extends Item {
 		}
 	}
 
-	private Component applyCapsuleStats(ItemStack capsule, StatsData data, String statName) {
+	private Component applyCapsuleStats(StatsData data, String statName, boolean[] anyApplied) {
 		CapsuleValues values = ConfigManager.getServerConfig().getGameplay().getCapsules().getCapsuleValues(type);
 		int requested = values.getPoints() * tierMultiplier;
 		int increment = data.getMaxAllowedIncreaseForStat(statName, requested);
 
 		if (increment > 0) {
 			addToStat(data, statName, increment);
-			capsule.shrink(1);
+			anyApplied[0] = true;
 
 			return Component.translatable("item.dragonminez.capsule.use", increment, statName)
 					.withStyle(ChatFormatting.GREEN);

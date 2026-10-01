@@ -4,6 +4,7 @@ import net.minecraft.nbt.CompoundTag;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Set;
 
 public class Cooldowns {
     private final Map<String, Integer> cooldowns;
@@ -44,6 +45,7 @@ public class Cooldowns {
 	public static final String STRIKE_GLOBAL = "StrikeGlobalCooldown";
 	public static final String KI_SURGE_CD = "KiSurgeCooldown";
 	public static final String KAMI_BLESS = "KamiBlessCooldown";
+	public static final String OLDKAI_ZSWORD = "OldKaiZSword";
 
     public Cooldowns() {
         this.cooldowns = new HashMap<>();
@@ -81,6 +83,10 @@ public class Cooldowns {
 
 	public void clearCooldowns() {
 		cooldowns.clear();
+	}
+
+	public void clearCooldownsExcept(Set<String> keptKeys, String keptSuffix) {
+		cooldowns.keySet().removeIf(key -> !keptKeys.contains(key) && !key.endsWith(keptSuffix));
 	}
 
     public void tick() {
