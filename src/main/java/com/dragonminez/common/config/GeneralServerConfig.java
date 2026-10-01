@@ -307,11 +307,11 @@ public class GeneralServerConfig {
 		private Double HTCTpMultiplier = 1.75;
 		private Double otherworldDeadTpMultiplier = 2.0;
 		private Boolean maxLevelValueInsteadOfStats = true;
-		private Integer maxValue = 10000;
-		private Double vitCurveKneeLevelMode = 0.225;
-		private Double vitCurveKneeStatMode = 0.45;
-		private Double defCurveKneeLevelMode = 0.225;
-		private Double defCurveKneeStatMode = 0.45;
+		private Integer maxValue = 1000000;
+		private Double vitCurveKneeLevelMode = 0.1125;
+		private Double vitCurveKneeStatMode = 0.225;
+		private Double defCurveKneeLevelMode = 0.1125;
+		private Double defCurveKneeStatMode = 0.225;
 		private CapsulesConfig capsules = new CapsulesConfig();
 		private Boolean storyModeEnabled = true;
 		private Boolean createDefaultSagas = true;
