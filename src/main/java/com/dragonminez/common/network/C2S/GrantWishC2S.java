@@ -12,6 +12,7 @@ import com.dragonminez.server.storage.StorageManager;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.entity.Entity;
 import net.minecraftforge.network.NetworkEvent;
 
 import java.util.ArrayList;
@@ -25,17 +26,20 @@ public class GrantWishC2S {
 	private static final int MAX_WISHES = 64;
 	private static final int MAX_TARGETS = 256;
 
+	private final int dragonEntityId;
 	private final String dragonType;
 	private final List<Integer> selectedWishIndices;
 	private final List<List<UUID>> selectedTargets;
 
-	public GrantWishC2S(String dragonType, List<Integer> selectedWishIndices, List<List<UUID>> selectedTargets) {
+	public GrantWishC2S(int dragonEntityId, String dragonType, List<Integer> selectedWishIndices, List<List<UUID>> selectedTargets) {
+		this.dragonEntityId = dragonEntityId;
 		this.dragonType = dragonType;
 		this.selectedWishIndices = selectedWishIndices;
 		this.selectedTargets = selectedTargets;
 	}
 
 	public static void encode(GrantWishC2S msg, FriendlyByteBuf buf) {
+		buf.writeVarInt(msg.dragonEntityId);
 		buf.writeUtf(msg.dragonType);
 		buf.writeVarInt(msg.selectedWishIndices.size());
 		for (int i = 0; i < msg.selectedWishIndices.size(); i++) {
@@ -46,6 +50,7 @@ public class GrantWishC2S {
 	}
 
 	public static GrantWishC2S decode(FriendlyByteBuf buf) {
+		int dragonEntityId = buf.readVarInt();
 		String dragon = buf.readUtf();
 		int count = buf.readVarInt();
 		if (count < 0 || count > MAX_WISHES) throw new DecoderException("GrantWishC2S: invalid wish count " + count);
@@ -55,7 +60,7 @@ public class GrantWishC2S {
 			indices.add(buf.readInt());
 			targets.add(buf.readCollection(FriendlyByteBuf.<List<UUID>>limitValue(ArrayList::new, MAX_TARGETS), FriendlyByteBuf::readUUID));
 		}
-		return new GrantWishC2S(dragon, indices, targets);
+		return new GrantWishC2S(dragonEntityId, dragon, indices, targets);
 	}
 
 	public void handle(Supplier<NetworkEvent.Context> context) {
@@ -63,14 +68,13 @@ public class GrantWishC2S {
 			ServerPlayer player = context.get().getSender();
 			if (player == null || StorageManager.isLoadPending(player)) return;
 			ServerLevel level = player.serverLevel();
-			DragonWishEntity dragon = level.getEntitiesOfClass(DragonWishEntity.class,
-							player.getBoundingBox().inflate(50.0),
-							e -> !e.hasGrantedWish() && e.getOwnerName().equals(player.getName().getString()))
-					.stream().findFirst().orElse(null);
-			if (dragon == null) return;
+			Entity entity = level.getEntity(dragonEntityId);
+			if (!(entity instanceof DragonWishEntity dragon) || dragon.isRemoved() || dragon.hasGrantedWish()) return;
+			if (!dragon.getOwnerName().equals(player.getName().getString())) return;
+			if (!player.getBoundingBox().inflate(50.0).intersects(dragon.getBoundingBox())) return;
 
 			DragonDefinition definition = dragon.getDragonDefinition();
-			if (definition == null) return;
+			if (definition == null || !definition.getWishScreenId().equals(dragonType)) return;
 
 			List<Wish> allWishes = WishManager.getAllWishes().get(definition.getWishScreenId());
 			if (allWishes == null || allWishes.isEmpty()) return;

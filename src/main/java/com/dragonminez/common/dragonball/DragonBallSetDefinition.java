@@ -47,7 +47,7 @@ public class DragonBallSetDefinition {
 			String assetDefinitionId,
 			String displayName) {
 		this.id = id;
-		this.validDimensions = Set.copyOf(validDimensions);
+		this.validDimensions = Collections.unmodifiableSet(new LinkedHashSet<>(validDimensions));
 		this.copiesSupplier = copiesSupplier;
 		this.spawnRangeSupplier = spawnRangeSupplier;
 		this.summonRadius = summonRadius;

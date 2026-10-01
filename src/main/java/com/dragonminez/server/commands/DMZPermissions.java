@@ -121,6 +121,10 @@ public class DMZPermissions {
 	// Locate
 	public static final PermissionNode<Boolean> LOCATE = register("dmzlocate", "Allows locating special structures.", (player, uuid, context) -> false);
 
+	// Dragon Balls
+	public static final PermissionNode<Boolean> DRAGONBALLS_STATUS = register("dmzdragonballs.status", "Allows viewing where every Dragon Ball set is tracked.", (player, uuid, context) -> false);
+	public static final PermissionNode<Boolean> DRAGONBALLS_REGENERATE = register("dmzdragonballs.regenerate", "Allows refilling a Dragon Ball set up to its configured copies.", (player, uuid, context) -> false);
+
 	// Revive
 	public static final PermissionNode<Boolean> REVIVE_SELF = register("dmzrevive.self", "Allows reviving yourself.", (player, uuid, context) -> false);
 	public static final PermissionNode<Boolean> REVIVE_OTHERS = register("dmzrevive.others", "Allows reviving other players.", (player, uuid, context) -> false);
