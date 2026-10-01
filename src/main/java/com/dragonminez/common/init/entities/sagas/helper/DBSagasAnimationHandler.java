@@ -155,6 +155,7 @@ public class DBSagasAnimationHandler {
                 case 30: return event.setAndContinue(kiClip(entity, skill, DBSagasAnimations.ANIM_BLASTER_METEOR_CAST, DBSagasAnimations.ANIM_BLASTER_METEOR_FIRE));
                 case 31: return event.setAndContinue(DBSagasAnimations.ANIM_BOSS_SPECIAL1);
                 case 32: return event.setAndContinue(DBSagasAnimations.ANIM_BOSS_DESTRUCTION);
+                case 33: return event.setAndContinue(kiClip(entity, skill, DBSagasAnimations.ANIM_SOUL_PUNISHER_CAST, DBSagasAnimations.ANIM_SOUL_PUNISHER_FIRE));
                 default: return event.setAndContinue(DBSagasAnimations.ANIM_KIWAVE);
             }
         }

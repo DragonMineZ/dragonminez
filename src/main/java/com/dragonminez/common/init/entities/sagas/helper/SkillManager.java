@@ -35,6 +35,9 @@ public class SkillManager {
     public static final int BLASTER_METEOR_FIRE_TICKS = 50;
     public static final int DRAGON_FIST_WINDUP = 5;
     public static final int DRAGON_FIST_RUSH_TICKS = 20;
+    public static final int SOUL_PUNISHER_CAST_TICKS = 40;
+    private static final int SOUL_PUNISHER_RECOVERY_TICKS = 20;
+    private static final float SOUL_PUNISHER_SPEED_FACTOR = 0.6F;
     private static final int KAMEHAMEHA_X10_MAIN = 0xFFE3E3;
     private static final int KAMEHAMEHA_X10_BORDER = 0xFF2A2A;
     private static final int KAMEHAMEHA_X10_OUTLINE = 0xB00020;
@@ -234,6 +237,13 @@ public class SkillManager {
             kame.setupKiHame(user, dmg, user.getKiBlastSpeed(), user.getCurrentPoolSkillSize(),
                     KAMEHAMEHA_X10_MAIN, KAMEHAMEHA_X10_BORDER, KAMEHAMEHA_X10_OUTLINE, KAMEHAMEHA_CAST_TICKS);
         });
+
+        // 33. SOUL PUNISHER (Gogeta)
+        REGISTRY.put(33, (user, target, dmg) -> {
+            KiBlastEntity soul = new KiBlastEntity(user.level(), user);
+            soul.setupSoulPunisher(user, dmg, user.getKiBlastSpeed() * SOUL_PUNISHER_SPEED_FACTOR, user.getCurrentPoolSkillSize(),
+                    SOUL_PUNISHER_CAST_TICKS, target.getId());
+        });
     }
 
     private static void applyColors(DBSagasEntity user, AbstractKiProjectile projectile) {
@@ -289,6 +299,7 @@ public class SkillManager {
             case 15, 28 -> 50;
             case 29 -> ASSAULT_RAIN_CAST_TICKS;
             case 30 -> BLASTER_METEOR_CAST_TICKS;
+            case 33 -> SOUL_PUNISHER_CAST_TICKS;
             default -> KAMEHAMEHA_CAST_TICKS;
         };
     }
@@ -310,6 +321,7 @@ public class SkillManager {
             case 30 -> BLASTER_METEOR_CAST_TICKS + BLASTER_METEOR_FIRE_TICKS;
             case 31 -> DIM_PUNCH_DURATION;
             case 32 -> DESTRUCTION_DURATION;
+            case 33 -> SOUL_PUNISHER_CAST_TICKS + SOUL_PUNISHER_RECOVERY_TICKS;
             default -> 60;
         };
     }

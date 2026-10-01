@@ -92,6 +92,7 @@ public class KiBlastEntity extends AbstractKiProjectile {
     private static final EntityDataAccessor<Float> STRETCH = SynchedEntityData.defineId(KiBlastEntity.class, EntityDataSerializers.FLOAT);
     private static final EntityDataAccessor<Float> PURIFY_RADIUS = SynchedEntityData.defineId(KiBlastEntity.class, EntityDataSerializers.FLOAT);
 
+    public static final String SOUL_PUNISHER_ID = "soul_punisher";
     public static final float SOUL_PUNISHER_CORE_SCALE = 0.15F;
     private static final int PURIFY_EXPAND_TICKS = 12;
     private static final int PURIFY_BURST_TICK = 22;
@@ -170,6 +171,20 @@ public class KiBlastEntity extends AbstractKiProjectile {
     }
 
     public void setupSoulPunisherPlayer(LivingEntity owner, float damage, float speed, int color, int colorOutline, float size) {
+        this.prepareSoulPunisher(owner, damage, speed, color, colorOutline, size, 100, 99999);
+        if (!this.level().isClientSide) { this.level().addFreshEntity(this); }
+    }
+
+    public void setupSoulPunisher(LivingEntity owner, float damage, float speed, float size, int castTime, int homingTargetId) {
+        this.prepareSoulPunisher(owner, damage, speed, 0xFFFFFF, 0xFFFFFF, size, castTime, castTime + 100);
+        this.setKiType(KiType.MEDIUM_BALL);
+        this.setTechniqueId(SOUL_PUNISHER_ID);
+        this.setHomingTarget(homingTargetId);
+        this.playInitialSound(MainSounds.KI_EXPLOSION_CHARGE.get());
+        if (!this.level().isClientSide) { this.level().addFreshEntity(this); }
+    }
+
+    private void prepareSoulPunisher(LivingEntity owner, float damage, float speed, int color, int colorOutline, float size, int castTime, int maxLife) {
         this.setOwner(owner);
         this.setKiRenderType(RENDER_SOUL_PUNISHER);
         this.setSize(size);
@@ -177,12 +192,11 @@ public class KiBlastEntity extends AbstractKiProjectile {
         this.setKiSpeed(speed);
         this.setColors(color, color, colorOutline);
         this.setFiring(false);
-        this.setMaxLife(99999);
-        this.setCastTime(100);
+        this.setMaxLife(maxLife);
+        this.setCastTime(castTime);
         float coreLift = (size * SOUL_PUNISHER_CORE_SCALE - this.getBbHeight() / 2.0F) / ownerScaleOf(owner);
         this.setCastOffsets(-0.5F, 1.2F + coreLift, 0.1F);
         updatePositionRelativeToOwner(owner);
-        if (!this.level().isClientSide) { this.level().addFreshEntity(this); }
     }
 
     public void setupFakeMoonPlayer(LivingEntity owner, float speed, int color, int colorOutline, float size) {
@@ -228,7 +242,7 @@ public class KiBlastEntity extends AbstractKiProjectile {
     }
 
     private boolean isSoulPunisher() {
-        return "soul_punisher".equals(this.getTechniqueId());
+        return SOUL_PUNISHER_ID.equals(this.getTechniqueId());
     }
 
     private float soulPunisherDamage(Entity target, float baseDamage) {

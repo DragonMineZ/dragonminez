@@ -910,6 +910,7 @@ public class SagaMoviesEntity {
             this.addKiSkill(KiSkillType.KI_VOLLEY, 200, 1.6F, 0xFFE657, 0xFFE657);
             this.addKiSkill(KiSkillType.BIG_BANG, 260, 1.9F, 0xE3FFFF, 0xE3FFFF);
             this.addKiSkill(KiSkillType.KAMEHAMEHA, 320, 2.6F, 0xFFFFFF, 0x40C4FF, 0x0D47A1);
+            this.addKiSkill(KiSkillType.SOUL_PUNISHER, 400, 3.5F);
 
             this.setWildSense(true, 60);
             this.setZanzoken(3, 120);

@@ -151,7 +151,8 @@ public abstract class DBSagasEntity extends Monster implements GeoEntity, ITextu
         ASSAULT_RAIN(29, SkillRole.ZONING, Tier.STRONG, 0xFFB8F4, 0x8A2BE2, 0xFF38D4),
         BLASTER_METEOR(30, SkillRole.ZONING, Tier.STRONG, 0x9DFF8A, 0x3DF54A, 0x0FBF1B),
         DIMENSIONAL_PUNCH(31, SkillRole.ZONING, Tier.STRONG, 0xC451FF, 0xC451FF, -1),
-        DESTRUCTION_BALLS(32, SkillRole.RANGED_TRAVEL, Tier.STRONG, 0xC77DFF, 0x5A189A, 0x0B0014);
+        DESTRUCTION_BALLS(32, SkillRole.RANGED_TRAVEL, Tier.STRONG, 0xC77DFF, 0x5A189A, 0x0B0014),
+        SOUL_PUNISHER(33, SkillRole.RANGED_TRAVEL, Tier.STRONG, 0xFFFFFF, 0xFFFFFF, 0xFFFFFF);
 
         private final int id;
         private final SkillRole role;

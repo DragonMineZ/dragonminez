@@ -144,6 +144,8 @@ public class DBSagasAnimations {
     public static final RawAnimation ANIM_LASER_FIRE_LOOP = RawAnimation.begin().thenLoop("ki.laser_fire");
     public static final RawAnimation ANIM_BURNING_ATTACK_CAST = RawAnimation.begin().thenPlay("ki.burning_attack_cast");
     public static final RawAnimation ANIM_BURNING_ATTACK_FIRE = RawAnimation.begin().thenPlay("ki.burning_attack_fire");
+    public static final RawAnimation ANIM_SOUL_PUNISHER_CAST = RawAnimation.begin().thenPlay("ki.soul_punisher_cast");
+    public static final RawAnimation ANIM_SOUL_PUNISHER_FIRE = RawAnimation.begin().thenPlay("ki.soul_punisher_fire");
     public static final RawAnimation ANIM_SUPERNOVA_COOLER_CAST = RawAnimation.begin().thenPlay("ki.supernova_cooler_cast");
     public static final RawAnimation ANIM_SUPERNOVA_COOLER_FIRE = RawAnimation.begin().thenPlay("ki.supernova_cooler_fire");
     public static final RawAnimation ANIM_ASSAULT_RAIN_CAST = RawAnimation.begin().thenPlay("ki.assault_rain_cast");
