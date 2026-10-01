@@ -3,7 +3,9 @@ package com.dragonminez.common.init.entities.ki;
 import com.dragonminez.common.combat.util.MultipartTargeting;
 
 import com.dragonminez.client.util.ColorUtils;
+import com.dragonminez.common.alignment.AlignmentBand;
 import com.dragonminez.common.combat.logic.player.TargetHelper;
+import com.dragonminez.common.init.entities.sagas.DBSagasEntity;
 import com.dragonminez.common.init.MainEntities;
 import com.dragonminez.common.init.MainParticles;
 import com.dragonminez.common.init.MainSounds;
@@ -88,6 +90,16 @@ public class KiBlastEntity extends AbstractKiProjectile {
 
     private static final EntityDataAccessor<Boolean> IS_FIRING = SynchedEntityData.defineId(KiBlastEntity.class, EntityDataSerializers.BOOLEAN);
     private static final EntityDataAccessor<Float> STRETCH = SynchedEntityData.defineId(KiBlastEntity.class, EntityDataSerializers.FLOAT);
+    private static final EntityDataAccessor<Float> PURIFY_RADIUS = SynchedEntityData.defineId(KiBlastEntity.class, EntityDataSerializers.FLOAT);
+
+    public static final float SOUL_PUNISHER_CORE_SCALE = 0.15F;
+    private static final int PURIFY_EXPAND_TICKS = 12;
+    private static final int PURIFY_BURST_TICK = 22;
+    private static final int PURIFY_END_TICK = 30;
+    private static final float PURIFY_DISSOLVE_SWELL = 0.18F;
+    private static final byte PURIFY_BURST_EVENT = 71;
+    private int purifyAge;
+    private int purifyTargetId = -1;
 
     private static final int DESTRUCTION_STRETCH_START = 14;
     private static final int DESTRUCTION_SPREAD_START = 26;
@@ -167,7 +179,8 @@ public class KiBlastEntity extends AbstractKiProjectile {
         this.setFiring(false);
         this.setMaxLife(99999);
         this.setCastTime(100);
-        this.setCastOffsets(0.0f, 0.0F, 2.0F);
+        float coreLift = (size * SOUL_PUNISHER_CORE_SCALE - this.getBbHeight() / 2.0F) / ownerScaleOf(owner);
+        this.setCastOffsets(-0.5F, 1.2F + coreLift, 0.1F);
         updatePositionRelativeToOwner(owner);
         if (!this.level().isClientSide) { this.level().addFreshEntity(this); }
     }
@@ -229,6 +242,137 @@ public class KiBlastEntity extends AbstractKiProjectile {
             reduced = true;
         }
         return reduced ? baseDamage * 0.25F : baseDamage;
+    }
+
+    private static boolean isPurifiable(LivingEntity target) {
+        if (target instanceof DBSagasEntity) return true;
+        if (!(target instanceof Player player)) return false;
+        return StatsProvider.get(StatsCapability.INSTANCE, player).resolve()
+                .map(data -> AlignmentBand.fromValue(data.getResources().getAlignment()) == AlignmentBand.EVIL)
+                .orElse(false);
+    }
+
+    public boolean isPurifying() {
+        return this.entityData.get(PURIFY_RADIUS) > 0.0F;
+    }
+
+    public float getPurifyRadius() {
+        return this.entityData.get(PURIFY_RADIUS);
+    }
+
+    public float getPurifyFade(float partialTick) {
+        float age = this.purifyAge + partialTick;
+        if (age <= PURIFY_BURST_TICK) return 1.0F;
+        return Mth.clamp(1.0F - (age - PURIFY_BURST_TICK) / (PURIFY_END_TICK - 1 - PURIFY_BURST_TICK), 0.0F, 1.0F);
+    }
+
+    public float getPurifyVisualRadius(float partialTick) {
+        float t = Mth.clamp((this.purifyAge + partialTick) / PURIFY_EXPAND_TICKS, 0.0F, 1.0F);
+        float inv = 1.0F - t;
+        float expansion = 1.0F - inv * inv * inv;
+        float radius = Mth.lerp(expansion, this.getSize() * SOUL_PUNISHER_CORE_SCALE, this.getPurifyRadius());
+        return radius * (1.0F + PURIFY_DISSOLVE_SWELL * (1.0F - this.getPurifyFade(partialTick)));
+    }
+
+    private void startPurify(LivingEntity target) {
+        AABB bounds = effectiveBounds(target);
+        double extent = Math.max(bounds.getYsize(), Math.max(bounds.getXsize(), bounds.getZsize()));
+        float radius = (float) Mth.clamp(extent * 0.85D + 1.5D + this.getSize() * 0.25D, 2.5D, 16.0D);
+
+        this.purifyTargetId = target.getId();
+        this.purifyAge = 0;
+        this.entityData.set(PURIFY_RADIUS, radius);
+        this.setDeltaMovement(Vec3.ZERO);
+        this.anchorOn(bounds.getCenter());
+
+        this.level().playSound(null, this.getX(), this.getY(), this.getZ(), MainSounds.KI_EXPLOSION_IMPACT.get(), SoundSource.PLAYERS, 1.6F, 1.5F);
+        this.level().playSound(null, this.getX(), this.getY(), this.getZ(), SoundEvents.BEACON_ACTIVATE, SoundSource.PLAYERS, 1.5F, 1.6F);
+    }
+
+    private void anchorOn(Vec3 center) {
+        this.setPos(center.x, center.y - this.getBbHeight() / 2.0D, center.z);
+    }
+
+    private void tickPurify() {
+        this.purifyAge++;
+        this.setDeltaMovement(Vec3.ZERO);
+
+        if (this.level().isClientSide) {
+            if (this.purifyAge < PURIFY_BURST_TICK) this.emitPurifyDust();
+            return;
+        }
+
+        if (this.level().getEntity(this.purifyTargetId) instanceof LivingEntity target && target.isAlive()) {
+            this.anchorOn(effectiveBounds(target).getCenter());
+        }
+
+        if (this.purifyAge == PURIFY_BURST_TICK) {
+            this.level().broadcastEntityEvent(this, PURIFY_BURST_EVENT);
+            this.level().playSound(null, this.getX(), this.getY(), this.getZ(), SoundEvents.AMETHYST_CLUSTER_BREAK, SoundSource.PLAYERS, 2.0F, 1.3F);
+            this.level().playSound(null, this.getX(), this.getY(), this.getZ(), SoundEvents.AMETHYST_BLOCK_CHIME, SoundSource.PLAYERS, 2.5F, 1.0F);
+        }
+
+        if (this.purifyAge >= PURIFY_END_TICK) this.discard();
+    }
+
+    private Vec3 visualCenter() {
+        return new Vec3(this.getX(), this.getY() + this.getBbHeight() / 2.0D, this.getZ());
+    }
+
+    private Vec3 randomUnitVector() {
+        double y = this.random.nextDouble() * 2.0D - 1.0D;
+        double theta = this.random.nextDouble() * Math.PI * 2.0D;
+        double ring = Math.sqrt(1.0D - y * y);
+        return new Vec3(Math.cos(theta) * ring, y, Math.sin(theta) * ring);
+    }
+
+    private void emitPurifyDust() {
+        Vec3 center = this.visualCenter();
+        float radius = this.getPurifyVisualRadius(0.0F);
+        for (int i = 0; i < 4; i++) {
+            Vec3 dir = this.randomUnitVector();
+            Vec3 pos = center.add(dir.scale(radius));
+            double speed = 0.02D + this.random.nextDouble() * 0.06D;
+            this.level().addParticle(MainParticles.STARDUST.get(), pos.x, pos.y, pos.z, dir.x * speed, dir.y * speed, dir.z * speed);
+        }
+    }
+
+    private void spawnStardustBurst() {
+        Vec3 center = this.visualCenter();
+        float radius = Math.max(this.getPurifyRadius(), 1.0F);
+        int count = Mth.clamp((int) (70 + radius * 30), 70, 320);
+        for (int i = 0; i < count; i++) {
+            Vec3 dir = this.randomUnitVector();
+            Vec3 pos = center.add(dir.scale(radius * (0.3D + this.random.nextDouble() * 0.8D)));
+            double speed = 0.05D + this.random.nextDouble() * 0.22D;
+            this.level().addParticle(MainParticles.STARDUST.get(), pos.x, pos.y, pos.z, dir.x * speed, dir.y * speed + 0.03D, dir.z * speed);
+        }
+    }
+
+    private void emitStardustTrail() {
+        double spread = this.getSize() * SOUL_PUNISHER_CORE_SCALE * 1.2D;
+        double halfHeight = this.getBbHeight() / 2.0D;
+        Vec3 drift = this.getDeltaMovement().scale(-0.03D);
+        for (int i = 0; i < 3; i++) {
+            double t = this.random.nextDouble();
+            Vec3 offset = this.randomUnitVector().scale(spread * this.random.nextDouble());
+            double x = Mth.lerp(t, this.xo, this.getX()) + offset.x;
+            double y = Mth.lerp(t, this.yo, this.getY()) + halfHeight + offset.y;
+            double z = Mth.lerp(t, this.zo, this.getZ()) + offset.z;
+            this.level().addParticle(MainParticles.STARDUST.get(), x, y, z,
+                    drift.x + (this.random.nextDouble() - 0.5D) * 0.03D,
+                    drift.y + (this.random.nextDouble() - 0.5D) * 0.03D,
+                    drift.z + (this.random.nextDouble() - 0.5D) * 0.03D);
+        }
+    }
+
+    @Override
+    public void handleEntityEvent(byte id) {
+        if (id == PURIFY_BURST_EVENT) {
+            this.spawnStardustBurst();
+            return;
+        }
+        super.handleEntityEvent(id);
     }
 
     public void setupKiLargeBlastPlayer(LivingEntity owner, float damage, float speed, int color, int colorBorder, int colorOutline, float size) {
@@ -797,7 +941,7 @@ public class KiBlastEntity extends AbstractKiProjectile {
 
     @Override
     protected float castClearanceRadius() {
-        if (this.getKiRenderType() == RENDER_TRI_BEAM && !this.isFiring()) return 0.0F;
+        if ((this.getKiRenderType() == RENDER_TRI_BEAM || this.getKiRenderType() == RENDER_SOUL_PUNISHER) && !this.isFiring()) return 0.0F;
         return this.isAnchoredVolley() ? 0.0F : super.castClearanceRadius();
     }
 
@@ -930,6 +1074,11 @@ public class KiBlastEntity extends AbstractKiProjectile {
 
     @Override
     public void tick() {
+        if (this.isPurifying()) {
+            this.tickPurify();
+            return;
+        }
+
         if (!this.isFiring() && this.getMaxLife() != 99999 && this.tickCount >= this.getCastTime()) {
             this.fireHability(this.getMaxLife() - this.tickCount);
         }
@@ -956,6 +1105,8 @@ public class KiBlastEntity extends AbstractKiProjectile {
 
     @Override
     protected void onKiTick() {
+        if (this.isPurifying()) return;
+
         if (!this.level().isClientSide && this.getOwner() == null) {
             this.discard();
             return;
@@ -1153,6 +1304,7 @@ public class KiBlastEntity extends AbstractKiProjectile {
                 pr = (float)(Math.sin(speed) * 0.5 + 0.5);
                 pg = (float)(Math.sin(speed + 2.0944) * 0.5 + 0.5);
                 pb = (float)(Math.sin(speed + 4.1888) * 0.5 + 0.5);
+                if (!isCasting) this.emitStardustTrail();
             }
 
             if (type >= 1 && !isCasting) {
@@ -1219,6 +1371,7 @@ public class KiBlastEntity extends AbstractKiProjectile {
         super.defineSynchedData();
         this.entityData.define(CAST_TIME, 0);
         this.entityData.define(STRETCH, 1.0F);
+        this.entityData.define(PURIFY_RADIUS, 0.0F);
         this.entityData.define(OFFSET_X, 0.0F);
         this.entityData.define(OFFSET_Y, 0.0F);
         this.entityData.define(OFFSET_Z, 0.0F);
@@ -1473,9 +1626,12 @@ public class KiBlastEntity extends AbstractKiProjectile {
                                     0, (double) this.getColorBorder(), (double) this.getSize(), 0.0D, 1.0D
                             );
                         }
+                        if (!this.isHeal() && TargetHelper.resolveHittable(targetEntity) instanceof LivingEntity living && isPurifiable(living)) {
+                            this.startPurify(living);
+                        }
                     }
                 }
-                this.discard();
+                if (!this.isPurifying()) this.discard();
             }
             return;
         }

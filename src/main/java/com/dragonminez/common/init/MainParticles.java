@@ -53,6 +53,8 @@ public class MainParticles {
             PARTICLE_TYPES.register("aura_particle", () -> new SimpleParticleType(true));
     public static final RegistryObject<SimpleParticleType> DIVINE =
             PARTICLE_TYPES.register("divine_particle", () -> new SimpleParticleType(true));
+    public static final RegistryObject<SimpleParticleType> STARDUST =
+            PARTICLE_TYPES.register("stardust", () -> new SimpleParticleType(true));
     @SuppressWarnings("deprecation")
     public static final RegistryObject<ParticleType<BlockParticleOption>> FLYING_BLOCK =
             PARTICLE_TYPES.register("flying_block", () -> new ParticleType<BlockParticleOption>(false, BlockParticleOption.DESERIALIZER) {
