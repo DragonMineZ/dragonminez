@@ -116,7 +116,19 @@ public class Resources {
         this.alignment = Math.max(0, Math.min(100, alignment));
     }
 
-    public void setTrainingPoints(double points) {
+    public float getTrainingPoints() {
+        return (float) Math.min(trainingPoints, Float.MAX_VALUE);
+    }
+
+    public double getTrainingPointsExact() {
+        return trainingPoints;
+    }
+
+    public void setTrainingPoints(float points) {
+        setTrainingPointsExact(points);
+    }
+
+    public void setTrainingPointsExact(double points) {
         if (Double.isNaN(points)) return;
         this.trainingPoints = Math.floor(Math.max(0.0, Math.min(Double.MAX_VALUE, points)));
     }
@@ -142,24 +154,16 @@ public class Resources {
         addTrainingPoints(amount, true);
     }
     public void addTrainingPoints(float amount, boolean shareWithParty) {
-        addTrainingPoints(amount, shareWithParty, false);
-    }
-
-    public void addBoostedTrainingPoints(float amount) {
-        addTrainingPoints(amount, true, true);
-    }
-
-    private void addTrainingPoints(float amount, boolean shareWithParty, boolean preBoosted) {
         if (amount <= 0 || player == null) {
-            setTrainingPoints(trainingPoints + amount);
+            setTrainingPointsExact(trainingPoints + amount);
             return;
         }
 
         double oldValue = this.trainingPoints;
-        DMZEvent.TPGainEvent event = new DMZEvent.TPGainEvent(player, (int) oldValue, (int) amount, shareWithParty, preBoosted);
+        DMZEvent.TPGainEvent event = new DMZEvent.TPGainEvent(player, (int) oldValue, (int) amount, shareWithParty);
 
         if (!MinecraftForge.EVENT_BUS.post(event)) {
-            setTrainingPoints(oldValue + event.getTpGain());
+            setTrainingPointsExact(oldValue + event.getTpGain());
         }
     }
 
@@ -217,7 +221,7 @@ public class Resources {
     }
     public void removePoise(float amount) { setCurrentPoise(currentPoise - amount); }
     public void removeAlignment(int amount) { setAlignment(alignment - amount); }
-    public void removeTrainingPoints(float amount) { setTrainingPoints(trainingPoints - amount); }
+    public void removeTrainingPoints(float amount) { setTrainingPointsExact(trainingPoints - amount); }
 
     public CompoundTag save() {
         CompoundTag tag = new CompoundTag();

@@ -31,9 +31,17 @@ public class NumberFormattingUtil {
         return COMPACT_NUMBER_FORMATTER.format(largeNumber / scales[i]) + suffixes[i];
     }
 
+    public static boolean shouldUseScientificForm(float value) {
+        return shouldUseScientificForm((double) value);
+    }
+
     public static boolean shouldUseScientificForm(double value) {
         if (!Double.isFinite(value)) return false;
         return Math.floor(Math.abs(value)) >= 999_999_999d;
+    }
+
+    public static String formatScientificNumber(float value) {
+        return formatScientificNumber((double) value);
     }
 
     public static String formatScientificNumber(double value) {

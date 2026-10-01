@@ -1724,6 +1724,10 @@ public class StatsData {
 		return (int) totalCost;
 	}
 
+	public int calculateStatIncrease(int maxStatsToAdd, float availableTPs, int maxStats) {
+		return calculateStatIncrease(maxStatsToAdd, (double) availableTPs, maxStats);
+	}
+
 	public int calculateStatIncrease(int maxStatsToAdd, double availableTPs, int maxStats) {
 		if (!ConfigManager.getServerConfig().getDynamicGrowth().isManualTpPurchasesEnabled()) return 0;
 		int statsIncreased = 0;
@@ -1754,7 +1758,7 @@ public class StatsData {
 			int newVit = (int) ((long) currentStats.getVitality() * keepPercentage / 100);
 			int newPwr = (int) ((long) currentStats.getKiPower() * keepPercentage / 100);
 			int newEne = (int) ((long) currentStats.getEnergy() * keepPercentage / 100);
-			double currentTPs = getResources().getTrainingPoints();
+			double currentTPs = getResources().getTrainingPointsExact();
 			double newTPs = (currentTPs * keepPercentage) / 100;
 
 			currentStats.setStrength(Math.max(0, newStr));
@@ -1764,7 +1768,7 @@ public class StatsData {
 			currentStats.setKiPower(Math.max(0, newPwr));
 			currentStats.setEnergy(Math.max(0, newEne));
 
-			getResources().setTrainingPoints(newTPs);
+			getResources().setTrainingPointsExact(newTPs);
 		} else {
 			currentStats.setStrength(0);
 			currentStats.setStrikePower(0);
@@ -1772,7 +1776,7 @@ public class StatsData {
 			currentStats.setVitality(0);
 			currentStats.setKiPower(0);
 			currentStats.setEnergy(0);
-			getResources().setTrainingPoints(0);
+			getResources().setTrainingPointsExact(0);
 		}
 
 		if (getStatus().isFused()) FusionLogic.endFusion(player, this, false);
@@ -1833,7 +1837,7 @@ public class StatsData {
 	}
 
 	public void load(CompoundTag nbt) throws ClassNotFoundException {
-		boolean fullPayload = nbt.contains("Character");
+		boolean fullPayload = nbt.contains("Character") && nbt.contains("Stats");
 		if (nbt.contains("Stats")) stats.load(nbt.getCompound("Stats"));
 		if (nbt.contains("Status")) status.load(nbt.getCompound("Status"));
 		if (nbt.contains("Cooldowns")) cooldowns.load(nbt.getCompound("Cooldowns"));

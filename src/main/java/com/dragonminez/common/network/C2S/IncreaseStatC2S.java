@@ -50,7 +50,7 @@ public class IncreaseStatC2S {
 				String statNameStr = msg.statType.name();
 
 				int pendingAP = data.getResources().getPendingAttributePoints();
-				double availableTPs = data.getResources().getTrainingPoints();
+				double availableTPs = data.getResources().getTrainingPointsExact();
 				if (pendingAP <= 0 && availableTPs <= 0) return;
 
 				int maxStats = data.getConfiguredMaxValue();

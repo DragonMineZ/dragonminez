@@ -307,6 +307,22 @@ public class GravityLogic {
 		return baseCurve * cfg().getPenaltyCurveFactor();
 	}
 
+	public static double getJumpFactor(Player player) {
+		return getJumpFactor(getPenalizationGravity(player));
+	}
+
+	public static double getFlyFactor(Player player) {
+		return getFlyFactor(getPenalizationGravity(player));
+	}
+
+	public static boolean isFlightHardStopped(Player player) {
+		return isFlightHardStopped(getPenalizationGravity(player));
+	}
+
+	public static double getFallExtra(Player player) {
+		return getFallExtra(getPenalizationGravity(player));
+	}
+
 	public static double getJumpFactor(double pGravity) {
 		GeneralServerConfig.GravityConfig config = cfg();
 		if (!config.getPhysicalEnabled()) return 1.0;

@@ -49,7 +49,7 @@ public class ImportTechniqueC2S {
 					player.displayClientMessage(Component.translatable("message.dragonminez.fusion.action_blocked"), true);
 					return;
 				}
-				if (data.getResources().getTrainingPoints() < tpCost) {
+				if (data.getResources().getTrainingPointsExact() < tpCost) {
 					NetworkHandler.sendToPlayer(new TechniqueImportResultS2C(TechniqueImportResultS2C.Status.NOT_ENOUGH_TP, tpCost), player);
 					return;
 				}

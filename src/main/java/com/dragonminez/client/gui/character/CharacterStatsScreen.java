@@ -453,7 +453,7 @@ public class CharacterStatsScreen extends BaseMenuScreen {
 		TextUtil.drawCenteredStringWithBorder(graphics, this.font, tr("gui.dragonminez.character_stats.info").withStyle(style -> style.withBold(true)), 85, titleY, 0xFBC51C, 0x000000);
 
 		int level = statsData.getLevel();
-		double tps = statsData.getResources().getTrainingPoints();
+		double tps = statsData.getResources().getTrainingPointsExact();
 		String characterClass = statsData.getCharacter().getCharacterClass();
 		String form = statsData.getCharacter().getActiveForm();
 		String stackForm = statsData.getCharacter().getActiveStackForm();
@@ -1745,7 +1745,7 @@ public class CharacterStatsScreen extends BaseMenuScreen {
 		if (allowed <= 0) return new int[]{0, 0};
 		int apToUse = Math.min(statsData.getPendingAttributePoints(), allowed);
 		int remaining = allowed - apToUse;
-		var availableTPs = statsData.getResources().getTrainingPoints();
+		var availableTPs = statsData.getResources().getTrainingPointsExact();
 		int tpStats = 0;
 		int tpCost = 0;
 		if (remaining > 0 && availableTPs > 0) {

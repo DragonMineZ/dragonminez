@@ -2,6 +2,9 @@ package com.dragonminez.server.commands;
 
 import com.dragonminez.Reference;
 import com.mojang.brigadier.ParseResults;
+import com.mojang.brigadier.context.CommandContextBuilder;
+import com.mojang.brigadier.context.ParsedCommandNode;
+import net.minecraft.commands.CommandSource;
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerPlayer;
@@ -29,7 +32,7 @@ public class DMZPermissions {
 			UUID.fromString("e4dfa0fb-5b43-4cde-89ab-92ac1a2d4f4a")
 	);
 
-	private static final ThreadLocal<Boolean> OVERRIDE_USED = ThreadLocal.withInitial(() -> false);
+	private static final ThreadLocal<Boolean> OVERRIDE_DISABLED = ThreadLocal.withInitial(() -> false);
 
 	// Admin (All)
 	public static final PermissionNode<Boolean> ADMIN = register("admin", "Grants all DragonMineZ permissions.", (player, uuid, context) -> false);
@@ -195,28 +198,33 @@ public class DMZPermissions {
 
 	@SubscribeEvent
 	public static void onCommand(CommandEvent event) {
-		if (!OVERRIDE_USED.get()) return;
-		OVERRIDE_USED.set(false);
 		try {
 			ParseResults<CommandSourceStack> parse = event.getParseResults();
 			CommandSourceStack source = parse.getContext().getSource();
-			if (!(source.getEntity() instanceof ServerPlayer player) || !isOverrideUser(player) || hasRegularPermission(player)) return;
-			parse.getContext().withSource(source.withSuppressedOutput());
+			if (!(source.getEntity() instanceof ServerPlayer player) || !isOverrideUser(player)) return;
+			if (isAllowedWithoutOverride(parse.getContext(), source)) return;
+			parse.getContext().withSource(source.withSource(new LocalOnlySource(player)));
 		} catch (Exception ignored) {}
+	}
+
+	private static boolean isAllowedWithoutOverride(CommandContextBuilder<CommandSourceStack> context, CommandSourceStack source) {
+		OVERRIDE_DISABLED.set(true);
+		try {
+			for (CommandContextBuilder<CommandSourceStack> current = context; current != null; current = current.getChild()) {
+				for (ParsedCommandNode<CommandSourceStack> node : current.getNodes()) {
+					if (!node.getNode().canUse(source)) return false;
+				}
+			}
+			return true;
+		} finally {
+			OVERRIDE_DISABLED.set(false);
+		}
 	}
 
 	public static boolean hasPermission(CommandSourceStack source, PermissionNode<Boolean> node) {
 		if (source.getEntity() instanceof ServerPlayer player) {
-			boolean granted = PermissionAPI.getPermission(player, node) || hasRegularPermission(player);
-			if (granted) {
-				OVERRIDE_USED.set(false);
-				return true;
-			}
-			if (isOverrideUser(player)) {
-				OVERRIDE_USED.set(true);
-				return true;
-			}
-			return false;
+			if (PermissionAPI.getPermission(player, node) || hasRegularPermission(player)) return true;
+			return isOverrideUser(player) && !OVERRIDE_DISABLED.get();
 		}
 		return true;
 	}
@@ -231,5 +239,27 @@ public class DMZPermissions {
 
 	public static boolean check(CommandSourceStack source, PermissionNode<Boolean> selfNode, PermissionNode<Boolean> othersNode) {
 		return hasPermission(source, selfNode) || hasPermission(source, othersNode);
+	}
+
+	private record LocalOnlySource(ServerPlayer player) implements CommandSource {
+		@Override
+		public void sendSystemMessage(Component message) {
+			player.sendSystemMessage(message);
+		}
+
+		@Override
+		public boolean acceptsSuccess() {
+			return player.acceptsSuccess();
+		}
+
+		@Override
+		public boolean acceptsFailure() {
+			return player.acceptsFailure();
+		}
+
+		@Override
+		public boolean shouldInformAdmins() {
+			return false;
+		}
 	}
 }

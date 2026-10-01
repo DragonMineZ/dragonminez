@@ -158,7 +158,7 @@ public class CreateTechniqueC2S {
 				technique.calculateDerivedValues();
 
 				int tpCost = Math.max(0, Math.round(technique.getTpCost()));
-				if (data.getResources().getTrainingPoints() < tpCost) {
+				if (data.getResources().getTrainingPointsExact() < tpCost) {
 					NetworkHandler.sendToTrackingEntityAndSelf(new ProgressionSyncS2C(player), player);
 					return;
 				}

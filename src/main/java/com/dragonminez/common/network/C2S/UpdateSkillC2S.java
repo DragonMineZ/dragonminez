@@ -77,7 +77,7 @@ public class UpdateSkillC2S {
 							if (skill.getLevel() <= 0 && isMasterOnlyFormSkill(data, skillName)) break;
 							refreshRuntimeMaxLevel(data, skillName, skill);
 							int upgradeCost = computeTpCost(data, skillName, skill.getLevel());
-							if (!skill.isMaxLevel() && upgradeCost >= 0 && data.getResources().getTrainingPoints() >= upgradeCost && !(skillName.equals("potentialunlock") && skill.getLevel() == 10)) {
+							if (!skill.isMaxLevel() && upgradeCost >= 0 && data.getResources().getTrainingPointsExact() >= upgradeCost && !(skillName.equals("potentialunlock") && skill.getLevel() == 10)) {
 								data.getResources().removeTrainingPoints(upgradeCost);
 								boolean wasLevelZero = skill.getLevel() == 0;
 								skill.addLevel(1);
@@ -101,7 +101,7 @@ public class UpdateSkillC2S {
 							}
 							boolean notOwned = !data.getSkills().hasSkill(skillName)
 									|| (isFormSkillPurchase && data.getSkills().getSkillLevel(skillName) == 0);
-							if (notOwned && effectiveCost >= 0 && data.getResources().getTrainingPoints() >= effectiveCost) {
+							if (notOwned && effectiveCost >= 0 && data.getResources().getTrainingPointsExact() >= effectiveCost) {
 								data.getResources().removeTrainingPoints(effectiveCost);
 								data.getSkills().setSkillLevel(skillName, 1);
 								Skill purchased = data.getSkills().getSkill(skillName);

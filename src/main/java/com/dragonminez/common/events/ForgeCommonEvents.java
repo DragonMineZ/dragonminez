@@ -219,6 +219,7 @@ public class ForgeCommonEvents {
 			PacketRateLimiter.clear(player.getUUID());
 			com.dragonminez.common.dialogue.DialogueService.clear(player.getUUID());
 			com.dragonminez.common.network.C2S.CombatAttackRequestC2S.clearCombo(player.getUUID());
+			com.dragonminez.common.wish.wishes.ReCustomizeWish.clear(player.getUUID());
 			com.dragonminez.server.util.BeetleFusionTracker.clear(player.getUUID());
 			com.dragonminez.server.world.worldboss.WorldBossManager.onPlayerLogout(player);
 			StatsProvider.get(StatsCapability.INSTANCE, player).ifPresent(data -> {
