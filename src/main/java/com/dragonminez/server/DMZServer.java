@@ -25,6 +25,7 @@ public class DMZServer {
 		DebugCommand.register(dispatcher);
 		MasteryCommand.register(dispatcher);
 		LocateCommand.register(dispatcher);
+		DragonBallsCommand.register(dispatcher);
 		PartyCommand.register(dispatcher);
 		StoryCommand.register(dispatcher);
 		ReviveCommand.register(dispatcher);

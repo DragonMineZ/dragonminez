@@ -3,24 +3,39 @@ package com.dragonminez.server.events;
 import com.dragonminez.Env;
 import com.dragonminez.LogUtil;
 import com.dragonminez.Reference;
+import com.dragonminez.common.config.ConfigManager;
 import com.dragonminez.common.dragonball.DragonBallDefinitions;
 import com.dragonminez.common.dragonball.DragonBallSetDefinition;
+import com.dragonminez.common.init.block.entity.DragonBallBlockEntity;
+import com.dragonminez.common.init.entities.dragon.DragonWishEntity;
 import com.dragonminez.common.network.NetworkHandler;
 import com.dragonminez.common.network.S2C.RadarSyncS2C;
 import com.dragonminez.server.world.data.DragonBallSavedData;
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.registries.Registries;
+import net.minecraft.resources.ResourceKey;
+import net.minecraft.resources.ResourceLocation;
+import net.minecraft.server.MinecraftServer;
+import net.minecraft.server.level.ServerChunkCache;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.item.ItemEntity;
+import net.minecraft.world.item.BlockItem;
+import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.ChunkPos;
-import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
+import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.level.chunk.LevelChunk;
 import net.minecraft.world.level.levelgen.Heightmap;
 import net.minecraftforge.event.TickEvent;
+import net.minecraftforge.event.entity.EntityLeaveLevelEvent;
+import net.minecraftforge.event.entity.item.ItemExpireEvent;
 import net.minecraftforge.event.entity.player.PlayerEvent;
-import net.minecraftforge.event.level.BlockEvent;
 import net.minecraftforge.event.level.ChunkEvent;
+import net.minecraftforge.eventbus.api.EventPriority;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
 
@@ -29,139 +44,226 @@ import java.util.concurrent.ConcurrentLinkedQueue;
 
 @Mod.EventBusSubscriber(modid = Reference.MOD_ID)
 public class DragonBallsHandler {
+	public static final long DRAGON_WAIT_TICKS = 20L * 60L * 10L;
+
 	private static final Queue<Runnable> generationQueue = new ConcurrentLinkedQueue<>();
-	private static final int PENDING_RESCAN_INTERVAL = 100;
-	private static int pendingRescanTimer = 0;
-
+	private static final int MAINTENANCE_INTERVAL = 20;
 	private static final int RADAR_SYNC_INTERVAL = 100;
-	private static int radarSyncTimer = 0;
-
-	private static final double NEARBY_GEN_RANGE_SQR = 128.0 * 128.0;
+	private static final Random RANDOM = new Random();
+	private static boolean radarDirty = false;
 
 	public static void scatterDragonBalls(ServerLevel level, String setId) {
 		DragonBallSetDefinition definition = DragonBallDefinitions.getBallSet(setId);
 		if (definition == null || !definition.supportsDimension(level.dimension())) return;
 
 		DragonBallSavedData data = DragonBallSavedData.get(level);
-		Random random = new Random();
-		int range = definition.getSpawnRange();
-		BlockPos spawnPos = level.getSharedSpawnPos();
-
-		Map<Integer, List<BlockPos>> active = data.getActiveBalls(setId);
-		Map<Integer, List<BlockPos>> pending = data.getPendingBalls(setId);
+		validateLoadedActiveBalls(level, data, definition);
 
 		boolean isFirstSpawn = !data.isFirstSpawnComplete(setId);
+		if (!isFirstSpawn) topUpCopies(level, setId);
+
 		int maxSets = definition.getCopies();
 		int setsToSpawn = isFirstSpawn ? maxSets : 1;
-
 		for (int star : definition.getStars()) {
-			int currentCount = active.get(star).size() + pending.get(star).size();
-			int actualToSpawn = Math.min(setsToSpawn, maxSets - currentCount);
-			for (int i = 0; i < actualToSpawn; i++) {
-				int x = spawnPos.getX() + random.nextInt(range * 2) - range;
-				int z = spawnPos.getZ() + random.nextInt(range * 2) - range;
-				BlockPos targetPos = new BlockPos(x, 0, z);
-				pending.get(star).add(targetPos);
-				LogUtil.debug(Env.SERVER, "Dragon Ball (pending) [" + star + "] assigned to " + targetPos + " for set " + setId + " (Y is a dummy value)");
-				if (level.isLoaded(targetPos)) generationQueue.add(() -> generateBallSafely(level, definition, star, targetPos));
-			}
+			int actualToSpawn = Math.min(setsToSpawn, maxSets - data.getTrackedCount(setId, star));
+			for (int i = 0; i < actualToSpawn; i++) addPendingBall(level, data, definition, star);
 		}
 
 		if (isFirstSpawn) {
 			data.setFirstSpawnComplete(setId, true);
+			data.setSpawnedCopies(setId, maxSets);
 		}
 		data.setDirty();
 		syncRadar(level);
 	}
 
-	public static void unregisterConsumedDragonBalls(ServerLevel level, Collection<BlockPos> consumedPositions, String setId) {
-		if (consumedPositions == null || consumedPositions.isEmpty()) return;
+	public static void topUpCopies(ServerLevel level, String setId) {
+		DragonBallSetDefinition definition = DragonBallDefinitions.getBallSet(setId);
+		if (definition == null || !definition.supportsDimension(level.dimension())) return;
 		DragonBallSavedData data = DragonBallSavedData.get(level);
-		Map<Integer, List<BlockPos>> active = data.getActiveBalls(setId);
-		Set<BlockPos> consumedSet = new HashSet<>(consumedPositions);
-		boolean changed = false;
-		for (int star : DragonBallDefinitions.getBallSet(setId).getStars()) {
-			List<BlockPos> positions = active.get(star);
-			if (positions != null && positions.removeIf(consumedSet::contains)) changed = true;
+		if (!data.isFirstSpawnComplete(setId)) return;
+
+		int copies = definition.getCopies();
+		int spawned = data.getSpawnedCopies(setId);
+		if (spawned < 0) {
+			int tracked = 0;
+			for (int star : definition.getStars()) tracked = Math.max(tracked, data.getTrackedCount(setId, star));
+			spawned = Math.max(1, Math.min(copies, tracked));
 		}
-		if (changed) {
-			data.setDirty();
-			syncRadar(level);
+		if (copies > spawned) {
+			int delta = copies - spawned;
+			for (int star : definition.getStars()) {
+				int toSpawn = Math.min(delta, copies - data.getTrackedCount(setId, star));
+				for (int i = 0; i < toSpawn; i++) addPendingBall(level, data, definition, star);
+			}
+			LogUtil.info(Env.SERVER, "Dragon Ball set " + setId + " raised from " + spawned + " to " + copies + " copies");
+		}
+		if (data.getSpawnedCopies(setId) != copies) data.setSpawnedCopies(setId, copies);
+	}
+
+	public static int regenerateSet(ServerLevel level, String setId) {
+		DragonBallSetDefinition definition = DragonBallDefinitions.getBallSet(setId);
+		if (definition == null || !definition.supportsDimension(level.dimension())) return 0;
+		DragonBallSavedData data = DragonBallSavedData.get(level);
+		validateLoadedActiveBalls(level, data, definition);
+
+		int copies = definition.getCopies();
+		int added = 0;
+		for (int star : definition.getStars()) {
+			while (data.getTrackedCount(setId, star) < copies) {
+				addPendingBall(level, data, definition, star);
+				added++;
+			}
+		}
+		if (!data.isFirstSpawnComplete(setId)) data.setFirstSpawnComplete(setId, true);
+		data.setSpawnedCopies(setId, copies);
+		LogUtil.info(Env.SERVER, "Dragon Ball set " + setId + " regenerated by command, " + added + " ball(s) added");
+		return added;
+	}
+
+	public static ServerLevel getHomeLevel(MinecraftServer server, DragonBallSetDefinition definition) {
+		for (ResourceLocation dimension : definition.getValidDimensions()) {
+			ServerLevel level = server.getLevel(ResourceKey.create(Registries.DIMENSION, dimension));
+			if (level != null) return level;
+		}
+		return null;
+	}
+
+	public static void registerSummon(ServerLevel level, DragonWishEntity dragon, String setId) {
+		DragonBallSavedData.get(level).addSummon(dragon.getUUID(), setId == null ? "" : setId, dragon.getSummonExpiresAt());
+	}
+
+	private static void addPendingBall(ServerLevel level, DragonBallSavedData data, DragonBallSetDefinition definition, int star) {
+		int range = definition.getSpawnRange();
+		BlockPos spawnPos = level.getSharedSpawnPos();
+		int x = spawnPos.getX() + RANDOM.nextInt(range * 2) - range;
+		int z = spawnPos.getZ() + RANDOM.nextInt(range * 2) - range;
+		BlockPos targetPos = new BlockPos(x, 0, z);
+		data.getPendingBalls(definition.getId(), star).add(targetPos);
+		data.setDirty();
+		LogUtil.debug(Env.SERVER, "Dragon Ball (pending) [" + star + "] assigned to " + targetPos + " for set " + definition.getId() + " (Y is a dummy value)");
+		if (level.getChunkSource().getChunkNow(x >> 4, z >> 4) != null) {
+			generationQueue.add(() -> generateBallSafely(level, definition, star, targetPos));
+		}
+		syncRadar(level);
+	}
+
+	private static void respawnBall(MinecraftServer server, DragonBallSetDefinition definition, int star, ServerLevel preferred) {
+		if (!ConfigManager.getServerConfig().getWorldGen().getGenerateDragonBalls()) return;
+		ServerLevel level = preferred != null && definition.supportsDimension(preferred.dimension()) ? preferred : getHomeLevel(server, definition);
+		if (level == null) return;
+		DragonBallSavedData data = DragonBallSavedData.get(level);
+		if (data.getTrackedCount(definition.getId(), star) >= definition.getCopies()) return;
+		addPendingBall(level, data, definition, star);
+	}
+
+	private static void dropStaleBall(ServerLevel level, DragonBallSavedData data, DragonBallSetDefinition definition, int star, BlockPos pos) {
+		if (!data.getActiveBalls(definition.getId(), star).remove(pos)) return;
+		data.setDirty();
+		LogUtil.warn(Env.SERVER, "Dragon Ball [" + star + "] of set " + definition.getId() + " was tracked at " + pos + " but is no longer there, respawning it");
+		respawnBall(level.getServer(), definition, star, level);
+		syncRadar(level);
+	}
+
+	private static void validateLoadedActiveBalls(ServerLevel level, DragonBallSavedData data, DragonBallSetDefinition definition) {
+		ServerChunkCache chunks = level.getChunkSource();
+		for (int star : definition.getStars()) {
+			Block expected = definition.getBlockForStar(star);
+			if (expected == null) continue;
+			for (BlockPos pos : new ArrayList<>(data.getActiveBalls(definition.getId(), star))) {
+				LevelChunk chunk = chunks.getChunkNow(pos.getX() >> 4, pos.getZ() >> 4);
+				if (chunk != null && !chunk.getBlockState(pos).is(expected)) dropStaleBall(level, data, definition, star, pos);
+			}
 		}
 	}
 
 	@SubscribeEvent
 	public static void onChunkLoad(ChunkEvent.Load event) {
-		if (!(event.getLevel() instanceof ServerLevel level)) return;
+		if (!(event.getLevel() instanceof ServerLevel level) || !(event.getChunk() instanceof LevelChunk chunk)) return;
 		DragonBallSavedData data = DragonBallSavedData.get(level);
-		ChunkPos chunkPos = event.getChunk().getPos();
+		ChunkPos chunkPos = chunk.getPos();
 
-		for (DragonBallSetDefinition definition : DragonBallDefinitions.getBallSetsForDimension(level.dimension())) {
-			Map<Integer, List<BlockPos>> pending = data.getPendingBalls(definition.getId());
-			pending.forEach((star, targets) -> {
-				for (BlockPos target : new ArrayList<>(targets)) {
-					if (chunkPos.x == (target.getX() >> 4) && chunkPos.z == (target.getZ() >> 4)) {
+		for (BlockEntity blockEntity : new ArrayList<>(chunk.getBlockEntities().values())) {
+			if (blockEntity instanceof DragonBallBlockEntity) {
+				onDragonBallPlaced(level, chunk.getBlockState(blockEntity.getBlockPos()).getBlock(), blockEntity.getBlockPos().immutable());
+			}
+		}
+
+		for (String setId : new ArrayList<>(data.getKnownSetIds())) {
+			DragonBallSetDefinition definition = DragonBallDefinitions.getBallSet(setId);
+			if (definition == null) continue;
+			for (int star : definition.getStars()) {
+				Block expected = definition.getBlockForStar(star);
+				if (expected != null) {
+					for (BlockPos pos : new ArrayList<>(data.getActiveBalls(setId, star))) {
+						if ((pos.getX() >> 4) == chunkPos.x && (pos.getZ() >> 4) == chunkPos.z && !chunk.getBlockState(pos).is(expected)) {
+							dropStaleBall(level, data, definition, star, pos);
+						}
+					}
+				}
+				if (!definition.supportsDimension(level.dimension())) continue;
+				for (BlockPos target : new ArrayList<>(data.getPendingBalls(setId, star))) {
+					if ((target.getX() >> 4) == chunkPos.x && (target.getZ() >> 4) == chunkPos.z) {
 						generationQueue.add(() -> generateBallSafely(level, definition, star, target));
 					}
 				}
-			});
+			}
 		}
 	}
 
 	@SubscribeEvent
 	public static void onLevelTick(TickEvent.LevelTickEvent event) {
-		if (event.phase != TickEvent.Phase.END || event.level.isClientSide) return;
-		if (event.level instanceof ServerLevel level && ++pendingRescanTimer >= PENDING_RESCAN_INTERVAL) {
-			pendingRescanTimer = 0;
-			rescanPendingBalls(level);
-		}
-		if (event.level instanceof ServerLevel level && level.dimension().equals(Level.OVERWORLD)
-				&& ++radarSyncTimer >= RADAR_SYNC_INTERVAL) {
-			radarSyncTimer = 0;
-			syncRadar(level);
-		}
-		if (event.level instanceof ServerLevel level) {
-			generateNearbyPendingBalls(level);
-		}
+		if (event.phase != TickEvent.Phase.END || !(event.level instanceof ServerLevel level)) return;
+		if (level.getGameTime() % MAINTENANCE_INTERVAL == 0) maintainLevel(level);
 		while (!generationQueue.isEmpty()) {
 			Runnable task = generationQueue.poll();
 			if (task != null) task.run();
 		}
 	}
 
-	private static void generateNearbyPendingBalls(ServerLevel level) {
-		List<ServerPlayer> players = level.players();
-		if (players.isEmpty()) return;
-		DragonBallSavedData data = DragonBallSavedData.get(level);
-		for (DragonBallSetDefinition definition : DragonBallDefinitions.getBallSetsForDimension(level.dimension())) {
-			Map<Integer, List<BlockPos>> pending = data.getPendingBalls(definition.getId());
-			pending.forEach((star, targets) -> {
-				for (BlockPos target : new ArrayList<>(targets)) {
-					if (!level.isLoaded(target)) continue;
-					for (ServerPlayer player : players) {
-						double dx = player.getX() - (target.getX() + 0.5);
-						double dz = player.getZ() - (target.getZ() + 0.5);
-						if (dx * dx + dz * dz <= NEARBY_GEN_RANGE_SQR) {
-							generationQueue.add(() -> generateBallSafely(level, definition, star, target));
-							break;
-						}
-					}
-				}
-			});
-		}
+	@SubscribeEvent
+	public static void onServerTick(TickEvent.ServerTickEvent event) {
+		if (event.phase != TickEvent.Phase.END || event.getServer() == null) return;
+		if (event.getServer().getTickCount() % RADAR_SYNC_INTERVAL == 0) radarDirty = true;
+		if (!radarDirty) return;
+		radarDirty = false;
+		RadarSyncS2C packet = buildRadarPacket(event.getServer());
+		if (packet != null) NetworkHandler.sendToAllPlayers(packet);
 	}
 
-	private static void rescanPendingBalls(ServerLevel level) {
+	private static void maintainLevel(ServerLevel level) {
 		DragonBallSavedData data = DragonBallSavedData.get(level);
-		for (DragonBallSetDefinition definition : DragonBallDefinitions.getBallSetsForDimension(level.dimension())) {
-			Map<Integer, List<BlockPos>> pending = data.getPendingBalls(definition.getId());
-			pending.forEach((star, targets) -> {
-				for (BlockPos target : new ArrayList<>(targets)) {
-					if (level.isLoaded(target)) {
+		ServerChunkCache chunks = level.getChunkSource();
+		for (String setId : new ArrayList<>(data.getKnownSetIds())) {
+			DragonBallSetDefinition definition = DragonBallDefinitions.getBallSet(setId);
+			if (definition == null) continue;
+			validateLoadedActiveBalls(level, data, definition);
+			if (!definition.supportsDimension(level.dimension())) continue;
+			for (int star : definition.getStars()) {
+				for (BlockPos target : new ArrayList<>(data.getPendingBalls(setId, star))) {
+					if (chunks.getChunkNow(target.getX() >> 4, target.getZ() >> 4) != null) {
 						generationQueue.add(() -> generateBallSafely(level, definition, star, target));
 					}
 				}
-			});
+			}
+		}
+		expireAbandonedSummons(level, data);
+	}
+
+	private static void expireAbandonedSummons(ServerLevel level, DragonBallSavedData data) {
+		long now = level.getGameTime();
+		for (Map.Entry<UUID, DragonBallSavedData.Summon> entry : new ArrayList<>(data.getSummons().entrySet())) {
+			if (now < entry.getValue().expiresAt()) continue;
+			Entity entity = level.getEntity(entry.getKey());
+			if (entity instanceof DragonWishEntity dragon && !dragon.isRemoved()) {
+				dragon.discard();
+				continue;
+			}
+			data.removeSummon(entry.getKey());
+			if (ConfigManager.getServerConfig().getWorldGen().getGenerateDragonBalls() && !entry.getValue().setId().isBlank()) {
+				LogUtil.info(Env.SERVER, "Dragon " + entry.getKey() + " was left waiting while unloaded, rescattering set " + entry.getValue().setId());
+				scatterDragonBalls(level, entry.getValue().setId());
+			}
 		}
 	}
 
@@ -183,6 +285,32 @@ public class DragonBallsHandler {
 		if (event.getEntity() instanceof ServerPlayer player) syncRadarForPlayer(player);
 	}
 
+	@SubscribeEvent(priority = EventPriority.LOWEST)
+	public static void onBallItemExpire(ItemExpireEvent event) {
+		ItemEntity item = event.getEntity();
+		if (item.level() instanceof ServerLevel level) respawnLostItem(level, item.getItem());
+	}
+
+	@SubscribeEvent
+	public static void onBallItemLeaveLevel(EntityLeaveLevelEvent event) {
+		if (!(event.getEntity() instanceof ItemEntity item) || !(event.getLevel() instanceof ServerLevel level)) return;
+		Entity.RemovalReason reason = item.getRemovalReason();
+		boolean lost = reason == Entity.RemovalReason.KILLED
+				|| (reason == Entity.RemovalReason.DISCARDED && item.getY() < level.getMinBuildHeight() - 64);
+		if (lost) respawnLostItem(level, item.getItem());
+	}
+
+	private static void respawnLostItem(ServerLevel level, ItemStack stack) {
+		if (stack.isEmpty() || !(stack.getItem() instanceof BlockItem blockItem)) return;
+		Block block = blockItem.getBlock();
+		DragonBallSetDefinition definition = DragonBallDefinitions.getBallSetForBlock(block);
+		if (definition == null) return;
+		Integer star = definition.getStarForBlock(block);
+		if (star == null) return;
+		LogUtil.info(Env.SERVER, "Dragon Ball [" + star + "] of set " + definition.getId() + " was lost as an item, respawning it");
+		for (int i = 0; i < stack.getCount(); i++) respawnBall(level.getServer(), definition, star, level);
+	}
+
 	private static void scheduleDelayedSync(ServerPlayer player, int delayTicks) {
 		player.server.tell(new net.minecraft.server.TickTask(player.server.getTickCount() + delayTicks, () -> {
 			if (player.hasDisconnected()) return;
@@ -192,15 +320,17 @@ public class DragonBallsHandler {
 
 	private static void generateBallSafely(ServerLevel level, DragonBallSetDefinition definition, int star, BlockPos targetXZ) {
 		DragonBallSavedData data = DragonBallSavedData.get(level);
-		List<BlockPos> pendingForStar = data.getPendingBalls(definition.getId()).get(star);
-		if (pendingForStar == null || !pendingForStar.contains(targetXZ)) return;
+		List<BlockPos> pendingForStar = data.getPendingBalls(definition.getId(), star);
+		if (!pendingForStar.contains(targetXZ)) return;
+		if (level.getChunkSource().getChunkNow(targetXZ.getX() >> 4, targetXZ.getZ() >> 4) == null) return;
+
+		Block block = definition.getBlockForStar(star);
+		if (block == null) return;
 
 		int x = targetXZ.getX();
 		int z = targetXZ.getZ();
 		int y = level.getHeight(Heightmap.Types.MOTION_BLOCKING_NO_LEAVES, x, z);
 		BlockPos realPos = new BlockPos(x, y, z);
-
-		if (!level.isLoaded(realPos)) return;
 
 		BlockPos.MutableBlockPos mutable = realPos.mutable();
 		while (mutable.getY() > level.getMinBuildHeight() && level.getBlockState(mutable.below()).canBeReplaced()) {
@@ -212,36 +342,31 @@ public class DragonBallsHandler {
 			realPos = realPos.above();
 		}
 
+		if (level.isOutsideBuildHeight(realPos)) return;
+
 		BlockState below = level.getBlockState(realPos.below());
 		if (below.isAir() || below.is(Blocks.WATER)) {
 			level.setBlock(realPos.below(), Blocks.GRASS_BLOCK.defaultBlockState(), 2);
 		}
 
-		Block block = definition.getBlockForStar(star);
-		if (block == null) return;
-
 		boolean success = level.setBlock(realPos, block.defaultBlockState(), 2);
+		if (!success || !level.getBlockState(realPos).is(block)) return;
 
-		if (!success || level.getBlockState(realPos).getBlock() != block) return;
-
-		data.getPendingBalls(definition.getId()).get(star).remove(targetXZ);
-
-		if (!data.getActiveBalls(definition.getId()).get(star).contains(realPos)) data.getActiveBalls(definition.getId()).get(star).add(realPos);
-
+		pendingForStar.remove(targetXZ);
+		onDragonBallPlaced(level, block, realPos);
 		data.setDirty();
 		LogUtil.info(Env.SERVER, "Dragon Ball [" + star + "] physically generated at " + realPos + " for set " + definition.getId());
-		syncRadar(level);
 	}
 
-	@SubscribeEvent
-	public static void onBlockPlace(BlockEvent.EntityPlaceEvent event) {
-		Block block = event.getPlacedBlock().getBlock();
+	public static void onDragonBallPlaced(ServerLevel level, Block block, BlockPos pos) {
 		DragonBallSetDefinition definition = DragonBallDefinitions.getBallSetForBlock(block);
-		if (definition == null || !(event.getLevel() instanceof ServerLevel level)) return;
+		if (definition == null) return;
 		Integer star = definition.getStarForBlock(block);
 		if (star == null) return;
 		DragonBallSavedData data = DragonBallSavedData.get(level);
-		if (!data.getActiveBalls(definition.getId()).get(star).contains(event.getPos())) data.getActiveBalls(definition.getId()).get(star).add(event.getPos());
+		List<BlockPos> positions = data.getActiveBalls(definition.getId(), star);
+		if (positions.contains(pos)) return;
+		positions.add(pos);
 		data.setDirty();
 		syncRadar(level);
 	}
@@ -252,16 +377,13 @@ public class DragonBallsHandler {
 		Integer star = definition.getStarForBlock(block);
 		if (star == null) return;
 		DragonBallSavedData data = DragonBallSavedData.get(level);
-		List<BlockPos> positions = data.getActiveBalls(definition.getId()).get(star);
-		if (positions == null || !positions.remove(pos)) return;
+		if (!data.getActiveBalls(definition.getId(), star).remove(pos)) return;
 		data.setDirty();
 		syncRadar(level);
 	}
 
 	public static void syncRadar(ServerLevel level) {
-		if (level == null) return;
-		RadarSyncS2C packet = buildRadarPacket(level.getServer());
-		if (packet != null) NetworkHandler.sendToAllPlayers(packet);
+		radarDirty = true;
 	}
 
 	public static void syncRadarForPlayer(ServerPlayer player) {
@@ -270,18 +392,13 @@ public class DragonBallsHandler {
 		if (packet != null) NetworkHandler.sendToPlayer(packet, player);
 	}
 
-	/**
-	 * Collects radar positions for every ball set across ALL of its valid dimensions. A set is only
-	 * skipped for a dimension that isn't currently loaded (null level); other dimensions of the same
-	 * set still contribute, so a partially-loaded multi-dimension set never wipes the client radar.
-	 */
-	private static RadarSyncS2C buildRadarPacket(net.minecraft.server.MinecraftServer server) {
+	private static RadarSyncS2C buildRadarPacket(MinecraftServer server) {
 		if (server == null) return null;
 		Map<String, List<BlockPos>> positionsBySet = new HashMap<>();
 		for (DragonBallSetDefinition definition : DragonBallDefinitions.getBallSets()) {
 			List<BlockPos> positions = positionsBySet.computeIfAbsent(definition.getId(), ignored -> new ArrayList<>());
-			for (net.minecraft.resources.ResourceLocation dimension : definition.getValidDimensions()) {
-				ServerLevel setLevel = server.getLevel(net.minecraft.resources.ResourceKey.create(net.minecraft.core.registries.Registries.DIMENSION, dimension));
+			for (ResourceLocation dimension : definition.getValidDimensions()) {
+				ServerLevel setLevel = server.getLevel(ResourceKey.create(Registries.DIMENSION, dimension));
 				if (setLevel == null) continue;
 				positions.addAll(DragonBallSavedData.get(setLevel).getAllKnownPositionsForRadar(definition.getId()));
 			}

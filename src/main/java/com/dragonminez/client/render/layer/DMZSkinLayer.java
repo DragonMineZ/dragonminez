@@ -661,12 +661,30 @@ public class DMZSkinLayer<T extends AbstractClientPlayer & GeoAnimatable> extend
 	private void renderSkinPixelHair(BakedGeoModel model, PoseStack poseStack, T animatable, MultiBufferSource bufferSource, AbstractClientPlayer player, StatsData stats, float pt, int pl, int po, float alpha) {
 		var character = stats.getCharacter();
 		SkinPixels pixels = character.getSkinPixels();
-		if (!pixels.hasHairMarks() || !SkinGathererProvider.rendersPlayerSkin(character)) return;
-		PixelPaint paint = resolvePixelPaint(stats, FormConfig.FormData::getHairColor, FormConfig.FormData::getRgbHairColor);
-		if (paint == null) return;
+		if (!pixels.hasHairMarks() || character.getHairId() == HairPresets.BALD_PRESET_ID || !SkinGathererProvider.rendersPlayerSkin(character)) return;
 		ResourceLocation mask = SkinPixelTextures.hairMask(player, pixels);
 		if (mask == null) return;
-		renderMaskLayer(model, poseStack, animatable, bufferSource, mask, applyColorTint(paint.rgb(), stats), pt, pl, po, alpha * paint.alpha());
+		float[] published = SkinPaintContext.active() ? null : HairStyleResolver.getPublishedBaseColor(player.getId(), player.level().getGameTime());
+		float[] tint = published != null ? published : applyColorTint(resolveSkinHairColor(stats), stats);
+		renderMaskLayer(model, poseStack, animatable, bufferSource, mask, tint, pt, pl, po, alpha);
+	}
+
+	private float[] resolveSkinHairColor(StatsData stats) {
+		var character = stats.getCharacter();
+		float[] tint = character.getRgbHairColor();
+		FormConfig.FormData form = character.hasActiveForm() ? character.getActiveFormData() : null;
+		if (form != null && form.getHairColor() != null && !form.getHairColor().isEmpty()) tint = form.getRgbHairColor();
+		FormConfig.FormData stack = character.hasActiveStackForm() ? character.getActiveStackFormData() : null;
+		if (stack != null && stack.getHairColor() != null && !stack.getHairColor().isEmpty()) tint = stack.getRgbHairColor();
+		if (stats.getStatus().isActionCharging()) {
+			FormConfig.FormData next = null;
+			if (stats.getStatus().getSelectedAction() == ActionMode.FORM) next = TransformationsHelper.presentNextForm(stats);
+			else if (stats.getStatus().getSelectedAction() == ActionMode.STACK) next = TransformationsHelper.presentNextStackForm(stats);
+			if (next != null && next.getHairColor() != null && !next.getHairColor().isEmpty()) {
+				tint = lerpColor(Mth.clamp(stats.getResources().getActionCharge() / 100.0f, 0.0f, 1.0f), tint, next.getRgbHairColor());
+			}
+		}
+		return tint;
 	}
 
 	private void renderSkinPixelEyes(BakedGeoModel model, PoseStack poseStack, T animatable, MultiBufferSource bufferSource, AbstractClientPlayer player, StatsData stats, float pt, int pl, int po, float alpha) {

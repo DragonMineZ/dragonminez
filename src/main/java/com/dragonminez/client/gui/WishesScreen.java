@@ -43,6 +43,7 @@ public class WishesScreen extends ScaledScreen {
 	private static final int BADGE_COLOR = 0xFFFFE680;
 	private static final int DISABLED_TEXT = 0x8A8A8A;
 
+	private final int dragonEntityId;
 	private final String dragonType;
 	private final int maxWishesToSelect;
 	private final List<Wish> availableWishes;
@@ -62,8 +63,9 @@ public class WishesScreen extends ScaledScreen {
 
 	private TexturedTextButton confirmButton;
 
-	public WishesScreen(String dragonType, int wishCount) {
+	public WishesScreen(int dragonEntityId, String dragonType, int wishCount) {
 		super(Component.literal("Wishes").withStyle(Style.EMPTY.withFont(ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "smooth"))));
+		this.dragonEntityId = dragonEntityId;
 		this.dragonType = dragonType;
 		this.maxWishesToSelect = wishCount;
 		this.availableWishes = WishManager.getClientWishes(dragonType);
@@ -131,7 +133,7 @@ public class WishesScreen extends ScaledScreen {
 				return;
 			}
 		}
-		NetworkHandler.sendToServer(new GrantWishC2S(dragonType, new ArrayList<>(selectedIndices), new ArrayList<>(selectedTargets)));
+		NetworkHandler.sendToServer(new GrantWishC2S(dragonEntityId, dragonType, new ArrayList<>(selectedIndices), new ArrayList<>(selectedTargets)));
 		this.onClose();
 	}
 

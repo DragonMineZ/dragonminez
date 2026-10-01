@@ -487,12 +487,14 @@ public class ForgeCommonEvents {
 
 		if (ConfigManager.getServerConfig().getWorldGen().getGenerateDragonBalls()) {
 			for (var definition : DragonBallDefinitions.getBallSets()) {
-				ServerLevel targetLevel = event.getServer().getLevel(net.minecraft.resources.ResourceKey.create(net.minecraft.core.registries.Registries.DIMENSION, definition.getValidDimensions().iterator().next()));
+				ServerLevel targetLevel = DragonBallsHandler.getHomeLevel(event.getServer(), definition);
 				if (targetLevel == null) continue;
 				DragonBallSavedData data = DragonBallSavedData.get(targetLevel);
 				if (!data.isFirstSpawnComplete(definition.getId())) {
 					DragonBallsHandler.scatterDragonBalls(targetLevel, definition.getId());
 					LogUtil.info(Env.COMMON, "First DragonBalls Spawn setup for set: " + definition.getId());
+				} else {
+					DragonBallsHandler.topUpCopies(targetLevel, definition.getId());
 				}
 			}
 		} else {

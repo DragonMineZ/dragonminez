@@ -692,7 +692,7 @@ public final class MainItems {
 				int star = entry.getKey();
 				String registryName = entry.getValue();
 				RegistryObject<Item> item = ITEM_REGISTER.register(registryName,
-						() -> new BlockItem(MainBlocks.getDragonBallBlockOrThrow(definition.getId(), star).get(), new Item.Properties().stacksTo(1).fireResistant()));
+						() -> new DragonBallBlockItem(MainBlocks.getDragonBallBlockOrThrow(definition.getId(), star).get(), new Item.Properties().stacksTo(1).fireResistant()));
 				setItems.put(star, item);
 			}
 			registered.put(definition.getId(), Map.copyOf(setItems));
