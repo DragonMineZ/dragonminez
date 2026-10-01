@@ -1957,6 +1957,24 @@ public class MainEntities {
                     .noSave()
                     .build(ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "kill_driver").toString())
     );
+    public static final RegistryObject<EntityType<HellzoneGrenadeEntity>> HELLZONE_GRENADE = ENTITY_TYPES.register("hellzone_grenade",
+            () -> EntityType.Builder.<HellzoneGrenadeEntity>of(HellzoneGrenadeEntity::new, MobCategory.MISC)
+                    .sized(0.5F, 0.5F)
+                    .clientTrackingRange(64)
+                    .updateInterval(1)
+                    .fireImmune()
+                    .noSave()
+                    .build(ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "hellzone_grenade").toString())
+    );
+    public static final RegistryObject<EntityType<HellzoneGrenadeEntity.Orb>> HELLZONE_GRENADE_ORB = ENTITY_TYPES.register("hellzone_grenade_orb",
+            () -> EntityType.Builder.<HellzoneGrenadeEntity.Orb>of(HellzoneGrenadeEntity.Orb::new, MobCategory.MISC)
+                    .sized(0.5F, 0.5F)
+                    .clientTrackingRange(128)
+                    .updateInterval(1)
+                    .fireImmune()
+                    .noSave()
+                    .build(ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "hellzone_grenade_orb").toString())
+    );
     public static final RegistryObject<EntityType<KiBarrierEntity>> KI_BARRIER = ENTITY_TYPES.register("ki_barrier",
             () -> EntityType.Builder.<KiBarrierEntity>of(KiBarrierEntity::new, MobCategory.MISC)
                     .sized(0.8F, 0.8F)

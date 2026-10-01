@@ -73,6 +73,12 @@ public class TechniqueDispatcher {
                     } else if (activeKi instanceof KillDriverEntity ring) {
                         ring.setKiDamage(realDamage);
                         ring.fireHability(maxLife);
+                    } else if (activeKi instanceof HellzoneGrenadeEntity hellzone) {
+                        hellzone.setKiDamage(realDamage);
+                        if (!hellzone.fireHability(clampedCharge, homingTargetId)) {
+                            KiTechniqueHandler.HellzoneGrenade.notifyNoTarget(owner);
+                            return false;
+                        }
                     }
                 }
                 return true;
@@ -91,6 +97,28 @@ public class TechniqueDispatcher {
             ring.setLockTarget(homingTargetId);
 
             if (!level.isClientSide) level.addFreshEntity(ring);
+            return true;
+        }
+
+        if (KiTechniqueHandler.HellzoneGrenade.is(data.getId())) {
+            if (!isInitialSpawn) return true;
+
+            LivingEntity hellzoneTarget = HellzoneGrenadeEntity.findTarget(owner, homingTargetId);
+            if (hellzoneTarget == null) {
+                KiTechniqueHandler.HellzoneGrenade.notifyNoTarget(owner);
+                return false;
+            }
+
+            HellzoneGrenadeEntity hellzone = new HellzoneGrenadeEntity(level, owner);
+            hellzone.setupPlayer(owner, realDamage, kiSpeed, data.getColorInterior(), data.getColorExterior(),
+                    data.getColorOutline(), castSize);
+            hellzone.setChargeTarget(hellzoneTarget);
+            hellzone.setKiType(kiTypeOrdinal);
+            hellzone.setTechniqueId(data.getId());
+            hellzone.setArmorPenetration(data.getArmorPenetration());
+            hellzone.setHeal(isHeal);
+
+            if (!level.isClientSide) level.addFreshEntity(hellzone);
             return true;
         }
 
@@ -529,6 +557,11 @@ public class TechniqueDispatcher {
 
 	public static boolean restrictsMovementWhileCharging(KiAttackData.KiType type) {
 		return isChargingRestrictedTechniqueType(type, true);
+	}
+
+	public static boolean canStartCharge(Player player, KiAttackData data, int lockedTargetId) {
+		if (KiTechniqueHandler.HellzoneGrenade.is(data.getId())) return KiTechniqueHandler.HellzoneGrenade.hasTarget(player, lockedTargetId);
+		return true;
 	}
 
 	public static LivingEntity resolveHomingTarget(LivingEntity owner, Level level, KiAttackData data, StatsData statsData) {

@@ -65,6 +65,7 @@ public class PredefinedTechniques {
 		registerKi("assault_rain", "technique.dragonminez.assault_rain", "Super Buu", KiAttackData.KiType.BARRAGE, 1.00F, 0xFFB8F4, 0x8A2BE2, 0xFF38D4, 0.4F, 1.5F, 15, "ki.assault_rain");
 		registerKi("blaster_meteor", "technique.dragonminez.blaster_meteor", "Broly", KiAttackData.KiType.BARRAGE, 1.00F, 0x9DFF8A, 0x3DF54A, 0x0FBF1B, 0.4F, 1.5F, 15, "ki.blaster_meteor");
 		registerKi("kill_driver", "technique.dragonminez.kill_driver", "Turles", KiAttackData.KiType.DISK, 2.25F, 0xFFF3A0, 0xFFC400, 0xE08A00, 1.0F, 1.2F, 12, "ki.kill_driver");
+		registerKi("hellzone_grenade", "technique.dragonminez.hellzone_grenade", "Piccolo", KiAttackData.KiType.BARRAGE, 2.50F, 0xFFF6B8, 0xFFB52E, 0xFF5A14, 0.8F, 1.5F, 15, "ki.hellzone_grenade");
 		registerEvasion("taiyoken", 0.00F, 30, 900, false);
 		registerEvasion("rage_scream", 1.2F, 60, 80, true);
 		registerEvasion("afterimage", 0.00F, 60, 200, false);

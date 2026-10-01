@@ -3,11 +3,13 @@ package com.dragonminez.server.events.players.combat;
 import com.dragonminez.Reference;
 import com.dragonminez.common.combat.util.MultipartTargeting;
 import com.dragonminez.common.init.entities.ki.AbstractKiProjectile;
+import com.dragonminez.common.init.entities.ki.HellzoneGrenadeEntity;
 import com.dragonminez.common.init.entities.ki.KiBlastEntity;
 import com.dragonminez.common.init.entities.ki.KiLaserEntity;
 import com.dragonminez.common.init.entities.ki.KillDriverEntity;
 import com.dragonminez.common.network.NetworkHandler;
 import com.dragonminez.common.network.TriBeamPackets;
+import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
@@ -384,6 +386,28 @@ public class KiTechniqueHandler {
 
 		public static float radiusScale(float castSize) {
 			return Mth.clamp(castSize, MIN_RADIUS_SCALE, MAX_RADIUS_SCALE);
+		}
+	}
+
+	public static final class HellzoneGrenade {
+
+		public static final String TECHNIQUE_ID = HellzoneGrenadeEntity.TECHNIQUE_ID;
+		private static final String NO_TARGET_MESSAGE = "message.dragonminez.hellzone_grenade.no_target";
+
+		private HellzoneGrenade() {}
+
+		public static boolean is(String techniqueId) {
+			return TECHNIQUE_ID.equals(techniqueId);
+		}
+
+		public static boolean hasTarget(LivingEntity caster, int lockedTargetId) {
+			if (HellzoneGrenadeEntity.findTarget(caster, lockedTargetId) != null) return true;
+			notifyNoTarget(caster);
+			return false;
+		}
+
+		public static void notifyNoTarget(LivingEntity caster) {
+			if (caster instanceof Player player) player.displayClientMessage(Component.translatable(NO_TARGET_MESSAGE), true);
 		}
 	}
 }

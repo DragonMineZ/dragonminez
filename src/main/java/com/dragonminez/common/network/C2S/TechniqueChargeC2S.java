@@ -91,9 +91,14 @@ public class TechniqueChargeC2S {
 								data.getTechniques().clearTechniqueCharge();
 								break;
 							}
+							int lockTarget = validLockTarget(player, data, msg.targetId);
+							if (!TechniqueDispatcher.canStartCharge(player, kiAttack, lockTarget)) {
+								data.getTechniques().clearTechniqueCharge();
+								break;
+							}
 							data.getTechniques().selectSlot(msg.slot);
 							data.getTechniques().startTechniqueCharge(kiAttack.getId());
-							data.getTechniques().setHomingTargetId(validLockTarget(player, data, msg.targetId));
+							data.getTechniques().setHomingTargetId(lockTarget);
 							net.minecraftforge.common.MinecraftForge.EVENT_BUS.post(
 									new com.dragonminez.common.events.DMZEvent.KiAttackCastEvent(player, data, kiAttack));
 						} else {

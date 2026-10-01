@@ -49,6 +49,7 @@ import net.minecraft.client.renderer.RenderType;
 import net.minecraft.world.level.GrassColor;
 import net.minecraft.client.renderer.blockentity.BlockEntityRenderers;
 import net.minecraft.client.renderer.entity.EntityRendererProvider;
+import net.minecraft.client.renderer.entity.NoopRenderer;
 import net.minecraft.client.renderer.item.ItemProperties;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
@@ -282,6 +283,8 @@ public class ModClientEvents {
         event.registerEntityRenderer(MainEntities.MAJIN_SKILL.get(), MajinSkillRenderer::new);
         event.registerEntityRenderer(MainEntities.KI_DISC.get(), KiDiskRenderer::new);
         event.registerEntityRenderer(MainEntities.KILL_DRIVER.get(), KillDriverRenderer::new);
+        event.registerEntityRenderer(MainEntities.HELLZONE_GRENADE.get(), NoopRenderer::new);
+        event.registerEntityRenderer(MainEntities.HELLZONE_GRENADE_ORB.get(), KiProjectileRenderer::new);
         event.registerEntityRenderer(MainEntities.KI_BARRIER.get(), KiBarrierRenderer::new);
         event.registerEntityRenderer(MainEntities.KI_EXPLOSION_VISUAL.get(), KiExplosionVisualRenderer::new);
         event.registerEntityRenderer(MainEntities.KI_AREA.get(), KiProjectileRenderer::new);

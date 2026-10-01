@@ -921,8 +921,12 @@ public class TickHandler {
 			CHARGING_CACHE.remove(player.getUUID());
 			activeKi = null;
 		}
-		if (activeKi == null && techniques.getTechniqueChargePercent() == 0.0f) {
-			TechniqueDispatcher.executeKiAttack(player, player.level(), kiAttack, data, 0.01f);
+		if (activeKi == null && techniques.getTechniqueChargePercent() == 0.0f
+				&& !TechniqueDispatcher.executeKiAttack(player, player.level(), kiAttack, data, 0.01f)) {
+			CHARGE_COST_ACCUM.remove(player.getUUID());
+			techniques.clearTechniqueCharge();
+			NetworkHandler.sendToTrackingEntityAndSelf(new TechniqueChargeSyncS2C(player.getId(), 0.0f, false), player);
+			return;
 		}
 
 		final float OVER = KiAttackData.OVERCHARGE_MAX_PERCENT;
@@ -1094,6 +1098,8 @@ public class TickHandler {
 		if (ki instanceof KiBarrierEntity barrier) return barrier.isFiring();
         if (ki instanceof KiAreaEntity area) return area.isFiring();
 		if (ki instanceof KillDriverEntity ring) return ring.isFiring();
+		if (ki instanceof HellzoneGrenadeEntity hellzone) return hellzone.isFiring();
+		if (ki instanceof HellzoneGrenadeEntity.Orb) return true;
 		return false;
 	}
 

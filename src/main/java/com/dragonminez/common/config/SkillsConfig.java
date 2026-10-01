@@ -71,6 +71,7 @@ public class SkillsConfig {
 		kiSkills.add("assault_rain");
 		kiSkills.add("blaster_meteor");
 		kiSkills.add("kill_driver");
+		kiSkills.add("hellzone_grenade");
 		evasionSkills.add("taiyoken");
 		evasionSkills.add("rage_scream");
 		evasionSkills.add("afterimage");
@@ -110,6 +111,7 @@ public class SkillsConfig {
 		skills.put("final_explosion", new SkillCosts(List.of(20000)));
 		skills.put("soul_punisher", new SkillCosts(List.of(25000)));
 		skills.put("kill_driver", new SkillCosts(List.of(16000)));
+		skills.put("hellzone_grenade", new SkillCosts(List.of(6000)));
 
 		strikeSkills.add("meteor");
 		strikeSkills.add("dragon_fist");
@@ -413,6 +415,7 @@ public class SkillsConfig {
 		piccoloSkills.add("makkanko");
 		piccoloSkills.add("ki_barrage");
 		piccoloSkills.add("kienzan");
+		piccoloSkills.add("hellzone_grenade");
 		skillOfferings.put("piccolo", piccoloSkills);
 
 		List<String> krillinSkills = new ArrayList<>();
