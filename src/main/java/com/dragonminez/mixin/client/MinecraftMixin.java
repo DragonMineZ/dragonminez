@@ -228,7 +228,7 @@ public abstract class MinecraftMixin implements Minecraft_DMZ {
 		var event = new DMZClientEvent.PlayerAttackHit(player, upswingStack, targetResult.entities, cursorTarget);
 		MinecraftForge.EVENT_BUS.post(event);
 
-		int[] entityIds = targetResult.entities.stream().mapToInt(Entity::getId).toArray();
+		int[] entityIds = targetResult.entities.stream().mapToInt(Entity::getId).distinct().limit(CombatAttackRequestC2S.MAX_ENTITY_IDS).toArray();
 
 		int comboCount = mcDMZ.getComboCount();
 		boolean sneaking = player.hasPose(Pose.CROUCHING);

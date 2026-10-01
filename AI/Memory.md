@@ -110,6 +110,27 @@ Use this schema for each memory entry:
 
 Add durable memories below this line, newest first.
 
+### 2026-10-01 - Client Code Must Not Recompute Server-Only Gameplay State
+
+- Type: pitfall
+- Status: active
+- Source: debugging
+- Scope: client code and common code reachable from the logical client (`StatsData` getters, client events, mixins)
+- Summary: `server/util/GravityLogic` (device zones in `GravityDeviceManager`, WorldGuard, NPC gravity cache) only has real data on the server; client callers saw 0 machine gravity on dedicated servers and raced the server thread on its static maps in singleplayer. The same applied to client-side fly-ki checks that used a different formula than `FlyStatusHandler`.
+- Guidance: On the client read the server-synced value instead (`ClientGravityState` from `GravityZoneSyncS2C`, synced `StatsData`), and route common code through `DistExecutor` when it needs a client holder. Mirror server formulas exactly or let the server decide and sync.
+- Do Not: Do not call `GravityLogic` or other server managers from client code; do not let a singleplayer host test stand in for a dedicated-server test of client/server agreement.
+- Related: `StatsData.getSyncedTrainingZone`, `ConfigManager.useServerSync`
+
+### 2026-10-01 - Validate Every C2S Packet Against Server State
+
+- Type: prohibition
+- Status: active
+- Source: review
+- Scope: `common/network/C2S/*`
+- Summary: An audit found packets that trusted the client for gating it only enforced in the GUI: recustomize (class swap + full heal), space pod travel without a pod, master-only skill purchase from anywhere, remote quest turn-in, uncapped `readUtf`/collection sizes, NaN floats passing `Mth.clamp`, and unthrottled handlers that broadcast a full `StatsSyncS2C`.
+- Guidance: Re-check on the server what the screen assumes (nearby NPC/entity, vehicle, pending wish token, skill/offering, alive/spectator), cap every decoded string and collection, reject non-finite floats before clamping, and throttle spammable handlers with `PacketRateLimiter` (use `StatsSyncS2C.sendRequested` for immediate syncs; the 10-tick periodic sync covers drops).
+- Do Not: Do not rely on a client-side button condition as the only gate.
+
 ### 2026-09-26 - Never Cache Framebuffer Attachments By Texture Id
 
 - Type: pitfall

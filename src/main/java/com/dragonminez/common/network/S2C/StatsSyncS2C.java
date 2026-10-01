@@ -1,6 +1,8 @@
 package com.dragonminez.common.network.S2C;
 
 import com.dragonminez.common.network.ClientPacketHandler;
+import com.dragonminez.common.network.NetworkHandler;
+import com.dragonminez.common.network.PacketRateLimiter;
 import com.dragonminez.common.stats.StatsCapability;
 import com.dragonminez.common.stats.StatsProvider;
 import com.dragonminez.common.stats.character.SkinPixels;
@@ -15,6 +17,8 @@ import java.util.function.Supplier;
 
 public class StatsSyncS2C {
 
+    private static final long REQUESTED_SYNC_MIN_INTERVAL_TICKS = 2L;
+
     private final int playerId;
     private final CompoundTag nbt;
 
@@ -26,6 +30,11 @@ public class StatsSyncS2C {
             this.nbt.merge(data.save());
             this.nbt.getCompound("Character").remove(SkinPixels.NBT_KEY);
         });
+    }
+
+    public static void sendRequested(ServerPlayer player) {
+        if (!PacketRateLimiter.allow(player.getUUID(), "requested_stats_sync", player.level().getGameTime(), REQUESTED_SYNC_MIN_INTERVAL_TICKS)) return;
+        NetworkHandler.sendToTrackingEntityAndSelf(new StatsSyncS2C(player), player);
     }
 
     public StatsSyncS2C(int playerId, CompoundTag nbt) {

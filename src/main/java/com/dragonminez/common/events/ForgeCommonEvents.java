@@ -217,6 +217,8 @@ public class ForgeCommonEvents {
 	public static void onPlayerLogout(PlayerEvent.PlayerLoggedOutEvent event) {
 		if (event.getEntity() instanceof ServerPlayer player) {
 			PacketRateLimiter.clear(player.getUUID());
+			com.dragonminez.common.dialogue.DialogueService.clear(player.getUUID());
+			com.dragonminez.common.network.C2S.CombatAttackRequestC2S.clearCombo(player.getUUID());
 			com.dragonminez.server.util.BeetleFusionTracker.clear(player.getUUID());
 			com.dragonminez.server.world.worldboss.WorldBossManager.onPlayerLogout(player);
 			StatsProvider.get(StatsCapability.INSTANCE, player).ifPresent(data -> {

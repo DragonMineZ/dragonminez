@@ -1,5 +1,6 @@
 package com.dragonminez.common.stats;
 
+import com.dragonminez.client.render.shader.ClientGravityState;
 import com.dragonminez.common.hair.HairStyleSlot;
 import com.dragonminez.common.config.CombatConfig;
 import com.dragonminez.common.config.ConfigManager;
@@ -37,6 +38,8 @@ import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.enchantment.Enchantments;
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.fml.DistExecutor;
 
 import java.util.Collection;
 import java.util.List;
@@ -1079,9 +1082,21 @@ public class StatsData {
 		};
 	}
 
+	private boolean isClientPlayer() {
+		return player != null && player.level().isClientSide;
+	}
+
+	private int getSyncedTrainingZone() {
+		if (isClientPlayer()) {
+			Integer zone = DistExecutor.unsafeCallWhenOn(Dist.CLIENT, () -> ClientGravityState::getZone);
+			return zone != null ? zone : 0;
+		}
+		return GravityLogic.getTrainingZone(player);
+	}
+
 	public double getLoadDrainMultiplier() {
 		var g = ConfigManager.getServerConfig().getGravity();
-		return switch (GravityLogic.getTrainingZone(player)) {
+		return switch (getSyncedTrainingZone()) {
 			case 1 -> g.getLoadDrainComfort();
 			case 2 -> g.getLoadDrainIdeal();
 			case 3 -> g.getLoadDrainHeavy();
@@ -1539,6 +1554,10 @@ public class StatsData {
 	}
 
 	public double getTpGravityMultiplier() {
+		if (isClientPlayer()) {
+			Float synced = DistExecutor.unsafeCallWhenOn(Dist.CLIENT, () -> ClientGravityState::getTpGravityMult);
+			return synced != null ? synced : 1.0;
+		}
 		var gravityConfig = ConfigManager.getServerConfig().getGravity();
 		if (!gravityConfig.getTpEnabled()) return 1.0;
 		double bonusGravity = GravityLogic.getTrainingBonusGravity(player);
@@ -1559,6 +1578,10 @@ public class StatsData {
 	}
 
 	public double getTpWeightBellMultiplier() {
+		if (isClientPlayer()) {
+			Float synced = DistExecutor.unsafeCallWhenOn(Dist.CLIENT, () -> ClientGravityState::getWeightTpMult);
+			return synced != null ? synced : 1.0;
+		}
 		return GravityLogic.getWeightTpMultiplier(player);
 	}
 
@@ -1689,28 +1712,29 @@ public class StatsData {
 	public int calculateRecursiveCost(int statsToAdd, int maxStats) {
 		if (!ConfigManager.getServerConfig().getDynamicGrowth().isManualTpPurchasesEnabled())
 			return statsToAdd <= 0 ? 0 : Integer.MAX_VALUE;
-		int totalCost = 0;
+		long totalCost = 0L;
 		int currentTotalStats = stats.getTotalStats();
 		int totalCap = getConfiguredMaxTotalStats();
 
 		for (int i = 0; i < statsToAdd; i++) {
 			if (currentTotalStats + i >= totalCap) break;
-			totalCost += getSingleStatCost(currentTotalStats + i);
+			totalCost += Math.max(0, getSingleStatCost(currentTotalStats + i));
+			if (totalCost >= Integer.MAX_VALUE) return Integer.MAX_VALUE;
 		}
-		return totalCost;
+		return (int) totalCost;
 	}
 
-	public int calculateStatIncrease(int maxStatsToAdd, float availableTPs, int maxStats) {
+	public int calculateStatIncrease(int maxStatsToAdd, double availableTPs, int maxStats) {
 		if (!ConfigManager.getServerConfig().getDynamicGrowth().isManualTpPurchasesEnabled()) return 0;
 		int statsIncreased = 0;
-		int costAccumulated = 0;
+		long costAccumulated = 0L;
 		int currentTotalStats = stats.getTotalStats();
 		int totalCap = getConfiguredMaxTotalStats();
 
 		while (statsIncreased < maxStatsToAdd) {
 			if (currentTotalStats + statsIncreased >= totalCap) break;
 
-			int costForNext = getSingleStatCost(currentTotalStats + statsIncreased);
+			long costForNext = Math.max(0, getSingleStatCost(currentTotalStats + statsIncreased));
 
 			if (costAccumulated + costForNext > availableTPs) break;
 
@@ -1724,14 +1748,14 @@ public class StatsData {
 	public void resetPlayerProgress(ServerPlayer player, Integer keepPercentage, boolean keepSkills, boolean forceSaiyanTail) {
 		var currentStats = getStats();
 		if (keepPercentage != null) {
-			int newStr = (currentStats.getStrength() * keepPercentage) / 100;
-			int newSkp = (currentStats.getStrikePower() * keepPercentage) / 100;
-			int newRes = (currentStats.getResistance() * keepPercentage) / 100;
-			int newVit = (currentStats.getVitality() * keepPercentage) / 100;
-			int newPwr = (currentStats.getKiPower() * keepPercentage) / 100;
-			int newEne = (currentStats.getEnergy() * keepPercentage) / 100;
-			float currentTPs = getResources().getTrainingPoints();
-			float newTPs = (currentTPs * keepPercentage) / 100;
+			int newStr = (int) ((long) currentStats.getStrength() * keepPercentage / 100);
+			int newSkp = (int) ((long) currentStats.getStrikePower() * keepPercentage / 100);
+			int newRes = (int) ((long) currentStats.getResistance() * keepPercentage / 100);
+			int newVit = (int) ((long) currentStats.getVitality() * keepPercentage / 100);
+			int newPwr = (int) ((long) currentStats.getKiPower() * keepPercentage / 100);
+			int newEne = (int) ((long) currentStats.getEnergy() * keepPercentage / 100);
+			double currentTPs = getResources().getTrainingPoints();
+			double newTPs = (currentTPs * keepPercentage) / 100;
 
 			currentStats.setStrength(Math.max(0, newStr));
 			currentStats.setStrikePower(Math.max(0, newSkp));
@@ -1809,6 +1833,7 @@ public class StatsData {
 	}
 
 	public void load(CompoundTag nbt) throws ClassNotFoundException {
+		boolean fullPayload = nbt.contains("Character");
 		if (nbt.contains("Stats")) stats.load(nbt.getCompound("Stats"));
 		if (nbt.contains("Status")) status.load(nbt.getCompound("Status"));
 		if (nbt.contains("Cooldowns")) cooldowns.load(nbt.getCompound("Cooldowns"));
@@ -1817,15 +1842,15 @@ public class StatsData {
 		if (nbt.contains("Skills")) skills.load(nbt.getCompound("Skills"));
 		if (nbt.contains("Effects")) effects.load(nbt.getCompound("Effects"));
 		if (nbt.contains("SecondaryStatEffects")) secondaryStatEffects.load(nbt.getCompound("SecondaryStatEffects"));
-		else secondaryStatEffects.clear();
+		else if (fullPayload) secondaryStatEffects.clear();
 		if (nbt.contains("PlayerQuestData")) playerQuestData.deserializeNBT(nbt.getCompound("PlayerQuestData"));
-		else throw new ClassNotFoundException("PlayerQuestData not found in NBT. This is required for quest progression to work correctly. " +
+		else if (fullPayload) throw new ClassNotFoundException("PlayerQuestData not found in NBT. This is required for quest progression to work correctly. " +
 				"Please update the mod or re-generate your config files.");
 		if (nbt.contains("BonusStats")) bonusStats.load(nbt.getCompound("BonusStats"));
 		if (nbt.contains("Techniques")) techniques.load(nbt.getCompound("Techniques"));
 		if (nbt.contains("DynamicGrowth")) dynamicGrowth.load(nbt.getCompound("DynamicGrowth"));
 		if (nbt.contains("RacialData")) racialData.load(nbt.getCompound("RacialData"));
-		else migrateRacialDataFromLegacy();
+		else if (fullPayload) migrateRacialDataFromLegacy();
 		if (nbt.contains(FusedData.NBT_KEY)) fusedData = FusedData.fromTag(nbt.getCompound(FusedData.NBT_KEY));
 		else if (nbt.contains("Skills")) fusedData = null;
 		if (nbt.contains("HasInitializedHealth")) hasInitializedHealth = nbt.getBoolean("HasInitializedHealth");

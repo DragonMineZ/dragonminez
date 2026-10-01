@@ -284,6 +284,7 @@ public class ForgeClientEvents {
 		com.dragonminez.client.render.effects.BeamClashScreenRenderer.reset();
 		com.dragonminez.client.clash.ClientBeamClashState.clear();
 		com.dragonminez.client.render.shader.ClientGravityState.reset();
+		LockOnEvent.unlock();
 		DMZRendererCache.clear();
 		TextureCounter.clearCache();
 		pendingCharacterCreationReopen = false;

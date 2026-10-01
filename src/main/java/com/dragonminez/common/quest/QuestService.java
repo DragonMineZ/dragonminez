@@ -3,7 +3,9 @@ package com.dragonminez.common.quest;
 import com.dragonminez.Env;
 import com.dragonminez.LogUtil;
 import com.dragonminez.common.events.DMZEvent;
+import com.dragonminez.common.init.entities.MastersEntity;
 import com.dragonminez.common.init.entities.ai.AiTierResolver;
+import com.dragonminez.common.init.entities.questnpc.QuestNPCEntity;
 import com.dragonminez.common.network.NetworkHandler;
 import com.dragonminez.common.network.S2C.ProgressionSyncS2C;
 import com.dragonminez.common.network.S2C.SagaTitleCardS2C;
@@ -25,6 +27,7 @@ import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.Mob;
 import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.phys.AABB;
 import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.registries.ForgeRegistries;
 import org.jetbrains.annotations.Nullable;
@@ -42,6 +45,7 @@ public final class QuestService {
 	public static final String QUEST_KEY_TAG = "dmz_quest_key";
 	public static final String QUEST_OBJECTIVE_INDEX_TAG = "dmz_quest_objective_index";
 	public static final String QUEST_OWNER_TAG = "dmz_quest_owner";
+	private static final double TURN_IN_NPC_RANGE = 10.0;
 	public static final String SAGA_ID_TAG = "dmz_saga_id";
 	public static final String QUEST_TEAM_TAG = "dmz_quest_team";
 
@@ -151,7 +155,7 @@ public final class QuestService {
 	@Nullable
 	public static Component turnInQuest(ServerPlayer requester, String questKey, @Nullable String npcId) {
 		ResolvedQuest resolved = resolveQuest(questKey);
-		if (resolved == null || npcId == null || npcId.isBlank()) {
+		if (resolved == null || npcId == null || npcId.isBlank() || !isTurnInNpcNearby(requester, npcId)) {
 			return Component.translatable("message.dragonminez.quest.start.unavailable");
 		}
 
@@ -165,6 +169,14 @@ public final class QuestService {
 			return Component.translatable("message.dragonminez.quest.start.unavailable");
 		}
 		return turnInQuest(requester, controller, resolved, data, npcId);
+	}
+
+	private static boolean isTurnInNpcNearby(ServerPlayer player, String npcId) {
+		AABB range = player.getBoundingBox().inflate(TURN_IN_NPC_RANGE);
+		if (!player.serverLevel().getEntitiesOfClass(MastersEntity.class, range,
+				master -> npcId.equalsIgnoreCase(master.getMasterName())).isEmpty()) return true;
+		return !player.serverLevel().getEntitiesOfClass(QuestNPCEntity.class, range,
+				npc -> npcId.equalsIgnoreCase(npc.getNpcId())).isEmpty();
 	}
 
 	public static void claimRewards(ServerPlayer requester, String questKey) {
@@ -544,8 +556,9 @@ public final class QuestService {
 
 	private static boolean hasUnclaimedRewards(PlayerQuestData pqd, String questKey, Quest quest) {
 		List<QuestReward> rewards = quest.getRewards();
+		Difficulty questDifficulty = pqd.getQuestDifficulty(questKey);
 		for (int i = 0; i < rewards.size(); i++) {
-			if (!rewards.get(i).isUnlockedFor(pqd.getDifficulty())) {
+			if (!rewards.get(i).isUnlockedFor(questDifficulty)) {
 				continue;
 			}
 			if (!pqd.isRewardClaimed(questKey, i)) {
@@ -577,11 +590,12 @@ public final class QuestService {
 		ResolvedQuest resolved = resolveQuest(questKey);
 		Saga saga = resolved != null ? resolved.saga() : null;
 		List<ServerPlayer> partyMembers = PartyManager.getAllPartyMembers(rewardTarget);
+		Difficulty questDifficulty = pqd.getQuestDifficulty(questKey);
 		for (int i = 0; i < rewards.size(); i++) {
 			if (pqd.isRewardClaimed(questKey, i)) {
 				continue;
 			}
-			if (!rewards.get(i).isUnlockedFor(pqd.getDifficulty())) {
+			if (!rewards.get(i).isUnlockedFor(questDifficulty)) {
 				continue;
 			}
 			DMZEvent.QuestRewardClaimEvent rewardEvent = new DMZEvent.QuestRewardClaimEvent(
@@ -595,7 +609,7 @@ public final class QuestService {
 			if (MinecraftForge.EVENT_BUS.post(rewardEvent)) {
 				continue;
 			}
-			rewards.get(i).giveReward(rewardTarget, pqd.rewardMultiplierFor(rewards.get(i)));
+			rewards.get(i).giveReward(rewardTarget, pqd.rewardMultiplierFor(rewards.get(i), questDifficulty));
 			pqd.claimReward(questKey, i);
 			anyClaimed = true;
 		}

@@ -1402,6 +1402,7 @@ public final class RhythmAutoCharter {
 		int[] laneLast = {-100000, -100000, -100000, -100000};
 		for (RhythmChart.Note note : notes) {
 			if (note.timeMs() < 0 || note.timeMs() > durationMs) return "time";
+			if (note.lane() < 0 || note.lane() >= laneLast.length) return "lane";
 			if (note.lengthMs() > 3000) return "hold";
 			if (note.tier() == 0) tierZero++;
 			if (note.timeMs() - laneLast[note.lane()] < 90) return "spacing";

@@ -52,7 +52,6 @@ public class ReloadCommand {
 
 		try {
 			if (scope.includesConfig()) {
-				ConfigManager.clearServerSync();
 				ConfigManager.reload();
 				RaidTypes.reload(ConfigManager.getRaids());
 				StorageManager.reload();

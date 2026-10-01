@@ -1,7 +1,6 @@
 package com.dragonminez.common.network.C2S;
 
 import com.dragonminez.common.init.MainEffects;
-import com.dragonminez.common.network.NetworkHandler;
 import com.dragonminez.common.network.S2C.StatsSyncS2C;
 import com.dragonminez.common.stats.StatsCapability;
 import com.dragonminez.common.stats.StatsData;
@@ -59,7 +58,7 @@ public class SelectFormC2S {
 					data.getCharacter().setSelectedFormGroup(group);
 					data.getCharacter().setSelectedForm(form);
 				}
-				NetworkHandler.sendToTrackingEntityAndSelf(new StatsSyncS2C(player), player);
+				StatsSyncS2C.sendRequested(player);
 			});
 		});
 		context.setPacketHandled(true);

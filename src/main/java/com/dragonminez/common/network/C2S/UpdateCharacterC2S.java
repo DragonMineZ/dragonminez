@@ -10,6 +10,7 @@ import com.dragonminez.common.network.S2C.AppearanceSyncS2C;
 import com.dragonminez.common.stats.character.Character;
 import com.dragonminez.common.stats.StatsCapability;
 import com.dragonminez.common.stats.StatsProvider;
+import com.dragonminez.common.wish.wishes.ReCustomizeWish;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraftforge.network.NetworkEvent;
@@ -135,7 +136,8 @@ public class UpdateCharacterC2S {
 	public static void handle(UpdateCharacterC2S msg, Supplier<NetworkEvent.Context> ctx) {
 		ctx.get().enqueueWork(() -> {
 			ServerPlayer player = ctx.get().getSender();
-			if (player == null) return;
+			if (player == null || !player.isAlive()) return;
+			if (!ReCustomizeWish.consume(player)) return;
 
 			StatsProvider.get(StatsCapability.INSTANCE, player).ifPresent(data -> {
 				Character c = data.getCharacter();

@@ -43,6 +43,7 @@ public class KiBlastC2S {
 		ctx.get().enqueueWork(() -> {
 			ServerPlayer player = ctx.get().getSender();
 			if (player == null) return;
+			if (player.isDeadOrDying() || player.isSpectator()) return;
 
 			if (msg.isShooting) {
 				StatsProvider.get(StatsCapability.INSTANCE, player).ifPresent(data -> {

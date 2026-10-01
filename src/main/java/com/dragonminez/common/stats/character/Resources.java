@@ -24,7 +24,7 @@ public class Resources {
     private int flightSpeedLimit;
     private int actionCharge;
     private int alignment;
-    private float trainingPoints;
+    private double trainingPoints;
     private int pendingAttributePoints;
     private int racialSkillCount;
     private Player player;
@@ -61,11 +61,7 @@ public class Resources {
     }
 
     private static float roundToQuarter(float value) {
-        return Math.round(value * 4.0f) / 4.0f;
-    }
-
-    private static float truncateToInt(float value) {
-        return (float) Math.floor(value);
+        return (float) (Math.round(value * 4.0) / 4.0);
     }
 
     public int getPowerRelease() { return release; }
@@ -120,9 +116,9 @@ public class Resources {
         this.alignment = Math.max(0, Math.min(100, alignment));
     }
 
-    public void setTrainingPoints(float points) {
-        float clamped = Math.max(0, Math.min(Float.MAX_VALUE - 1, points));
-        this.trainingPoints = truncateToInt(clamped);
+    public void setTrainingPoints(double points) {
+        if (Double.isNaN(points)) return;
+        this.trainingPoints = Math.floor(Math.max(0.0, Math.min(Double.MAX_VALUE, points)));
     }
 
     public void setPendingAttributePoints(int points) {
@@ -146,13 +142,21 @@ public class Resources {
         addTrainingPoints(amount, true);
     }
     public void addTrainingPoints(float amount, boolean shareWithParty) {
+        addTrainingPoints(amount, shareWithParty, false);
+    }
+
+    public void addBoostedTrainingPoints(float amount) {
+        addTrainingPoints(amount, true, true);
+    }
+
+    private void addTrainingPoints(float amount, boolean shareWithParty, boolean preBoosted) {
         if (amount <= 0 || player == null) {
             setTrainingPoints(trainingPoints + amount);
             return;
         }
 
-        float oldValue = this.trainingPoints;
-        DMZEvent.TPGainEvent event = new DMZEvent.TPGainEvent(player, (int) oldValue, (int) amount, shareWithParty);
+        double oldValue = this.trainingPoints;
+        DMZEvent.TPGainEvent event = new DMZEvent.TPGainEvent(player, (int) oldValue, (int) amount, shareWithParty, preBoosted);
 
         if (!MinecraftForge.EVENT_BUS.post(event)) {
             setTrainingPoints(oldValue + event.getTpGain());
@@ -227,7 +231,8 @@ public class Resources {
         tag.putInt("FlightSpeed", flightSpeedLimit);
         tag.putInt("FormRelease", actionCharge);
         tag.putInt("Alignment", alignment);
-        tag.putFloat("TrainingPointsF", trainingPoints);
+        tag.putDouble("TrainingPointsD", trainingPoints);
+        tag.putFloat("TrainingPointsF", (float) trainingPoints);
         tag.putInt("PendingAttributePoints", pendingAttributePoints);
         tag.putInt("ZenkaiCount", racialSkillCount);
         return tag;
@@ -252,7 +257,8 @@ public class Resources {
         this.actionCharge = tag.getInt("FormRelease");
         this.alignment = tag.getInt("Alignment");
 
-        if (tag.contains("TrainingPointsF", 5)) this.trainingPoints = tag.getFloat("TrainingPointsF");
+        if (tag.contains("TrainingPointsD", 6)) this.trainingPoints = tag.getDouble("TrainingPointsD");
+        else if (tag.contains("TrainingPointsF", 5)) this.trainingPoints = tag.getFloat("TrainingPointsF");
         else this.trainingPoints = tag.getInt("TrainingPoints");
 
         this.pendingAttributePoints = tag.getInt("PendingAttributePoints");

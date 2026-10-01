@@ -1,5 +1,6 @@
 package com.dragonminez.common.network.C2S;
 
+import com.dragonminez.common.network.PacketRateLimiter;
 import com.dragonminez.common.config.ConfigManager;
 import com.dragonminez.common.network.ITTargetEntry;
 import com.dragonminez.common.network.NetworkHandler;
@@ -37,6 +38,7 @@ public class RequestITTargetsC2S {
 		ctx.get().enqueueWork(() -> {
 			ServerPlayer player = ctx.get().getSender();
 			if (player == null) return;
+			if (!PacketRateLimiter.allow(player.getUUID(), "it_targets", player.level().getGameTime(), 10L)) return;
 
 			StatsProvider.get(StatsCapability.INSTANCE, player).ifPresent(data -> {
 				int skillLevel = data.getSkills().getSkillLevel("instant_transmission");

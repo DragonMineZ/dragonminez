@@ -438,6 +438,8 @@ public class TickHandler {
 			handleOtherworldTransfer(serverPlayer, data, playerId);
 
 			if (tickCounter % 20 == 0) {
+				int maxPowerRelease = data.getMaxPowerRelease();
+				if (data.getResources().getPowerRelease() > maxPowerRelease) data.getResources().setPowerRelease(maxPowerRelease);
 				handleActionCharge(serverPlayer, data);
 				handleActiveFormDrains(serverPlayer, data);
 				enforceShadowDummyTether(serverPlayer, data);
@@ -942,17 +944,17 @@ public class TickHandler {
 			if (creative) percent = newP;
 			else {
 				double chargeCost = 0.5 * base * (KiAttackData.costMultiplier(newP) - KiAttackData.costMultiplier(percent));
-				float accum = CHARGE_COST_ACCUM.getOrDefault(player.getUUID(), 0.0f) + (float) chargeCost;
+				double costModifier = data.getKiAttackCostModifier();
+				float accum = CHARGE_COST_ACCUM.getOrDefault(player.getUUID(), 0.0f) + (float) (chargeCost * costModifier);
 				float energy = data.getResources().getCurrentEnergy();
-				int whole = (int) accum;
-				int effectiveWhole = (int) Math.round(whole * data.getKiAttackCostModifier());
+				int effectiveWhole = (int) accum;
 
 				if (energy >= effectiveWhole) {
 					if (effectiveWhole > 0) {
 						data.getResources().removeEnergy(effectiveWhole);
-						applyHumanKiPassiveDuringCharge(player, data, whole);
+						applyHumanKiPassiveDuringCharge(player, data, (float) (effectiveWhole / costModifier));
 					}
-					accum -= whole;
+					accum -= effectiveWhole;
 					CHARGE_COST_ACCUM.put(player.getUUID(), accum);
 					percent = newP;
 				} else {
@@ -960,7 +962,7 @@ public class TickHandler {
 					percent = percent + (newP - percent) * affordFrac;
 					data.getResources().setCurrentEnergy(0);
 					CHARGE_COST_ACCUM.put(player.getUUID(), 0.0f);
-					applyHumanKiPassiveDuringCharge(player, data, Math.round(whole * affordFrac));
+					applyHumanKiPassiveDuringCharge(player, data, (float) (effectiveWhole / costModifier * affordFrac));
 					outOfKi = true;
 				}
 			}
@@ -1009,7 +1011,7 @@ public class TickHandler {
 							boolean drainsOverLife = activeKi.isMovementRestrictedType();
 							double fireFraction = drainsOverLife ? 0.25 : 0.50;
 							int originalFireCost = (int) Math.round(fireFraction * base * costMult);
-							int modifiedFireCost = (int) Math.round(originalFireCost * data.getKiAttackCostModifier());
+							int modifiedFireCost = (int) Math.round(fireFraction * base * costMult * data.getKiAttackCostModifier());
 							modifiedFireCost = MajinAbsorption.applyHealTechniqueCostReduction(data, kiAttack, modifiedFireCost);
 							if (modifiedFireCost > 0) data.getResources().removeEnergy(modifiedFireCost);
 
@@ -1232,7 +1234,7 @@ public class TickHandler {
 		player.refreshDimensions();
 	}
 
-	private static void applyHumanKiPassiveDuringCharge(ServerPlayer player, StatsData data, int originalKiCost) {
+	private static void applyHumanKiPassiveDuringCharge(ServerPlayer player, StatsData data, float originalKiCost) {
 		if (!data.isHumanRacialActive() || data.isAndroidRacialActive() || originalKiCost <= 0) return;
 		if (KiTechniqueHandler.TriBeam.isNeo(data.getTechniques().getChargingTechniqueId())) return;
 

@@ -49,7 +49,7 @@ public class IncreaseStatC2S {
 				String statNameStr = msg.statType.name();
 
 				int pendingAP = data.getResources().getPendingAttributePoints();
-				float availableTPs = data.getResources().getTrainingPoints();
+				double availableTPs = data.getResources().getTrainingPoints();
 				if (pendingAP <= 0 && availableTPs <= 0) return;
 
 				int maxStats = data.getConfiguredMaxValue();
@@ -72,7 +72,7 @@ public class IncreaseStatC2S {
 						int tpStats = data.calculateStatIncrease(remainingCap, availableTPs, maxStats);
 						if (tpStats > 0) {
 							int tpCost = data.calculateRecursiveCost(tpStats, maxStats);
-							if (tpCost <= availableTPs) {
+							if (tpCost < Integer.MAX_VALUE && tpCost <= availableTPs) {
 								increaseStat(data, player, statNameStr, tpStats);
 								data.getResources().removeTrainingPoints(tpCost);
 								changed = true;

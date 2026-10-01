@@ -7,6 +7,7 @@ import com.dragonminez.common.stats.StatsData;
 import com.dragonminez.common.stats.StatsProvider;
 import com.dragonminez.common.wish.Wish;
 import com.dragonminez.common.wish.WishManager;
+import io.netty.handler.codec.DecoderException;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
@@ -20,6 +21,9 @@ import java.util.UUID;
 import java.util.function.Supplier;
 
 public class GrantWishC2S {
+	private static final int MAX_WISHES = 64;
+	private static final int MAX_TARGETS = 256;
+
 	private final String dragonType;
 	private final List<Integer> selectedWishIndices;
 	private final List<List<UUID>> selectedTargets;
@@ -43,11 +47,12 @@ public class GrantWishC2S {
 	public static GrantWishC2S decode(FriendlyByteBuf buf) {
 		String dragon = buf.readUtf();
 		int count = buf.readVarInt();
+		if (count < 0 || count > MAX_WISHES) throw new DecoderException("GrantWishC2S: invalid wish count " + count);
 		List<Integer> indices = new ArrayList<>(count);
 		List<List<UUID>> targets = new ArrayList<>(count);
 		for (int i = 0; i < count; i++) {
 			indices.add(buf.readInt());
-			targets.add(buf.readList(FriendlyByteBuf::readUUID));
+			targets.add(buf.readCollection(FriendlyByteBuf.<List<UUID>>limitValue(ArrayList::new, MAX_TARGETS), FriendlyByteBuf::readUUID));
 		}
 		return new GrantWishC2S(dragon, indices, targets);
 	}
