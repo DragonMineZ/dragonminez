@@ -27,6 +27,7 @@ import com.dragonminez.common.stats.character.Status;
 import com.dragonminez.common.stats.skills.Skill;
 import com.dragonminez.common.stats.skills.Skills;
 import com.dragonminez.common.stats.techniques.*;
+import com.dragonminez.common.util.FormRequisites;
 import com.dragonminez.common.util.TransformationsHelper;
 import com.mojang.blaze3d.systems.RenderSystem;
 import net.minecraft.ChatFormatting;
@@ -1041,8 +1042,9 @@ public class SkillsMenuScreen extends BaseMenuScreen {
 			boolean isStack = ConfigManager.getSkillsConfig().getStackSkills().contains(node.formType.toLowerCase(Locale.ROOT));
 			boolean isFirstStackLevel = isStack && targetLevel == 0;
 			boolean isMasterOnly = isMasterOnlyFirstFormLevel(node.formType, targetLevel);
+			boolean requisiteLocked = !unlocked && FormRequisites.check(statsData, node.data, true).isLocked();
 
-			if (!unlocked && canPurchaseLevel && !isFirstStackLevel && !isMasterOnly && cost != -1 && cost != Integer.MAX_VALUE && statsData.getResources().getTrainingPointsExact() >= cost) {
+			if (!unlocked && canPurchaseLevel && !isFirstStackLevel && !isMasterOnly && !requisiteLocked && cost != -1 && cost != Integer.MAX_VALUE && statsData.getResources().getTrainingPointsExact() >= cost) {
 				float exX = nx + size - 6 * formsZoom;
 				float exY = ny - 10 * formsZoom;
 
@@ -1093,8 +1095,10 @@ public class SkillsMenuScreen extends BaseMenuScreen {
 			}
 			else {
 				lines.add(Component.translatable("gui.dragonminez.quests.rewards.tps", cost).withStyle(ChatFormatting.AQUA));
+				List<Component> lockLines = FormRequisites.describe(FormRequisites.check(statsData, hovered.data, true), true);
+				for (Component lockLine : lockLines) lines.add(lockLine.copy().withStyle(ChatFormatting.RED));
 				if (isMasterOnly) lines.add(Component.translatable("gui.dragonminez.skills.unlocked_by_master").withStyle(ChatFormatting.LIGHT_PURPLE, ChatFormatting.ITALIC));
-				else if (canPurchaseLevel && !isFirstStackLevel && statsData.getResources().getTrainingPointsExact() >= cost) lines.add(Component.translatable("gui.dragonminez.skills.doubleclick_buy").withStyle(ChatFormatting.YELLOW, ChatFormatting.ITALIC));
+				else if (lockLines.isEmpty() && canPurchaseLevel && !isFirstStackLevel && statsData.getResources().getTrainingPointsExact() >= cost) lines.add(Component.translatable("gui.dragonminez.skills.doubleclick_buy").withStyle(ChatFormatting.YELLOW, ChatFormatting.ITALIC));
 			}
 
 			TextUtil.renderAdvancedTooltip(graphics, this.font, mouseX, mouseY, getUiWidth(), getUiHeight(), null, lines, null, 0xFFFFFF);
@@ -1668,7 +1672,9 @@ public class SkillsMenuScreen extends BaseMenuScreen {
 					boolean isStack = ConfigManager.getSkillsConfig().getStackSkills().contains(clicked.formType.toLowerCase(Locale.ROOT));
 					boolean isFirstStackLevel = isStack && targetLevel == 0;
 
-					if (canPurchaseLevel && !isFirstStackLevel && !isMasterOnlyFirstFormLevel(clicked.formType, targetLevel) && cost != -1 && cost != Integer.MAX_VALUE && statsData.getResources().getTrainingPointsExact() >= cost) {
+					boolean requisiteLocked = FormRequisites.check(statsData, clicked.data, true).isLocked();
+
+					if (canPurchaseLevel && !isFirstStackLevel && !requisiteLocked && !isMasterOnlyFirstFormLevel(clicked.formType, targetLevel) && cost != -1 && cost != Integer.MAX_VALUE && statsData.getResources().getTrainingPointsExact() >= cost) {
 						NetworkHandler.INSTANCE.sendToServer(new UpdateSkillC2S(UpdateSkillC2S.SkillAction.UPGRADE, clicked.formType, cost));
 						updateStatsData();
 					}

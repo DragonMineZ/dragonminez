@@ -216,6 +216,8 @@ public class FormConfig {
 		private Double maxStatsMultiplier = 1.25;
 		private String formRequisite = "";
 		private String formRequisiteType = "all";
+		private Integer levelRequisite = 0;
+		private String sagaRequisite = "";
 		private Double unlockOnMastery = 0.0;
 		private Double stackOnMastery = 0.0;
 		private Double instantTransformOnMastery = 40.0;
@@ -335,6 +337,31 @@ public class FormConfig {
 
 		public String getFormRequisiteType() {
 			return "any".equalsIgnoreCase(formRequisiteType != null ? formRequisiteType.trim() : "") ? "any" : "all";
+		}
+
+		public int getLevelRequisite() {
+			return levelRequisite != null ? Math.max(0, levelRequisite) : 0;
+		}
+
+		public String getSagaRequisite() {
+			return sagaRequisite != null ? sagaRequisite.trim() : "";
+		}
+
+		public String getSagaRequisiteId() {
+			String value = getSagaRequisite();
+			int separator = value.lastIndexOf(':');
+			return separator > 0 ? value.substring(0, separator).trim() : "";
+		}
+
+		public int getSagaRequisiteQuest() {
+			String value = getSagaRequisite();
+			int separator = value.lastIndexOf(':');
+			if (separator <= 0) return -1;
+			try {
+				return Integer.parseInt(value.substring(separator + 1).trim());
+			} catch (NumberFormatException e) {
+				return -1;
+			}
 		}
 
 		public Double getUnlockOnMastery() {

@@ -18,6 +18,7 @@ import com.dragonminez.common.stats.techniques.EvasionAttackData;
 import com.dragonminez.common.stats.techniques.KiAttackData;
 import com.dragonminez.common.stats.techniques.PredefinedTechniques;
 import com.dragonminez.common.stats.techniques.StrikeAttackData;
+import com.dragonminez.common.util.FormRequisites;
 import com.mojang.blaze3d.systems.RenderSystem;
 import net.minecraft.ChatFormatting;
 import net.minecraft.client.Minecraft;
@@ -27,6 +28,7 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.network.chat.Style;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.util.FormattedCharSequence;
 import net.minecraft.util.Mth;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraftforge.api.distmarker.Dist;
@@ -255,7 +257,7 @@ public class MastersSkillsScreen extends BaseMenuScreen {
 		if (!statsData.getSkills().hasSkill(selectedSkill) || skill.getLevel() == 0) {
 			int cost = getUpgradeCost(selectedSkill, 0);
 			double currentTPS = statsData.getResources().getTrainingPointsExact();
-			boolean canAfford = currentTPS >= cost;
+			boolean canAfford = currentTPS >= cost && !FormRequisites.checkSkillLevel(statsData, selectedSkill, 1, true).isLocked();
 			if (cost == -1 || cost == Integer.MAX_VALUE) return;
 
 			purchaseButton = new TexturedTextButton.Builder()
@@ -583,6 +585,14 @@ public class MastersSkillsScreen extends BaseMenuScreen {
 			int cost = getUpgradeCost(selectedSkill, 0);
 			if (cost != Integer.MAX_VALUE && cost != -1) {
 				TextUtil.drawCenteredStringWithBorder(graphics, this.font, txt("%d TPS".formatted(cost)), panelX + 72, startY + 24, 0xFFAAAAAA);
+			}
+			FormRequisites.Lock lock = FormRequisites.checkSkillLevel(statsData, selectedSkill, 1, true);
+			if (lock.isLocked()) {
+				int lockY = startY + 36;
+				for (FormattedCharSequence line : this.font.split(FormRequisites.describeInline(lock, true), 130)) {
+					TextUtil.drawCenteredStringWithBorder(graphics, this.font, line, panelX + 72, lockY, 0xFFFF5555);
+					lockY += 11;
+				}
 			}
 		} else {
 			TextUtil.drawCenteredStringWithBorder(graphics, this.font, tr("gui.dragonminez.skills.already_learned"), panelX + 72, startY + 24, 0xFF55AA55);

@@ -318,6 +318,8 @@ public class GeneralServerConfig {
 		private Boolean sideQuestsEnabled = true;
 		private Boolean createDefaultSideQuests = true;
 		private Boolean autoUpdateQuests = true;
+		private Boolean levelFormRequisiteEnabled = true;
+		private Boolean sagaFormRequisiteEnabled = true;
 		private Double defaultQuestPartyMultiplier = 1.45;
 		private Integer senzuCooldownTicks = 240;
 		private Integer senzuGiftCooldownTicks = 18000;
@@ -498,6 +500,14 @@ public class GeneralServerConfig {
 
 		public Integer getSenzuCooldownTicks() {
 			return Math.max(0, Math.min(senzuCooldownTicks, Integer.MAX_VALUE));
+		}
+
+		public boolean getLevelFormRequisiteEnabled() {
+			return levelFormRequisiteEnabled == null || levelFormRequisiteEnabled;
+		}
+
+		public boolean getSagaFormRequisiteEnabled() {
+			return sagaFormRequisiteEnabled == null || sagaFormRequisiteEnabled;
 		}
 
 		public Double getDefaultQuestPartyMultiplier() {

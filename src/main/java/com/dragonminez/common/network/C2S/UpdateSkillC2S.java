@@ -13,6 +13,7 @@ import com.dragonminez.common.stats.techniques.EvasionAttackData;
 import com.dragonminez.common.stats.techniques.KiAttackData;
 import com.dragonminez.common.stats.techniques.PredefinedTechniques;
 import com.dragonminez.common.stats.techniques.StrikeAttackData;
+import com.dragonminez.common.util.FormRequisites;
 import com.dragonminez.server.storage.StorageManager;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.FriendlyByteBuf;
@@ -75,6 +76,7 @@ public class UpdateSkillC2S {
 							boolean isStackSkill = ConfigManager.getSkillsConfig().getStackSkills().contains(skillName.toLowerCase());
 							if (isStackSkill && skill.getLevel() <= 0) break;
 							if (skill.getLevel() <= 0 && isMasterOnlyFormSkill(data, skillName)) break;
+							if (isFormLocked(player, data, skillName, skill.getLevel() + 1)) break;
 							refreshRuntimeMaxLevel(data, skillName, skill);
 							int upgradeCost = computeTpCost(data, skillName, skill.getLevel());
 							if (!skill.isMaxLevel() && upgradeCost >= 0 && data.getResources().getTrainingPointsExact() >= upgradeCost && !(skillName.equals("potentialunlock") && skill.getLevel() == 10)) {
@@ -101,6 +103,7 @@ public class UpdateSkillC2S {
 							}
 							boolean notOwned = !data.getSkills().hasSkill(skillName)
 									|| (isFormSkillPurchase && data.getSkills().getSkillLevel(skillName) == 0);
+							if (notOwned && isFormLocked(player, data, skillName, 1)) break;
 							if (notOwned && effectiveCost >= 0 && data.getResources().getTrainingPointsExact() >= effectiveCost) {
 								data.getResources().removeTrainingPoints(effectiveCost);
 								data.getSkills().setSkillLevel(skillName, 1);
@@ -115,6 +118,13 @@ public class UpdateSkillC2S {
 			}
 		});
 		ctx.get().setPacketHandled(true);
+	}
+
+	private static boolean isFormLocked(ServerPlayer player, StatsData data, String skillName, int targetLevel) {
+		FormRequisites.Lock lock = FormRequisites.checkSkillLevel(data, skillName, targetLevel, false);
+		if (!lock.isLocked()) return false;
+		player.displayClientMessage(FormRequisites.describeInline(lock, false), true);
+		return true;
 	}
 
 	private static int computeTpCost(StatsData data, String skillName, int currentLevel) {

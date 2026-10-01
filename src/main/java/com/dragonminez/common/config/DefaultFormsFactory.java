@@ -400,6 +400,7 @@ public class DefaultFormsFactory {
 		FormConfig.FormData buffed = new FormConfig.FormData();
 		buffed.setName(HumanForms.BUFFED);
 		buffed.setUnlockOnSkillLevel(1);
+		buffed.setSagaRequisite("classic_saga:46");
 		buffed.setCustomModel("buffedg3");
 		buffed.setModelScaling(new Float[]{1.2f, 1.1f, 1.2f});
 		buffed.setStrMultiplier(1.6);
@@ -417,6 +418,7 @@ public class DefaultFormsFactory {
 		FormConfig.FormData fullPower = new FormConfig.FormData();
 		fullPower.setName(HumanForms.FULLPOWER);
 		fullPower.setUnlockOnSkillLevel(2);
+		fullPower.setSagaRequisite("saiyan_saga:12");
 		fullPower.setModelScaling(new Float[]{1.0f, 1.0f, 1.0f});
 		fullPower.setStrMultiplier(2.1);
 		fullPower.setSkpMultiplier(2.25);
@@ -432,6 +434,7 @@ public class DefaultFormsFactory {
 		FormConfig.FormData overdrive = new FormConfig.FormData();
 		overdrive.setName(HumanForms.OVERDRIVE);
 		overdrive.setUnlockOnSkillLevel(3);
+		overdrive.setSagaRequisite("frieza_saga:10");
 		overdrive.setModelScaling(new Float[]{1.1f, 1.1f, 1.1f});
 		overdrive.setStrMultiplier(2.85);
 		overdrive.setSkpMultiplier(3.0);
@@ -450,6 +453,7 @@ public class DefaultFormsFactory {
 		FormConfig.FormData solaris = new FormConfig.FormData();
 		solaris.setName(HumanForms.SOLARIS);
 		solaris.setUnlockOnSkillLevel(4);
+		solaris.setSagaRequisite("android_saga:6");
 		solaris.setModelScaling(new Float[]{1.0f, 1.0f, 1.0f});
 		solaris.setStrMultiplier(3.6);
 		solaris.setSkpMultiplier(3.75);
@@ -588,6 +592,7 @@ public class DefaultFormsFactory {
 		FormConfig.FormData superAndroid = new FormConfig.FormData();
 		superAndroid.setName(HumanForms.SUPER_ANDROID);
 		superAndroid.setUnlockOnSkillLevel(1);
+		superAndroid.setSagaRequisite("frieza_saga:10");
 		superAndroid.setCustomModel("buffed");
 		superAndroid.setModelScaling(new Float[]{1.05f, 1.05f, 1.05f});
 		superAndroid.setStrMultiplier(2.9);
@@ -602,6 +607,7 @@ public class DefaultFormsFactory {
 		FormConfig.FormData fusedAndroid = new FormConfig.FormData();
 		fusedAndroid.setName(HumanForms.FUSED_ANDROID);
 		fusedAndroid.setUnlockOnSkillLevel(2);
+		fusedAndroid.setSagaRequisite("android_saga:6");
 		fusedAndroid.setCustomModel("buffedg3");
 		fusedAndroid.setModelScaling(new Float[]{1.4f, 1.3f, 1.4f});
 		fusedAndroid.setStrMultiplier(3.7);
@@ -665,6 +671,7 @@ public class DefaultFormsFactory {
 		FormConfig.FormData goldenOozaru = new FormConfig.FormData();
 		goldenOozaru.setName(SaiyanForms.GOLDEN_OOZARU);
 		goldenOozaru.setUnlockOnSkillLevel(7);
+		goldenOozaru.setSagaRequisite("android_saga:2");
 		goldenOozaru.setFormCombo("dragonminez:giant");
 		goldenOozaru.setCustomModel("oozaru");
 		goldenOozaru.setTransformationAnimation("transf.ozaru");
@@ -690,6 +697,7 @@ public class DefaultFormsFactory {
 		ssj4gt.setCustomModel("ssj4gt");
 		ssj4gt.setTransformationAnimation("transf.ozaru");
 		ssj4gt.setUnlockOnSkillLevel(8);
+		ssj4gt.setSagaRequisite("android_saga:11");
 		ssj4gt.setHairColor("");
 		ssj4gt.setBodyColor2("#9d1e31");
 		ssj4gt.setEye1Color("#FFD700");
@@ -727,6 +735,7 @@ public class DefaultFormsFactory {
 		FormConfig.FormData ssj1 = new FormConfig.FormData();
 		ssj1.setName(SaiyanForms.SUPER_SAIYAN);
 		ssj1.setUnlockOnSkillLevel(1);
+		ssj1.setSagaRequisite("classic_saga:46");
 		ssj1.setHairColor("#FFEDB3");
 		ssj1.setBodyColor2("#FFEDB3");
 		ssj1.setEye1Color("#00FFFF");
@@ -749,6 +758,7 @@ public class DefaultFormsFactory {
 		ssg2.setName(SaiyanForms.SUPER_SAIYAN_GRADE_2);
 		ssg2.setTransformationAnimation("transf.ssg2");
 		ssg2.setUnlockOnSkillLevel(2);
+		ssg2.setSagaRequisite("saiyan_saga:4");
 		ssg2.setCustomModel("buffed");
 		ssg2.setHairColor("#FFEDB3");
 		ssg2.setBodyColor2("#FFEDB3");
@@ -772,6 +782,7 @@ public class DefaultFormsFactory {
 		FormConfig.FormData ssg3 = new FormConfig.FormData();
 		ssg3.setName(SaiyanForms.SUPER_SAIYAN_GRADE_3);
 		ssg3.setUnlockOnSkillLevel(3);
+		ssg3.setSagaRequisite("saiyan_saga:12");
 		ssg3.setCustomModel("buffedg3");
 		ssg3.setHairColor("#FFEDB3");
 		ssg3.setBodyColor2("#FFEDB3");
@@ -811,6 +822,7 @@ public class DefaultFormsFactory {
 		FormConfig.FormData ssj1Mastered = new FormConfig.FormData();
 		ssj1Mastered.setName(SaiyanForms.SUPER_SAIYAN_MASTERED);
 		ssj1Mastered.setUnlockOnSkillLevel(4);
+		ssj1Mastered.setSagaRequisite("frieza_saga:2");
 		ssj1Mastered.setHairColor("#FFE89E");
 		ssj1Mastered.setBodyColor2("#FFE89E");
 		ssj1Mastered.setEye1Color("#00FFFF");
@@ -832,6 +844,7 @@ public class DefaultFormsFactory {
 		FormConfig.FormData ssj2 = new FormConfig.FormData();
 		ssj2.setName(SaiyanForms.SUPER_SAIYAN_2);
 		ssj2.setUnlockOnSkillLevel(5);
+		ssj2.setSagaRequisite("frieza_saga:5");
 		ssj2.setHairColor("#FFE89E");
 		ssj2.setBodyColor2("#FFE89E");
 		ssj2.setEye1Color("#00FFFF");
@@ -854,6 +867,7 @@ public class DefaultFormsFactory {
 		FormConfig.FormData ssj3 = new FormConfig.FormData();
 		ssj3.setName(SaiyanForms.SUPER_SAIYAN_3);
 		ssj3.setUnlockOnSkillLevel(6);
+		ssj3.setSagaRequisite("frieza_saga:13");
 		ssj3.setTransformationAnimation("transf.ssj3");
 		ssj3.setHairColor("#FFE89E");
 		ssj3.setBodyColor2("#FFE89E");
@@ -885,6 +899,7 @@ public class DefaultFormsFactory {
 		ssj4d.setCustomModel("ssj4d");
 		ssj4d.setTransformationAnimation("transf.daima");
 		ssj4d.setUnlockOnSkillLevel(8);
+		ssj4d.setSagaRequisite("android_saga:11");
 		ssj4d.setHairColor("#83073F");
 		ssj4d.setBodyColor2("#83073F");
 		ssj4d.setEye1Color("#83073F");
@@ -1061,6 +1076,7 @@ public class DefaultFormsFactory {
 		FormConfig.FormData giantForm = new FormConfig.FormData();
 		giantForm.setName(NamekianForms.GIANT);
 		giantForm.setUnlockOnSkillLevel(1);
+		giantForm.setSagaRequisite("classic_saga:46");
 		giantForm.setFormCombo("dragonminez:giant");
 		giantForm.setKeepBaseFormHeadBones(true);
 		giantForm.setModelScaling(new Float[]{3.6f, 3.6f, 3.6f});
@@ -1080,6 +1096,7 @@ public class DefaultFormsFactory {
 		fullPower.setName(NamekianForms.FULLPOWER);
 		fullPower.setKeepBaseFormHeadBones(true);
 		fullPower.setUnlockOnSkillLevel(2);
+		fullPower.setSagaRequisite("frieza_saga:10");
 		fullPower.setModelScaling(new Float[]{1.0f, 1.0f, 1.0f});
 		fullPower.setStrMultiplier(2.85);
 		fullPower.setSkpMultiplier(2.85);
@@ -1095,6 +1112,7 @@ public class DefaultFormsFactory {
 		FormConfig.FormData superNamekian = new FormConfig.FormData();
 		superNamekian.setName(NamekianForms.SUPER_NAMEKIAN);
 		superNamekian.setUnlockOnSkillLevel(3);
+		superNamekian.setSagaRequisite("android_saga:11");
 		superNamekian.setCustomModel("namekian_buffed");
 		superNamekian.setKeepBaseFormHeadBones(true);
 		superNamekian.setAuraColor("#7FFF00");
@@ -1229,6 +1247,7 @@ public class DefaultFormsFactory {
 		FormConfig.FormData second = new FormConfig.FormData();
 		second.setName(FrostDemonForms.SECOND_FORM);
 		second.setUnlockOnSkillLevel(1);
+		second.setSagaRequisite("classic_saga:46");
 		second.setTransformationAnimation("transf.freezer");
 		second.setCustomModel("frostdemon_second");
 		second.setKeepBaseFormHeadBones(true);
@@ -1246,6 +1265,7 @@ public class DefaultFormsFactory {
 		FormConfig.FormData third = new FormConfig.FormData();
 		third.setName(FrostDemonForms.THIRD_FORM);
 		third.setUnlockOnSkillLevel(2);
+		third.setSagaRequisite("saiyan_saga:12");
 		third.setTransformationAnimation("transf.freezer");
 		third.setCustomModel("frostdemon_third");
 		third.setModelScaling(new Float[]{1.4f, 1.4f, 1.4f});
@@ -1261,6 +1281,7 @@ public class DefaultFormsFactory {
 		FormConfig.FormData finalForm = new FormConfig.FormData();
 		finalForm.setName(FrostDemonForms.FINAL_FORM);
 		finalForm.setUnlockOnSkillLevel(3);
+		finalForm.setSagaRequisite("frieza_saga:10");
 		second.setTransformationAnimation("transf.freezer2");
 		finalForm.setModelScaling(new Float[]{1.0f, 1.0f, 1.0f});
 		finalForm.setStrMultiplier(2.6);
@@ -1275,6 +1296,7 @@ public class DefaultFormsFactory {
 		FormConfig.FormData fullPower = new FormConfig.FormData();
 		fullPower.setName(FrostDemonForms.FULLPOWER);
 		fullPower.setUnlockOnSkillLevel(4);
+		fullPower.setSagaRequisite("frieza_saga:13");
 		second.setTransformationAnimation("transf.freezer2");
 		fullPower.setCustomModel("frostdemon_fp");
 		fullPower.setModelScaling(new Float[]{1.3f, 1.2f, 1.3f});
@@ -1295,6 +1317,7 @@ public class DefaultFormsFactory {
 		FormConfig.FormData fifthForm = new FormConfig.FormData();
 		fifthForm.setName(FrostDemonForms.FIFTH_FORM);
 		fifthForm.setUnlockOnSkillLevel(5);
+		fifthForm.setSagaRequisite("android_saga:11");
 		second.setTransformationAnimation("transf.freezer");
 		fifthForm.setCustomModel("frostdemon_fifth");
 		fifthForm.setModelScaling(new Float[]{1.4f, 1.3f, 1.4f});
@@ -1412,6 +1435,7 @@ public class DefaultFormsFactory {
 		FormConfig.FormData kid = new FormConfig.FormData();
 		kid.setName(MajinForms.KID);
 		kid.setUnlockOnSkillLevel(1);
+		kid.setSagaRequisite("classic_saga:46");
 		kid.setCustomModel("majin_kid");
 		kid.setKeepBaseFormHeadBones(true);
 		kid.setModelScaling(new Float[]{0.7f, 0.7f, 0.7f});
@@ -1429,6 +1453,7 @@ public class DefaultFormsFactory {
 		FormConfig.FormData evil = new FormConfig.FormData();
 		evil.setName(MajinForms.EVIL);
 		evil.setUnlockOnSkillLevel(2);
+		evil.setSagaRequisite("frieza_saga:5");
 		evil.setCustomModel("majin_evil");
 		evil.setKeepBaseFormHeadBones(true);
 		evil.setModelScaling(new Float[]{0.9f, 1.0f, 0.9f});
@@ -1452,6 +1477,7 @@ public class DefaultFormsFactory {
         superForm.setCustomModel("majin_super");
 		superForm.setName(MajinForms.SUPER);
 		superForm.setUnlockOnSkillLevel(3);
+		superForm.setSagaRequisite("frieza_saga:13");
 		superForm.setKeepBaseFormHeadBones(true);
 		superForm.setModelScaling(new Float[]{1.0f, 1.0f, 1.0f});
 		superForm.setStrMultiplier(3.0);
@@ -1466,6 +1492,7 @@ public class DefaultFormsFactory {
 		FormConfig.FormData ultra = new FormConfig.FormData();
 		ultra.setName(MajinForms.ULTRA);
 		ultra.setUnlockOnSkillLevel(4);
+		ultra.setSagaRequisite("android_saga:11");
 		ultra.setCustomModel("majin_ultra");
 		ultra.setKeepBaseFormHeadBones(true);
 		ultra.setModelScaling(new Float[]{1.3f, 1.2f, 1.3f});
@@ -1583,6 +1610,7 @@ public class DefaultFormsFactory {
 		FormConfig.FormData semiPerfect = new FormConfig.FormData();
 		semiPerfect.setName(BioAndroidForms.SEMI_PERFECT);
 		semiPerfect.setUnlockOnSkillLevel(1);
+		semiPerfect.setSagaRequisite("classic_saga:46");
 		semiPerfect.setCustomModel("bioandroid_semi");
 		semiPerfect.setModelScaling(new Float[]{1.3f, 1.3f, 1.3f});
 		semiPerfect.setStrMultiplier(1.75);
@@ -1604,6 +1632,7 @@ public class DefaultFormsFactory {
 		FormConfig.FormData perfect = new FormConfig.FormData();
 		perfect.setName(BioAndroidForms.PERFECT);
 		perfect.setUnlockOnSkillLevel(2);
+		perfect.setSagaRequisite("frieza_saga:5");
 		perfect.setCustomModel("bioandroid_perfect");
 		perfect.setModelScaling(new Float[]{1.1f, 1.1f, 1.1f});
 		perfect.setStrMultiplier(2.4);
@@ -1625,6 +1654,7 @@ public class DefaultFormsFactory {
 		FormConfig.FormData superPerfect = new FormConfig.FormData();
 		superPerfect.setName(BioAndroidForms.SUPER_PERFECT);
 		superPerfect.setUnlockOnSkillLevel(3);
+		superPerfect.setSagaRequisite("frieza_saga:13");
 		superPerfect.setCustomModel("bioandroid_perfect");
 		superPerfect.setModelScaling(new Float[]{1.1f, 1.1f, 1.1f});
 		superPerfect.setStrMultiplier(3.05);
@@ -1650,6 +1680,7 @@ public class DefaultFormsFactory {
 		FormConfig.FormData ultraperfect = new FormConfig.FormData();
 		ultraperfect.setName(BioAndroidForms.ULTRA_PERFECT);
 		ultraperfect.setUnlockOnSkillLevel(4);
+		ultraperfect.setSagaRequisite("android_saga:11");
 		ultraperfect.setCustomModel("bioandroid_ultra");
 		ultraperfect.setModelScaling(new Float[]{1.3f, 1.3f, 1.3f});
 		ultraperfect.setStrMultiplier(3.9);

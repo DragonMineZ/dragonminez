@@ -872,6 +872,8 @@
   "gui.dragonminez.skills.unlocked_by_quest": "Unlocked by quest:",
   "gui.dragonminez.skills.unlocked_by_master": "Learn it from a master",
   "gui.dragonminez.skills.quest_ref": "%s - Quest %s",
+  "gui.dragonminez.skills.locked_until": "Locked until: %s",
+  "gui.dragonminez.skills.locked_level": "Level %s",
   "gui.dragonminez.training.title": "Training",
   "gui.dragonminez.training.select": "Select Stat",
   "gui.dragonminez.training.stats_format": "%s [%s/%s]",
