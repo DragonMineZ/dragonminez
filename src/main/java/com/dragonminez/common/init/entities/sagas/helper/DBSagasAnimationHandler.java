@@ -274,7 +274,9 @@ public class DBSagasAnimationHandler {
             return PlayState.STOP;
         }
 
-        return event.getController().isPlayingTriggeredAnimation() ? PlayState.CONTINUE : PlayState.STOP;
+        if (event.getController().isPlayingTriggeredAnimation()) return PlayState.CONTINUE;
+        if (entity.isStunned()) return event.setAndContinue(DBSagasAnimations.ANIM_STUNNED);
+        return PlayState.STOP;
     }
 
     public static <T extends GeoAnimatable> PlayState tailPredicate(AnimationState<T> event) {

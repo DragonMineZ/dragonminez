@@ -59,4 +59,5 @@ public class BaseAnimations {
 	public static final RawAnimation FLYBACK = RawAnimation.begin().thenPlay("base.flyback");
 	public static final RawAnimation KNOCKBACK_HORIZONTAL = RawAnimation.begin().thenPlay("base.faint_horizontal");
 	public static final RawAnimation KNOCKBACK_VERTICAL = RawAnimation.begin().thenPlay("base.faint_vertical");
+	public static final RawAnimation STUNNED = RawAnimation.begin().thenLoop("base.stunned");
 }

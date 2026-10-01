@@ -239,6 +239,8 @@ public abstract class DBSagasEntity extends Monster implements GeoEntity, ITextu
 
     private static final EntityDataAccessor<Integer> LOCOMOTION_MODE = SynchedEntityData.defineId(DBSagasEntity.class, EntityDataSerializers.INT);
 
+    private static final EntityDataAccessor<Boolean> IS_STUNNED = SynchedEntityData.defineId(DBSagasEntity.class, EntityDataSerializers.BOOLEAN);
+
     private static final int SKILL_GRACE_TICKS = 80;
 
     public static final float SKILL_COOLDOWN_MULTIPLIER = 2.0F;
@@ -965,6 +967,7 @@ public abstract class DBSagasEntity extends Monster implements GeoEntity, ITextu
         }
 
         if (!this.level().isClientSide) {
+            this.entityData.set(IS_STUNNED, this.isAlive() && this.isStunned());
 
             if (!this.isAlive()) {
                 if (this.isCasting()) this.stopCasting();
@@ -1810,6 +1813,7 @@ public abstract class DBSagasEntity extends Monster implements GeoEntity, ITextu
         this.entityData.define(IS_KID, false);
         this.entityData.define(SCALE_VAL, 1.0F);
         this.entityData.define(LOCOMOTION_MODE, LocomotionMode.IDLE.ordinal());
+        this.entityData.define(IS_STUNNED, false);
     }
 
     public boolean isMeleeAllowed() {
@@ -1817,6 +1821,7 @@ public abstract class DBSagasEntity extends Monster implements GeoEntity, ITextu
     }
 
     public boolean isStunned() {
+        if (this.level().isClientSide) return this.entityData.get(IS_STUNNED);
         return this.hasEffect(MainEffects.STUN.get());
     }
 

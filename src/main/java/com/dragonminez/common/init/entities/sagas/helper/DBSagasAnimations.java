@@ -92,6 +92,7 @@ public class DBSagasAnimations {
     public static final RawAnimation ANIM_HURT_TOP2 = RawAnimation.begin().thenPlayAndHold("base.hurt_top2");
     public static final RawAnimation ANIM_HURT_DOWN = RawAnimation.begin().thenPlayAndHold("base.hurt_down");
     public static final RawAnimation ANIM_HURT_GRABBED = RawAnimation.begin().thenPlay("skp.grabbed");
+    public static final RawAnimation ANIM_STUNNED = RawAnimation.begin().thenLoop("base.stunned");
     public static final RawAnimation ANIM_KIWAVE = RawAnimation.begin().thenPlay("ki_finalflash");
     public static final RawAnimation ANIM_KIATTACK = RawAnimation.begin().thenPlay("kiattack");
     public static final RawAnimation ANIM_KIBALL = RawAnimation.begin().thenPlay("ki_ball");

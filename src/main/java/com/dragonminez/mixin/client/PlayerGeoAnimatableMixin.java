@@ -231,6 +231,11 @@ public abstract class PlayerGeoAnimatableMixin implements GeoAnimatable, IPlayer
 	}
 
 	@Unique
+	private static boolean dragonminez$isStunned(StatsData data) {
+		return data.getStatus().isStunEffect() && !data.getStatus().isStrikeLocked() && !data.getStatus().isKnockedDown();
+	}
+
+	@Unique
 	private static boolean dragonminez$isEatingFood(AbstractClientPlayer player) {
 		if (!player.isUsingItem()) return false;
 		UseAnim anim = player.getUseItem().getUseAnimation();
@@ -336,6 +341,7 @@ public abstract class PlayerGeoAnimatableMixin implements GeoAnimatable, IPlayer
 		ActionMode actionMode = data.getStatus().getSelectedAction();
 
 		if (isKnockedDown) return state.setAndContinue(KNOCKBACK_HORIZONTAL);
+		if (dragonminez$isStunned(data)) return state.setAndContinue(STUNNED);
 
 		if (isDraining) {
 			boolean semiPerfect = "bioandroid".equalsIgnoreCase(data.getCharacter().getRaceName())
@@ -471,7 +477,7 @@ public abstract class PlayerGeoAnimatableMixin implements GeoAnimatable, IPlayer
 		if (player.isSwimming() || player.isVisuallyCrawling() || player.isPassenger()) return PlayState.STOP;
 
 		StatsData data = StatsProvider.get(StatsCapability.INSTANCE, player).orElse(null);
-		if (data != null && (data.getStatus().isBlocking() || data.getStatus().isChargingKi())) return PlayState.STOP;
+		if (data != null && (data.getStatus().isBlocking() || data.getStatus().isChargingKi() || dragonminez$isStunned(data))) return PlayState.STOP;
 
 		if (dragonminez$currentPoseAnim == null || dragonminez$currentPoseAnim.isEmpty()) return PlayState.STOP;
 

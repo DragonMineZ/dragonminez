@@ -133,6 +133,7 @@ public class TickHandler {
 				NetworkHandler.sendToPlayer(new ResourceSyncS2C(serverPlayer), serverPlayer);
 			}
 
+			boolean wasStunEffect = data.getStatus().isStunEffect();
 			if (isStunned || isDowned || isFrozen) {
 				data.getStatus().setChargingKi(false);
 				data.getStatus().setActionCharging(false);
@@ -142,6 +143,9 @@ public class TickHandler {
 				if (isStunned && !data.getStatus().isStunEffect()) data.getStatus().setStunEffect(true);
 				if (!isStunned && data.getStatus().isStunEffect()) data.getStatus().setStunEffect(false);
 			} else if (data.getStatus().isStunEffect()) data.getStatus().setStunEffect(false);
+			if (wasStunEffect != data.getStatus().isStunEffect()) {
+				NetworkHandler.sendToTrackingEntityAndSelf(new StatsSyncS2C(serverPlayer), serverPlayer);
+			}
 
 			data.getCooldowns().tick();
 			data.getEffects().tick();
