@@ -2144,7 +2144,7 @@
   "dialogue.dragonminez.story.sidequest.kingkai.offer": "嘿呀！你成功通过蛇道了——这可不是简单的事情！我有个任务交给你，哈哈！当然，作为报酬，你至少得听我讲一个笑话！",
   "dialogue.dragonminez.story.sidequest.kingkai.in_progress": "继续努力！界王拳可不是那么容易掌握的，你知道吗！悟空第一次使用时差点昏过去。你已经做得更好了，哈哈！",
   "dialogue.dragonminez.story.sidequest.kingkai.complete": "你成功了！你已经准备好面对整个银河了！……懂了吗？银河？哈哈哈哈！不过认真说，悟空一定会为你今天的努力感到骄傲！",
-  "dialogue.dragonminez.story.sidequest.kingkai.idle": "巴布鲁斯！格雷格利！我的客人去哪了？……算了。嘿，要不要听个笑话？一个赛亚人走完了蛇道，然后说：'哇，这路真长！'",
+  "dialogue.dragonminez.story.sidequest.kingkai.idle": "巴布鲁斯！格雷戈里！我的客人去哪了？……算了。嘿，要不要听个笑话？一个赛亚人走完了蛇道，然后说：'哇，这路真长！'",
   "command.dragonminez.skills.unknown_skill": "§e[DMZ-Skills]§r §c未知技能：%s",
   "command.dragonminez.skills.set_success": "§e[DMZ-Skills]§r 已将%s的技能“%s”设置为%s级",
   "command.dragonminez.skills.set_multiple": "§e[DMZ-Skills]§r 已将%d名玩家的技能“%s”设置为%s级。",
