@@ -79,6 +79,9 @@ public final class RhythmAutoCharter {
 	private static final double VOCAL_ONSET_ENERGY_RISE = 1.3;
 	private static final double VOCAL_SNAP_MS = 45;
 	private static final double VOCAL_HOLD_MAX_MS = 2500;
+	private static final double VOCAL_COVERAGE_JOIN_MS = 3000;
+	private static final double VOCAL_MIN_COVERAGE = 0.45;
+	private static final double VOCAL_MAX_GAP_MS = 20000;
 
 	public static final int PHASE_ANALYZING = 0;
 	public static final int PHASE_TEMPO = 1;
@@ -89,6 +92,7 @@ public final class RhythmAutoCharter {
 
 	public static java.util.function.Consumer<String> DEBUG;
 	public static FeatureSink FEATURES;
+	public static boolean KEEP_SPARSE_VOCALS;
 
 	public interface FeatureSink {
 		void accept(int frame, float[] features, boolean silent);
@@ -190,6 +194,7 @@ public final class RhythmAutoCharter {
 		if (vocals != null) {
 			vocalNotes = buildVocal(vocals, spectra, grid, durationMs);
 			String problem = vocalNotes.size() < 20 ? "count" : validateNotes(vocalNotes, (int) durationMs);
+			if (problem == null && !KEEP_SPARSE_VOCALS) problem = vocalCoverageProblem(vocalNotes, durationMs);
 			if (DEBUG != null) DEBUG.accept("vocal notes=" + vocalNotes.size() + " segments=" + vocals.segments.length + " problem=" + problem);
 			if (problem != null) vocalNotes = new ArrayList<>();
 		}
@@ -882,6 +887,18 @@ public final class RhythmAutoCharter {
 			row[scalars + 2] = (float) s.centerBalance[f];
 		}
 		return out;
+	}
+
+	private static String vocalCoverageProblem(List<RhythmChart.Note> vocalNotes, double durationMs) {
+		double covered = 0, longestGap = 0;
+		for (int i = 1; i < vocalNotes.size(); i++) {
+			double gap = vocalNotes.get(i).timeMs() - vocalNotes.get(i - 1).timeMs();
+			if (gap < VOCAL_COVERAGE_JOIN_MS) covered += gap;
+			longestGap = Math.max(longestGap, gap);
+		}
+		if (covered < VOCAL_MIN_COVERAGE * durationMs) return "coverage";
+		if (longestGap >= VOCAL_MAX_GAP_MS) return "gap";
+		return null;
 	}
 
 	private static double dipRate(double[] energy, boolean[] active) {
