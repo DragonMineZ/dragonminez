@@ -462,7 +462,9 @@ public class DMZSkinLayer<T extends AbstractClientPlayer & GeoAnimatable> extend
         }
 
         renderColoredLayer(model, poseStack, animatable, bufferSource, folder + "humansaiyan_nose_" + character.getNoseType() + ".png", skinBase, pt, pl, po, alpha, false);
+        renderFeatureShadow(model, poseStack, animatable, bufferSource, folder + "humansaiyan_nose_" + character.getNoseType() + ".png", skin, pt, pl, po, alpha);
         renderColoredLayer(model, poseStack, animatable, bufferSource, folder + "humansaiyan_mouth_" + character.getMouthType() + ".png", skinBase, pt, pl, po, alpha, false);
+        renderFeatureShadow(model, poseStack, animatable, bufferSource, folder + "humansaiyan_mouth_" + character.getMouthType() + ".png", skin, pt, pl, po, alpha);
 	}
 
 	private void renderHumanEyes(BakedGeoModel model, PoseStack poseStack, T animatable, MultiBufferSource bufferSource, Character character, int eyeType, float[] sclera, float[] eye1, float[] eye2, float[] brow, float[] ssj3Brow, float pt, int pl, int po, float alpha) {
@@ -494,7 +496,17 @@ public class DMZSkinLayer<T extends AbstractClientPlayer & GeoAnimatable> extend
 	private void renderFaceFeature(BakedGeoModel model, PoseStack poseStack, T animatable, MultiBufferSource bufferSource, Character character, String type, int value, String ownPath, float[] tint, float pt, int pl, int po, float alpha) {
 		int humanValue = TextureCounter.toHumanFaceIndex(character, type, value);
 		String path = humanValue >= 0 ? HUMAN_FACE_FOLDER + "humansaiyan_" + type + "_" + humanValue + ".png" : ownPath;
-		if (path != null) renderColoredLayer(model, poseStack, animatable, bufferSource, path, tint, pt, pl, po, alpha);
+		if (path == null) return;
+		renderColoredLayer(model, poseStack, animatable, bufferSource, path, tint, pt, pl, po, alpha);
+		renderFeatureShadow(model, poseStack, animatable, bufferSource, path, tint, pt, pl, po, alpha);
+	}
+
+	private void renderFeatureShadow(BakedGeoModel model, PoseStack poseStack, T animatable, MultiBufferSource bufferSource, String featurePath, float[] shadowSource, float pt, int pl, int po, float alpha) {
+		if (!featurePath.endsWith(".png")) return;
+		ResourceLocation shadow = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, featurePath.substring(0, featurePath.length() - ".png".length()) + "_shadow.png");
+		if (!getSafeTexture(shadow).equals(shadow)) return;
+		float[] tone = ColorUtils.skinShadowTone(shadowSource);
+		renderLayerWholeModel(model, poseStack, bufferSource, animatable, ModRenderTypes.skinOverlayTranslucent(shadow), tone[0], tone[1], tone[2], 1.0f, pt, pl, po, alpha, false);
 	}
 
 	private void renderBorrowedHumanFace(BakedGeoModel model, PoseStack poseStack, T animatable, MultiBufferSource bufferSource, Character character, float[] eye1, float[] eye2, float[] hair, float[] faceColor, float pt, int pl, int po, float alpha) {
@@ -541,6 +553,7 @@ public class DMZSkinLayer<T extends AbstractClientPlayer & GeoAnimatable> extend
 
 		if (isFifth) {
 			renderColoredLayer(model, poseStack, animatable, bufferSource, folder + "frostdemon_fifth_mouth.png", skin, pt, pl, po, alpha, true);
+			renderFeatureShadow(model, poseStack, animatable, bufferSource, folder + "frostdemon_fifth_mouth.png", skin, pt, pl, po, alpha);
 			return;
 		}
 
@@ -587,6 +600,7 @@ public class DMZSkinLayer<T extends AbstractClientPlayer & GeoAnimatable> extend
             renderColoredLayer(model, poseStack, animatable, bufferSource, folder + "janemba_eye_0.png", janembaEyeBg, pt, pl, po, alpha);
             renderColoredLayer(model, poseStack, animatable, bufferSource, folder + "janemba_eye_1.png", eye1, pt, pl, po, alpha);
             renderColoredLayer(model, poseStack, animatable, bufferSource, folder + "janemba_mouth.png", skin, pt, pl, po, alpha);
+            renderFeatureShadow(model, poseStack, animatable, bufferSource, folder + "janemba_mouth.png", skin, pt, pl, po, alpha);
             return;
         }
 

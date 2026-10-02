@@ -38,6 +38,7 @@ import top.theillusivec4.curios.api.CuriosApi;
 public class DMZRacePartsLayer<T extends AbstractClientPlayer & GeoAnimatable> extends GeoRenderLayer<T> {
 	private static final ResourceLocation RACES_PARTS_MODEL = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "geo/entity/raceparts.geo.json");
 	private static final ResourceLocation RACES_PARTS_TEXTURE = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "textures/entity/races/raceparts.png");
+	private static final ResourceLocation RACES_PARTS_SHADOW_TEXTURE = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "textures/entity/races/raceparts_shadow.png");
 
 	private static final ResourceLocation ACCESORIES_MODEL = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "geo/entity/races/accesories.geo.json");
 	private static final ResourceLocation SCOUTER_MODEL = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "geo/entity/scouter.geo.json");
@@ -166,6 +167,7 @@ public class DMZRacePartsLayer<T extends AbstractClientPlayer & GeoAnimatable> e
 		if (partsModel == null) return;
 
 		RenderType partsRenderType = RenderType.entityTranslucent(RACES_PARTS_TEXTURE);
+		RenderType partsShadowRenderType = RenderType.entityTranslucent(RACES_PARTS_SHADOW_TEXTURE);
 		FormConfig.FormData tintForm = DMZSkinLayer.resolveTintForm(stats);
 		float[] formTintColor = tintForm != null ? tintForm.getRgbTintColor() : null;
 		float formTintIntensity = tintForm != null ? (float) tintForm.getTintIntensity() : 0.0f;
@@ -221,12 +223,15 @@ public class DMZRacePartsLayer<T extends AbstractClientPlayer & GeoAnimatable> e
 						}
 
 						float[] tintedColor = applyAuraTint(colorToTint[0], colorToTint[1], colorToTint[2], formTintColor, formTintIntensity, topAuraColor, tintProgress);
+						float[] shadowColor = tintedShadow(colorToTint, formTintColor, formTintIntensity, topAuraColor, tintProgress);
 
 						if (boneName.contains("horn") && character.getRaceName().equals("frostdemon")) {
 							tintedColor = ColorUtils.hexToRgb("#1A1A1A");
+							shadowColor = ColorUtils.skinShadowTone(tintedColor);
 						}
 
 						renderTargetedBone(targetBone, poseStack, bufferSource, animatable, partsRenderType, tintedColor[0], tintedColor[1], tintedColor[2], alpha, partialTick, packedLight);
+						renderTargetedBone(targetBone, poseStack, bufferSource, animatable, partsShadowRenderType, shadowColor[0], shadowColor[1], shadowColor[2], alpha, partialTick, packedLight);
 					}
 				}
 			}
@@ -247,7 +252,9 @@ public class DMZRacePartsLayer<T extends AbstractClientPlayer & GeoAnimatable> e
 					}
 					float[] antennaColor = resolveBodyColor1(stats);
 					float[] tintedColor = applyAuraTint(antennaColor[0], antennaColor[1], antennaColor[2], formTintColor, formTintIntensity, topAuraColor, tintProgress);
+					float[] shadowColor = tintedShadow(antennaColor, formTintColor, formTintIntensity, topAuraColor, tintProgress);
 					renderTargetedBone(antennaBone, poseStack, bufferSource, animatable, partsRenderType, tintedColor[0], tintedColor[1], tintedColor[2], alpha, partialTick, packedLight);
+					renderTargetedBone(antennaBone, poseStack, bufferSource, animatable, partsShadowRenderType, shadowColor[0], shadowColor[1], shadowColor[2], alpha, partialTick, packedLight);
 				}
 			}
 
@@ -268,7 +275,9 @@ public class DMZRacePartsLayer<T extends AbstractClientPlayer & GeoAnimatable> e
 					}
 
 					float[] tintedColor = applyAuraTint(majinBodyColor[0], majinBodyColor[1], majinBodyColor[2], formTintColor, formTintIntensity, topAuraColor, tintProgress);
+					float[] shadowColor = tintedShadow(majinBodyColor, formTintColor, formTintIntensity, topAuraColor, tintProgress);
 					renderTargetedBone(earsBone, poseStack, bufferSource, animatable, partsRenderType, tintedColor[0], tintedColor[1], tintedColor[2], alpha, partialTick, packedLight);
+					renderTargetedBone(earsBone, poseStack, bufferSource, animatable, partsShadowRenderType, shadowColor[0], shadowColor[1], shadowColor[2], alpha, partialTick, packedLight);
 				}
 			}
 
@@ -324,10 +333,17 @@ public class DMZRacePartsLayer<T extends AbstractClientPlayer & GeoAnimatable> e
 					}
 
 					float[] tintedColor = applyAuraTint(tailColor[0], tailColor[1], tailColor[2], formTintColor, formTintIntensity, topAuraColor, tintProgress);
+					float[] shadowColor = tintedShadow(tailColor, formTintColor, formTintIntensity, topAuraColor, tintProgress);
 					renderTargetedBone(targetBone, poseStack, bufferSource, animatable, tailRenderType, tintedColor[0], tintedColor[1], tintedColor[2], alpha, partialTick, packedLight);
+					renderTargetedBone(targetBone, poseStack, bufferSource, animatable, RenderType.entityTranslucentCull(RACES_PARTS_SHADOW_TEXTURE), shadowColor[0], shadowColor[1], shadowColor[2], alpha, partialTick, packedLight);
 				});
 			}
 		}
+	}
+
+	private float[] tintedShadow(float[] color, float[] formTintColor, float formTintIntensity, float[] auraColor, float tintProgress) {
+		float[] shadow = ColorUtils.skinShadowTone(color);
+		return applyAuraTint(shadow[0], shadow[1], shadow[2], formTintColor, formTintIntensity, auraColor, tintProgress);
 	}
 
 	private void renderTargetedBone(GeoBone targetBone, PoseStack poseStack, MultiBufferSource bufferSource, T animatable, RenderType renderType, float r, float g, float b, float alpha, float partialTick, int packedLight) {
