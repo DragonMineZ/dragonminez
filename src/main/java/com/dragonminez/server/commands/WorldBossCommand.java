@@ -12,14 +12,22 @@ import com.mojang.brigadier.arguments.StringArgumentType;
 import com.mojang.brigadier.builder.LiteralArgumentBuilder;
 import com.mojang.brigadier.context.CommandContext;
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
+import net.minecraft.ChatFormatting;
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.commands.Commands;
 import net.minecraft.commands.SharedSuggestionProvider;
 import net.minecraft.core.BlockPos;
+import net.minecraft.network.chat.ClickEvent;
 import net.minecraft.network.chat.Component;
+import net.minecraft.network.chat.ComponentUtils;
+import net.minecraft.network.chat.HoverEvent;
+import net.minecraft.network.chat.MutableComponent;
+import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.util.Mth;
 import net.minecraft.world.entity.Entity;
+import net.minecraft.world.phys.Vec3;
 
 public class WorldBossCommand {
 
@@ -31,7 +39,7 @@ public class WorldBossCommand {
 		dispatcher.register(Commands.literal("dmzworldboss")
 				.then(Commands.literal("results")
 						.executes(WorldBossCommand::results))
-				.then(bossCommand("locate", WorldBossCommand::locate))
+				.then(bossCommand("locate", WorldBossCommand::locate).executes(WorldBossCommand::locateAll))
 				.then(bossCommand("tp", WorldBossCommand::teleport))
 				.then(bossCommand("reset", WorldBossCommand::reset))
 				.then(bossCommand("ready", WorldBossCommand::ready)));
@@ -67,47 +75,95 @@ public class WorldBossCommand {
 		return 1;
 	}
 
+	private static int locateAll(CommandContext<CommandSourceStack> ctx) {
+		int found = 0;
+		for (WorldBossLair lair : WorldBossManager.lairs()) found += locate(ctx, lair);
+		return found;
+	}
+
 	private static int locate(CommandContext<CommandSourceStack> ctx, WorldBossLair lair) {
-		BlockPos pos = WorldBossManager.getLair(ctx.getSource().getServer(), lair.key());
+		CommandSourceStack source = ctx.getSource();
+		MinecraftServer server = source.getServer();
+		BlockPos pos = WorldBossManager.getLair(server, lair.key());
 		if (pos == null) {
-			ctx.getSource().sendFailure(Component.literal("No lair has been chosen yet for " + lair.displayName()
-					+ ". Visit " + lair.dimension().location() + " once."));
+			source.sendFailure(notChosen(lair));
 			return 0;
 		}
 
-		WorldBossManager.Data data = WorldBossManager.Data.get(ctx.getSource().getServer());
-		WorldBossManager.Data.Entry entry = data.peek(lair.key());
-		long remaining = WorldBossManager.getRespawnRemainingTicks(ctx.getSource().getServer(), lair.key());
+		Component name = Component.literal(lair.displayName()).withStyle(ChatFormatting.YELLOW);
+		Component coords = ComponentUtils.wrapInSquareBrackets(Component.literal(pos.getX() + ", " + pos.getY() + ", " + pos.getZ()))
+				.withStyle(style -> style
+						.withColor(ChatFormatting.GREEN)
+						.withClickEvent(new ClickEvent(ClickEvent.Action.SUGGEST_COMMAND, "/dmzworldboss tp " + lair.key()))
+						.withHoverEvent(new HoverEvent(HoverEvent.Action.SHOW_TEXT, Component.translatable("command.dragonminez.worldboss.click_tp"))));
 
-		ctx.getSource().sendSuccess(() -> Component.literal(
-				lair.displayName() + " lair: " + pos.getX() + " " + pos.getY() + " " + pos.getZ()
-						+ " (" + lair.dimension().location() + ")"
-						+ " | resolved=" + (entry != null && entry.lairResolved)
-						+ " | arena=" + (entry != null && entry.arenaBuilt)
-						+ " | alive=" + (entry != null && entry.bossId != null)
-						+ " | respawn in " + (remaining / 20L) + "s"), false);
+		Component found;
+		if (source.getLevel().dimension().equals(lair.dimension())) {
+			Vec3 from = source.getPosition();
+			double dx = from.x - (pos.getX() + 0.5D);
+			double dz = from.z - (pos.getZ() + 0.5D);
+			int distance = Mth.floor(Math.sqrt(dx * dx + dz * dz));
+			found = Component.translatable("command.dragonminez.worldboss.locate.found", name, coords, distance);
+		} else {
+			found = Component.translatable("command.dragonminez.worldboss.locate.found_elsewhere", name, coords,
+					Component.literal(lair.dimension().location().toString()).withStyle(ChatFormatting.AQUA));
+		}
+		Component status = status(server, lair);
+		source.sendSuccess(() -> found, false);
+		source.sendSuccess(() -> status, false);
 		return 1;
+	}
+
+	private static Component status(MinecraftServer server, WorldBossLair lair) {
+		WorldBossManager.Data.Entry entry = WorldBossManager.Data.get(server).peek(lair.key());
+		long remaining = WorldBossManager.getRespawnRemainingTicks(server, lair.key());
+		MutableComponent state;
+		if (entry != null && entry.bossId != null) {
+			state = Component.translatable("command.dragonminez.worldboss.status.alive").withStyle(ChatFormatting.GREEN);
+		} else if (remaining > 0L) {
+			state = Component.translatable("command.dragonminez.worldboss.status.respawn", formatTicks(remaining)).withStyle(ChatFormatting.GOLD);
+		} else {
+			state = Component.translatable("command.dragonminez.worldboss.status.waiting").withStyle(ChatFormatting.AQUA);
+		}
+		if (entry == null || !entry.lairResolved || !entry.arenaBuilt) {
+			state.append(Component.translatable("command.dragonminez.worldboss.status.lair_pending").withStyle(ChatFormatting.DARK_GRAY));
+		}
+		return Component.translatable("command.dragonminez.worldboss.locate.status", state).withStyle(ChatFormatting.GRAY);
+	}
+
+	private static String formatTicks(long ticks) {
+		long seconds = ticks / 20L;
+		long hours = seconds / 3600L;
+		long minutes = (seconds % 3600L) / 60L;
+		long rest = seconds % 60L;
+		if (hours > 0L) return String.format("%dh %02dm", hours, minutes);
+		if (minutes > 0L) return String.format("%dm %02ds", minutes, rest);
+		return rest + "s";
+	}
+
+	private static Component notChosen(WorldBossLair lair) {
+		return Component.translatable("command.dragonminez.worldboss.not_chosen", lair.displayName(), lair.dimension().location().toString());
 	}
 
 	private static int teleport(CommandContext<CommandSourceStack> ctx, WorldBossLair lair) throws CommandSyntaxException {
 		ServerPlayer player = ctx.getSource().getPlayerOrException();
 		BlockPos pos = WorldBossManager.getLair(ctx.getSource().getServer(), lair.key());
 		if (pos == null) {
-			ctx.getSource().sendFailure(Component.literal("No lair has been chosen yet for " + lair.displayName()
-					+ ". Visit " + lair.dimension().location() + " once."));
+			ctx.getSource().sendFailure(notChosen(lair));
 			return 0;
 		}
 
 		ServerLevel level = WorldBossManager.levelFor(ctx.getSource().getServer(), lair.key());
 		if (level == null) {
-			ctx.getSource().sendFailure(Component.literal(lair.dimension().location() + " is not loaded."));
+			ctx.getSource().sendFailure(Component.translatable("command.dragonminez.worldboss.not_loaded", lair.dimension().location().toString()));
 			return 0;
 		}
 
 		BlockPos target = lair.teleportTarget(level, pos);
 		player.teleportTo(level, target.getX() + 0.5D, target.getY() + 2.0D, target.getZ() + 0.5D,
 				player.getYRot(), player.getXRot());
-		ctx.getSource().sendSuccess(() -> Component.literal("Teleported to the " + lair.displayName() + " lair."), false);
+		ctx.getSource().sendSuccess(() -> Component.translatable("command.dragonminez.worldboss.tp.success",
+				Component.literal(lair.displayName()).withStyle(ChatFormatting.YELLOW)), false);
 		return 1;
 	}
 
