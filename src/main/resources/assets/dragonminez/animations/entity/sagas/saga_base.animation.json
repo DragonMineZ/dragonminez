@@ -10837,6 +10837,29 @@
 					}
 				}
 			}
+		},
+		"tamagami.sleep": {
+			"loop": true,
+			"bones": {
+				"waist": {
+					"rotation": {
+						"vector": [8, 0, 0]
+					},
+					"position": {
+						"vector": [0, "math.sin(query.anim_time * 60) * 0.3 - 0.6", 0]
+					}
+				},
+				"right_arm": {
+					"rotation": {
+						"vector": [-8, 0, "4 + math.cos(query.anim_time * 60) * 1.5"]
+					}
+				},
+				"left_arm": {
+					"rotation": {
+						"vector": [-8, 0, "-4 - math.cos(query.anim_time * 60) * 1.5"]
+					}
+				}
+			}
 		}
 	}
 }

@@ -1880,6 +1880,10 @@ public abstract class DBSagasEntity extends Monster implements GeoEntity, ITextu
         return DBSagasAnimations.ANIM_BOSS_SLEEP;
     }
 
+    public double getAttackAnimationSpeed() {
+        return 1.0D;
+    }
+
     public boolean usesFullVolleyPalette() {
         return false;
     }

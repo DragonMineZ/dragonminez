@@ -92,7 +92,7 @@ public class SPBlueHurricaneRenderer extends EntityRenderer<SPBlueHurricaneEntit
             stack.pushPose();
             stack.last().pose().set(basePose);
 
-            if (owner != null) {
+            if (owner != null && !entity.isDetached()) {
                 Vec3 anchor = owner.getPosition(partialTick).subtract(entity.getPosition(partialTick));
                 stack.translate(anchor.x, anchor.y, anchor.z);
             }

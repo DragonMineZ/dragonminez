@@ -18,6 +18,7 @@ import com.dragonminez.common.init.entities.ki.KiBlastEntity;
 import com.dragonminez.common.init.entities.ki.KiExplosionVisualEntity;
 import com.dragonminez.common.init.entities.ki.KiLaserEntity;
 import com.dragonminez.common.init.entities.ki.KillDriverEntity;
+import com.dragonminez.common.init.entities.ki.SPBlueHurricaneEntity;
 import com.dragonminez.common.init.entities.sagas.DBSagasEntity;
 import com.dragonminez.common.init.entities.sagas.DBSagasPart;
 import com.dragonminez.common.init.entities.sagas.helper.DBSagasAnimations;
@@ -34,9 +35,11 @@ import com.dragonminez.server.events.players.combat.KnockbackHelper;
 import com.dragonminez.server.events.players.combat.MeteorBurstCombo;
 import com.dragonminez.server.events.players.combat.MomentumImpactHandler;
 import com.dragonminez.server.events.players.combat.StrikeAttackHandler;
+import com.dragonminez.server.commands.WorldBossCommand;
 import com.dragonminez.server.world.structure.BossStructures.GeteStarShape;
 import com.dragonminez.server.world.worldboss.WorldBossContribution;
 import com.dragonminez.server.world.worldboss.WorldBossManager;
+import net.minecraft.ChatFormatting;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.particles.DustParticleOptions;
 import net.minecraft.core.particles.ItemParticleOption;
@@ -69,12 +72,17 @@ import net.minecraft.world.entity.ai.attributes.AttributeInstance;
 import net.minecraft.world.entity.ai.attributes.AttributeModifier;
 import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.entity.ai.goal.Goal;
+import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.entity.monster.Monster;
 import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.ChunkPos;
+import net.minecraft.world.level.ClipContext;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.AABB;
+import net.minecraft.world.phys.BlockHitResult;
+import net.minecraft.world.phys.HitResult;
 import net.minecraft.world.phys.Vec3;
 import net.minecraftforge.registries.RegistryObject;
 import org.joml.Vector3f;
@@ -87,11 +95,13 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.EnumSet;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Random;
+import java.util.Set;
 import java.util.UUID;
 
 public class AllWorldBossesEntity {
@@ -2701,5 +2711,1031 @@ public class AllWorldBossesEntity {
             }
             this.discard();
         }
+    }
+
+    public abstract static class Tamagami extends WorldBossEntity {
+
+        public static final float SCALE = 1.5F;
+
+        protected record Profile(int number, float health, float melee, float poweredMelee, float ki, float poweredKi,
+                                 int hitInterval, int poweredHitInterval, float hitRatio, float poweredHitRatio,
+                                 double swingSpeed, double poweredSwingSpeed, double knockbackResistance, OutlineStyle outline) {}
+
+        private static final float SLEEP_YAW = 0.0F;
+        private static final float SLEEP_PITCH = 35.0F;
+        private static final int BASE_AURA = 0xFFFFFF;
+        private static final int POWERED_AURA = 0xFF8C1A;
+        private static final double WALK_SPEED = 0.3D;
+        private static final double POWERED_WALK_SPEED = 0.34D;
+        private static final int ABILITY_GAP = 45;
+        private static final float POWERED_COOLDOWN = 0.75F;
+        private static final float MIN_POWERED_HEALTH = 0.35F;
+        private static final double TETHER_RADIUS = 56.0D;
+        private static final double FALL_LIMIT = 12.0D;
+        private static final int DORMANT_NOTICE_INTERVAL = 40;
+        private static final double BALL_DROP_DISTANCE = 2.5D;
+        private static final UUID FAST_HIT_ID = UUID.fromString("0d6b7f43-6a3e-4f6c-9b8e-2f3c1a5d7e91");
+        private static final String DORMANT_KEY = "worldboss.dragonminez.tamagami.dormant";
+        private static final String BALL_KEY = "worldboss.dragonminez.tamagami.ball_dropped";
+
+        private final boolean powered;
+        private final Profile profile;
+        private int fastHitTimer;
+        private int abilityGap;
+
+        protected Tamagami(EntityType<? extends Monster> pEntityType, Level pLevel, boolean powered, Profile profile) {
+            super(pEntityType, pLevel);
+            this.powered = powered;
+            this.profile = profile;
+            this.setCanFly(true);
+            this.setDBZStyle(0);
+            this.setAuraColor(powered ? POWERED_AURA : BASE_AURA);
+            this.setKiBlastSpeed(powered ? 1.9F : 1.5F);
+            this.setDropChance(EquipmentSlot.MAINHAND, 0.0F);
+            this.setItemSlot(EquipmentSlot.MAINHAND, new ItemStack(this.weaponItem()));
+            this.applyScale();
+            this.applyFixedStats();
+            this.getPersistentData().putBoolean("dmz_stats_configured", true);
+            if (!powered) this.fallAsleep();
+        }
+
+        protected abstract Item weaponItem();
+
+        protected abstract EntityType<? extends Tamagami> formType(boolean powered);
+
+        protected void tickCooldowns() {
+        }
+
+        protected void chooseAbility(ServerLevel level, LivingEntity target) {
+        }
+
+        protected void clearAbilityState(ServerLevel level) {
+        }
+
+        protected void resetCooldowns() {
+        }
+
+        public boolean isPowered() {
+            return this.powered;
+        }
+
+        public int getNumber() {
+            return this.profile.number();
+        }
+
+        protected int cooldown(int ticks) {
+            return this.powered ? Math.round(ticks * POWERED_COOLDOWN) : ticks;
+        }
+
+        private void applyScale() {
+            this.setScaleVal(SCALE);
+            this.refreshDimensions();
+        }
+
+        @Override
+        public String getWorldBossKey() {
+            return WorldBossEntity.tamagamiKey(this.profile.number());
+        }
+
+        @Override
+        public String getGeckolibModelName() {
+            return "saga_tamagami_" + this.profile.number();
+        }
+
+        @Override
+        public String getGeckolibTextureName() {
+            return this.powered ? "saga_tamagami_" + this.profile.number() + "_powered" : this.getGeckolibModelName();
+        }
+
+        @Override
+        public RawAnimation getSleepAnimation() {
+            return DBSagasAnimations.ANIM_TAMAGAMI_SLEEP;
+        }
+
+        @Override
+        public int getNamekDragonBallStars() {
+            return this.profile.number();
+        }
+
+        @Override
+        public OutlineStyle getOutlineStyle() {
+            return this.powered ? this.profile.outline() : null;
+        }
+
+        @Override
+        protected BossEvent.BossBarColor getBossBarColor() {
+            return this.powered ? BossEvent.BossBarColor.RED : BossEvent.BossBarColor.WHITE;
+        }
+
+        @Override
+        public double getAttackAnimationSpeed() {
+            return this.powered ? this.profile.poweredSwingSpeed() : this.profile.swingSpeed();
+        }
+
+        @Override
+        public boolean isMeleeAllowed() {
+            return this.getBossAbility() < 0 && super.isMeleeAllowed();
+        }
+
+        @Override
+        public boolean isZanzokenReady() {
+            return this.getBossAbility() < 0 && super.isZanzokenReady();
+        }
+
+        @Override
+        public boolean isWildSenseReady() {
+            return this.getBossAbility() < 0 && super.isWildSenseReady();
+        }
+
+        @Override
+        protected void applyFixedStats() {
+            double speed = this.powered ? POWERED_WALK_SPEED : WALK_SPEED;
+            float ki = this.powered ? this.profile.poweredKi() : this.profile.ki();
+            this.getAttribute(Attributes.MAX_HEALTH).setBaseValue(this.profile.health());
+            this.getAttribute(Attributes.ATTACK_DAMAGE).setBaseValue(this.powered ? this.profile.poweredMelee() : this.profile.melee());
+            this.getAttribute(Attributes.MOVEMENT_SPEED).setBaseValue(speed);
+            this.setDefaultMovementSpeed(speed);
+            this.getAttribute(Attributes.KNOCKBACK_RESISTANCE).setBaseValue(this.profile.knockbackResistance());
+            this.getAttribute(EntityAttributes.KI_BLAST_DAMAGE.get()).setBaseValue(ki);
+            this.setKiBlastDamage(ki);
+            this.setHealth(this.profile.health());
+        }
+
+        @Override
+        protected boolean hasTransformation() {
+            return !this.powered;
+        }
+
+        @Override
+        public EntityType<? extends DBSagasEntity> getNextTransform() {
+            return this.formType(true);
+        }
+
+        @Override
+        protected void startTransformation() {
+            this.stopBossAbility();
+            if (this.level() instanceof ServerLevel level) this.clearAbilityState(level);
+            super.startTransformation();
+        }
+
+        @Override
+        protected void finishTransformationSpawn(DBSagasEntity newEntity, boolean fullHealth) {
+            float fraction = this.getHealth() / this.getMaxHealth();
+            super.finishTransformationSpawn(newEntity, fullHealth);
+            if (newEntity instanceof Tamagami next && !this.level().isClientSide) {
+                next.setHealth(Math.max(1.0F, next.getMaxHealth() * Math.max(fraction, MIN_POWERED_HEALTH)));
+            }
+        }
+
+        @Override
+        public void fallAsleep() {
+            super.fallAsleep();
+            this.setFlying(false);
+            this.setFlyingFast(false);
+            this.setNoGravity(false);
+            this.holdSleepPose();
+        }
+
+        private void holdSleepPose() {
+            this.setYRot(SLEEP_YAW);
+            this.setYBodyRot(SLEEP_YAW);
+            this.setYHeadRot(SLEEP_YAW);
+            this.setXRot(SLEEP_PITCH);
+            this.getNavigation().stop();
+        }
+
+        private static boolean isAbsolute(DamageSource source) {
+            return source.is(DamageTypes.FELL_OUT_OF_WORLD) || source.is(DamageTypes.GENERIC_KILL);
+        }
+
+        @Override
+        public boolean hurt(DamageSource pSource, float pAmount) {
+            if (!this.level().isClientSide && this.isBossAsleep() && !isAbsolute(pSource)) {
+                if (pSource.getEntity() instanceof Player player && this.isEligible(player)) this.wakeUp(player);
+                return false;
+            }
+            return super.hurt(pSource, pAmount);
+        }
+
+        @Override
+        public void die(DamageSource pCause) {
+            if (this.level() instanceof ServerLevel level && !isAbsolute(pCause) && !this.canTransform()) {
+                this.subdue(level);
+                return;
+            }
+            super.die(pCause);
+        }
+
+        private void subdue(ServerLevel level) {
+            this.stopBossAbility();
+            this.clearAbilityState(level);
+            this.setTarget(null);
+            this.setHealth(this.getMaxHealth());
+            this.deathTime = 0;
+            WorldBossManager.onBossSubdued(this);
+            this.dropDragonBall(level);
+            if (this.powered && this.revertToBase(level)) return;
+            this.resetCooldowns();
+            this.applyFixedStats();
+            this.returnToDais();
+            this.fallAsleep();
+        }
+
+        private void dropDragonBall(ServerLevel level) {
+            Item ball = switch (this.profile.number()) {
+                case 1 -> MainItems.DBALL1_NAMEK_BLOCK_ITEM.get();
+                case 2 -> MainItems.DBALL2_NAMEK_BLOCK_ITEM.get();
+                default -> MainItems.DBALL3_NAMEK_BLOCK_ITEM.get();
+            };
+            BlockPos anchor = this.getAnchor();
+            Vec3 front = Vec3.directionFromRotation(0.0F, SLEEP_YAW);
+            double x = anchor.getX() + 0.5D + front.x * BALL_DROP_DISTANCE;
+            double y = anchor.getY() + 1.5D;
+            double z = anchor.getZ() + 0.5D + front.z * BALL_DROP_DISTANCE;
+
+            ItemEntity drop = new ItemEntity(level, x, y, z, new ItemStack(ball));
+            drop.setDeltaMovement(0.0D, 0.3D, 0.0D);
+            drop.setUnlimitedLifetime();
+            drop.setGlowingTag(true);
+            drop.setInvulnerable(true);
+            level.addFreshEntity(drop);
+
+            level.sendParticles(ParticleTypes.END_ROD, x, y + 0.5D, z, 40, 0.3D, 0.6D, 0.3D, 0.08D);
+            level.sendParticles(new DustParticleOptions(new Vector3f(1.0F, 0.6F, 0.1F), 1.6F), x, y + 0.5D, z, 30, 0.4D, 0.6D, 0.4D, 0.0D);
+            level.playSound(null, x, y, z, SoundEvents.BEACON_ACTIVATE, SoundSource.HOSTILE, 2.0F, 1.4F);
+
+            Component message = Component.translatable(BALL_KEY, this.getDisplayName(), this.profile.number()).withStyle(ChatFormatting.GOLD);
+            for (ServerPlayer player : level.players()) {
+                if (player.blockPosition().closerThan(anchor, LEASH_RADIUS)) player.sendSystemMessage(message);
+            }
+        }
+
+        private boolean revertToBase(ServerLevel level) {
+            Tamagami base = this.formType(false).create(level);
+            if (base == null) return false;
+
+            BlockPos anchor = this.getAnchor();
+            base.setAnchor(anchor);
+            base.moveTo(anchor.getX() + 0.5D, anchor.getY() + 1.0D, anchor.getZ() + 0.5D, SLEEP_YAW, SLEEP_PITCH);
+            base.fallAsleep();
+            if (!level.addFreshEntity(base)) return false;
+
+            level.sendParticles(ParticleTypes.CLOUD, this.getX(), this.getY() + 1.5D, this.getZ(), 40, 0.8D, 1.4D, 0.8D, 0.05D);
+            level.sendParticles(ParticleTypes.CLOUD, anchor.getX() + 0.5D, anchor.getY() + 2.0D, anchor.getZ() + 0.5D, 40, 0.8D, 1.4D, 0.8D, 0.05D);
+            WorldBossManager.onBossTransformed(base);
+            this.discard();
+            return true;
+        }
+
+        private void returnToDais() {
+            BlockPos anchor = this.getAnchor();
+            this.setFlying(false);
+            this.setFlyingFast(false);
+            this.setNoGravity(false);
+            this.setDeltaMovement(Vec3.ZERO);
+            this.getNavigation().stop();
+            this.teleportTo(anchor.getX() + 0.5D, anchor.getY() + 1.0D, anchor.getZ() + 0.5D);
+            this.fallDistance = 0.0F;
+        }
+
+        @Override
+        protected boolean onReturnToSleep() {
+            if (this.level() instanceof ServerLevel level) {
+                this.clearAbilityState(level);
+                WorldBossContribution.clear(this.getWorldBossKey());
+                if (this.powered && this.revertToBase(level)) return true;
+            }
+            this.resetCooldowns();
+            this.abilityGap = 0;
+            this.fastHitTimer = 0;
+            return false;
+        }
+
+        @Override
+        public void stopBossAbility() {
+            int ability = this.getBossAbility();
+            super.stopBossAbility();
+            if (ability >= 0) this.abilityGap = ABILITY_GAP;
+        }
+
+        @Override
+        public void tick() {
+            if (!this.level().isClientSide && this.getHealth() <= 0.0F && !this.dead && !this.isRemoved()) {
+                if (this.canTransform()) {
+                    this.setHealth(1.0F);
+                    this.deathTime = 0;
+                    this.startTransformation();
+                } else if (this.level() instanceof ServerLevel level) {
+                    this.subdue(level);
+                    return;
+                }
+            }
+
+            super.tick();
+            if (!(this.level() instanceof ServerLevel level) || !this.isAlive()) return;
+
+            if (this.isBossAsleep()) {
+                this.holdSleepPose();
+                this.noticeDormancy(level);
+                return;
+            }
+
+            this.stayNearPlatform(level);
+            this.tickFastHits();
+            if (this.abilityGap > 0) this.abilityGap--;
+
+            LivingEntity target = this.getTarget();
+            if (target == null || !target.isAlive()) return;
+            this.tickCooldowns();
+
+            if (this.getBossAbility() >= 0 || this.abilityGap > 0) return;
+            if (this.isStunned() || this.isCasting() || this.isComboing() || this.isTransforming() || this.isZanzoken()) return;
+            this.chooseAbility(level, target);
+        }
+
+        private void noticeDormancy(ServerLevel level) {
+            if (this.tickCount % DORMANT_NOTICE_INTERVAL != 0 || WorldBossManager.canWake(this)) return;
+            long remaining = WorldBossManager.getRespawnRemainingTicks(level.getServer(), this.getWorldBossKey());
+            Component message = Component.translatable(DORMANT_KEY, this.getDisplayName(), WorldBossCommand.formatTicks(remaining))
+                    .withStyle(ChatFormatting.GRAY);
+            for (ServerPlayer player : level.players()) {
+                if (this.isEligible(player) && player.blockPosition().closerThan(this.getAnchor(), WAKE_RADIUS)) {
+                    player.displayClientMessage(message, true);
+                }
+            }
+        }
+
+        private void stayNearPlatform(ServerLevel level) {
+            if (this.getBossAbility() >= 0 || this.isTransforming()) return;
+            BlockPos anchor = this.getAnchor();
+            double dx = this.getX() - (anchor.getX() + 0.5D);
+            double dz = this.getZ() - (anchor.getZ() + 0.5D);
+            boolean strayed = dx * dx + dz * dz > TETHER_RADIUS * TETHER_RADIUS;
+            boolean fell = this.getY() < anchor.getY() - FALL_LIMIT;
+            if (!strayed && !fell) return;
+
+            level.sendParticles(ParticleTypes.CLOUD, this.getX(), this.getY() + 1.5D, this.getZ(), 25, 0.6D, 1.2D, 0.6D, 0.05D);
+            this.returnToDais();
+            level.playSound(null, this.getX(), this.getY(), this.getZ(), MainSounds.TP_SHORT.get(), SoundSource.HOSTILE, 1.5F, 0.8F);
+        }
+
+        private void tickFastHits() {
+            int interval = this.powered ? this.profile.poweredHitInterval() : this.profile.hitInterval();
+            if (interval <= 0) return;
+            if (this.fastHitTimer > 0) {
+                this.fastHitTimer--;
+                return;
+            }
+            if (this.getBossAbility() >= 0 || this.isCasting() || this.isComboing() || this.isStunned() || this.isTransforming() || this.isZanzoken()) return;
+            if (!this.isMeleeAllowed() || this.isCombatFrozen()) return;
+
+            LivingEntity target = this.getTarget();
+            if (target == null || !target.isAlive()) return;
+            double reach = this.getMeleeReach() + target.getBbWidth() * 0.5D;
+            if (this.distanceToSqr(target) > reach * reach || !this.hasLineOfSight(target)) return;
+
+            this.fastHitTimer = interval;
+            this.lookAt(target, 30.0F, 30.0F);
+            this.swing(InteractionHand.MAIN_HAND);
+            target.invulnerableTime = 0;
+
+            float ratio = this.powered ? this.profile.poweredHitRatio() : this.profile.hitRatio();
+            AttributeInstance damage = this.getAttribute(Attributes.ATTACK_DAMAGE);
+            if (damage != null && ratio != 1.0F) {
+                damage.removeModifier(FAST_HIT_ID);
+                damage.addTransientModifier(new AttributeModifier(FAST_HIT_ID, "Tamagami fast hit", ratio - 1.0F,
+                        AttributeModifier.Operation.MULTIPLY_TOTAL));
+            }
+            this.doHurtTarget(target);
+            if (damage != null) damage.removeModifier(FAST_HIT_ID);
+        }
+
+        @Override
+        public void remove(RemovalReason pReason) {
+            if (this.level() instanceof ServerLevel level) this.clearAbilityState(level);
+            super.remove(pReason);
+        }
+
+        @Override
+        public void readAdditionalSaveData(CompoundTag pCompound) {
+            super.readAdditionalSaveData(pCompound);
+            this.applyScale();
+            if (this.getMainHandItem().isEmpty()) this.setItemSlot(EquipmentSlot.MAINHAND, new ItemStack(this.weaponItem()));
+        }
+    }
+
+    public static class Tamagami3 extends Tamagami {
+
+        public static final int ABILITY_HAMMER_THROW = 14;
+        public static final int ABILITY_HAMMER_SLAM = 15;
+        public static final int THROW_TICK = 16;
+        public static final int SLAM_APEX = 16;
+        public static final double SLAM_ANIMATION_SPEED = 0.4D;
+
+        private static final Profile PROFILE = new Profile(3, 936000.0F, 88560.0F, 101844.0F, 80136.0F, 92160.0F,
+                0, 9, 1.0F, 0.6F, 1.0D, 1.6D, 0.8D, new OutlineStyle(0xFF9A2E, 0xB84A00, 3.0F));
+
+        private static final int THROW_DURATION = 26;
+        private static final int THROW_COOLDOWN = 260;
+        private static final int THROW_FIRST_DELAY = 80;
+        private static final double THROW_MIN_RANGE = 6.0D;
+        private static final double THROW_MAX_RANGE = 32.0D;
+        private static final double THROW_LEAD = 6.0D;
+        private static final float THROW_DAMAGE_RATIO = 1.3F;
+        private static final int HAMMER_RECALL_TICKS = 200;
+
+        private static final int SLAM_LAUNCH = 8;
+        private static final int SLAM_DROP = 31;
+        private static final int SLAM_FORCE_IMPACT = 44;
+        private static final int SLAM_DURATION = 56;
+        private static final double SLAM_RISE = 1.3D;
+        private static final double SLAM_FALL = -2.6D;
+        private static final double SLAM_GLIDE = 0.2D;
+        private static final float SLAM_RADIUS = 7.0F;
+        private static final float SLAM_DAMAGE_RATIO = 1.6F;
+        private static final double SLAM_TRIGGER_RANGE = 24.0D;
+        private static final double SLAM_TARGET_GROUND = 3.0D;
+        private static final int SLAM_COOLDOWN = 560;
+        private static final int SLAM_FIRST_DELAY = 280;
+        private static final int SLAM_COLOR = 0xFF2A2A;
+        private static final int SLAM_SHOCKWAVE_COLOR = 0xFFE0B3;
+
+        private int throwCooldown = THROW_FIRST_DELAY;
+        private int slamCooldown = SLAM_FIRST_DELAY;
+        private UUID hammerId;
+        private int hammerOutTicks;
+        private float lockedYaw;
+        private double slamX;
+        private double slamY;
+        private double slamZ;
+        private boolean slamImpacted;
+
+        public Tamagami3(EntityType<? extends Monster> pEntityType, Level pLevel, boolean powered) {
+            super(pEntityType, pLevel, powered, PROFILE);
+            if (powered) {
+                this.setEvade(true, 40);
+                this.setWildSense(true, 80);
+                this.setZanzoken(2, 250);
+            } else {
+                this.setEvade(true, 50);
+                this.setWildSense(true, 110);
+            }
+        }
+
+        @Override
+        protected Item weaponItem() {
+            return MainItems.TAMAGAMI_HAMMER.get();
+        }
+
+        @Override
+        protected EntityType<? extends Tamagami> formType(boolean powered) {
+            return powered ? MainEntities.WORLDBOSS_TAMAGAMI_3_POWERED.get() : MainEntities.WORLDBOSS_TAMAGAMI_3.get();
+        }
+
+        private boolean holdsHammer() {
+            return this.getMainHandItem().is(MainItems.TAMAGAMI_HAMMER.get());
+        }
+
+        Vec3 hammerHandPosition() {
+            Vec3 forward = Vec3.directionFromRotation(0.0F, this.yBodyRot);
+            Vec3 right = new Vec3(-forward.z, 0.0D, forward.x);
+            return this.position().add(0.0D, this.getBbHeight() * 0.7D, 0.0D).add(forward.scale(0.6D)).add(right.scale(0.7D));
+        }
+
+        void catchHammer() {
+            this.hammerId = null;
+            this.hammerOutTicks = 0;
+            if (!this.isAlive() || this.isRemoved()) return;
+            this.setItemSlot(EquipmentSlot.MAINHAND, new ItemStack(MainItems.TAMAGAMI_HAMMER.get()));
+            this.level().playSound(null, this.getX(), this.getY(), this.getZ(), SoundEvents.TRIDENT_RETURN, SoundSource.HOSTILE, 2.0F, 0.6F);
+        }
+
+        @Override
+        protected int getBossAbilityDuration(int ability) {
+            if (ability == ABILITY_HAMMER_THROW) return THROW_DURATION;
+            if (ability == ABILITY_HAMMER_SLAM) return SLAM_DURATION;
+            return 0;
+        }
+
+        @Override
+        public void tick() {
+            super.tick();
+            if (this.level() instanceof ServerLevel level && this.isAlive()) this.tickHammer(level);
+        }
+
+        private void tickHammer(ServerLevel level) {
+            if (this.hammerId == null) {
+                if (this.getMainHandItem().isEmpty()) this.setItemSlot(EquipmentSlot.MAINHAND, new ItemStack(MainItems.TAMAGAMI_HAMMER.get()));
+                return;
+            }
+            Entity hammer = level.getEntity(this.hammerId);
+            if (++this.hammerOutTicks > HAMMER_RECALL_TICKS || !(hammer instanceof TamagamiHammer) || !hammer.isAlive()) {
+                if (hammer != null) hammer.discard();
+                this.catchHammer();
+            }
+        }
+
+        @Override
+        protected void tickCooldowns() {
+            if (this.throwCooldown > 0) this.throwCooldown--;
+            if (this.slamCooldown > 0) this.slamCooldown--;
+        }
+
+        @Override
+        protected void resetCooldowns() {
+            this.throwCooldown = THROW_FIRST_DELAY;
+            this.slamCooldown = SLAM_FIRST_DELAY;
+        }
+
+        @Override
+        protected void chooseAbility(ServerLevel level, LivingEntity target) {
+            if (!this.holdsHammer()) return;
+            double distance = this.distanceTo(target);
+
+            if (this.slamCooldown <= 0 && this.onGround() && distance <= SLAM_TRIGGER_RANGE && this.nearGround(level, target)
+                    && this.startBossAbility(ABILITY_HAMMER_SLAM)) {
+                this.slamCooldown = this.cooldown(SLAM_COOLDOWN);
+                this.slamImpacted = false;
+                return;
+            }
+            if (this.throwCooldown <= 0 && distance >= THROW_MIN_RANGE && distance <= THROW_MAX_RANGE && this.hasLineOfSight(target)
+                    && this.startBossAbility(ABILITY_HAMMER_THROW)) {
+                this.throwCooldown = this.cooldown(THROW_COOLDOWN);
+            }
+        }
+
+        private boolean nearGround(ServerLevel level, LivingEntity target) {
+            if (target.onGround()) return true;
+            return target.getY() - groundHeight(level, target.getX(), target.getZ(), target.getY()) <= SLAM_TARGET_GROUND;
+        }
+
+        @Override
+        protected void tickBossAbility(int ability, int tick) {
+            if (!(this.level() instanceof ServerLevel level)) return;
+            if (ability == ABILITY_HAMMER_THROW) this.tickThrow(level, tick);
+            else if (ability == ABILITY_HAMMER_SLAM) this.tickSlam(level, tick);
+        }
+
+        private void tickThrow(ServerLevel level, int tick) {
+            LivingEntity target = this.getTarget();
+            this.setDeltaMovement(0.0D, this.getDeltaMovement().y, 0.0D);
+
+            if (tick < THROW_TICK) {
+                if (target != null) this.lockedYaw = yawTowards(this, target.getX(), target.getZ());
+                else if (tick == 1) this.lockedYaw = this.getYRot();
+                faceYaw(this, this.lockedYaw);
+                if (tick == 1) {
+                    level.playSound(null, this.getX(), this.getY(), this.getZ(), MainSounds.KI_EXPLOSION_CHARGE.get(), SoundSource.HOSTILE, 1.2F, 0.6F);
+                }
+                return;
+            }
+
+            faceYaw(this, this.lockedYaw);
+            if (tick != THROW_TICK || !this.holdsHammer()) return;
+
+            Vec3 hand = this.hammerHandPosition();
+            Vec3 aim = target != null && target.isAlive()
+                    ? target.getBoundingBox().getCenter().add(target.getDeltaMovement().scale(THROW_LEAD)).subtract(hand)
+                    : Vec3.directionFromRotation(0.0F, this.lockedYaw);
+            float damage = (float) this.getAttributeValue(Attributes.ATTACK_DAMAGE) * THROW_DAMAGE_RATIO;
+            TamagamiHammer hammer = TamagamiHammer.launch(level, this, hand, aim, damage);
+            if (hammer == null) return;
+
+            this.hammerId = hammer.getUUID();
+            this.hammerOutTicks = 0;
+            this.setItemSlot(EquipmentSlot.MAINHAND, ItemStack.EMPTY);
+            level.playSound(null, this.getX(), this.getY(), this.getZ(), SoundEvents.TRIDENT_THROW, SoundSource.HOSTILE, 2.0F, 0.5F);
+        }
+
+        private void tickSlam(ServerLevel level, int tick) {
+            this.fallDistance = 0.0F;
+            LivingEntity target = this.getTarget();
+
+            if (tick == 1) {
+                if (target != null) {
+                    NetworkHandler.sendToTrackingEntity(new BossTelegraphS2C(target.getX(), target.getY(), target.getZ(),
+                            SLAM_RADIUS, SLAM_COLOR, SLAM_APEX - 1, target.getId()), this);
+                }
+                level.playSound(null, this.getX(), this.getY(), this.getZ(), MainSounds.KI_EXPLOSION_CHARGE.get(), SoundSource.HOSTILE, 1.5F, 0.5F);
+            }
+
+            if (tick < SLAM_LAUNCH) {
+                this.setDeltaMovement(0.0D, this.getDeltaMovement().y, 0.0D);
+                return;
+            }
+
+            if (tick < SLAM_APEX) {
+                if (tick == SLAM_LAUNCH) {
+                    level.sendParticles(MainParticles.DUST.get(), this.getX(), this.getY() + 0.2D, this.getZ(), 40, 1.2D, 0.2D, 1.2D, 0.08D);
+                    level.playSound(null, this.getX(), this.getY(), this.getZ(), MainSounds.KNOCKBACK_CHARACTER.get(), SoundSource.HOSTILE, 2.0F, 0.6F);
+                }
+                this.setNoGravity(true);
+                this.setDeltaMovement(0.0D, SLAM_RISE, 0.0D);
+                this.hasImpulse = true;
+                return;
+            }
+
+            if (tick == SLAM_APEX) {
+                this.setNoGravity(true);
+                this.setDeltaMovement(Vec3.ZERO);
+                this.slamX = target != null ? target.getX() : this.getX();
+                this.slamZ = target != null ? target.getZ() : this.getZ();
+                this.slamY = groundHeight(level, this.slamX, this.slamZ, target != null ? target.getY() : this.getY());
+                NetworkHandler.sendToTrackingEntity(new BossTelegraphS2C(this.slamX, this.slamY, this.slamZ,
+                        SLAM_RADIUS, SLAM_COLOR, SLAM_DROP - SLAM_APEX + 6, -1), this);
+                return;
+            }
+
+            if (tick < SLAM_DROP) {
+                this.setNoGravity(true);
+                this.setDeltaMovement(Vec3.ZERO);
+                this.setPos(Mth.lerp(SLAM_GLIDE, this.getX(), this.slamX), this.getY(), Mth.lerp(SLAM_GLIDE, this.getZ(), this.slamZ));
+                faceYaw(this, yawTowards(this, this.slamX, this.slamZ));
+                return;
+            }
+
+            if (tick == SLAM_DROP) {
+                this.setNoGravity(false);
+                this.teleportTo(this.slamX, Math.max(this.getY(), this.slamY + 2.0D), this.slamZ);
+                this.setDeltaMovement(0.0D, SLAM_FALL, 0.0D);
+                this.hasImpulse = true;
+                return;
+            }
+
+            if (this.slamImpacted) return;
+            this.setDeltaMovement(0.0D, SLAM_FALL, 0.0D);
+            if (this.onGround() || tick >= SLAM_FORCE_IMPACT || this.getY() <= this.slamY + 0.05D) {
+                this.slamImpacted = true;
+                this.slamImpact(level);
+            }
+        }
+
+        private void slamImpact(ServerLevel level) {
+            double cx = this.getX();
+            double cy = this.getY();
+            double cz = this.getZ();
+            this.setDeltaMovement(Vec3.ZERO);
+
+            float damage = (float) this.getAttributeValue(Attributes.ATTACK_DAMAGE) * SLAM_DAMAGE_RATIO;
+            AABB area = new AABB(cx - SLAM_RADIUS, cy - 3.0D, cz - SLAM_RADIUS, cx + SLAM_RADIUS, cy + 5.0D, cz + SLAM_RADIUS);
+            for (LivingEntity victim : level.getEntitiesOfClass(LivingEntity.class, area)) {
+                if (victim == this || victim.isAlliedTo(this) || victim instanceof WorldBossEntity) continue;
+                double dx = victim.getX() - cx;
+                double dz = victim.getZ() - cz;
+                double distance = Math.sqrt(dx * dx + dz * dz);
+                if (distance > SLAM_RADIUS) continue;
+
+                victim.invulnerableTime = 0;
+                victim.hurt(this.damageSources().mobAttack(this), damage);
+                double push = distance < 0.1D ? 0.0D : 0.9D * (1.0D - distance / (SLAM_RADIUS * 2.0D)) / distance;
+                victim.setDeltaMovement(victim.getDeltaMovement().add(dx * push, 0.8D, dz * push));
+                victim.hasImpulse = true;
+                victim.hurtMarked = true;
+            }
+
+            level.sendParticles(MainParticles.ROCK.get(), cx, cy + 0.3D, cz, 90, SLAM_RADIUS * 0.4D, 0.4D, SLAM_RADIUS * 0.4D, 0.35D);
+            level.sendParticles(MainParticles.DUST.get(), cx, cy + 0.3D, cz, 120, SLAM_RADIUS * 0.5D, 0.6D, SLAM_RADIUS * 0.5D, 0.15D);
+            level.playSound(null, cx, cy, cz, MainSounds.ANCHOR_SLAM.get(), SoundSource.HOSTILE, 4.0F, 0.6F);
+            level.playSound(null, cx, cy, cz, MainSounds.KI_EXPLOSION_IMPACT.get(), SoundSource.HOSTILE, 3.0F, 0.75F);
+            NetworkHandler.sendToTrackingEntity(new ShockwaveVfxS2C(cx, cy + 0.2D, cz, SLAM_RADIUS * 1.5F, SLAM_SHOCKWAVE_COLOR, 16), this);
+            NetworkHandler.sendToTrackingEntity(new KiBurstVfxS2C(this.getId(), true, 10.0F), this);
+        }
+
+        @Override
+        protected void clearAbilityState(ServerLevel level) {
+            if (this.hammerId != null) {
+                Entity hammer = level.getEntity(this.hammerId);
+                if (hammer != null) hammer.discard();
+                this.hammerId = null;
+                this.hammerOutTicks = 0;
+            }
+            if (!this.holdsHammer()) this.setItemSlot(EquipmentSlot.MAINHAND, new ItemStack(MainItems.TAMAGAMI_HAMMER.get()));
+            this.setNoGravity(false);
+        }
+    }
+
+    public static class Tamagami2 extends Tamagami {
+
+        public static final int ABILITY_WHIRLWINDS = 16;
+        public static final int WHIRLWIND_ERUPT_TICK = 31;
+
+        private static final Profile PROFILE = new Profile(2, 3786000.0F, 119340.0F, 137250.0F, 107982.0F, 124182.0F,
+                7, 4, 0.45F, 0.4F, 1.6D, 2.4D, 0.6D, new OutlineStyle(0x7FD4FF, 0x2F6BFF, 3.0F));
+
+        private static final int WHIRLWIND_DURATION = 45;
+        private static final int WHIRLWIND_COOLDOWN = 380;
+        private static final int WHIRLWIND_FIRST_DELAY = 160;
+        private static final double WHIRLWIND_RANGE = 40.0D;
+        private static final double WHIRLWIND_MAX_HEIGHT = 9.0D;
+        private static final double WHIRLWIND_SPACING = 4.0D;
+        private static final int WHIRLWIND_MAX_SPOTS = 5;
+        private static final int WHIRLWIND_MIN_SPOTS = 3;
+        private static final float WHIRLWIND_RADIUS = 5.0F;
+        private static final int WHIRLWIND_MARK_COLOR = 0xFF2A2A;
+        private static final int WHIRLWIND_CAST = 6;
+        private static final int WHIRLWIND_FIRING = 80;
+        private static final float WHIRLWIND_DAMAGE_RATIO = 1.6F;
+        private static final int WHIRLWIND_CORE = 0xFFFFFF;
+        private static final int WHIRLWIND_BORDER = 0xE4ECF4;
+        private static final int WHIRLWIND_OUTLINE = 0x9FB0C2;
+
+        private int whirlwindCooldown = WHIRLWIND_FIRST_DELAY;
+        private final List<Vec3> whirlwindSpots = new ArrayList<>();
+
+        public Tamagami2(EntityType<? extends Monster> pEntityType, Level pLevel, boolean powered) {
+            super(pEntityType, pLevel, powered, PROFILE);
+            if (powered) {
+                this.setEvade(true, 45);
+                this.setWildSense(true, 90);
+                this.setZanzoken(2, 250);
+            } else {
+                this.setEvade(true, 60);
+                this.setWildSense(true, 120);
+            }
+        }
+
+        @Override
+        protected Item weaponItem() {
+            return MainItems.TAMAGAMI_TRIDENT.get();
+        }
+
+        @Override
+        protected EntityType<? extends Tamagami> formType(boolean powered) {
+            return powered ? MainEntities.WORLDBOSS_TAMAGAMI_2_POWERED.get() : MainEntities.WORLDBOSS_TAMAGAMI_2.get();
+        }
+
+        @Override
+        protected int getBossAbilityDuration(int ability) {
+            return ability == ABILITY_WHIRLWINDS ? WHIRLWIND_DURATION : 0;
+        }
+
+        @Override
+        protected void tickCooldowns() {
+            if (this.whirlwindCooldown > 0) this.whirlwindCooldown--;
+        }
+
+        @Override
+        protected void resetCooldowns() {
+            this.whirlwindCooldown = WHIRLWIND_FIRST_DELAY;
+        }
+
+        @Override
+        protected void chooseAbility(ServerLevel level, LivingEntity target) {
+            if (this.whirlwindCooldown > 0 || this.distanceTo(target) > WHIRLWIND_RANGE) return;
+            if (this.startBossAbility(ABILITY_WHIRLWINDS)) this.whirlwindCooldown = this.cooldown(WHIRLWIND_COOLDOWN);
+        }
+
+        @Override
+        protected void tickBossAbility(int ability, int tick) {
+            if (ability != ABILITY_WHIRLWINDS || !(this.level() instanceof ServerLevel level)) return;
+
+            LivingEntity target = this.getTarget();
+            this.setDeltaMovement(0.0D, this.getDeltaMovement().y, 0.0D);
+            if (target != null) faceYaw(this, yawTowards(this, target.getX(), target.getZ()));
+
+            if (tick == 1) {
+                this.markWhirlwinds(level, target);
+                if (this.whirlwindSpots.isEmpty()) {
+                    this.stopBossAbility();
+                    return;
+                }
+                level.playSound(null, this.getX(), this.getY(), this.getZ(), MainSounds.KI_EXPLOSION_CHARGE.get(), SoundSource.HOSTILE, 1.6F, 1.3F);
+                return;
+            }
+            if (tick != WHIRLWIND_ERUPT_TICK) return;
+
+            float damage = this.getKiBlastDamage() * WHIRLWIND_DAMAGE_RATIO;
+            for (Vec3 spot : this.whirlwindSpots) {
+                SPBlueHurricaneEntity whirlwind = new SPBlueHurricaneEntity(level, this);
+                whirlwind.setupDetached(this, spot, damage, WHIRLWIND_CAST, WHIRLWIND_FIRING, WHIRLWIND_CORE, WHIRLWIND_BORDER, WHIRLWIND_OUTLINE);
+                level.sendParticles(ParticleTypes.CLOUD, spot.x, spot.y + 0.3D, spot.z, 25, 1.5D, 0.2D, 1.5D, 0.12D);
+            }
+            this.whirlwindSpots.clear();
+            level.playSound(null, this.getX(), this.getY(), this.getZ(), SoundEvents.ELYTRA_FLYING, SoundSource.HOSTILE, 1.5F, 1.4F);
+        }
+
+        private void markWhirlwinds(ServerLevel level, LivingEntity target) {
+            this.whirlwindSpots.clear();
+            AABB area = this.getBoundingBox().inflate(WHIRLWIND_RANGE, 24.0D, WHIRLWIND_RANGE);
+            for (Player player : level.getEntitiesOfClass(Player.class, area, this::isEligible)) {
+                if (this.whirlwindSpots.size() >= WHIRLWIND_MAX_SPOTS) break;
+                this.addSpot(level, player.getX(), player.getY(), player.getZ());
+            }
+            if (target != null) {
+                for (int attempt = 0; attempt < 8 && this.whirlwindSpots.size() < WHIRLWIND_MIN_SPOTS; attempt++) {
+                    double angle = this.random.nextDouble() * Math.PI * 2.0D;
+                    double distance = 6.0D + this.random.nextDouble() * 5.0D;
+                    this.addSpot(level, target.getX() + Math.cos(angle) * distance, target.getY(), target.getZ() + Math.sin(angle) * distance);
+                }
+            }
+            for (Vec3 spot : this.whirlwindSpots) {
+                NetworkHandler.sendToTrackingEntity(new BossTelegraphS2C(spot.x, spot.y, spot.z, WHIRLWIND_RADIUS, WHIRLWIND_MARK_COLOR,
+                        WHIRLWIND_ERUPT_TICK + WHIRLWIND_CAST, -1), this);
+            }
+        }
+
+        private void addSpot(ServerLevel level, double x, double y, double z) {
+            double ground = groundHeight(level, x, z, y);
+            if (y - ground > WHIRLWIND_MAX_HEIGHT) return;
+            Vec3 spot = new Vec3(x, ground, z);
+            for (Vec3 other : this.whirlwindSpots) {
+                if (other.distanceToSqr(spot) < WHIRLWIND_SPACING * WHIRLWIND_SPACING) return;
+            }
+            this.whirlwindSpots.add(spot);
+        }
+
+        @Override
+        protected void clearAbilityState(ServerLevel level) {
+            this.whirlwindSpots.clear();
+            for (SPBlueHurricaneEntity whirlwind : level.getEntitiesOfClass(SPBlueHurricaneEntity.class, this.getBoundingBox().inflate(WHIRLWIND_RANGE + 24.0D),
+                    entity -> entity.isDetached() && entity.isOwner(this))) {
+                whirlwind.discard();
+            }
+        }
+    }
+
+    public static class Tamagami1 extends Tamagami {
+
+        private static final Profile PROFILE = new Profile(1, 5100000.0F, 160758.0F, 184878.0F, 145458.0F, 167274.0F,
+                6, 4, 0.45F, 0.4F, 1.6D, 2.4D, 0.6D, new OutlineStyle(0xFF3030, 0x8A0000, 3.0F));
+
+        public Tamagami1(EntityType<? extends Monster> pEntityType, Level pLevel, boolean powered) {
+            super(pEntityType, pLevel, powered, PROFILE);
+            if (powered) {
+                this.setEvade(true, 45);
+                this.setWildSense(true, 90);
+                this.setZanzoken(2, 250);
+            } else {
+                this.setEvade(true, 60);
+                this.setWildSense(true, 130);
+            }
+        }
+
+        @Override
+        protected Item weaponItem() {
+            return MainItems.TAMAGAMI_SWORD.get();
+        }
+
+        @Override
+        protected EntityType<? extends Tamagami> formType(boolean powered) {
+            return powered ? MainEntities.WORLDBOSS_TAMAGAMI_1_POWERED.get() : MainEntities.WORLDBOSS_TAMAGAMI_1.get();
+        }
+    }
+
+    public static class TamagamiHammer extends Entity {
+
+        private static final EntityDataAccessor<Integer> OWNER_ID = SynchedEntityData.defineId(TamagamiHammer.class, EntityDataSerializers.INT);
+        private static final EntityDataAccessor<Boolean> RETURNING = SynchedEntityData.defineId(TamagamiHammer.class, EntityDataSerializers.BOOLEAN);
+
+        private static final double OUT_SPEED = 1.4D;
+        private static final double RETURN_SPEED = 1.6D;
+        private static final double MAX_RANGE = 34.0D;
+        private static final double HIT_RADIUS = 1.2D;
+        private static final double CATCH_DISTANCE = 2.0D;
+        private static final double KNOCKBACK = 1.4D;
+        private static final int MAX_LIFE = 160;
+
+        private Vec3 origin = Vec3.ZERO;
+        private Vec3 direction = Vec3.ZERO;
+        private float damage;
+        private final Set<Integer> struck = new HashSet<>();
+
+        public TamagamiHammer(EntityType<? extends TamagamiHammer> type, Level level) {
+            super(type, level);
+            this.noPhysics = true;
+        }
+
+        public static TamagamiHammer launch(ServerLevel level, Tamagami3 owner, Vec3 from, Vec3 aim, float damage) {
+            if (aim.lengthSqr() < 1.0E-6D) return null;
+            TamagamiHammer hammer = MainEntities.THROWN_TAMAGAMI_HAMMER.get().create(level);
+            if (hammer == null) return null;
+            hammer.entityData.set(OWNER_ID, owner.getId());
+            hammer.origin = from;
+            hammer.direction = aim.normalize();
+            hammer.damage = damage;
+            hammer.moveTo(from.x, from.y - hammer.getBbHeight() * 0.5D, from.z, yawOf(hammer.direction), 0.0F);
+            hammer.setDeltaMovement(hammer.direction.scale(OUT_SPEED));
+            return level.addFreshEntity(hammer) ? hammer : null;
+        }
+
+        private static float yawOf(Vec3 motion) {
+            return (float) (Mth.atan2(motion.z, motion.x) * (180.0D / Math.PI)) - 90.0F;
+        }
+
+        @Override
+        protected void defineSynchedData() {
+            this.entityData.define(OWNER_ID, -1);
+            this.entityData.define(RETURNING, false);
+        }
+
+        public boolean isReturning() {
+            return this.entityData.get(RETURNING);
+        }
+
+        private Vec3 center() {
+            return this.position().add(0.0D, this.getBbHeight() * 0.5D, 0.0D);
+        }
+
+        @Override
+        public void tick() {
+            super.tick();
+            if (this.level().isClientSide) {
+                Vec3 center = this.center();
+                this.level().addParticle(ParticleTypes.CLOUD, center.x, center.y, center.z, 0.0D, 0.0D, 0.0D);
+                return;
+            }
+            if (!(this.level() instanceof ServerLevel level)) return;
+
+            Tamagami3 owner = level.getEntity(this.entityData.get(OWNER_ID)) instanceof Tamagami3 tamagami && tamagami.isAlive() ? tamagami : null;
+            if (owner == null || this.tickCount > MAX_LIFE) {
+                if (owner != null) owner.catchHammer();
+                this.discard();
+                return;
+            }
+
+            Vec3 from = this.center();
+            Vec3 step;
+            if (!this.isReturning()) {
+                step = this.direction.scale(OUT_SPEED);
+                BlockHitResult hit = level.clip(new ClipContext(from, from.add(step), ClipContext.Block.COLLIDER, ClipContext.Fluid.NONE, this));
+                if (hit.getType() != HitResult.Type.MISS) {
+                    step = hit.getLocation().subtract(from);
+                    this.crash(level, hit.getLocation());
+                }
+                this.sweep(level, owner, from, from.add(step));
+                if (from.add(step).distanceTo(this.origin) >= MAX_RANGE) this.turnBack();
+            } else {
+                Vec3 toHand = owner.hammerHandPosition().subtract(from);
+                double distance = toHand.length();
+                if (distance <= CATCH_DISTANCE) {
+                    owner.catchHammer();
+                    this.discard();
+                    return;
+                }
+                step = toHand.scale(Math.min(RETURN_SPEED, distance) / distance);
+                this.sweep(level, owner, from, from.add(step));
+            }
+
+            this.setPos(this.getX() + step.x, this.getY() + step.y, this.getZ() + step.z);
+            this.setDeltaMovement(step);
+            if (step.horizontalDistanceSqr() > 1.0E-6D) this.setYRot(yawOf(step));
+            if (this.tickCount % 5 == 0) {
+                level.playSound(null, this.getX(), this.getY(), this.getZ(), SoundEvents.PLAYER_ATTACK_SWEEP, SoundSource.HOSTILE, 1.2F, 0.5F);
+            }
+        }
+
+        private void turnBack() {
+            this.entityData.set(RETURNING, true);
+        }
+
+        private void crash(ServerLevel level, Vec3 at) {
+            level.sendParticles(MainParticles.ROCK.get(), at.x, at.y, at.z, 20, 0.4D, 0.4D, 0.4D, 0.15D);
+            level.playSound(null, at.x, at.y, at.z, MainSounds.ANCHOR_SLAM.get(), SoundSource.HOSTILE, 1.5F, 1.1F);
+            this.turnBack();
+        }
+
+        private void sweep(ServerLevel level, Tamagami3 owner, Vec3 from, Vec3 to) {
+            Vec3 push = to.subtract(from);
+            push = push.lengthSqr() > 1.0E-6D ? push.normalize() : Vec3.directionFromRotation(0.0F, this.getYRot());
+            AABB box = new AABB(from, to).inflate(HIT_RADIUS);
+            for (LivingEntity victim : level.getEntitiesOfClass(LivingEntity.class, box)) {
+                if (victim == owner || !victim.isAlive() || victim instanceof WorldBossEntity || victim.isAlliedTo(owner)) continue;
+                if (victim instanceof Player player && (player.isCreative() || player.isSpectator())) continue;
+                if (!this.struck.add(victim.getId())) continue;
+
+                victim.invulnerableTime = 0;
+                victim.hurt(owner.damageSources().mobAttack(owner), this.damage);
+                KnockbackHelper.apply(victim, new Vec3(push.x * KNOCKBACK, 0.45D, push.z * KNOCKBACK));
+                level.sendParticles(ParticleTypes.CRIT, victim.getX(), victim.getY() + victim.getBbHeight() * 0.5D, victim.getZ(), 14, 0.3D, 0.3D, 0.3D, 0.3D);
+                level.playSound(null, victim.getX(), victim.getY(), victim.getZ(), MainSounds.CRITICO1.get(), SoundSource.HOSTILE, 1.6F, 0.8F);
+                this.turnBack();
+            }
+        }
+
+        @Override
+        public boolean shouldRenderAtSqrDistance(double distance) {
+            return distance < 128.0D * 128.0D;
+        }
+
+        @Override
+        protected void readAdditionalSaveData(CompoundTag tag) {
+        }
+
+        @Override
+        protected void addAdditionalSaveData(CompoundTag tag) {
+        }
+    }
+
+    private static float yawTowards(Entity from, double x, double z) {
+        double dx = x - from.getX();
+        double dz = z - from.getZ();
+        if (dx * dx + dz * dz < 1.0E-6D) return from.getYRot();
+        return (float) (Mth.atan2(dz, dx) * (180.0D / Math.PI)) - 90.0F;
+    }
+
+    private static void faceYaw(LivingEntity entity, float yaw) {
+        entity.setYRot(yaw);
+        entity.setYBodyRot(yaw);
+        entity.setYHeadRot(yaw);
     }
 }

@@ -28,7 +28,8 @@ import java.util.UUID;
 
 public final class WorldBossManager {
 
-    private static final List<WorldBossLair> LAIRS = List.of(new WorldBossLair.Janemba(), new WorldBossLair.Turles(), new WorldBossLair.GeteStar());
+    private static final List<WorldBossLair> LAIRS = List.of(new WorldBossLair.Janemba(), new WorldBossLair.Turles(), new WorldBossLair.GeteStar(),
+            new WorldBossLair.Tamagami(3), new WorldBossLair.Tamagami(2), new WorldBossLair.Tamagami(1));
 
     private static final int ACTIVATION_RADIUS = 128;
     private static final int TICK_INTERVAL = 20;
@@ -211,6 +212,34 @@ public final class WorldBossManager {
         LogUtil.info(Env.SERVER, "World boss {} defeated, respawning in {} ticks", key, respawnTicks);
     }
 
+    public static void onBossSubdued(WorldBossEntity boss) {
+        if (!(boss.level() instanceof ServerLevel level)) return;
+
+        String key = boss.getWorldBossKey();
+        WorldBossSession session = onBossEngaged(boss);
+        if (session != null) {
+            session.finishVictory(level, boss);
+            ACTIVE.remove(key);
+        }
+
+        Data data = Data.get(level.getServer());
+        Data.Entry entry = data.peek(key);
+        if (entry != null) {
+            WorldBossLair lair = lair(key);
+            entry.nextRespawnTick = level.getGameTime() + (lair != null ? lair.respawnTicks() : 72000L);
+            data.markDirty();
+        }
+        syncToAll(level, key);
+        WorldBossContribution.clear(key);
+        LogUtil.info(Env.SERVER, "World boss {} subdued, dormant for {} ticks", key, getRespawnRemainingTicks(level.getServer(), key));
+    }
+
+    public static boolean canWake(WorldBossEntity boss) {
+        if (boss.level().isClientSide || boss.getServer() == null) return true;
+        Data.Entry entry = Data.get(boss.getServer()).peek(boss.getWorldBossKey());
+        return entry == null || boss.level().getGameTime() >= entry.nextRespawnTick;
+    }
+
     public static void syncToAll(ServerLevel level, String key) {
         WorldBossStateS2C packet = statePacket(level.getServer(), key);
         if (packet != null) NetworkHandler.sendToAllPlayers(packet);
@@ -227,8 +256,8 @@ public final class WorldBossManager {
         Data.Entry entry = Data.get(server).peek(key);
         if (entry == null) return null;
 
-        boolean alive = entry.bossId != null;
         long remaining = Math.max(0L, entry.nextRespawnTick - server.overworld().getGameTime());
+        boolean alive = entry.bossId != null && remaining <= 0L;
         return new WorldBossStateS2C(key, entry.lair != null, entry.lair, alive, remaining);
     }
 

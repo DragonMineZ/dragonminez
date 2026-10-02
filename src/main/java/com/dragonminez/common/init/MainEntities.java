@@ -138,7 +138,9 @@ public class MainEntities {
 
                 // WORLD BOSSES
                 WORLDBOSS_JANEMBA_FAT, WORLDBOSS_SUPER_JANEMBA, WORLDBOSS_MINI_JANEMBA, WORLDBOSS_TURLES,
-                WORLDBOSS_METAL_COOLER_CORE, WORLDBOSS_METAL_COOLER, WORLDBOSS_METAL_COOLER_COPY
+                WORLDBOSS_METAL_COOLER_CORE, WORLDBOSS_METAL_COOLER, WORLDBOSS_METAL_COOLER_COPY,
+                WORLDBOSS_TAMAGAMI_3, WORLDBOSS_TAMAGAMI_3_POWERED, WORLDBOSS_TAMAGAMI_2, WORLDBOSS_TAMAGAMI_2_POWERED,
+                WORLDBOSS_TAMAGAMI_1, WORLDBOSS_TAMAGAMI_1_POWERED
         );
     }
 
@@ -1485,6 +1487,57 @@ public class MainEntities {
                             .clientTrackingRange(10)
                             .fireImmune()
                             .build(ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "gete_scrap").toString()));
+    public static final RegistryObject<EntityType<AllWorldBossesEntity.Tamagami3>> WORLDBOSS_TAMAGAMI_3 =
+            ENTITY_TYPES.register("worldboss_tamagami_3",
+                    () -> EntityType.Builder.<AllWorldBossesEntity.Tamagami3>of((type, level) -> new AllWorldBossesEntity.Tamagami3(type, level, false), MobCategory.MONSTER)
+                            .sized(1.1f, 3.1f)
+                            .clientTrackingRange(16)
+                            .fireImmune()
+                            .build(ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "worldboss_tamagami_3").toString()));
+    public static final RegistryObject<EntityType<AllWorldBossesEntity.Tamagami3>> WORLDBOSS_TAMAGAMI_3_POWERED =
+            ENTITY_TYPES.register("worldboss_tamagami_3_powered",
+                    () -> EntityType.Builder.<AllWorldBossesEntity.Tamagami3>of((type, level) -> new AllWorldBossesEntity.Tamagami3(type, level, true), MobCategory.MONSTER)
+                            .sized(1.1f, 3.1f)
+                            .clientTrackingRange(16)
+                            .fireImmune()
+                            .build(ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "worldboss_tamagami_3_powered").toString()));
+    public static final RegistryObject<EntityType<AllWorldBossesEntity.Tamagami2>> WORLDBOSS_TAMAGAMI_2 =
+            ENTITY_TYPES.register("worldboss_tamagami_2",
+                    () -> EntityType.Builder.<AllWorldBossesEntity.Tamagami2>of((type, level) -> new AllWorldBossesEntity.Tamagami2(type, level, false), MobCategory.MONSTER)
+                            .sized(1.0f, 3.5f)
+                            .clientTrackingRange(16)
+                            .fireImmune()
+                            .build(ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "worldboss_tamagami_2").toString()));
+    public static final RegistryObject<EntityType<AllWorldBossesEntity.Tamagami2>> WORLDBOSS_TAMAGAMI_2_POWERED =
+            ENTITY_TYPES.register("worldboss_tamagami_2_powered",
+                    () -> EntityType.Builder.<AllWorldBossesEntity.Tamagami2>of((type, level) -> new AllWorldBossesEntity.Tamagami2(type, level, true), MobCategory.MONSTER)
+                            .sized(1.0f, 3.5f)
+                            .clientTrackingRange(16)
+                            .fireImmune()
+                            .build(ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "worldboss_tamagami_2_powered").toString()));
+    public static final RegistryObject<EntityType<AllWorldBossesEntity.Tamagami1>> WORLDBOSS_TAMAGAMI_1 =
+            ENTITY_TYPES.register("worldboss_tamagami_1",
+                    () -> EntityType.Builder.<AllWorldBossesEntity.Tamagami1>of((type, level) -> new AllWorldBossesEntity.Tamagami1(type, level, false), MobCategory.MONSTER)
+                            .sized(1.0f, 3.5f)
+                            .clientTrackingRange(16)
+                            .fireImmune()
+                            .build(ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "worldboss_tamagami_1").toString()));
+    public static final RegistryObject<EntityType<AllWorldBossesEntity.Tamagami1>> WORLDBOSS_TAMAGAMI_1_POWERED =
+            ENTITY_TYPES.register("worldboss_tamagami_1_powered",
+                    () -> EntityType.Builder.<AllWorldBossesEntity.Tamagami1>of((type, level) -> new AllWorldBossesEntity.Tamagami1(type, level, true), MobCategory.MONSTER)
+                            .sized(1.0f, 3.5f)
+                            .clientTrackingRange(16)
+                            .fireImmune()
+                            .build(ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "worldboss_tamagami_1_powered").toString()));
+    public static final RegistryObject<EntityType<AllWorldBossesEntity.TamagamiHammer>> THROWN_TAMAGAMI_HAMMER =
+            ENTITY_TYPES.register("thrown_tamagami_hammer",
+                    () -> EntityType.Builder.<AllWorldBossesEntity.TamagamiHammer>of(AllWorldBossesEntity.TamagamiHammer::new, MobCategory.MISC)
+                            .sized(1.0f, 1.0f)
+                            .clientTrackingRange(8)
+                            .updateInterval(1)
+                            .fireImmune()
+                            .noSave()
+                            .build(ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "thrown_tamagami_hammer").toString()));
 
     // Hirudegarn
     public static final RegistryObject<EntityType<SagaMoviesEntity.HirudegarnEntity>> SAGA_HIRUDEGARN =

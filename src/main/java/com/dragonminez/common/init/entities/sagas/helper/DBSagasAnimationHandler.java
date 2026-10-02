@@ -197,6 +197,7 @@ public class DBSagasAnimationHandler {
         if (entity.swingTime > 0 && !entity.isAttacking()) {
             entity.setAttacking(true);
             event.getController().forceAnimationReset();
+            event.getController().setAnimationSpeed(entity.getAttackAnimationSpeed());
 
             int randAttack = entity.getRandom().nextInt(3);
 
@@ -265,7 +266,21 @@ public class DBSagasAnimationHandler {
     public static <T extends GeoAnimatable> PlayState bossAbilityPredicate(AnimationState<T> event) {
         DBSagasEntity entity = (DBSagasEntity) event.getAnimatable();
         int ability = entity.getBossAbility();
+        event.getController().setAnimationSpeed(1.0D);
 
+        if (ability == AllWorldBossesEntity.Tamagami3.ABILITY_HAMMER_THROW) {
+            boolean thrown = entity.getBossAbilityTicks() >= AllWorldBossesEntity.Tamagami3.THROW_TICK;
+            return event.setAndContinue(thrown ? DBSagasAnimations.ANIM_TAMAGAMI_RELEASE : DBSagasAnimations.ANIM_TAMAGAMI_RAISE);
+        }
+        if (ability == AllWorldBossesEntity.Tamagami3.ABILITY_HAMMER_SLAM) {
+            if (entity.getBossAbilityTicks() < AllWorldBossesEntity.Tamagami3.SLAM_APEX) return event.setAndContinue(DBSagasAnimations.ANIM_TAMAGAMI_RAISE);
+            event.getController().setAnimationSpeed(AllWorldBossesEntity.Tamagami3.SLAM_ANIMATION_SPEED);
+            return event.setAndContinue(DBSagasAnimations.ANIM_TAMAGAMI_SLAM);
+        }
+        if (ability == AllWorldBossesEntity.Tamagami2.ABILITY_WHIRLWINDS) {
+            boolean erupted = entity.getBossAbilityTicks() >= AllWorldBossesEntity.Tamagami2.WHIRLWIND_ERUPT_TICK;
+            return event.setAndContinue(erupted ? DBSagasAnimations.ANIM_TAMAGAMI_RELEASE : DBSagasAnimations.ANIM_TAMAGAMI_RAISE);
+        }
         if (ability == 2) return event.setAndContinue(DBSagasAnimations.ANIM_BOSS_SPECIAL2);
         if (ability == 3) return event.setAndContinue(DBSagasAnimations.ANIM_BOSS_SPECIAL3);
         if (ability == 5) return event.setAndContinue(DBSagasAnimations.ANIM_BOSS_CUTS);

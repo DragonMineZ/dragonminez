@@ -42,6 +42,7 @@ public class SPBlueHurricaneEntity extends AbstractKiProjectile {
     private static final EntityDataAccessor<Integer> CAST_TIME = SynchedEntityData.defineId(SPBlueHurricaneEntity.class, EntityDataSerializers.INT);
     private static final EntityDataAccessor<Boolean> IS_FIRING = SynchedEntityData.defineId(SPBlueHurricaneEntity.class, EntityDataSerializers.BOOLEAN);
     private static final EntityDataAccessor<Integer> FIRING_TICKS = SynchedEntityData.defineId(SPBlueHurricaneEntity.class, EntityDataSerializers.INT);
+    private static final EntityDataAccessor<Boolean> DETACHED = SynchedEntityData.defineId(SPBlueHurricaneEntity.class, EntityDataSerializers.BOOLEAN);
 
     public SPBlueHurricaneEntity(EntityType<? extends Projectile> pEntityType, Level pLevel) {
         super(pEntityType, pLevel);
@@ -84,6 +85,29 @@ public class SPBlueHurricaneEntity extends AbstractKiProjectile {
         }
     }
 
+    public void setupDetached(LivingEntity owner, Vec3 position, float damage, int castTime, int firingTicks,
+                              int colorCore, int colorBorder, int colorOutline) {
+        this.setFiringTicks(firingTicks);
+        this.setOwner(owner);
+        this.setKiDamage(damage);
+        this.setKiSpeed(0.0F);
+        this.setColors(colorCore, colorBorder, colorOutline);
+        this.setCastTime(castTime);
+        this.setFiring(false);
+        this.entityData.set(DETACHED, true);
+        this.setPos(position.x, position.y, position.z);
+
+        this.playInitialSound(MainSounds.KI_EXPLOSION_CHARGE.get());
+
+        if (!this.level().isClientSide) {
+            this.level().addFreshEntity(this);
+        }
+    }
+
+    public boolean isDetached() {
+        return this.entityData.get(DETACHED);
+    }
+
     @Override
     public void tick() {
         this.baseTick();
@@ -106,15 +130,19 @@ public class SPBlueHurricaneEntity extends AbstractKiProjectile {
             }
         }
 
-        if (!isFiring) {
-            this.setPos(owner.getX(), owner.getY(), owner.getZ());
+        boolean detached = this.isDetached();
 
-            if (owner instanceof Player) {
-                this.slowOwner(owner);
-            } else {
-                double preserveGravity = owner.getDeltaMovement().y < 0 ? owner.getDeltaMovement().y : 0;
-                owner.setDeltaMovement(0, preserveGravity, 0);
-                owner.hasImpulse = true;
+        if (!isFiring) {
+            if (!detached) {
+                this.setPos(owner.getX(), owner.getY(), owner.getZ());
+
+                if (owner instanceof Player) {
+                    this.slowOwner(owner);
+                } else {
+                    double preserveGravity = owner.getDeltaMovement().y < 0 ? owner.getDeltaMovement().y : 0;
+                    owner.setDeltaMovement(0, preserveGravity, 0);
+                    owner.hasImpulse = true;
+                }
             }
 
             if (this.level().isClientSide) {
@@ -152,10 +180,10 @@ public class SPBlueHurricaneEntity extends AbstractKiProjectile {
         }
 
         else {
-            this.setPos(owner.getX(), owner.getY(), owner.getZ());
+            if (!detached) this.setPos(owner.getX(), owner.getY(), owner.getZ());
             this.setBoundingBox(this.getDimensions(this.getPose()).makeBoundingBox(this.position()));
 
-            if (owner instanceof Player) this.slowOwner(owner);
+            if (!detached && owner instanceof Player) this.slowOwner(owner);
 
             if (this.level().isClientSide) {
                 float[] rgb = ColorUtils.rgbIntToFloat(this.getColorBorder());
@@ -234,6 +262,7 @@ public class SPBlueHurricaneEntity extends AbstractKiProjectile {
         this.entityData.define(CAST_TIME, 0);
         this.entityData.define(IS_FIRING, false);
         this.entityData.define(FIRING_TICKS, FIRING_WINDOW);
+        this.entityData.define(DETACHED, false);
     }
 
     public int getCastTime() { return this.entityData.get(CAST_TIME); }
@@ -249,6 +278,7 @@ public class SPBlueHurricaneEntity extends AbstractKiProjectile {
         pCompound.putInt("CastTime", this.getCastTime());
         pCompound.putBoolean("IsFiring", this.isFiring());
         pCompound.putInt("FiringTicks", this.getFiringTicks());
+        pCompound.putBoolean("Detached", this.isDetached());
     }
 
     @Override
@@ -257,5 +287,6 @@ public class SPBlueHurricaneEntity extends AbstractKiProjectile {
         if (pCompound.contains("CastTime")) this.setCastTime(pCompound.getInt("CastTime"));
         if (pCompound.contains("IsFiring")) this.setFiring(pCompound.getBoolean("IsFiring"));
         if (pCompound.contains("FiringTicks")) this.setFiringTicks(pCompound.getInt("FiringTicks"));
+        this.entityData.set(DETACHED, pCompound.getBoolean("Detached"));
     }
 }

@@ -71,6 +71,10 @@ public class DBSagasAnimations {
     public static final RawAnimation ANIM_KILL_DRIVER_FIRE = RawAnimation.begin().thenPlayAndHold("ki.kill_driver_fire");
     public static final RawAnimation ANIM_METEOR_BURST = RawAnimation.begin().thenPlayAndHold("skp.meteor_burst");
     public static final RawAnimation ANIM_BOSS_GRAB = RawAnimation.begin().thenPlayAndHold("skp.grab");
+    public static final RawAnimation ANIM_TAMAGAMI_SLEEP = RawAnimation.begin().thenLoop("tamagami.sleep");
+    public static final RawAnimation ANIM_TAMAGAMI_RAISE = RawAnimation.begin().thenPlayAndHold("ki.kienzan_cast");
+    public static final RawAnimation ANIM_TAMAGAMI_RELEASE = RawAnimation.begin().thenPlayAndHold("ki.kienzan_fire");
+    public static final RawAnimation ANIM_TAMAGAMI_SLAM = RawAnimation.begin().thenPlayAndHold("attack1_1");
 
     // POWER POLE = DBZSTYLE 7
     public static final RawAnimation ANIM_ATTACK1_8 = RawAnimation.begin().thenPlay("attack1_8");

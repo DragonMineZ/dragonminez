@@ -116,6 +116,9 @@ public class GeneralServerConfig {
 				metalCoolerCore.add(WorldBossRewardEntry.item("dragonminez:gete_" + capsule + "_capsule", 1, 0.12));
 			}
 			map.put("metal_cooler_core", metalCoolerCore);
+			map.put("tamagami_3", List.of(WorldBossRewardEntry.tps(1_500_000, 1.0), WorldBossRewardEntry.item("dragonminez:tamagami_hammer", 1, 0.3)));
+			map.put("tamagami_2", List.of(WorldBossRewardEntry.tps(2_000_000, 1.0), WorldBossRewardEntry.item("dragonminez:tamagami_trident", 1, 0.3)));
+			map.put("tamagami_1", List.of(WorldBossRewardEntry.tps(2_700_000, 1.0), WorldBossRewardEntry.item("dragonminez:tamagami_sword", 1, 0.3)));
 			return map;
 		}
 

@@ -118,10 +118,10 @@ public class WorldBossCommand {
 		WorldBossManager.Data.Entry entry = WorldBossManager.Data.get(server).peek(lair.key());
 		long remaining = WorldBossManager.getRespawnRemainingTicks(server, lair.key());
 		MutableComponent state;
-		if (entry != null && entry.bossId != null) {
-			state = Component.translatable("command.dragonminez.worldboss.status.alive").withStyle(ChatFormatting.GREEN);
-		} else if (remaining > 0L) {
+		if (remaining > 0L) {
 			state = Component.translatable("command.dragonminez.worldboss.status.respawn", formatTicks(remaining)).withStyle(ChatFormatting.GOLD);
+		} else if (entry != null && entry.bossId != null) {
+			state = Component.translatable("command.dragonminez.worldboss.status.alive").withStyle(ChatFormatting.GREEN);
 		} else {
 			state = Component.translatable("command.dragonminez.worldboss.status.waiting").withStyle(ChatFormatting.AQUA);
 		}
@@ -131,7 +131,7 @@ public class WorldBossCommand {
 		return Component.translatable("command.dragonminez.worldboss.locate.status", state).withStyle(ChatFormatting.GRAY);
 	}
 
-	private static String formatTicks(long ticks) {
+	public static String formatTicks(long ticks) {
 		long seconds = ticks / 20L;
 		long hours = seconds / 3600L;
 		long minutes = (seconds % 3600L) / 60L;

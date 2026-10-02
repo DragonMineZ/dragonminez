@@ -35,6 +35,17 @@ public abstract class WorldBossEntity extends DBSagasEntity {
     public static final String JANEMBA = "janemba";
     public static final String TURLES = "turles";
     public static final String METAL_COOLER_CORE = "metal_cooler_core";
+    public static final String TAMAGAMI_1 = "tamagami_1";
+    public static final String TAMAGAMI_2 = "tamagami_2";
+    public static final String TAMAGAMI_3 = "tamagami_3";
+
+    public static String tamagamiKey(int number) {
+        return switch (number) {
+            case 1 -> TAMAGAMI_1;
+            case 2 -> TAMAGAMI_2;
+            default -> TAMAGAMI_3;
+        };
+    }
 
     private static final EntityDataAccessor<Boolean> BOSS_ASLEEP =
             SynchedEntityData.defineId(WorldBossEntity.class, EntityDataSerializers.BOOLEAN);
@@ -154,6 +165,7 @@ public abstract class WorldBossEntity extends DBSagasEntity {
 
     public void wakeUp(Player trigger) {
         if (!this.isBossAsleep()) return;
+        if (this.level() instanceof ServerLevel && !com.dragonminez.server.world.worldboss.WorldBossManager.canWake(this)) return;
         applyAsleep(false);
         if (trigger != null) this.setTarget(trigger);
         if (this.level() instanceof ServerLevel) {
@@ -272,7 +284,7 @@ public abstract class WorldBossEntity extends DBSagasEntity {
         return false;
     }
 
-    private boolean isEligible(Player player) {
+    protected boolean isEligible(Player player) {
         if (!player.isAlive() || player.isSpectator() || player.isCreative()) return false;
         return !StatsProvider.get(StatsCapability.INSTANCE, player).map(data -> data.getStatus().isKnockedDown()).orElse(false);
     }

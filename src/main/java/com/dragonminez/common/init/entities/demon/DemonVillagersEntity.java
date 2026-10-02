@@ -4,6 +4,8 @@ import com.dragonminez.Reference;
 import com.dragonminez.common.hair.HairPresets;
 import com.dragonminez.common.init.CapsuleCorpMapTrade;
 import com.dragonminez.common.init.MainItems;
+import com.dragonminez.common.init.entities.worldboss.WorldBossEntity;
+import com.dragonminez.server.world.worldboss.WorldBossManager;
 import net.minecraft.core.BlockPos;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
@@ -294,7 +296,7 @@ public final class DemonVillagersEntity {
 
 		@Nullable
 		public static BlockPos locateTamagami(ServerLevel level, int number) {
-			return null;
+			return WorldBossManager.getLair(level.getServer(), WorldBossEntity.tamagamiKey(number));
 		}
 
 		@Override
