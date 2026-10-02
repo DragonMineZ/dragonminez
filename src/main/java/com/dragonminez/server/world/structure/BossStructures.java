@@ -4,6 +4,7 @@ import com.dragonminez.Reference;
 import com.dragonminez.common.init.MainBlocks;
 import com.dragonminez.common.init.entities.SpacePodEntity;
 import com.dragonminez.server.world.biome.NamekBiomes;
+import com.dragonminez.server.world.gen.DemonRealmGeneration;
 import com.dragonminez.server.world.raid.RaidSiteManager;
 import com.dragonminez.server.world.structure.helper.DMZStructureSets;
 import com.dragonminez.server.world.structure.helper.DMZStructures;
@@ -26,6 +27,7 @@ import net.minecraft.util.RandomSource;
 import net.minecraft.world.entity.Mob;
 import net.minecraft.world.level.ChunkPos;
 import net.minecraft.world.level.LevelHeightAccessor;
+import net.minecraft.world.level.NoiseColumn;
 import net.minecraft.world.level.ServerLevelAccessor;
 import net.minecraft.world.level.StructureManager;
 import net.minecraft.world.level.WorldGenLevel;
@@ -2815,6 +2817,283 @@ public final class BossStructures {
 					if (dx * dx + dy * dy + dz * dz <= blast[3] * blast[3]) return true;
 				}
 				return false;
+			}
+		}
+	}
+
+	public static class GomahCampStructure extends Structure {
+		public static final Codec<GomahCampStructure> CODEC = simpleCodec(GomahCampStructure::new);
+
+		private static final int[][] FLOOR_BANDS = {
+				{DemonRealmGeneration.CRUST_A_BOTTOM - 1, DemonRealmGeneration.FIRST_BASE - 16},
+				{DemonRealmGeneration.CRUST_B_BOTTOM - 1, DemonRealmGeneration.SECOND_SEA + 1},
+				{DemonRealmGeneration.WORLD_TOP - 2, DemonRealmGeneration.THIRD_BASE - 16}
+		};
+		private static final int HEADROOM = 8;
+		private static final int CHECK_RADIUS = 13;
+		private static final int CHECK_POINTS = 8;
+		private static final int MAX_SLOPE = 3;
+
+		public GomahCampStructure(StructureSettings settings) {
+			super(settings);
+		}
+
+		@Override
+		protected Optional<GenerationStub> findGenerationPoint(GenerationContext context) {
+			ChunkPos chunkPos = context.chunkPos();
+			int centerX = chunkPos.getMiddleBlockX();
+			int centerZ = chunkPos.getMiddleBlockZ();
+			ChunkGenerator generator = context.chunkGenerator();
+			LevelHeightAccessor heightAccessor = context.heightAccessor();
+			RandomState randomState = context.randomState();
+			RandomSource random = context.random();
+
+			int firstFloor = random.nextInt(FLOOR_BANDS.length);
+			for (int i = 0; i < FLOOR_BANDS.length; i++) {
+				int[] band = FLOOR_BANDS[(firstFloor + i) % FLOOR_BANDS.length];
+				int ground = flatGround(generator, heightAccessor, randomState, centerX, centerZ, band);
+				if (ground == Integer.MIN_VALUE) continue;
+
+				CampPiece piece = new CampPiece(centerX, ground, centerZ, random.nextLong());
+				return Optional.of(new GenerationStub(new BlockPos(centerX, ground, centerZ), builder -> builder.addPiece(piece)));
+			}
+			return Optional.empty();
+		}
+
+		private static int flatGround(ChunkGenerator generator, LevelHeightAccessor heightAccessor, RandomState randomState,
+									  int centerX, int centerZ, int[] band) {
+			int ground = bandGround(generator.getBaseColumn(centerX, centerZ, heightAccessor, randomState), band);
+			if (ground == Integer.MIN_VALUE) return ground;
+
+			for (int i = 0; i < CHECK_POINTS; i++) {
+				double angle = Math.PI * 2.0D * i / CHECK_POINTS;
+				int x = centerX + (int) Math.round(Math.cos(angle) * CHECK_RADIUS);
+				int z = centerZ + (int) Math.round(Math.sin(angle) * CHECK_RADIUS);
+				int sample = bandGround(generator.getBaseColumn(x, z, heightAccessor, randomState), band);
+				if (sample == Integer.MIN_VALUE || Math.abs(sample - ground) > MAX_SLOPE) return Integer.MIN_VALUE;
+			}
+			return ground;
+		}
+
+		private static int bandGround(NoiseColumn column, int[] band) {
+			int high = band[0];
+			int low = band[1];
+			int y = high;
+			while (y > low && !column.getBlock(y).isAir()) y--;
+			while (y > low && column.getBlock(y).isAir()) y--;
+			if (y <= low || !column.getBlock(y).getFluidState().isEmpty()) return Integer.MIN_VALUE;
+			for (int h = 1; h <= HEADROOM; h++) {
+				if (!column.getBlock(y + h).isAir()) return Integer.MIN_VALUE;
+			}
+			return y;
+		}
+
+		@Override
+		public StructureType<?> type() {
+			return MainStructureTypes.GOMAH_CAMP.get();
+		}
+
+		public static class CampPiece extends StructurePiece {
+			private static final int RADIUS = 14;
+			private static final int TENT_RING = 8;
+			private static final int TENT_HALF = 2;
+			private static final int GATE_HALF_ANGLE_DEG = 12;
+			private static final int SUPPLY_CLUSTERS = 4;
+			private static final int COLUMN_SCAN = 6;
+
+			private final int centerX;
+			private final int groundY;
+			private final int centerZ;
+			private final long seed;
+
+			public CampPiece(int centerX, int groundY, int centerZ, long seed) {
+				super(MainStructureTypes.GOMAH_CAMP_PIECE.get(), 0, new BoundingBox(
+						centerX - RADIUS - 2, groundY + 1, centerZ - RADIUS - 2,
+						centerX + RADIUS + 2, groundY + 8, centerZ + RADIUS + 2));
+				this.centerX = centerX;
+				this.groundY = groundY;
+				this.centerZ = centerZ;
+				this.seed = seed;
+			}
+
+			public CampPiece(CompoundTag tag) {
+				super(MainStructureTypes.GOMAH_CAMP_PIECE.get(), tag);
+				this.centerX = tag.getInt("CenterX");
+				this.groundY = tag.getInt("GroundY");
+				this.centerZ = tag.getInt("CenterZ");
+				this.seed = tag.getLong("Seed");
+			}
+
+			@Override
+			protected void addAdditionalSaveData(StructurePieceSerializationContext context, CompoundTag tag) {
+				tag.putInt("CenterX", this.centerX);
+				tag.putInt("GroundY", this.groundY);
+				tag.putInt("CenterZ", this.centerZ);
+				tag.putLong("Seed", this.seed);
+			}
+
+			@Override
+			public void postProcess(WorldGenLevel level, StructureManager structureManager, ChunkGenerator generator,
+									RandomSource random, BoundingBox box, ChunkPos chunkPos, BlockPos pivot) {
+				BlockPos.MutableBlockPos pos = new BlockPos.MutableBlockPos();
+				double gateAngle = campNoise(this.seed, 0, 0, 0) * Math.PI;
+
+				this.dressGround(level, box, pos);
+				this.palisade(level, box, pos, gateAngle);
+
+				int tents = 3 + (campNoise(this.seed, 1, 0, 0) < 0.5F ? 0 : 1);
+				for (int i = 0; i < tents; i++) {
+					double angle = gateAngle + Math.PI / 2.0D + Math.PI * 2.0D * i / tents;
+					this.tent(level, box, pos, this.centerX + (int) Math.round(Math.cos(angle) * TENT_RING),
+							this.centerZ + (int) Math.round(Math.sin(angle) * TENT_RING));
+				}
+
+				for (int i = 0; i < SUPPLY_CLUSTERS; i++) {
+					double angle = gateAngle + Math.PI * 2.0D * (i + 0.5D) / SUPPLY_CLUSTERS;
+					int distance = RADIUS - 3;
+					this.supplies(level, box, pos, i, this.centerX + (int) Math.round(Math.cos(angle) * distance),
+							this.centerZ + (int) Math.round(Math.sin(angle) * distance));
+				}
+
+				this.fireplace(level, box, pos);
+
+				if (box.isInside(this.centerX, box.minY(), this.centerZ)) this.placeScout(level, pos, chunkPos);
+			}
+
+			private int columnGround(WorldGenLevel level, BlockPos.MutableBlockPos pos, int x, int z) {
+				for (int y = this.groundY + COLUMN_SCAN; y > this.groundY - COLUMN_SCAN; y--) {
+					if (!level.getBlockState(pos.set(x, y, z)).getCollisionShape(level, pos).isEmpty()) return y;
+				}
+				return this.groundY;
+			}
+
+			private static void put(WorldGenLevel level, BoundingBox box, int x, int y, int z, BlockState state) {
+				if (box.isInside(x, y, z)) level.setBlock(new BlockPos(x, y, z), state, 2);
+			}
+
+			private void dressGround(WorldGenLevel level, BoundingBox box, BlockPos.MutableBlockPos pos) {
+				for (int x = Math.max(box.minX(), this.centerX - RADIUS); x <= Math.min(box.maxX(), this.centerX + RADIUS); x++) {
+					for (int z = Math.max(box.minZ(), this.centerZ - RADIUS); z <= Math.min(box.maxZ(), this.centerZ + RADIUS); z++) {
+						int dx = x - this.centerX;
+						int dz = z - this.centerZ;
+						if (dx * dx + dz * dz > RADIUS * RADIUS) continue;
+						float roll = campNoise(this.seed, x, 1, z);
+						if (roll > 0.45F) continue;
+						int y = this.columnGround(level, pos, x, z);
+						BlockState state = level.getBlockState(pos.set(x, y, z));
+						if (state.hasBlockEntity() || !state.isCollisionShapeFullBlock(level, pos)) continue;
+						put(level, box, x, y, z, roll < 0.3F ? Blocks.COARSE_DIRT.defaultBlockState() : Blocks.GRAVEL.defaultBlockState());
+					}
+				}
+			}
+
+			private void palisade(WorldGenLevel level, BoundingBox box, BlockPos.MutableBlockPos pos, double gateAngle) {
+				BlockState log = Blocks.DARK_OAK_LOG.defaultBlockState();
+				for (int x = Math.max(box.minX(), this.centerX - RADIUS - 1); x <= Math.min(box.maxX(), this.centerX + RADIUS + 1); x++) {
+					for (int z = Math.max(box.minZ(), this.centerZ - RADIUS - 1); z <= Math.min(box.maxZ(), this.centerZ + RADIUS + 1); z++) {
+						int dx = x - this.centerX;
+						int dz = z - this.centerZ;
+						double distance = Math.sqrt(dx * dx + dz * dz);
+						if (Math.abs(distance - RADIUS) > 0.5D) continue;
+						if (inGate(Math.atan2(dz, dx), gateAngle)) continue;
+
+						float roll = campNoise(this.seed, x, 2, z);
+						int height = roll < 0.12F ? 1 + (int) (roll * 100.0F) % 2 : (roll < 0.6F ? 3 : 4);
+						int base = this.columnGround(level, pos, x, z);
+						for (int y = 1; y <= height; y++) put(level, box, x, base + y, z, log);
+					}
+				}
+			}
+
+			private static boolean inGate(double angle, double gateAngle) {
+				double halfGate = Math.toRadians(GATE_HALF_ANGLE_DEG);
+				for (int side = 0; side < 2; side++) {
+					if (Math.abs(wrap(angle - gateAngle - side * Math.PI)) <= halfGate) return true;
+				}
+				return false;
+			}
+
+			private static double wrap(double angle) {
+				while (angle > Math.PI) angle -= Math.PI * 2.0D;
+				while (angle < -Math.PI) angle += Math.PI * 2.0D;
+				return angle;
+			}
+
+			private void tent(WorldGenLevel level, BoundingBox box, BlockPos.MutableBlockPos pos, int tentX, int tentZ) {
+				Direction front = Direction.getNearest(this.centerX - tentX, 0, this.centerZ - tentZ);
+				Direction right = front.getClockWise();
+				int base = this.columnGround(level, pos, tentX, tentZ);
+				BlockState roof = Blocks.PURPLE_WOOL.defaultBlockState();
+				BlockState ridge = Blocks.BLACK_WOOL.defaultBlockState();
+
+				for (int u = -TENT_HALF; u <= TENT_HALF; u++) {
+					int height = TENT_HALF + 1 - Math.abs(u);
+					for (int v = -TENT_HALF; v <= TENT_HALF; v++) {
+						int x = tentX + right.getStepX() * u + front.getStepX() * v;
+						int z = tentZ + right.getStepZ() * u + front.getStepZ() * v;
+						put(level, box, x, base + height, z, u == 0 ? ridge : roof);
+						for (int y = 1; y < height; y++) {
+							put(level, box, x, base + y, z, v == -TENT_HALF ? roof : Blocks.AIR.defaultBlockState());
+						}
+					}
+				}
+
+				int barrelX = tentX - front.getStepX() * (TENT_HALF - 1);
+				int barrelZ = tentZ - front.getStepZ() * (TENT_HALF - 1);
+				put(level, box, barrelX, base + 1, barrelZ, Blocks.BARREL.defaultBlockState().setValue(BlockStateProperties.FACING, Direction.UP));
+
+				int flagX = tentX + front.getStepX() * (TENT_HALF + 1) + right.getStepX() * (TENT_HALF + 1);
+				int flagZ = tentZ + front.getStepZ() * (TENT_HALF + 1) + right.getStepZ() * (TENT_HALF + 1);
+				int flagBase = this.columnGround(level, pos, flagX, flagZ);
+				put(level, box, flagX, flagBase + 1, flagZ, Blocks.DARK_OAK_FENCE.defaultBlockState());
+				put(level, box, flagX, flagBase + 2, flagZ, Blocks.PURPLE_BANNER.defaultBlockState()
+						.setValue(BlockStateProperties.ROTATION_16, (front.get2DDataValue() * 4 + 8) % 16));
+			}
+
+			private void supplies(WorldGenLevel level, BoundingBox box, BlockPos.MutableBlockPos pos, int cluster, int x, int z) {
+				int count = 2 + (int) (campNoise(this.seed, cluster, 3, 0) * 3.0F);
+				for (int i = 0; i < count; i++) {
+					int ox = x + Math.round((campNoise(this.seed, cluster, 4, i) - 0.5F) * 3.0F);
+					int oz = z + Math.round((campNoise(this.seed, cluster, 5, i) - 0.5F) * 3.0F);
+					int base = this.columnGround(level, pos, ox, oz);
+					BlockState crate = campNoise(this.seed, cluster, 6, i) < 0.6F
+							? Blocks.BARREL.defaultBlockState().setValue(BlockStateProperties.FACING, Direction.UP)
+							: Blocks.DARK_OAK_PLANKS.defaultBlockState();
+					put(level, box, ox, base + 1, oz, crate);
+					if (campNoise(this.seed, cluster, 7, i) < 0.3F) put(level, box, ox, base + 2, oz, Blocks.DARK_OAK_PLANKS.defaultBlockState());
+				}
+			}
+
+			private void fireplace(WorldGenLevel level, BoundingBox box, BlockPos.MutableBlockPos pos) {
+				int base = this.columnGround(level, pos, this.centerX, this.centerZ);
+				for (int dx = -1; dx <= 1; dx++) {
+					for (int dz = -1; dz <= 1; dz++) {
+						if (dx != 0 || dz != 0) put(level, box, this.centerX + dx, base, this.centerZ + dz, Blocks.BLACKSTONE.defaultBlockState());
+					}
+				}
+				put(level, box, this.centerX, base + 1, this.centerZ, Blocks.CAMPFIRE.defaultBlockState());
+
+				BlockState seat = Blocks.DARK_OAK_LOG.defaultBlockState().setValue(BlockStateProperties.AXIS, Direction.Axis.X);
+				for (int dx = -1; dx <= 1; dx++) {
+					put(level, box, this.centerX + dx, base + 1, this.centerZ - 3, seat);
+					put(level, box, this.centerX + dx, base + 1, this.centerZ + 3, seat);
+				}
+			}
+
+			private void placeScout(WorldGenLevel level, BlockPos.MutableBlockPos pos, ChunkPos chunkPos) {
+				int x = this.centerX + RaidSiteManager.SCOUT_OFFSET_X;
+				int z = this.centerZ + RaidSiteManager.SCOUT_OFFSET_Z;
+				BlockPos stand = new BlockPos(x, this.columnGround(level, pos, x, z) + 1, z);
+				Mob scout = RaidSiteManager.createScout(level, RaidSiteManager.Kind.GOMAH_CAMP, chunkPos.toLong(), stand, stand);
+				if (scout != null) level.addFreshEntityWithPassengers(scout);
+			}
+
+			private static float campNoise(long seed, int x, int y, int z) {
+				long hash = seed ^ (x * 0x9E3779B97F4A7C15L) ^ (y * 0xC2B2AE3D27D4EB4FL) ^ (z * 0x165667B19E3779F9L);
+				hash ^= hash >>> 33;
+				hash *= 0xFF51AFD7ED558CCDL;
+				hash ^= hash >>> 33;
+				return (hash >>> 40) / (float) (1 << 24);
 			}
 		}
 	}

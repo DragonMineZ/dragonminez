@@ -12,6 +12,7 @@ import com.dragonminez.common.init.entities.sagas.DBSagasEntity;
 import com.dragonminez.common.quest.Difficulty;
 import lombok.Getter;
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.Direction;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.ListTag;
@@ -56,6 +57,8 @@ public class Raid {
 	private static final int GLOW_INTERVAL_TICKS = 200;
 	private static final int GLOW_DURATION_TICKS = 200;
 	private static final int LEASH_GRACE_TICKS = 15 * 20;
+	private static final int GROUND_SEARCH_UP = 24;
+	private static final int GROUND_SEARCH_DOWN = 32;
 
 	@Getter
 	private final UUID raidId;
@@ -345,7 +348,8 @@ public class Raid {
 			double dist = 6.0 + random.nextDouble() * 10.0;
 			int x = center.getX() + (int) Math.round(Math.cos(angle) * dist);
 			int z = center.getZ() + (int) Math.round(Math.sin(angle) * dist);
-			int ground = level.getHeight(Heightmap.Types.MOTION_BLOCKING_NO_LEAVES, x, z);
+			int ground = groundNear(level, x, z);
+			if (ground == Integer.MIN_VALUE) continue;
 			BlockPos groundPos = new BlockPos(x, ground, z);
 			if (!level.noCollision(new AABB(groundPos))) continue;
 
@@ -353,6 +357,21 @@ public class Raid {
 			return level.noCollision(new AABB(sky)) ? sky : groundPos;
 		}
 		return center.above(SKY_SPAWN_HEIGHT);
+	}
+
+	private int groundNear(ServerLevel level, int x, int z) {
+		int top = Math.min(level.getHeight(Heightmap.Types.MOTION_BLOCKING_NO_LEAVES, x, z), center.getY() + GROUND_SEARCH_UP);
+		int bottom = center.getY() - GROUND_SEARCH_DOWN;
+		BlockPos.MutableBlockPos pos = new BlockPos.MutableBlockPos(x, top, z);
+		boolean openAbove = level.getBlockState(pos).getCollisionShape(level, pos).isEmpty();
+
+		while (pos.getY() > bottom) {
+			pos.move(Direction.DOWN);
+			boolean open = level.getBlockState(pos).getCollisionShape(level, pos).isEmpty();
+			if (!open && openAbove) return pos.getY() + 1;
+			openAbove = open;
+		}
+		return Integer.MIN_VALUE;
 	}
 
 	// ------------------------------------------------------------------------------------------------

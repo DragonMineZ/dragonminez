@@ -23,6 +23,7 @@ public class MainTags {
 
 	public static class EntityTypes {
 		public static final TagKey<EntityType<?>> FRIEZA_SOLDIERS = create("frieza_soldiers");
+		public static final TagKey<EntityType<?>> GOMAH_SOLDIERS = create("gomah_soldiers");
 		public static final TagKey<EntityType<?>> SAIBAMEN = create("saibamen");
 		public static final TagKey<EntityType<?>> RED_RIBBON_ROBOTS = create("red_ribbon_robots");
 		public static final TagKey<EntityType<?>> NPC_SUPERSAIYAN = create("npc_supersaiyan");

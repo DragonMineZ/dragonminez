@@ -7,6 +7,7 @@ import com.dragonminez.server.world.structure.DemonVillageStructure;
 import com.dragonminez.server.world.structure.TallJigsawStructure;
 import com.dragonminez.server.world.structure.BossStructures.SaiyanCraterStructure;
 import com.dragonminez.server.world.structure.BossStructures.GeteStarStructure;
+import com.dragonminez.server.world.structure.BossStructures.GomahCampStructure;
 import com.dragonminez.server.world.structure.BossStructures.NamekRuinsStructure;
 import com.dragonminez.server.world.structure.BossStructures.TreeOfMightStructure;
 import net.minecraft.core.HolderGetter;
@@ -42,7 +43,8 @@ public class DMZStructures {
 			VEGETA_POD = createKey("vegeta_pod"),
 			BABA_PALACE = createKey("baba_palace"), TREE_OF_MIGHT = createKey("tree_of_might"),
 			SAIYAN_CRATER = createKey("saiyan_crater"), NAMEK_RUINS = createKey("namek_ruins"),
-			GETE_STAR = createKey("gete_star"), DEMON_VILLAGE = createKey("demon_village");
+			GETE_STAR = createKey("gete_star"), DEMON_VILLAGE = createKey("demon_village"),
+			GOMAH_CAMP = createKey("gomah_camp");
 
 	public static void bootstrap(BootstapContext<Structure> context) {
 		HolderGetter<Biome> biomes = context.lookup(Registries.BIOME);
@@ -307,6 +309,17 @@ public class DMZStructures {
 						Map.of(),
 						GenerationStep.Decoration.SURFACE_STRUCTURES,
 						TerrainAdjustment.NONE
+				)
+		));
+
+		context.register(GOMAH_CAMP, new GomahCampStructure(
+				new Structure.StructureSettings(
+						HolderSet.direct(biomes.getOrThrow(DemonRealmBiomes.FIRST_DEMON_WORLD),
+								biomes.getOrThrow(DemonRealmBiomes.SECOND_DEMON_WORLD),
+								biomes.getOrThrow(DemonRealmBiomes.THIRD_DEMON_WORLD)),
+						Map.of(),
+						GenerationStep.Decoration.SURFACE_STRUCTURES,
+						TerrainAdjustment.BEARD_THIN
 				)
 		));
 	}

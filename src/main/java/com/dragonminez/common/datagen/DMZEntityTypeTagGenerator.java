@@ -29,6 +29,10 @@ public class DMZEntityTypeTagGenerator extends EntityTypeTagsProvider {
 				.add(MainEntities.SAGA_FRIEZA_SOLDIER2.get())
 				.add(MainEntities.SAGA_FRIEZA_SOLDIER3.get());
 
+		this.tag(MainTags.EntityTypes.GOMAH_SOLDIERS)
+				.add(MainEntities.SAGA_GOMAH_SOLDIER_1.get())
+				.add(MainEntities.SAGA_GOMAH_SOLDIER_2.get());
+
 		this.tag(MainTags.EntityTypes.SAIBAMEN)
 				.add(MainEntities.SAGA_SAIBAMAN.get())
 				.add(MainEntities.SAGA_SAIBAMAN2.get())

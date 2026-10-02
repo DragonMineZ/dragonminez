@@ -5,6 +5,7 @@ import com.dragonminez.server.world.structure.TallJigsawStructure;
 import com.dragonminez.server.world.structure.DemonVillageStructure;
 import com.dragonminez.server.world.structure.BossStructures.SaiyanCraterStructure;
 import com.dragonminez.server.world.structure.BossStructures.GeteStarStructure;
+import com.dragonminez.server.world.structure.BossStructures.GomahCampStructure;
 import com.dragonminez.server.world.structure.BossStructures.NamekRuinsStructure;
 import com.dragonminez.server.world.structure.BossStructures.TreeOfMightPiece;
 import com.dragonminez.server.world.structure.BossStructures.TreeOfMightStructure;
@@ -34,6 +35,8 @@ public class MainStructureTypes {
 			STRUCTURE_TYPES.register("gete_star", () -> () -> GeteStarStructure.CODEC);
 	public static final RegistryObject<StructureType<DemonVillageStructure>> DEMON_VILLAGE =
 			STRUCTURE_TYPES.register("demon_village", () -> () -> DemonVillageStructure.CODEC);
+	public static final RegistryObject<StructureType<GomahCampStructure>> GOMAH_CAMP =
+			STRUCTURE_TYPES.register("gomah_camp", () -> () -> GomahCampStructure.CODEC);
 
 	public static final RegistryObject<StructurePieceType> TREE_OF_MIGHT_PIECE =
 			STRUCTURE_PIECES.register("tree_of_might", () -> (StructurePieceType.ContextlessType) TreeOfMightPiece::new);
@@ -49,6 +52,8 @@ public class MainStructureTypes {
 			STRUCTURE_PIECES.register("demon_village_building", () -> (StructurePieceType.StructureTemplateType) DemonVillageStructure.BuildingPiece::new);
 	public static final RegistryObject<StructurePieceType> DEMON_VILLAGE_GROUND =
 			STRUCTURE_PIECES.register("demon_village_ground", () -> (StructurePieceType.ContextlessType) DemonVillageStructure.GroundPiece::new);
+	public static final RegistryObject<StructurePieceType> GOMAH_CAMP_PIECE =
+			STRUCTURE_PIECES.register("gomah_camp", () -> (StructurePieceType.ContextlessType) GomahCampStructure.CampPiece::new);
 
 	public static void register(IEventBus eventBus) {
 		STRUCTURE_TYPES.register(eventBus);

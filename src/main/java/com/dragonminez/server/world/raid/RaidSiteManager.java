@@ -10,9 +10,11 @@ import com.dragonminez.common.init.MainEntities;
 import com.dragonminez.common.init.entities.SpacePodEntity;
 import com.dragonminez.common.init.entities.sagas.DBSagasEntity;
 import com.dragonminez.common.init.entities.sagas.SagaSaiyanInvadersEntity;
+import com.dragonminez.server.world.dimension.DemonRealmDimension;
 import com.dragonminez.server.world.dimension.NamekDimension;
 import com.dragonminez.server.world.structure.helper.DMZStructures;
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.Direction;
 import net.minecraft.core.Registry;
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.core.registries.Registries;
@@ -36,7 +38,6 @@ import net.minecraft.world.level.ChunkPos;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.ServerLevelAccessor;
 import net.minecraft.world.level.chunk.LevelChunk;
-import net.minecraft.world.level.levelgen.Heightmap;
 import net.minecraft.world.level.levelgen.structure.BoundingBox;
 import net.minecraft.world.level.levelgen.structure.Structure;
 import net.minecraft.world.level.levelgen.structure.StructureStart;
@@ -66,6 +67,9 @@ public final class RaidSiteManager {
 	private static final int SCAN_INTERVAL = 40;
 	private static final int SCAN_RADIUS_CHUNKS = 6;
 	private static final double ANNOUNCE_RADIUS = 80.0D;
+	private static final double ANNOUNCE_HEIGHT = 48.0D;
+	private static final int GROUND_SCAN_ABOVE = 4;
+	private static final int GROUND_SCAN_BELOW = 16;
 	private static final int MISSING_CHECKS_BEFORE_LOST = 3;
 	private static final double CREW_SEARCH_MARGIN = 16.0D;
 	private static final int SCOUT_LEASH = 10;
@@ -75,7 +79,9 @@ public final class RaidSiteManager {
 		SAIYAN_CRATER(Level.OVERWORLD, RaidDefaults.SAIYAN_ASSAULT, List.of(DMZStructures.SAIYAN_CRATER), true,
 				"raid.dragonminez.saiyan_assault.crater", 500.0D, 12.0D, 10.0D, () -> MainEntities.SAGA_SAIYAN_SOLDIER.get()),
 		NAMEK_RUINS(NamekDimension.NAMEK_KEY, RaidDefaults.FRIEZA_INVASION, List.of(DMZStructures.NAMEK_RUINS), false,
-				"raid.dragonminez.frieza_invasion.ruins", 400.0D, 18.0D, 12.0D, () -> MainEntities.SAGA_FRIEZA_SOLDIER.get());
+				"raid.dragonminez.frieza_invasion.ruins", 400.0D, 18.0D, 12.0D, () -> MainEntities.SAGA_FRIEZA_SOLDIER.get()),
+		GOMAH_CAMP(DemonRealmDimension.DEMON_REALM_KEY, RaidDefaults.GOMAH_ASSAULT, List.of(DMZStructures.GOMAH_CAMP), false,
+				"raid.dragonminez.gomah_assault.camp", 10000.0D, 900.0D, 800.0D, () -> MainEntities.SAGA_GOMAH_SOLDIER_1.get());
 
 		private final ResourceKey<Level> dimension;
 		private final String raidId;
@@ -184,7 +190,7 @@ public final class RaidSiteManager {
 			AABB area = AABB.of(box).inflate(CREW_SEARCH_MARGIN);
 			Mob existing = findScout(level, area, key);
 			if (existing != null) entry.scout = existing.getUUID();
-			else if (!spawnMissingCrew(level, kind, entry, key, area, center.getX(), center.getZ())) return;
+			else if (!spawnMissingCrew(level, kind, entry, key, box, area)) return;
 			data.setDirty();
 		} else if (scoutLost(level, entry, key, center)) {
 			entry.consumed = true;
@@ -193,7 +199,7 @@ public final class RaidSiteManager {
 			return;
 		}
 
-		BlockPos floor = surface(level, center.getX(), center.getZ());
+		BlockPos floor = groundIn(level, box, center.getX(), center.getZ());
 		level.sendParticles(ParticleTypes.CAMPFIRE_COSY_SMOKE, floor.getX() + 0.5D, floor.getY() + 1.0D, floor.getZ() + 0.5D,
 				3, 0.6D, 0.2D, 0.6D, 0.01D);
 
@@ -221,6 +227,7 @@ public final class RaidSiteManager {
 			if (player.isSpectator()) continue;
 			double dx = player.getX() - (center.getX() + 0.5D);
 			double dz = player.getZ() - (center.getZ() + 0.5D);
+			if (Math.abs(player.getY() - center.getY()) > ANNOUNCE_HEIGHT) continue;
 			if (dx * dx + dz * dz <= radiusSqr) nearby.add(player);
 		}
 		return nearby;
@@ -254,14 +261,16 @@ public final class RaidSiteManager {
 		return null;
 	}
 
-	private static boolean spawnMissingCrew(ServerLevel level, Kind kind, Data.Entry entry, long key, AABB area, int centerX, int centerZ) {
-		BlockPos floor = surface(level, centerX, centerZ);
+	private static boolean spawnMissingCrew(ServerLevel level, Kind kind, Data.Entry entry, long key, BoundingBox box, AABB area) {
+		int centerX = box.getCenter().getX();
+		int centerZ = box.getCenter().getZ();
+		BlockPos floor = groundIn(level, box, centerX, centerZ);
 		if (kind.withPod && level.getEntitiesOfClass(SpacePodEntity.class, area).isEmpty()) {
 			SpacePodEntity pod = createPod(level, floor);
 			if (pod != null) level.addFreshEntity(pod);
 		}
 
-		Mob scout = createScout(level, kind, key, surface(level, centerX + SCOUT_OFFSET_X, centerZ + SCOUT_OFFSET_Z), floor);
+		Mob scout = createScout(level, kind, key, groundIn(level, box, centerX + SCOUT_OFFSET_X, centerZ + SCOUT_OFFSET_Z), floor);
 		if (scout == null || !level.addFreshEntity(scout)) return false;
 
 		entry.scout = scout.getUUID();
@@ -328,8 +337,14 @@ public final class RaidSiteManager {
 		if (scout instanceof DBSagasEntity saga) saga.setBattlePower((int) Math.round(maxHealthValue));
 	}
 
-	private static BlockPos surface(ServerLevel level, int x, int z) {
-		return new BlockPos(x, level.getHeight(Heightmap.Types.MOTION_BLOCKING_NO_LEAVES, x, z), z);
+	private static BlockPos groundIn(ServerLevel level, BoundingBox box, int x, int z) {
+		BlockPos.MutableBlockPos pos = new BlockPos.MutableBlockPos(x, box.maxY() + GROUND_SCAN_ABOVE, z);
+		int bottom = box.minY() - GROUND_SCAN_BELOW;
+		while (pos.getY() > bottom) {
+			if (!level.getBlockState(pos).getCollisionShape(level, pos).isEmpty()) return pos.above().immutable();
+			pos.move(Direction.DOWN);
+		}
+		return new BlockPos(x, box.minY(), z);
 	}
 
 	static final class Data extends SavedData {

@@ -8,6 +8,7 @@ public final class RaidDefaults {
 
 	public static final String FRIEZA_INVASION = "frieza_invasion";
 	public static final String SAIYAN_ASSAULT = "saiyan_assault";
+	public static final String GOMAH_ASSAULT = "gomah_assault";
 
 	private RaidDefaults() {}
 
@@ -15,6 +16,7 @@ public final class RaidDefaults {
 		Map<String, RaidDefinition> defaults = new LinkedHashMap<>();
 		defaults.put(FRIEZA_INVASION, friezaInvasion());
 		defaults.put(SAIYAN_ASSAULT, saiyanAssault());
+		defaults.put(GOMAH_ASSAULT, gomahAssault());
 		return defaults;
 	}
 	private static RaidDefinition friezaInvasion() {
@@ -130,6 +132,61 @@ public final class RaidDefaults {
 				item("dragonminez:green_scouter", 1)));
 		def.setRewards(rewards);
 		def.setDefeat(defeat("raid.dragonminez.saiyan_assault.defeat", -10));
+
+		return def;
+	}
+
+	private static RaidDefinition gomahAssault() {
+		RaidDefinition def = new RaidDefinition();
+		def.setConfigVersion(RaidDefinition.CURRENT_VERSION);
+		def.setDisplayName("raid.dragonminez.gomah_assault");
+		def.setEnabled(true);
+		def.setActivationRadius(48.0D);
+		def.setLeashDistance(80.0D);
+		def.setInterWaveDelaySeconds(5);
+
+		RaidDefinition.Music music = new RaidDefinition.Music();
+		music.setPreparation("dragonminez:menu_music_11");
+		music.setBattle("dragonminez:raid_ost_1");
+		def.setMusic(music);
+
+		String soldiers = "#dragonminez:gomah_soldiers";
+
+		RaidDefinition.Trigger trigger = new RaidDefinition.Trigger();
+		trigger.setEntityId(soldiers);
+		trigger.setDimension("dragonminez:demon_realm");
+		trigger.setSpawnChance(0.0D);
+		trigger.setSupervillain(true);
+		trigger.setPreparationSeconds(60);
+		trigger.setAnnounceMessage("raid.dragonminez.gomah_assault.camp");
+		trigger.setOmenMessage("raid.dragonminez.gomah_assault.omen");
+		trigger.setStartMessage("raid.dragonminez.gomah_assault.start");
+		trigger.setHealth(10000.0D);
+		trigger.setMeleeDamage(900.0D);
+		trigger.setKiDamage(800.0D);
+		trigger.setAiTier(2);
+		def.setTrigger(trigger);
+
+		def.setWaves(List.of(
+				wave(mob(soldiers, 6, 8000, 750, 650, 1)),
+				wave(mob(soldiers, 8, 10000, 900, 800, 1)),
+				wave(mob(soldiers, 10, 12000, 1100, 950, 2)),
+				wave(mob(soldiers, 10, 14000, 1300, 1100, 2),
+						boss("dragonminez:saga_glorio", 450000, 19000, 17000, 3)),
+				wave(mob(soldiers, 10, 16000, 1500, 1300, 2),
+						boss("dragonminez:saga_majin_kuu", 750000, 31000, 28000, 3),
+						boss("dragonminez:saga_majin_duu", 800000, 33000, 30000, 3))));
+
+		RaidDefinition.Rewards rewards = new RaidDefinition.Rewards();
+		rewards.setTrainingPoints(350_000F);
+		rewards.setEffects(List.of(
+				effect("minecraft:hero_of_the_village", 600, 0),
+				effect("dragonminez:world_hero", 600, 2)));
+		rewards.setItems(List.of(
+				item("minecraft:golden_carrot", 16),
+				item("dragonminez:medi_bug_ant", 4)));
+		def.setRewards(rewards);
+		def.setDefeat(defeat("raid.dragonminez.gomah_assault.defeat", -30));
 
 		return def;
 	}
