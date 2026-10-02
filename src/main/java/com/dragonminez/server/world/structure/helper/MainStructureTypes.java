@@ -2,11 +2,11 @@ package com.dragonminez.server.world.structure.helper;
 
 import com.dragonminez.Reference;
 import com.dragonminez.server.world.structure.TallJigsawStructure;
-import com.dragonminez.server.world.structure.crater.SaiyanCraterStructure;
-import com.dragonminez.server.world.structure.WorldBossStructures.GeteStarStructure;
-import com.dragonminez.server.world.structure.ruins.NamekRuinsStructure;
-import com.dragonminez.server.world.structure.WorldBossStructures.TreeOfMightPiece;
-import com.dragonminez.server.world.structure.WorldBossStructures.TreeOfMightStructure;
+import com.dragonminez.server.world.structure.BossStructures.SaiyanCraterStructure;
+import com.dragonminez.server.world.structure.BossStructures.GeteStarStructure;
+import com.dragonminez.server.world.structure.BossStructures.NamekRuinsStructure;
+import com.dragonminez.server.world.structure.BossStructures.TreeOfMightPiece;
+import com.dragonminez.server.world.structure.BossStructures.TreeOfMightStructure;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.world.level.levelgen.structure.StructureType;
 import net.minecraft.world.level.levelgen.structure.pieces.StructurePieceType;

@@ -6,7 +6,7 @@ import com.dragonminez.common.init.entities.sagas.SagaMoviesEntity;
 import com.dragonminez.common.init.entities.worldboss.AllWorldBossesEntity;
 import com.dragonminez.server.world.data.StructurePlanSavedData;
 import com.dragonminez.server.world.dimension.NamekDimension;
-import com.dragonminez.server.world.structure.WorldBossStructures.GeteStarShape;
+import com.dragonminez.server.world.structure.BossStructures.GeteStarShape;
 import com.dragonminez.server.world.structure.helper.DMZStructureSets;
 import com.dragonminez.server.world.structure.placement.StructureSpawnPlanner;
 import net.minecraft.core.BlockPos;

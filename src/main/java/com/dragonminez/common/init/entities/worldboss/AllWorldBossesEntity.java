@@ -34,7 +34,7 @@ import com.dragonminez.server.events.players.combat.KnockbackHelper;
 import com.dragonminez.server.events.players.combat.MeteorBurstCombo;
 import com.dragonminez.server.events.players.combat.MomentumImpactHandler;
 import com.dragonminez.server.events.players.combat.StrikeAttackHandler;
-import com.dragonminez.server.world.structure.WorldBossStructures.GeteStarShape;
+import com.dragonminez.server.world.structure.BossStructures.GeteStarShape;
 import com.dragonminez.server.world.worldboss.WorldBossContribution;
 import com.dragonminez.server.world.worldboss.WorldBossManager;
 import net.minecraft.core.BlockPos;
