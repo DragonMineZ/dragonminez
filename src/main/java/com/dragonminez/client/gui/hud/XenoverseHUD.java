@@ -20,12 +20,10 @@ import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraftforge.client.gui.overlay.IGuiOverlay;
 
 import java.text.NumberFormat;
-import java.util.List;
 import java.util.Locale;
 
 public class XenoverseHUD {
 	private static final ResourceLocation hud = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "textures/gui/hud/xenoversehud.png");
-	private static final ResourceLocation racialIcons = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "textures/gui/hud/racial_icons.png");
 
 	private static final HudBarAnimator HP_BAR = new HudBarAnimator();
 	private static final HudBarAnimator KI_BAR = new HudBarAnimator();
@@ -141,17 +139,14 @@ public class XenoverseHUD {
 				}
 				part(guiGraphics, hud, 43, 29, 24, 121, currentStmBarWidth, 5);
 
-				List<String> loadedRaces = ConfigManager.getDefaultRaces();
-				int raceIndex = Math.max(0, loadedRaces.indexOf(raceName.toLowerCase()));
-				int iconU = 1 + (raceIndex * 17);
+				ResourceLocation racialIcon = RacialIcons.forRace(raceName);
 				boolean isMajin = raceName.equalsIgnoreCase("majin");
-				boolean isCustomRace = !loadedRaces.contains(raceName.toLowerCase());
 
 				int raceY = isMajin ? 12 : 13;
-				part(guiGraphics, racialIcons, 15, raceY, isCustomRace ? 103 : iconU, 1, 16, 16);
+				part(guiGraphics, racialIcon, 15, raceY, 0, 0, RacialIcons.SIZE, RacialIcons.SIZE, RacialIcons.TEXTURE_WIDTH, RacialIcons.TEXTURE_HEIGHT);
 
-				int fillHeight = (int) (16 * (Math.min(displayPowerRelease, 100.0f) / 100.0f));
-				if (fillHeight > 0) part(guiGraphics, racialIcons, 15, raceY + (16 - fillHeight), isCustomRace ? 103 : iconU, 18 + (16 - fillHeight), 16, fillHeight);
+				int fillHeight = (int) (RacialIcons.SIZE * (Math.min(displayPowerRelease, 100.0f) / 100.0f));
+				if (fillHeight > 0) part(guiGraphics, racialIcon, 15, raceY + (RacialIcons.SIZE - fillHeight), 0, RacialIcons.FILL_V + (RacialIcons.SIZE - fillHeight), RacialIcons.SIZE, fillHeight, RacialIcons.TEXTURE_WIDTH, RacialIcons.TEXTURE_HEIGHT);
 
 				part(guiGraphics, hud, 8, 8, 218, 100, 26, 27);
 				int fillFormHeight = (int) (17 * (formRelease / 100.0f));
@@ -191,8 +186,12 @@ public class XenoverseHUD {
 	}
 
 	private static void part(GuiGraphics guiGraphics, ResourceLocation texture, float x, float y, float u, float v, float width, float height) {
-		if (mirrorWidth < 0.0f) HudRender.blit(guiGraphics, texture, x, y, u, v, width, height, 256, 256);
-		else HudRender.blit(guiGraphics, texture, mirrorWidth - x - width, y, u + width, v, width, height, -width, height, 256, 256);
+		part(guiGraphics, texture, x, y, u, v, width, height, 256, 256);
+	}
+
+	private static void part(GuiGraphics guiGraphics, ResourceLocation texture, float x, float y, float u, float v, float width, float height, int textureWidth, int textureHeight) {
+		if (mirrorWidth < 0.0f) HudRender.blit(guiGraphics, texture, x, y, u, v, width, height, textureWidth, textureHeight);
+		else HudRender.blit(guiGraphics, texture, mirrorWidth - x - width, y, u + width, v, width, height, -width, height, textureWidth, textureHeight);
 	}
 
 	private static int mirrorX(int x) {

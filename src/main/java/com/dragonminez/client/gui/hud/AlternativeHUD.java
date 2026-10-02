@@ -20,13 +20,11 @@ import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraftforge.client.gui.overlay.IGuiOverlay;
 
 import java.text.NumberFormat;
-import java.util.List;
 import java.util.Locale;
 
 public class AlternativeHUD {
 	private static final ResourceLocation hud = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "textures/gui/hud/alternativehud.png");
 	private static final ResourceLocation xvhud = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "textures/gui/hud/xenoversehud.png");
-	private static final ResourceLocation racialIcons = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "textures/gui/hud/racial_icons.png");
 
 	private static final HudBarAnimator HP_BAR = new HudBarAnimator();
 	private static final HudBarAnimator KI_BAR = new HudBarAnimator();
@@ -178,14 +176,11 @@ public class AlternativeHUD {
 	}
 
 	private static void drawRacialIcon(GuiGraphics guiGraphics, String raceName, float powerRelease, int x, int y) {
-		List<String> loadedRaces = ConfigManager.getDefaultRaces();
-		int raceIndex = Math.max(0, loadedRaces.indexOf(raceName.toLowerCase()));
-		int iconU = 1 + (raceIndex * 17);
-		boolean isCustomRace = !loadedRaces.contains(raceName.toLowerCase());
-		int fillHeight = (int) (16 * (Math.min(powerRelease, 100.0f) / 100.0f));
+		ResourceLocation racialIcon = RacialIcons.forRace(raceName);
+		int fillHeight = (int) (RacialIcons.SIZE * (Math.min(powerRelease, 100.0f) / 100.0f));
 
-		guiGraphics.blit(racialIcons, x + 7, y + 4, isCustomRace ? 103 : iconU, 1, 16, 16, 256, 256);
-		if (fillHeight > 0) guiGraphics.blit(racialIcons, x + 7, y + 4 + (16 - fillHeight), isCustomRace ? 103 : iconU, 18 + (16 - fillHeight), 16, fillHeight, 256, 256);
+		guiGraphics.blit(racialIcon, x + 7, y + 4, 0, 0, RacialIcons.SIZE, RacialIcons.SIZE, RacialIcons.TEXTURE_WIDTH, RacialIcons.TEXTURE_HEIGHT);
+		if (fillHeight > 0) guiGraphics.blit(racialIcon, x + 7, y + 4 + (RacialIcons.SIZE - fillHeight), 0, RacialIcons.FILL_V + (RacialIcons.SIZE - fillHeight), RacialIcons.SIZE, fillHeight, RacialIcons.TEXTURE_WIDTH, RacialIcons.TEXTURE_HEIGHT);
 
 		RenderSystem.enableBlend();
 		guiGraphics.blit(xvhud, x, y, 218, 100, 26, 27, 256, 256);

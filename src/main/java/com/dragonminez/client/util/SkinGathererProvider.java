@@ -356,6 +356,11 @@ public class SkinGathererProvider {
         String genderPart = (gender.equals(Character.GENDER_FEMALE)) ? "_female" : "_male";
 		String basePath = "textures/entity/races/humansaiyan/bodytype" + genderPart + "_" + bodyType + "_";
 		String fallbackPath = "textures/entity/races/humansaiyan/bodytype" + genderPart + "_0_";
+		RaceCharacterConfig raceConfig = ConfigManager.getRaceCharacter(character.getRaceName());
+		if (bodyType != 0 && raceConfig != null && raceConfig.isSlimBodyType(bodyType)) {
+			ResourceLocation slimLayer = getCachedTexture(basePath + "slim_layer1.png");
+			if (DMZSkinLayer.getSafeTexture(slimLayer).equals(slimLayer)) basePath = basePath + "slim_";
+		}
 
 		ResourceLocation shadowLayer = getCachedTexture(basePath + "layer2.png");
 		boolean shaded = DMZSkinLayer.getSafeTexture(shadowLayer).equals(shadowLayer);

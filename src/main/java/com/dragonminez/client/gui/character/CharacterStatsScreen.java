@@ -23,6 +23,7 @@ import com.dragonminez.common.network.C2S.IncreaseStatC2S;
 import com.dragonminez.common.network.NetworkHandler;
 import com.dragonminez.common.racial.RacialContext;
 import com.dragonminez.common.racial.RacialRegistry;
+import com.dragonminez.common.racial.impl.GlindDivinity;
 import com.dragonminez.common.stats.StatsCapability;
 import com.dragonminez.common.stats.StatsData;
 import com.dragonminez.common.stats.StatsProvider;
@@ -1050,8 +1051,8 @@ public class CharacterStatsScreen extends BaseMenuScreen {
 		int meditationLevel = statsData.getSkills().getSkillLevel("meditation");
 		if (meditationLevel > 0 && ConfigManager.getCombatConfig().getEnableSpeedDodge()) {
 			var combatConfig = ConfigManager.getCombatConfig();
-			double pvpChance = com.dragonminez.server.events.players.combat.SpeedDodgeHandler.maxChance(meditationLevel, true, combatConfig);
-			double pveChance = com.dragonminez.server.events.players.combat.SpeedDodgeHandler.maxChance(meditationLevel, false, combatConfig);
+			double pvpChance = GlindDivinity.modifyMeditationDodge(statsData, com.dragonminez.server.events.players.combat.SpeedDodgeHandler.maxChance(meditationLevel, true, combatConfig));
+			double pveChance = GlindDivinity.modifyMeditationDodge(statsData, com.dragonminez.server.events.players.combat.SpeedDodgeHandler.maxChance(meditationLevel, false, combatConfig));
 
 			extras.add(tr("gui.dragonminez.character_stats.speed.dodge",
 					formatSpeedPercent(pvpChance), formatSpeedPercent(pveChance)).withStyle(ChatFormatting.LIGHT_PURPLE));

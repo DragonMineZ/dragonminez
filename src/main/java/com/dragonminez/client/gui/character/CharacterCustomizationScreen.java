@@ -640,7 +640,7 @@ public class CharacterCustomizationScreen extends ScaledScreen {
 
 	private void renderPresetText(GuiGraphics graphics, int centerX, int top) {
 		TextUtil.drawCenteredStringWithBorder(graphics, this.font, tr("gui.dragonminez.customization.body_type"), centerX, top + 2, 0xFF9B9B);
-		renderPreviewGrid(graphics, bodyTypeBar, top + 40, 0, getCombinedBodyTypeCount(), getCurrentCombinedBodyTypeValue(), PreviewRenderMode.FULL_BODY, false, PREVIEW_GRID_VISIBLE_ROWS, bodyTypePreviewScrollRows);
+		renderPreviewGrid(graphics, bodyTypeBar, top + 40, character.getMinBodyType(), getCombinedBodyTypeCount(), getCurrentCombinedBodyTypeValue(), PreviewRenderMode.FULL_BODY, false, PREVIEW_GRID_VISIBLE_ROWS, bodyTypePreviewScrollRows);
 		if (Character.GENDER_FEMALE.equalsIgnoreCase(character.getGender())) {
 			TextUtil.drawCenteredStringWithBorder(graphics, this.font, txt(tr("gui.dragonminez.customization.chest_size").getString() + " x" + String.format("%.2f", character.getBoobScale())), centerX, top + 150, 0xFF9B9B);
 		}
@@ -1059,8 +1059,8 @@ public class CharacterCustomizationScreen extends ScaledScreen {
 		TabId tab = activeTabs.get(currentTabIndex);
 		switch (tab) {
 			case PRESET -> {
-				if (tryScrollGrid(uiMouseX, uiMouseY, top + 40, 0, getCombinedBodyTypeCount(), PREVIEW_GRID_VISIBLE_ROWS, direction, bodyTypePreviewScrollRows)) {
-					bodyTypePreviewScrollRows = clampScrollRows(0, getCombinedBodyTypeCount(), PREVIEW_GRID_VISIBLE_ROWS, bodyTypePreviewScrollRows + direction);
+				if (tryScrollGrid(uiMouseX, uiMouseY, top + 40, character.getMinBodyType(), getCombinedBodyTypeCount(), PREVIEW_GRID_VISIBLE_ROWS, direction, bodyTypePreviewScrollRows)) {
+					bodyTypePreviewScrollRows = clampScrollRows(character.getMinBodyType(), getCombinedBodyTypeCount(), PREVIEW_GRID_VISIBLE_ROWS, bodyTypePreviewScrollRows + direction);
 					return true;
 				}
 			}
@@ -1743,7 +1743,7 @@ public class CharacterCustomizationScreen extends ScaledScreen {
 		TabId tab = activeTabs.get(currentTabIndex);
 
 		return switch (tab) {
-			case PRESET -> handlePreviewGridSelection(uiMouseX, uiMouseY, top + 40, 0, getCombinedBodyTypeCount(), PREVIEW_GRID_VISIBLE_ROWS, bodyTypePreviewScrollRows, this::setBodyTypeFromPreview);
+			case PRESET -> handlePreviewGridSelection(uiMouseX, uiMouseY, top + 40, character.getMinBodyType(), getCombinedBodyTypeCount(), PREVIEW_GRID_VISIBLE_ROWS, bodyTypePreviewScrollRows, this::setBodyTypeFromPreview);
 			case HAIR -> handlePreviewGridSelection(uiMouseX, uiMouseY, top + 30, 0, Math.max(0, getMaxHairForCurrentState() - 1), PREVIEW_GRID_VISIBLE_ROWS, hairPreviewScrollRows, this::setHairFromPreview);
 			case EYES -> handlePreviewGridSelection(uiMouseX, uiMouseY, top + 30, 0, Math.max(1, TextureCounter.getMaxEyesTypes(getEffectiveModelBase())), PREVIEW_GRID_VISIBLE_ROWS, eyesPreviewScrollRows, this::setEyesFromPreview);
 			case FACE -> handlePreviewGridSelection(uiMouseX, uiMouseY, top + 20, 0, Math.max(1, TextureCounter.getMaxNoseTypes(getEffectiveModelBase())), 1, nosePreviewScrollRows, this::setNoseFromPreview)

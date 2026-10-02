@@ -3,6 +3,7 @@ package com.dragonminez.client.systems.kisense;
 import com.dragonminez.common.init.MainItems;
 import com.dragonminez.common.init.MainSounds;
 import com.dragonminez.common.init.entities.IBattlePower;
+import com.dragonminez.common.racial.impl.GlindDivinity;
 import com.dragonminez.common.stats.StatsCapability;
 import com.dragonminez.common.stats.StatsData;
 import com.dragonminez.common.stats.StatsProvider;
@@ -133,6 +134,7 @@ public final class KiSenseScan {
 			boolean visible = !entity.isInvisible() || !entity.isInvisibleTo(player);
 			if (!visible) continue;
 			if (!canTarget(entity, data)) continue;
+			if (GlindDivinity.isHiddenFrom(entity, player)) continue;
 
 			double dist = player.distanceTo(entity);
 			float bp = getEntityBP(entity);

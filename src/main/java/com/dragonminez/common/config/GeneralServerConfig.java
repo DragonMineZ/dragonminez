@@ -864,6 +864,57 @@ public class GeneralServerConfig {
 
 	@Getter
 	@NoArgsConstructor
+	public static class GlindRacialConfig {
+		private Boolean enabled = true;
+		private Boolean divineKi = true;
+		private Double meditationDodgeMultiplier = 1.5;
+		private Double regenMultiplier = 1.25;
+		private Double healingReductionBase = 0.20;
+		private Double healingReductionStackEfficiency = 0.5;
+		private Integer evilAttackerMaxAlignment = 25;
+		private Integer goodTargetMinAlignment = 60;
+		private Integer goodAttackerMinAlignment = 75;
+		private Integer evilTargetMaxAlignment = 40;
+		private Double playerDamageBonus = 0.10;
+		private Double frostDemonDamageBonus = 0.15;
+		private Double majinDamageBonus = 0.05;
+		private Double npcDamageBonus = 0.075;
+
+		public Double getMeditationDodgeMultiplier() {
+			return Math.max(0, Math.min(meditationDodgeMultiplier, Double.MAX_VALUE));
+		}
+
+		public Double getRegenMultiplier() {
+			return Math.max(0, Math.min(regenMultiplier, Double.MAX_VALUE));
+		}
+
+		public Double getHealingReductionBase() {
+			return Math.max(0, Math.min(healingReductionBase, 1.0));
+		}
+
+		public Double getHealingReductionStackEfficiency() {
+			return Math.max(0, Math.min(healingReductionStackEfficiency, Double.MAX_VALUE));
+		}
+
+		public Double getPlayerDamageBonus() {
+			return Math.max(0, Math.min(playerDamageBonus, Double.MAX_VALUE));
+		}
+
+		public Double getFrostDemonDamageBonus() {
+			return Math.max(0, Math.min(frostDemonDamageBonus, Double.MAX_VALUE));
+		}
+
+		public Double getMajinDamageBonus() {
+			return Math.max(0, Math.min(majinDamageBonus, Double.MAX_VALUE));
+		}
+
+		public Double getNpcDamageBonus() {
+			return Math.max(0, Math.min(npcDamageBonus, Double.MAX_VALUE));
+		}
+	}
+
+	@Getter
+	@NoArgsConstructor
 	public static class BioAndroidRacialConfig {
 		private Boolean enabled = true;
 		private Integer cooldownSeconds = 180;
@@ -902,6 +953,7 @@ public class GeneralServerConfig {
 		private HumanRacialConfig human = new HumanRacialConfig();
 		private FrostDemonRacialConfig frostdemon = new FrostDemonRacialConfig();
 		private BioAndroidRacialConfig bioandroid = new BioAndroidRacialConfig();
+		private GlindRacialConfig glind = new GlindRacialConfig();
 
 		public Boolean getHumanRacialSkill() { return human.getEnabled(); }
 		public Double getHumanKiRegenBoost() { return human.getKiRegenBoost(); }

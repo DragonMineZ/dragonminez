@@ -18,6 +18,7 @@ import com.dragonminez.common.stats.extras.UsedForms;
 import com.dragonminez.common.init.MainSounds;
 import com.dragonminez.common.util.FusionAppearance;
 import com.dragonminez.common.util.FusionForms;
+import com.dragonminez.common.util.FusionTraits;
 import lombok.Getter;
 import lombok.Setter;
 import net.minecraft.core.BlockPos;
@@ -414,6 +415,17 @@ public class Character {
 	public boolean canHaveGender() {
 		RaceCharacterConfig raceConfig = ConfigManager.getRaceCharacter(getRaceName());
 		return raceConfig != null ? raceConfig.getHasGender() : true;
+	}
+
+	public void setBodyType(int bodyType) {
+		this.bodyType = Math.max(bodyType, getMinBodyType());
+	}
+
+	public int getMinBodyType() {
+		RaceCharacterConfig raceConfig = ConfigManager.getRaceCharacter(getRaceName());
+		if (raceConfig == null || Boolean.TRUE.equals(raceConfig.getUseVanillaSkin())) return 0;
+		String baseKey = Boolean.TRUE.equals(raceConfig.hasCustomModel()) ? raceConfig.getCustomModel() : getRaceName();
+		return FusionTraits.modelFamily(baseKey).equals("human") ? 1 : 0;
 	}
 
 	public Float[] getModelScaling() {

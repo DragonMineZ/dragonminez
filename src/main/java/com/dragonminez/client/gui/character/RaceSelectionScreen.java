@@ -16,6 +16,7 @@ import com.dragonminez.common.config.RaceCharacterConfig;
 import com.dragonminez.common.hair.HairManager;
 import com.dragonminez.common.network.C2S.StatsSyncC2S;
 import com.dragonminez.common.network.NetworkHandler;
+import com.dragonminez.common.racial.impl.GlindDivinity;
 import com.dragonminez.common.stats.character.Character;
 import com.dragonminez.common.stats.StatsCapability;
 import com.dragonminez.common.stats.StatsProvider;
@@ -407,6 +408,7 @@ public class RaceSelectionScreen extends ScaledScreen {
 				int maxUses = config.getMajinAbsorptionAmount();
 				description = tr(descKey, absHealth, absStat, maxUses).getString();
 			}
+			case GlindDivinity.ID -> description = tr(descKey, GlindDivinity.descriptionArgs()).getString();
 			default -> description = tr(descKey).getString();
 		}
 

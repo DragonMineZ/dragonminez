@@ -824,17 +824,35 @@ public class DMZSkinLayer<T extends AbstractClientPlayer & GeoAnimatable> extend
 	}
 
 	private static float[] resolveSsj4OverlayColor(Character character, FormConfig.FormData chargeTarget, float chargeFraction) {
-		float[] b2 = character.getRgbBodyColor2();
-		if (character.hasActiveForm() && character.getActiveFormData() != null && !character.getActiveFormData().getBodyColor2().isEmpty()) {
-			b2 = character.getActiveFormData().getRgbBodyColor2();
+		FormConfig.FormData form = character.hasActiveForm() ? character.getActiveFormData() : null;
+		FormConfig.FormData stack = character.hasActiveStackForm() ? character.getActiveStackFormData() : null;
+		if (furUsesHairColor(chargeTarget) || furUsesHairColor(stack) || furUsesHairColor(form)) {
+			return resolveSsj4FurHairColor(character, form, stack, chargeTarget, chargeFraction);
 		}
-		if (character.hasActiveStackForm() && character.getActiveStackFormData() != null && !character.getActiveStackFormData().getBodyColor2().isEmpty()) {
-			b2 = character.getActiveStackFormData().getRgbBodyColor2();
+
+		float[] b2 = character.getRgbBodyColor2();
+		if (form != null && !form.getBodyColor2().isEmpty()) {
+			b2 = form.getRgbBodyColor2();
+		}
+		if (stack != null && !stack.getBodyColor2().isEmpty()) {
+			b2 = stack.getRgbBodyColor2();
 		}
 		if (chargeTarget != null && chargeTarget.getRgbBodyColor2() != null) {
 			b2 = lerpColor(chargeFraction, b2, chargeTarget.getRgbBodyColor2());
 		}
 		return b2;
+	}
+
+	private static boolean furUsesHairColor(FormConfig.FormData form) {
+		return form != null && form.usesHairColorForFur() && Boolean.TRUE.equals(form.hasCustomModel()) && isSsj4Model(form.getCustomModel().toLowerCase());
+	}
+
+	private static float[] resolveSsj4FurHairColor(Character character, FormConfig.FormData form, FormConfig.FormData stack, FormConfig.FormData chargeTarget, float chargeFraction) {
+		float[] hair = character.getRgbHairColor();
+		if (form != null && form.getRgbHairColor() != null) hair = form.getRgbHairColor();
+		if (stack != null && stack.getRgbHairColor() != null) hair = stack.getRgbHairColor();
+		if (chargeTarget != null && chargeTarget.getRgbHairColor() != null) hair = lerpColor(chargeFraction, hair, chargeTarget.getRgbHairColor());
+		return hair;
 	}
 
 	private void renderFadingBodyLayers(BakedGeoModel model, PoseStack poseStack, T animatable, MultiBufferSource bufferSource, int entityId, long gameTime, List<BodyLayerFadeTracker.FadingLayer> activeLayers, float partialTick, int packedLight, int packedOverlay, float baseAlpha) {

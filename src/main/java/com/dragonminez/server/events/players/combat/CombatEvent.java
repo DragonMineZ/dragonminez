@@ -28,6 +28,7 @@ import com.dragonminez.common.racial.capture.RacialCapture;
 import com.dragonminez.common.racial.impl.BioAndroidEvolution;
 import com.dragonminez.common.stats.StatsData;
 import com.dragonminez.common.racial.impl.AndroidBarrier;
+import com.dragonminez.common.racial.impl.GlindDivinity;
 import com.dragonminez.common.stats.techniques.KiAttackData;
 import com.dragonminez.common.stats.techniques.TechniqueData;
 import com.dragonminez.common.stats.techniques.TechniqueDispatcher;
@@ -330,6 +331,10 @@ public class CombatEvent {
 
 		if (canceledByBlocking[0]) return;
 
+		if (source.getEntity() instanceof Player glindAttacker && !isExcludedSource(source)) {
+			currentDamage[0] *= GlindDivinity.alignmentDamageMultiplier(glindAttacker, event.getEntity());
+		}
+
 		if (event.getEntity() instanceof Player victim) {
 			if (isExcludedSource(source)) return;
 
@@ -342,15 +347,16 @@ public class CombatEvent {
 				double enchHealReduction = Math.max(healMainHandLvl, healOffHandLvl) * 0.05;
 
 				double skillHealReduction = 0.0;
+				StatsData attackerStats = null;
 				if (sourceLiving instanceof Player sourcePlayer) {
-					var attackerStats = StatsProvider.get(StatsCapability.INSTANCE, sourcePlayer).orElse(null);
+					attackerStats = StatsProvider.get(StatsCapability.INSTANCE, sourcePlayer).orElse(null);
 					if (attackerStats != null) {
 						skillHealReduction = attackerStats.getSkills().getSkillLevel("healing_reduction") * 0.02;
 					}
 				}
 
 				finalDefensePenetration = computeDefensePenetration(sourceLiving, source, passiveDefensePen[0]);
-				healingReduction = Math.min(HEALING_REDUCTION_CAP, enchHealReduction + skillHealReduction);
+				healingReduction = Math.min(HEALING_REDUCTION_CAP, GlindDivinity.applyHealingReduction(attackerStats, enchHealReduction + skillHealReduction));
 			} else finalDefensePenetration = 0.0;
 
 			final double finalHealingReduction = healingReduction;

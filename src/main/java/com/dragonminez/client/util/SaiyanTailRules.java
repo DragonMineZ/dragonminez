@@ -12,6 +12,7 @@ public final class SaiyanTailRules {
 	private SaiyanTailRules() {}
 
 	public static boolean ssj4ForcesTail(Character character) {
+		if (formHidesTail(character)) return false;
 		String form = character.getActiveForm();
 		if (form != null) {
 			String lowered = form.toLowerCase(Locale.ROOT);
@@ -22,7 +23,14 @@ public final class SaiyanTailRules {
 	}
 
 	public static boolean hasTail(Character character) {
+		if (formHidesTail(character)) return false;
 		return character.isHasSaiyanTail() || ssj4ForcesTail(character);
+	}
+
+	public static boolean formHidesTail(Character character) {
+		FormConfig.FormData stack = character.hasActiveStackForm() ? character.getActiveStackFormData() : null;
+		FormConfig.FormData form = character.hasActiveForm() ? character.getActiveFormData() : null;
+		return (stack != null && stack.hidesTail()) || (form != null && form.hidesTail());
 	}
 
 	private static boolean isSsj4Model(FormConfig.FormData form) {

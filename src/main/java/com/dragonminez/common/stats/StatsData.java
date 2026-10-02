@@ -15,6 +15,7 @@ import com.dragonminez.common.config.TpSource;
 import com.dragonminez.common.init.MainEffects;
 import com.dragonminez.common.quest.PlayerQuestData;
 import com.dragonminez.common.racial.RacialData;
+import com.dragonminez.common.racial.impl.GlindDivinity;
 import com.dragonminez.common.stats.character.*;
 import com.dragonminez.common.stats.character.Character;
 import com.dragonminez.common.stats.extras.DynamicGrowthData;
@@ -394,7 +395,7 @@ public class StatsData {
 		double actionMod = (player != null && player.getPersistentData().contains("dmz_stamina_regen_mod"))
 				? player.getPersistentData().getDouble("dmz_stamina_regen_mod") : 1.0;
 
-		double regenPerSecond = (sp5 / 5.0) * meditationBonus * enchMult * regenMultiplier * actionMod * secondaryStatEffects.getMultiplier(SecondaryStatEffects.STM_REGEN);
+		double regenPerSecond = (sp5 / 5.0) * meditationBonus * enchMult * regenMultiplier * actionMod * GlindDivinity.regenMultiplier(this) * secondaryStatEffects.getMultiplier(SecondaryStatEffects.STM_REGEN);
 		return PotionEffectHelper.applyStaminaRegenMultiplier(player, regenPerSecond);
 	}
 
@@ -417,7 +418,7 @@ public class StatsData {
 		if (adjustedHealthDrain > 0.0) regenMultiplier = Math.max(0.0, 1.0 - (adjustedHealthDrain / 10.0));
 		else if (adjustedHealthDrain < 0.0) regenMultiplier = 1.0 + Math.abs(adjustedHealthDrain);
 
-		return (hp5 / 5.0) * enchMult * regenMultiplier * secondaryStatEffects.getMultiplier(SecondaryStatEffects.HP_REGEN);
+		return (hp5 / 5.0) * enchMult * regenMultiplier * GlindDivinity.regenMultiplier(this) * secondaryStatEffects.getMultiplier(SecondaryStatEffects.HP_REGEN);
 	}
 
 	public double getEnergyRegenPerSecond(boolean activeCharging) {
@@ -456,7 +457,7 @@ public class StatsData {
 			energyChange += PotionEffectHelper.applyKiRegenMultiplier(player, baseRegenPerSecond) * androidRegenMult;
 		}
 
-		return energyChange * secondaryStatEffects.getMultiplier(SecondaryStatEffects.ENE_REGEN);
+		return energyChange * GlindDivinity.regenMultiplier(this) * secondaryStatEffects.getMultiplier(SecondaryStatEffects.ENE_REGEN);
 	}
 
 	public float getMaxPoise() {

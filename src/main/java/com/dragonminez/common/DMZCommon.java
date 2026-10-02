@@ -10,6 +10,7 @@ import com.dragonminez.common.quest.QuestRegistry;
 import com.dragonminez.common.racial.RacialRegistry;
 import com.dragonminez.common.racial.impl.BioAndroidEvolution;
 import com.dragonminez.common.racial.impl.FrostDemonReserve;
+import com.dragonminez.common.racial.impl.GlindDivinity;
 import com.dragonminez.common.racial.impl.HumanAdaptation;
 import com.dragonminez.common.racial.impl.MajinAbsorption;
 import com.dragonminez.common.racial.impl.NamekAssimilation;
@@ -77,5 +78,6 @@ public class DMZCommon {
 		RacialRegistry.register(new HumanAdaptation());
 		RacialRegistry.register(new FrostDemonReserve());
 		RacialRegistry.register(new BioAndroidEvolution());
+		RacialRegistry.register(new GlindDivinity());
 	}
 }

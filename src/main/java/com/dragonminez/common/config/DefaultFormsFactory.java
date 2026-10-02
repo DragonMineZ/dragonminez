@@ -71,6 +71,7 @@ public class DefaultFormsFactory {
 			case "frostdemon" -> createFrostDemonForms(formsPath, forms);
 			case "majin" -> createMajinForms(formsPath, forms);
 			case "bioandroid" -> createBioAndroidForms(formsPath, forms);
+			case "glind" -> createGlindForms(formsPath, forms);
 		}
 		forceGroupAura3D(forms, LEGENDARY_FORM_TYPE, FormConfig.AURA_3D_SPARKING);
 	}
@@ -1599,6 +1600,241 @@ public class DefaultFormsFactory {
 
 		forms.put(MajinForms.GROUP_LEGENDARYFORMS, majinLegendaryForms);
 		LogUtil.info(Env.COMMON, "Default Majin legendary forms created");
+	}
+
+	private static FormConfig.FormData.OutlineShaderConfig outline(String primary, String secondary, double thickness) {
+		FormConfig.FormData.OutlineShaderConfig outline = new FormConfig.FormData.OutlineShaderConfig();
+		outline.setEnabled(true);
+		outline.setPrimaryColor(primary);
+		outline.setSecondaryColor(secondary);
+		outline.setOutlineThickness(thickness);
+		return outline;
+	}
+
+	private void createGlindForms(Path formsPath, Map<String, FormConfig> forms) throws IOException {
+		FormConfig glindForms = new FormConfig();
+		glindForms.setConfigVersion(FormConfig.CURRENT_VERSION);
+		glindForms.setGroupName(GlindForms.GROUP_SUPERFORMS);
+		glindForms.setFormType("superforms");
+
+		FormConfig.FormData buffed = new FormConfig.FormData();
+		buffed.setName(GlindForms.BUFFED);
+		buffed.setUnlockOnSkillLevel(1);
+		buffed.setSagaRequisite("classic_saga:46");
+		buffed.setCustomModel("buffed");
+		buffed.setModelScaling(new Float[]{1.05f, 1.05f, 1.05f});
+		buffed.setStrMultiplier(1.65);
+		buffed.setSkpMultiplier(1.65);
+		buffed.setDefMultiplier(1.375);
+		buffed.setPwrMultiplier(1.65);
+		buffed.setEnergyDrain(0.08);
+		buffed.setHairType("base");
+		setDefaultMasteryValues(buffed);
+		buffed.setAura3DStyle(aura3D().waves(2.0f, 5.0f, 0.78f).turbulence(0.12f, 0.54f));
+		buffed.setStackDrainMultiplier(2.0);
+		buffed.setAllowFreeTransformOnMastery(0.0);
+		buffed.setIncompatibleWith(List.of(""));
+
+		FormConfig.FormData outOfControl = new FormConfig.FormData();
+		outOfControl.setOutlineShader(outline("#FF2B2B", "#7D0202", 3.5));
+		outOfControl.setName(GlindForms.OUT_OF_CONTROL);
+		outOfControl.setUnlockOnSkillLevel(2);
+		outOfControl.setSagaRequisite("saiyan_saga:12");
+		outOfControl.setTransformationAnimation("transf.berserker");
+		outOfControl.setCustomModel("buffed");
+		outOfControl.setModelScaling(new Float[]{1.1f, 1.1f, 1.1f});
+		outOfControl.setStrMultiplier(2.1);
+		outOfControl.setSkpMultiplier(2.1);
+		outOfControl.setDefMultiplier(1.8125);
+		outOfControl.setPwrMultiplier(2.1);
+		outOfControl.setEnergyDrain(0.16);
+		outOfControl.setEye1Color("#E01414");
+		outOfControl.setEye2Color("#E01414");
+		outOfControl.setAuraColor("#E01B1B");
+		outOfControl.setHairType("base");
+		setDefaultMasteryValues(outOfControl);
+		outOfControl.setAura3DStyle(aura3D().waves(2.1f, 5.4f, 0.8f).turbulence(0.35f, 0.55f).colors("", "", "#FF3A3A"));
+		outOfControl.setStackDrainMultiplier(2.0);
+		outOfControl.setIncompatibleWith(List.of(""));
+
+		FormConfig.FormData superForm = new FormConfig.FormData();
+		superForm.setOutlineShader(outline("#5AA9FF", "#1238C9", 3.5));
+		superForm.setName(GlindForms.SUPER);
+		superForm.setUnlockOnSkillLevel(3);
+		superForm.setSagaRequisite("frieza_saga:10");
+		superForm.setTransformationAnimation("transf.berserker");
+		superForm.setCustomModel("buffed");
+		superForm.setModelScaling(new Float[]{1.2f, 1.1f, 1.2f});
+		superForm.setStrMultiplier(2.6);
+		superForm.setSkpMultiplier(2.6);
+		superForm.setDefMultiplier(2.1875);
+		superForm.setPwrMultiplier(2.6);
+		superForm.setEnergyDrain(0.22);
+		superForm.setEye1Color("#E01414");
+		superForm.setEye2Color("#E01414");
+		superForm.setAuraColor("#2F6BFF");
+		superForm.setHairType("base");
+		setDefaultMasteryValues(superForm);
+		superForm.setAura3DStyle(aura3D().size(1.12f, 1.2f, 1.04f).waves(2.1f, 5.6f, 0.82f).turbulence(0.2f, 0.55f).colors("", "", "#9CC8FF"));
+		superForm.setStackDrainMultiplier(2.0);
+		superForm.setIncompatibleWith(List.of(""));
+
+		FormConfig.FormData absorption = new FormConfig.FormData();
+		absorption.setName(GlindForms.ABSORPTION);
+		absorption.setUnlockOnSkillLevel(4);
+		absorption.setSagaRequisite("frieza_saga:13");
+		absorption.setCustomModel("ssj4gt");
+		absorption.setHideTail(true);
+		absorption.setFurUsesHairColor(true);
+		absorption.setModelScaling(new Float[]{1.1f, 1.1f, 1.1f});
+		absorption.setStrMultiplier(3.15);
+		absorption.setSkpMultiplier(3.15);
+		absorption.setDefMultiplier(2.5);
+		absorption.setPwrMultiplier(3.15);
+		absorption.setEnergyDrain(0.24);
+		absorption.setAuraColor("#2F6BFF");
+		absorption.setHairType("base");
+		setDefaultMasteryValues(absorption);
+		absorption.setAura3DStyle(aura3D().waves(2.0f, 5.0f, 0.78f).turbulence(0.13f, 0.54f).colors("", "", "#9CC8FF"));
+		absorption.setStackDrainMultiplier(2.0);
+		absorption.setIncompatibleWith(List.of(""));
+
+		FormConfig.FormData trueForm = new FormConfig.FormData();
+		trueForm.setName(GlindForms.TRUE_FORM);
+		trueForm.setUnlockOnSkillLevel(5);
+		trueForm.setSagaRequisite("android_saga:11");
+		trueForm.setCustomModel("");
+		trueForm.setModelScaling(new Float[]{1.6f, 1.6f, 1.6f});
+		trueForm.setStrMultiplier(3.9);
+		trueForm.setSkpMultiplier(3.9);
+		trueForm.setDefMultiplier(3.0);
+		trueForm.setPwrMultiplier(3.9);
+		trueForm.setEnergyDrain(0.28);
+		trueForm.setHairColor("#C41E1E");
+		trueForm.setBodyColor1("#F8FDDC");
+		trueForm.setBodyColor2("#0F75B5");
+		trueForm.setAuraColor("#7B2FBE");
+		trueForm.setHairType("base");
+		setDefaultMasteryValues(trueForm);
+		trueForm.setAura3DStyle(darkAura("#B05CFF").size(1.12f, 1.2f, 1.04f).waves(2.1f, 5.2f, 0.8f).turbulence(0.45f, 0.54f));
+		trueForm.setStackDrainMultiplier(2.0);
+		trueForm.setIncompatibleWith(List.of(""));
+
+		Map<String, FormConfig.FormData> glindFormData = new LinkedHashMap<>();
+		otherworldDrain(buffed, TIER_1);
+		otherworldDrain(outOfControl, GRADE_2);
+		otherworldDrain(superForm, TIER_2);
+		otherworldDrain(absorption, TIER_3);
+		otherworldDrain(trueForm, TIER_4);
+		glindFormData.put(GlindForms.BUFFED, buffed);
+		glindFormData.put(GlindForms.OUT_OF_CONTROL, outOfControl);
+		glindFormData.put(GlindForms.SUPER, superForm);
+		glindFormData.put(GlindForms.ABSORPTION, absorption);
+		glindFormData.put(GlindForms.TRUE_FORM, trueForm);
+		applySequentialMasteryRequisites(GlindForms.GROUP_SUPERFORMS, glindFormData);
+		glindForms.setForms(glindFormData);
+
+		forms.put(GlindForms.GROUP_SUPERFORMS, glindForms);
+		LogUtil.info(Env.COMMON, "Default Glind forms created");
+
+		FormConfig glindLegendaryForms = new FormConfig();
+		glindLegendaryForms.setConfigVersion(FormConfig.CURRENT_VERSION);
+		glindLegendaryForms.setGroupName(GlindForms.GROUP_LEGENDARYFORMS);
+		glindLegendaryForms.setFormType("legendaryforms");
+
+		FormConfig.FormData transcended = new FormConfig.FormData();
+		transcended.setName(GlindForms.TRANSCENDED);
+		transcended.setUnlockOnSkillLevel(1);
+		transcended.setCustomModel("");
+		transcended.setModelScaling(new Float[]{1.95f, 2.1f, 1.95f});
+		transcended.setStrMultiplier(3.4);
+		transcended.setSkpMultiplier(3.4);
+		transcended.setDefMultiplier(2.625);
+		transcended.setPwrMultiplier(3.4);
+		transcended.setEnergyDrain(0.22);
+		transcended.setHairColor("#C41E1E");
+		transcended.setBodyColor1("#F8FDDC");
+		transcended.setBodyColor2("#0F75B5");
+		transcended.setAuraColor("#7B2FBE");
+		transcended.setHairType("ssj4");
+		setDefaultMasteryValues(transcended);
+		transcended.setAura3DStyle(darkAura("#B05CFF").size(1.12f, 1.2f, 1.03f).waves(2.1f, 5.2f, 0.8f).turbulence(0.45f, 0.54f));
+		transcended.setStackDrainMultiplier(2.0);
+		transcended.setAllowFreeTransformOnMastery(0.0);
+
+		FormConfig.FormData darkKing = new FormConfig.FormData();
+		darkKing.setName(GlindForms.DARK_KING);
+		darkKing.setUnlockOnSkillLevel(2);
+		darkKing.setCustomModel("");
+		darkKing.setModelScaling(new Float[]{1.1f, 1.1f, 1.1f});
+		darkKing.setStrMultiplier(4.3);
+		darkKing.setSkpMultiplier(4.3);
+		darkKing.setDefMultiplier(3.25);
+		darkKing.setPwrMultiplier(4.3);
+		darkKing.setEnergyDrain(0.28);
+		darkKing.setHairColor("#C41E1E");
+		darkKing.setBodyColor1("#F8FDDC");
+		darkKing.setBodyColor2("#3C3A3F");
+		darkKing.setAuraColor("#7B2FBE");
+		darkKing.setHairType("base");
+		setDefaultMasteryValues(darkKing);
+		darkKing.setAura3DStyle(darkAura("#B05CFF").size(1.14f, 1.2f, 1.05f).waves(2.1f, 5.4f, 0.82f).turbulence(0.5f, 0.55f));
+		darkKing.setStackDrainMultiplier(2.0);
+
+		FormConfig.FormData timePowerDarkKing = new FormConfig.FormData();
+		timePowerDarkKing.setName(GlindForms.TIME_POWER_DARK_KING);
+		timePowerDarkKing.setUnlockOnSkillLevel(3);
+		timePowerDarkKing.setCustomModel("");
+		timePowerDarkKing.setModelScaling(new Float[]{1.1f, 1.1f, 1.1f});
+		timePowerDarkKing.setStrMultiplier(5.0);
+		timePowerDarkKing.setSkpMultiplier(5.0);
+		timePowerDarkKing.setDefMultiplier(3.625);
+		timePowerDarkKing.setPwrMultiplier(5.0);
+		timePowerDarkKing.setEnergyDrain(0.34);
+		timePowerDarkKing.setHairColor("#F5F5F5");
+		timePowerDarkKing.setBodyColor1("#6E8C95");
+		timePowerDarkKing.setBodyColor2("#3C3A3F");
+		timePowerDarkKing.setAuraColor("#8E4A4A");
+		timePowerDarkKing.setHairType("base");
+		setDefaultMasteryValues(timePowerDarkKing);
+		timePowerDarkKing.setAura3DStyle(darkAura("#C9A3A3").size(1.18f, 1.24f, 1.08f).waves(2.1f, 5.4f, 0.82f).turbulence(0.5f, 0.55f));
+		timePowerDarkKing.setStackDrainMultiplier(2.0);
+		timePowerDarkKing.setShareMasteryWith(List.of(GlindForms.GROUP_LEGENDARYFORMS + "." + GlindForms.TIME_POWER_REALM_OF_LIGHT));
+		timePowerDarkKing.setShareMasteryMultiplier(0.5);
+
+		FormConfig.FormData timePowerRealmOfLight = new FormConfig.FormData();
+		timePowerRealmOfLight.setName(GlindForms.TIME_POWER_REALM_OF_LIGHT);
+		timePowerRealmOfLight.setUnlockOnSkillLevel(3);
+		timePowerRealmOfLight.setCustomModel("");
+		timePowerRealmOfLight.setModelScaling(new Float[]{1.35f, 1.45f, 1.35f});
+		timePowerRealmOfLight.setStrMultiplier(5.0);
+		timePowerRealmOfLight.setSkpMultiplier(5.0);
+		timePowerRealmOfLight.setDefMultiplier(3.625);
+		timePowerRealmOfLight.setPwrMultiplier(5.0);
+		timePowerRealmOfLight.setEnergyDrain(0.34);
+		timePowerRealmOfLight.setAuraColor("#FFF3C4");
+		timePowerRealmOfLight.setHairType("base");
+		setDefaultMasteryValues(timePowerRealmOfLight);
+		timePowerRealmOfLight.setAura3DStyle(aura3D().size(1.18f, 1.24f, 1.08f).waves(1.9f, 4.6f, 0.7f).turbulence(0.1f, 0.52f).rim(0.03f, 0.9f, 3.0f, 0.08f).colors("", "", "#FFFFFF"));
+		timePowerRealmOfLight.setStackDrainMultiplier(2.0);
+		timePowerRealmOfLight.setShareMasteryWith(List.of(GlindForms.GROUP_LEGENDARYFORMS + "." + GlindForms.TIME_POWER_DARK_KING));
+		timePowerRealmOfLight.setShareMasteryMultiplier(0.5);
+
+		Map<String, FormConfig.FormData> glindLegendaryData = new LinkedHashMap<>();
+		otherworldDrain(transcended, TIER_1);
+		otherworldDrain(darkKing, TIER_2);
+		otherworldDrain(timePowerDarkKing, TIER_3);
+		otherworldDrain(timePowerRealmOfLight, TIER_3);
+		glindLegendaryData.put(GlindForms.TRANSCENDED, transcended);
+		glindLegendaryData.put(GlindForms.DARK_KING, darkKing);
+		glindLegendaryData.put(GlindForms.TIME_POWER_DARK_KING, timePowerDarkKing);
+		glindLegendaryData.put(GlindForms.TIME_POWER_REALM_OF_LIGHT, timePowerRealmOfLight);
+		applySequentialMasteryRequisites(GlindForms.GROUP_LEGENDARYFORMS, glindLegendaryData);
+		timePowerRealmOfLight.setFormRequisite(GlindForms.GROUP_LEGENDARYFORMS + "." + GlindForms.DARK_KING);
+		glindLegendaryForms.setForms(glindLegendaryData);
+
+		forms.put(GlindForms.GROUP_LEGENDARYFORMS, glindLegendaryForms);
+		LogUtil.info(Env.COMMON, "Default Glind legendary forms created");
 	}
 
 	private void createBioAndroidForms(Path formsPath, Map<String, FormConfig> forms) throws IOException {

@@ -2,6 +2,7 @@ package com.dragonminez.client.util;
 
 import com.dragonminez.client.render.layer.DMZCustomArmorLayer;
 import com.dragonminez.common.config.ConfigManager;
+import com.dragonminez.common.config.RaceCharacterConfig;
 import com.dragonminez.common.init.armor.DbzArmorCapeItem;
 import com.dragonminez.common.init.armor.DbzArmorTextured;
 import com.dragonminez.common.stats.FusedData;
@@ -89,17 +90,16 @@ public class BoneVisibilityHandler {
 			boolean showNormalTail;
             if (logicKey.equals("janemba_super") || logicKey.equals("janemba_fat")) return;
 
-			boolean isTaillessRace = isHuman || isNamekian || isMajin;
-			boolean isTaillessModel = logicKey.equals("human") ||
-					logicKey.equals("namekian") ||
-					logicKey.equals("namekian_orange") ||
-					logicKey.equals("majin") ||
-					logicKey.equals("majin_kid") ||
-					logicKey.equals("majin_ultra");
+			RaceCharacterConfig raceConfig = ConfigManager.getRaceCharacter(race);
+			String raceBaseKey = raceConfig != null && Boolean.TRUE.equals(raceConfig.hasCustomModel()) ? raceConfig.getCustomModel().toLowerCase() : race;
+			boolean isTaillessRace = isHuman || isNamekian || isMajin || isTaillessModel(raceBaseKey);
+			boolean isTaillessModel = isTaillessModel(logicKey);
 
-			boolean configHasSaiyanTail = ConfigManager.getRaceCharacter(race) != null && ConfigManager.getRaceCharacter(race).getHasSaiyanTail();
+			boolean configHasSaiyanTail = raceConfig != null && raceConfig.getHasSaiyanTail();
 
-			if (logicKey.contains("ssj4") || SaiyanTailRules.ssj4ForcesTail(stats.getCharacter())) {
+			if (SaiyanTailRules.formHidesTail(stats.getCharacter())) {
+				showNormalTail = false;
+			} else if (logicKey.contains("ssj4") || SaiyanTailRules.ssj4ForcesTail(stats.getCharacter())) {
 				showNormalTail = stats.getStatus().isTailVisible();
 			} else if (isSaiyan || configHasSaiyanTail) {
 				showNormalTail = stats.getStatus().isTailVisible() && stats.getCharacter().isHasSaiyanTail();
@@ -118,6 +118,15 @@ public class BoneVisibilityHandler {
 		setBonesHidden(model, true, "armorHead", "armorBody", "armorBody2", "armorLeggingsBody", "armorRightArm", "armorLeftArm",
 				"armorLeftLeg", "armorLeftBoot", "armorRightLeg", "armorRightBoot");
 		hideAllArmorPrefixBones(model);
+	}
+
+	private static boolean isTaillessModel(String key) {
+		return key.equals("human") ||
+				key.equals("namekian") ||
+				key.equals("namekian_orange") ||
+				key.equals("majin") ||
+				key.equals("majin_kid") ||
+				key.equals("majin_ultra");
 	}
 
 	private static void hideAllArmorPrefixBones(BakedGeoModel model) {

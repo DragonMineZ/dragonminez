@@ -130,6 +130,8 @@ public class DMZPlayerModel<T extends AbstractClientPlayer & GeoAnimatable> exte
             int bodyType = partnerModel && character.getBodyType() == 0 && !SkinGathererProvider.isHumanoidKey(ownSkinKey) ? 1 : character.getBodyType();
             String fallbackCustomModel = this.customModel != null ? this.customModel.toLowerCase() : "";
             String formKey = currentForm != null ? currentForm.toLowerCase() : "";
+            boolean isSlimSkin = playerModelName.contains("slim");
+            boolean slimBody = bodyType == 0 ? isSlimSkin : raceConfig != null && raceConfig.isSlimBodyType(bodyType);
             String stateKey = String.join("|",
                     race,
                     gender,
@@ -139,12 +141,12 @@ public class DMZPlayerModel<T extends AbstractClientPlayer & GeoAnimatable> exte
                     activeCustomModel,
                     raceCustomModel,
                     fallbackCustomModel,
-                    Boolean.toString(raceConfig != null && raceConfig.getHasGender())
+                    Boolean.toString(raceConfig != null && raceConfig.getHasGender()),
+                    Boolean.toString(slimBody)
             );
 
             return MODEL_RESOLUTION_CACHE.computeIfAbsent(stateKey, ignored -> {
                 boolean isMale = gender.equals(Character.GENDER_MALE);
-                boolean isSlimSkin = playerModelName.contains("slim");
                 boolean isBaseForm = currentForm == null || currentForm.isEmpty() || currentForm.equalsIgnoreCase("base");
 
                 if (race.equals("saiyan") && (Objects.equals(currentForm, SaiyanForms.OOZARU) || Objects.equals(currentForm, SaiyanForms.GOLDEN_OOZARU))) {
@@ -163,18 +165,17 @@ public class DMZPlayerModel<T extends AbstractClientPlayer & GeoAnimatable> exte
                 if (!modelKey.isEmpty()) {
                     String customRaceGender = (raceConfig != null && raceConfig.getHasGender()) ? gender : "";
                     if (modelKey.equals("finalbase")) {
-                        switch (race) {
+                        switch (raceCustomModel.isEmpty() ? race : raceCustomModel) {
                             case "human", "saiyan":
                                 if (!isMale) return MAJIN_SLIM;
-                                if (bodyType == 0) return isSlimSkin ? BASE_SLIM : BASE_DEFAULT;
-                                return BASE_DEFAULT;
+                                return slimBody ? BASE_SLIM : BASE_DEFAULT;
                             case "majin": return isMale ? BASE_DEFAULT : MAJIN_SLIM;
                             case "namekian": return BASE_DEFAULT;
                             case "frostdemon": return FROST_DEMON;
                             case "bioandroid": return BIO_ANDROID_PERFECT;
                         }
                     }
-                    return resolveCustomModel(modelKey, isSlimSkin, isMale, bodyType, customRaceGender);
+                    return resolveCustomModel(modelKey, isSlimSkin, slimBody, isMale, bodyType, customRaceGender);
                 }
 
                 if (race.equals("bioandroid")) return isBaseForm ? BIO_ANDROID : BIO_ANDROID_PERFECT;
@@ -189,8 +190,7 @@ public class DMZPlayerModel<T extends AbstractClientPlayer & GeoAnimatable> exte
 
                 if (race.equals("human") || race.equals("saiyan")) {
                     if (!isMale) return MAJIN_SLIM;
-                    if (bodyType == 0) return isSlimSkin ? BASE_SLIM : BASE_DEFAULT;
-                    return BASE_DEFAULT;
+                    return slimBody ? BASE_SLIM : BASE_DEFAULT;
                 }
 
                 if (!isMale) return MAJIN_SLIM;
@@ -199,7 +199,12 @@ public class DMZPlayerModel<T extends AbstractClientPlayer & GeoAnimatable> exte
         }).orElse(BASE_DEFAULT);
     }
 
-    private ResourceLocation resolveCustomModel(String modelName, boolean isSlimSkin, boolean isMale, int bodyType, String customRaceGender) {
+    private static ResourceLocation humanoidVariant(boolean slimBody, boolean isMale, int bodyType, ResourceLocation wide, ResourceLocation slim, ResourceLocation female) {
+        if (bodyType != 0 && !isMale) return female;
+        return slimBody ? slim : wide;
+    }
+
+    private ResourceLocation resolveCustomModel(String modelName, boolean isSlimSkin, boolean slimBody, boolean isMale, int bodyType, String customRaceGender) {
         String key = modelName.toLowerCase();
 
         switch (key) {
@@ -207,23 +212,16 @@ public class DMZPlayerModel<T extends AbstractClientPlayer & GeoAnimatable> exte
             case "human":
             case "saiyan":
                 if (!isMale) return MAJIN_SLIM;
-                if (bodyType == 0) return isSlimSkin ? BASE_SLIM : BASE_DEFAULT;
-                return BASE_DEFAULT;
+                return slimBody ? BASE_SLIM : BASE_DEFAULT;
             case "oozaru": return OOZARU;
             case "ssj4gt":
             case "buffed":
-                if (bodyType == 0) return isSlimSkin ? HUMAN_SAIYAN_SLIM_BUFFED : HUMAN_SAIYAN_BUFFED;
-                if (!isMale) return HUMAN_SAIYAN_FEMALE_BUFFED;
-                return HUMAN_SAIYAN_BUFFED;
+                return humanoidVariant(slimBody, isMale, bodyType, HUMAN_SAIYAN_BUFFED, HUMAN_SAIYAN_SLIM_BUFFED, HUMAN_SAIYAN_FEMALE_BUFFED);
             case "ssj4d":
             case "buffedg3":
-                if (bodyType == 0) return isSlimSkin ? HUMAN_SAIYAN_SLIM_BUFFED_G3 : HUMAN_SAIYAN_BUFFED_G3;
-                if (!isMale) return HUMAN_SAIYAN_FEMALE_BUFFED_G3;
-                return HUMAN_SAIYAN_BUFFED_G3;
+                return humanoidVariant(slimBody, isMale, bodyType, HUMAN_SAIYAN_BUFFED_G3, HUMAN_SAIYAN_SLIM_BUFFED_G3, HUMAN_SAIYAN_FEMALE_BUFFED_G3);
             case "4arms":
-                if (bodyType == 0) return isSlimSkin ? HUMAN_SAIYAN_4ARMS_SLIM : HUMAN_SAIYAN_4ARMS;
-                if (!isMale) return HUMAN_SAIYAN_4ARMS_FEM;
-                return HUMAN_SAIYAN_4ARMS;
+                return humanoidVariant(slimBody, isMale, bodyType, HUMAN_SAIYAN_4ARMS, HUMAN_SAIYAN_4ARMS_SLIM, HUMAN_SAIYAN_4ARMS_FEM);
 
             // NAMEKIAN
             case "namekian": return BASE_DEFAULT;

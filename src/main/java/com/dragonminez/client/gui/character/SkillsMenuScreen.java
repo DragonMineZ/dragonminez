@@ -21,6 +21,7 @@ import com.dragonminez.common.quest.QuestRegistry;
 import com.dragonminez.common.quest.QuestReward;
 import com.dragonminez.common.quest.Saga;
 import com.dragonminez.common.quest.rewards.SkillReward;
+import com.dragonminez.common.racial.impl.GlindDivinity;
 import com.dragonminez.common.stats.*;
 import com.dragonminez.common.stats.character.Character;
 import com.dragonminez.common.stats.character.Status;
@@ -1493,6 +1494,7 @@ public class SkillsMenuScreen extends BaseMenuScreen {
 					int maxUses = config.getMajinAbsorptionAmount();
 					description = tr("skill.dragonminez.racial_majin.desc", absHealth, absStat, maxUses).getString();
 				}
+				case "racial_glind" -> description = tr("skill.dragonminez.racial_glind.desc", GlindDivinity.descriptionArgs()).getString();
 			}
 		} else description = tr("skill.dragonminez." + selectedSkill + ".desc").getString();
 
