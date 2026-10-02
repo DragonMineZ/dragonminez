@@ -44,6 +44,8 @@ public class DMZBlockStateProvider extends BlockStateProvider {
 		blockWithItem(MainBlocks.HELL_DEEPSTONE);
 		blockWithItem(MainBlocks.MIGHT_TREE_WOOD);
 		blockWithItem(MainBlocks.MIGHT_TREE_LEAVES);
+		blockWithItem(MainBlocks.GETE_STAR_HULL);
+		blockWithItem(MainBlocks.GETE_STAR_CIRCUIT);
 		rootBlock(MainBlocks.MIGHT_TREE_ROOT);
 		fruitBlock(MainBlocks.MIGHT_TREE_FRUIT_BLOCK);
 

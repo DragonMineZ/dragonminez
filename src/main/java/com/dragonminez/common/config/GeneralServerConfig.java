@@ -108,6 +108,14 @@ public class GeneralServerConfig {
 			turles.add(WorldBossRewardEntry.skill("kill_driver", 1, 0.25));
 			turles.add(WorldBossRewardEntry.skill("meteor_burst", 1, 0.15));
 			map.put("turles", turles);
+			List<WorldBossRewardEntry> metalCoolerCore = new ArrayList<>();
+			metalCoolerCore.add(WorldBossRewardEntry.tps(750_000, 1.0));
+			metalCoolerCore.add(WorldBossRewardEntry.skill("supernova_cooler", 1, 0.2));
+			metalCoolerCore.add(WorldBossRewardEntry.item("dragonminez:gete_ingot", 4, 1.0));
+			for (String capsule : List.of("red", "purple", "yellow", "green", "orange", "blue")) {
+				metalCoolerCore.add(WorldBossRewardEntry.item("dragonminez:gete_" + capsule + "_capsule", 1, 0.12));
+			}
+			map.put("metal_cooler_core", metalCoolerCore);
 			return map;
 		}
 

@@ -3,16 +3,28 @@ package com.dragonminez.common.init.entities.sagas;
 import com.dragonminez.common.config.ConfigManager;
 import com.dragonminez.common.init.MainEntities;
 import com.dragonminez.common.init.MainItems;
+import com.dragonminez.common.init.entities.namek.NamekWarriorEntity;
 import com.dragonminez.common.stats.StatsCapability;
 import com.dragonminez.common.stats.StatsProvider;
+import net.minecraft.core.BlockPos;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.sounds.SoundEvents;
+import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntityDimensions;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.EquipmentSlot;
+import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.ai.attributes.Attributes;
+import net.minecraft.world.entity.ai.goal.Goal;
+import net.minecraft.world.entity.ai.goal.target.NearestAttackableTargetGoal;
+import net.minecraft.world.entity.ai.util.DefaultRandomPos;
 import net.minecraft.world.entity.monster.Monster;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
+import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.phys.Vec3;
+
+import java.util.EnumSet;
 
 public class SagaMoviesEntity {
 
@@ -266,11 +278,115 @@ public class SagaMoviesEntity {
 
     public static class GeteRobotEntity extends DBSagasEntity {
 
+        public static final String VILLAGE_TAG = "dmz_gete_village";
+
+        private static final double WALK_SPEED = 0.14D;
+        private static final double LAUNCH_POWER = 0.45D;
+
         public GeteRobotEntity(EntityType<? extends Monster> pEntityType, Level pLevel) {
             super(pEntityType, pLevel);
 
-            this.setZanzoken(2, 100);
+            this.setCanFly(false);
             this.setDBZStyle(2);
+
+            this.getAttribute(Attributes.MAX_HEALTH).setBaseValue(400.0D);
+            this.getAttribute(Attributes.ATTACK_DAMAGE).setBaseValue(25.0D);
+            this.getAttribute(Attributes.KNOCKBACK_RESISTANCE).setBaseValue(1.0D);
+            this.getAttribute(Attributes.MOVEMENT_SPEED).setBaseValue(WALK_SPEED);
+            this.setDefaultMovementSpeed(WALK_SPEED);
+            this.setHealth(this.getMaxHealth());
+        }
+
+        @Override
+        protected void registerGoals() {
+            super.registerGoals();
+            this.goalSelector.addGoal(4, new MarchOnVillageGoal(this));
+            this.targetSelector.addGoal(4, new NearestAttackableTargetGoal<>(this, NamekWarriorEntity.class, false));
+        }
+
+        @Override
+        public boolean doHurtTarget(Entity pTarget) {
+            boolean hurt = super.doHurtTarget(pTarget);
+
+            if (hurt && !this.level().isClientSide && pTarget instanceof LivingEntity victim) {
+                victim.setDeltaMovement(victim.getDeltaMovement().add(0.0D, LAUNCH_POWER, 0.0D));
+                victim.hurtMarked = true;
+                this.playSound(SoundEvents.IRON_GOLEM_ATTACK, 1.0F, 0.8F);
+            }
+            return hurt;
+        }
+
+        @Override
+        protected void playStepSound(BlockPos pPos, BlockState pState) {
+            this.playSound(SoundEvents.IRON_GOLEM_STEP, 1.0F, 0.9F);
+        }
+
+        @Override
+        protected boolean brainMovementAllowed() {
+            return false;
+        }
+
+        @Override
+        public boolean isDashReady() {
+            return false;
+        }
+
+        @Override
+        public void performSidestep(Vec3 approachDir) {
+        }
+
+        static class MarchOnVillageGoal extends Goal {
+
+            private static final double ARRIVAL_DISTANCE = 12.0D;
+            private static final int REPATH_TICKS = 40;
+
+            private final GeteRobotEntity robot;
+            private BlockPos village;
+            private int repathTicks;
+
+            MarchOnVillageGoal(GeteRobotEntity robot) {
+                this.robot = robot;
+                this.setFlags(EnumSet.of(Flag.MOVE));
+            }
+
+            @Override
+            public boolean canUse() {
+                if (this.robot.getTarget() != null || !this.robot.getPersistentData().contains(VILLAGE_TAG)) return false;
+                this.village = BlockPos.of(this.robot.getPersistentData().getLong(VILLAGE_TAG));
+                return !this.arrived();
+            }
+
+            @Override
+            public boolean canContinueToUse() {
+                return this.robot.getTarget() == null && !this.arrived();
+            }
+
+            @Override
+            public void start() {
+                this.repathTicks = 0;
+            }
+
+            @Override
+            public void stop() {
+                this.robot.getNavigation().stop();
+            }
+
+            @Override
+            public void tick() {
+                if (--this.repathTicks > 0 && !this.robot.getNavigation().isDone()) return;
+                this.repathTicks = REPATH_TICKS;
+
+                Vec3 goal = Vec3.atBottomCenterOf(this.village);
+                Vec3 step = DefaultRandomPos.getPosTowards(this.robot, 16, 7, goal, Math.PI / 2.0D);
+                if (step == null) step = goal;
+                this.robot.getNavigation().moveTo(step.x, step.y, step.z, 1.0D);
+            }
+
+            private boolean arrived() {
+                double dx = this.robot.getX() - (this.village.getX() + 0.5D);
+                double dz = this.robot.getZ() - (this.village.getZ() + 0.5D);
+                return dx * dx + dz * dz <= ARRIVAL_DISTANCE * ARRIVAL_DISTANCE;
+            }
         }
     }
 

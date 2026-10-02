@@ -104,7 +104,8 @@ public class WorldBossCommand {
 			return 0;
 		}
 
-		player.teleportTo(level, pos.getX() + 0.5D, pos.getY() + 2.0D, pos.getZ() + 0.5D,
+		BlockPos target = lair.teleportTarget(level, pos);
+		player.teleportTo(level, target.getX() + 0.5D, target.getY() + 2.0D, target.getZ() + 0.5D,
 				player.getYRot(), player.getXRot());
 		ctx.getSource().sendSuccess(() -> Component.literal("Teleported to the " + lair.displayName() + " lair."), false);
 		return 1;

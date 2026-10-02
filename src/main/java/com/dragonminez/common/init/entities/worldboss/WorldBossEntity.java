@@ -34,6 +34,7 @@ public abstract class WorldBossEntity extends DBSagasEntity {
 
     public static final String JANEMBA = "janemba";
     public static final String TURLES = "turles";
+    public static final String METAL_COOLER_CORE = "metal_cooler_core";
 
     private static final EntityDataAccessor<Boolean> BOSS_ASLEEP =
             SynchedEntityData.defineId(WorldBossEntity.class, EntityDataSerializers.BOOLEAN);

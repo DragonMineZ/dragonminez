@@ -5,6 +5,7 @@ import com.dragonminez.common.combat.HealContext;
 import com.dragonminez.common.events.DMZEvent;
 import com.dragonminez.common.init.MainDamageTypes;
 import com.dragonminez.common.init.entities.worldboss.AllWorldBossesEntity;
+import com.dragonminez.common.init.entities.worldboss.GeteStarEntities;
 import com.dragonminez.common.init.entities.worldboss.WorldBossEntity;
 import com.dragonminez.common.passives.PassiveEventHandler;
 import com.dragonminez.common.stats.StatsCapability;
@@ -92,6 +93,7 @@ public final class WorldBossCombatEvents {
 	public static String resolveBossKey(Entity entity) {
 		if (entity instanceof WorldBossEntity boss) return boss.getWorldBossKey();
 		if (entity instanceof AllWorldBossesEntity.MiniJanemba) return WorldBossEntity.JANEMBA;
+		if (entity != null && GeteStarEntities.ownerOf(entity) != null) return WorldBossEntity.METAL_COOLER_CORE;
 		return null;
 	}
 

@@ -4,8 +4,9 @@ import com.dragonminez.Reference;
 import com.dragonminez.common.init.MainTags;
 import com.dragonminez.server.world.structure.TallJigsawStructure;
 import com.dragonminez.server.world.structure.crater.SaiyanCraterStructure;
+import com.dragonminez.server.world.structure.WorldBossStructures.GeteStarStructure;
 import com.dragonminez.server.world.structure.ruins.NamekRuinsStructure;
-import com.dragonminez.server.world.structure.tree.TreeOfMightStructure;
+import com.dragonminez.server.world.structure.WorldBossStructures.TreeOfMightStructure;
 import net.minecraft.core.HolderGetter;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.data.worldgen.BootstapContext;
@@ -37,7 +38,8 @@ public class DMZStructures {
 			YAMCHA_HOUSE = createKey("yamcha_house"), TRUNKS_SHIP = createKey("trunks_ship"),
 			VEGETA_POD = createKey("vegeta_pod"),
 			BABA_PALACE = createKey("baba_palace"), TREE_OF_MIGHT = createKey("tree_of_might"),
-			SAIYAN_CRATER = createKey("saiyan_crater"), NAMEK_RUINS = createKey("namek_ruins");
+			SAIYAN_CRATER = createKey("saiyan_crater"), NAMEK_RUINS = createKey("namek_ruins"),
+			GETE_STAR = createKey("gete_star");
 
 	public static void bootstrap(BootstapContext<Structure> context) {
 		HolderGetter<Biome> biomes = context.lookup(Registries.BIOME);
@@ -284,6 +286,15 @@ public class DMZStructures {
 						Map.of(),
 						GenerationStep.Decoration.SURFACE_STRUCTURES,
 						TerrainAdjustment.BEARD_THIN
+				)
+		));
+
+		context.register(GETE_STAR, new GeteStarStructure(
+				new Structure.StructureSettings(
+						biomes.getOrThrow(MainTags.Biomes.IS_NAMEK),
+						Map.of(),
+						GenerationStep.Decoration.SURFACE_STRUCTURES,
+						TerrainAdjustment.NONE
 				)
 		));
 	}

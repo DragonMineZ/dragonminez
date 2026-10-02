@@ -10,9 +10,13 @@ import com.dragonminez.server.events.players.combat.KiTechniqueHandler;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.particle.Particle;
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.network.syncher.EntityDataAccessor;
 import net.minecraft.network.syncher.EntityDataSerializers;
 import net.minecraft.network.syncher.SynchedEntityData;
+import net.minecraft.server.level.ServerLevel;
+import net.minecraft.sounds.SoundEvents;
+import net.minecraft.util.Mth;
 import net.minecraft.sounds.SoundEvent;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.entity.EntityType;
@@ -36,6 +40,8 @@ public class KiLaserEntity extends AbstractKiProjectile{
     private static final EntityDataAccessor<Float> FIXED_PITCH = SynchedEntityData.defineId(KiLaserEntity.class, EntityDataSerializers.FLOAT);
 
     private static final EntityDataAccessor<Integer> CAST_TIME = SynchedEntityData.defineId(KiLaserEntity.class, EntityDataSerializers.INT);
+    private static final EntityDataAccessor<Boolean> STRIKE = SynchedEntityData.defineId(KiLaserEntity.class, EntityDataSerializers.BOOLEAN);
+    private static final double STRIKE_COLUMN = 12.0D;
     private static final EntityDataAccessor<Float> OFFSET_X = SynchedEntityData.defineId(KiLaserEntity.class, EntityDataSerializers.FLOAT);
     private static final EntityDataAccessor<Float> OFFSET_Y = SynchedEntityData.defineId(KiLaserEntity.class, EntityDataSerializers.FLOAT);
     private static final EntityDataAccessor<Float> OFFSET_Z = SynchedEntityData.defineId(KiLaserEntity.class, EntityDataSerializers.FLOAT);
@@ -43,6 +49,10 @@ public class KiLaserEntity extends AbstractKiProjectile{
     private static final float MAX_RANGE = 250.0F;
     private static final int CHAIN_SHOT_LIFE_TICKS = 10;
     private static final float CHAIN_SHOT_MIN_SPEED = 8.0F;
+
+    private Vec3 strikeOrigin;
+    private float strikeRadius;
+    private boolean strikeLanded;
 
     private boolean chainShot = false;
     private int pendingFireTick = -1;
@@ -237,6 +247,48 @@ public class KiLaserEntity extends AbstractKiProjectile{
         this.fireHability(CHAIN_SHOT_LIFE_TICKS);
     }
 
+    public void setupStrike(LivingEntity owner, Vec3 origin, Vec3 target, float damage, float speed, float size, float radius,
+                            int color, int colorBorder, int colorOutline, int life) {
+        Vec3 dir = target.subtract(origin);
+        double horizontal = Math.sqrt(dir.x * dir.x + dir.z * dir.z);
+        float yaw = (float) (Mth.atan2(dir.z, dir.x) * (180.0D / Math.PI)) - 90.0F;
+        float pitch = (float) (Mth.atan2(-dir.y, horizontal) * (180.0D / Math.PI));
+        this.entityData.set(FIXED_YAW, yaw);
+        this.entityData.set(FIXED_PITCH, pitch);
+        this.setYRot(yaw);
+        this.setXRot(pitch);
+        this.strikeOrigin = origin;
+        this.strikeRadius = radius;
+        this.entityData.set(STRIKE, true);
+        this.setKiRenderType(0);
+        this.setSize(size);
+        this.setKiDamage(damage);
+        this.setKiSpeed(speed);
+        this.setColors(color, colorBorder, colorOutline);
+        this.setFiring(false);
+        this.setCastTime(0);
+        this.setMaxLife(life);
+        this.setPos(origin.x, origin.y, origin.z);
+        if (!this.level().isClientSide) this.level().addFreshEntity(this);
+    }
+
+    private void strikeImpact(Vec3 pos) {
+        if (!(this.level() instanceof ServerLevel serverLevel)) return;
+        double radius = this.strikeRadius;
+        AABB area = new AABB(pos.x - radius, pos.y - 1.0D, pos.z - radius, pos.x + radius, pos.y + STRIKE_COLUMN, pos.z + radius);
+        for (LivingEntity target : MultipartTargeting.collectTargets(this.level(), area)) {
+            if (!this.shouldDamage(target)) continue;
+            double dx = target.getX() - pos.x;
+            double dz = target.getZ() - pos.z;
+            if (dx * dx + dz * dz > radius * radius) continue;
+            target.invulnerableTime = 0;
+            if (this.applyDamageOrHeal(target, this.getKiDamage())) this.onSuccessfulHit(target);
+        }
+        serverLevel.sendParticles(ParticleTypes.EXPLOSION_EMITTER, pos.x, pos.y, pos.z, 1, 0.0D, 0.0D, 0.0D, 0.0D);
+        serverLevel.sendParticles(ParticleTypes.LARGE_SMOKE, pos.x, pos.y + 0.5D, pos.z, 30, radius * 0.4D, 0.4D, radius * 0.4D, 0.04D);
+        this.level().playSound(null, pos.x, pos.y, pos.z, SoundEvents.GENERIC_EXPLODE, SoundSource.HOSTILE, 4.0F, 0.6F);
+    }
+
     private void startEmperorChain() {
         if (this.chainStarted || this.isHeal() || this.level().isClientSide) return;
         if (!KiTechniqueHandler.EmperorDeathBeam.is(this.getTechniqueId())) return;
@@ -294,6 +346,7 @@ public class KiLaserEntity extends AbstractKiProjectile{
     public ClashRole getClashRole() {
         // Render type 1 = Special Beam Cannon (a major clashing beam); type 0 = plain laser /
         // Dodonpa, classified as a minor attack that gets broken instead of clashing.
+        if (this.entityData.get(STRIKE)) return ClashRole.NONE;
         return this.getKiRenderType() == 1 ? ClashRole.MAJOR : ClashRole.MINOR;
     }
 
@@ -319,6 +372,7 @@ public class KiLaserEntity extends AbstractKiProjectile{
         this.entityData.define(FIXED_YAW, 0.0F);
         this.entityData.define(FIXED_PITCH, 0.0F);
         this.entityData.define(CAST_TIME, 0);
+        this.entityData.define(STRIKE, false);
         this.entityData.define(OFFSET_X, 0.0F);
         this.entityData.define(OFFSET_Y, 0.0F);
         this.entityData.define(OFFSET_Z, 0.0F);
@@ -387,6 +441,11 @@ public class KiLaserEntity extends AbstractKiProjectile{
                 Vec3 startPos = this.position();
                 Vec3 dir = Vec3.directionFromRotation(this.getFixedPitch(), this.getFixedYaw());
 
+                if (this.strikeOrigin != null && !this.strikeLanded) {
+                    this.strikeLanded = true;
+                    this.strikeImpact(startPos);
+                }
+
                 float currentLen = this.getBeamLength();
                 float targetLen = currentLen + this.getKiSpeed();
 
@@ -400,7 +459,7 @@ public class KiLaserEntity extends AbstractKiProjectile{
                 if (hitResult.getType() != HitResult.Type.MISS) {
                     distToWall = hitResult.getLocation().distanceTo(startPos);
 
-                    if (hitResult.getType() == HitResult.Type.BLOCK && targetLen >= distToWall) {
+                    if (hitResult.getType() == HitResult.Type.BLOCK && targetLen >= distToWall && this.strikeOrigin == null) {
                         explodeAndDie(hitResult.getLocation());
                         return;
                     }
@@ -413,7 +472,7 @@ public class KiLaserEntity extends AbstractKiProjectile{
 
                 this.setBeamLength(targetLen);
 
-                damageEntitiesInBeam(startPos, dir, targetLen);
+                if (this.strikeOrigin == null) damageEntitiesInBeam(startPos, dir, targetLen);
 
                 if (this.tickCount > this.getMaxLife()) {
                     this.discard();
@@ -431,6 +490,10 @@ public class KiLaserEntity extends AbstractKiProjectile{
 
 
     private void updatePositionRelativeToOwner(LivingEntity owner) {
+        if (this.entityData.get(STRIKE)) {
+            if (this.strikeOrigin != null) this.setPos(this.strikeOrigin.x, this.strikeOrigin.y, this.strikeOrigin.z);
+            return;
+        }
         Vec3 look = owner.getLookAngle();
         Vec3 right = look.cross(new Vec3(0, 1, 0)).normalize();
         Vec3 up = right.cross(look).normalize();

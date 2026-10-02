@@ -148,6 +148,9 @@ public class DBSagasAnimations {
     public static final RawAnimation ANIM_SOUL_PUNISHER_FIRE = RawAnimation.begin().thenPlay("ki.soul_punisher_fire");
     public static final RawAnimation ANIM_SUPERNOVA_COOLER_CAST = RawAnimation.begin().thenPlay("ki.supernova_cooler_cast");
     public static final RawAnimation ANIM_SUPERNOVA_COOLER_FIRE = RawAnimation.begin().thenPlay("ki.supernova_cooler_fire");
+    public static final RawAnimation ANIM_CORE_SUPERNOVA_CHANNEL = RawAnimation.begin().thenPlayAndHold("ki.supernova_cooler_cast");
+    public static final RawAnimation ANIM_CORE_SUPERNOVA_RELEASE = RawAnimation.begin().thenPlayAndHold("ki.supernova_cooler_fire");
+    public static final RawAnimation ANIM_CORE_OVERLOAD = RawAnimation.begin().thenLoop("base.crouching");
     public static final RawAnimation ANIM_ASSAULT_RAIN_CAST = RawAnimation.begin().thenPlay("ki.assault_rain_cast");
     public static final RawAnimation ANIM_ASSAULT_RAIN_FIRE = RawAnimation.begin().thenPlay("ki.assault_rain_fire");
     public static final RawAnimation ANIM_BLASTER_METEOR_CAST = RawAnimation.begin().thenLoop("ki.blaster_meteor_cast");

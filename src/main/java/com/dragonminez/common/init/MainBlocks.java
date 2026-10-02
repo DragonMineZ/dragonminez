@@ -160,6 +160,15 @@ public final class MainBlocks {
 			() -> new Block(BlockBehaviour.Properties.copy(Blocks.NETHERITE_BLOCK)));
 	public static final RegistryObject<Block> GETE_ORE = registerBlock("gete_debris_ore",
 			() -> new Block(BlockBehaviour.Properties.copy(Blocks.ANCIENT_DEBRIS).requiresCorrectToolForDrops()));
+	public static final RegistryObject<Block> GETE_STAR_HULL = registerBlock("gete_star_hull",
+			() -> new Block(BlockBehaviour.Properties.of().mapColor(MapColor.COLOR_PURPLE).instrument(NoteBlockInstrument.IRON_XYLOPHONE)
+					.strength(-1.0F, 3600000.0F).noLootTable().sound(SoundType.NETHERITE_BLOCK)
+					.isValidSpawn((pState, pLevel, pPos, pType) -> false).pushReaction(PushReaction.BLOCK)));
+	public static final RegistryObject<Block> GETE_STAR_CIRCUIT = registerBlock("gete_star_circuit",
+			() -> new Block(BlockBehaviour.Properties.of().mapColor(MapColor.COLOR_RED).instrument(NoteBlockInstrument.IRON_XYLOPHONE)
+					.strength(-1.0F, 3600000.0F).noLootTable().sound(SoundType.NETHERITE_BLOCK).lightLevel(state -> 12)
+					.emissiveRendering((pState, pLevel, pPos) -> true)
+					.isValidSpawn((pState, pLevel, pPos, pType) -> false).pushReaction(PushReaction.BLOCK)));
 	public static final RegistryObject<Block> NAMEK_KIKONO_ORE = registerBlock("namek_kikono_ore",
 			() -> new Block(BlockBehaviour.Properties.copy(Blocks.ANCIENT_DEBRIS).requiresCorrectToolForDrops()));
 	public static final RegistryObject<Block> KIKONO_BLOCK = registerBlock("kikono_block",

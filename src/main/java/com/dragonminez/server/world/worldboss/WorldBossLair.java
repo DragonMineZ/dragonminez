@@ -2,13 +2,17 @@ package com.dragonminez.server.world.worldboss;
 
 import com.dragonminez.common.init.MainBlocks;
 import com.dragonminez.common.init.MainEntities;
+import com.dragonminez.common.init.entities.worldboss.AllWorldBossesEntity;
 import com.dragonminez.common.init.entities.worldboss.WorldBossEntity;
 import com.dragonminez.server.world.data.StructurePlanSavedData;
+import com.dragonminez.server.world.dimension.NamekDimension;
 import com.dragonminez.server.world.dimension.OtherworldDimension;
+import com.dragonminez.server.world.structure.WorldBossStructures.GeteStarShape;
+import com.dragonminez.server.world.structure.WorldBossStructures.GeteStarStructure;
 import com.dragonminez.server.world.structure.helper.DMZStructureSets;
 import com.dragonminez.server.world.structure.placement.StructureSpawnPlanner;
-import com.dragonminez.server.world.structure.tree.TreeOfMightShape;
-import com.dragonminez.server.world.structure.tree.TreeOfMightShapes;
+import com.dragonminez.server.world.structure.WorldBossStructures.TreeOfMightShape;
+import com.dragonminez.server.world.structure.WorldBossStructures.TreeOfMightShapes;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.resources.ResourceKey;
@@ -42,6 +46,10 @@ public interface WorldBossLair {
 
 	default long respawnTicks() {
 		return 72000L;
+	}
+
+	default BlockPos teleportTarget(ServerLevel level, BlockPos lair) {
+		return lair;
 	}
 
 	final class Janemba implements WorldBossLair {
@@ -275,6 +283,81 @@ public interface WorldBossLair {
 		@Override
 		public WorldBossEntity createBoss(ServerLevel level) {
 			return MainEntities.WORLDBOSS_TURLES.get().create(level);
+		}
+	}
+
+	final class GeteStar implements WorldBossLair {
+		private static final int AREA_CHECK_RADIUS = GeteStarShape.RING_OUTER;
+
+		@Override
+		public String key() {
+			return WorldBossEntity.METAL_COOLER_CORE;
+		}
+
+		@Override
+		public String displayName() {
+			return "Metal Cooler Core";
+		}
+
+		@Override
+		public ResourceKey<Level> dimension() {
+			return NamekDimension.NAMEK_KEY;
+		}
+
+		@Override
+		public boolean isReady(ServerLevel level) {
+			return StructureSpawnPlanner.publishedPositions(level).containsKey(DMZStructureSets.GETE_STAR_SALT);
+		}
+
+		@Override
+		public BlockPos teleportTarget(ServerLevel level, BlockPos lair) {
+			GeteStarShape shape = shape(level);
+			return shape == null ? lair : shape.entrancePosition();
+		}
+
+		private static GeteStarShape shape(ServerLevel level) {
+			ChunkPos origin = StructureSpawnPlanner.publishedPositions(level).get(DMZStructureSets.GETE_STAR_SALT);
+			if (origin == null) return null;
+			return GeteStarShape.planned(level, level.getChunkSource().getGenerator(), origin);
+		}
+
+		@Override
+		public BlockPos pickColumn(ServerLevel level) {
+			GeteStarShape shape = shape(level);
+			return shape == null ? null : shape.corePosition();
+		}
+
+		@Override
+		public boolean isAreaLoaded(ServerLevel level, BlockPos column) {
+			int minX = (column.getX() - AREA_CHECK_RADIUS) >> 4;
+			int maxX = (column.getX() + AREA_CHECK_RADIUS) >> 4;
+			int minZ = (column.getZ() - AREA_CHECK_RADIUS) >> 4;
+			int maxZ = (column.getZ() + AREA_CHECK_RADIUS) >> 4;
+			for (int cx = minX; cx <= maxX; cx++) {
+				for (int cz = minZ; cz <= maxZ; cz++) {
+					if (!level.hasChunk(cx, cz)) return false;
+				}
+			}
+			return true;
+		}
+
+		@Override
+		public BlockPos resolveGround(ServerLevel level, BlockPos column) {
+			return GeteStarStructure.isStarBlock(level.getBlockState(column)) ? column : null;
+		}
+
+		@Override
+		public void buildArena(ServerLevel level, BlockPos ground) {
+		}
+
+		@Override
+		public WorldBossEntity createBoss(ServerLevel level) {
+			AllWorldBossesEntity.MetalCoolerCore core = MainEntities.WORLDBOSS_METAL_COOLER_CORE.get().create(level);
+			GeteStarShape shape = shape(level);
+			if (core != null && shape != null) {
+				core.setChamber(shape.chamberCenter(), shape.capsulePositions());
+			}
+			return core;
 		}
 	}
 }

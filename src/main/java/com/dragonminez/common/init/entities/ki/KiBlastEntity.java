@@ -80,6 +80,7 @@ public class KiBlastEntity extends AbstractKiProjectile {
     private static final float MIN_BLAST_CRATER = 2.5F;
 
     private static final EntityDataAccessor<Integer> CAST_TIME = SynchedEntityData.defineId(KiBlastEntity.class, EntityDataSerializers.INT);
+    private static final EntityDataAccessor<Boolean> DETACHED = SynchedEntityData.defineId(KiBlastEntity.class, EntityDataSerializers.BOOLEAN);
     private static final EntityDataAccessor<Float> OFFSET_X = SynchedEntityData.defineId(KiBlastEntity.class, EntityDataSerializers.FLOAT);
     private static final EntityDataAccessor<Float> OFFSET_Y = SynchedEntityData.defineId(KiBlastEntity.class, EntityDataSerializers.FLOAT);
     private static final EntityDataAccessor<Float> OFFSET_Z = SynchedEntityData.defineId(KiBlastEntity.class, EntityDataSerializers.FLOAT);
@@ -1384,6 +1385,7 @@ public class KiBlastEntity extends AbstractKiProjectile {
     protected void defineSynchedData() {
         super.defineSynchedData();
         this.entityData.define(CAST_TIME, 0);
+        this.entityData.define(DETACHED, false);
         this.entityData.define(STRETCH, 1.0F);
         this.entityData.define(PURIFY_RADIUS, 0.0F);
         this.entityData.define(OFFSET_X, 0.0F);
@@ -1570,7 +1572,16 @@ public class KiBlastEntity extends AbstractKiProjectile {
         return ground.getType() != HitResult.Type.MISS ? ground.getLocation() : endPos;
     }
 
+    public void setDetached(boolean detached) {
+        this.entityData.set(DETACHED, detached);
+    }
+
+    public boolean isDetached() {
+        return this.entityData.get(DETACHED);
+    }
+
     private void updatePositionRelativeToOwner(LivingEntity owner) {
+        if (this.isDetached()) return;
         Vec3 look = owner.getLookAngle();
         Vec3 worldUp = new Vec3(0, 1, 0);
         Vec3 right = look.cross(worldUp).normalize();

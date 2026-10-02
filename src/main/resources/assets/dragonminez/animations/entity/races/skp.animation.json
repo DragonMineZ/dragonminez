@@ -1,6 +1,42 @@
 {
 	"format_version": "1.8.0",
 	"animations": {
+		"skp.gete_bind": {
+			"loop": true,
+			"animation_length": 8.0,
+			"bones": {
+				"head": {
+					"rotation": {
+						"vector": ["-12.5 + math.sin(query.anim_time * 720) * 4", "math.sin(query.anim_time * 360) * 10", 0]
+					}
+				},
+				"body": {
+					"rotation": {
+						"vector": [0, 0, "math.sin(query.anim_time * 360) * 2.5"]
+					}
+				},
+				"right_arm": {
+					"rotation": {
+						"vector": [0, 0, "87.5 + math.sin(query.anim_time * 1080) * 4"]
+					}
+				},
+				"left_arm": {
+					"rotation": {
+						"vector": [0, 0, "-87.5 - math.sin(query.anim_time * 1080 + 90) * 4"]
+					}
+				},
+				"right_leg": {
+					"rotation": {
+						"vector": [0, 0, 10]
+					}
+				},
+				"left_leg": {
+					"rotation": {
+						"vector": [0, 0, -10]
+					}
+				}
+			}
+		},
 		"skp.dimensional_punch": {
 			"animation_length": 3.5,
 			"bones": {

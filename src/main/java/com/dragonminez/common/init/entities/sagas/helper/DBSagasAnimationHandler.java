@@ -276,6 +276,13 @@ public class DBSagasAnimationHandler {
         }
         if (ability == 8) return event.setAndContinue(DBSagasAnimations.ANIM_METEOR_BURST);
         if (ability == 9) return event.setAndContinue(DBSagasAnimations.ANIM_BOSS_GRAB);
+        if (ability == AllWorldBossesEntity.MetalCoolerCore.ABILITY_ORBITAL_LASERS) return event.setAndContinue(DBSagasAnimations.ANIM_LASER_FIRE_LOOP);
+        if (ability == AllWorldBossesEntity.MetalCoolerCore.ABILITY_CABLES) return event.setAndContinue(DBSagasAnimations.ANIM_KIBLAST);
+        if (ability == AllWorldBossesEntity.MetalCoolerCore.ABILITY_OVERLOAD) return event.setAndContinue(DBSagasAnimations.ANIM_CORE_OVERLOAD);
+        if (ability == AllWorldBossesEntity.MetalCoolerCore.ABILITY_SUPERNOVA) {
+            boolean released = entity.getBossAbilityTicks() >= AllWorldBossesEntity.MetalCoolerCore.SUPERNOVA_CHANNEL;
+            return event.setAndContinue(released ? DBSagasAnimations.ANIM_CORE_SUPERNOVA_RELEASE : DBSagasAnimations.ANIM_CORE_SUPERNOVA_CHANNEL);
+        }
 
         event.getController().forceAnimationReset();
         return PlayState.STOP;

@@ -136,7 +136,8 @@ public class MainEntities {
                 SHADOW_DUMMY, MINI_BUU, SAGA_OGRE_RED, SAGA_OGRE_BLUE, MINI_JANEMBA_STAMPEDE,
 
                 // WORLD BOSSES
-                WORLDBOSS_JANEMBA_FAT, WORLDBOSS_SUPER_JANEMBA, WORLDBOSS_MINI_JANEMBA, WORLDBOSS_TURLES
+                WORLDBOSS_JANEMBA_FAT, WORLDBOSS_SUPER_JANEMBA, WORLDBOSS_MINI_JANEMBA, WORLDBOSS_TURLES,
+                WORLDBOSS_METAL_COOLER_CORE, WORLDBOSS_METAL_COOLER, WORLDBOSS_METAL_COOLER_COPY
         );
     }
 
@@ -1437,6 +1438,42 @@ public class MainEntities {
                             .clientTrackingRange(16)
                             .fireImmune()
                             .build(ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "worldboss_turles").toString()));
+    public static final RegistryObject<EntityType<AllWorldBossesEntity.MetalCoolerCore>> WORLDBOSS_METAL_COOLER_CORE =
+            ENTITY_TYPES.register("worldboss_metal_cooler_core",
+                    () -> EntityType.Builder.of(AllWorldBossesEntity.MetalCoolerCore::new, MobCategory.MONSTER)
+                            .sized(4.5f, 12.0f)
+                            .clientTrackingRange(32)
+                            .fireImmune()
+                            .build(ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "worldboss_metal_cooler_core").toString()));
+    public static final RegistryObject<EntityType<AllWorldBossesEntity.MetalCooler>> WORLDBOSS_METAL_COOLER =
+            ENTITY_TYPES.register("worldboss_metal_cooler",
+                    () -> EntityType.Builder.of(AllWorldBossesEntity.MetalCooler::new, MobCategory.MONSTER)
+                            .sized(0.8f, 2.0f)
+                            .clientTrackingRange(16)
+                            .fireImmune()
+                            .build(ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "worldboss_metal_cooler").toString()));
+    public static final RegistryObject<EntityType<AllWorldBossesEntity.MetalCoolerCopy>> WORLDBOSS_METAL_COOLER_COPY =
+            ENTITY_TYPES.register("worldboss_metal_cooler_copy",
+                    () -> EntityType.Builder.of(AllWorldBossesEntity.MetalCoolerCopy::new, MobCategory.MONSTER)
+                            .sized(0.7f, 1.8f)
+                            .clientTrackingRange(16)
+                            .fireImmune()
+                            .build(ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "worldboss_metal_cooler_copy").toString()));
+    public static final RegistryObject<EntityType<GeteStarEntities.Bind>> GETE_CABLE =
+            ENTITY_TYPES.register("gete_cable",
+                    () -> EntityType.Builder.<GeteStarEntities.Bind>of(GeteStarEntities.Bind::new, MobCategory.MISC)
+                            .sized(1.0f, 0.5f)
+                            .clientTrackingRange(16)
+                            .fireImmune()
+                            .noSave()
+                            .build(ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "gete_cable").toString()));
+    public static final RegistryObject<EntityType<GeteStarEntities.Scrap>> GETE_SCRAP =
+            ENTITY_TYPES.register("gete_scrap",
+                    () -> EntityType.Builder.<GeteStarEntities.Scrap>of(GeteStarEntities.Scrap::new, MobCategory.MISC)
+                            .sized(0.9f, 0.5f)
+                            .clientTrackingRange(10)
+                            .fireImmune()
+                            .build(ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "gete_scrap").toString()));
 
     // Hirudegarn
     public static final RegistryObject<EntityType<SagaMoviesEntity.HirudegarnEntity>> SAGA_HIRUDEGARN =

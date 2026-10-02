@@ -28,7 +28,7 @@ import java.util.UUID;
 
 public final class WorldBossManager {
 
-    private static final List<WorldBossLair> LAIRS = List.of(new WorldBossLair.Janemba(), new WorldBossLair.Turles());
+    private static final List<WorldBossLair> LAIRS = List.of(new WorldBossLair.Janemba(), new WorldBossLair.Turles(), new WorldBossLair.GeteStar());
 
     private static final int ACTIVATION_RADIUS = 128;
     private static final int TICK_INTERVAL = 20;

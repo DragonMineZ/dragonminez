@@ -37,7 +37,7 @@ public class DMZStructureSets {
 			YAMCHA_HOUSE = createKey("yamcha_house"), TRUNKS_SHIP = createKey("trunks_ship"),
 			VEGETA_POD = createKey("vegeta_pod"),
 			BABA_PALACE = createKey("baba_palace"), TREE_OF_MIGHT = createKey("tree_of_might"),
-			SAIYAN_CRATER = createKey("saiyan_crater");
+			SAIYAN_CRATER = createKey("saiyan_crater"), GETE_STAR = createKey("gete_star");
 
 	public static void bootstrap(BootstapContext<StructureSet> context) {
 		HolderGetter<Structure> structures = context.lookup(Registries.STRUCTURE);
@@ -96,6 +96,9 @@ public class DMZStructureSets {
 				77889900, biomes.getOrThrow(MainTags.Biomes.IS_ROCKYBIOME));
 		unique(context, TREE_OF_MIGHT, structures.getOrThrow(DMZStructures.TREE_OF_MIGHT),
 				TREE_OF_MIGHT_SALT, biomes.getOrThrow(MainTags.Biomes.IS_SWAMPLIKE), TREE_OF_MIGHT_MIN_DISTANCE);
+		unique(context, GETE_STAR, structures.getOrThrow(DMZStructures.GETE_STAR),
+				GETE_STAR_SALT, HolderSet.direct(biomes.getOrThrow(NamekBiomes.AJISSA_PLAINS), biomes.getOrThrow(NamekBiomes.SACRED_LAND)),
+				GETE_STAR_MIN_DISTANCE);
 
 		HolderGetter<StructureSet> sets = context.lookup(Registries.STRUCTURE_SET);
 		context.register(SAIYAN_CRATER, new StructureSet(
@@ -114,6 +117,8 @@ public class DMZStructureSets {
 	}
 
 	public static final int TREE_OF_MIGHT_SALT = 28475016;
+	public static final int GETE_STAR_SALT = 61937482;
+	private static final int GETE_STAR_MIN_DISTANCE = 1000;
 	private static final int SAIYAN_CRATER_SALT = 51738264;
 	private static final int SAIYAN_CRATER_SPACING = 40;
 	private static final int SAIYAN_CRATER_SEPARATION = 20;

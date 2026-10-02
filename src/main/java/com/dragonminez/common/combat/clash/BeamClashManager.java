@@ -24,6 +24,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.UUID;
+import java.util.concurrent.CopyOnWriteArrayList;
 
 @Mod.EventBusSubscriber(modid = Reference.MOD_ID, bus = Mod.EventBusSubscriber.Bus.FORGE)
 public class BeamClashManager {
@@ -37,6 +38,21 @@ public class BeamClashManager {
 
     private static final List<BeamClash> ACTIVE_CLASHES = new ArrayList<>();
     private static final Set<UUID> CLASHING_OWNERS = new HashSet<>();
+    private static final List<ExternalClash> EXTERNAL_CLASHES = new CopyOnWriteArrayList<>();
+
+    public interface ExternalClash {
+        boolean handlePress(ServerPlayer player, float pressTime, float marker);
+
+        boolean involves(UUID ownerId);
+    }
+
+    public static void registerExternal(ExternalClash clash) {
+        if (!EXTERNAL_CLASHES.contains(clash)) EXTERNAL_CLASHES.add(clash);
+    }
+
+    public static void unregisterExternal(ExternalClash clash) {
+        EXTERNAL_CLASHES.remove(clash);
+    }
 
     @SubscribeEvent
     public static void onLevelTick(TickEvent.LevelTickEvent event) {
@@ -255,7 +271,11 @@ public class BeamClashManager {
     }
 
     public static boolean isClashing(UUID ownerId) {
-        return CLASHING_OWNERS.contains(ownerId);
+        if (CLASHING_OWNERS.contains(ownerId)) return true;
+        for (ExternalClash clash : EXTERNAL_CLASHES) {
+            if (clash.involves(ownerId)) return true;
+        }
+        return false;
     }
 
     @SuppressWarnings("unchecked")
@@ -270,11 +290,18 @@ public class BeamClashManager {
             if (participant != null) {
                 float serverTime = (float) (player.level().getGameTime() - clash.startGameTime());
                 ClashMeter.Grade grade = participant.registerPlayerPress(pressTime, marker, serverTime, clash.realElapsedTicks(), player.latency);
-                if (grade == ClashMeter.Grade.PERFECT) playPunchSound(player, 1.15F);
-                else if (grade == ClashMeter.Grade.GOOD) playPunchSound(player, 0.95F);
+                playPressFeedback(player, grade);
                 return;
             }
         }
+        for (ExternalClash clash : EXTERNAL_CLASHES) {
+            if (clash.handlePress(player, pressTime, marker)) return;
+        }
+    }
+
+    public static void playPressFeedback(ServerPlayer player, ClashMeter.Grade grade) {
+        if (grade == ClashMeter.Grade.PERFECT) playPunchSound(player, 1.15F);
+        else if (grade == ClashMeter.Grade.GOOD) playPunchSound(player, 0.95F);
     }
 
     private static void playPunchSound(ServerPlayer player, float basePitch) {

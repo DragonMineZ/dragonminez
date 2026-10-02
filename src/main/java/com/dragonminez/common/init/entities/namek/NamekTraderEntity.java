@@ -1,7 +1,15 @@
 package com.dragonminez.common.init.entities.namek;
 
 import com.dragonminez.Reference;
+import com.dragonminez.common.init.CapsuleCorpMapTrade;
 import com.dragonminez.common.init.entities.goals.VillageAlertSystem;
+import com.dragonminez.server.world.structure.helper.DMZStructures;
+import net.minecraft.server.level.ServerLevel;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.Items;
+import net.minecraft.world.item.trading.MerchantOffer;
+import net.minecraft.world.item.trading.MerchantOffers;
+import net.minecraft.world.level.saveddata.maps.MapDecoration;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.syncher.EntityDataAccessor;
@@ -37,6 +45,10 @@ public class NamekTraderEntity extends NamekVillagerEntity{
     private static final EntityDataAccessor<Integer> VARIANT = SynchedEntityData.defineId(NamekTraderEntity.class, EntityDataSerializers.INT);
 
     public static final int VARIANT_COUNT = 4;
+
+    private static final int GETE_STAR_MAP_PRICE = 16;
+    private static final int GETE_STAR_MAP_USES = 4;
+    private static final int GETE_STAR_MAP_XP = 10;
 
     public static final ResourceLocation[] TEXTURES = new ResourceLocation[VARIANT_COUNT];
 
@@ -109,6 +121,27 @@ public class NamekTraderEntity extends NamekVillagerEntity{
     public @Nullable SpawnGroupData finalizeSpawn(ServerLevelAccessor pLevel, DifficultyInstance pDifficulty, MobSpawnType pReason, @Nullable SpawnGroupData pSpawnData, @Nullable CompoundTag pDataTag) {
         this.setVariantNamek(this.random.nextInt(VARIANT_COUNT));
         return super.finalizeSpawn(pLevel, pDifficulty, pReason, pSpawnData, pDataTag);
+    }
+
+    @Override
+    public MerchantOffers getOffers() {
+        MerchantOffers offers = super.getOffers();
+        if (this.level() instanceof ServerLevel && !(this instanceof CCNamekianEntity) && !hasGeteStarMap(offers)) {
+            MerchantOffer map = new CapsuleCorpMapTrade(new ItemStack(Items.EMERALD, GETE_STAR_MAP_PRICE), new ItemStack(Items.MAP),
+                    DMZStructures.GETE_STAR, Reference.MOD_ID + ".gete_star", MapDecoration.Type.RED_X, GETE_STAR_MAP_USES, GETE_STAR_MAP_XP)
+                    .getOffer(this, this.random);
+            if (map != null) offers.add(map);
+        }
+        return offers;
+    }
+
+    private static boolean hasGeteStarMap(MerchantOffers offers) {
+        String id = DMZStructures.GETE_STAR.location().toString();
+        for (MerchantOffer offer : offers) {
+            CompoundTag tag = offer.getResult().getTag();
+            if (tag != null && id.equals(tag.getString(CapsuleCorpMapTrade.STRUCTURE_TAG))) return true;
+        }
+        return false;
     }
 
     @Override

@@ -1,7 +1,7 @@
 package com.dragonminez.server.world.feature;
 
 import com.dragonminez.Reference;
-import com.dragonminez.server.world.structure.tree.TreeOfMightCanopyFeature;
+import com.dragonminez.server.world.structure.WorldBossStructures.TreeOfMightCanopyFeature;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.world.level.levelgen.feature.Feature;
 import net.minecraft.world.level.levelgen.feature.configurations.NoneFeatureConfiguration;
