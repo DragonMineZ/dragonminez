@@ -30,6 +30,7 @@ public final class RhythmChart {
 	public final List<Note> notes;
 	public final List<Note> vocalNotes;
 	public final String audioHash;
+	public final String audioPrint;
 	private final double[] sortedLevels;
 	private final double[] sortedVocalLevels;
 
@@ -52,8 +53,13 @@ public final class RhythmChart {
 	}
 
 	public RhythmChart(String id, String item, String sound, float bpm, int durationMs, List<Note> notes, List<Note> vocalNotes, String audioHash) {
+		this(id, item, sound, bpm, durationMs, notes, vocalNotes, audioHash, "");
+	}
+
+	public RhythmChart(String id, String item, String sound, float bpm, int durationMs, List<Note> notes, List<Note> vocalNotes, String audioHash, String audioPrint) {
 		this.id = id;
 		this.audioHash = audioHash == null ? "" : audioHash;
+		this.audioPrint = audioPrint == null ? "" : audioPrint;
 		this.item = item == null ? "" : item;
 		this.sound = sound == null ? "" : sound;
 		this.bpm = bpm;
@@ -85,7 +91,8 @@ public final class RhythmChart {
 		List<Note> notes = parseNotes(root.getAsJsonArray("notes"), duration);
 		List<Note> vocal = root.has("vocal") && root.get("vocal").isJsonArray() ? parseNotes(root.getAsJsonArray("vocal"), duration) : List.of();
 		String hash = root.has("audioHash") ? root.get("audioHash").getAsString() : "";
-		return new RhythmChart(id, item, sound, bpm, duration, notes, vocal, hash);
+		String print = root.has("audioPrint") ? root.get("audioPrint").getAsString() : "";
+		return new RhythmChart(id, item, sound, bpm, duration, notes, vocal, hash, print);
 	}
 
 	private static List<Note> parseNotes(JsonArray array, int duration) {
@@ -130,11 +137,15 @@ public final class RhythmChart {
 	}
 
 	public RhythmChart withoutVocals() {
-		return hasVocals() ? new RhythmChart(id, item, sound, bpm, durationMs, notes, List.of(), audioHash) : this;
+		return hasVocals() ? new RhythmChart(id, item, sound, bpm, durationMs, notes, List.of(), audioHash, audioPrint) : this;
 	}
 
 	public RhythmChart withAudioHash(String hash) {
-		return new RhythmChart(id, item, sound, bpm, durationMs, notes, vocalNotes, hash);
+		return new RhythmChart(id, item, sound, bpm, durationMs, notes, vocalNotes, hash, audioPrint);
+	}
+
+	public RhythmChart withAudioPrint(String print) {
+		return new RhythmChart(id, item, sound, bpm, durationMs, notes, vocalNotes, audioHash, print);
 	}
 
 	public boolean matchesAudio(String hash) {
@@ -185,6 +196,7 @@ public final class RhythmChart {
 		root.addProperty("bpm", bpm);
 		root.addProperty("durationMs", durationMs);
 		if (!audioHash.isEmpty()) root.addProperty("audioHash", audioHash);
+		if (!audioPrint.isEmpty()) root.addProperty("audioPrint", audioPrint);
 		root.add("notes", notesToJson(notes));
 		if (hasVocals()) root.add("vocal", notesToJson(vocalNotes));
 		return root;
