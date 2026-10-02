@@ -39,6 +39,7 @@ import com.dragonminez.common.stats.StatsCapability;
 import com.dragonminez.common.stats.StatsProvider;
 import com.dragonminez.server.events.players.FalseSuperSaiyanEvents;
 import com.dragonminez.server.events.players.RageEvents;
+import com.dragonminez.server.events.players.statuseffect.RelicItemsStatusHandler;
 import com.dragonminez.server.events.players.KiSurgeService;
 import com.dragonminez.server.util.GravityLogic;
 import com.dragonminez.server.world.dimension.OtherworldDimension;
@@ -896,6 +897,7 @@ public class CombatEvent {
 		}
 		RageEvents.onFinalDamage(event);
 		FalseSuperSaiyanEvents.onFinalDamage(event);
+		RelicItemsStatusHandler.onFinalDamage(event);
 	}
 
 	private static double computeDamageScaledKnockback(double rawDamage, double finalDamage, float maxHealth) {

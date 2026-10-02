@@ -98,6 +98,8 @@ public final class MainItems {
 
 	public static final RegistryObject<Item> MIGHT_TREE_FRUIT = ITEM_REGISTER.register("might_tree_fruit",
 			MightTreeFruitItem::new);
+	public static final RegistryObject<Item> SACRED_WATER = ITEM_REGISTER.register("sacred_water",
+			SacredWaterItem::new);
 	public static final RegistryObject<Item> SATAN_BADGE = ITEM_REGISTER.register("satan_badge",
 			() -> new Item(new Item.Properties()));
 	public static final RegistryObject<Item> DINO_MEAT_RAW = ITEM_REGISTER.register("raw_dino_meat",
@@ -378,6 +380,8 @@ public final class MainItems {
 			() -> new KiBatteryItem());
 	public static final RegistryObject<Item> ANTI_KI_CLOAK = ITEM_REGISTER.register("anti_ki_cloak",
 			() -> new DMZCuriosItem(new Item.Properties().stacksTo(1).fireResistant(), DMZCuriosItem.CurioType.HEAD_TECH));
+	public static final RegistryObject<Item> DEMON_EYE = ITEM_REGISTER.register("demon_eye",
+			() -> new DMZCuriosItem(new Item.Properties().stacksTo(1).fireResistant().rarity(Rarity.EPIC), DMZCuriosItem.CurioType.HEAD_TECH));
 	public static final RegistryObject<Item> KIKONO_SHARD = regItem("kikono_shard");
 	public static final RegistryObject<Item> KIKONO_STICK = regItem("kikono_stick");
 	public static final RegistryObject<Item> MAJILITE = regItem("majilite");

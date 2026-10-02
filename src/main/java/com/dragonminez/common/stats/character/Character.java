@@ -73,6 +73,7 @@ public class Character {
 	private boolean renderHairBase = true;
 	private boolean aura3D = false;
 	private String aura3DType = FormConfig.AURA_3D_SMOOTH;
+	private float demonEyeGrowth = 1.0f;
 
 	private final Map<String, MasterLocation> interactedMasters = new HashMap<>();
 
@@ -444,6 +445,12 @@ public class Character {
 	}
 
 	public Float[] getResolvedModelScaling() {
+		Float[] scaling = resolveFormModelScaling();
+		if (demonEyeGrowth <= 1.0f) return scaling;
+		return new Float[]{scaling[0] * demonEyeGrowth, scaling[1] * demonEyeGrowth, scaling[2] * demonEyeGrowth};
+	}
+
+	private Float[] resolveFormModelScaling() {
 		FormConfig.FormData form = getActiveFormData();
 		FormConfig.FormData stack = getActiveStackFormData();
 
@@ -557,6 +564,8 @@ public class Character {
 		for (String song : learnedSongs) songsList.add(net.minecraft.nbt.StringTag.valueOf(song));
 		tag.put("LearnedSongs", songsList);
 
+		tag.putFloat("DemonEyeGrowth", demonEyeGrowth);
+
 		return tag;
 	}
 
@@ -647,6 +656,8 @@ public class Character {
 			ListTag songsList = tag.getList("LearnedSongs", 8);
 			for (int i = 0; i < songsList.size(); i++) this.learnedSongs.add(songsList.getString(i));
 		}
+
+		this.demonEyeGrowth = tag.contains("DemonEyeGrowth") ? Math.max(1.0f, tag.getFloat("DemonEyeGrowth")) : 1.0f;
 
 		updateOozaruCache();
 	}
@@ -917,6 +928,7 @@ public class Character {
 		this.minigameLearnRuns.putAll(other.minigameLearnRuns);
 		this.learnedSongs.clear();
 		this.learnedSongs.addAll(other.learnedSongs);
+		this.demonEyeGrowth = other.demonEyeGrowth;
 		updateOozaruCache();
 	}
 }

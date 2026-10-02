@@ -13,7 +13,10 @@ import com.dragonminez.client.render.effects.AuraBorderRenderer;
 import com.dragonminez.client.render.effects.DimensionalFistEffect;
 import com.dragonminez.client.render.shader.TransformationMaskBufferSource;
 import com.dragonminez.client.render.util.IrisCompat;
+import com.dragonminez.client.init.entities.renderer.sagas.SaiyanInvaderRenderer;
 import com.dragonminez.client.util.BoneVisibilityHandler;
+import com.dragonminez.client.util.ColorUtils;
+import com.dragonminez.server.events.players.statuseffect.RelicItemsStatusHandler;
 import com.dragonminez.mixin.client.GeoModelAccessor;
 import com.dragonminez.common.config.ConfigManager;
 import com.dragonminez.common.stats.StatsCapability;
@@ -45,6 +48,9 @@ import software.bernie.geckolib.util.RenderUtils;
 public class DMZPlayerRenderer<T extends AbstractClientPlayer & GeoAnimatable> extends GeoEntityRenderer<T> {
 
 	private static final String HEAD_BONE = "head";
+	private static final float[] DEMON_EYE_TINT = {0.545f, 0.0f, 0.0f, 0.35f};
+	private static final float[] DEMON_EYE_FLAME_INNER = ColorUtils.hexToRgb("#FF2A2A");
+	private static final float[] DEMON_EYE_FLAME_OUTER = ColorUtils.hexToRgb("#6B0000");
 
 	protected GeoRenderLayer<T> caller = null;
 
@@ -153,13 +159,17 @@ public class DMZPlayerRenderer<T extends AbstractClientPlayer & GeoAnimatable> e
 			RenderSystem.stencilOp(GL11.GL_KEEP, GL11.GL_KEEP, GL11.GL_REPLACE);
 		}
 
-		MultiBufferSource renderSource = bufferSource;
+		boolean demonEye = RelicItemsStatusHandler.isDemonEyeActive(stats) && !entity.isSpectator() && !entity.isInvisible();
+		MultiBufferSource baseSource = demonEye ? new SaiyanInvaderRenderer.TintedBufferSource(bufferSource, DEMON_EYE_TINT) : bufferSource;
+		MultiBufferSource renderSource = baseSource;
 		if (maskBufferSource != null) {
-			maskBufferSource.wrap(bufferSource);
+			maskBufferSource.wrap(baseSource);
 			maskBufferSource.setForceCaptureAll(true);
 			renderSource = maskBufferSource;
 		}
-		MultiBufferSource borderSource = AuraBorderRenderer.begin(entity, renderSource, AuraBorderRenderer.playerColor(entity, stats), partialTick);
+		MultiBufferSource borderSource = demonEye
+				? AuraBorderRenderer.begin(entity, renderSource, DEMON_EYE_FLAME_OUTER, DEMON_EYE_FLAME_INNER, partialTick)
+				: AuraBorderRenderer.begin(entity, renderSource, AuraBorderRenderer.playerColor(entity, stats), partialTick);
 		try {
 			super.render(entity, entityYaw, partialTick, poseStack, borderSource, packedLight);
 		} finally {

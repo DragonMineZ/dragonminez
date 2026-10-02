@@ -144,13 +144,13 @@ public class SaiyanInvaderRenderer<T extends DBSagasEntity & SagaSaiyanInvadersE
 		PUPPETS.clear();
 	}
 
-	private static final class TintedBufferSource implements MultiBufferSource {
+	public static final class TintedBufferSource implements MultiBufferSource {
 		private final MultiBufferSource delegate;
 		private final float red;
 		private final float green;
 		private final float blue;
 
-		private TintedBufferSource(MultiBufferSource delegate, float[] tint) {
+		public TintedBufferSource(MultiBufferSource delegate, float[] tint) {
 			this.delegate = delegate;
 			float strength = tint[3];
 			this.red = 1.0F - strength + strength * tint[0];

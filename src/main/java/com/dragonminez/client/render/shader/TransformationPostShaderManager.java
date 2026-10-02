@@ -14,6 +14,7 @@ import com.dragonminez.common.stats.StatsData;
 import com.dragonminez.common.stats.StatsProvider;
 import com.dragonminez.common.stats.character.Character;
 import com.dragonminez.mixin.client.PostChainAccessor;
+import com.dragonminez.server.events.players.statuseffect.RelicItemsStatusHandler;
 import com.mojang.blaze3d.pipeline.RenderTarget;
 import com.mojang.blaze3d.shaders.Uniform;
 import com.mojang.blaze3d.vertex.PoseStack;
@@ -47,6 +48,7 @@ public final class TransformationPostShaderManager {
 	private static final float FIXED_GLOW_STRENGTH = 1.35f;
 	private static final float FIXED_BLOOM_STRENGTH = 0.95f;
 	private static final double SAGA_OUTLINE_RANGE_SQR = 96.0 * 96.0;
+	private static final DBSagasEntity.OutlineStyle DEMON_EYE_OUTLINE = new DBSagasEntity.OutlineStyle(0xFF2020, 0x9A0000, 2.5F);
 
 	private static final Map<UUID, TrackedShaderState> TRACKED_PLAYERS = new HashMap<>();
 	private static final Set<UUID> ACTIVE_MASK_PLAYERS = new HashSet<>();
@@ -351,6 +353,10 @@ public final class TransformationPostShaderManager {
 		if (data == null) return null;
 		Character character = data.getCharacter();
 		if (character == null) return null;
+
+		if (RelicItemsStatusHandler.isDemonEyeActive(data) && !player.isSpectator() && !player.isInvisible()) {
+			return new ResolvedShaderConfig("demon_eye", ShaderUniformState.fromStyle(DEMON_EYE_OUTLINE));
+		}
 
 		FormConfig.FormData activeFormData = character.getActiveFormData();
 		FormConfig.FormData activeStackFormData = character.getActiveStackFormData();

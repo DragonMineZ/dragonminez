@@ -341,6 +341,16 @@ public class GeneralServerConfig {
 		private FoodConfig food = new FoodConfig();
 		private Double mightFruitPower = 1.2;
 		private Double majinPower = 1.3;
+		private Double sacredWaterMultiplier = 1.2;
+		private Double demonEyeMultiplier = 1.5;
+		private Double demonEyeKiDrainPercent = 0.02;
+		private Double demonEyeHealthDrainPercent = 0.02;
+		private Integer demonEyeAlignmentLossIntervalSeconds = 10;
+		private Double demonEyeMaxGrowth = 0.5;
+		private Integer demonEyeGrowthSeconds = 300;
+		private Integer demonEyeShrinkSeconds = 30;
+		private Integer demonEyeBackHitsToRemove = 3;
+		private Integer demonEyeBackHitWindowSeconds = 10;
 		private Double metamoruFusionThreshold = 0.5;
 		private String[] fusionBoosts = {"STR", "SKP", "PWR"};
 		private Integer fusionDurationSeconds = 900;
@@ -531,6 +541,46 @@ public class GeneralServerConfig {
 
 		public Double getMajinPower() {
 			return Math.max(0, Math.min(majinPower, Double.MAX_VALUE));
+		}
+
+		public Double getSacredWaterMultiplier() {
+			return sacredWaterMultiplier == null ? 1.2 : Math.max(1.0, Math.min(sacredWaterMultiplier, 100.0));
+		}
+
+		public Double getDemonEyeMultiplier() {
+			return demonEyeMultiplier == null ? 1.5 : Math.max(1.0, Math.min(demonEyeMultiplier, 100.0));
+		}
+
+		public Double getDemonEyeKiDrainPercent() {
+			return demonEyeKiDrainPercent == null ? 0.02 : Math.max(0.0, Math.min(demonEyeKiDrainPercent, 1.0));
+		}
+
+		public Double getDemonEyeHealthDrainPercent() {
+			return demonEyeHealthDrainPercent == null ? 0.02 : Math.max(0.0, Math.min(demonEyeHealthDrainPercent, 1.0));
+		}
+
+		public Integer getDemonEyeAlignmentLossIntervalSeconds() {
+			return demonEyeAlignmentLossIntervalSeconds == null ? 10 : Math.max(0, demonEyeAlignmentLossIntervalSeconds);
+		}
+
+		public Double getDemonEyeMaxGrowth() {
+			return demonEyeMaxGrowth == null ? 0.5 : Math.max(0.0, Math.min(demonEyeMaxGrowth, 10.0));
+		}
+
+		public Integer getDemonEyeGrowthSeconds() {
+			return demonEyeGrowthSeconds == null ? 300 : Math.max(0, demonEyeGrowthSeconds);
+		}
+
+		public Integer getDemonEyeShrinkSeconds() {
+			return demonEyeShrinkSeconds == null ? 30 : Math.max(0, demonEyeShrinkSeconds);
+		}
+
+		public Integer getDemonEyeBackHitsToRemove() {
+			return demonEyeBackHitsToRemove == null ? 3 : Math.max(0, demonEyeBackHitsToRemove);
+		}
+
+		public Integer getDemonEyeBackHitWindowSeconds() {
+			return demonEyeBackHitWindowSeconds == null ? 10 : Math.max(1, demonEyeBackHitWindowSeconds);
 		}
 
 		public Double getMetamoruFusionThreshold() {
