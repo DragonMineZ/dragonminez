@@ -1,6 +1,6 @@
 package com.dragonminez.client.render.layer;
 
-import com.dragonminez.client.init.entities.renderer.sagas.SaiyanInvaderRenderer;
+import com.dragonminez.client.render.DMZRendererCache;
 import com.dragonminez.client.render.VanillaModelSync;
 import com.dragonminez.common.stats.StatsCapability;
 import com.dragonminez.common.stats.StatsData;
@@ -49,7 +49,7 @@ public class DMZThirdPartyLayerForwarder<T extends AbstractClientPlayer & GeoAni
 	@SuppressWarnings({"rawtypes", "unchecked"})
 	public void renderForBone(PoseStack poseStack, T animatable, GeoBone bone, RenderType renderType, MultiBufferSource bufferSource, VertexConsumer buffer, float partialTick, int packedLight, int packedOverlay) {
 		if (!"root".equals(bone.getName())) return;
-		if (animatable instanceof SaiyanInvaderRenderer.Puppet) return;
+		if (animatable instanceof DMZRendererCache.NpcPuppet) return;
 		var stats = StatsProvider.get(StatsCapability.INSTANCE, animatable).orElse(new StatsData(animatable));
 		if (stats.getCharacter().isOozaruCached()) return;
 

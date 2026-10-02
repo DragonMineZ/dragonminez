@@ -3,6 +3,7 @@ package com.dragonminez.common.init.entities.sagas;
 import com.dragonminez.common.init.MainEntities;
 import com.dragonminez.common.init.MainItems;
 import net.minecraft.nbt.CompoundTag;
+import net.minecraft.network.syncher.EntityDataAccessor;
 import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.entity.EntityDimensions;
 import net.minecraft.world.entity.EntityType;
@@ -719,11 +720,15 @@ public class SagaDaimaEntity {
      */
 
     public static class GomahSoldierEntity extends DBSagasEntity {
+        private static final double SOLDIER_SPEED = 0.34D;
+
+        private float appliedScale = 1.0F;
+        private boolean scaleReady;
 
         public GomahSoldierEntity(EntityType<? extends Monster> pEntityType, Level pLevel) {
             super(pEntityType, pLevel);
 
-            this.setCanFly(true);
+            this.setCanFly(false);
             this.setAuraColor(0xE0245E);
             this.setKiBlastSpeed(1.3F);
             this.setDBZStyle(0);
@@ -732,6 +737,35 @@ public class SagaDaimaEntity {
             this.addKiSkill(KiSkillType.KI_SMALL, 80, 1.0F, 0xFFD6E0, 0xE0245E);
 
             this.setWildSense(true, 200);
+
+            this.setDefaultMovementSpeed(SOLDIER_SPEED);
+            this.getAttribute(Attributes.MOVEMENT_SPEED).setBaseValue(SOLDIER_SPEED);
+            this.scaleReady = true;
+        }
+
+        public void setSoldierScale(float scale) {
+            this.setScaleVal(scale);
+            this.applyScale();
+        }
+
+        private void applyScale() {
+            if (!this.scaleReady) return;
+            float scale = this.getScale();
+            if (Math.abs(scale - this.appliedScale) < 1.0E-3F) return;
+            this.appliedScale = scale;
+            this.refreshDimensions();
+        }
+
+        @Override
+        public void onSyncedDataUpdated(EntityDataAccessor<?> key) {
+            super.onSyncedDataUpdated(key);
+            this.applyScale();
+        }
+
+        @Override
+        public void readAdditionalSaveData(CompoundTag pCompound) {
+            super.readAdditionalSaveData(pCompound);
+            this.applyScale();
         }
     }
 

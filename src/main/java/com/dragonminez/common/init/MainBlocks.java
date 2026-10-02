@@ -233,9 +233,9 @@ public final class MainBlocks {
 	public static final RegistryObject<Block> MAKAI_STRATA_STONE = registerBlock("makai_strata_stone",
 			() -> new DemonRealmBlocks.SkylitBlock(BlockBehaviour.Properties.copy(Blocks.STONE).mapColor(MapColor.TERRACOTTA_YELLOW).requiresCorrectToolForDrops().sound(SoundType.TUFF)));
 	public static final RegistryObject<Block> MAKAI_GRASS_BLOCK = registerBlock("makai_grass_block",
-			() -> new DemonRealmBlocks.SkylitBlock(BlockBehaviour.Properties.copy(Blocks.DIRT).mapColor(MapColor.GRASS).strength(0.6F).sound(SoundType.GRASS)));
+			() -> new DemonRealmBlocks.SkylitSoilBlock(BlockBehaviour.Properties.copy(Blocks.DIRT).mapColor(MapColor.GRASS).strength(0.6F).sound(SoundType.GRASS)));
 	public static final RegistryObject<Block> MAKAI_DIRT = registerBlock("makai_dirt",
-			() -> new DemonRealmBlocks.SkylitBlock(BlockBehaviour.Properties.copy(Blocks.DIRT).sound(SoundType.ROOTED_DIRT)));
+			() -> new DemonRealmBlocks.SkylitSoilBlock(BlockBehaviour.Properties.copy(Blocks.DIRT).sound(SoundType.ROOTED_DIRT)));
 	public static final RegistryObject<Block> LILAC_SAND = registerBlock("lilac_sand",
 			() -> new DemonRealmBlocks.SkylitSandBlock(0xCFA9C9, BlockBehaviour.Properties.copy(Blocks.SAND).mapColor(MapColor.COLOR_PINK)));
 	public static final RegistryObject<Block> MAKAI_SAND = registerBlock("makai_sand",
@@ -245,6 +245,16 @@ public final class MainBlocks {
 	public static final RegistryObject<Block> MAKAI_BUSH = registerBlock("makai_bush",
 			() -> new Block(BlockBehaviour.Properties.copy(Blocks.AZALEA_LEAVES).mapColor(MapColor.COLOR_CYAN)
 					.isViewBlocking((pState, pLevel, pPos) -> false).isSuffocating((pState, pLevel, pPos) -> false)));
+	public static final RegistryObject<Block> ADOBE = registerBlock("adobe",
+			() -> new DemonRealmBlocks.SkylitBlock(BlockBehaviour.Properties.copy(Blocks.MUD_BRICKS).mapColor(MapColor.COLOR_ORANGE)));
+	public static final RegistryObject<Block> ADOBE_SLAB = registerBlock("adobe_slab",
+			() -> new SlabBlock(BlockBehaviour.Properties.copy(Blocks.MUD_BRICK_SLAB).mapColor(MapColor.COLOR_ORANGE)));
+	public static final RegistryObject<Block> ADOBE_STAIRS = registerBlock("adobe_stairs",
+			() -> new StairBlock(() -> ADOBE.get().defaultBlockState(), BlockBehaviour.Properties.copy(Blocks.MUD_BRICK_STAIRS).mapColor(MapColor.COLOR_ORANGE)));
+	public static final RegistryObject<Block> ADOBE_WALL = registerBlock("adobe_wall",
+			() -> new WallBlock(BlockBehaviour.Properties.copy(Blocks.MUD_BRICK_WALL).mapColor(MapColor.COLOR_ORANGE)));
+	public static final RegistryObject<Block> ADOBE_BRICKS = registerBlock("adobe_bricks",
+			() -> new DemonRealmBlocks.SkylitBlock(BlockBehaviour.Properties.copy(Blocks.MUD_BRICKS).mapColor(MapColor.TERRACOTTA_ORANGE)));
 	public static final RegistryObject<Block> GAS_VENT = registerBlock("gas_vent",
 			() -> new DemonRealmBlocks.GasVentBlock(BlockBehaviour.Properties.copy(Blocks.STONE).mapColor(MapColor.COLOR_YELLOW).requiresCorrectToolForDrops().sound(SoundType.TUFF)));
 	public static final RegistryObject<Block> DARK_SEA_CLOUD = registerBlock("dark_sea_cloud",

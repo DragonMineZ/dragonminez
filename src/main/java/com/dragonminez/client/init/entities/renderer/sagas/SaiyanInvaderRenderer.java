@@ -223,7 +223,7 @@ public class SaiyanInvaderRenderer<T extends DBSagasEntity & SagaSaiyanInvadersE
 		}
 	}
 
-	public static class Puppet extends RemotePlayer implements GeoAnimatable {
+	public static class Puppet extends RemotePlayer implements GeoAnimatable, DMZRendererCache.NpcPuppet {
 		private static final int SAGA_BODY_TYPE = 1;
 		private static final String SUPERVILLAIN_AURA = "#9A1CFF";
 		private static final String DEFAULT_AURA = "#FFFFFF";
@@ -248,6 +248,7 @@ public class SaiyanInvaderRenderer<T extends DBSagasEntity & SagaSaiyanInvadersE
 			return (id.hashCode() & 1) == 1 ? new UUID(id.getMostSignificantBits(), id.getLeastSignificantBits() ^ 1L) : id;
 		}
 
+		@Override
 		public ItemStack getScouter() {
 			return this.scouter;
 		}

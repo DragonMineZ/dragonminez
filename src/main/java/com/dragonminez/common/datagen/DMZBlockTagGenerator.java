@@ -305,6 +305,11 @@ public class DMZBlockTagGenerator extends BlockTagsProvider {
 				.add(MainBlocks.DEMON_BRICK_SLAB.get())
 				.add(MainBlocks.DEMON_BRICK_STAIRS.get())
 				.add(MainBlocks.DEMON_BRICK_WALL.get())
+				.add(MainBlocks.ADOBE.get())
+				.add(MainBlocks.ADOBE_SLAB.get())
+				.add(MainBlocks.ADOBE_STAIRS.get())
+				.add(MainBlocks.ADOBE_WALL.get())
+				.add(MainBlocks.ADOBE_BRICKS.get())
 				.add(MainBlocks.DEMON_MAGMA_ROCK.get())
 				.add(MainBlocks.CRIMSON_CRYSTAL.get())
 				.add(MainBlocks.DEMON_HORN.get());
@@ -324,15 +329,18 @@ public class DMZBlockTagGenerator extends BlockTagsProvider {
 
 		this.tag(BlockTags.SLABS)
 				.add(MainBlocks.MAKAI_STONE_SLAB.get())
-				.add(MainBlocks.DEMON_BRICK_SLAB.get());
+				.add(MainBlocks.DEMON_BRICK_SLAB.get())
+				.add(MainBlocks.ADOBE_SLAB.get());
 
 		this.tag(BlockTags.STAIRS)
 				.add(MainBlocks.MAKAI_STONE_STAIRS.get())
-				.add(MainBlocks.DEMON_BRICK_STAIRS.get());
+				.add(MainBlocks.DEMON_BRICK_STAIRS.get())
+				.add(MainBlocks.ADOBE_STAIRS.get());
 
 		this.tag(BlockTags.WALLS)
 				.add(MainBlocks.MAKAI_STONE_WALL.get())
-				.add(MainBlocks.DEMON_BRICK_WALL.get());
+				.add(MainBlocks.DEMON_BRICK_WALL.get())
+				.add(MainBlocks.ADOBE_WALL.get());
 
 		this.tag(BlockTags.DIRT)
 				.add(MainBlocks.MAKAI_DIRT.get())

@@ -24,6 +24,7 @@ import com.dragonminez.common.init.item.weapons.TamagamiSwordItem;
 import com.dragonminez.common.init.item.weapons.TamagamiTridentItem;
 import net.minecraft.ChatFormatting;
 import net.minecraft.sounds.SoundEvent;
+import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.item.*;
 import net.minecraftforge.common.ForgeSpawnEggItem;
 import net.minecraftforge.eventbus.api.IEventBus;
@@ -39,6 +40,10 @@ import java.util.Map;
 public final class MainItems {
 	public static final Item.Properties properties = new Item.Properties();
 	public static final DeferredRegister<Item> ITEM_REGISTER = DeferredRegister.create(ForgeRegistries.ITEMS, Reference.MOD_ID);
+
+	private static final int MEDI_SHELL_TICKS = 45 * 20;
+	private static final int MEDI_WORM_TICKS = 5 * 60 * 20;
+	private static final int MEDI_WORM_AMPLIFIER = 1;
 
 	public static final java.util.List<RegistryObject<Item>> MUSIC_DISCS = new java.util.ArrayList<>();
 
@@ -79,15 +84,17 @@ public final class MainItems {
 			() -> new SenzuBagItem(new Item.Properties().stacksTo(1)));
 
 	public static final RegistryObject<Item> MEDI_BUG_ANT = ITEM_REGISTER.register("medi_bug_ant",
-			() -> new FoodItem(2, 1.2f, 64));
+			() -> new FoodItem(2, 1.2f, 64, "item.dragonminez.medi_bug_ant.tooltip"));
 	public static final RegistryObject<Item> MEDI_BUG_BEETLE = ITEM_REGISTER.register("medi_bug_beetle",
 			MediBugBeetleItem::new);
 	public static final RegistryObject<Item> MEDI_BUG_BEETLE_PAIR = ITEM_REGISTER.register("medi_bug_beetle_pair",
 			() -> new MediBugBeetlePairItem(new Item.Properties().stacksTo(1), () -> MEDI_BUG_BEETLE.get()));
 	public static final RegistryObject<Item> MEDI_BUG_RHINO = ITEM_REGISTER.register("medi_bug_rhino",
-			() -> new FoodItem(2, 1.2f, 64));
+			() -> new FoodItem(2, 1.2f, 64, "item.dragonminez.medi_bug_rhino.tooltip",
+					() -> new MobEffectInstance(MainEffects.MEDI_SHELL.get(), MEDI_SHELL_TICKS, 0)));
 	public static final RegistryObject<Item> MEDI_BUG_WORM = ITEM_REGISTER.register("medi_bug_worm",
-			() -> new FoodItem(2, 1.2f, 64));
+			() -> new FoodItem(2, 1.2f, 64, "item.dragonminez.medi_bug_worm.tooltip",
+					() -> new MobEffectInstance(MainEffects.MASTERY_GAIN.get(), MEDI_WORM_TICKS, MEDI_WORM_AMPLIFIER)));
 
 	public static final RegistryObject<Item> MIGHT_TREE_FRUIT = ITEM_REGISTER.register("might_tree_fruit",
 			MightTreeFruitItem::new);
@@ -593,6 +600,10 @@ public final class MainItems {
 			new ForgeSpawnEggItem(MainEntities.SAGA_FRIEZA_SOLDIER3, 0x95F0CB, 0xDABAE6, new Item.Properties()));
 	public static final RegistryObject<Item> NWARRIOR_SE = ITEM_REGISTER.register("nwarrior_spawn_egg", () ->
 			new ForgeSpawnEggItem(MainEntities.NAMEK_WARRIOR, 0x246E18, 0x12848A, new Item.Properties()));
+	public static final RegistryObject<Item> DEMON_VILLAGER_SE = ITEM_REGISTER.register("demon_villager_spawn_egg", () ->
+			new ForgeSpawnEggItem(MainEntities.DEMON_VILLAGER, 0xA1DAF0, 0xF2C2FF, new Item.Properties()));
+	public static final RegistryObject<Item> TIME_PATROLLER_SE = ITEM_REGISTER.register("time_patroller_spawn_egg", () ->
+			new ForgeSpawnEggItem(MainEntities.TIME_PATROLLER, 0xA1DAF0, 0x2B3A8C, new Item.Properties()));
 	public static final RegistryObject<Item> SAIBAMAN_SE = ITEM_REGISTER.register("saibaman_spawn_egg", () ->
 			new ForgeSpawnEggItem(MainEntities.SAGA_SAIBAMAN, 0x6ED610, 0x2A6E18, new Item.Properties()));
 	public static final RegistryObject<Item> KAIWAREMAN_SE = ITEM_REGISTER.register("kaiwareman_spawn_egg", () ->

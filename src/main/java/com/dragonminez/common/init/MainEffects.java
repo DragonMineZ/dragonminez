@@ -57,6 +57,7 @@ public class MainEffects {
 	public static final RegistryObject<MobEffect> MASTERY_GAIN = EFFECTS.register("mastery_gain", () -> new DMZEffect(MobEffectCategory.BENEFICIAL, 0x9B59D0));
 	public static final RegistryObject<MobEffect> MUTANT = EFFECTS.register("mutant", () -> new DMZEffect(MobEffectCategory.BENEFICIAL, 0xB14CE0));
 	public static final RegistryObject<MobEffect> KAMI_BLESS = EFFECTS.register("kami_bless", () -> new DMZEffect(MobEffectCategory.BENEFICIAL, 0x7FE08A));
+	public static final RegistryObject<MobEffect> MEDI_SHELL = EFFECTS.register("medi_shell", () -> new DMZEffect(MobEffectCategory.BENEFICIAL, 0xE0559B));
 
 	// Raids
 	public static final RegistryObject<MobEffect> RAID_WRATH = EFFECTS.register("raid_wrath", () -> new DMZEffect(MobEffectCategory.HARMFUL, 0x9B30D9));

@@ -5,6 +5,7 @@ import com.dragonminez.common.config.GeneralServerConfig.DynamicGrowthConfig;
 import com.dragonminez.common.init.entities.MastersEntity;
 import com.dragonminez.common.init.entities.ShadowDummyEntity;
 import com.dragonminez.common.init.entities.dragon.DragonWishEntity;
+import com.dragonminez.common.init.entities.demon.DemonVillagersEntity;
 import com.dragonminez.common.init.entities.namek.NamekTraderEntity;
 import com.dragonminez.common.init.entities.namek.NamekVillagerEntity;
 import com.dragonminez.common.init.entities.questnpc.QuestNPCEntity;
@@ -118,7 +119,8 @@ public final class DynamicGrowthService {
 	}
 
 	private static boolean isProtectedNpc(LivingEntity target) {
-		return target instanceof Villager || target instanceof NamekVillagerEntity || target instanceof NamekTraderEntity || target instanceof MastersEntity || target instanceof DragonWishEntity;
+		return target instanceof Villager || target instanceof NamekVillagerEntity || target instanceof NamekTraderEntity
+				|| target instanceof DemonVillagersEntity.Resident || target instanceof MastersEntity || target instanceof DragonWishEntity;
 	}
 
 	private static boolean isNoRiskTarget(ServerPlayer player, LivingEntity target) {

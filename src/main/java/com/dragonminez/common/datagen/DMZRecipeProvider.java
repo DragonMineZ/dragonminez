@@ -311,6 +311,21 @@ public class DMZRecipeProvider extends RecipeProvider implements IConditionBuild
 
 		buildingSet(pWriter, MainBlocks.MAKAI_STONE.get(), MainBlocks.MAKAI_STONE_SLAB.get(), MainBlocks.MAKAI_STONE_STAIRS.get(), MainBlocks.MAKAI_STONE_WALL.get());
 		buildingSet(pWriter, MainBlocks.DEMON_BRICKS.get(), MainBlocks.DEMON_BRICK_SLAB.get(), MainBlocks.DEMON_BRICK_STAIRS.get(), MainBlocks.DEMON_BRICK_WALL.get());
+		buildingSet(pWriter, MainBlocks.ADOBE.get(), MainBlocks.ADOBE_SLAB.get(), MainBlocks.ADOBE_STAIRS.get(), MainBlocks.ADOBE_WALL.get());
+
+		ShapelessRecipeBuilder.shapeless(RecipeCategory.BUILDING_BLOCKS, MainBlocks.ADOBE.get(), 2)
+				.requires(MainBlocks.MAKAI_SAND.get())
+				.requires(Items.CLAY_BALL, 2)
+				.requires(Items.WHEAT)
+				.unlockedBy(getHasName(MainBlocks.MAKAI_SAND.get()), has(MainBlocks.MAKAI_SAND.get()))
+				.group(Reference.MOD_ID).save(pWriter);
+
+		ShapedRecipeBuilder.shaped(RecipeCategory.BUILDING_BLOCKS, MainBlocks.ADOBE_BRICKS.get(), 4)
+				.pattern("##")
+				.pattern("##")
+				.define('#', MainBlocks.ADOBE.get())
+				.unlockedBy(getHasName(MainBlocks.ADOBE.get()), has(MainBlocks.ADOBE.get()))
+				.group(Reference.MOD_ID).save(pWriter);
 
 		ShapedRecipeBuilder.shaped(RecipeCategory.BUILDING_BLOCKS, MainBlocks.DEMON_BRICKS.get(), 4)
 				.pattern("##")

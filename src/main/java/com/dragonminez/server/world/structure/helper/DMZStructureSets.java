@@ -37,7 +37,8 @@ public class DMZStructureSets {
 			YAMCHA_HOUSE = createKey("yamcha_house"), TRUNKS_SHIP = createKey("trunks_ship"),
 			VEGETA_POD = createKey("vegeta_pod"),
 			BABA_PALACE = createKey("baba_palace"), TREE_OF_MIGHT = createKey("tree_of_might"),
-			SAIYAN_CRATER = createKey("saiyan_crater"), GETE_STAR = createKey("gete_star");
+			SAIYAN_CRATER = createKey("saiyan_crater"), GETE_STAR = createKey("gete_star"),
+			DEMON_VILLAGE = createKey("demon_village");
 
 	public static void bootstrap(BootstapContext<StructureSet> context) {
 		HolderGetter<Structure> structures = context.lookup(Registries.STRUCTURE);
@@ -114,6 +115,20 @@ public class DMZStructureSets {
 						RandomSpreadType.LINEAR
 				)
 		));
+
+		context.register(DEMON_VILLAGE, new StructureSet(
+				structures.getOrThrow(DMZStructures.DEMON_VILLAGE),
+				new RandomSpreadStructurePlacement(
+						Vec3i.ZERO,
+						StructurePlacement.FrequencyReductionMethod.DEFAULT,
+						1.0f,
+						DEMON_VILLAGE_SALT,
+						Optional.empty(),
+						DEMON_VILLAGE_SPACING,
+						DEMON_VILLAGE_SEPARATION,
+						RandomSpreadType.TRIANGULAR
+				)
+		));
 	}
 
 	public static final int TREE_OF_MIGHT_SALT = 28475016;
@@ -123,6 +138,9 @@ public class DMZStructureSets {
 	private static final int SAIYAN_CRATER_SPACING = 40;
 	private static final int SAIYAN_CRATER_SEPARATION = 20;
 	private static final int TREE_OF_MIGHT_MIN_DISTANCE = 1000;
+	private static final int DEMON_VILLAGE_SALT = 73019284;
+	private static final int DEMON_VILLAGE_SPACING = 24;
+	private static final int DEMON_VILLAGE_SEPARATION = 8;
 
 	private static void unique(BootstapContext<StructureSet> context, ResourceKey<StructureSet> key,
 							   Holder<Structure> structure, int salt, HolderSet<Biome> validBiomes) {

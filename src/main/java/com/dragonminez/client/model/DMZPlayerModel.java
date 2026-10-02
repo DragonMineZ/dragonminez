@@ -1,8 +1,8 @@
 package com.dragonminez.client.model;
 
+import com.dragonminez.client.render.DMZRendererCache;
 import com.dragonminez.Reference;
 import com.dragonminez.client.animation.IPlayerAnimatable;
-import com.dragonminez.client.init.entities.renderer.sagas.SaiyanInvaderRenderer;
 import com.dragonminez.client.render.util.RenderUtil;
 import com.dragonminez.common.config.ConfigManager;
 import com.dragonminez.common.config.RaceCharacterConfig;
@@ -274,13 +274,13 @@ public class DMZPlayerModel<T extends AbstractClientPlayer & GeoAnimatable> exte
 
     @Override
     public ResourceLocation getAnimationResource(T t) {
-        if (t instanceof SaiyanInvaderRenderer.Puppet) return PUPPET_ANIM_PRIMARY;
+        if (t instanceof DMZRendererCache.NpcPuppet) return PUPPET_ANIM_PRIMARY;
         return ANIM_PRIMARY;
     }
 
     @Override
     public ResourceLocation[] getAnimationResourceFallbacks(T t) {
-        if (t instanceof SaiyanInvaderRenderer.Puppet) return PUPPET_ANIM_FALLBACKS;
+        if (t instanceof DMZRendererCache.NpcPuppet) return PUPPET_ANIM_FALLBACKS;
         return ANIM_FALLBACKS;
     }
 

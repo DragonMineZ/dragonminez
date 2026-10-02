@@ -16,6 +16,7 @@ import com.dragonminez.common.init.MainItems;
 import com.dragonminez.common.init.entities.ki.AbstractKiProjectile;
 import com.dragonminez.common.init.entities.ShadowDummyEntity;
 import com.dragonminez.common.network.C2S.SummonPlayerShadowDummyC2S;
+import com.dragonminez.common.init.entities.demon.DemonVillagersEntity;
 import com.dragonminez.common.init.entities.namek.NamekTraderEntity;
 import com.dragonminez.common.init.entities.namek.NamekWarriorEntity;
 import com.dragonminez.common.init.entities.redribbon.BanditEntity;
@@ -83,6 +84,7 @@ public class StatsEvents {
 	public static final UUID SURGE_ATTACK_SPEED_UUID = UUID.fromString("4e83c027-9a1b-4d65-b3f8-6c20d74a1e9b");
 	public static final UUID SPEED_STEP_HEIGHT_UUID = UUID.fromString("5a2f8c14-7b93-4e6d-b0a5-8c3f1e94d762");
 	private static final double TURBO_SPEED_BONUS = 0.30;
+	private static final float MEDI_ANT_RESTORE = 0.85F;
 	public static final UUID FORM_REACH_UUID = UUID.fromString("d8d18684-4476-5c2d-ba28-37c348eb521f");
 	public static final UUID FORM_ATTACK_SPEED_UUID = UUID.fromString("f2e0aaf0-a4ab-4921-a5b0-f34cf1c3533b");
 	public static final UUID KI_WEAPON_ATTACK_SPEED_UUID = UUID.fromString("a3b1c5d7-9e2f-4a6b-8c1d-5f7e9a0b2c4d");
@@ -265,7 +267,8 @@ public class StatsEvents {
 	}
 
 	private static boolean removesAlignment(Entity entity) {
-		return entity instanceof NamekWarriorEntity || entity instanceof Villager || entity instanceof NamekTraderEntity;
+		return entity instanceof NamekWarriorEntity || entity instanceof Villager || entity instanceof NamekTraderEntity
+				|| entity instanceof DemonVillagersEntity.Resident;
 	}
 
 	@SubscribeEvent
@@ -556,8 +559,9 @@ public class StatsEvents {
 				SenzuBeanItem senzu = stack.getItem() instanceof SenzuBeanItem bean ? bean : null;
 				boolean isSenzu = senzu != null;
 				boolean isHeartMedicine = itemId.equals("dragonminez:heart_medicine");
+				boolean isMediAnt = stack.is(MainItems.MEDI_BUG_ANT.get());
 
-				if ((isSenzu || isHeartMedicine) && player.getCooldowns().isOnCooldown(stack.getItem())) return;
+				if ((isSenzu || isHeartMedicine || isMediAnt) && player.getCooldowns().isOnCooldown(stack.getItem())) return;
 
 				FoodProperties foodProperties = stack.getFoodProperties(player);
 				if (foodProperties == null) return;
@@ -618,6 +622,13 @@ public class StatsEvents {
 					} else {
 						player.getCooldowns().addCooldown(stack.getItem(), cooldownTicks);
 					}
+				} else if (isMediAnt) {
+					PassiveEventHandler.suppressHealingBonus = true;
+					player.heal(maxHealth * MEDI_ANT_RESTORE);
+					PassiveEventHandler.suppressHealingBonus = false;
+					data.getResources().setCurrentEnergy(data.getResources().getCurrentEnergy() + maxEnergy * MEDI_ANT_RESTORE);
+					data.getResources().setCurrentStamina(data.getResources().getCurrentStamina() + maxStamina * MEDI_ANT_RESTORE);
+					player.getCooldowns().addCooldown(stack.getItem(), ConfigManager.getServerConfig().getGameplay().getSenzuCooldownTicks());
 				} else {
 					int durationSeconds = 6;
 					FOOD_REGEN_QUEUE.computeIfAbsent(player.getUUID(), k -> new ArrayList<>()).add(new FoodRegenTask(durationSeconds, healAmount, energyAmount, staminaAmount));
@@ -639,6 +650,8 @@ public class StatsEvents {
 			if (player.getCooldowns().isOnCooldown(stack.getItem()) || player.hasEffect(MainEffects.STUN.get()))
 				event.setCanceled(true);
 			else event.setDuration(1);
+		} else if (stack.is(MainItems.MEDI_BUG_ANT.get()) && player.getCooldowns().isOnCooldown(stack.getItem())) {
+			event.setCanceled(true);
 		}
 	}
 

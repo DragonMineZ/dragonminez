@@ -10,9 +10,11 @@ import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.effect.MobEffects;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.item.context.UseOnContext;
 import net.minecraft.world.level.BlockGetter;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Block;
+import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.BushBlock;
 import net.minecraft.world.level.block.HalfTransparentBlock;
 import net.minecraft.world.level.block.SandBlock;
@@ -22,6 +24,9 @@ import net.minecraft.world.level.block.state.properties.BooleanProperty;
 import net.minecraft.world.phys.shapes.CollisionContext;
 import net.minecraft.world.phys.shapes.Shapes;
 import net.minecraft.world.phys.shapes.VoxelShape;
+import net.minecraftforge.common.ToolAction;
+import net.minecraftforge.common.ToolActions;
+import org.jetbrains.annotations.Nullable;
 import org.joml.Vector3f;
 
 public final class DemonRealmBlocks {
@@ -52,6 +57,22 @@ public final class DemonRealmBlocks {
 		@Override
 		public boolean propagatesSkylightDown(BlockState state, BlockGetter level, BlockPos pos) {
 			return state.getValue(NATURAL) || super.propagatesSkylightDown(state, level, pos);
+		}
+	}
+
+	public static class SkylitSoilBlock extends SkylitBlock {
+		public SkylitSoilBlock(Properties properties) {
+			super(properties);
+		}
+
+		@Override
+		public @Nullable BlockState getToolModifiedState(BlockState state, UseOnContext context, ToolAction toolAction, boolean simulate) {
+			if (toolAction == ToolActions.HOE_TILL && context.getItemInHand().canPerformAction(toolAction)
+					&& context.getClickedFace() != Direction.DOWN
+					&& context.getLevel().getBlockState(context.getClickedPos().above()).isAir()) {
+				return Blocks.FARMLAND.defaultBlockState();
+			}
+			return super.getToolModifiedState(state, context, toolAction, simulate);
 		}
 	}
 

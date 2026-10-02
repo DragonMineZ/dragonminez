@@ -2,12 +2,15 @@ package com.dragonminez.server.world.structure.helper;
 
 import com.dragonminez.Reference;
 import com.dragonminez.common.init.MainTags;
+import com.dragonminez.server.world.biome.DemonRealmBiomes;
+import com.dragonminez.server.world.structure.DemonVillageStructure;
 import com.dragonminez.server.world.structure.TallJigsawStructure;
 import com.dragonminez.server.world.structure.BossStructures.SaiyanCraterStructure;
 import com.dragonminez.server.world.structure.BossStructures.GeteStarStructure;
 import com.dragonminez.server.world.structure.BossStructures.NamekRuinsStructure;
 import com.dragonminez.server.world.structure.BossStructures.TreeOfMightStructure;
 import net.minecraft.core.HolderGetter;
+import net.minecraft.core.HolderSet;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.data.worldgen.BootstapContext;
 import net.minecraft.resources.ResourceKey;
@@ -39,7 +42,7 @@ public class DMZStructures {
 			VEGETA_POD = createKey("vegeta_pod"),
 			BABA_PALACE = createKey("baba_palace"), TREE_OF_MIGHT = createKey("tree_of_might"),
 			SAIYAN_CRATER = createKey("saiyan_crater"), NAMEK_RUINS = createKey("namek_ruins"),
-			GETE_STAR = createKey("gete_star");
+			GETE_STAR = createKey("gete_star"), DEMON_VILLAGE = createKey("demon_village");
 
 	public static void bootstrap(BootstapContext<Structure> context) {
 		HolderGetter<Biome> biomes = context.lookup(Registries.BIOME);
@@ -292,6 +295,15 @@ public class DMZStructures {
 		context.register(GETE_STAR, new GeteStarStructure(
 				new Structure.StructureSettings(
 						biomes.getOrThrow(MainTags.Biomes.IS_NAMEK),
+						Map.of(),
+						GenerationStep.Decoration.SURFACE_STRUCTURES,
+						TerrainAdjustment.NONE
+				)
+		));
+
+		context.register(DEMON_VILLAGE, new DemonVillageStructure(
+				new Structure.StructureSettings(
+						HolderSet.direct(biomes.getOrThrow(DemonRealmBiomes.THIRD_DEMON_WORLD)),
 						Map.of(),
 						GenerationStep.Decoration.SURFACE_STRUCTURES,
 						TerrainAdjustment.NONE

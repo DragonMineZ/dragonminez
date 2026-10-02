@@ -14,6 +14,7 @@ import com.dragonminez.common.config.ConfigManager;
 import com.dragonminez.common.dragonball.DragonBallDefinitions;
 import com.dragonminez.common.init.CapsuleCorpMapTrade;
 import com.dragonminez.common.init.MainAttributes;
+import com.dragonminez.common.init.MainEffects;
 import com.dragonminez.common.init.MainEnchants;
 import com.dragonminez.common.init.MainItems;
 import com.dragonminez.common.init.MainVillagers;
@@ -158,6 +159,7 @@ public class ForgeCommonEvents {
 	private static final int MAP_XP = 40;
 
 	private static final int MAP_MAX_USES = 8;
+	private static final float MEDI_SHELL_DAMAGE_TAKEN = 0.7F;
 
 	private static ItemStack emptyMap() {
 		return new ItemStack(Items.MAP, 1);
@@ -675,6 +677,10 @@ public class ForgeCommonEvents {
 	public static void onLivingDamage(LivingDamageEvent event) {
 		if (isCharacterCreationProtected(event.getEntity())) {
 			event.setCanceled(true);
+			return;
+		}
+		if (event.getEntity().hasEffect(MainEffects.MEDI_SHELL.get())) {
+			event.setAmount(event.getAmount() * MEDI_SHELL_DAMAGE_TAKEN);
 		}
 	}
 

@@ -118,6 +118,11 @@ public class DMZBlockLootTables extends BlockLootSubProvider {
 		this.dropSelf(MainBlocks.DEMON_BRICK_STAIRS.get());
 		this.add(MainBlocks.DEMON_BRICK_SLAB.get(), block -> createSlabItemTable(MainBlocks.DEMON_BRICK_SLAB.get()));
 		this.dropSelf(MainBlocks.DEMON_BRICK_WALL.get());
+		this.dropSelf(MainBlocks.ADOBE.get());
+		this.dropSelf(MainBlocks.ADOBE_STAIRS.get());
+		this.add(MainBlocks.ADOBE_SLAB.get(), block -> createSlabItemTable(MainBlocks.ADOBE_SLAB.get()));
+		this.dropSelf(MainBlocks.ADOBE_WALL.get());
+		this.dropSelf(MainBlocks.ADOBE_BRICKS.get());
 		this.dropSelf(MainBlocks.DEMON_MAGMA_ROCK.get());
 		this.dropSelf(MainBlocks.RED_ASH.get());
 		this.dropSelf(MainBlocks.CRIMSON_CRYSTAL.get());

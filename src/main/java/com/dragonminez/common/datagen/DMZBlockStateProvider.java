@@ -148,6 +148,11 @@ public class DMZBlockStateProvider extends BlockStateProvider {
 		blockWithItem(MainBlocks.MAKAI_SAND);
 		simpleBlock(MainBlocks.MAKAI_SHRUB.get(), models().cross("makai_shrub", blockTexture(MainBlocks.MAKAI_SHRUB.get())).renderType("cutout"));
 		leavesBlock(MainBlocks.MAKAI_BUSH);
+		blockWithItem(MainBlocks.ADOBE);
+		stairsBlock(((StairBlock) MainBlocks.ADOBE_STAIRS.get()), blockTexture(MainBlocks.ADOBE.get()));
+		slabBlock(((SlabBlock) MainBlocks.ADOBE_SLAB.get()), blockTexture(MainBlocks.ADOBE.get()), blockTexture(MainBlocks.ADOBE.get()));
+		wallBlock(((WallBlock) MainBlocks.ADOBE_WALL.get()), blockTexture(MainBlocks.ADOBE.get()));
+		blockWithItem(MainBlocks.ADOBE_BRICKS);
 		blockWithItem(MainBlocks.DEMON_HORN);
 		simpleBlockWithItem(MainBlocks.GAS_VENT.get(), models().cubeBottomTop("gas_vent",
 				modLoc("block/gas_vent_side"), blockTexture(MainBlocks.MAKAI_STONE.get()), modLoc("block/gas_vent_top")));

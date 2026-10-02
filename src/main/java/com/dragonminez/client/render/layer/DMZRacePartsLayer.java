@@ -1,6 +1,6 @@
 package com.dragonminez.client.render.layer;
 
-import com.dragonminez.client.init.entities.renderer.sagas.SaiyanInvaderRenderer;
+import com.dragonminez.client.render.DMZRendererCache;
 import com.dragonminez.Reference;
 import com.dragonminez.client.render.HeadPortraitRenderer;
 import com.dragonminez.client.render.firstperson.dto.FirstPersonManager;
@@ -218,7 +218,8 @@ public class DMZRacePartsLayer<T extends AbstractClientPlayer & GeoAnimatable> e
 
 						float[] colorToTint = accessoryColor;
 
-						if (character.getRaceName().equals("majin") || character.getRaceName().equals("namekian")) {
+						if (character.getRaceName().equals("majin") || character.getRaceName().equals("namekian")
+								|| animatable instanceof DMZRendererCache.NpcPuppet) {
 							colorToTint = resolveBodyColor1(stats);
 						}
 
@@ -448,7 +449,7 @@ public class DMZRacePartsLayer<T extends AbstractClientPlayer & GeoAnimatable> e
 	}
 
 	private void renderAccessories(PoseStack poseStack, T animatable, BakedGeoModel playerModel, MultiBufferSource bufferSource, float partialTick, int packedLight) {
-		if (animatable instanceof SaiyanInvaderRenderer.Puppet puppet) {
+		if (animatable instanceof DMZRendererCache.NpcPuppet puppet) {
 			renderScouter(poseStack, animatable, playerModel, bufferSource, partialTick, packedLight, puppet.getScouter());
 			return;
 		}

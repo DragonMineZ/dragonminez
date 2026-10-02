@@ -2,6 +2,7 @@ package com.dragonminez.server.world.structure.helper;
 
 import com.dragonminez.Reference;
 import com.dragonminez.server.world.structure.TallJigsawStructure;
+import com.dragonminez.server.world.structure.DemonVillageStructure;
 import com.dragonminez.server.world.structure.BossStructures.SaiyanCraterStructure;
 import com.dragonminez.server.world.structure.BossStructures.GeteStarStructure;
 import com.dragonminez.server.world.structure.BossStructures.NamekRuinsStructure;
@@ -31,6 +32,8 @@ public class MainStructureTypes {
 			STRUCTURE_TYPES.register("namek_ruins", () -> () -> NamekRuinsStructure.CODEC);
 	public static final RegistryObject<StructureType<GeteStarStructure>> GETE_STAR =
 			STRUCTURE_TYPES.register("gete_star", () -> () -> GeteStarStructure.CODEC);
+	public static final RegistryObject<StructureType<DemonVillageStructure>> DEMON_VILLAGE =
+			STRUCTURE_TYPES.register("demon_village", () -> () -> DemonVillageStructure.CODEC);
 
 	public static final RegistryObject<StructurePieceType> TREE_OF_MIGHT_PIECE =
 			STRUCTURE_PIECES.register("tree_of_might", () -> (StructurePieceType.ContextlessType) TreeOfMightPiece::new);
@@ -42,6 +45,10 @@ public class MainStructureTypes {
 			STRUCTURE_PIECES.register("namek_ruins_house", () -> (StructurePieceType.StructureTemplateType) NamekRuinsStructure.HousePiece::new);
 	public static final RegistryObject<StructurePieceType> GETE_STAR_PIECE =
 			STRUCTURE_PIECES.register("gete_star", () -> (StructurePieceType.ContextlessType) GeteStarStructure.Piece::new);
+	public static final RegistryObject<StructurePieceType> DEMON_VILLAGE_BUILDING =
+			STRUCTURE_PIECES.register("demon_village_building", () -> (StructurePieceType.StructureTemplateType) DemonVillageStructure.BuildingPiece::new);
+	public static final RegistryObject<StructurePieceType> DEMON_VILLAGE_GROUND =
+			STRUCTURE_PIECES.register("demon_village_ground", () -> (StructurePieceType.ContextlessType) DemonVillageStructure.GroundPiece::new);
 
 	public static void register(IEventBus eventBus) {
 		STRUCTURE_TYPES.register(eventBus);
