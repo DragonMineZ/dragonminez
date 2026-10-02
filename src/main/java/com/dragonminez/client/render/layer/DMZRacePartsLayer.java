@@ -237,6 +237,7 @@ public class DMZRacePartsLayer<T extends AbstractClientPlayer & GeoAnimatable> e
 						float[] colorToTint = accessoryColor;
 
 						if (character.getRaceName().equals("majin") || character.getRaceName().equals("namekian")
+								|| character.getRaceName().equals("glind")
 								|| animatable instanceof DMZRendererCache.NpcPuppet) {
 							colorToTint = resolveBodyColor1(stats);
 						}

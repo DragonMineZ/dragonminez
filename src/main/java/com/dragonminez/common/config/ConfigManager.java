@@ -1043,7 +1043,7 @@ public class ConfigManager {
 		config.setCustomModel("human");
 		config.setIsLayered(true);
 		config.setRacialSkill("glind");
-		config.setHeadBones(new String[]{"hair"});
+		config.setHeadBones(new String[]{"ears1", "hair"});
 		config.setDefaultModelScaling(new Float[]{0.9375f, 0.9375f, 0.9375f});
 		config.setDefaultBodyType(1);
 		config.setSlimBodyTypes(new Integer[]{2});
