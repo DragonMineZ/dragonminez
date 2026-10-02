@@ -60,6 +60,7 @@ import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.Style;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.util.FormattedCharSequence;
 import net.minecraft.util.Mth;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
@@ -152,33 +153,17 @@ public class QuestTreeScreen extends BaseMenuScreen {
 	private float navContentHeight;
 	private boolean currentSagaCollapsed;
 
-	private float targetNavScroll = 0;
-	private float currentNavScroll = 0;
-	private float navMaxScroll = 0;
-
-	private float targetDescScroll = 0;
-	private float currentDescScroll = 0;
-	private float descMaxScroll = 0;
-
-	private float targetObjScroll = 0;
-	private float currentObjScroll = 0;
-	private float objMaxScroll = 0;
-
-	private float targetRewardsScroll = 0;
-	private float currentRewardsScroll = 0;
-	private float rewardsMaxScroll = 0;
-
-	private float diffIntroScroll = 0;
-	private float diffIntroMaxScroll = 0;
-	private final float[] diffOptScroll = new float[3];
-	private final float[] diffOptMaxScroll = new float[3];
-
-	private final ScrollbarState navBar = new ScrollbarState();
-	private final ScrollbarState descBar = new ScrollbarState();
-	private final ScrollbarState objBar = new ScrollbarState();
-	private final ScrollbarState rewardsBar = new ScrollbarState();
-	private final ScrollbarState diffIntroBar = new ScrollbarState();
-	private final ScrollbarState[] diffOptBars = { new ScrollbarState(), new ScrollbarState(), new ScrollbarState() };
+	private final ScrollbarState navBar = new ScrollbarState().barWidth(2).minThumb(10).step(26);
+	private final ScrollbarState descBar = new ScrollbarState().minThumb(10);
+	private final ScrollbarState objBar = new ScrollbarState().barWidth(2).minThumb(10);
+	private final ScrollbarState rewardsBar = new ScrollbarState().minThumb(10);
+	private final ScrollbarState diffIntroBar = new ScrollbarState().minThumb(10).instant();
+	private final ScrollbarState[] diffOptBars = {
+			new ScrollbarState().minThumb(10).instant(),
+			new ScrollbarState().minThumb(10).instant(),
+			new ScrollbarState().minThumb(10).instant()
+	};
+	private final ScrollbarState inviteBar = new ScrollbarState().step(18);
 
 	private List<String> frameObjLinesCache = null;
 	private Quest frameObjLinesQuest = null;
@@ -215,7 +200,6 @@ public class QuestTreeScreen extends BaseMenuScreen {
 	private double treePressStartY = 0.0;
 
 	private boolean invitePopupOpen = false;
-	private int invitePopupScroll = 0;
 	private final List<PartyInviteEntry> inviteEntries = new ArrayList<>();
 
 	private boolean confirmOverlayOpen = false;
@@ -327,6 +311,7 @@ public class QuestTreeScreen extends BaseMenuScreen {
 	@Override
 	protected void init() {
 		super.init();
+		configureScrollSteps();
 		startPanelIntroAnimation();
 		updateStatsData();
 		loadAvailableSagas();
@@ -337,6 +322,16 @@ public class QuestTreeScreen extends BaseMenuScreen {
 		scrollNavigatorToSelected();
 		refreshButtons();
 		requestTutorial();
+	}
+
+	private void configureScrollSteps() {
+		int detailStep = getDetailLineHeight() * 2;
+		int textStep = (this.font.lineHeight + 2) * 2;
+		rewardsBar.step(detailStep);
+		objBar.step(detailStep);
+		descBar.step(textStep);
+		diffIntroBar.step(textStep);
+		for (ScrollbarState bar : diffOptBars) bar.step(textStep);
 	}
 
 	private void requestTutorial() {
@@ -497,8 +492,7 @@ public class QuestTreeScreen extends BaseMenuScreen {
 			if (entry.quest() != null && sameQuestIdentity(entry.quest(), selectedQuest)) {
 				float rowY = 0.0f;
 				for (int j = 0; j < i; j++) rowY += navRowHeight(navigatorEntries.get(j));
-				targetNavScroll = Mth.clamp(rowY - 40, 0, navMaxScroll);
-				currentNavScroll = targetNavScroll;
+				navBar.jumpTo(rowY - 40);
 				return;
 			}
 		}
@@ -805,13 +799,6 @@ public class QuestTreeScreen extends BaseMenuScreen {
 		rebuildSagaCounters();
 		mergeNavigatorRows();
 
-		PanelRect left = getLeftPanelRect();
-		int usableHeight = Math.max(32, left.height - 40 - getPartyFooterHeight());
-		float totalNavHeight = 0.0f;
-		for (NavigatorEntry entry : navigatorEntries) totalNavHeight += navRowHeight(entry);
-		navMaxScroll = Math.max(0, totalNavHeight - usableHeight);
-		targetNavScroll = Math.max(0, Math.min(targetNavScroll, navMaxScroll));
-
 		rebuildTreeRenderData();
 	}
 
@@ -956,8 +943,9 @@ public class QuestTreeScreen extends BaseMenuScreen {
 		if (mouseX < listX || mouseX > listX + listW || mouseY < listY || mouseY > listY + listH) return null;
 		for (NavPlacement placement : navPlacements) {
 			if (placement.row().ghost) continue;
-			float top = Math.max(listY + placement.y() - currentNavScroll, listY + placement.clipTop() - currentNavScroll);
-			float bottom = Math.min(listY + placement.y() + placement.height() - currentNavScroll, listY + placement.clipBottom() - currentNavScroll);
+			float scroll = navBar.scroll();
+			float top = Math.max(listY + placement.y() - scroll, listY + placement.clipTop() - scroll);
+			float bottom = Math.min(listY + placement.y() + placement.height() - scroll, listY + placement.clipBottom() - scroll);
 			if (mouseY >= top && mouseY < bottom) return placement;
 		}
 		return null;
@@ -1592,6 +1580,7 @@ public class QuestTreeScreen extends BaseMenuScreen {
 		rewardsBar.clear();
 		diffIntroBar.clear();
 		for (ScrollbarState b : diffOptBars) b.clear();
+		inviteBar.clear();
 
 		long now = System.nanoTime();
 		if (lastRenderTime == 0) lastRenderTime = now;
@@ -1637,7 +1626,7 @@ public class QuestTreeScreen extends BaseMenuScreen {
 		getRightPanelRect();
 		graphics.pose().pushPose();
 		graphics.pose().translate(rightPanelFraction, 0.0f, 0.0f);
-		renderRightDetailPanel(graphics, uiMouseX, uiMouseY, dt);
+		renderRightDetailPanel(graphics, uiMouseX, uiMouseY);
 		graphics.pose().popPose();
 
 		super.render(graphics, uiMouseX, uiMouseY, partialTick);
@@ -1675,7 +1664,7 @@ public class QuestTreeScreen extends BaseMenuScreen {
 		}
 
 		PanelRect tree = getTreePanelRect();
-		graphics.enableScissor(toScreenCoord(tree.x), toScreenCoord(tree.y), toScreenCoord(tree.right()), toScreenCoord(tree.bottom()));
+		HudRender.scissor(graphics, tree.x, tree.y, tree.right(), tree.bottom());
 		renderBackgroundGrid(graphics, tree);
 
 		Saga currentSaga = availableSagas.get(currentSagaIndex);
@@ -1861,41 +1850,29 @@ public class QuestTreeScreen extends BaseMenuScreen {
 
 		int listH = Math.max(32, panel.height - 38 - getPartyFooterHeight());
 		updateNavigatorLayout(dt);
-		navMaxScroll = Math.max(0, navContentHeight - listH);
-		targetNavScroll = Mth.clamp(targetNavScroll, 0, navMaxScroll);
-
-		currentNavScroll += (targetNavScroll - currentNavScroll) * (float)(1.0 - Math.exp(-15.0f * dt));
-		currentNavScroll = Mth.clamp(currentNavScroll, 0, navMaxScroll);
+		navBar.layout(listX, listY, listW, listH, navContentHeight).barAt(listX + listW - 3);
+		float navScroll = navBar.scroll();
 
 		NavPlacement hoveredPlacement = navPlacementAt(mouseX, mouseY, listX, listY, listW, listH);
 		NavigatorEntry hoveredEntry = hoveredPlacement != null ? hoveredPlacement.row().entry : null;
 
-		graphics.enableScissor(toScreenCoord(listX + leftPanelFraction), toScreenCoord(listY), toScreenCoord(listX + listW + leftPanelFraction), toScreenCoord(listY + listH));
+		navBar.beginClip(graphics, false);
 		for (NavPlacement placement : navPlacements) {
-			float rowTop = listY + placement.y() - currentNavScroll;
-			float clipTop = listY + placement.clipTop() - currentNavScroll;
-			float clipBottom = listY + placement.clipBottom() - currentNavScroll;
+			float rowTop = listY + placement.y() - navScroll;
+			float clipTop = listY + placement.clipTop() - navScroll;
+			float clipBottom = listY + placement.clipBottom() - navScroll;
 			if (rowTop + placement.height() <= Math.max(listY, clipTop) || rowTop >= Math.min(listY + listH, clipBottom)) continue;
 
 			boolean clipped = rowTop < clipTop || rowTop + placement.height() > clipBottom;
-			if (clipped) graphics.enableScissor(toScreenCoord(listX + leftPanelFraction), toScreenCoord(clipTop), toScreenCoord(listX + listW + leftPanelFraction), toScreenCoord(clipBottom));
+			if (clipped) HudRender.scissor(graphics, listX, clipTop, listX + listW, clipBottom);
 			graphics.pose().pushPose();
 			graphics.pose().translate(0.0f, rowTop, 0.0f);
 			renderNavigatorEntry(graphics, placement.row(), listX, listW, placement == hoveredPlacement);
 			graphics.pose().popPose();
 			if (clipped) graphics.disableScissor();
 		}
-		graphics.disableScissor();
-
-		navBar.update(listX + listW - 3, 2, listY, listH, navMaxScroll);
-		if (navMaxScroll > 0) {
-			int scrollBarX = listX + listW - 3;
-			HudRender.rect(graphics, scrollBarX, listY, 2, listH, 0xFF333333);
-			float scrollPercent = currentNavScroll / navMaxScroll;
-			float indicatorHeight = Math.max(10.0f, listH / Math.max(1.0f, navContentHeight) * listH);
-			float indicatorY = listY + (listH - indicatorHeight) * scrollPercent;
-			HudRender.rect(graphics, scrollBarX, indicatorY, 2, indicatorHeight, 0xFFAAAAAA);
-		}
+		navBar.endClip(graphics);
+		navBar.renderBar(graphics, mouseX, mouseY);
 
 		if (hoveredEntry != null) {
 			if (hoveredEntry.comingSoon()) {
@@ -2081,7 +2058,7 @@ public class QuestTreeScreen extends BaseMenuScreen {
 		return new PanelRect(panel.x + 8, panel.bottom() - footerHeight, panel.width - 16, footerHeight - 6);
 	}
 
-	private void renderRightDetailPanel(GuiGraphics graphics, int mouseX, int mouseY, float dt) {
+	private void renderRightDetailPanel(GuiGraphics graphics, int mouseX, int mouseY) {
 		if (rightPanelRevealProgress <= 0.001f && selectedQuest == null) return;
 
 		PanelRect panel = getRightPanelRect();
@@ -2105,9 +2082,9 @@ public class QuestTreeScreen extends BaseMenuScreen {
 		int objectivesY = descY + layout.descH();
 
 		renderTopSection(graphics, innerX, innerY, innerW, layout.titleH(), status);
-		renderRewardsSection(graphics, innerX, rewardsY, innerW, layout.rewardsH(), questKey, mouseX, mouseY, dt);
-		renderDescriptionSection(graphics, innerX, descY, innerW, layout.descH(), questKey, dt);
-		renderObjectivesSection(graphics, innerX, objectivesY, innerW, layout.objectivesH(), saga, dt);
+		renderRewardsSection(graphics, innerX, rewardsY, innerW, layout.rewardsH(), questKey, mouseX, mouseY);
+		renderDescriptionSection(graphics, innerX, descY, innerW, layout.descH(), questKey, mouseX, mouseY);
+		renderObjectivesSection(graphics, innerX, objectivesY, innerW, layout.objectivesH(), saga, mouseX, mouseY);
 	}
 
 	private DetailPanelLayout computeDetailPanelLayout(int width, int totalHeight, String questKey, Saga saga) {
@@ -2196,7 +2173,7 @@ public class QuestTreeScreen extends BaseMenuScreen {
 				getStatusColor(status));
 	}
 
-	private void renderRewardsSection(GuiGraphics graphics, int x, int y, int width, int height, String questKey, int mouseX, int mouseY, float dt) {
+	private void renderRewardsSection(GuiGraphics graphics, int x, int y, int width, int height, String questKey, int mouseX, int mouseY) {
 		graphics.fill(x, y, x + width, y + height, 0x44111122);
 		graphics.renderOutline(x, y, width, height, 0x88444466);
 
@@ -2208,6 +2185,7 @@ public class QuestTreeScreen extends BaseMenuScreen {
 
 		List<RewardBlock> blocks = buildRewardBlocks(width);
 		if (blocks.isEmpty()) {
+			rewardsBar.clear();
 			TextUtil.drawStringWithBorder(graphics, this.font, txt("-"), x + 8, y + 18, 0xFF999999);
 			return;
 		}
@@ -2220,23 +2198,18 @@ public class QuestTreeScreen extends BaseMenuScreen {
 		int totalContentHeight = 0;
 		for (RewardBlock block : blocks) totalContentHeight += block.height();
 
-		rewardsMaxScroll = Math.max(0, totalContentHeight - viewHeight);
-		targetRewardsScroll = Mth.clamp(targetRewardsScroll, 0, rewardsMaxScroll);
-		currentRewardsScroll += (targetRewardsScroll - currentRewardsScroll) * (float) (1.0 - Math.exp(-15.0f * dt));
+		rewardsBar.layout(x + 2, originY, width - 4, viewHeight, totalContentHeight).barAt(x + width - 6);
+		float rewardsScroll = rewardsBar.scroll();
 
 		String fullText = buildRewardsText(getDisplayRewards(selectedQuest));
 		int revealedChars = resolveTypewriterText(questKey, "rewards", fullText).length();
 
-		graphics.enableScissor(toScreenCoord(x + 2), toScreenCoord(originY),
-				toScreenCoord(x + width - 2), toScreenCoord(y + height - 2));
-		graphics.pose().pushPose();
-		graphics.pose().translate(0, -currentRewardsScroll, 0);
+		rewardsBar.beginClip(graphics);
 
 		int blockTop = originY;
 		int consumedChars = 0;
 		for (RewardBlock block : blocks) {
-			boolean blockVisible = (blockTop + block.height()) >= originY + currentRewardsScroll
-					&& blockTop <= originY + viewHeight + currentRewardsScroll;
+			boolean blockVisible = rewardsBar.isVisible(blockTop, block.height());
 
 			if (block.isHeader()) {
 				if (blockVisible) {
@@ -2264,7 +2237,7 @@ public class QuestTreeScreen extends BaseMenuScreen {
 					HudRender.blit(graphics, REWARD_GENERIC_ICON, iconX, blockTop, 0, 0, iconSize, iconSize, iconSize, iconSize);
 				}
 
-				rewardHitboxes.add(new RewardHitbox(iconX, (int) (blockTop - currentRewardsScroll), iconSize,
+				rewardHitboxes.add(new RewardHitbox(iconX, (int) (blockTop - rewardsScroll), iconSize,
 						tooltipStack, rewardDescription(reward)));
 
 				int charsLeft = rowVisible;
@@ -2286,18 +2259,8 @@ public class QuestTreeScreen extends BaseMenuScreen {
 			blockTop += block.height();
 		}
 
-		graphics.pose().popPose();
-		graphics.disableScissor();
-
-		rewardsBar.update(x + width - 6, 3, originY, viewHeight, rewardsMaxScroll);
-		if (rewardsMaxScroll > 0) {
-			int scrollBarX = x + width - 6;
-			graphics.fill(scrollBarX, originY, scrollBarX + 3, originY + viewHeight, 0xFF333333);
-			float scrollPercent = currentRewardsScroll / rewardsMaxScroll;
-			int indicatorHeight = Math.max(10, (int) ((float) viewHeight / totalContentHeight * viewHeight));
-			int indicatorY = originY + (int) ((viewHeight - indicatorHeight) * scrollPercent);
-			graphics.fill(scrollBarX, indicatorY, scrollBarX + 3, indicatorY + indicatorHeight, 0xFFAAAAAA);
-		}
+		rewardsBar.endClip(graphics);
+		rewardsBar.renderBar(graphics, mouseX, mouseY);
 	}
 
 	private List<RewardBlock> buildRewardBlocks(int width) {
@@ -2405,7 +2368,7 @@ public class QuestTreeScreen extends BaseMenuScreen {
 		}
 	}
 
-	private void renderDescriptionSection(GuiGraphics graphics, int x, int y, int width, int height, String questKey, float dt) {
+	private void renderDescriptionSection(GuiGraphics graphics, int x, int y, int width, int height, String questKey, int mouseX, int mouseY) {
 		graphics.fill(x, y, x + width, y + height, 0x44111122);
 		graphics.renderOutline(x, y, width, height, 0x88444466);
 
@@ -2413,44 +2376,14 @@ public class QuestTreeScreen extends BaseMenuScreen {
 
 		String fullDescription = tr(selectedQuest.getDescription()).getString();
 		String visibleDescription = resolveTypewriterText(questKey, "desc", fullDescription);
-		List<String> lines = wrapText(visibleDescription, width - 14);
 
 		int lineHeight = this.font.lineHeight + 2;
 		int viewHeight = height - 24;
-		int totalContentHeight = lines.size() * lineHeight;
-
-		descMaxScroll = Math.max(0, totalContentHeight - viewHeight);
-		targetDescScroll = Mth.clamp(targetDescScroll, 0, descMaxScroll);
-		currentDescScroll += (targetDescScroll - currentDescScroll) * (float)(1.0 - Math.exp(-15.0f * dt));
-
-		graphics.enableScissor(toScreenCoord(x + 4), toScreenCoord(y + 18), toScreenCoord(x + width - 6), toScreenCoord(y + height - 2));
-
-		graphics.pose().pushPose();
-		graphics.pose().translate(0, -currentDescScroll, 0);
-		int descOriginY = y + 18;
-		for (int i = 0; i < lines.size(); i++) {
-			float lineY = descOriginY + (i * lineHeight);
-			if (lineY + lineHeight >= descOriginY + currentDescScroll
-					&& lineY <= descOriginY + viewHeight + currentDescScroll) {
-				TextUtil.drawStringWithBorder(graphics, this.font, txt(lines.get(i)), x + 6, (int) lineY, 0xFFCCCCCC);
-			}
-		}
-		graphics.pose().popPose();
-
-		descBar.update(x + width - 10, 3, descOriginY, viewHeight, descMaxScroll);
-		if (descMaxScroll > 0) {
-			int scrollBarX = x + width - 10;
-			graphics.fill(scrollBarX, descOriginY, scrollBarX + 3, descOriginY + viewHeight, 0xFF333333);
-			float scrollPercent = currentDescScroll / descMaxScroll;
-			int indicatorHeight = Math.max(10, (int) ((float) viewHeight / totalContentHeight * viewHeight));
-			int indicatorY = descOriginY + (int) ((viewHeight - indicatorHeight) * scrollPercent);
-			graphics.fill(scrollBarX, indicatorY, scrollBarX + 3, indicatorY + indicatorHeight, 0xFFAAAAAA);
-		}
-
-		graphics.disableScissor();
+		List<FormattedCharSequence> lines = TextUtil.wrapScrollable(this.font, txt(visibleDescription), width - 14, viewHeight, lineHeight, descBar);
+		TextUtil.renderScrollableText(graphics, this.font, descBar, lines, x + 6, y + 18, width - 13, viewHeight, lineHeight, 0xFFCCCCCC, false, mouseX, mouseY);
 	}
 
-	private void renderObjectivesSection(GuiGraphics graphics, int x, int y, int width, int height, Saga saga, float dt) {
+	private void renderObjectivesSection(GuiGraphics graphics, int x, int y, int width, int height, Saga saga, int mouseX, int mouseY) {
 		graphics.fill(x, y, x + width, y + height, 0x44111122);
 		graphics.renderOutline(x, y, width, height, 0x88444466);
 
@@ -2465,6 +2398,7 @@ public class QuestTreeScreen extends BaseMenuScreen {
 
 		List<String> lines = objectiveRenderLines(saga, width - 30);
 		if (lines.isEmpty()) {
+			objBar.clear();
 			TextUtil.drawStringWithBorder(graphics, this.font, txt("-"), x + 8, y + 18, 0xFF999999);
 			return;
 		}
@@ -2473,39 +2407,19 @@ public class QuestTreeScreen extends BaseMenuScreen {
 		int viewHeight = height - 24;
 		int totalContentHeight = lines.size() * lineHeight;
 
-		objMaxScroll = Math.max(0, totalContentHeight - viewHeight);
-		targetObjScroll = Mth.clamp(targetObjScroll, 0, objMaxScroll);
-
-		currentObjScroll += (targetObjScroll - currentObjScroll) * (float)(1.0 - Math.exp(-15.0f * dt));
-
 		int drawY = y + 18;
-		graphics.enableScissor(toScreenCoord(x + 4), toScreenCoord(y + 18), toScreenCoord(x + width - 6), toScreenCoord(y + height - 2));
-		graphics.pose().pushPose();
-		graphics.pose().translate(0, -currentObjScroll, 0);
+		objBar.layout(x + 4, drawY, width - 10, viewHeight, totalContentHeight).barAt(x + width - 4);
+		objBar.beginClip(graphics);
 
 		for (int i = 0; i < lines.size(); i++) {
-			float lineY = drawY + (i * lineHeight);
-			if (lineY + lineHeight >= drawY + currentObjScroll && lineY <= drawY + viewHeight + currentObjScroll) {
-				drawObjectiveLineWithSymbolColors(graphics, lines.get(i), x + 8, (int)lineY);
+			int lineY = drawY + (i * lineHeight);
+			if (objBar.isVisible(lineY, lineHeight)) {
+				drawObjectiveLineWithSymbolColors(graphics, lines.get(i), x + 8, lineY);
 			}
 		}
 
-		graphics.pose().popPose();
-		graphics.disableScissor();
-
-		int objContentY = y + 18;
-		int objContentH = Math.max(8, height - 24);
-		objBar.update(x + width - 4, 2, objContentY, objContentH, objMaxScroll);
-		if (objMaxScroll > 0) {
-			int contentY = objContentY;
-			int contentH = objContentH;
-			int scrollBarX = x + width - 4;
-			graphics.fill(scrollBarX, contentY, scrollBarX + 2, contentY + contentH, 0xFF333333);
-			float scrollPercent = objMaxScroll == 0 ? 0.0f : currentObjScroll / objMaxScroll;
-			int indicatorHeight = Math.max(10, (int) ((float) viewHeight / totalContentHeight * contentH));
-			int indicatorY = contentY + (int) ((contentH - indicatorHeight) * scrollPercent);
-			graphics.fill(scrollBarX, indicatorY, scrollBarX + 2, indicatorY + indicatorHeight, 0xFFAAAAAA);
-		}
+		objBar.endClip(graphics);
+		objBar.renderBar(graphics, mouseX, mouseY);
 	}
 
 	private List<String> objectiveRenderLines(Saga saga, int textWidth) {
@@ -2640,6 +2554,7 @@ public class QuestTreeScreen extends BaseMenuScreen {
 	}
 
 	private void renderRewardTooltips(GuiGraphics graphics, int mouseX, int mouseY) {
+		if (!rewardsBar.isInView(mouseX, mouseY)) return;
 		for (RewardHitbox hitbox : rewardHitboxes) {
 			if (!hitbox.contains(mouseX, mouseY)) continue;
 			if (hitbox.stack != null && !hitbox.stack.isEmpty()) {
@@ -3000,7 +2915,7 @@ public class QuestTreeScreen extends BaseMenuScreen {
 		if (getVisiblePartyInvite() != null) return;
 		invitePopupOpen = true;
 		confirmOverlayOpen = false;
-		invitePopupScroll = 0;
+		inviteBar.reset();
 		rebuildInviteEntries();
 	}
 
@@ -3020,7 +2935,6 @@ public class QuestTreeScreen extends BaseMenuScreen {
 			inviteEntries.add(new PartyInviteEntry(playerId, info.getProfile().getName()));
 		}
 		inviteEntries.sort(Comparator.comparing(PartyInviteEntry::playerName, String.CASE_INSENSITIVE_ORDER));
-		invitePopupScroll = Math.max(0, Math.min(invitePopupScroll, Math.max(0, inviteEntries.size() - getInvitePopupVisibleRows())));
 	}
 
 	private void requestConfirm(PartyConfirmAction action, Component title, Component body) {
@@ -3065,6 +2979,10 @@ public class QuestTreeScreen extends BaseMenuScreen {
 		return 5;
 	}
 
+	private int inviteRowWidth(int listW) {
+		return inviteBar.canScroll() ? listW - inviteBar.reserve() : listW;
+	}
+
 	private void renderInvitePopup(GuiGraphics graphics, int mouseX, int mouseY) {
 		graphics.fill(0, 0, getUiWidth(), getUiHeight(), 0x99000000);
 		PanelRect popup = getInvitePopupRect();
@@ -3088,18 +3006,26 @@ public class QuestTreeScreen extends BaseMenuScreen {
 					popup.y + popup.height / 2 - 6,
 					0xFFAAAAAA);
 		} else {
-			for (int i = 0; i < visibleRows && (i + invitePopupScroll) < inviteEntries.size(); i++) {
-				PartyInviteEntry entry = inviteEntries.get(i + invitePopupScroll);
+			inviteBar.layout(listX, listY, listW, visibleRows * 18, inviteEntries.size() * 18);
+			int rowW = inviteRowWidth(listW);
+			boolean mouseInList = inviteBar.isInView(mouseX, mouseY);
+			double contentMouseY = inviteBar.toContent(mouseY);
+			inviteBar.beginClip(graphics);
+			for (int i = 0; i < inviteEntries.size(); i++) {
 				int rowY = listY + (i * 18);
-				boolean hovered = mouseX >= listX && mouseX <= listX + listW && mouseY >= rowY && mouseY <= rowY + 16;
-				graphics.fill(listX, rowY, listX + listW, rowY + 16, hovered ? 0x66FFFFFF : 0x33000000);
-				graphics.renderOutline(listX, rowY, listW, 16, hovered ? 0xFFCCDDFF : 0x55444466);
+				if (!inviteBar.isVisible(rowY, 16)) continue;
+				PartyInviteEntry entry = inviteEntries.get(i);
+				boolean hovered = mouseInList && mouseX >= listX && mouseX <= listX + rowW && contentMouseY >= rowY && contentMouseY <= rowY + 16;
+				graphics.fill(listX, rowY, listX + rowW, rowY + 16, hovered ? 0x66FFFFFF : 0x33000000);
+				graphics.renderOutline(listX, rowY, rowW, 16, hovered ? 0xFFCCDDFF : 0x55444466);
 				TextUtil.drawStringWithBorder(graphics, this.font,
-						txt(fitSingleLineEllipsis(entry.playerName(), listW - 10)),
+						txt(fitSingleLineEllipsis(entry.playerName(), rowW - 10)),
 						listX + 5,
 						rowY + 5,
 						hovered ? 0xFFFFFFFF : 0xFFDCE6FF);
 			}
+			inviteBar.endClip(graphics);
+			inviteBar.renderBar(graphics, mouseX, mouseY);
 		}
 
 		TextUtil.drawCenteredStringWithBorder(graphics, this.font,
@@ -3169,13 +3095,10 @@ public class QuestTreeScreen extends BaseMenuScreen {
 		return new PanelRect(x, y, popup.width - 24, optH);
 	}
 
-	private List<String> difficultyDescriptionLines(Difficulty d, int textWidth) {
-		List<String> lines = new ArrayList<>();
-		lines.addAll(wrapText(tr("gui.dragonminez.quest_tree.difficulty.tooltip.stats",
-				formatMultiplier(d.hpMultiplier()), formatMultiplier(d.damageMultiplier())).getString(), textWidth));
-		lines.addAll(wrapText(tr("gui.dragonminez.quest_tree.difficulty.tooltip.rewards",
-				formatMultiplier(d.tpMultiplier()), formatMultiplier(d.questRewardMultiplier())).getString(), textWidth));
-		return lines;
+	private List<Component> difficultyDescription(Difficulty d) {
+		return List.of(
+				tr("gui.dragonminez.quest_tree.difficulty.tooltip.stats", formatMultiplier(d.hpMultiplier()), formatMultiplier(d.damageMultiplier())),
+				tr("gui.dragonminez.quest_tree.difficulty.tooltip.rewards", formatMultiplier(d.tpMultiplier()), formatMultiplier(d.questRewardMultiplier())));
 	}
 
 	private void renderDifficultySelectOverlay(GuiGraphics graphics, int mouseX, int mouseY) {
@@ -3188,12 +3111,9 @@ public class QuestTreeScreen extends BaseMenuScreen {
 				popup.x + popup.width / 2, popup.y + 4, 0xFFFFD700);
 
 		PanelRect intro = getDifficultyIntroRect();
-		List<String> introLines = wrapText(tr("gui.dragonminez.quest_tree.difficulty.select.intro").getString(), intro.width - 6);
-		diffIntroMaxScroll = scrollMax(introLines, intro.height);
-		diffIntroScroll = Mth.clamp(diffIntroScroll, 0, diffIntroMaxScroll);
-		graphics.enableScissor(toScreenCoord(intro.x), toScreenCoord(intro.y), toScreenCoord(intro.right()), toScreenCoord(intro.bottom()));
-		TextUtil.renderScrollableText(graphics, this.font, diffIntroBar, introLines, intro.x, intro.y, intro.width, intro.height, diffIntroScroll, diffIntroMaxScroll, 0xFFAAAAAA, Style.EMPTY.withFont(DMZ_FONT));
-		graphics.disableScissor();
+		int lineHeight = this.font.lineHeight + 2;
+		List<FormattedCharSequence> introLines = TextUtil.wrapScrollable(this.font, tr("gui.dragonminez.quest_tree.difficulty.select.intro"), intro.width - 6, intro.height, lineHeight, diffIntroBar);
+		TextUtil.renderScrollableText(graphics, this.font, diffIntroBar, introLines, intro.x, intro.y, intro.width - 1, intro.height, lineHeight, 0xFFAAAAAA, false, mouseX, mouseY);
 
 		for (int i = 0; i < DIFFICULTY_OPTIONS.length; i++) {
 			Difficulty d = DIFFICULTY_OPTIONS[i];
@@ -3209,17 +3129,9 @@ public class QuestTreeScreen extends BaseMenuScreen {
 			int textY = rect.y + 15;
 			int textW = rect.width - 12;
 			int textH = rect.bottom() - textY - 2;
-			List<String> lines = difficultyDescriptionLines(d, textW - 6);
-			diffOptMaxScroll[i] = scrollMax(lines, textH);
-			diffOptScroll[i] = Mth.clamp(diffOptScroll[i], 0, diffOptMaxScroll[i]);
-			graphics.enableScissor(toScreenCoord(textX), toScreenCoord(textY), toScreenCoord(textX + textW), toScreenCoord(textY + textH));
-			TextUtil.renderScrollableText(graphics, this.font, diffOptBars[i], lines, textX, textY, textW, textH, diffOptScroll[i], diffOptMaxScroll[i], 0xFFDCE6FF, Style.EMPTY.withFont(DMZ_FONT));
-			graphics.disableScissor();
+			List<FormattedCharSequence> lines = TextUtil.wrapScrollable(this.font, difficultyDescription(d), textW - 6, textH, lineHeight, diffOptBars[i]);
+			TextUtil.renderScrollableText(graphics, this.font, diffOptBars[i], lines, textX, textY, textW - 1, textH, lineHeight, 0xFFDCE6FF, false, mouseX, mouseY);
 		}
-	}
-
-	private float scrollMax(List<String> lines, int viewHeight) {
-		return Math.max(0, lines.size() * (this.font.lineHeight + 2) - viewHeight);
 	}
 
 	private boolean handleDifficultySelectClick(double uiMouseX, double uiMouseY, int button) {
@@ -3272,21 +3184,19 @@ public class QuestTreeScreen extends BaseMenuScreen {
 		int listX = popup.x + 10;
 		int listY = popup.y + 24;
 		int listW = popup.width - 20;
-		int visibleRows = getInvitePopupVisibleRows();
 
-		if (uiMouseX < listX || uiMouseX > listX + listW) {
+		if (uiMouseX < listX || uiMouseX > listX + inviteRowWidth(listW) || !inviteBar.isInView(uiMouseX, uiMouseY)) {
 			return true;
 		}
 
-		for (int i = 0; i < visibleRows && (i + invitePopupScroll) < inviteEntries.size(); i++) {
-			int rowY = listY + (i * 18);
-			if (uiMouseY >= rowY && uiMouseY <= rowY + 16) {
-				PartyInviteEntry entry = inviteEntries.get(i + invitePopupScroll);
-				NetworkHandler.sendToServer(new InvitePartyMemberC2S(entry.playerId()));
-				invitePopupOpen = false;
-				queuePartyRefresh();
-				return true;
-			}
+		double contentY = inviteBar.toContent(uiMouseY) - listY;
+		int index = (int) (contentY / 18);
+		if (index >= 0 && index < inviteEntries.size() && contentY - index * 18 <= 16) {
+			PartyInviteEntry entry = inviteEntries.get(index);
+			NetworkHandler.sendToServer(new InvitePartyMemberC2S(entry.playerId()));
+			invitePopupOpen = false;
+			queuePartyRefresh();
+			return true;
 		}
 
 		return true;
@@ -3314,7 +3224,7 @@ public class QuestTreeScreen extends BaseMenuScreen {
 		double uiMouseX = toUiX(mouseX);
 		double uiMouseY = toUiY(mouseY);
 
-		if (button == 0 && tryStartScrollbarDrag(uiMouseX, uiMouseY)) {
+		if (ScrollbarState.clicked(uiMouseX, uiMouseY, button, interactiveScrollbars())) {
 			return true;
 		}
 
@@ -3418,7 +3328,7 @@ public class QuestTreeScreen extends BaseMenuScreen {
 				currentSagaIndex = newIndex;
 				currentSagaCollapsed = false;
 				selectedQuest = null;
-				currentObjScroll = 0;
+				objBar.reset();
 				rebuildLayout();
 				rebuildNavigatorEntries();
 				persistSelection();
@@ -3442,46 +3352,20 @@ public class QuestTreeScreen extends BaseMenuScreen {
 		return true;
 	}
 
-	private boolean tryStartScrollbarDrag(double mx, double my) {
-		if (navBar.tryStartDrag(mx, my)) { targetNavScroll = navBar.scrollFor(my); return true; }
-		if (descBar.tryStartDrag(mx, my)) { targetDescScroll = descBar.scrollFor(my); return true; }
-		if (objBar.tryStartDrag(mx, my)) { targetObjScroll = objBar.scrollFor(my); return true; }
-		if (rewardsBar.tryStartDrag(mx, my)) { targetRewardsScroll = rewardsBar.scrollFor(my); return true; }
-		if (diffIntroBar.tryStartDrag(mx, my)) { diffIntroScroll = diffIntroBar.scrollFor(my); return true; }
-		for (int i = 0; i < diffOptBars.length; i++) {
-			if (diffOptBars[i].tryStartDrag(mx, my)) { diffOptScroll[i] = diffOptBars[i].scrollFor(my); return true; }
-		}
-		return false;
+	private ScrollbarState[] interactiveScrollbars() {
+		if (shouldShowDifficultySelect()) return new ScrollbarState[] { diffIntroBar, diffOptBars[0], diffOptBars[1], diffOptBars[2] };
+		if (confirmOverlayOpen) return new ScrollbarState[0];
+		if (invitePopupOpen) return new ScrollbarState[] { inviteBar };
+		return new ScrollbarState[] { navBar, descBar, objBar, rewardsBar };
 	}
 
-	private boolean updateScrollbarDrag(double my) {
-		if (navBar.isDragging()) { targetNavScroll = navBar.scrollFor(my); return true; }
-		if (descBar.isDragging()) { targetDescScroll = descBar.scrollFor(my); return true; }
-		if (objBar.isDragging()) { targetObjScroll = objBar.scrollFor(my); return true; }
-		if (rewardsBar.isDragging()) { targetRewardsScroll = rewardsBar.scrollFor(my); return true; }
-		if (diffIntroBar.isDragging()) { diffIntroScroll = diffIntroBar.scrollFor(my); return true; }
-		for (int i = 0; i < diffOptBars.length; i++) {
-			if (diffOptBars[i].isDragging()) { diffOptScroll[i] = diffOptBars[i].scrollFor(my); return true; }
-		}
-		return false;
-	}
-
-	private boolean stopScrollbarDrag() {
-		boolean any = navBar.isDragging() || descBar.isDragging() || objBar.isDragging()
-				|| rewardsBar.isDragging() || diffIntroBar.isDragging();
-		for (ScrollbarState b : diffOptBars) any |= b.isDragging();
-		navBar.stopDrag();
-		descBar.stopDrag();
-		objBar.stopDrag();
-		rewardsBar.stopDrag();
-		diffIntroBar.stopDrag();
-		for (ScrollbarState b : diffOptBars) b.stopDrag();
-		return any;
+	private ScrollbarState[] allScrollbars() {
+		return new ScrollbarState[] { navBar, descBar, objBar, rewardsBar, diffIntroBar, diffOptBars[0], diffOptBars[1], diffOptBars[2], inviteBar };
 	}
 
 	@Override
 	public boolean mouseDragged(double mouseX, double mouseY, int button, double dragX, double dragY) {
-		if (updateScrollbarDrag(toUiY(mouseY))) {
+		if (ScrollbarState.dragged(toUiX(mouseX), toUiY(mouseY), allScrollbars())) {
 			return true;
 		}
 		if (invitePopupOpen || confirmOverlayOpen) {
@@ -3504,7 +3388,7 @@ public class QuestTreeScreen extends BaseMenuScreen {
 
 	@Override
 	public boolean mouseReleased(double mouseX, double mouseY, int button) {
-		if (stopScrollbarDrag()) {
+		if (ScrollbarState.released(allScrollbars())) {
 			return true;
 		}
 		if (invitePopupOpen || confirmOverlayOpen) {
@@ -3519,8 +3403,7 @@ public class QuestTreeScreen extends BaseMenuScreen {
 
 			if (treePressStarted && !moved && selectedQuest != null) {
 				selectedQuest = null;
-				currentObjScroll = 0;
-				objMaxScroll = 0;
+				objBar.reset();
 				persistSelection();
 				refreshButtons();
 			}
@@ -3538,15 +3421,13 @@ public class QuestTreeScreen extends BaseMenuScreen {
 		if (shouldShowDifficultySelect()) {
 			double dsX = toUiX(mouseX);
 			double dsY = toUiY(mouseY);
-			float step = (this.font.lineHeight + 2) * 2;
-			int dir = (int) Math.signum(delta);
 			if (getDifficultyIntroRect().contains(dsX, dsY)) {
-				diffIntroScroll = Mth.clamp(diffIntroScroll - dir * step, 0, diffIntroMaxScroll);
+				diffIntroBar.scrollWheel(delta);
 				return true;
 			}
 			for (int i = 0; i < DIFFICULTY_OPTIONS.length; i++) {
 				if (getDifficultyOptionRect(i).contains(dsX, dsY)) {
-					diffOptScroll[i] = Mth.clamp(diffOptScroll[i] - dir * step, 0, diffOptMaxScroll[i]);
+					diffOptBars[i].scrollWheel(delta);
 					return true;
 				}
 			}
@@ -3556,9 +3437,7 @@ public class QuestTreeScreen extends BaseMenuScreen {
 			return true;
 		}
 		if (invitePopupOpen) {
-			int direction = (int) Math.signum(delta);
-			int maxScroll = Math.max(0, inviteEntries.size() - getInvitePopupVisibleRows());
-			invitePopupScroll = Math.max(0, Math.min(maxScroll, invitePopupScroll - direction));
+			inviteBar.scrollWheel(delta);
 			return true;
 		}
 		double uiMouseX = toUiX(mouseX);
@@ -3567,25 +3446,25 @@ public class QuestTreeScreen extends BaseMenuScreen {
 
 		PanelRect left = getLeftPanelRect();
 		if (left.contains(uiMouseX, uiMouseY)) {
-			targetNavScroll = Mth.clamp(targetNavScroll - (scrollAmount * 26), 0, navMaxScroll);
+			navBar.scrollWheel(delta);
 			return true;
 		}
 
 		PanelRect rewardsRect = getRewardsSectionRect();
 		if (rewardsRect != null && rewardsRect.contains(uiMouseX, uiMouseY)) {
-			targetRewardsScroll = Mth.clamp(targetRewardsScroll - (scrollAmount * getDetailLineHeight() * 2), 0, rewardsMaxScroll);
+			rewardsBar.scrollWheel(delta);
 			return true;
 		}
 
 		PanelRect objectivesRect = getObjectivesSectionRect();
 		if (objectivesRect != null && objectivesRect.contains(uiMouseX, uiMouseY)) {
-			targetObjScroll = Mth.clamp(targetObjScroll - (scrollAmount * getDetailLineHeight() * 2), 0, objMaxScroll);
+			objBar.scrollWheel(delta);
 			return true;
 		}
 
 		PanelRect descRect = getDescriptionSectionRect();
 		if (descRect != null && descRect.contains(uiMouseX, uiMouseY)) {
-			targetDescScroll = Mth.clamp(targetDescScroll - (scrollAmount * (this.font.lineHeight + 2) * 2), 0, descMaxScroll);
+			descBar.scrollWheel(delta);
 			return true;
 		}
 
@@ -3614,11 +3493,8 @@ public class QuestTreeScreen extends BaseMenuScreen {
 	private void selectQuest(Quest quest, boolean playClickSound) {
 		if (quest == null) return;
 		selectedQuest = quest;
-		currentObjScroll = 0;
-		objMaxScroll = 0;
-		currentRewardsScroll = 0;
-		targetRewardsScroll = 0;
-		rewardsMaxScroll = 0;
+		objBar.reset();
+		rewardsBar.reset();
 		resetTypewriterForSelectedQuest();
 		persistSelection();
 		refreshButtons();

@@ -39,7 +39,6 @@ import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.network.chat.Style;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.FormattedCharSequence;
-import net.minecraft.util.Mth;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraftforge.api.distmarker.Dist;
@@ -76,17 +75,11 @@ public class QuestNPCDialogueScreen extends ScaledScreen {
 	private int selectedIndex = -1;
 	private int panelX, panelY, panelW, panelH;
 
-	private float dialogueScroll = 0, dialogueTargetScroll = 0, dialogueMaxScroll = 0;
-	private float listScroll = 0, listTargetScroll = 0, listMaxScroll = 0;
-	private float descScroll = 0, descTargetScroll = 0, descMaxScroll = 0;
-	private float objScroll = 0, objTargetScroll = 0, objMaxScroll = 0;
-	private float rewardScroll = 0, rewardTargetScroll = 0, rewardMaxScroll = 0;
-
-	private final ScrollbarState dialogueBar = new ScrollbarState();
-	private final ScrollbarState listBar = new ScrollbarState();
-	private final ScrollbarState descBar = new ScrollbarState();
-	private final ScrollbarState objBar = new ScrollbarState();
-	private final ScrollbarState rewardBar = new ScrollbarState();
+	private final ScrollbarState dialogueBar = new ScrollbarState().barWidth(2).minThumb(10).step(13);
+	private final ScrollbarState listBar = new ScrollbarState().barWidth(2).minThumb(10).step(ENTRY_HEIGHT);
+	private final ScrollbarState descBar = new ScrollbarState().barWidth(2).minThumb(10).step(13);
+	private final ScrollbarState objBar = new ScrollbarState().barWidth(2).minThumb(10).step(13);
+	private final ScrollbarState rewardBar = new ScrollbarState().barWidth(2).minThumb(10).step(13);
 
 	private boolean isTrainingMode = false;
 	/** Replaces the NPC's stage line until the screen closes, e.g. after pressing a service button. */
@@ -187,8 +180,7 @@ public class QuestNPCDialogueScreen extends ScaledScreen {
 						BlockPos lair = ClientWorldBossState.getLair(WorldBossEntity.JANEMBA);
 						overrideLine = tr("dialogue.dragonminez.story.sidequest." + npcId + ".location",
 								lair.getX(), lair.getZ());
-						dialogueScroll = 0.0F;
-						dialogueTargetScroll = 0.0F;
+						dialogueBar.reset();
 					})
 					.build());
 		}
@@ -373,13 +365,6 @@ public class QuestNPCDialogueScreen extends ScaledScreen {
 		int uiMouseX = (int) Math.round(toUiX(mouseX));
 		int uiMouseY = (int) Math.round(toUiY(mouseY));
 
-		float ease = frameEase();
-		dialogueScroll = Mth.lerp(ease, dialogueScroll, dialogueTargetScroll);
-		listScroll = Mth.lerp(ease, listScroll, listTargetScroll);
-		descScroll = Mth.lerp(ease, descScroll, descTargetScroll);
-		objScroll = Mth.lerp(ease, objScroll, objTargetScroll);
-		rewardScroll = Mth.lerp(ease, rewardScroll, rewardTargetScroll);
-
 		beginUiScale(guiGraphics);
 
 		RenderSystem.setShaderColor(1.0f, 1.0f, 1.0f, 1.0f);
@@ -388,26 +373,24 @@ public class QuestNPCDialogueScreen extends ScaledScreen {
 		Component npcName = npcName().copy().withStyle(ChatFormatting.GOLD, ChatFormatting.BOLD);
 		TextUtil.drawCenteredStringWithBorder(guiGraphics, this.font, npcName, panelX + panelW / 2, panelY + 12, 0xFFFFFF);
 
-		renderDialogueSection(guiGraphics);
+		renderDialogueSection(guiGraphics, uiMouseX, uiMouseY);
 		renderQuestListSection(guiGraphics, uiMouseX, uiMouseY);
-		renderQuestDetails(guiGraphics);
+		renderQuestDetails(guiGraphics, uiMouseX, uiMouseY);
 
 		super.render(guiGraphics, uiMouseX, uiMouseY, partialTick);
 
 		endUiScale(guiGraphics);
 	}
 
-	private void renderDialogueSection(GuiGraphics guiGraphics) {
+	private void renderDialogueSection(GuiGraphics guiGraphics, int uiMouseX, int uiMouseY) {
 		int diagX = panelX + 14;
 		int diagY = panelY + 28;
 		int diagW = panelW - 28;
 		int diagH = 55;
+		int lineHeight = this.font.lineHeight + 2;
 
-		List<FormattedCharSequence> diagLines = this.font.split(dialogueLine(), diagW - 10);
-		dialogueMaxScroll = Math.max(0, diagLines.size() * (this.font.lineHeight + 2) - diagH);
-		dialogueTargetScroll = Mth.clamp(dialogueTargetScroll, 0, dialogueMaxScroll);
-
-		renderScrollableFormatted(guiGraphics, dialogueBar, diagLines, diagX, diagY, diagW, diagH, dialogueScroll, dialogueMaxScroll);
+		List<FormattedCharSequence> diagLines = TextUtil.wrapScrollable(this.font, dialogueLine(), diagW - 10, diagH, lineHeight, dialogueBar);
+		TextUtil.renderScrollableText(guiGraphics, this.font, dialogueBar, diagLines, diagX, diagY, diagW - 2, diagH, lineHeight, 0xFFFFFF, false, uiMouseX, uiMouseY);
 	}
 
 	private void renderQuestListSection(GuiGraphics guiGraphics, int uiMouseX, int uiMouseY) {
@@ -419,24 +402,22 @@ public class QuestNPCDialogueScreen extends ScaledScreen {
 		TextUtil.drawStringWithBorder(guiGraphics, this.font, tr("gui.dragonminez.sidequest.available_quests").withStyle(ChatFormatting.YELLOW).withStyle(ChatFormatting.BOLD), listX + 2, listY - 12, 0xFFFFFF);
 
 		if (questEntries.isEmpty()) {
+			listBar.clear();
 			TextUtil.drawStringWithBorder(guiGraphics, this.font, tr("gui.dragonminez.sidequest.no_quests").withStyle(ChatFormatting.GRAY).withStyle(ChatFormatting.BOLD), listX + 4, listY + 4, 0xFF888888);
 			return;
 		}
 
-		listMaxScroll = Math.max(0, questEntries.size() * ENTRY_HEIGHT - viewHeight);
-		listTargetScroll = Mth.clamp(listTargetScroll, 0, listMaxScroll);
-
-		guiGraphics.enableScissor(toScreenCoord(listX), toScreenCoord(listY), toScreenCoord(listX + listW + 6), toScreenCoord(listY + viewHeight));
-		guiGraphics.pose().pushPose();
-		guiGraphics.pose().translate(0, -listScroll, 0);
+		listBar.layout(listX, listY, listW, viewHeight, questEntries.size() * ENTRY_HEIGHT).barAt(listX + listW);
+		listBar.beginClip(guiGraphics);
+		double contentMouseY = listBar.toContent(uiMouseY);
 
 		for (int i = 0; i < questEntries.size(); i++) {
 			int entryY = listY + i * ENTRY_HEIGHT;
 
-			if (entryY + ENTRY_HEIGHT >= listY + listScroll && entryY <= listY + viewHeight + listScroll) {
+			if (listBar.isVisible(entryY, ENTRY_HEIGHT)) {
 				QuestEntry entry = questEntries.get(i);
 				boolean isSelected = (i == selectedIndex);
-				boolean isHovered = uiMouseX >= listX && uiMouseX <= listX + listW && uiMouseY >= entryY - listScroll && uiMouseY < entryY + ENTRY_HEIGHT - listScroll;
+				boolean isHovered = uiMouseX >= listX && uiMouseX <= listX + listW && contentMouseY >= entryY && contentMouseY < entryY + ENTRY_HEIGHT;
 
 				MutableComponent titleComp = tr(entry.quest.getTitle());
 				if (isSelected) titleComp.withStyle(ChatFormatting.YELLOW);
@@ -448,23 +429,17 @@ public class QuestNPCDialogueScreen extends ScaledScreen {
 			}
 		}
 
-		guiGraphics.pose().popPose();
-		guiGraphics.disableScissor();
-
-		listBar.update(listX + listW, 2, listY, viewHeight, listMaxScroll);
-
-		if (listMaxScroll > 0) {
-			int scrollBarX = listX + listW;
-			guiGraphics.fill(scrollBarX, listY, scrollBarX + 2, listY + viewHeight, 0xFF333333);
-			float scrollPercent = listScroll / listMaxScroll;
-			int indicatorHeight = Math.max(10, (int) ((float) viewHeight / (questEntries.size() * ENTRY_HEIGHT) * viewHeight));
-			int indicatorY = listY + (int) ((viewHeight - indicatorHeight) * scrollPercent);
-			guiGraphics.fill(scrollBarX, indicatorY, scrollBarX + 2, indicatorY + indicatorHeight, 0xFFAAAAAA);
-		}
+		listBar.endClip(guiGraphics);
+		listBar.renderBar(guiGraphics, uiMouseX, uiMouseY);
 	}
 
-	private void renderQuestDetails(GuiGraphics guiGraphics) {
-		if (selectedIndex < 0 || selectedIndex >= questEntries.size()) return;
+	private void renderQuestDetails(GuiGraphics guiGraphics, int uiMouseX, int uiMouseY) {
+		if (selectedIndex < 0 || selectedIndex >= questEntries.size()) {
+			descBar.clear();
+			objBar.clear();
+			rewardBar.clear();
+			return;
+		}
 
 		int listX = panelX + 14;
 		int listW = Math.min(150, panelW - 20);
@@ -481,27 +456,25 @@ public class QuestNPCDialogueScreen extends ScaledScreen {
 			titleY += this.font.lineHeight + 2;
 		}
 
+		int lineHeight = this.font.lineHeight + 2;
 		int descY = detailY + 26;
-		List<FormattedCharSequence> descLines = this.font.split(ph(tr(selected.quest.getDescription())).withStyle(ChatFormatting.GRAY), detailW - 8);
-		descMaxScroll = Math.max(0, descLines.size() * (this.font.lineHeight + 2) - 33);
-		descTargetScroll = Mth.clamp(descTargetScroll, 0, descMaxScroll);
-		renderScrollableFormatted(guiGraphics, descBar, descLines, detailX, descY, detailW, 33, descScroll, descMaxScroll);
+		List<FormattedCharSequence> descLines = TextUtil.wrapScrollable(this.font, ph(tr(selected.quest.getDescription())).withStyle(ChatFormatting.GRAY), detailW - 8, 33, lineHeight, descBar);
+		TextUtil.renderScrollableText(guiGraphics, this.font, descBar, descLines, detailX, descY, detailW - 2, 33, lineHeight, 0xFFFFFF, false, uiMouseX, uiMouseY);
 
 		int objY = detailY + 63;
-		List<FormattedCharSequence> objLines = new ArrayList<>();
+		List<Component> objParts = new ArrayList<>();
 		for (QuestObjective objective : selected.quest.getObjectives()) {
 			Component objText = txt("- ").withStyle(ChatFormatting.GRAY).append(QuestTextFormatter.describeObjective(objective).copy().withStyle(ChatFormatting.WHITE));
-			objLines.addAll(this.font.split(objText, detailW - 8));
+			objParts.add(objText);
 		}
-		objMaxScroll = Math.max(0, objLines.size() * (this.font.lineHeight + 2) - 33);
-		objTargetScroll = Mth.clamp(objTargetScroll, 0, objMaxScroll);
-		renderScrollableFormatted(guiGraphics, objBar, objLines, detailX, objY, detailW, 33, objScroll, objMaxScroll);
+		List<FormattedCharSequence> objLines = TextUtil.wrapScrollable(this.font, objParts, detailW - 8, 33, lineHeight, objBar);
+		TextUtil.renderScrollableText(guiGraphics, this.font, objBar, objLines, detailX, objY, detailW - 2, 33, lineHeight, 0xFFFFFF, false, uiMouseX, uiMouseY);
 
 		int rewTitleY = detailY + 100;
 		TextUtil.drawStringWithBorder(guiGraphics, this.font, tr("gui.dragonminez.sidequest.rewards").withStyle(ChatFormatting.GOLD), detailX, rewTitleY, 0xFFFFFF);
 
 		int rewY = rewTitleY + 11;
-		List<FormattedCharSequence> rewLines = new ArrayList<>();
+		List<Component> rewParts = new ArrayList<>();
 		PlayerQuestData questData = StatsProvider.get(StatsCapability.INSTANCE, Minecraft.getInstance().player)
 				.map(StatsData::getPlayerQuestData).orElse(null);
 		Difficulty difficulty = questData == null ? Difficulty.NORMAL
@@ -514,7 +487,7 @@ public class QuestNPCDialogueScreen extends ScaledScreen {
 			if (tiered) {
 				Component header = QuestTextFormatter.describeRewardDifficulties(group.difficulties()).copy()
 						.withStyle(tierLocked ? ChatFormatting.DARK_GRAY : QuestTextFormatter.rewardDifficultyStyle(group.difficulties()));
-				rewLines.addAll(this.font.split(header, detailW - 8));
+				rewParts.add(header);
 			}
 			for (QuestReward reward : tierRewards) {
 				double rewardMultiplier = questData != null
@@ -522,42 +495,11 @@ public class QuestNPCDialogueScreen extends ScaledScreen {
 						: difficulty.questRewardMultiplier();
 				Component rewText = txt("  ").append(reward.getDescription(rewardMultiplier))
 						.withStyle(tierLocked ? ChatFormatting.DARK_GRAY : ChatFormatting.GREEN);
-				rewLines.addAll(this.font.split(rewText, detailW - 8));
+				rewParts.add(rewText);
 			}
 		}
-		rewardMaxScroll = Math.max(0, rewLines.size() * (this.font.lineHeight + 2) - 33);
-		rewardTargetScroll = Mth.clamp(rewardTargetScroll, 0, rewardMaxScroll);
-		renderScrollableFormatted(guiGraphics, rewardBar, rewLines, detailX, rewY, detailW, 33, rewardScroll, rewardMaxScroll);
-	}
-
-	private void renderScrollableFormatted(GuiGraphics guiGraphics, ScrollbarState bar, List<FormattedCharSequence> lines, int x, int y, int width, int height, float currentScroll, float maxScroll) {
-		int lineHeight = this.font.lineHeight + 2;
-		int totalContentHeight = lines.size() * lineHeight;
-
-		bar.update(x + width - 4, 2, y, height, maxScroll);
-
-		guiGraphics.enableScissor(toScreenCoord(x), toScreenCoord(y), toScreenCoord(x + width), toScreenCoord(y + height));
-		guiGraphics.pose().pushPose();
-		guiGraphics.pose().translate(0, -currentScroll, 0);
-
-		for (int i = 0; i < lines.size(); i++) {
-			float lineY = y + (i * lineHeight);
-			if (lineY + lineHeight >= y + currentScroll && lineY <= y + height + currentScroll) {
-				TextUtil.drawStringWithBorder(guiGraphics, this.font, lines.get(i), x, (int)lineY, 0xFFFFFF);
-			}
-		}
-
-		guiGraphics.pose().popPose();
-		guiGraphics.disableScissor();
-
-		if (maxScroll > 0) {
-			int scrollBarX = x + width - 4;
-			guiGraphics.fill(scrollBarX, y, scrollBarX + 2, y + height, 0xFF333333);
-			float scrollPercent = maxScroll == 0 ? 0.0f : currentScroll / maxScroll;
-			int indicatorHeight = Math.max(10, (int) ((float) height / totalContentHeight * height));
-			int indicatorY = y + (int) ((height - indicatorHeight) * scrollPercent);
-			guiGraphics.fill(scrollBarX, indicatorY, scrollBarX + 2, indicatorY + indicatorHeight, 0xFFAAAAAA);
-		}
+		List<FormattedCharSequence> rewLines = TextUtil.wrapScrollable(this.font, rewParts, detailW - 8, 33, lineHeight, rewardBar);
+		TextUtil.renderScrollableText(guiGraphics, this.font, rewardBar, rewLines, detailX, rewY, detailW - 2, 33, lineHeight, 0xFFFFFF, false, uiMouseX, uiMouseY);
 	}
 
 	private MutableComponent statusPrefix(EntryType type) {
@@ -573,11 +515,7 @@ public class QuestNPCDialogueScreen extends ScaledScreen {
 		double uiMouseX = toUiX(mouseX);
 		double uiMouseY = toUiY(mouseY);
 
-		if (dialogueBar.tryStartDrag(uiMouseX, uiMouseY)) { dialogueTargetScroll = dialogueBar.scrollFor(uiMouseY); return true; }
-		if (listBar.tryStartDrag(uiMouseX, uiMouseY)) { listTargetScroll = listBar.scrollFor(uiMouseY); return true; }
-		if (descBar.tryStartDrag(uiMouseX, uiMouseY)) { descTargetScroll = descBar.scrollFor(uiMouseY); return true; }
-		if (objBar.tryStartDrag(uiMouseX, uiMouseY)) { objTargetScroll = objBar.scrollFor(uiMouseY); return true; }
-		if (rewardBar.tryStartDrag(uiMouseX, uiMouseY)) { rewardTargetScroll = rewardBar.scrollFor(uiMouseY); return true; }
+		if (ScrollbarState.clicked(uiMouseX, uiMouseY, button, dialogueBar, listBar, descBar, objBar, rewardBar)) return true;
 
 		int listY = panelY + 120;
 		int listX = panelX + 14;
@@ -585,13 +523,13 @@ public class QuestNPCDialogueScreen extends ScaledScreen {
 		int viewHeight = MAX_VISIBLE * ENTRY_HEIGHT;
 
 		if (uiMouseX >= listX && uiMouseX <= listX + listW && uiMouseY >= listY && uiMouseY <= listY + viewHeight) {
-			int relativeY = (int) (uiMouseY - listY + listScroll);
+			int relativeY = (int) (uiMouseY - listY + listBar.scroll());
 			int index = relativeY / ENTRY_HEIGHT;
 			if (index >= 0 && index < questEntries.size()) {
 				selectedIndex = index;
-				descTargetScroll = 0;
-				objTargetScroll = 0;
-				rewardTargetScroll = 0;
+				descBar.scrollTo(0);
+				objBar.scrollTo(0);
+				rewardBar.scrollTo(0);
 				initButtons();
 				return true;
 			}
@@ -602,24 +540,13 @@ public class QuestNPCDialogueScreen extends ScaledScreen {
 
 	@Override
 	public boolean mouseDragged(double mouseX, double mouseY, int button, double dragX, double dragY) {
-		double uiMouseY = toUiY(mouseY);
-		if (dialogueBar.isDragging()) { dialogueTargetScroll = dialogueBar.scrollFor(uiMouseY); return true; }
-		if (listBar.isDragging()) { listTargetScroll = listBar.scrollFor(uiMouseY); return true; }
-		if (descBar.isDragging()) { descTargetScroll = descBar.scrollFor(uiMouseY); return true; }
-		if (objBar.isDragging()) { objTargetScroll = objBar.scrollFor(uiMouseY); return true; }
-		if (rewardBar.isDragging()) { rewardTargetScroll = rewardBar.scrollFor(uiMouseY); return true; }
+		if (ScrollbarState.dragged(toUiX(mouseX), toUiY(mouseY), dialogueBar, listBar, descBar, objBar, rewardBar)) return true;
 		return super.mouseDragged(mouseX, mouseY, button, dragX, dragY);
 	}
 
 	@Override
 	public boolean mouseReleased(double mouseX, double mouseY, int button) {
-		boolean wasDragging = dialogueBar.isDragging() || listBar.isDragging() || descBar.isDragging() || objBar.isDragging() || rewardBar.isDragging();
-		dialogueBar.stopDrag();
-		listBar.stopDrag();
-		descBar.stopDrag();
-		objBar.stopDrag();
-		rewardBar.stopDrag();
-		if (wasDragging) return true;
+		if (ScrollbarState.released(dialogueBar, listBar, descBar, objBar, rewardBar)) return true;
 		return super.mouseReleased(mouseX, mouseY, button);
 	}
 
@@ -627,42 +554,13 @@ public class QuestNPCDialogueScreen extends ScaledScreen {
 	public boolean mouseScrolled(double mouseX, double mouseY, double delta) {
 		double uiMouseX = toUiX(mouseX);
 		double uiMouseY = toUiY(mouseY);
-		int scrollAmount = (int) Math.signum(delta);
 
 		if (uiMouseX >= panelX + 14 && uiMouseX <= panelX + panelW - 6 && uiMouseY >= panelY + 28 && uiMouseY <= panelY + 83) {
-			dialogueTargetScroll = Mth.clamp(dialogueTargetScroll - (scrollAmount * 13), 0, dialogueMaxScroll);
+			dialogueBar.scrollWheel(delta);
 			return true;
 		}
 
-		int listY = panelY + 120;
-		int listX = panelX + 14;
-		int listW = Math.min(150, panelW - 20);
-		if (uiMouseX >= listX && uiMouseX <= listX + listW && uiMouseY >= listY && uiMouseY <= listY + (MAX_VISIBLE * ENTRY_HEIGHT)) {
-			listTargetScroll = Mth.clamp(listTargetScroll - (scrollAmount * ENTRY_HEIGHT), 0, listMaxScroll);
-			return true;
-		}
-
-		int detailX = listX + listW + 10;
-		int detailW = panelX + panelW - detailX - 14;
-		int detailY = panelY + 120;
-
-		if (uiMouseX >= detailX && uiMouseX <= detailX + detailW) {
-			int descY = detailY + 26;
-			if (uiMouseY >= descY && uiMouseY <= descY + 33) {
-				descTargetScroll = Mth.clamp(descTargetScroll - (scrollAmount * 13), 0, descMaxScroll);
-				return true;
-			}
-			int objY = detailY + 63;
-			if (uiMouseY >= objY && uiMouseY <= objY + 33) {
-				objTargetScroll = Mth.clamp(objTargetScroll - (scrollAmount * 13), 0, objMaxScroll);
-				return true;
-			}
-			int rewY = detailY + 111;
-			if (uiMouseY >= rewY && uiMouseY <= rewY + 33) {
-				rewardTargetScroll = Mth.clamp(rewardTargetScroll - (scrollAmount * 13), 0, rewardMaxScroll);
-				return true;
-			}
-		}
+		if (ScrollbarState.scrolled(uiMouseX, uiMouseY, delta, listBar, descBar, objBar, rewardBar)) return true;
 
 		return super.mouseScrolled(mouseX, mouseY, delta);
 	}

@@ -4,6 +4,7 @@ import com.dragonminez.Reference;
 import com.dragonminez.client.gui.buttons.TexturedTextButton;
 import com.dragonminez.client.gui.character.util.ScaledScreen;
 import com.dragonminez.client.gui.hud.HudRender;
+import com.dragonminez.client.util.ScrollbarState;
 import com.dragonminez.client.util.TextUtil;
 import com.dragonminez.common.init.entities.sagas.DBSagasEntity;
 import com.dragonminez.common.network.NetworkHandler;
@@ -125,11 +126,9 @@ public class TournamentBracketScreen extends ScaledScreen {
 	private int contentWidth;
 	private int contentHeight;
 
-	private float targetScroll;
-	private float currentScroll;
-	private float maxScroll;
+	private final ScrollbarState scroll = new ScrollbarState().barWidth(SCROLLBAR).minThumb(12.0f).step(SCROLL_STEP)
+			.colors(TRACK_COLOR, THUMB_COLOR, 0xFFC9DCFF);
 	private boolean verticalScroll = true;
-	private boolean draggingThumb;
 	private float contentScale = 1.0f;
 	private float originX;
 	private float originY;
@@ -177,8 +176,7 @@ public class TournamentBracketScreen extends ScaledScreen {
 			return;
 		}
 		if (before != view()) {
-			targetScroll = 0.0f;
-			currentScroll = 0.0f;
+			scroll.reset();
 			pendingFocus = true;
 		}
 		rebuildWidgets();
@@ -332,7 +330,7 @@ public class TournamentBracketScreen extends ScaledScreen {
 			case RULES -> renderRules(graphics);
 			default -> renderLadder(graphics, uiMouseX, uiMouseY);
 		}
-		renderScrollbar(graphics);
+		scroll.renderBar(graphics, uiMouseX, uiMouseY);
 		renderFooter(graphics);
 
 		super.render(graphics, uiMouseX, uiMouseY, partialTick);
@@ -512,15 +510,14 @@ public class TournamentBracketScreen extends ScaledScreen {
 
 		verticalScroll = true;
 		contentScale = 1.0f;
-		maxScroll = Math.max(0.0f, total - contentHeight);
-		updateScroll();
+		scroll.horizontal(false).layout(contentX, contentY, contentWidth, contentHeight, total);
 		originX = contentX;
-		originY = contentY - currentScroll;
+		originY = contentY - scroll.scroll();
 
 		graphics.enableScissor(toScreenCoord(contentX), toScreenCoord(contentY),
 				toScreenCoord(contentX + contentWidth), toScreenCoord(contentY + contentHeight));
 		graphics.pose().pushPose();
-		graphics.pose().translate(0.0f, -currentScroll, 0.0f);
+		graphics.pose().translate(0.0f, -scroll.scroll(), 0.0f);
 
 		int y = contentY + 2;
 		TextUtil.drawStringWithBorder(graphics, font, tr("tournament.dragonminez.rules.title"), contentX + 4, y, TITLE_COLOR);
@@ -563,7 +560,7 @@ public class TournamentBracketScreen extends ScaledScreen {
 		colors.add(TEXT_COLOR);
 
 		for (int i = 0; i < texts.size(); i++) {
-			out.add(new RuleLine(i + 1, font.split(texts.get(i), width), colors.get(i)));
+			out.add(new RuleLine(i + 1, TextUtil.split(font, texts.get(i), width), colors.get(i)));
 		}
 		return out;
 	}
@@ -578,24 +575,22 @@ public class TournamentBracketScreen extends ScaledScreen {
 		float scaledHeight = size[1] * scale;
 
 		verticalScroll = scaledWidth <= contentWidth + 0.5f;
-		maxScroll = verticalScroll ? Math.max(0.0f, scaledHeight - contentHeight) : Math.max(0.0f, scaledWidth - contentWidth);
+		scroll.horizontal(!verticalScroll).layout(contentX, contentY, contentWidth, contentHeight, verticalScroll ? scaledHeight : scaledWidth);
 		if (pendingFocus) {
 			pendingFocus = false;
-			if (!data.isGauntlet() && verticalScroll && maxScroll > 0.0f) {
+			if (!data.isGauntlet() && verticalScroll && scroll.maxScroll() > 0.0f) {
 				int focusRow = data.isCompleted() ? qualifierRounds() + challengers().size() : data.getRound();
 				float rowCentre = (rowY(focusRow, size[1]) + SLOT / 2.0f) * scale;
-				targetScroll = Mth.clamp(rowCentre - contentHeight / 2.0f, 0.0f, maxScroll);
-				if (!data.isRevealed()) targetScroll = 0.0f;
-				currentScroll = targetScroll;
+				float focus = Mth.clamp(rowCentre - contentHeight / 2.0f, 0.0f, scroll.maxScroll());
+				scroll.jumpTo(data.isRevealed() ? focus : 0.0f);
 			}
 		}
-		updateScroll();
 
 		if (verticalScroll) {
 			originX = contentX + (contentWidth - scaledWidth) / 2.0f;
-			originY = maxScroll > 0.0f ? contentY - currentScroll : contentY + (contentHeight - scaledHeight) / 2.0f;
+			originY = scroll.maxScroll() > 0.0f ? contentY - scroll.scroll() : contentY + (contentHeight - scaledHeight) / 2.0f;
 		} else {
-			originX = contentX - currentScroll;
+			originX = contentX - scroll.scroll();
 			originY = contentY + (contentHeight - scaledHeight) / 2.0f;
 		}
 
@@ -623,12 +618,6 @@ public class TournamentBracketScreen extends ScaledScreen {
 				}
 			}
 		}
-	}
-
-	private void updateScroll() {
-		targetScroll = Mth.clamp(targetScroll, 0.0f, maxScroll);
-		currentScroll = Mth.lerp(frameEase(), currentScroll, targetScroll);
-		if (Math.abs(currentScroll - targetScroll) < 0.05f) currentScroll = targetScroll;
 	}
 
 	private int qualifierRounds() {
@@ -1003,22 +992,6 @@ public class TournamentBracketScreen extends ScaledScreen {
 		return created;
 	}
 
-	private void renderScrollbar(GuiGraphics graphics) {
-		if (maxScroll <= 0.0f) return;
-		float fraction = currentScroll / maxScroll;
-		if (verticalScroll) {
-			int x = contentX + contentWidth - SCROLLBAR;
-			HudRender.rect(graphics, x, contentY, SCROLLBAR, contentHeight, TRACK_COLOR);
-			float thumb = Math.max(12.0f, contentHeight * contentHeight / (contentHeight + maxScroll));
-			HudRender.rect(graphics, x, contentY + (contentHeight - thumb) * fraction, SCROLLBAR, thumb, THUMB_COLOR);
-		} else {
-			int y = contentY + contentHeight - SCROLLBAR;
-			HudRender.rect(graphics, contentX, y, contentWidth, SCROLLBAR, TRACK_COLOR);
-			float thumb = Math.max(12.0f, contentWidth * contentWidth / (contentWidth + maxScroll));
-			HudRender.rect(graphics, contentX + (contentWidth - thumb) * fraction, y, thumb, SCROLLBAR, THUMB_COLOR);
-		}
-	}
-
 	private void renderFooter(GuiGraphics graphics) {
 		int y = guiTop + guiHeight - PADDING - BUTTON_HEIGHT + 6;
 		MutableComponent hint = hintLine();
@@ -1153,62 +1126,27 @@ public class TournamentBracketScreen extends ScaledScreen {
 		return type != null ? tr(type.getDescriptionId()) : txt(id);
 	}
 
-	private boolean overThumb(double uiX, double uiY) {
-		if (maxScroll <= 0.0f) return false;
-		if (verticalScroll) {
-			int x = contentX + contentWidth - SCROLLBAR;
-			return uiX >= x - 3 && uiX <= x + SCROLLBAR + 3 && uiY >= contentY && uiY <= contentY + contentHeight;
-		}
-		int y = contentY + contentHeight - SCROLLBAR;
-		return uiY >= y - 3 && uiY <= y + SCROLLBAR + 3 && uiX >= contentX && uiX <= contentX + contentWidth;
-	}
-
-	private void scrollFromMouse(double uiX, double uiY) {
-		if (verticalScroll) {
-			float thumb = Math.max(12.0f, contentHeight * contentHeight / (contentHeight + maxScroll));
-			float track = contentHeight - thumb;
-			float fraction = track <= 0.0f ? 0.0f : (float) (uiY - contentY - thumb / 2.0f) / track;
-			targetScroll = Mth.clamp(fraction, 0.0f, 1.0f) * maxScroll;
-		} else {
-			float thumb = Math.max(12.0f, contentWidth * contentWidth / (contentWidth + maxScroll));
-			float track = contentWidth - thumb;
-			float fraction = track <= 0.0f ? 0.0f : (float) (uiX - contentX - thumb / 2.0f) / track;
-			targetScroll = Mth.clamp(fraction, 0.0f, 1.0f) * maxScroll;
-		}
-		currentScroll = targetScroll;
-	}
-
 	@Override
 	public boolean mouseClicked(double mouseX, double mouseY, int button) {
-		if (button == 0 && overThumb(toUiX(mouseX), toUiY(mouseY))) {
-			draggingThumb = true;
-			scrollFromMouse(toUiX(mouseX), toUiY(mouseY));
-			return true;
-		}
+		if (scroll.mouseClicked(toUiX(mouseX), toUiY(mouseY), button)) return true;
 		return super.mouseClicked(mouseX, mouseY, button);
 	}
 
 	@Override
 	public boolean mouseDragged(double mouseX, double mouseY, int button, double dragX, double dragY) {
-		if (draggingThumb && button == 0) {
-			scrollFromMouse(toUiX(mouseX), toUiY(mouseY));
-			return true;
-		}
+		if (button == 0 && scroll.mouseDragged(toUiX(mouseX), toUiY(mouseY))) return true;
 		return super.mouseDragged(mouseX, mouseY, button, dragX, dragY);
 	}
 
 	@Override
 	public boolean mouseReleased(double mouseX, double mouseY, int button) {
-		if (button == 0) draggingThumb = false;
+		if (button == 0) scroll.mouseReleased();
 		return super.mouseReleased(mouseX, mouseY, button);
 	}
 
 	@Override
 	public boolean mouseScrolled(double mouseX, double mouseY, double delta) {
-		if (maxScroll > 0.0f) {
-			targetScroll = Mth.clamp(targetScroll - (float) delta * SCROLL_STEP, 0.0f, maxScroll);
-			return true;
-		}
+		if (scroll.scrollWheel(delta)) return true;
 		return super.mouseScrolled(mouseX, mouseY, delta);
 	}
 

@@ -4,6 +4,7 @@ import com.dragonminez.Reference;
 import com.dragonminez.client.gui.hud.HudRender;
 import com.dragonminez.client.gui.tutorial.TutorialManager;
 import com.dragonminez.client.util.KeyBinds;
+import com.dragonminez.client.util.ScrollbarState;
 import com.dragonminez.client.util.TextUtil;
 import com.dragonminez.common.config.ConfigManager;
 import com.dragonminez.common.config.TrainingConfig;
@@ -92,7 +93,7 @@ public class RythmGameScreen extends BaseMinigameScreen {
 	private int glowTick = -100;
 
 	private float cx, topY, hitY, vpY, bottomWidth;
-	private int listScroll;
+	private final ScrollbarState listScroll = new ScrollbarState().noTrack().colors(0, 0xFFD2D7F1, 0xFFFFFFFF).barWidth(2).minThumb(8).step(LIST_ROW_H);
 	private float[] listBox;
 	private float[] playRect;
 	private float[] calibrateRect;
@@ -442,6 +443,7 @@ public class RythmGameScreen extends BaseMinigameScreen {
 	protected boolean onReadyClick(double mouseX, double mouseY) {
 		if (isChallenge()) return false;
 		float x = readyToUiX(mouseX), y = readyToUiY(mouseY);
+		if (listScroll.mouseClicked(x, y, 0)) return true;
 		int row = rowAt(x, y);
 		if (row >= 0) {
 			if (row != trackIndex) {
@@ -486,25 +488,40 @@ public class RythmGameScreen extends BaseMinigameScreen {
 	@Override
 	public boolean mouseScrolled(double mouseX, double mouseY, double delta) {
 		if (isReady() && !isChallenge() && insideRect(listBox, readyToUiX(mouseX), readyToUiY(mouseY))) {
-			int max = Math.max(0, tracks.size() - LIST_ROWS);
-			listScroll = Math.max(0, Math.min(max, listScroll - (int) Math.signum(delta)));
+			listScroll.scrollWheel(delta);
 			return true;
 		}
 		return super.mouseScrolled(mouseX, mouseY, delta);
 	}
 
+	@Override
+	public boolean mouseDragged(double mouseX, double mouseY, int button, double dragX, double dragY) {
+		if (isReady() && listScroll.mouseDragged(readyToUiX(mouseX), readyToUiY(mouseY))) return true;
+		return super.mouseDragged(mouseX, mouseY, button, dragX, dragY);
+	}
+
+	@Override
+	public boolean mouseReleased(double mouseX, double mouseY, int button) {
+		if (listScroll.mouseReleased() && isReady()) return true;
+		return super.mouseReleased(mouseX, mouseY, button);
+	}
+
 	private void ensureVisible() {
 		if (trackIndex < 0) return;
-		if (trackIndex < listScroll) listScroll = trackIndex;
-		if (trackIndex >= listScroll + LIST_ROWS) listScroll = trackIndex - LIST_ROWS + 1;
+		if (listBox == null) {
+			listScroll.jumpTo(Math.max(0, trackIndex - LIST_ROWS + 1) * LIST_ROW_H);
+			return;
+		}
+		float rowTop = listBox[1] + 1 + trackIndex * LIST_ROW_H;
+		listScroll.ensureVisible(rowTop, rowTop + LIST_ROW_H);
 	}
 
 	private int rowAt(float x, float y) {
 		if (listBox == null) return -1;
 		if (x < listBox[0] || x > listBox[0] + listBox[2] || y < listBox[1] || y > listBox[1] + listBox[3]) return -1;
-		int row = (int) ((y - listBox[1] - 1) / LIST_ROW_H);
-		if (row < 0 || row >= Math.min(LIST_ROWS, tracks.size())) return -1;
-		int index = row + listScroll;
+		float rel = y - listBox[1] - 1;
+		if (rel >= LIST_ROWS * LIST_ROW_H) return -1;
+		int index = (int) (Math.max(0, rel) + listScroll.scroll()) / LIST_ROW_H;
 		return index < tracks.size() ? index : -1;
 	}
 
@@ -546,16 +563,17 @@ public class RythmGameScreen extends BaseMinigameScreen {
 		graphics.pose().scale(hintScale, hintScale, 1f);
 		TextUtil.drawStringWithBorder(graphics, this.font, hint, -this.font.width(hint), 0, hintHover ? 0xFFFFD700 : 0xFF909AC3);
 		graphics.pose().popPose();
-		int rows = Math.min(LIST_ROWS, tracks.size());
 		float boxTop = top + 12;
 		float boxH = LIST_ROWS * LIST_ROW_H + 2;
 		listBox = new float[]{left, boxTop, LIST_W, boxH};
 		drawMenuBox(graphics, left, boxTop, LIST_W, boxH, 0xF0081410);
+		listScroll.layout(left, top + 13, LIST_W, LIST_ROWS * LIST_ROW_H, tracks.size() * LIST_ROW_H).barAt(left + LIST_W - 4);
 		int hoverRow = rowAt(mx, my);
-		for (int i = 0; i < rows; i++) {
-			int index = i + listScroll;
+		listScroll.beginClip(graphics);
+		for (int index = 0; index < tracks.size(); index++) {
+			float rowY = boxTop + 1 + index * LIST_ROW_H;
+			if (!listScroll.isVisible(rowY, LIST_ROW_H)) continue;
 			Track track = tracks.get(index);
-			float rowY = boxTop + 1 + i * LIST_ROW_H;
 			boolean selected = index == trackIndex;
 			if (selected) {
 				rectF(graphics, left + 2, rowY, LIST_W - 8, LIST_ROW_H, 0x50D2D7F1);
@@ -579,13 +597,8 @@ public class RythmGameScreen extends BaseMinigameScreen {
 				TextUtil.drawStringWithBorder(graphics, this.font, dmz(duration), left + LIST_W - 8 - (durationW - 4), (int) rowY + 2, selected ? 0xFFD2D7F1 : 0xFF808898);
 			}
 		}
-		if (tracks.size() > LIST_ROWS) {
-			float trackH = LIST_ROWS * LIST_ROW_H;
-			float thumbH = Math.max(8, trackH * LIST_ROWS / tracks.size());
-			float thumbY = boxTop + 1 + (trackH - thumbH) * listScroll / Math.max(1, tracks.size() - LIST_ROWS);
-			rectF(graphics, left + LIST_W - 4, thumbY, 2, thumbH, 0xFFD2D7F1);
-			graphics.flush();
-		}
+		listScroll.endClip(graphics);
+		listScroll.renderBar(graphics, mx, my);
 	}
 
 	private void drawDetails(GuiGraphics graphics, int x, int top, float mx, float my) {

@@ -3,6 +3,7 @@ package com.dragonminez.client.gui.hair;
 import com.dragonminez.common.hair.CustomHair;
 import com.dragonminez.common.hair.HairStrand;
 import com.dragonminez.common.hair.HairStyleSlot;
+import com.dragonminez.client.util.ScrollbarState;
 import com.dragonminez.client.util.TextUtil;
 import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.GuiGraphics;
@@ -49,7 +50,8 @@ final class HairOutlinerPanel {
 	private int y;
 	private int width;
 	private int height;
-	private int segmentScroll;
+	private final ScrollbarState segmentScroll = new ScrollbarState().barWidth(4).minThumb(12).step(ROW_HEIGHT)
+			.colors(0x60000000, HairEditorUi.DIVIDER, HairEditorUi.HOVER_TEXT);
 
 	HairOutlinerPanel(HairEditorState state, Font font, Listener listener) {
 		this.state = state;
@@ -144,10 +146,11 @@ final class HairOutlinerPanel {
 
 			HairStrand strand = state.selectedStrand();
 			if (strand != null && strand.isVisible()) {
+				if (segmentScroll.mouseClicked(mouseX, mouseY, button)) return true;
 				int listTop = cursor;
 				int listBottom = codeAreaTop() - 3;
 				if (mouseY >= listTop && mouseY < listBottom) {
-					int row = (int) ((mouseY - listTop) / ROW_HEIGHT) + segmentScroll;
+					int row = (int) ((mouseY - listTop + segmentScroll.scroll()) / ROW_HEIGHT);
 					if (row == 0) {
 						state.selectSegment(-1);
 						HairEditorSounds.select();
@@ -176,10 +179,16 @@ final class HairOutlinerPanel {
 
 	boolean mouseScrolled(double mouseX, double mouseY, double delta) {
 		if (!contains(mouseX, mouseY)) return false;
-		HairStrand strand = state.selectedStrand();
-		int rows = strand != null && strand.isVisible() ? strand.getSegments() + 1 : 0;
-		segmentScroll = Math.max(0, Math.min(Math.max(0, rows - 1), segmentScroll - (int) Math.signum(delta)));
+		segmentScroll.scrollWheel(delta);
 		return true;
+	}
+
+	boolean mouseDragged(double mouseX, double mouseY) {
+		return segmentScroll.mouseDragged(mouseX, mouseY);
+	}
+
+	boolean mouseReleased() {
+		return segmentScroll.mouseReleased();
 	}
 
 	private void renderStyleTabs(GuiGraphics graphics, int mouseX, int mouseY, int top) {
@@ -250,26 +259,34 @@ final class HairOutlinerPanel {
 
 	private void renderSegmentList(GuiGraphics graphics, int mouseX, int mouseY, int top, int bottom) {
 		HairStrand strand = state.selectedStrand();
-		if (strand == null || !strand.isVisible() || bottom - top < ROW_HEIGHT) return;
+		if (strand == null || !strand.isVisible() || bottom - top < ROW_HEIGHT) {
+			segmentScroll.clear();
+			return;
+		}
 		int rows = strand.getSegments() + 1;
-		int visibleRows = (bottom - top) / ROW_HEIGHT;
-		segmentScroll = Math.max(0, Math.min(segmentScroll, Math.max(0, rows - visibleRows)));
-		for (int visibleRow = 0; visibleRow < visibleRows; visibleRow++) {
-			int row = visibleRow + segmentScroll;
-			if (row >= rows) break;
-			int rowY = top + visibleRow * ROW_HEIGHT;
+		segmentScroll.layout(x + INSET, top, width - INSET * 2 + 2, bottom - top, rows * ROW_HEIGHT);
+		int rowWidth = width - INSET * 2 - (segmentScroll.canScroll() ? segmentScroll.reserve() : 0);
+		boolean mouseInList = segmentScroll.isInView(mouseX, mouseY);
+		double contentMouseY = segmentScroll.toContent(mouseY);
+		segmentScroll.beginClip(graphics);
+		for (int row = 0; row < rows; row++) {
+			int rowY = top + row * ROW_HEIGHT;
+			if (!segmentScroll.isVisible(rowY, ROW_HEIGHT)) continue;
 			boolean selected = row == 0 ? state.selectedSegment() < 0 : state.selectedSegment() == row - 1;
-			boolean hovered = HairEditorUi.inside(mouseX, mouseY, x + INSET, rowY, width - INSET * 2, ROW_HEIGHT);
-			if (selected) HairEditorTextures.draw(graphics, HairEditorTextures.BUTTON_ACTIVE, x + INSET, rowY, width - INSET * 2, ROW_HEIGHT);
-			else if (hovered) graphics.fill(x + INSET, rowY, x + width - INSET, rowY + ROW_HEIGHT, HairEditorUi.ROW_HOVER);
+			boolean hovered = mouseInList && HairEditorUi.inside(mouseX, contentMouseY, x + INSET, rowY, rowWidth, ROW_HEIGHT);
+			if (selected) HairEditorTextures.draw(graphics, HairEditorTextures.BUTTON_ACTIVE, x + INSET, rowY, rowWidth, ROW_HEIGHT);
+			else if (hovered) graphics.fill(x + INSET, rowY, x + INSET + rowWidth, rowY + ROW_HEIGHT, HairEditorUi.ROW_HOVER);
 			Component label = row == 0
 					? HairEditorUi.tr("gui.dragonminez.hair_editor.strand", state.selectedFace().key, state.selectedIndex() + 1)
 					: HairEditorUi.tr("gui.dragonminez.hair_editor.segment", row);
 			int indent = row == 0 ? 8 : 18;
 			boolean overridden = row > 0 && strand.getOverride(row - 1) != null && !strand.getOverride(row - 1).isIdentity();
 			TextUtil.drawStringWithBorder(graphics, font, label, x + INSET + indent - 4, rowY + 2, HairEditorUi.TEXT);
-			if (overridden) graphics.fill(x + width - 10, rowY + 4, x + width - 7, rowY + 7, HairEditorUi.SECTION);
+			int markerX = x + INSET + rowWidth - 1;
+			if (overridden) graphics.fill(markerX, rowY + 4, markerX + 3, rowY + 7, HairEditorUi.SECTION);
 		}
+		segmentScroll.endClip(graphics);
+		segmentScroll.renderBar(graphics, mouseX, mouseY);
 	}
 
 	private void renderCodeButtons(GuiGraphics graphics, int mouseX, int mouseY) {

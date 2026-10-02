@@ -10,10 +10,11 @@ import com.dragonminez.client.gui.tutorial.TutorialManager;
 import com.dragonminez.client.gui.tutorial.TutorialRect;
 import com.dragonminez.client.gui.tutorial.TutorialStep;
 import com.dragonminez.client.render.layer.DMZSkinLayer;
+import com.dragonminez.client.util.ScrollbarState;
+import com.dragonminez.client.gui.character.util.RacialSkillParts;
 import com.dragonminez.client.util.TextUtil;
 import com.dragonminez.common.config.ConfigManager;
 import com.dragonminez.common.config.FormConfig;
-import com.dragonminez.common.config.GeneralServerConfig;
 import com.dragonminez.common.network.C2S.*;
 import com.dragonminez.common.network.NetworkHandler;
 import com.dragonminez.common.quest.Quest;
@@ -21,7 +22,6 @@ import com.dragonminez.common.quest.QuestRegistry;
 import com.dragonminez.common.quest.QuestReward;
 import com.dragonminez.common.quest.Saga;
 import com.dragonminez.common.quest.rewards.SkillReward;
-import com.dragonminez.common.racial.impl.GlindDivinity;
 import com.dragonminez.common.stats.*;
 import com.dragonminez.common.stats.character.Character;
 import com.dragonminez.common.stats.character.Status;
@@ -37,6 +37,8 @@ import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.EditBox;
 import net.minecraft.client.gui.screens.inventory.InventoryScreen;
 import net.minecraft.network.chat.Component;
+import net.minecraft.network.chat.MutableComponent;
+import net.minecraft.network.chat.Style;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.Mth;
 import net.minecraft.world.entity.LivingEntity;
@@ -65,6 +67,8 @@ public class SkillsMenuScreen extends BaseMenuScreen {
 	private static final String NEW_SKILL_ENTRY = "__new_skill__";
 	private static final String CLASS_PASSIVE_ENTRY = "__class_passive__";
 	private static final String SAMPLE_ENTRY = "__sample_skill__";
+	private static final int DESC_BOX_X = 12;
+	private static final int DESC_BOX_WIDTH = 119;
 	private static final List<String> PREVIEW_FORM_TYPE_ORDER = List.of("superforms", "androidforms", "legendaryforms", "godforms");
 
 	private enum SkillCategory {SKILLS, KI, FORMS, STRIKE, EVASION}
@@ -76,16 +80,10 @@ public class SkillsMenuScreen extends BaseMenuScreen {
 
 	private String selectedSkill = null;
 
-	private float targetScroll = 0;
-	private float currentScroll = 0;
-	private float maxScroll = 0;
+	private final ScrollbarState skillsScroll = new ScrollbarState().step(SKILL_ITEM_HEIGHT * 2).minThumb(20);
+	private final ScrollbarState descScroll = new ScrollbarState().step(24).minThumb(10);
+	private final ScrollbarState sampleDescScroll = new ScrollbarState().step(24).minThumb(10);
 
-	private float targetDescScroll = 0;
-	private float currentDescScroll = 0;
-	private float maxDescScroll = 0;
-
-	private boolean isDraggingMainScroll = false;
-	private boolean isDraggingDescScroll = false;
 	private boolean isBinding = false;
 	private boolean isImportingTechnique = false;
 
@@ -269,8 +267,8 @@ public class SkillsMenuScreen extends BaseMenuScreen {
 		if (pick == null && !names.isEmpty()) pick = names.get(0);
 		if (pick == null) return;
 		selectedSkill = pick;
-		targetScroll = 0;
-		targetDescScroll = 0;
+		skillsScroll.scrollTo(0);
+		descScroll.scrollTo(0);
 		refreshButtons();
 	}
 
@@ -366,10 +364,8 @@ public class SkillsMenuScreen extends BaseMenuScreen {
 				.onPress(btn -> {
 					currentCategory = SkillCategory.SKILLS;
 					selectedSkill = null;
-					targetScroll = 0;
-					currentScroll = 0;
-					targetDescScroll = 0;
-					currentDescScroll = 0;
+					skillsScroll.reset();
+					descScroll.reset();
 					refreshButtons();
 				})
 				.build();
@@ -383,10 +379,8 @@ public class SkillsMenuScreen extends BaseMenuScreen {
 				.onPress(btn -> {
 					currentCategory = SkillCategory.KI;
 					selectedSkill = null;
-					targetScroll = 0;
-					currentScroll = 0;
-					targetDescScroll = 0;
-					currentDescScroll = 0;
+					skillsScroll.reset();
+					descScroll.reset();
 					refreshButtons();
 				})
 				.build();
@@ -403,10 +397,8 @@ public class SkillsMenuScreen extends BaseMenuScreen {
 					selectedFormName = null;
 					selectedFormGroup = null;
 					buildFormsTree();
-					targetScroll = 0;
-					currentScroll = 0;
-					targetDescScroll = 0;
-					currentDescScroll = 0;
+					skillsScroll.reset();
+					descScroll.reset();
 					refreshButtons();
 				})
 				.build();
@@ -420,10 +412,8 @@ public class SkillsMenuScreen extends BaseMenuScreen {
 				.onPress(btn -> {
 					currentCategory = SkillCategory.STRIKE;
 					selectedSkill = null;
-					targetScroll = 0;
-					currentScroll = 0;
-					targetDescScroll = 0;
-					currentDescScroll = 0;
+					skillsScroll.reset();
+					descScroll.reset();
 					refreshButtons();
 				})
 				.build();
@@ -437,10 +427,8 @@ public class SkillsMenuScreen extends BaseMenuScreen {
 				.onPress(btn -> {
 					currentCategory = SkillCategory.EVASION;
 					selectedSkill = null;
-					targetScroll = 0;
-					currentScroll = 0;
-					targetDescScroll = 0;
-					currentDescScroll = 0;
+					skillsScroll.reset();
+					descScroll.reset();
 					refreshButtons();
 				})
 				.build();
@@ -450,6 +438,13 @@ public class SkillsMenuScreen extends BaseMenuScreen {
 		this.addRenderableWidget(formsButton);
 		this.addRenderableWidget(stacksButton);
 		this.addRenderableWidget(evasionButton);
+	}
+
+	private List<RacialSkillParts.Part> racialParts() {
+		if (statsData == null) return List.of();
+		String race = statsData.getCharacter().getRaceName();
+		if (race == null || race.isEmpty() || ConfigManager.getRaceCharacter(race.toLowerCase()) == null) return List.of();
+		return RacialSkillParts.forPlayer(ConfigManager.getRaceCharacter(race.toLowerCase()).getRacialSkill(), statsData.getStatus().isAndroidUpgraded());
 	}
 
 	private List<String> getVisibleSkillNames() {
@@ -502,13 +497,9 @@ public class SkillsMenuScreen extends BaseMenuScreen {
 		skillNames.sort((a, b) -> getDisplayNameForEntry(a).compareToIgnoreCase(getDisplayNameForEntry(b)));
 		if (skillNames.remove(NEW_SKILL_ENTRY)) skillNames.add(0, NEW_SKILL_ENTRY);
 		if (currentCategory == SkillCategory.SKILLS) {
-			int classPassiveIndex = 0;
-			String raceLower = race.toLowerCase();
-			if (!raceLower.isEmpty() && !ConfigManager.getRaceCharacter(raceLower).getRacialSkill().isEmpty()) {
-				skillNames.add(0, "racial_" + ConfigManager.getRaceCharacter(raceLower).getRacialSkill());
-				classPassiveIndex = 1;
-			}
-			skillNames.add(classPassiveIndex, CLASS_PASSIVE_ENTRY);
+			List<RacialSkillParts.Part> racialParts = racialParts();
+			for (int i = 0; i < racialParts.size(); i++) skillNames.add(i, racialParts.get(i).id());
+			skillNames.add(racialParts.size(), CLASS_PASSIVE_ENTRY);
 		}
 		if (currentCategory != SkillCategory.FORMS && sampleTutorialActive()) {
 			boolean hasReal = false;
@@ -960,6 +951,8 @@ public class SkillsMenuScreen extends BaseMenuScreen {
 		renderLeftPanel(graphics, currentLeftX, getUiHeight() / 2 - 105, uiMouseX, uiMouseY);
 		graphics.pose().popPose();
 
+		descScroll.clear();
+		sampleDescScroll.clear();
 		if (formsTransitionProgress < 1.0f) {
 			graphics.pose().pushPose();
 			graphics.pose().translate(rightFraction, 0.0f, 0.0f);
@@ -1204,30 +1197,19 @@ public class SkillsMenuScreen extends BaseMenuScreen {
 
 		int startY = panelY + 30;
 		int viewHeight = MAX_VISIBLE_SKILLS * SKILL_ITEM_HEIGHT;
-		int totalHeight = skillNames.size() * SKILL_ITEM_HEIGHT;
 
-		maxScroll = Math.max(0, totalHeight - viewHeight);
-		targetScroll = Mth.clamp(targetScroll, 0, maxScroll);
-		currentScroll = Mth.lerp(frameEase(), currentScroll, targetScroll);
-
-		graphics.enableScissor(
-				toScreenCoord(panelX + 5),
-				toScreenCoord(startY),
-				toScreenCoord(panelX + 179),
-				toScreenCoord(startY + viewHeight)
-		);
-
-		graphics.pose().pushPose();
-		graphics.pose().translate(0, -currentScroll, 0);
+		skillsScroll.layout(panelX + 7, startY, 124, viewHeight, skillNames.size() * SKILL_ITEM_HEIGHT).barAt(panelX + 128);
+		int listRight = panelX + (skillsScroll.canScroll() ? 124 : 130);
+		skillsScroll.beginClip(graphics);
 
 		for (int i = 0; i < skillNames.size(); i++) {
 			String skillName = skillNames.get(i);
 			int itemY = startY + (i * SKILL_ITEM_HEIGHT);
 
-			if (itemY + SKILL_ITEM_HEIGHT >= startY + currentScroll && itemY <= startY + viewHeight + currentScroll) {
+			if (skillsScroll.isVisible(itemY, SKILL_ITEM_HEIGHT)) {
 				boolean isSelected = skillName.equals(selectedSkill);
 				boolean isHovered = mouseX >= panelX + 10 && mouseX <= panelX + 100 &&
-						mouseY >= itemY - currentScroll && mouseY <= itemY + SKILL_ITEM_HEIGHT - currentScroll;
+						mouseY >= itemY - skillsScroll.scroll() && mouseY <= itemY + SKILL_ITEM_HEIGHT - skillsScroll.scroll();
 
 				int color = isSelected ? 0xFFFFAA00 : (isHovered ? 0xFFAAAAAA : 0xFFFFFFFF);
 
@@ -1245,32 +1227,20 @@ public class SkillsMenuScreen extends BaseMenuScreen {
 					TechniqueData technique = NEW_SKILL_ENTRY.equals(skillName) || SAMPLE_ENTRY.equals(skillName) ? null : statsData.getTechniques().getUnlockedTechniques().get(skillName);
 					if (technique != null) {
 						String xpText = String.valueOf(technique.getExperience());
-						int xpX = panelX + 130 - TextUtil.width(this.font, xpText, DMZ_FONT);
+						int xpX = listRight - TextUtil.width(this.font, xpText, DMZ_FONT);
 						TextUtil.drawStringWithBorder(graphics, this.font, txt(xpText), xpX, itemY + 5, color);
 					}
 				} else if (skill != null) {
 					String levelText = String.valueOf(skill.getLevel());
-					int levelX = panelX + 130 - TextUtil.width(this.font, levelText, DMZ_FONT);
+					int levelX = listRight - TextUtil.width(this.font, levelText, DMZ_FONT);
 					TextUtil.drawStringWithBorder(graphics, this.font, txt(levelText),
 							levelX, itemY + 5, color);
 				}
 			}
 		}
 
-		graphics.pose().popPose();
-		graphics.disableScissor();
-
-		if (maxScroll > 0) {
-			int scrollBarX = panelX + 135;
-			graphics.fill(scrollBarX, startY, scrollBarX + 3, startY + viewHeight, 0xFF333333);
-
-			float scrollPercent = currentScroll / maxScroll;
-			float visiblePercent = (float) viewHeight / totalHeight;
-			int indicatorHeight = Math.max(20, (int) (viewHeight * visiblePercent));
-			int indicatorY = startY + (int) ((viewHeight - indicatorHeight) * scrollPercent);
-
-			graphics.fill(scrollBarX, indicatorY, scrollBarX + 3, indicatorY + indicatorHeight, 0xFFAAAAAA);
-		}
+		skillsScroll.endClip(graphics);
+		skillsScroll.renderBar(graphics, mouseX, mouseY);
 
 		String title = "";
 		switch (currentCategory) {
@@ -1303,25 +1273,25 @@ public class SkillsMenuScreen extends BaseMenuScreen {
 		if (SAMPLE_ENTRY.equals(selectedSkill) && !sampleTutorialActive()) selectedSkill = null;
 
 		if (SAMPLE_ENTRY.equals(selectedSkill)) {
-			renderSampleDetails(graphics, panelX, panelY);
+			renderSampleDetails(graphics, panelX, panelY, mouseX, mouseY);
 		} else if (selectedSkill != null && statsData != null) {
 			if (currentCategory == SkillCategory.KI && NEW_SKILL_ENTRY.equals(selectedSkill))
 				renderNewSkillPlaceholder(graphics, panelX, panelY);
 			else if (currentCategory == SkillCategory.KI || currentCategory == SkillCategory.STRIKE || currentCategory == SkillCategory.EVASION)
 				renderTechniqueDetails(graphics, panelX, panelY, mouseX, mouseY);
-			else renderSkillDetails(graphics, panelX, panelY);
+			else renderSkillDetails(graphics, panelX, panelY, mouseX, mouseY);
 		}
 	}
 
-	private void renderSampleDetails(GuiGraphics graphics, int panelX, int panelY) {
+	private void renderSampleDetails(GuiGraphics graphics, int panelX, int panelY, int mouseX, int mouseY) {
 		int startY = panelY + 40;
 		TextUtil.drawCenteredStringWithBorder(graphics, this.font, tr("gui.dragonminez.tutorial.skills.sample.name").withStyle(ChatFormatting.BOLD), panelX + 72, startY, 0xFFFFFFFF);
 		TextUtil.drawCenteredStringWithBorder(graphics, this.font, tr("gui.dragonminez.tutorial.skills.sample.level"), panelX + 72, startY + 12, 0xFFFFAA00);
 		TextUtil.drawCenteredStringWithBorder(graphics, this.font, tr("gui.dragonminez.tutorial.skills.sample.cost"), panelX + 72, startY + 24, 0xFFFFE593);
 
-		List<String> wrapped = wrapText(tr("gui.dragonminez.tutorial.skills.sample.desc").getString(), 120);
 		int lineHeight = this.font.lineHeight + 2;
-		TextUtil.renderScrollableText(graphics, this.font, wrapped, panelX + 13, startY + 70, 130, 6 * lineHeight, 0, 0, 0xFFCCCCCC);
+		TextUtil.renderScrollableText(graphics, this.font, sampleDescScroll, tr("gui.dragonminez.tutorial.skills.sample.desc"),
+				panelX + DESC_BOX_X, startY + 70, DESC_BOX_WIDTH, 6 * lineHeight, lineHeight, 0xFFCCCCCC, false, mouseX, mouseY);
 	}
 
 	private void renderNewSkillPlaceholder(GuiGraphics graphics, int panelX, int panelY) {
@@ -1443,60 +1413,21 @@ public class SkillsMenuScreen extends BaseMenuScreen {
 		}
 	}
 
-	private void renderSkillDetails(GuiGraphics graphics, int panelX, int panelY) {
+	private void renderSkillDetails(GuiGraphics graphics, int panelX, int panelY, int mouseX, int mouseY) {
 		Skill skill = statsData.getSkills().getSkill(selectedSkill);
 		boolean isClassPassive = selectedSkill.equals(CLASS_PASSIVE_ENTRY);
 		if (skill == null && !selectedSkill.startsWith("racial_") && !isClassPassive) return;
-		GeneralServerConfig.RacialSkillsConfig config = ConfigManager.getServerConfig().getRacialSkills();
 		String displayName = isClassPassive ? getClassPassiveTitle() : tr("skill.dragonminez." + selectedSkill).getString();
 
-		String description = "";
+		MutableComponent description;
 		if (isClassPassive) {
-			description = tr("class.dragonminez." + statsData.getCharacter().getCharacterClass() + ".passive.desc").getString();
-		} else if (selectedSkill.startsWith("racial_")) {
-			switch (selectedSkill) {
-				case "racial_human" -> {
-					var human = config.getHuman();
-					description = tr("skill.dragonminez.racial_human.desc",
-							percent(human.getTechniqueXpBonus()), percent(human.getAdrenalineThreshold()), human.getAdrenalineSeconds(),
-							percent(human.getAdrenalineDamageReduction()), percent(human.getAdrenalineAttackSpeed()),
-							percent(human.getAdrenalineMoveSpeed()), human.getAdrenalineCooldownSeconds(),
-							human.getAndroidBarrierMaxSeconds(), percent(human.getAndroidBarrierKiConversion()),
-							percent(human.getAndroidBarrierSurgeOverflow()), percent(human.getAndroidBarrierBreakOverflow()),
-							human.getAndroidBarrierCooldownSeconds(), human.getAndroidBarrierBrokenCooldownSeconds()).getString();
-				}
-				case "racial_saiyan" -> {
-					int zenkaiHealth = (int) Math.round((config.getSaiyanZenkaiHealthRegen() * 100));
-					int zenkaiStat = (int) Math.round((config.getSaiyanZenkaiStatBoost() * 100));
-					int cooldown = config.getSaiyanZenkaiCooldownSeconds();
-					int maxUses = config.getSaiyanZenkaiAmount();
-					int minLevel = config.getSaiyanZenkaiMinLevel();
-					description = tr("skill.dragonminez.racial_saiyan.desc", zenkaiHealth, zenkaiStat, cooldown, maxUses, minLevel).getString();
-				}
-				case "racial_namekian" -> {
-					int assimHealth = (int) Math.round(config.getNamekianAssimilationHealthRegen() * 100);
-					int assimStat = (int) Math.round(config.getNamekianAssimilationStatBoost() * 100);
-					int maxUses = config.getNamekianAssimilationAmount();
-					description = tr("skill.dragonminez.racial_namekian.desc", assimHealth, assimStat, maxUses).getString();
-				}
-				case "racial_frostdemon" -> {
-					int tpBoost = (int) Math.round((config.getFrostDemonTPBoost() - 1.0) * 100);
-					description = tr("skill.dragonminez.racial_frostdemon.desc", tpBoost).getString();
-				}
-				case "racial_bioandroid" -> {
-					int drainRatio = (int) Math.round(config.getBioAndroidDrainRatio() * 100);
-					int cooldown = config.getBioAndroidCooldownSeconds();
-					description = tr("skill.dragonminez.racial_bioandroid.desc", drainRatio, cooldown).getString();
-				}
-				case "racial_majin" -> {
-					int absHealth = (int) Math.round(config.getMajinAbsorptionHealthRegen() * 100);
-					int absStat = (int) Math.round(config.getMajinAbsorptionStatCopy() * 100);
-					int maxUses = config.getMajinAbsorptionAmount();
-					description = tr("skill.dragonminez.racial_majin.desc", absHealth, absStat, maxUses).getString();
-				}
-				case "racial_glind" -> description = tr("skill.dragonminez.racial_glind.desc", GlindDivinity.descriptionArgs()).getString();
-			}
-		} else description = tr("skill.dragonminez." + selectedSkill + ".desc").getString();
+			description = tr("class.dragonminez." + statsData.getCharacter().getCharacterClass() + ".passive.desc");
+		} else if (selectedSkill.startsWith(RacialSkillParts.ENTRY_PREFIX)) {
+			RacialSkillParts.Part part = RacialSkillParts.find(racialParts(), selectedSkill);
+			if (part == null) return;
+			displayName = part.name().getString();
+			description = part.description().withStyle(Style.EMPTY.withFont(DMZ_FONT));
+		} else description = tr("skill.dragonminez." + selectedSkill + ".desc");
 
 		int startY = panelY + 40;
 
@@ -1514,24 +1445,14 @@ public class SkillsMenuScreen extends BaseMenuScreen {
 			TextUtil.drawCenteredStringWithBorder(graphics, this.font, tr("gui.dragonminez.skills.racial"), panelX + 72, startY + 12, 0xFF55FF55);
 		}
 
-		List<String> wrappedDesc = wrapText(description, 120);
-
 		int descY = startY + 70;
-		int boxX = panelX + 13;
-		int boxW = 130;
+		int boxX = panelX + DESC_BOX_X;
+		int boxW = DESC_BOX_WIDTH;
 		int lineHeight = this.font.lineHeight + 2;
 		int viewHeight = 6 * lineHeight;
-		int totalContentHeight = wrappedDesc.size() * lineHeight;
 
-		maxDescScroll = Math.max(0, totalContentHeight - viewHeight);
-		targetDescScroll = Mth.clamp(targetDescScroll, 0, maxDescScroll);
-		currentDescScroll = Mth.lerp(frameEase(), currentDescScroll, targetDescScroll);
-
-		TextUtil.renderScrollableText(graphics, this.font, wrappedDesc, boxX, descY, boxW, viewHeight, currentDescScroll, maxDescScroll, 0xFFCCCCCC);
-	}
-
-	private List<String> wrapText(String text, int maxWidth) {
-		return TextUtil.wrap(this.font, text, maxWidth, DMZ_FONT);
+		TextUtil.renderScrollableText(graphics, this.font, descScroll, description,
+				boxX, descY, boxW, viewHeight, lineHeight, 0xFFCCCCCC, false, mouseX, mouseY);
 	}
 
 	@Override
@@ -1543,20 +1464,12 @@ public class SkillsMenuScreen extends BaseMenuScreen {
 		int scrollAmount = (int) Math.signum(delta);
 
 		if (uiMouseX >= currentLeftX && uiMouseX <= currentLeftX + 141 && uiMouseY >= leftPanelY && uiMouseY <= leftPanelY + 213) {
-			targetScroll = Mth.clamp(targetScroll - (scrollAmount * SKILL_ITEM_HEIGHT * 2), 0, maxScroll);
+			skillsScroll.scrollWheel(delta);
 			return true;
 		}
 
 		if (formsTransitionProgress < 1.0f) {
-			int descBoxX = currentRightX + 10;
-			int descBoxY = (centerY - 105) + 110;
-			int descBoxW = 136;
-			int descBoxH = 6 * 12;
-
-			if (uiMouseX >= descBoxX && uiMouseX <= descBoxX + descBoxW && uiMouseY >= descBoxY && uiMouseY <= descBoxY + descBoxH) {
-				targetDescScroll = Mth.clamp(targetDescScroll - (scrollAmount * 12 * 2), 0, maxDescScroll);
-				return true;
-			}
+			if (ScrollbarState.scrolled(uiMouseX, uiMouseY, delta, descScroll, sampleDescScroll)) return true;
 
 			if (uiMouseX >= currentRightX && uiMouseX <= currentRightX + 141 && uiMouseY >= leftPanelY && uiMouseY <= leftPanelY + 213) {
 				return true;
@@ -1569,11 +1482,6 @@ public class SkillsMenuScreen extends BaseMenuScreen {
 		}
 
 		return super.mouseScrolled(mouseX, mouseY, delta);
-	}
-
-	private float calculateScrollPercent(double uiMouseY, int startY, int scrollBarHeight) {
-		float percent = (float) (uiMouseY - startY) / scrollBarHeight;
-		return Mth.clamp(percent, 0.0f, 1.0f);
 	}
 
 	@Override
@@ -1599,19 +1507,13 @@ public class SkillsMenuScreen extends BaseMenuScreen {
 		int leftPanelY = centerY - 105;
 
 		int startY = leftPanelY + 30;
-		int scrollBarHeight = MAX_VISIBLE_SKILLS * SKILL_ITEM_HEIGHT;
-		int scrollBarX = currentLeftX + 135;
 
-		if (maxScroll > 0 && uiMouseX >= scrollBarX - 5 && uiMouseX <= scrollBarX + 10 && uiMouseY >= startY && uiMouseY <= startY + scrollBarHeight) {
-			isDraggingMainScroll = true;
-			targetScroll = calculateScrollPercent(uiMouseY, startY, scrollBarHeight) * maxScroll;
-			return true;
-		}
+		if (skillsScroll.mouseClicked(uiMouseX, uiMouseY, button)) return true;
 
 		List<String> skillNames = getVisibleSkillNames();
 
-		if (uiMouseX >= currentLeftX + 10 && uiMouseX <= currentLeftX + 100 && uiMouseY >= startY && uiMouseY <= startY + scrollBarHeight) {
-			int index = (int) ((uiMouseY - startY + currentScroll) / SKILL_ITEM_HEIGHT);
+		if (uiMouseX >= currentLeftX + 10 && uiMouseX <= currentLeftX + 100 && skillsScroll.isInView(uiMouseX, uiMouseY)) {
+			int index = (int) ((uiMouseY - startY + skillsScroll.scroll()) / SKILL_ITEM_HEIGHT);
 
 			if (index >= 0 && index < skillNames.size()) {
 				selectedSkill = skillNames.get(index);
@@ -1628,8 +1530,7 @@ public class SkillsMenuScreen extends BaseMenuScreen {
 						}
 					}
 				} else {
-					targetDescScroll = 0;
-					currentDescScroll = 0;
+					descScroll.reset();
 				}
 
 				refreshButtons();
@@ -1642,15 +1543,7 @@ public class SkillsMenuScreen extends BaseMenuScreen {
 		}
 
 		if (formsTransitionProgress < 1.0f) {
-			int descBoxY = (centerY - 105) + 110;
-			int descBoxH = 6 * 12;
-			int descScrollBarX = currentRightX + 140;
-
-			if (maxDescScroll > 0 && uiMouseX >= descScrollBarX - 5 && uiMouseX <= descScrollBarX + 10 && uiMouseY >= descBoxY && uiMouseY <= descBoxY + descBoxH) {
-				isDraggingDescScroll = true;
-				targetDescScroll = calculateScrollPercent(uiMouseY, descBoxY, descBoxH) * maxDescScroll;
-				return true;
-			}
+			if (ScrollbarState.clicked(uiMouseX, uiMouseY, button, descScroll, sampleDescScroll)) return true;
 
 			if (uiMouseX >= currentRightX && uiMouseX <= currentRightX + 141 && uiMouseY >= leftPanelY && uiMouseY <= leftPanelY + 213) {
 				return true;
@@ -1713,21 +1606,7 @@ public class SkillsMenuScreen extends BaseMenuScreen {
 			return true;
 		}
 
-		if (isDraggingMainScroll && maxScroll > 0) {
-			int centerY = getUiHeight() / 2;
-			int startY = (centerY - 105) + 30;
-			int scrollBarHeight = MAX_VISIBLE_SKILLS * SKILL_ITEM_HEIGHT;
-			targetScroll = calculateScrollPercent(uiMouseY, startY, scrollBarHeight) * maxScroll;
-			return true;
-		}
-
-		if (isDraggingDescScroll && maxDescScroll > 0) {
-			int centerY = getUiHeight() / 2;
-			int descBoxY = (centerY - 105) + 110;
-			int descBoxH = 6 * 12;
-			targetDescScroll = calculateScrollPercent(uiMouseY, descBoxY, descBoxH) * maxDescScroll;
-			return true;
-		}
+		if (ScrollbarState.dragged(uiMouseX, uiMouseY, skillsScroll, descScroll, sampleDescScroll)) return true;
 
 		return super.mouseDragged(mouseX, mouseY, button, dragX, dragY);
 	}
@@ -1738,11 +1617,7 @@ public class SkillsMenuScreen extends BaseMenuScreen {
 			isDraggingForms = false;
 			return true;
 		}
-		if (isDraggingMainScroll || isDraggingDescScroll) {
-			isDraggingMainScroll = false;
-			isDraggingDescScroll = false;
-			return true;
-		}
+		if (ScrollbarState.released(skillsScroll, descScroll, sampleDescScroll)) return true;
 		return super.mouseReleased(mouseX, mouseY, button);
 	}
 
@@ -1850,7 +1725,4 @@ public class SkillsMenuScreen extends BaseMenuScreen {
 		}
 	}
 
-	private static int percent(double ratio) {
-		return (int) Math.round(ratio * 100);
-	}
 }

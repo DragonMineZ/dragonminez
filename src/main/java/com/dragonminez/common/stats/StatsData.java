@@ -443,7 +443,7 @@ public class StatsData {
 
 		double kiConductivityMult = TickHandler.getRecoveryMultiplier(TickHandler.getTotalArmorEnchantmentLevel(MainEnchants.KI_CONDUCTIVITY.get(), player));
 		double baseRegenPerSecond = (ep5 / 5.0) * meditationBonus * enchMult * kiConductivityMult;
-		double androidRegenMult = isAndroidRacialActive() ? 2.0 : 1.0;
+		double androidRegenMult = isAndroidRacialActive() ? ConfigManager.getServerConfig().getRacialSkills().getHuman().getAndroidKiRegenMultiplier() : 1.0;
 
 		double energyChange = 0;
 

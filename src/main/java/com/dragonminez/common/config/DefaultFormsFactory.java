@@ -1693,7 +1693,7 @@ public class DefaultFormsFactory {
 		absorption.setPwrMultiplier(3.15);
 		absorption.setEnergyDrain(0.24);
 		absorption.setAuraColor("#2F6BFF");
-		absorption.setHairType("base");
+		absorption.setHairType("ssj4");
 		setDefaultMasteryValues(absorption);
 		absorption.setAura3DStyle(aura3D().waves(2.0f, 5.0f, 0.78f).turbulence(0.13f, 0.54f).colors("", "", "#9CC8FF"));
 		absorption.setStackDrainMultiplier(2.0);
@@ -1756,7 +1756,7 @@ public class DefaultFormsFactory {
 		transcended.setBodyColor1("#F8FDDC");
 		transcended.setBodyColor2("#0F75B5");
 		transcended.setAuraColor("#7B2FBE");
-		transcended.setHairType("ssj4");
+		transcended.setHairType("base");
 		setDefaultMasteryValues(transcended);
 		transcended.setAura3DStyle(darkAura("#B05CFF").size(1.12f, 1.2f, 1.03f).waves(2.1f, 5.2f, 0.8f).turbulence(0.45f, 0.54f));
 		transcended.setStackDrainMultiplier(2.0);

@@ -15,6 +15,7 @@ import net.minecraft.client.renderer.RenderType;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.Mth;
 import org.joml.Matrix4f;
+import org.joml.Vector3f;
 
 public final class HudRender {
 	private static float alphaScale = 1.0f;
@@ -186,6 +187,14 @@ public final class HudRender {
 		graphics.drawString(font, uncolored(sequence), 0, 1, border, false);
 		graphics.drawString(font, sequence, 0, 0, color, false);
 		graphics.pose().popPose();
+	}
+
+	public static void scissor(GuiGraphics graphics, float minX, float minY, float maxX, float maxY) {
+		Matrix4f pose = graphics.pose().last().pose();
+		Vector3f min = pose.transformPosition(new Vector3f(minX, minY, 0.0f));
+		Vector3f max = pose.transformPosition(new Vector3f(maxX, maxY, 0.0f));
+		graphics.enableScissor(Math.round(Math.min(min.x, max.x)), Math.round(Math.min(min.y, max.y)),
+				Math.round(Math.max(min.x, max.x)), Math.round(Math.max(min.y, max.y)));
 	}
 
 	public static void rect(GuiGraphics graphics, float x, float y, float width, float height, int color) {

@@ -4,6 +4,7 @@ import com.dragonminez.client.gui.hud.HudRender;
 import com.dragonminez.Reference;
 import com.dragonminez.client.gui.buttons.TexturedTextButton;
 import com.dragonminez.client.gui.character.util.ScaledScreen;
+import com.dragonminez.client.util.ScrollbarState;
 import com.dragonminez.client.util.TextUtil;
 import com.dragonminez.common.network.C2S.GrantWishC2S;
 import com.dragonminez.common.network.C2S.RequestReviveTargetsC2S;
@@ -19,7 +20,6 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.Style;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.sounds.SoundEvents;
-import net.minecraft.util.Mth;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 
@@ -56,10 +56,7 @@ public class WishesScreen extends ScaledScreen {
 	private final List<UUID> pickerPicks = new ArrayList<>();
 
 	private int guiLeft, guiTop;
-	private float targetScroll = 0;
-	private float currentScroll = 0;
-	private float maxScroll = 0;
-	private boolean isScrolling = false;
+	private final ScrollbarState listBar = new ScrollbarState().minThumb(20).step(ITEM_HEIGHT * 2);
 
 	private TexturedTextButton confirmButton;
 
@@ -141,8 +138,7 @@ public class WishesScreen extends ScaledScreen {
 		pickerOpen = true;
 		pickerSelection = selection;
 		pickerPicks.clear();
-		targetScroll = 0;
-		currentScroll = 0;
+		listBar.reset();
 		refreshConfirmButton();
 	}
 
@@ -150,8 +146,7 @@ public class WishesScreen extends ScaledScreen {
 		pickerOpen = false;
 		pickerSelection = -1;
 		pickerPicks.clear();
-		targetScroll = 0;
-		currentScroll = 0;
+		listBar.reset();
 	}
 
 	private void refreshConfirmButton() {
@@ -203,34 +198,29 @@ public class WishesScreen extends ScaledScreen {
 	private int listWidth() { return PANEL_WIDTH - 25; }
 	private int viewHeight() { return MAX_VISIBLE_ITEMS * ITEM_HEIGHT; }
 
-	private void updateScroll(int rowCount) {
-		int totalHeight = rowCount * ITEM_HEIGHT;
-		maxScroll = Math.max(0, totalHeight - viewHeight());
-		targetScroll = Mth.clamp(targetScroll, 0, maxScroll);
-		currentScroll = Mth.lerp(frameEase(), currentScroll, targetScroll);
+	private void layoutList(int rowCount) {
+		listBar.layout(listLeft(), listTop(), listWidth(), viewHeight(), rowCount * ITEM_HEIGHT).barAt(guiLeft + PANEL_WIDTH - 12);
 	}
 
 	private void renderWishesList(GuiGraphics graphics, int uiMouseX, int uiMouseY) {
 		int listLeft = listLeft();
 		int listTop = listTop();
 		int listWidth = listWidth();
-		int viewHeight = viewHeight();
-		updateScroll(availableWishes.size());
+		layoutList(availableWishes.size());
 
-		graphics.enableScissor(toScreenCoord(listLeft), toScreenCoord(listTop), toScreenCoord(listLeft + listWidth), toScreenCoord(listTop + viewHeight));
-		graphics.pose().pushPose();
-		graphics.pose().translate(0, -currentScroll, 0);
+		listBar.beginClip(graphics);
+		double contentMouseY = listBar.toContent(uiMouseY);
 
 		for (int i = 0; i < availableWishes.size(); i++) {
 			int itemY = listTop + (i * ITEM_HEIGHT);
-			if (itemY + ITEM_HEIGHT < listTop + currentScroll || itemY > listTop + viewHeight + currentScroll) continue;
+			if (!listBar.isVisible(itemY, ITEM_HEIGHT)) continue;
 
 			Wish wish = availableWishes.get(i);
 			String badge = badgeFor(i);
 			boolean isSelected = !badge.isEmpty();
 			boolean selectable = !needsTargets(wish) || !reviveTargets.isEmpty();
 			boolean isHovered = uiMouseX >= listLeft && uiMouseX < listLeft + listWidth &&
-					uiMouseY >= itemY - currentScroll && uiMouseY < itemY + ITEM_HEIGHT - currentScroll;
+					contentMouseY >= itemY && contentMouseY < itemY + ITEM_HEIGHT;
 
 			int color = isSelected ? SELECTED_FILL : (isHovered ? HOVER_FILL : 0);
 			graphics.fill(listLeft, itemY, listLeft + listWidth, itemY + ITEM_HEIGHT, color);
@@ -243,36 +233,34 @@ public class WishesScreen extends ScaledScreen {
 			}
 		}
 
-		graphics.pose().popPose();
-		graphics.disableScissor();
-		renderScrollbar(graphics, availableWishes.size());
+		listBar.endClip(graphics);
+		listBar.renderBar(graphics, uiMouseX, uiMouseY);
 	}
 
 	private void renderTargetList(GuiGraphics graphics, int uiMouseX, int uiMouseY) {
 		int listLeft = listLeft();
 		int listTop = listTop();
 		int listWidth = listWidth();
-		int viewHeight = viewHeight();
-		updateScroll(reviveTargets.size());
 
 		if (reviveTargets.isEmpty()) {
+			listBar.clear();
 			TextUtil.drawCenteredStringWithBorder(graphics, this.font, tr("gui.dragonminez.wishes.revive_nobody"),
 					getUiWidth() / 2, listTop + 10, 0xFFAAAAAA);
 			return;
 		}
 
-		graphics.enableScissor(toScreenCoord(listLeft), toScreenCoord(listTop), toScreenCoord(listLeft + listWidth), toScreenCoord(listTop + viewHeight));
-		graphics.pose().pushPose();
-		graphics.pose().translate(0, -currentScroll, 0);
+		layoutList(reviveTargets.size());
+		listBar.beginClip(graphics);
+		double contentMouseY = listBar.toContent(uiMouseY);
 
 		for (int i = 0; i < reviveTargets.size(); i++) {
 			int itemY = listTop + (i * ITEM_HEIGHT);
-			if (itemY + ITEM_HEIGHT < listTop + currentScroll || itemY > listTop + viewHeight + currentScroll) continue;
+			if (!listBar.isVisible(itemY, ITEM_HEIGHT)) continue;
 
 			ReviveTargetsS2C.Entry entry = reviveTargets.get(i);
 			boolean isSelected = pickerPicks.contains(entry.id());
 			boolean isHovered = uiMouseX >= listLeft && uiMouseX < listLeft + listWidth &&
-					uiMouseY >= itemY - currentScroll && uiMouseY < itemY + ITEM_HEIGHT - currentScroll;
+					contentMouseY >= itemY && contentMouseY < itemY + ITEM_HEIGHT;
 
 			int color = isSelected ? SELECTED_FILL : (isHovered ? HOVER_FILL : 0);
 			graphics.fill(listLeft, itemY, listLeft + listWidth, itemY + ITEM_HEIGHT, color);
@@ -280,9 +268,8 @@ public class WishesScreen extends ScaledScreen {
 			if (isSelected) graphics.renderOutline(listLeft, itemY, listWidth, ITEM_HEIGHT, SELECTED_OUTLINE);
 		}
 
-		graphics.pose().popPose();
-		graphics.disableScissor();
-		renderScrollbar(graphics, reviveTargets.size());
+		listBar.endClip(graphics);
+		listBar.renderBar(graphics, uiMouseX, uiMouseY);
 	}
 
 	private void drawBadge(GuiGraphics graphics, String badge, int right, int top) {
@@ -304,23 +291,6 @@ public class WishesScreen extends ScaledScreen {
 		return badge.toString();
 	}
 
-	private void renderScrollbar(GuiGraphics graphics, int rowCount) {
-		if (maxScroll <= 0) return;
-		int viewHeight = viewHeight();
-		int totalHeight = rowCount * ITEM_HEIGHT;
-		int scrollBarX = guiLeft + PANEL_WIDTH - 12;
-		int scrollBarY = listTop();
-
-		graphics.fill(scrollBarX, scrollBarY, scrollBarX + 3, scrollBarY + viewHeight, 0xFF333333);
-
-		float scrollPercent = currentScroll / maxScroll;
-		float visiblePercent = (float) viewHeight / totalHeight;
-		int indicatorHeight = Math.max(20, (int) (viewHeight * visiblePercent));
-		int indicatorY = scrollBarY + (int) ((viewHeight - indicatorHeight) * scrollPercent);
-
-		graphics.fill(scrollBarX, indicatorY, scrollBarX + 3, indicatorY + indicatorHeight, 0xFFAAAAAA);
-	}
-
 	private void renderTooltip(GuiGraphics graphics, int uiMouseX, int uiMouseY) {
 		int index = rowAt(uiMouseX, uiMouseY, availableWishes.size());
 		if (index < 0) return;
@@ -337,13 +307,8 @@ public class WishesScreen extends ScaledScreen {
 		int listLeft = listLeft();
 		int listTop = listTop();
 		if (uiX < listLeft || uiX >= listLeft + listWidth() || uiY < listTop || uiY > listTop + viewHeight()) return -1;
-		int index = (int) ((uiY - listTop + currentScroll) / ITEM_HEIGHT);
+		int index = (int) ((uiY - listTop + listBar.scroll()) / ITEM_HEIGHT);
 		return index >= 0 && index < rowCount ? index : -1;
-	}
-
-	private float calculateScrollPercent(double uiY, int startY, int viewHeight) {
-		float percent = (float) (uiY - startY) / viewHeight;
-		return Mth.clamp(percent, 0.0f, 1.0f);
 	}
 
 	@Override
@@ -353,17 +318,7 @@ public class WishesScreen extends ScaledScreen {
 		double uiX = toUiX(mouseX);
 		double uiY = toUiY(mouseY);
 
-		int listLeft = listLeft();
-		int listTop = listTop();
-		int listWidth = listWidth();
-		int viewHeight = viewHeight();
-
-		if (maxScroll > 0 && uiX >= listLeft + listWidth && uiX <= guiLeft + PANEL_WIDTH &&
-				uiY >= listTop && uiY <= listTop + viewHeight) {
-			this.isScrolling = true;
-			targetScroll = calculateScrollPercent(uiY, listTop, viewHeight) * maxScroll;
-			return true;
-		}
+		if (listBar.mouseClicked(uiX, uiY, button)) return true;
 
 		if (pickerOpen) {
 			int index = rowAt(uiX, uiY, reviveTargets.size());
@@ -387,26 +342,19 @@ public class WishesScreen extends ScaledScreen {
 
 	@Override
 	public boolean mouseScrolled(double mouseX, double mouseY, double delta) {
-		if (maxScroll > 0) {
-			targetScroll = (float) Mth.clamp(targetScroll - (Math.signum(delta) * ITEM_HEIGHT * 2), 0, maxScroll);
-			return true;
-		}
+		if (listBar.scrollWheel(delta)) return true;
 		return super.mouseScrolled(mouseX, mouseY, delta);
 	}
 
 	@Override
 	public boolean mouseReleased(double mouseX, double mouseY, int button) {
-		this.isScrolling = false;
+		listBar.mouseReleased();
 		return super.mouseReleased(mouseX, mouseY, button);
 	}
 
 	@Override
 	public boolean mouseDragged(double mouseX, double mouseY, int button, double dragX, double dragY) {
-		if (isScrolling && maxScroll > 0) {
-			double uiY = toUiY(mouseY);
-			targetScroll = calculateScrollPercent(uiY, listTop(), viewHeight()) * maxScroll;
-			return true;
-		}
+		if (listBar.mouseDragged(toUiX(mouseX), toUiY(mouseY))) return true;
 		return super.mouseDragged(mouseX, mouseY, button, dragX, dragY);
 	}
 

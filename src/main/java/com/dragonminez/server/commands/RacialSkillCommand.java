@@ -3,10 +3,9 @@ package com.dragonminez.server.commands;
 import com.dragonminez.common.config.ConfigManager;
 import com.dragonminez.common.network.NetworkHandler;
 import com.dragonminez.common.network.S2C.StatsSyncS2C;
+import com.dragonminez.common.racial.RacialReset;
 import com.dragonminez.common.racial.capture.CaptureRequest;
-import com.dragonminez.common.stats.character.Cooldowns;
 import com.dragonminez.common.stats.StatsCapability;
-import com.dragonminez.common.stats.StatsData;
 import com.dragonminez.common.stats.StatsProvider;
 import com.mojang.brigadier.CommandDispatcher;
 import com.mojang.brigadier.arguments.StringArgumentType;
@@ -17,7 +16,6 @@ import net.minecraft.commands.arguments.EntityArgument;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerPlayer;
 
-import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 
@@ -25,7 +23,6 @@ public class RacialSkillCommand {
 
 	public static void register(CommandDispatcher<CommandSourceStack> dispatcher) {
 		dispatcher.register(Commands.literal("dmzracial")
-				.requires(source -> DMZPermissions.check(source, DMZPermissions.RACIAL_RESET_SELF, DMZPermissions.RACIAL_RESET_OTHERS))
 				.then(Commands.literal("reset")
 						.requires(source -> DMZPermissions.check(source, DMZPermissions.RACIAL_RESET_SELF, DMZPermissions.RACIAL_RESET_OTHERS))
 						.executes(context -> resetRacialSkills(context.getSource(), List.of(context.getSource().getPlayerOrException())))
@@ -58,19 +55,7 @@ public class RacialSkillCommand {
 		boolean log = ConfigManager.getServerConfig().getGameplay().getCommandOutputOnConsole();
 		for (ServerPlayer player : targets) {
 			StatsProvider.get(StatsCapability.INSTANCE, player).ifPresent(data -> {
-				var ownedBonusNames = data.getRacialData().getOwnedBonusNames();
-				if (!ownedBonusNames.isEmpty()) {
-					for (String bonusName : new ArrayList<>(ownedBonusNames)) {
-						data.getBonusStats().removeAllBonuses(bonusName);
-					}
-					ownedBonusNames.clear();
-				} else {
-					clearLegacyBonuses(data);
-				}
-
-				data.getCooldowns().removeCooldown(Cooldowns.ZENKAI);
-				data.getResources().setRacialSkillCount(0);
-
+				RacialReset.reset(player, data);
 				NetworkHandler.sendToTrackingEntityAndSelf(new StatsSyncS2C(player), player);
 			});
 		}
@@ -82,22 +67,5 @@ public class RacialSkillCommand {
 		}
 
 		return targets.size();
-	}
-
-	private static void clearLegacyBonuses(StatsData data) {
-		String[] statBoosts = switch (data.getCharacter().getRace()) {
-			case "namekian" -> ConfigManager.getServerConfig().getRacialSkills().getNamekianAssimilationBoosts();
-			case "majin" -> ConfigManager.getServerConfig().getRacialSkills().getMajinAbsorptionBoosts();
-			case "saiyan" -> ConfigManager.getServerConfig().getRacialSkills().getSaiyanZenkaiBoosts();
-			default -> new String[0];
-		};
-
-		for (String stat : statBoosts) {
-			for (int i = data.getResources().getRacialSkillCount(); i >= 0; i--) {
-				data.getBonusStats().clearBonusSplit(stat, "Absorption_");
-				data.getBonusStats().clearBonusSplit(stat, "Assimilation_");
-				data.getBonusStats().clearBonusSplit(stat, "Zenkai_");
-			}
-		}
 	}
 }

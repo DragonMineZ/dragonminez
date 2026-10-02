@@ -59,24 +59,6 @@ public class GlindDivinity implements RacialAbility {
 		return !canPerceiveDivineKi(viewer, viewerData);
 	}
 
-	public static Object[] descriptionArgs() {
-		GeneralServerConfig.GlindRacialConfig config = config();
-		return new Object[]{
-				percent(config.getMeditationDodgeMultiplier() - 1.0),
-				percent(config.getRegenMultiplier() - 1.0),
-				percent(config.getHealingReductionBase()),
-				percent(config.getHealingReductionStackEfficiency()),
-				percent(config.getPlayerDamageBonus()),
-				percent(config.getFrostDemonDamageBonus()),
-				percent(config.getMajinDamageBonus()),
-				config.getEvilAttackerMaxAlignment(),
-				config.getGoodTargetMinAlignment(),
-				config.getGoodAttackerMinAlignment(),
-				config.getEvilTargetMaxAlignment(),
-				percent(config.getNpcDamageBonus())
-		};
-	}
-
 	public static double modifyMeditationDodge(StatsData data, double chance) {
 		if (chance <= 0.0 || !isActive(data)) return chance;
 		return Math.min(1.0, chance * config().getMeditationDodgeMultiplier());
@@ -116,9 +98,5 @@ public class GlindDivinity implements RacialAbility {
 		if (FROST_DEMON_FAMILY.equals(family)) return config.getFrostDemonDamageBonus();
 		if (MAJIN_FAMILY.equals(family)) return config.getMajinDamageBonus();
 		return config.getPlayerDamageBonus();
-	}
-
-	private static int percent(double ratio) {
-		return (int) Math.round(ratio * 100.0);
 	}
 }

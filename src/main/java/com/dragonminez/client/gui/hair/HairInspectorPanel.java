@@ -1,5 +1,6 @@
 package com.dragonminez.client.gui.hair;
 
+import com.dragonminez.client.util.ScrollbarState;
 import com.dragonminez.common.hair.CustomHair;
 import com.dragonminez.common.hair.HairJointStyle;
 import com.dragonminez.common.hair.HairPresets;
@@ -22,7 +23,6 @@ final class HairInspectorPanel implements HairInspectorRows.Context {
 	private static final int INSET = 8;
 	private static final int SCROLL_STEP = 14;
 	private static final int SCROLLBAR_WIDTH = 4;
-	private static final int SCROLLBAR_HIT_PADDING = 2;
 	private static final int MIN_THUMB_HEIGHT = 12;
 	private static final float OFFSET_STEP = 0.05f;
 	private static final float ANGLE_STEP = 1.0f;
@@ -42,12 +42,11 @@ final class HairInspectorPanel implements HairInspectorRows.Context {
 	private int y;
 	private int width;
 	private int height;
-	private int scroll;
+	private final ScrollbarState scroll = new ScrollbarState().barWidth(SCROLLBAR_WIDTH).minThumb(MIN_THUMB_HEIGHT).step(SCROLL_STEP)
+			.colors(0x60000000, HairEditorUi.DIVIDER, HairEditorUi.HOVER_TEXT);
 	private int contentHeight;
 	private boolean rebuildRequested = true;
 	private HairInspectorRows.Row dragging;
-	private boolean draggingScrollbar;
-	private int scrollbarGrab;
 	private HairInspectorRows.NumberRow editing;
 	private final StringBuilder editText = new StringBuilder();
 	private HairStyleSlot copySource = HairStyleSlot.BASE;
@@ -63,7 +62,6 @@ final class HairInspectorPanel implements HairInspectorRows.Context {
 		this.y = y;
 		this.width = width;
 		this.height = height;
-		clampScroll();
 	}
 
 	int x() {
@@ -94,7 +92,7 @@ final class HairInspectorPanel implements HairInspectorRows.Context {
 	}
 
 	public void openColorPicker(HairInspectorRows.ColorRow row, int anchorX, int anchorY) {
-		colorPickerOpener.open(row, anchorX, anchorY - scroll);
+		colorPickerOpener.open(row, anchorX, anchorY);
 	}
 
 	public void requestRebuild() {
@@ -112,8 +110,9 @@ final class HairInspectorPanel implements HairInspectorRows.Context {
 
 		int top = y + HEADER_HEIGHT;
 		int visible = visibleHeight();
+		scroll.layout(x + INSET, top, width - INSET * 2, visible, contentHeight);
 		scissor.enable(graphics, x + INSET, top, x + width - INSET, top + visible);
-		int rowY = top - scroll;
+		int rowY = top - scroll.scrollPixels();
 		for (HairInspectorRows.Row row : rows) {
 			if (rowY + row.height() >= top && rowY <= top + visible) {
 				row.render(graphics, font, rowX(), rowY, rowWidth(), mouseX, mouseY, this);
@@ -122,13 +121,7 @@ final class HairInspectorPanel implements HairInspectorRows.Context {
 		}
 		scissor.disable(graphics);
 
-		if (hasScrollbar()) {
-			int trackX = trackX();
-			graphics.fill(trackX, top, trackX + SCROLLBAR_WIDTH, top + visible, 0x60000000);
-			int thumbY = thumbY();
-			boolean highlighted = draggingScrollbar || insideScrollbar(mouseX, mouseY);
-			graphics.fill(trackX, thumbY, trackX + SCROLLBAR_WIDTH, thumbY + thumbHeight(), highlighted ? HairEditorUi.HOVER_TEXT : HairEditorUi.DIVIDER);
-		}
+		scroll.renderBar(graphics, mouseX, mouseY);
 	}
 
 	boolean mouseClicked(double mouseX, double mouseY, int button) {
@@ -138,16 +131,11 @@ final class HairInspectorPanel implements HairInspectorRows.Context {
 		}
 		int top = y + HEADER_HEIGHT;
 		if (mouseY < top) return true;
-		if (button == 0 && insideScrollbar(mouseX, mouseY)) {
+		if (scroll.mouseClicked(mouseX, mouseY, button)) {
 			commitTextEdit();
-			int thumbY = thumbY();
-			boolean onThumb = mouseY >= thumbY && mouseY < thumbY + thumbHeight();
-			scrollbarGrab = onThumb ? (int) Math.round(mouseY) - thumbY : thumbHeight() / 2;
-			draggingScrollbar = true;
-			scrollToMouse(mouseY);
 			return true;
 		}
-		int rowY = top - scroll;
+		int rowY = top - scroll.scrollPixels();
 		HairInspectorRows.NumberRow previousEditing = editing;
 		for (HairInspectorRows.Row row : rows) {
 			if (mouseY >= rowY && mouseY < rowY + row.height()) {
@@ -164,12 +152,9 @@ final class HairInspectorPanel implements HairInspectorRows.Context {
 	}
 
 	boolean mouseDragged(double mouseX, double mouseY) {
-		if (draggingScrollbar) {
-			scrollToMouse(mouseY);
-			return true;
-		}
+		if (scroll.mouseDragged(mouseX, mouseY)) return true;
 		if (dragging == null) return false;
-		int rowY = y + HEADER_HEIGHT - scroll;
+		int rowY = y + HEADER_HEIGHT - scroll.scrollPixels();
 		for (HairInspectorRows.Row row : rows) {
 			if (row == dragging) {
 				row.mouseDragged(mouseX, mouseY, rowX(), rowY, rowWidth(), this);
@@ -181,10 +166,7 @@ final class HairInspectorPanel implements HairInspectorRows.Context {
 	}
 
 	boolean mouseReleased() {
-		if (draggingScrollbar) {
-			draggingScrollbar = false;
-			return true;
-		}
+		if (scroll.mouseReleased()) return true;
 		if (dragging == null) return false;
 		dragging.mouseReleased(this);
 		dragging = null;
@@ -193,8 +175,7 @@ final class HairInspectorPanel implements HairInspectorRows.Context {
 
 	boolean mouseScrolled(double mouseX, double mouseY, double delta) {
 		if (!contains(mouseX, mouseY)) return false;
-		scroll -= (int) Math.round(delta * SCROLL_STEP);
-		clampScroll();
+		scroll.scrollWheel(delta);
 		return true;
 	}
 
@@ -236,55 +217,15 @@ final class HairInspectorPanel implements HairInspectorRows.Context {
 		return width - INSET * 2 - SCROLLBAR_WIDTH - 2;
 	}
 
-	private boolean hasScrollbar() {
-		return contentHeight > visibleHeight();
-	}
-
-	private int trackX() {
-		return x + width - INSET - SCROLLBAR_WIDTH;
-	}
-
-	private int thumbHeight() {
-		int visible = visibleHeight();
-		return Math.min(visible, Math.max(MIN_THUMB_HEIGHT, visible * visible / Math.max(1, contentHeight)));
-	}
-
-	private int thumbY() {
-		int range = contentHeight - visibleHeight();
-		float progress = range > 0 ? scroll / (float) range : 0.0f;
-		return y + HEADER_HEIGHT + Math.round((visibleHeight() - thumbHeight()) * progress);
-	}
-
-	private boolean insideScrollbar(double mouseX, double mouseY) {
-		if (!hasScrollbar()) return false;
-		int top = y + HEADER_HEIGHT;
-		return mouseX >= trackX() - SCROLLBAR_HIT_PADDING && mouseX < trackX() + SCROLLBAR_WIDTH + SCROLLBAR_HIT_PADDING
-				&& mouseY >= top && mouseY < top + visibleHeight();
-	}
-
-	private void scrollToMouse(double mouseY) {
-		int travel = visibleHeight() - thumbHeight();
-		int range = contentHeight - visibleHeight();
-		if (travel <= 0 || range <= 0) return;
-		double thumbTop = mouseY - scrollbarGrab - (y + HEADER_HEIGHT);
-		scroll = (int) Math.round(thumbTop / travel * range);
-		clampScroll();
-	}
-
 	private int visibleHeight() {
 		return height - HEADER_HEIGHT - INSET;
-	}
-
-	private void clampScroll() {
-		int visible = visibleHeight();
-		scroll = Math.max(0, Math.min(scroll, Math.max(0, contentHeight - visible)));
 	}
 
 	private void rebuild() {
 		rebuildRequested = false;
 		editing = null;
 		dragging = null;
-		draggingScrollbar = false;
+		scroll.mouseReleased();
 		rows.clear();
 
 		HairStrand strand = state.selectedStrand();
@@ -299,7 +240,6 @@ final class HairInspectorPanel implements HairInspectorRows.Context {
 
 		contentHeight = 0;
 		for (HairInspectorRows.Row row : rows) contentHeight += row.height();
-		clampScroll();
 	}
 
 	private void buildStyleRows() {

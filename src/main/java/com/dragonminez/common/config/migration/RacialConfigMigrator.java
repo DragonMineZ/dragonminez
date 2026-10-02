@@ -16,8 +16,6 @@ public final class RacialConfigMigrator {
 				new String[]{"saiyanRacialSkill", "enabled"},
 				new String[]{"saiyanZenkaiMinLevel", "minLevel"},
 				new String[]{"saiyanZenkaiAmount", "permanentMaxBuffs"},
-				new String[]{"saiyanZenkaiHealthRegen", "triggerHealthRegen"},
-				new String[]{"saiyanZenkaiStatBoost", "triggerStatBoost"},
 				new String[]{"saiyanZenkaiBoosts", "buffStats"},
 				new String[]{"saiyanZenkaiCooldownSeconds", "cooldownSeconds"}));
 
@@ -31,18 +29,14 @@ public final class RacialConfigMigrator {
 
 		racial.add("majin", buildSection(racial,
 				new String[]{"majinAbsoprtionSkill", "enabled"},
-				new String[]{"majinReviveSkill", "reviveSkill"},
 				new String[]{"majinAbsorptionAmount", "absorptionAmount"},
 				new String[]{"majinAbsorptionHealthRegen", "absorptionHealthRegen"},
 				new String[]{"majinAbsorptionStatsCopy", "absorptionStatCopy"},
 				new String[]{"majinAbsorptionBoosts", "absorptionBoosts"},
-				new String[]{"majinAbsorptionOnMobs", "absorptionOnMobs"},
-				new String[]{"majinReviveCooldownSeconds", "reviveCooldownSeconds"},
-				new String[]{"majinReviveHealthRatioPerBlop", "reviveHealthRatioPerBlop"}));
+				new String[]{"majinAbsorptionOnMobs", "absorptionOnMobs"}));
 
 		racial.add("human", buildSection(racial,
-				new String[]{"humanRacialSkill", "enabled"},
-				new String[]{"humanKiRegenBoost", "kiRegenBoost"}));
+				new String[]{"humanRacialSkill", "enabled"}));
 
 		racial.add("frostdemon", buildSection(racial,
 				new String[]{"frostDemonRacialSkill", "enabled"},

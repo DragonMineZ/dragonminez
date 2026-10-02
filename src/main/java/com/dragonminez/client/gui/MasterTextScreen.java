@@ -6,6 +6,7 @@ import com.dragonminez.client.gui.hair.HairEditorScreen;
 import com.dragonminez.client.gui.character.minigames.RythmGameScreen;
 import com.dragonminez.common.training.MinigameOrigin;
 import com.dragonminez.client.gui.character.minigames.UltimateChallenge;
+import com.dragonminez.client.util.ScrollbarState;
 import com.dragonminez.client.util.TextUtil;
 import com.dragonminez.common.alignment.AlignmentBand;
 import com.dragonminez.common.config.ConfigManager;
@@ -53,8 +54,7 @@ public class MasterTextScreen extends Screen {
 	private EditBox weightBox;
 	private TexturedTextButton liveButton;
 	private int liveTicks;
-	private int dialogueScroll;
-	private int dialogueLineCount;
+	private final ScrollbarState dialogueBar = new ScrollbarState().minThumb(8).step(DIALOGUE_LINE_STEP);
 	private Component renderedDialogue;
 
 	public MasterTextScreen(String masterName) {
@@ -338,7 +338,7 @@ public class MasterTextScreen extends Screen {
 	private void setDialogue(Component dialogue) {
 		if (dialogue.getString().equals(this.currentDialogue.getString())) return;
 		this.currentDialogue = dialogue;
-		this.dialogueScroll = 0;
+		this.dialogueBar.reset();
 	}
 
 	@Override
@@ -708,42 +708,41 @@ public class MasterTextScreen extends Screen {
 		TextUtil.drawStringWithBorder(graphics, this.font, tr("gui.dragonminez.lines." + masterName + ".name").withStyle(ChatFormatting.BOLD), centerX - 120, centerY - 87, 0xFFFFFF);
 
 		int maxTextWidth = 230;
+		int textLeft = centerX - 120;
 		int textTop = centerY - 74;
+		int barX = centerX + 116;
 		if (currentDialogue != renderedDialogue) {
 			renderedDialogue = currentDialogue;
-			dialogueScroll = 0;
+			dialogueBar.reset();
 		}
-		var splitLines = this.font.split(currentDialogue, maxTextWidth);
-		dialogueLineCount = splitLines.size();
-		int maxScroll = Math.max(0, dialogueLineCount - MAX_DIALOGUE_LINES);
-		dialogueScroll = Math.max(0, Math.min(dialogueScroll, maxScroll));
-
-		int textY = textTop;
-		for (int i = dialogueScroll; i < Math.min(splitLines.size(), dialogueScroll + MAX_DIALOGUE_LINES); i++) {
-			TextUtil.drawStringWithBorder(graphics, this.font, splitLines.get(i), centerX - 120, textY, 0xFFFFFF);
-			textY += DIALOGUE_LINE_STEP;
-		}
-
-		if (maxScroll > 0) {
-			int trackX = centerX + 116;
-			int trackTop = textTop - 1;
-			int trackHeight = MAX_DIALOGUE_LINES * DIALOGUE_LINE_STEP;
-			graphics.fill(trackX, trackTop, trackX + 3, trackTop + trackHeight, 0xFF333333);
-			int thumbHeight = Math.max(8, trackHeight * MAX_DIALOGUE_LINES / dialogueLineCount);
-			int thumbY = trackTop + (trackHeight - thumbHeight) * dialogueScroll / maxScroll;
-			graphics.fill(trackX, thumbY, trackX + 3, thumbY + thumbHeight, 0xFFAAAAAA);
-		}
+		var splitLines = TextUtil.split(this.font, currentDialogue, maxTextWidth);
+		TextUtil.renderScrollableText(graphics, this.font, dialogueBar, splitLines, textLeft, textTop, barX + dialogueBar.barWidth() - textLeft,
+				MAX_DIALOGUE_LINES * DIALOGUE_LINE_STEP, DIALOGUE_LINE_STEP, 0xFFFFFF, false, mouseX, mouseY);
 		super.render(graphics, mouseX, mouseY, partialTick);
 	}
 
 	@Override
 	public boolean mouseScrolled(double mouseX, double mouseY, double delta) {
-		if (dialogueLineCount > MAX_DIALOGUE_LINES) {
-			int maxScroll = dialogueLineCount - MAX_DIALOGUE_LINES;
-			dialogueScroll = Math.max(0, Math.min(maxScroll, dialogueScroll - (int) Math.signum(delta)));
-			return true;
-		}
+		if (dialogueBar.scrollWheel(delta)) return true;
 		return super.mouseScrolled(mouseX, mouseY, delta);
+	}
+
+	@Override
+	public boolean mouseClicked(double mouseX, double mouseY, int button) {
+		if (dialogueBar.mouseClicked(mouseX, mouseY, button)) return true;
+		return super.mouseClicked(mouseX, mouseY, button);
+	}
+
+	@Override
+	public boolean mouseDragged(double mouseX, double mouseY, int button, double dragX, double dragY) {
+		if (dialogueBar.mouseDragged(mouseX, mouseY)) return true;
+		return super.mouseDragged(mouseX, mouseY, button, dragX, dragY);
+	}
+
+	@Override
+	public boolean mouseReleased(double mouseX, double mouseY, int button) {
+		if (dialogueBar.mouseReleased()) return true;
+		return super.mouseReleased(mouseX, mouseY, button);
 	}
 
 	private void refreshButtons() {

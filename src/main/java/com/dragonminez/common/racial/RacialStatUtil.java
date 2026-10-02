@@ -12,7 +12,7 @@ public final class RacialStatUtil {
 		return switch (statName) {
 			case "STR" -> data.getStats().getStrength();
 			case "SKP" -> data.getStats().getStrikePower();
-			case "RES" -> data.getStats().getResistance();
+			case "RES", "DEF", "STM" -> data.getStats().getResistance();
 			case "VIT" -> data.getStats().getVitality();
 			case "PWR" -> data.getStats().getKiPower();
 			case "ENE" -> data.getStats().getEnergy();

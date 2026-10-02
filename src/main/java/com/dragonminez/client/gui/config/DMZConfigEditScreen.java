@@ -35,8 +35,7 @@ public class DMZConfigEditScreen extends Screen {
 	private final List<Field> fields = new ArrayList<>();
 
 	private JsonObject root;
-	private int scrollOffset = 0;
-	private final ScrollbarState scrollBar = new ScrollbarState();
+	private final ScrollbarState scrollBar = new ScrollbarState().minThumb(20).step(ROW_HEIGHT);
 	private Component feedback;
 	private int feedbackColor;
 	private long feedbackUntil;
@@ -49,14 +48,6 @@ public class DMZConfigEditScreen extends Screen {
 
 	private int listBottom() {
 		return this.height - LIST_BOTTOM_MARGIN;
-	}
-
-	private int visibleRows() {
-		return Math.max(1, (listBottom() - LIST_TOP) / ROW_HEIGHT);
-	}
-
-	private int maxScroll() {
-		return Math.max(0, fields.size() - visibleRows());
 	}
 
 	@Override
@@ -163,39 +154,31 @@ public class DMZConfigEditScreen extends Screen {
 
 		int top = LIST_TOP;
 		int bottom = listBottom();
-		int start = scrollOffset;
-		int end = Math.min(fields.size(), start + visibleRows());
+		scrollBar.layout(0, top, this.width, bottom - top, fields.size() * ROW_HEIGHT).barAt(this.width - 8);
+		int scroll = scrollBar.scrollPixels();
 
-		graphics.enableScissor(0, top, this.width, bottom);
+		scrollBar.beginClip(graphics, false);
 		for (int i = 0; i < fields.size(); i++) {
 			Field field = fields.get(i);
-			if (i < start || i >= end) {
+			int rowY = top + i * ROW_HEIGHT;
+			if (!scrollBar.isVisible(rowY, ROW_HEIGHT)) {
 				field.box.visible = false;
 				continue;
 			}
-			int y = top + (i - start) * ROW_HEIGHT;
+			int y = rowY - scroll;
 			graphics.drawString(this.font, trim(field.label, this.width / 2 - 24), 14, y + 5, 0xFFFFFFFF);
 			field.box.visible = true;
 			field.box.setY(y + 1);
 			field.box.render(graphics, mouseX, mouseY, partialTick);
 		}
-		graphics.disableScissor();
+		scrollBar.endClip(graphics);
 
 		if (fields.isEmpty()) {
 			graphics.drawCenteredString(this.font, Component.translatable("gui.dragonminez.modconfig.no_fields"),
 					this.width / 2, top + 10, 0xFF888888);
 		}
 
-		scrollBar.update(this.width - 8, 3, top, bottom - top, maxScroll());
-		if (maxScroll() > 0) {
-			int barX = this.width - 8;
-			int trackH = bottom - top;
-			graphics.fill(barX, top, barX + 3, bottom, 0xFF333333);
-			float pct = (float) scrollOffset / maxScroll();
-			int handleH = Math.max(20, (int) (trackH * ((float) visibleRows() / fields.size())));
-			int handleY = top + (int) ((trackH - handleH) * pct);
-			graphics.fill(barX, handleY, barX + 3, handleY + handleH, 0xFFAAAAAA);
-		}
+		scrollBar.renderBar(graphics, mouseX, mouseY);
 
 		if (feedback != null && System.currentTimeMillis() < feedbackUntil) {
 			graphics.drawCenteredString(this.font, feedback, this.width / 2, this.height - 38, feedbackColor);
@@ -214,39 +197,28 @@ public class DMZConfigEditScreen extends Screen {
 
 	@Override
 	public boolean mouseScrolled(double mouseX, double mouseY, double delta) {
-		int max = maxScroll();
-		if (max > 0 && mouseY >= LIST_TOP && mouseY < listBottom()) {
-			scrollOffset = Math.max(0, Math.min(max, scrollOffset - (int) Math.signum(delta)));
-			return true;
-		}
+		if (mouseY >= LIST_TOP && mouseY < listBottom() && scrollBar.scrollWheel(delta)) return true;
 		return super.mouseScrolled(mouseX, mouseY, delta);
 	}
 
 	@Override
 	public boolean mouseClicked(double mouseX, double mouseY, int button) {
-		if (super.mouseClicked(mouseX, mouseY, button)) return true;
-		if (scrollBar.tryStartDrag(mouseX, mouseY)) {
-			scrollOffset = Math.round(scrollBar.scrollFor(mouseY));
-			return true;
+		if (mouseY < LIST_TOP || mouseY >= listBottom()) {
+			for (Field field : fields) field.box.visible = false;
 		}
-		return false;
+		if (super.mouseClicked(mouseX, mouseY, button)) return true;
+		return scrollBar.mouseClicked(mouseX, mouseY, button);
 	}
 
 	@Override
 	public boolean mouseDragged(double mouseX, double mouseY, int button, double dragX, double dragY) {
-		if (scrollBar.isDragging()) {
-			scrollOffset = Math.round(scrollBar.scrollFor(mouseY));
-			return true;
-		}
+		if (scrollBar.mouseDragged(mouseX, mouseY)) return true;
 		return super.mouseDragged(mouseX, mouseY, button, dragX, dragY);
 	}
 
 	@Override
 	public boolean mouseReleased(double mouseX, double mouseY, int button) {
-		if (scrollBar.isDragging()) {
-			scrollBar.stopDrag();
-			return true;
-		}
+		if (scrollBar.mouseReleased()) return true;
 		return super.mouseReleased(mouseX, mouseY, button);
 	}
 

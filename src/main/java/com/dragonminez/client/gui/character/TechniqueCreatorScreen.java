@@ -203,6 +203,7 @@ public class TechniqueCreatorScreen extends ScaledScreen {
 				.range(0, 360)
 				.value(0)
 				.message(tr("gui.dragonminez.customization.hue"))
+				.gradient(ColorSlider.Gradient.HUE)
 				.onValueChange(val -> updateColorFromSliders())
 				.build();
 
@@ -212,6 +213,7 @@ public class TechniqueCreatorScreen extends ScaledScreen {
 				.range(100, 0)
 				.value(100)
 				.message(tr("gui.dragonminez.customization.saturation"))
+				.gradient(ColorSlider.Gradient.SATURATION)
 				.onValueChange(val -> updateColorFromSliders())
 				.build();
 
@@ -221,6 +223,7 @@ public class TechniqueCreatorScreen extends ScaledScreen {
 				.range(100, 0)
 				.value(100)
 				.message(tr("gui.dragonminez.customization.value"))
+				.gradient(ColorSlider.Gradient.VALUE)
 				.onValueChange(val -> updateColorFromSliders())
 				.build();
 
