@@ -333,8 +333,38 @@ public class Character {
 	}
 
 	public CustomHair getHairStyle(HairStyleSlot slot) {
+		FusedData fused = fusedData();
+		CustomHair fusedStyle = fused != null ? fused.getHairStyle(slot) : null;
+		if (fusedStyle != null) return fusedStyle;
 		if (this.hairId > 0) return HairManager.getPresetStyle(this.hairId, slot);
 		return resolveOwnStyle(hairStyles, slot);
+	}
+
+	private FusedData fusedData() {
+		return statsData != null ? statsData.getFusedData() : null;
+	}
+
+	public boolean rendersHair() {
+		FusedData fused = fusedData();
+		return fused != null ? fused.hasHair() : HairManager.canUseHair(this);
+	}
+
+	public boolean hasVisibleHair() {
+		FusedData fused = fusedData();
+		CustomHair fusedBase = fused != null ? fused.getHairStyle(HairStyleSlot.BASE) : null;
+		if (fusedBase != null) return !fusedBase.isEmpty();
+		if (hairId == HairPresets.BALD_PRESET_ID) return false;
+		return hairId > 0 || !getHairBase().isEmpty();
+	}
+
+	public boolean rendersHairBase() {
+		FusedData fused = fusedData();
+		return fused != null && fused.hasHair() ? fused.isHairBase() : renderHairBase;
+	}
+
+	public float[] getRgbRenderHairColor() {
+		FusedData fused = fusedData();
+		return fused != null && fused.hasHair() ? fused.getRgbHairColor() : getRgbHairColor();
 	}
 
 	public static CustomHair resolveOwnStyle(Map<HairStyleSlot, CustomHair> styles, HairStyleSlot slot) {
@@ -679,7 +709,7 @@ public class Character {
 	}
 
 	public boolean isFused() {
-		return statsData != null && statsData.getFusedData() != null;
+		return fusedData() != null;
 	}
 
 	public FormMasteries getFormMasteries() {

@@ -186,9 +186,10 @@ public class FusionLogic {
 		refreshNames(leader);
 		refreshNames(partner);
 
+		FusedData fused = FusedData.build(lData, pData);
 		mixAppearance(lData, pData);
 		calculateAndApplyStats(lData, pData, type, lvl1, lvl2);
-		lData.setFusedData(FusedData.build(lData, pData));
+		lData.setFusedData(fused);
 		PartyManager.beginFusionParty(leader, partner);
 
 		NetworkHandler.sendToTrackingEntityAndSelf(new StatsSyncS2C(leader), leader);

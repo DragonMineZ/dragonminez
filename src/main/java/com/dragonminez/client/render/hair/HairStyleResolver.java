@@ -82,7 +82,7 @@ public final class HairStyleResolver {
 		track.lastSeenMs = nowMs;
 
 		StyleChoice from = new StyleChoice(style(player, character, HairStyleSlot.BASE), HairStyleSlot.BASE);
-		float[] rgbFrom = character.getRgbHairColor();
+		float[] rgbFrom = character.getRgbRenderHairColor();
 		if (character.hasActiveForm()) {
 			from = styleForForm(player, character, character.getActiveFormGroup(), character.getActiveForm());
 			rgbFrom = rgbForForm(character, character.getActiveFormGroup(), character.getActiveForm());
@@ -299,7 +299,7 @@ public final class HairStyleResolver {
 			FormConfig.FormData formData = config.getForm(formName);
 			if (formData != null && formData.getRgbHairColor() != null) return formData.getRgbHairColor();
 		}
-		return character.getRgbHairColor();
+		return character.getRgbRenderHairColor();
 	}
 
 	private static float[] rgbForStackForm(String group, String formName, float[] fallback) {

@@ -17,7 +17,6 @@ import com.dragonminez.client.render.util.IrisCompat;
 import com.dragonminez.common.config.ConfigManager;
 import com.dragonminez.common.config.GeneralUserConfig;
 import com.dragonminez.common.hair.HairColors;
-import com.dragonminez.common.hair.HairManager;
 import com.dragonminez.common.init.MainEffects;
 import com.dragonminez.common.stats.StatsCapability;
 import com.dragonminez.common.stats.StatsData;
@@ -118,7 +117,7 @@ public class DMZHairLayer<T extends AbstractClientPlayer & GeoAnimatable> extend
 		StatsData stats = StatsProvider.get(StatsCapability.INSTANCE, animatable).orElse(null);
 		if (stats == null) return false;
 		Character character = stats.getCharacter();
-		if (!HairManager.canUseHair(character)) return false;
+		if (!character.rendersHair()) return false;
 		preparedStats = stats;
 		HairRenderContext.Preview preview = editorPreview(animatable);
 		if (preview == null) resolver.resolve(animatable, stats, resolved);
@@ -243,7 +242,7 @@ public class DMZHairLayer<T extends AbstractClientPlayer & GeoAnimatable> extend
 		return HairSimulation.FULL_SUBSTEPS;
 	}
 
-	private static boolean wantsPixelDetail(Entity animatable) {
+	public static boolean wantsPixelDetail(Entity animatable) {
 		if (HairRenderContext.mode() != HairRenderContext.Mode.WORLD) return true;
 		if (IrisCompat.isRenderingShadowPass()) return false;
 		Entity camera = Minecraft.getInstance().getCameraEntity();

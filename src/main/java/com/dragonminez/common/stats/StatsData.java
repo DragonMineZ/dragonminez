@@ -1855,7 +1855,7 @@ public class StatsData {
 		if (nbt.contains("DynamicGrowth")) dynamicGrowth.load(nbt.getCompound("DynamicGrowth"));
 		if (nbt.contains("RacialData")) racialData.load(nbt.getCompound("RacialData"));
 		else if (fullPayload) migrateRacialDataFromLegacy();
-		if (nbt.contains(FusedData.NBT_KEY)) fusedData = FusedData.fromTag(nbt.getCompound(FusedData.NBT_KEY));
+		if (nbt.contains(FusedData.NBT_KEY)) fusedData = FusedData.fromTag(nbt.getCompound(FusedData.NBT_KEY), fusedData);
 		else if (nbt.contains("Skills")) fusedData = null;
 		if (nbt.contains("HasInitializedHealth")) hasInitializedHealth = nbt.getBoolean("HasInitializedHealth");
 		if (character.getRaceName() != null && !character.getRaceName().isEmpty()) updateTransformationSkillLimits(character.getRaceName());

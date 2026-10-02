@@ -46,11 +46,8 @@ public final class FusionAppearance {
 		copy.setAuraColor(blend(character.getAuraColor(), raw.getAuraColor()));
 
 		if (foreign) {
-			copy.setCustomModel("");
-			copy.setModelScaling(character.getModelScaling().clone());
 			copy.setHairType("");
 			copy.setForcedHairCode("");
-			copy.setExtraFormLayer("");
 			copy.setKeepBaseFormHeadBones(true);
 		}
 		return copy;

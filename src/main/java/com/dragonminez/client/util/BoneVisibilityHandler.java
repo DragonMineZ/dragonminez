@@ -4,9 +4,11 @@ import com.dragonminez.client.render.layer.DMZCustomArmorLayer;
 import com.dragonminez.common.config.ConfigManager;
 import com.dragonminez.common.init.armor.DbzArmorCapeItem;
 import com.dragonminez.common.init.armor.DbzArmorTextured;
+import com.dragonminez.common.stats.FusedData;
 import com.dragonminez.common.stats.StatsCapability;
 import com.dragonminez.common.stats.StatsProvider;
 import com.dragonminez.common.stats.character.Character;
+import com.dragonminez.common.util.FusionTraits;
 import com.dragonminez.common.util.lists.MajinForms;
 import net.minecraft.client.player.AbstractClientPlayer;
 import net.minecraft.world.entity.EquipmentSlot;
@@ -20,6 +22,7 @@ import java.util.Objects;
 import software.bernie.geckolib.renderer.layer.GeoRenderLayer;
 
 public class BoneVisibilityHandler {
+	private static final String[] FUSION_MODEL_BONES = {"cola", "orejas", "alas", "cabeza2"};
 
 	public static void updateVisibility(BakedGeoModel model, AbstractClientPlayer player, GeoRenderLayer<?> renderLayer) {
 		var stats = StatsProvider.get(StatsCapability.INSTANCE, player).orElse(null);
@@ -49,6 +52,8 @@ public class BoneVisibilityHandler {
 		boolean isSuperOrUltra = Objects.equals(currentForm, MajinForms.SUPER) || Objects.equals(currentForm, MajinForms.ULTRA);
 
 		final String logicKey = character.getRenderLogicKey();
+		FusedData fused = stats.getFusedData();
+		final FusionTraits.Plan fusionPlan = fused != null ? fused.traitPlan(character) : FusionTraits.Plan.EMPTY;
 
 
 		boolean isSpectator = player.isSpectator();
@@ -94,8 +99,8 @@ public class BoneVisibilityHandler {
 
 			boolean configHasSaiyanTail = ConfigManager.getRaceCharacter(race) != null && ConfigManager.getRaceCharacter(race).getHasSaiyanTail();
 
-			if (currentForm.contains("supersaiyan4") || logicKey.contains("ssj4")) {
-				showNormalTail = true;
+			if (logicKey.contains("ssj4") || SaiyanTailRules.ssj4ForcesTail(stats.getCharacter())) {
+				showNormalTail = stats.getStatus().isTailVisible();
 			} else if (isSaiyan || configHasSaiyanTail) {
 				showNormalTail = stats.getStatus().isTailVisible() && stats.getCharacter().isHasSaiyanTail();
 			} else if (isTaillessRace || isTaillessModel) {
@@ -104,8 +109,11 @@ public class BoneVisibilityHandler {
 				showNormalTail = true;
 			}
 
-			setHiddenRecursive(bone, !showNormalTail);
+			setHiddenRecursive(bone, !showNormalTail || fusionPlan.hides("tail1"));
 		});
+		for (String fusionBone : FUSION_MODEL_BONES) {
+			model.getBone(fusionBone).ifPresent(bone -> setHiddenRecursive(bone, fusionPlan.hides(fusionBone)));
+		}
 
 		setBonesHidden(model, true, "armorHead", "armorBody", "armorBody2", "armorLeggingsBody", "armorRightArm", "armorLeftArm",
 				"armorLeftLeg", "armorLeftBoot", "armorRightLeg", "armorRightBoot");

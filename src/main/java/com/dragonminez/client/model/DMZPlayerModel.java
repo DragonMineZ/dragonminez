@@ -4,6 +4,7 @@ import com.dragonminez.Reference;
 import com.dragonminez.client.animation.IPlayerAnimatable;
 import com.dragonminez.client.init.entities.renderer.sagas.SaiyanInvaderRenderer;
 import com.dragonminez.client.render.util.RenderUtil;
+import com.dragonminez.client.util.SkinGathererProvider;
 import com.dragonminez.common.config.ConfigManager;
 import com.dragonminez.common.config.RaceCharacterConfig;
 import com.dragonminez.common.init.MainEffects;
@@ -110,7 +111,6 @@ public class DMZPlayerModel<T extends AbstractClientPlayer & GeoAnimatable> exte
             String race = character.getRaceName().toLowerCase();
             String gender = character.getGender().toLowerCase();
             String currentForm = character.getActiveForm();
-            int bodyType = character.getBodyType();
             String playerModelName = player.getModelName();
 
             RaceCharacterConfig raceConfig = ConfigManager.getRaceCharacter(race);
@@ -125,6 +125,9 @@ public class DMZPlayerModel<T extends AbstractClientPlayer & GeoAnimatable> exte
                 activeCustomModel = "";
             }
             String raceCustomModel = (raceConfig != null && raceConfig.hasCustomModel()) ? raceConfig.getCustomModel().toLowerCase() : "";
+            boolean partnerModel = data.getFusedData() != null && data.getFusedData().usesPartnerModel(character);
+            String ownSkinKey = raceCustomModel.isEmpty() ? race : raceCustomModel;
+            int bodyType = partnerModel && character.getBodyType() == 0 && !SkinGathererProvider.isHumanoidKey(ownSkinKey) ? 1 : character.getBodyType();
             String fallbackCustomModel = this.customModel != null ? this.customModel.toLowerCase() : "";
             String formKey = currentForm != null ? currentForm.toLowerCase() : "";
             String stateKey = String.join("|",
