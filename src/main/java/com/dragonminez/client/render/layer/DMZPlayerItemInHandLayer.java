@@ -36,6 +36,8 @@ public class DMZPlayerItemInHandLayer<T extends AbstractClientPlayer & GeoAnimat
 	private static final float SCALE_DAMPEN = (GIANT_SCALING / 4.0F - VANILLA_SCALING)
 			/ (float) Math.sqrt(GIANT_SCALING - VANILLA_SCALING);
 
+	private static float renderingAttackProgress = -1.0F;
+
 	public DMZPlayerItemInHandLayer(GeoRenderer<T> renderer) {
 		super(renderer);
 	}
@@ -124,8 +126,19 @@ public class DMZPlayerItemInHandLayer<T extends AbstractClientPlayer & GeoAnimat
 		float itemScale = resolveItemScale(animatable);
 		if (itemScale != 1.0F) poseStack.scale(itemScale, itemScale, itemScale);
 
-		super.renderStackForBone(poseStack, bone, stack, animatable, bufferSource, partialTick, packedLight, packedOverlay);
+		float previousProgress = renderingAttackProgress;
+		renderingAttackProgress = combatWeight > 0.0F && animatable instanceof IPlayerAnimatable playerAnim
+				? playerAnim.dragonminez$getAttackProgress(partialTick) : -1.0F;
+		try {
+			super.renderStackForBone(poseStack, bone, stack, animatable, bufferSource, partialTick, packedLight, packedOverlay);
+		} finally {
+			renderingAttackProgress = previousProgress;
+		}
 		poseStack.popPose();
+	}
+
+	public static float renderingAttackProgress() {
+		return renderingAttackProgress;
 	}
 
 	private boolean useCombatPlacement(GeoBone bone, T animatable) {

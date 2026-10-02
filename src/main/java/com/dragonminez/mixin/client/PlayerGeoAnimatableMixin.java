@@ -83,6 +83,7 @@ public abstract class PlayerGeoAnimatableMixin implements GeoAnimatable, IPlayer
 	@Unique private boolean dragonminez$poseInstantResume = false;
 	@Unique private float dragonminez$currentMeleeSpeed = 1.0F;
 	@Unique private AnimationController<?> dragonminez$attackController = null;
+	@Unique private float dragonminez$attackStartTime = 0.0F;
 
 	@Unique private static final int POSE_TRANSITION_TICKS = 4;
 
@@ -529,6 +530,7 @@ public abstract class PlayerGeoAnimatableMixin implements GeoAnimatable, IPlayer
 
 			ctl.forceAnimationReset();
 			dragonminez$currentMeleeAnim = null;
+			dragonminez$attackStartTime = player.tickCount + state.getPartialTick();
 			dragonminez$attackAnimTicks = Math.max(8, Math.round(12.0F / Math.max(dragonminez$currentMeleeSpeed, 0.1F)));
 			return PlayState.CONTINUE;
 		}
@@ -839,6 +841,16 @@ public abstract class PlayerGeoAnimatableMixin implements GeoAnimatable, IPlayer
 		if (dragonminez$attackAnimTicks <= 0) return 0.0F;
 		if (dragonminez$attackController != null && dragonminez$attackController.getAnimationState() == AnimationController.State.STOPPED) return 0.0F;
 		return 1.0F;
+	}
+
+	@Override
+	public float dragonminez$getAttackProgress(float partialTick) {
+		if (dragonminez$getCombatPlacementWeight() <= 0.0F || dragonminez$attackController == null) return -1.0F;
+		var current = dragonminez$attackController.getCurrentAnimation();
+		if (current == null || current.animation().length() <= 0.0D) return -1.0F;
+		AbstractClientPlayer player = (AbstractClientPlayer) (Object) this;
+		double elapsed = (player.tickCount + partialTick - dragonminez$attackStartTime) * dragonminez$currentMeleeSpeed;
+		return (float) Mth.clamp(elapsed / current.animation().length(), 0.0D, 1.0D);
 	}
 
 	@Override
