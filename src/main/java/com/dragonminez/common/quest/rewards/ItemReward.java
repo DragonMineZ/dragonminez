@@ -3,11 +3,13 @@ package com.dragonminez.common.quest.rewards;
 import com.dragonminez.common.quest.QuestReward;
 import lombok.Getter;
 import net.minecraft.network.chat.Component;
+import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.Items;
 import net.minecraftforge.registries.ForgeRegistries;
 
 @Getter
@@ -59,9 +61,15 @@ public class ItemReward extends QuestReward {
 		return Component.translatable(
 				"gui.dragonminez.quests.rewards.item",
 				shownCount,
-				Component.translatable(
-						"item." + ResourceLocation.parse(itemId).toLanguageKey()
-				)
+				itemName()
 		);
+	}
+
+	public MutableComponent itemName() {
+		ResourceLocation id = ResourceLocation.tryParse(itemId);
+		if (id == null) return Component.literal(itemId);
+		Item item = ForgeRegistries.ITEMS.getValue(id);
+		if (item == null || item == Items.AIR) return Component.translatable("item." + id.toLanguageKey());
+		return new ItemStack(item).getHoverName().copy();
 	}
 }

@@ -99,6 +99,14 @@ public class PredefinedTechniques {
 		return technique != null && isPredefinedTechniqueId(technique.getId());
 	}
 
+	public static String nameKey(String techniqueId) {
+		if (techniqueId == null) return null;
+		TechniqueData data = REGISTRY.get(techniqueId);
+		if (data == null) data = STRIKE_REGISTRY.get(techniqueId);
+		if (data == null) data = EVASION_REGISTRY.get(techniqueId);
+		return data != null ? data.getName() : null;
+	}
+
 	public static TechniqueData copyOf(String techniqueId) {
 		if (techniqueId == null) return null;
 		if (REGISTRY.containsKey(techniqueId)) {

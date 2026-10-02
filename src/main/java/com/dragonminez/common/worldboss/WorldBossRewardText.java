@@ -9,7 +9,6 @@ import com.dragonminez.common.quest.rewards.TPSReward;
 import com.dragonminez.common.quest.rewards.TransformationReward;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.MutableComponent;
-import net.minecraft.resources.ResourceLocation;
 
 public final class WorldBossRewardText {
 
@@ -17,13 +16,13 @@ public final class WorldBossRewardText {
 
 	public static MutableComponent name(QuestReward reward) {
 		if (reward instanceof ItemReward item) {
-			return Component.translatable("item." + ResourceLocation.parse(item.getItemId()).toLanguageKey());
+			return item.itemName();
 		}
 		if (reward instanceof TPSReward tps) {
 			return Component.translatable("worldboss.dragonminez.results.tps", NumberFormattingUtil.formatLargeNumber(tps.getAmount()));
 		}
 		if (reward instanceof SkillReward skill) {
-			return Component.translatable("skill.dragonminez." + skill.getSkill());
+			return skill.displayName();
 		}
 		if (reward instanceof KiTechniqueReward technique) {
 			String techniqueName = technique.getTemplate().getName();
@@ -37,8 +36,7 @@ public final class WorldBossRewardText {
 
 	public static MutableComponent describe(QuestReward reward, float amount) {
 		if (reward instanceof ItemReward item) {
-			return Component.translatable("worldboss.dragonminez.results.item", Math.max(1, Math.round(amount)),
-					Component.translatable("item." + ResourceLocation.parse(item.getItemId()).toLanguageKey()));
+			return Component.translatable("worldboss.dragonminez.results.item", Math.max(1, Math.round(amount)), item.itemName());
 		}
 		if (reward instanceof TPSReward tps) {
 			double shown = amount > 0.0f ? amount : tps.getAmount();
