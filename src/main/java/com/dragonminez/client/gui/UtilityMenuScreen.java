@@ -86,8 +86,7 @@ public class UtilityMenuScreen extends ScaledScreen {
 	private List<RadialNode> panelOptions = null;
 	private Component panelTitle = null;
 	private boolean panelScrollable = false;
-	private int panelScroll = 0;
-	private final ScrollbarState panelBar = new ScrollbarState();
+	private final ScrollbarState panelBar = new ScrollbarState().colors(0x40FFFFFF, 0xC0FFFFFF, 0xFFFFFFFF).barWidth(2).minThumb(6).step(PANEL_ROW_H);
 	private MoreNode openMore = null;
 	private float panelAngleDeg = 0f;
 	private int panelLevel = 0;
@@ -200,6 +199,7 @@ public class UtilityMenuScreen extends ScaledScreen {
 		}
 
 		if (panelOptions != null) drawPanel(graphics, cx, cy, uiMouseX, uiMouseY);
+		else panelBar.clear();
 
 		super.render(graphics, (int) Math.round(uiMouseX), (int) Math.round(uiMouseY), partialTick);
 		endUiScale(graphics);
@@ -249,9 +249,6 @@ public class UtilityMenuScreen extends ScaledScreen {
 	private void drawPanel(GuiGraphics graphics, float cx, float cy, double mouseX, double mouseY) {
 		List<RadialNode> opts = panelOptions;
 		int visibleRows = visiblePanelRows();
-		int maxScroll = Math.max(0, opts.size() - visibleRows);
-		panelScroll = Mth.clamp(panelScroll, 0, maxScroll);
-		int start = panelScrollable ? panelScroll : 0;
 
 		int[] b = panelBounds(cx, cy);
 		int px = b[0], py = b[1], pw = b[2], ph = b[3];
@@ -265,15 +262,24 @@ public class UtilityMenuScreen extends ScaledScreen {
 		TextUtil.drawCenteredStringWithBorder(graphics, this.font, title, px + pw / 2, py + 4, 0xFFFFFF, 0x000000);
 
 		int rowsTop = py + PANEL_TITLE_H;
-		int textWidth = pw - 12 - (maxScroll > 0 ? 4 : 0);
-		for (int r = 0; r < visibleRows; r++) {
-			int i = start + r;
+		if (panelScrollable) {
+			panelBar.layout(px, rowsTop, pw, visibleRows * PANEL_ROW_H, opts.size() * PANEL_ROW_H).barAt(px + pw - 3);
+			panelBar.beginClip(graphics);
+		} else {
+			panelBar.clear();
+		}
+		int textWidth = pw - 12 - (panelBar.canScroll() ? 4 : 0);
+		boolean mouseInRows = !panelScrollable || panelBar.isInView(mouseX, mouseY);
+		double rowMouseY = panelScrollable ? panelBar.toContent(mouseY) : mouseY;
+		int rowCount = panelScrollable ? opts.size() : visibleRows;
+		for (int i = 0; i < rowCount; i++) {
 			RadialNode node = opts.get(i);
-			int ry = rowsTop + r * PANEL_ROW_H;
+			int ry = rowsTop + i * PANEL_ROW_H;
+			if (panelScrollable && !panelBar.isVisible(ry, PANEL_ROW_H)) continue;
 			boolean isDragged = !panelScrollable && dragging && i == dragIndex;
 			int drawY = isDragged ? (int) Math.round(dragCurrentY - PANEL_ROW_H / 2.0) : ry;
 
-			boolean hovered = !dragging && mouseX >= px && mouseX <= px + pw && mouseY >= ry && mouseY < ry + PANEL_ROW_H;
+			boolean hovered = !dragging && mouseInRows && mouseX >= px && mouseX <= px + pw && rowMouseY >= ry && rowMouseY < ry + PANEL_ROW_H;
 			if (hovered) graphics.fill(px + 1, ry, px + pw - 1, ry + PANEL_ROW_H - 1, 0x55000000);
 			if (isDragged) graphics.fill(px + 1, drawY, px + pw - 1, drawY + PANEL_ROW_H - 1, 0x33FFFFFF);
 			if (node.active(statsData)) drawRowBorder(graphics, px + 1, drawY, px + pw - 1, drawY + PANEL_ROW_H - 1, 0xFF3BE05A);
@@ -284,18 +290,8 @@ public class UtilityMenuScreen extends ScaledScreen {
 		}
 
 		if (panelScrollable) {
-			int trackX = px + pw - 3;
-			int trackTop = rowsTop;
-			int trackH = visibleRows * PANEL_ROW_H;
-			panelBar.update(trackX, 2, trackTop, trackH, maxScroll);
-			if (maxScroll > 0) {
-				graphics.fill(trackX, trackTop, trackX + 2, trackTop + trackH, 0x40FFFFFF);
-				int thumbH = Math.max(6, trackH * visibleRows / opts.size());
-				int thumbY = trackTop + (trackH - thumbH) * panelScroll / maxScroll;
-				graphics.fill(trackX, thumbY, trackX + 2, thumbY + thumbH, 0xC0FFFFFF);
-			}
-		} else {
-			panelBar.clear();
+			panelBar.endClip(graphics);
+			panelBar.renderBar(graphics, mouseX, mouseY);
 		}
 
 		if (!panelScrollable && dragging && dragIndex >= 0) {
@@ -740,14 +736,11 @@ public class UtilityMenuScreen extends ScaledScreen {
 			}
 			int rowsTop = b[1] + PANEL_TITLE_H;
 			if (panelScrollable) {
-				if (panelBar.tryStartDrag(ux, uy)) {
-					panelScroll = Math.round(panelBar.scrollFor(uy));
-					return true;
-				}
-				int rel = rowIndexAt(rowsTop, uy);
-				int i = panelScroll + rel;
-				if (rel >= 0 && rel < visiblePanelRows() && i < panelOptions.size()) {
-					selectNode(panelOptions.get(i));
+				if (panelBar.mouseClicked(ux, uy, button)) return true;
+				double rel = uy - rowsTop;
+				if (rel >= 0 && rel < visiblePanelRows() * PANEL_ROW_H) {
+					int i = (int) ((rel + panelBar.scroll()) / PANEL_ROW_H);
+					if (i >= 0 && i < panelOptions.size()) selectNode(panelOptions.get(i));
 				}
 				return true;
 			}
@@ -803,7 +796,7 @@ public class UtilityMenuScreen extends ScaledScreen {
 		panelOptions = options;
 		panelTitle = title;
 		panelScrollable = scrollable;
-		panelScroll = 0;
+		panelBar.reset();
 		panelAngleDeg = hover.deepestAngleDeg;
 		panelLevel = hover.deepestLevel;
 		frozenHover = hover;
@@ -823,19 +816,15 @@ public class UtilityMenuScreen extends ScaledScreen {
 		panelOptions = null;
 		panelTitle = null;
 		panelScrollable = false;
-		panelScroll = 0;
 		openMore = null;
 		dragIndex = -1;
 		dragging = false;
-		panelBar.stopDrag();
+		panelBar.reset();
 	}
 
 	@Override
 	public boolean mouseDragged(double mouseX, double mouseY, int button, double dragX, double dragY) {
-		if (panelBar.isDragging()) {
-			panelScroll = Math.round(panelBar.scrollFor(toUiY(mouseY)));
-			return true;
-		}
+		if (panelBar.mouseDragged(toUiX(mouseX), toUiY(mouseY))) return true;
 		if (panelOptions != null && !panelScrollable && dragIndex >= 0) {
 			double uy = toUiY(mouseY);
 			if (Math.abs(uy - dragStartY) > 3) dragging = true;
@@ -847,10 +836,7 @@ public class UtilityMenuScreen extends ScaledScreen {
 
 	@Override
 	public boolean mouseReleased(double mouseX, double mouseY, int button) {
-		if (panelBar.isDragging()) {
-			panelBar.stopDrag();
-			return true;
-		}
+		if (panelBar.mouseReleased()) return true;
 		if (panelOptions != null && !panelScrollable && dragIndex >= 0) {
 			double uy = toUiY(mouseY);
 			if (!dragging) {
@@ -871,8 +857,7 @@ public class UtilityMenuScreen extends ScaledScreen {
 	@Override
 	public boolean mouseScrolled(double mouseX, double mouseY, double delta) {
 		if (panelOptions != null && panelScrollable) {
-			int maxScroll = Math.max(0, panelOptions.size() - visiblePanelRows());
-			panelScroll = Mth.clamp(panelScroll - (int) Math.signum(delta), 0, maxScroll);
+			panelBar.scrollWheel(delta);
 			return true;
 		}
 		return super.mouseScrolled(mouseX, mouseY, delta);

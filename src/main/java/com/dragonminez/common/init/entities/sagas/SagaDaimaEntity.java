@@ -2,15 +2,23 @@ package com.dragonminez.common.init.entities.sagas;
 
 import com.dragonminez.common.init.MainEntities;
 import com.dragonminez.common.init.MainItems;
+import com.dragonminez.common.quest.QuestService;
+import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.syncher.EntityDataAccessor;
+import net.minecraft.nbt.Tag;
+import net.minecraft.server.level.ServerLevel;
+import net.minecraft.util.Mth;
 import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.entity.EntityDimensions;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.entity.monster.Monster;
+import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
+
+import java.util.UUID;
 
 public class SagaDaimaEntity {
 
@@ -674,6 +682,10 @@ public class SagaDaimaEntity {
 
     public static class GomahThirdEyeEntity extends DBSagasEntity {
 
+        private static final float BASE_SCALE = 5.5F;
+        private static final float MAX_SCALE = 8.0F;
+        private static final float GROWTH_PER_TICK = 0.02F;
+
         public GomahThirdEyeEntity(EntityType<? extends Monster> pEntityType, Level pLevel) {
             super(pEntityType, pLevel);
 
@@ -681,7 +693,7 @@ public class SagaDaimaEntity {
             this.setDBZStyle(2);
             this.setAuraColor(0xE0245E);
             this.setKiBlastSpeed(2.0F);
-            this.setScaleVal(5.5F);
+            this.setScaleVal(BASE_SCALE);
             this.setAllowedCombos(150, ComboType.BASIC, ComboType.AIR, ComboType.KI_CHARGE_ATTACK);
             this.addKiSkill(KiSkillType.KI_AIR_VOLLEY, 300, 1.0F, 0xFFD6E0, 0xE0245E);
             this.addKiSkill(KiSkillType.GENERIC_KI_WAVE, 420, 1.2F, 0xFFD6E0, 0xE0245E);
@@ -696,13 +708,31 @@ public class SagaDaimaEntity {
         }
 
         @Override
+        public void tick() {
+            super.tick();
+            if (this.level().isClientSide || !this.isAlive()) return;
+
+            float damageTaken = Mth.clamp(1.0F - this.getHealth() / this.getMaxHealth(), 0.0F, 1.0F);
+            float target = Mth.lerp(damageTaken, BASE_SCALE, MAX_SCALE);
+            float current = this.getScale();
+            if (target > current + 0.001F) {
+                this.setScaleVal(Math.min(target, current + GROWTH_PER_TICK));
+            }
+        }
+
+        @Override
+        public float getHitboxScale() {
+            return Math.max(1.0F, this.getScale() / BASE_SCALE);
+        }
+
+        @Override
         public boolean hasHitboxParts() {
             return true;
         }
 
         @Override
         protected EntityDimensions getCoreDimensions() {
-            return EntityDimensions.scalable(2.3F, 4.6F);
+            return EntityDimensions.scalable(2.3F, 4.6F).scale(this.getHitboxScale());
         }
 
         @Override
@@ -825,6 +855,13 @@ public class SagaDaimaEntity {
 
     public abstract static class TamagamiEntity extends DBSagasEntity {
 
+        private static final String ANCHOR_X = "dmz_tamagami_anchor_x";
+        private static final String ANCHOR_Y = "dmz_tamagami_anchor_y";
+        private static final String ANCHOR_Z = "dmz_tamagami_anchor_z";
+        private static final String[] CARRIED_TAGS = {
+                ANCHOR_X, ANCHOR_Y, ANCHOR_Z, "dmz_quest_hp", "dmz_quest_melee", "dmz_quest_ki", "dmz_quest_ai_tier"
+        };
+
         private final int dragonBallStars;
 
         protected TamagamiEntity(EntityType<? extends Monster> pEntityType, Level pLevel, int dragonBallStars) {
@@ -850,12 +887,76 @@ public class SagaDaimaEntity {
         }
 
         @Override
+        public void tick() {
+            super.tick();
+            CompoundTag data = this.getPersistentData();
+            if (!this.level().isClientSide && !data.contains(ANCHOR_X)) {
+                data.putDouble(ANCHOR_X, this.getX());
+                data.putDouble(ANCHOR_Y, this.getY());
+                data.putDouble(ANCHOR_Z, this.getZ());
+            }
+        }
+
+        @Override
         protected void finishTransformationSpawn(DBSagasEntity newEntity, boolean fullHealth) {
             float healthFraction = this.getHealth() / this.getMaxHealth();
             super.finishTransformationSpawn(newEntity, fullHealth);
             if (newEntity != null && !this.level().isClientSide) {
                 newEntity.setHealth(Math.max(1.0F, newEntity.getMaxHealth() * healthFraction));
+                CompoundTag from = this.getPersistentData();
+                CompoundTag to = newEntity.getPersistentData();
+                for (String key : CARRIED_TAGS) {
+                    Tag value = from.get(key);
+                    if (value != null) to.put(key, value.copy());
+                }
             }
+        }
+
+        @Override
+        public void remove(RemovalReason reason) {
+            if (reason == RemovalReason.KILLED && this.level() instanceof ServerLevel serverLevel
+                    && QuestService.hasPendingKills(serverLevel, this.getPersistentData())) {
+                this.reform(serverLevel);
+            }
+            super.remove(reason);
+        }
+
+        private void reform(ServerLevel level) {
+            TamagamiEntity reformed = this.reformType().create(level);
+            if (reformed == null) return;
+
+            CompoundTag data = this.getPersistentData();
+            double x = data.contains(ANCHOR_X) ? data.getDouble(ANCHOR_X) : this.getX();
+            double y = data.contains(ANCHOR_Y) ? data.getDouble(ANCHOR_Y) : this.getY();
+            double z = data.contains(ANCHOR_Z) ? data.getDouble(ANCHOR_Z) : this.getZ();
+
+            CompoundTag carried = data.copy();
+            carried.remove("dmz_stats_configured");
+            reformed.getPersistentData().merge(carried);
+            reformed.moveTo(x, y, z, this.getYRot(), 0.0F);
+
+            Player owner = this.questOwner(level);
+            if (owner != null) reformed.setTarget(owner);
+
+            level.sendParticles(ParticleTypes.EXPLOSION_EMITTER, x, y + 1.0D, z, 1, 0.0D, 0.0D, 0.0D, 0.0D);
+            level.sendParticles(ParticleTypes.CLOUD, x, y + 1.5D, z, 40, 0.8D, 1.2D, 0.8D, 0.05D);
+            level.addFreshEntity(reformed);
+        }
+
+        private Player questOwner(ServerLevel level) {
+            try {
+                return level.getServer().getPlayerList().getPlayer(UUID.fromString(this.getPersistentData().getString(QuestService.QUEST_OWNER_TAG)));
+            } catch (IllegalArgumentException e) {
+                return null;
+            }
+        }
+
+        private EntityType<? extends TamagamiEntity> reformType() {
+            return switch (this.dragonBallStars) {
+                case 1 -> MainEntities.SAGA_TAMAGAMI_1.get();
+                case 2 -> MainEntities.SAGA_TAMAGAMI_2.get();
+                default -> MainEntities.SAGA_TAMAGAMI_3.get();
+            };
         }
     }
 

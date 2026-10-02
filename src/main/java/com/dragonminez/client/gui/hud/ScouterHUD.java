@@ -9,6 +9,7 @@ import com.dragonminez.common.config.ConfigManager;
 import com.dragonminez.common.init.MainItems;
 import com.dragonminez.common.init.entities.IBattlePower;
 import com.dragonminez.common.quest.QuestUnlocks;
+import com.dragonminez.common.racial.impl.GlindDivinity;
 import com.dragonminez.common.network.C2S.DamageCurioC2S;
 import com.dragonminez.common.network.NetworkHandler;
 import com.dragonminez.common.stats.*;
@@ -98,7 +99,7 @@ public class ScouterHUD {
 
 		AABB searchBox = player.getBoundingBox().inflate(SCAN_RANGE);
 		List<LivingEntity> entities = player.level().getEntitiesOfClass(LivingEntity.class, searchBox,
-				e -> e != player && e.isAlive());
+				e -> e != player && e.isAlive() && !GlindDivinity.isHiddenFrom(e, player));
 
 		LivingEntity newStrongest = null;
 		double maxFoundBP = thresholdBP;
@@ -189,7 +190,7 @@ public class ScouterHUD {
 		HitResult hit = mc.hitResult;
 		LivingEntity focusedEntity = null;
 		if (hit != null && hit.getType() == HitResult.Type.ENTITY) {
-			if (((EntityHitResult) hit).getEntity() instanceof LivingEntity living) focusedEntity = living;
+			if (((EntityHitResult) hit).getEntity() instanceof LivingEntity living && !GlindDivinity.isHiddenFrom(living, mc.player)) focusedEntity = living;
 		}
 
 		double distToFocus = (focusedEntity != null) ? mc.player.distanceTo(focusedEntity) : Double.MAX_VALUE;

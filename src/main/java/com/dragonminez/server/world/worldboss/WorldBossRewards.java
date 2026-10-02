@@ -25,7 +25,6 @@ import net.minecraft.network.chat.ClickEvent;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.HoverEvent;
 import net.minecraft.network.chat.MutableComponent;
-import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 
@@ -184,14 +183,13 @@ public final class WorldBossRewards {
 
 	public static MutableComponent describe(QuestReward reward, float amount) {
 		if (reward instanceof ItemReward item) {
-			return Component.translatable("worldboss.dragonminez.results.item", Math.max(1, Math.round(amount)),
-					Component.translatable("item." + ResourceLocation.parse(item.getItemId()).toLanguageKey()));
+			return Component.translatable("worldboss.dragonminez.results.item", Math.max(1, Math.round(amount)), item.itemName());
 		}
 		if (reward instanceof TPSReward) {
 			return Component.translatable("worldboss.dragonminez.results.tps", NumberFormattingUtil.formatLargeNumber(amount));
 		}
 		if (reward instanceof SkillReward skill) {
-			return Component.translatable("skill.dragonminez." + skill.getSkill());
+			return skill.displayName();
 		}
 		return reward.getDescription().copy();
 	}

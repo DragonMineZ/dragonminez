@@ -18,6 +18,7 @@ import com.dragonminez.common.stats.extras.UsedForms;
 import com.dragonminez.common.init.MainSounds;
 import com.dragonminez.common.util.FusionAppearance;
 import com.dragonminez.common.util.FusionForms;
+import com.dragonminez.common.util.FusionTraits;
 import lombok.Getter;
 import lombok.Setter;
 import net.minecraft.core.BlockPos;
@@ -333,8 +334,38 @@ public class Character {
 	}
 
 	public CustomHair getHairStyle(HairStyleSlot slot) {
+		FusedData fused = fusedData();
+		CustomHair fusedStyle = fused != null ? fused.getHairStyle(slot) : null;
+		if (fusedStyle != null) return fusedStyle;
 		if (this.hairId > 0) return HairManager.getPresetStyle(this.hairId, slot);
 		return resolveOwnStyle(hairStyles, slot);
+	}
+
+	private FusedData fusedData() {
+		return statsData != null ? statsData.getFusedData() : null;
+	}
+
+	public boolean rendersHair() {
+		FusedData fused = fusedData();
+		return fused != null ? fused.hasHair() : HairManager.canUseHair(this);
+	}
+
+	public boolean hasVisibleHair() {
+		FusedData fused = fusedData();
+		CustomHair fusedBase = fused != null ? fused.getHairStyle(HairStyleSlot.BASE) : null;
+		if (fusedBase != null) return !fusedBase.isEmpty();
+		if (hairId == HairPresets.BALD_PRESET_ID) return false;
+		return hairId > 0 || !getHairBase().isEmpty();
+	}
+
+	public boolean rendersHairBase() {
+		FusedData fused = fusedData();
+		return fused != null && fused.hasHair() ? fused.isHairBase() : renderHairBase;
+	}
+
+	public float[] getRgbRenderHairColor() {
+		FusedData fused = fusedData();
+		return fused != null && fused.hasHair() ? fused.getRgbHairColor() : getRgbHairColor();
 	}
 
 	public static CustomHair resolveOwnStyle(Map<HairStyleSlot, CustomHair> styles, HairStyleSlot slot) {
@@ -384,6 +415,17 @@ public class Character {
 	public boolean canHaveGender() {
 		RaceCharacterConfig raceConfig = ConfigManager.getRaceCharacter(getRaceName());
 		return raceConfig != null ? raceConfig.getHasGender() : true;
+	}
+
+	public void setBodyType(int bodyType) {
+		this.bodyType = Math.max(bodyType, getMinBodyType());
+	}
+
+	public int getMinBodyType() {
+		RaceCharacterConfig raceConfig = ConfigManager.getRaceCharacter(getRaceName());
+		if (raceConfig == null || Boolean.TRUE.equals(raceConfig.getUseVanillaSkin())) return 0;
+		String baseKey = Boolean.TRUE.equals(raceConfig.hasCustomModel()) ? raceConfig.getCustomModel() : getRaceName();
+		return FusionTraits.modelFamily(baseKey).equals("human") ? 1 : 0;
 	}
 
 	public Float[] getModelScaling() {
@@ -679,7 +721,7 @@ public class Character {
 	}
 
 	public boolean isFused() {
-		return statsData != null && statsData.getFusedData() != null;
+		return fusedData() != null;
 	}
 
 	public FormMasteries getFormMasteries() {

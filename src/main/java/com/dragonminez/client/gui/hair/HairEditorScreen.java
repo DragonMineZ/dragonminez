@@ -223,7 +223,7 @@ public class HairEditorScreen extends ScaledScreen {
 			viewportTool.drag(mouseX, mouseY);
 			return true;
 		}
-		if (inspector.mouseDragged(uiX, uiY)) return true;
+		if (outliner.mouseDragged(uiX, uiY) || inspector.mouseDragged(uiX, uiY)) return true;
 
 		boolean moved = Math.hypot(mouseX - pressX, mouseY - pressY) > CLICK_DRAG_THRESHOLD;
 		if (pressingViewport && pendingTool != null) {
@@ -267,6 +267,7 @@ public class HairEditorScreen extends ScaledScreen {
 			inspector.requestRebuild();
 			return true;
 		}
+		outliner.mouseReleased();
 		inspector.mouseReleased();
 
 		if (pressingViewport && !orbiting) pickSelection(mouseX, mouseY);

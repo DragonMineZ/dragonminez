@@ -5,6 +5,7 @@ import com.dragonminez.client.gui.buttons.CustomTextureButton;
 import com.dragonminez.client.gui.buttons.TexturedTextButton;
 import com.dragonminez.client.gui.character.util.BaseMenuScreen;
 import com.dragonminez.client.gui.hud.HudRender;
+import com.dragonminez.client.util.ScrollbarState;
 import com.dragonminez.client.util.TextUtil;
 import com.dragonminez.common.init.MainSounds;
 import com.dragonminez.common.network.PartyPackets;
@@ -21,7 +22,6 @@ import net.minecraft.client.multiplayer.PlayerInfo;
 import net.minecraft.client.player.AbstractClientPlayer;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
-import net.minecraft.util.Mth;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.player.Player;
 import net.minecraftforge.api.distmarker.Dist;
@@ -54,11 +54,7 @@ public class PartyMenuScreen extends BaseMenuScreen {
 	private List<PartyEntry> displayList = new ArrayList<>();
 	private int selectedIndex = -1;
 
-	private float targetScroll = 0;
-	private float currentScroll = 0;
-	private float listSlide;
-	private float maxScroll = 0;
-	private boolean isDraggingScroll = false;
+	private final ScrollbarState listScroll = new ScrollbarState().barWidth(2).minThumb(10).step(ITEM_HEIGHT * 2);
 
 	private TexturedTextButton actionBtn;
 	private TexturedTextButton altBtn;
@@ -106,8 +102,7 @@ public class PartyMenuScreen extends BaseMenuScreen {
 	private void setView(View view) {
 		currentView = view;
 		selectedIndex = -1;
-		targetScroll = 0;
-		currentScroll = 0;
+		listScroll.reset();
 		refreshPlayerList();
 		rebuildWidgets();
 		if (Minecraft.getInstance().player != null) {
@@ -402,6 +397,7 @@ public class PartyMenuScreen extends BaseMenuScreen {
 		applyZoom(graphics, partialTick);
 
 		if (currentView == View.WELCOME) {
+			listScroll.clear();
 			renderWelcome(graphics);
 			super.render(graphics, uiMouseX, uiMouseY, partialTick);
 			endUiScale(graphics);
@@ -417,7 +413,6 @@ public class PartyMenuScreen extends BaseMenuScreen {
 		int rightPanelX = getUiWidth() - 158;
 		int centerY = getUiHeight() / 2;
 		int panelY = centerY - 105;
-		listSlide = leftOffset;
 
 		graphics.pose().pushPose();
 		graphics.pose().translate(leftOffset, 0.0f, 0.0f);
@@ -505,23 +500,19 @@ public class PartyMenuScreen extends BaseMenuScreen {
 
 		int startY = panelY + 35;
 		int viewHeight = MAX_VISIBLE_ITEMS * ITEM_HEIGHT;
-		int totalHeight = displayList.size() * ITEM_HEIGHT;
 
-		maxScroll = Math.max(0, totalHeight - viewHeight);
-		targetScroll = Mth.clamp(targetScroll, 0, maxScroll);
-		currentScroll = Mth.lerp(frameEase(), currentScroll, targetScroll);
-
-		graphics.enableScissor(toScreenCoord(panelX + 5 + listSlide), toScreenCoord(startY), toScreenCoord(panelX + 135 + listSlide), toScreenCoord(startY + viewHeight));
-		graphics.pose().pushPose();
-		graphics.pose().translate(0, -currentScroll, 0);
+		listScroll.layout(panelX + 5, startY, 130, viewHeight, displayList.size() * ITEM_HEIGHT).barAt(panelX + 130);
+		boolean overList = listScroll.isInView(mouseX, mouseY);
+		double contentMouseY = listScroll.toContent(mouseY);
+		listScroll.beginClip(graphics);
 
 		for (int i = 0; i < displayList.size(); i++) {
 			PartyEntry entry = displayList.get(i);
 			int itemY = startY + (i * ITEM_HEIGHT);
 
-			if (itemY + ITEM_HEIGHT >= startY + currentScroll && itemY <= startY + viewHeight + currentScroll) {
+			if (listScroll.isVisible(itemY, ITEM_HEIGHT)) {
 				boolean isSelected = (i == selectedIndex);
-				boolean isHovered = mouseX >= panelX + 10 && mouseX <= panelX + 120 && mouseY >= itemY - currentScroll && mouseY <= itemY + ITEM_HEIGHT - currentScroll;
+				boolean isHovered = overList && mouseX >= panelX + 10 && mouseX <= panelX + 120 && contentMouseY >= itemY && contentMouseY <= itemY + ITEM_HEIGHT;
 
 				int color;
 				if (currentView == View.CREATE) {
@@ -537,18 +528,8 @@ public class PartyMenuScreen extends BaseMenuScreen {
 			}
 		}
 
-		graphics.pose().popPose();
-		graphics.disableScissor();
-
-		if (maxScroll > 0) {
-			int scrollBarX = panelX + 130;
-			graphics.fill(scrollBarX, startY, scrollBarX + 2, startY + viewHeight, 0xFF333333);
-			float scrollPercent = currentScroll / maxScroll;
-			float visiblePercent = (float) viewHeight / totalHeight;
-			int indicatorHeight = Math.max(10, (int) (viewHeight * visiblePercent));
-			int indicatorY = startY + (int) ((viewHeight - indicatorHeight) * scrollPercent);
-			graphics.fill(scrollBarX, indicatorY, scrollBarX + 2, indicatorY + indicatorHeight, 0xFFAAAAAA);
-		}
+		listScroll.endClip(graphics);
+		listScroll.renderBar(graphics, mouseX, mouseY);
 	}
 
 	private void renderRightPanelDetails(GuiGraphics graphics, int panelX, int panelY) {
@@ -707,10 +688,7 @@ public class PartyMenuScreen extends BaseMenuScreen {
 
 	@Override
 	public boolean mouseScrolled(double mouseX, double mouseY, double delta) {
-		if (maxScroll > 0) {
-			targetScroll = Mth.clamp(targetScroll - ((float) Math.signum(delta) * ITEM_HEIGHT * 2), 0, maxScroll);
-			return true;
-		}
+		if (listScroll.scrollWheel(delta)) return true;
 		return super.mouseScrolled(mouseX, mouseY, delta);
 	}
 
@@ -721,21 +699,18 @@ public class PartyMenuScreen extends BaseMenuScreen {
 
 		double uiMouseX = toUiX(mouseX);
 		double uiMouseY = toUiY(mouseY);
-		int leftPanelX = 12 + Math.round(getLeftPanelSwitchOffset(1.0f));
+		int listSlide = Math.round(getLeftPanelSwitchOffset(1.0f));
+		int leftPanelX = 12 + listSlide;
 		int centerY = getUiHeight() / 2;
 		int panelY = centerY - 105;
 
 		int startY = panelY + 35;
 		int viewHeight = MAX_VISIBLE_ITEMS * ITEM_HEIGHT;
 
-		if (maxScroll > 0 && TextUtil.overScrollBar(uiMouseX, uiMouseY, leftPanelX + 130, 2, startY, viewHeight)) {
-			isDraggingScroll = true;
-			targetScroll = TextUtil.scrollFromBar(uiMouseY, startY, viewHeight, maxScroll);
-			return true;
-		}
+		if (listScroll.mouseClicked(uiMouseX - listSlide, uiMouseY, button)) return true;
 
 		if (uiMouseX >= leftPanelX + 10 && uiMouseX <= leftPanelX + 120 && uiMouseY >= startY && uiMouseY <= startY + viewHeight) {
-			int index = (int) ((uiMouseY - startY + currentScroll) / ITEM_HEIGHT);
+			int index = (int) ((uiMouseY - startY + listScroll.scroll()) / ITEM_HEIGHT);
 			if (index >= 0 && index < displayList.size()) {
 				selectedIndex = index;
 				refreshActionButtons();
@@ -747,21 +722,13 @@ public class PartyMenuScreen extends BaseMenuScreen {
 
 	@Override
 	public boolean mouseDragged(double mouseX, double mouseY, int button, double dragX, double dragY) {
-		if (isDraggingScroll && maxScroll > 0) {
-			int panelY = (getUiHeight() / 2) - 105;
-			int startY = panelY + 35;
-			targetScroll = TextUtil.scrollFromBar(toUiY(mouseY), startY, MAX_VISIBLE_ITEMS * ITEM_HEIGHT, maxScroll);
-			return true;
-		}
+		if (listScroll.mouseDragged(toUiX(mouseX) - Math.round(getLeftPanelSwitchOffset(1.0f)), toUiY(mouseY))) return true;
 		return super.mouseDragged(mouseX, mouseY, button, dragX, dragY);
 	}
 
 	@Override
 	public boolean mouseReleased(double mouseX, double mouseY, int button) {
-		if (isDraggingScroll) {
-			isDraggingScroll = false;
-			return true;
-		}
+		if (listScroll.mouseReleased()) return true;
 		return super.mouseReleased(mouseX, mouseY, button);
 	}
 }

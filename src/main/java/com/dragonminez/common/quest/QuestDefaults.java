@@ -31,6 +31,7 @@ final class QuestDefaults {
 		createBuuSagaQuests(questsDir);
 		createMoviesSagaQuests(questsDir);
 		createGTSagaQuests(questsDir);
+		createDaimaSagaQuests(questsDir);
 	}
 
 	private static void writeQuest(Path dir, String filename, JsonObject quest) {
@@ -108,6 +109,25 @@ final class QuestDefaults {
 	private static JsonObject objKill(String entity, int count, double hp, double melee, double ki, int textureVariant) {
 		JsonObject o = objKill(entity, count, hp, melee, ki);
 		o.addProperty("TextureVariant", textureVariant);
+		return o;
+	}
+
+	private static JsonObject objSpar(String entity, double hp, double melee, double ki) {
+		JsonObject o = objKill(entity, 1, hp, melee, ki);
+		o.addProperty("type", "SPAR");
+		return o;
+	}
+
+	private static JsonObject objWaves(String entity, int waves, int mobsPerWave, double hp, double melee, double ki) {
+		JsonObject o = new JsonObject();
+		o.addProperty("type", "SURVIVE_WAVES");
+		o.addProperty("entity", entity);
+		o.addProperty("waves", waves);
+		o.addProperty("mobs_per_wave", mobsPerWave);
+		o.addProperty("wave_delay_seconds", 8);
+		o.addProperty("health", hp);
+		o.addProperty("meleeDamage", melee);
+		o.addProperty("kiDamage", ki);
 		return o;
 	}
 
@@ -1747,6 +1767,100 @@ final class QuestDefaults {
 				step("gt", 46, "46_omega_shenron_final.json",
 						earthReq(condBiome("dragonminez:rocky")),
 						new JsonObject[]{ objKill("dragonminez:saga_omega_shenron", 1, 3161500, 132830, 120210) },
+						rewTPS(1327800), rewItem("dragonminez:senzu_bean", 5))
+		);
+	}
+
+	private static final String THIRD_DEMON_WORLD = "dragonminez:third_demon_world";
+	private static final String SECOND_DEMON_WORLD = "dragonminez:second_demon_world";
+	private static final String FIRST_DEMON_WORLD = "dragonminez:first_demon_world";
+
+	private static JsonObject demonRealmReq(JsonObject... extraConditions) {
+		return dimensionReq("dragonminez:demon_realm", extraConditions);
+	}
+
+	private static void createDaimaSagaQuests(Path questsDir) {
+		JsonObject prevBuu = prevQuest("buu_saga", 35);
+
+		writeSaga(questsDir.resolve("saga_daima"), "daima_saga", "saga_daima", prevBuu,
+				step("daima", 1, "01_vegeta_training.json",
+						earthReq(condBiome("#dragonminez:is_plains")),
+						new JsonObject[]{ noTransform(objSpar("dragonminez:saga_vegeta_daima", 645000, 27110, 24530)) },
+						rewTPS(271000)),
+				step("daima", 2, "02_gomahs_wish.json",
+						earthReq(),
+						new JsonObject[]{
+								objStructure("dragonminez:goku_house"),
+								objTalkTo("goku")
+						},
+						rewTPS(85500)),
+				step("daima", 3, "03_to_the_demon_realm.json",
+						earthReq(),
+						new JsonObject[]{
+								objDeliver("minecraft:ender_pearl", 16, "bulma"),
+								objDeliver("minecraft:crying_obsidian", 8, "bulma"),
+								objDeliver("minecraft:redstone_block", 8, "bulma"),
+								objDeliver("minecraft:amethyst_shard", 16, "bulma")
+						},
+						rewTPS(107800)),
+				step("daima", 4, "04_the_third_demon_world.json",
+						null,
+						new JsonObject[]{ objBiome(THIRD_DEMON_WORLD) },
+						rewTPS(104300)),
+				step("daima", 5, "05_demon_bandits.json",
+						demonRealmReq(condBiome(THIRD_DEMON_WORLD)),
+						new JsonObject[]{ objKill("dragonminez:bandit", 10, 120000, 5040, 4560) },
+						rewTPS(384000)),
+				step("daima", 6, "06_glorios_test.json",
+						demonRealmReq(condBiome(THIRD_DEMON_WORLD)),
+						new JsonObject[]{ objSpar("dragonminez:saga_glorio", 1060000, 44550, 40310) },
+						rewTPS(445300)),
+				step("daima", 7, "07_tamagami_number_3.json",
+						demonRealmReq(condBiome(THIRD_DEMON_WORLD)),
+						new JsonObject[]{ transformStats(objKill("dragonminez:saga_tamagami_3", 3, 390000, 49200, 44520), 390000, 56580, 51200) },
+						rewTPS(491800)),
+				step("daima", 8, "08_a_new_majin_is_born.json",
+						demonRealmReq(condBiome(THIRD_DEMON_WORLD)),
+						new JsonObject[]{ objKill("dragonminez:saga_majin_kuu", 1, 1293000, 54350, 49170) },
+						rewTPS(543200)),
+				step("daima", 9, "09_the_second_demon_world.json",
+						demonRealmReq(),
+						new JsonObject[]{ objBiome(SECOND_DEMON_WORLD) },
+						rewTPS(171400)),
+				step("daima", 10, "10_tamagami_number_2.json",
+						demonRealmReq(condBiome(SECOND_DEMON_WORLD)),
+						new JsonObject[]{ transformStats(objKill("dragonminez:saga_tamagami_2", 1, 1577500, 66300, 59990), 1577500, 76250, 68990) },
+						rewTPS(662700)),
+				step("daima", 11, "11_majin_duu.json",
+						demonRealmReq(condBiome(SECOND_DEMON_WORLD)),
+						new JsonObject[]{ objKill("dragonminez:saga_majin_duu", 1, 1742000, 73220, 66250) },
+						rewTPS(731800), rewItem("dragonminez:senzu_bean", 3)),
+				step("daima", 12, "12_the_first_demon_world.json",
+						demonRealmReq(),
+						new JsonObject[]{ objBiome(FIRST_DEMON_WORLD) },
+						rewTPS(230900)),
+				step("daima", 13, "13_tamagami_number_1.json",
+						demonRealmReq(condBiome(FIRST_DEMON_WORLD)),
+						new JsonObject[]{ transformStats(objKill("dragonminez:saga_tamagami_1", 1, 2125000, 89310, 80810), 2125000, 102710, 92930) },
+						rewTPS(892700)),
+				step("daima", 14, "14_ultra_vegeta_1.json",
+						demonRealmReq(condBiome(FIRST_DEMON_WORLD)),
+						new JsonObject[]{ transformStats(objKill("dragonminez:saga_vegeta_mini", 1, 426500, 98640, 89260), 640000, 113440, 102650) },
+						rewTPS(986000)),
+				step("daima", 15, "15_the_great_assault.json",
+						demonRealmReq(condBiome(FIRST_DEMON_WORLD)),
+						new JsonObject[]{
+								objWaves("dragonminez:saga_gomah_soldier_1", 2, 5, 216000, 9080, 8210),
+								objWaves("dragonminez:saga_gomah_soldier_2", 1, 5, 216000, 9080, 8210)
+						},
+						rewTPS(1037000)),
+				step("daima", 16, "16_king_gomah.json",
+						demonRealmReq(condBiome(FIRST_DEMON_WORLD)),
+						new JsonObject[]{ noTransform(objKill("dragonminez:saga_gomah_mini", 1, 2863000, 120330, 108880)) },
+						rewTPS(1202700)),
+				step("daima", 17, "17_the_demon_eye.json",
+						demonRealmReq(condBiome(FIRST_DEMON_WORLD)),
+						new JsonObject[]{ objKill("dragonminez:saga_gomah_third_eye", 1, 3161500, 132830, 120210) },
 						rewTPS(1327800), rewItem("dragonminez:senzu_bean", 5))
 		);
 	}

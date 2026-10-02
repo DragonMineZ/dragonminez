@@ -4,6 +4,7 @@ import com.dragonminez.client.gui.hud.HudRender;
 import com.dragonminez.Reference;
 import com.dragonminez.client.gui.buttons.TexturedTextButton;
 import com.dragonminez.client.gui.character.util.ScaledScreen;
+import com.dragonminez.client.util.ScrollbarState;
 import com.dragonminez.client.util.TextUtil;
 import com.dragonminez.common.init.MainSounds;
 import com.dragonminez.common.network.C2S.TravelToPlanetC2S;
@@ -18,7 +19,6 @@ import net.minecraft.client.resources.sounds.SimpleSoundInstance;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.Style;
 import net.minecraft.resources.ResourceLocation;
-import net.minecraft.util.Mth;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 import org.jspecify.annotations.NonNull;
@@ -48,10 +48,7 @@ public class SpacePodScreen extends ScaledScreen {
 	private int selectedIndex = -1;
 
 	private int guiLeft, guiTop;
-	private float targetScroll = 0;
-	private float currentScroll = 0;
-	private float maxScroll = 0;
-	private boolean isScrolling = false;
+	private final ScrollbarState listScroll = new ScrollbarState().minThumb(20).step(ITEM_HEIGHT * 2);
 
 	private TexturedTextButton travelButton;
 
@@ -147,31 +144,21 @@ public class SpacePodScreen extends ScaledScreen {
 		int listTop = guiTop + 35;
 		int listWidth = PANEL_WIDTH - 25;
 		int viewHeight = MAX_VISIBLE_ITEMS * ITEM_HEIGHT;
-		int totalHeight = destinations.size() * ITEM_HEIGHT;
 
-		maxScroll = Math.max(0, totalHeight - viewHeight);
-		targetScroll = Mth.clamp(targetScroll, 0, maxScroll);
-		currentScroll = Mth.lerp(frameEase(), currentScroll, targetScroll);
-
-		int scLeft = toScreenCoord(listLeft);
-		int scTop = toScreenCoord(listTop);
-		int scRight = toScreenCoord(listLeft + listWidth);
-		int scBottom = toScreenCoord(listTop + viewHeight);
-
-		graphics.enableScissor(scLeft, scTop, scRight, scBottom);
-		graphics.pose().pushPose();
-		graphics.pose().translate(0, -currentScroll, 0);
+		listScroll.layout(listLeft, listTop, listWidth, viewHeight, destinations.size() * ITEM_HEIGHT).barAt(guiLeft + PANEL_WIDTH - 12);
+		boolean overList = listScroll.isInView(uiMouseX, uiMouseY);
+		double contentMouseY = listScroll.toContent(uiMouseY);
+		listScroll.beginClip(graphics);
 
 		for (int i = 0; i < destinations.size(); i++) {
 			int itemY = listTop + (i * ITEM_HEIGHT);
 
-			if (itemY + ITEM_HEIGHT >= listTop + currentScroll && itemY <= listTop + viewHeight + currentScroll) {
+			if (listScroll.isVisible(itemY, ITEM_HEIGHT)) {
 				PlanetDestination dest = destinations.get(i);
 				boolean isSelected = (i == selectedIndex);
 
 				if (dest.unlocked) {
-					boolean isHovered = uiMouseX >= listLeft && uiMouseX < listLeft + listWidth &&
-							uiMouseY >= itemY - currentScroll && uiMouseY < itemY + ITEM_HEIGHT - currentScroll;
+					boolean isHovered = overList && contentMouseY >= itemY && contentMouseY < itemY + ITEM_HEIGHT;
 
 					int color = isSelected ? 0x80D4AF37 : (isHovered ? 0x80555555 : 0x00000000);
 					graphics.fill(listLeft, itemY, listLeft + listWidth, itemY + ITEM_HEIGHT, color);
@@ -201,12 +188,8 @@ public class SpacePodScreen extends ScaledScreen {
 			}
 		}
 
-		graphics.pose().popPose();
-		graphics.disableScissor();
-
-		if (maxScroll > 0) {
-			renderScrollbar(graphics, listTop, viewHeight, totalHeight);
-		}
+		listScroll.endClip(graphics);
+		listScroll.renderBar(graphics, uiMouseX, uiMouseY);
 	}
 
 	private void renderDestinationIcon(GuiGraphics graphics, PlanetDestination dest, int x, int y) {
@@ -226,24 +209,6 @@ public class SpacePodScreen extends ScaledScreen {
 		return destination.translate ? tr(destination.name) : txt(destination.name);
 	}
 
-	private void renderScrollbar(GuiGraphics graphics, int listTop, int viewHeight, int totalHeight) {
-		int scrollBarX = guiLeft + PANEL_WIDTH - 12;
-
-		graphics.fill(scrollBarX, listTop, scrollBarX + 3, listTop + viewHeight, 0xFF333333);
-
-		float scrollPercent = currentScroll / maxScroll;
-		float visiblePercent = (float) viewHeight / totalHeight;
-		int indicatorHeight = Math.max(20, (int) (viewHeight * visiblePercent));
-		int indicatorY = listTop + (int) ((viewHeight - indicatorHeight) * scrollPercent);
-
-		graphics.fill(scrollBarX, indicatorY, scrollBarX + 3, indicatorY + indicatorHeight, 0xFFAAAAAA);
-	}
-
-	private float calculateScrollPercent(double uiY, int startY, int viewHeight) {
-		float percent = (float)(uiY - startY) / viewHeight;
-		return Mth.clamp(percent, 0.0f, 1.0f);
-	}
-
 	@Override
 	public boolean mouseClicked(double mouseX, double mouseY, int button) {
 		if (super.mouseClicked(mouseX, mouseY, button)) return true;
@@ -256,15 +221,10 @@ public class SpacePodScreen extends ScaledScreen {
 		int listWidth = PANEL_WIDTH - 25;
 		int viewHeight = MAX_VISIBLE_ITEMS * ITEM_HEIGHT;
 
-		if (maxScroll > 0 && uiX >= listLeft + listWidth && uiX <= guiLeft + PANEL_WIDTH &&
-				uiY >= listTop && uiY <= listTop + viewHeight) {
-			this.isScrolling = true;
-			targetScroll = calculateScrollPercent(uiY, listTop, viewHeight) * maxScroll;
-			return true;
-		}
+		if (listScroll.mouseClicked(uiX, uiY, button)) return true;
 
 		if (uiX >= listLeft && uiX < listLeft + listWidth && uiY >= listTop && uiY <= listTop + viewHeight) {
-			int relativeY = (int) (uiY - listTop + currentScroll);
+			int relativeY = (int) (uiY - listTop + listScroll.scroll());
 			int index = relativeY / ITEM_HEIGHT;
 
 			if (index >= 0 && index < destinations.size()) {
@@ -291,28 +251,19 @@ public class SpacePodScreen extends ScaledScreen {
 
 	@Override
 	public boolean mouseScrolled(double mouseX, double mouseY, double delta) {
-		if (maxScroll > 0) {
-			targetScroll = (float) Mth.clamp(targetScroll - (Math.signum(delta) * ITEM_HEIGHT * 2), 0, maxScroll);
-			return true;
-		}
+		if (listScroll.scrollWheel(delta)) return true;
 		return super.mouseScrolled(mouseX, mouseY, delta);
 	}
 
 	@Override
 	public boolean mouseReleased(double mouseX, double mouseY, int button) {
-		this.isScrolling = false;
+		listScroll.mouseReleased();
 		return super.mouseReleased(mouseX, mouseY, button);
 	}
 
 	@Override
 	public boolean mouseDragged(double mouseX, double mouseY, int button, double dragX, double dragY) {
-		if (isScrolling && maxScroll > 0) {
-			double uiY = toUiY(mouseY);
-			int listTop = guiTop + 35;
-			int viewHeight = MAX_VISIBLE_ITEMS * ITEM_HEIGHT;
-			targetScroll = calculateScrollPercent(uiY, listTop, viewHeight) * maxScroll;
-			return true;
-		}
+		if (listScroll.mouseDragged(toUiX(mouseX), toUiY(mouseY))) return true;
 		return super.mouseDragged(mouseX, mouseY, button, dragX, dragY);
 	}
 

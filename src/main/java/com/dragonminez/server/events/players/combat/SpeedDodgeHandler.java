@@ -9,6 +9,7 @@ import com.dragonminez.common.init.entities.IBattlePower;
 import com.dragonminez.common.network.NetworkHandler;
 import com.dragonminez.common.network.S2C.ResourceSyncS2C;
 import com.dragonminez.common.network.S2C.TriggerAnimationS2C;
+import com.dragonminez.common.racial.impl.GlindDivinity;
 import com.dragonminez.common.stats.StatsCapability;
 import com.dragonminez.common.stats.StatsData;
 import com.dragonminez.common.stats.StatsProvider;
@@ -72,7 +73,7 @@ public class SpeedDodgeHandler {
 			int meditationLevel = data.getSkills().getSkillLevel("meditation");
 			if (meditationLevel <= 0) return;
 
-			double chance = dodgeChance(data, attacker, meditationLevel, config);
+			double chance = GlindDivinity.modifyMeditationDodge(data, dodgeChance(data, attacker, meditationLevel, config));
 			if (chance <= 0.0) return;
 
 			long now = defender.level().getGameTime();

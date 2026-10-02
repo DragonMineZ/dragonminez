@@ -5,6 +5,7 @@ import com.dragonminez.client.gui.buttons.TexturedTextButton;
 import com.dragonminez.client.gui.character.util.ScaledScreen;
 import com.dragonminez.client.gui.hud.HudRender;
 import com.dragonminez.client.util.NumberFormattingUtil;
+import com.dragonminez.client.util.ScrollbarState;
 import com.dragonminez.client.util.TextUtil;
 import com.dragonminez.common.config.ConfigManager;
 import com.dragonminez.common.config.GeneralServerConfig;
@@ -25,6 +26,7 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.network.chat.Style;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.util.FormattedCharSequence;
 import net.minecraft.util.Mth;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
@@ -53,7 +55,9 @@ public class WorldBossResultsScreen extends ScaledScreen {
 	private static final int BADGE_HEIGHT = 12;
 	private static final int BAR_MAX_WIDTH = 96;
 	private static final int BAR_HEIGHT = 7;
-	private static final int REWARD_ROW_HEIGHT = 24;
+	private static final int REWARD_LIST_HEIGHT = PANEL_HEIGHT - PADDING - 20 - 6 - LIST_TOP;
+	private static final int REWARD_SCROLL_STEP = 24;
+	private static final int LINE_HEIGHT = 10;
 
 	private static final int TITLE_COLOR = 0xFFD54F;
 	private static final int DURATION_COLOR = 0xFF6B6B;
@@ -88,20 +92,24 @@ public class WorldBossResultsScreen extends ScaledScreen {
 		}
 	}
 
+	private record RewardBlock(int index, ItemStack icon, List<FormattedCharSequence> nameLines, List<FormattedCharSequence> chanceLines, boolean received, int offsetY, int height) {}
+
 	private final WorldBossResults results;
 	private final List<QuestReward> rewards = new ArrayList<>();
 	private final List<WorldBossResults.PlayerEntry> shown;
 	private final List<SegmentHit> segmentHits = new ArrayList<>();
 	private final List<RowHit> rowHits = new ArrayList<>();
 	private final List<RewardHit> rewardHits = new ArrayList<>();
+	private final List<FormattedCharSequence> rewardHeader = new ArrayList<>();
+	private final List<RewardBlock> rewardBlocks = new ArrayList<>();
+	private final ScrollbarState listBar = new ScrollbarState().step(ROW_HEIGHT);
+	private final ScrollbarState rewardBar = new ScrollbarState().step(REWARD_SCROLL_STEP);
 
 	private UUID selected;
 	private int guiLeft;
 	private int guiTop;
-	private float targetScroll;
-	private float currentScroll;
-	private float maxScroll;
-	private boolean draggingScroll;
+	private int rewardContentHeight;
+	private boolean rewardLayoutDirty = true;
 
 	public static void open(WorldBossResults results) {
 		Minecraft mc = Minecraft.getInstance();
@@ -142,6 +150,7 @@ public class WorldBossResultsScreen extends ScaledScreen {
 		super.init();
 		this.guiLeft = (getUiWidth() - PANEL_WIDTH) / 2;
 		this.guiTop = (getUiHeight() - PANEL_HEIGHT) / 2;
+		this.rewardLayoutDirty = true;
 
 		TexturedTextButton close = new TexturedTextButton.Builder()
 				.position(guiLeft + PANEL_WIDTH - PADDING - 74, guiTop + PANEL_HEIGHT - PADDING - 20)
@@ -190,39 +199,25 @@ public class WorldBossResultsScreen extends ScaledScreen {
 		TextUtil.drawStringWithBorder(graphics, font, tr("gui.dragonminez.worldboss.results.contribution"), left, guiTop + 30, TITLE_COLOR);
 
 		int listTop = guiTop + LIST_TOP;
-		int totalHeight = shown.size() * ROW_HEIGHT;
-		maxScroll = Math.max(0, totalHeight - LIST_HEIGHT);
-		targetScroll = Mth.clamp(targetScroll, 0.0f, maxScroll);
-		currentScroll = Mth.lerp(frameEase(), currentScroll, targetScroll);
-		if (Math.abs(currentScroll - targetScroll) < 0.05f) currentScroll = targetScroll;
+		listBar.layout(left, listTop, width, LIST_HEIGHT, shown.size() * ROW_HEIGHT).barAt(left + width + 3);
 
 		float best = shown.isEmpty() ? 1.0f : Math.max(1.0e-6f, shown.get(0).points());
-		boolean mouseInList = mouseX >= left && mouseX < left + width && mouseY >= listTop && mouseY < listTop + LIST_HEIGHT;
+		boolean mouseInList = listBar.isInView(mouseX, mouseY);
 
-		graphics.enableScissor(toScreenCoord(left), toScreenCoord(listTop), toScreenCoord(left + width), toScreenCoord(listTop + LIST_HEIGHT));
-		graphics.pose().pushPose();
-		graphics.pose().translate(0.0f, -currentScroll, 0.0f);
+		listBar.beginClip(graphics);
 		for (int i = 0; i < shown.size(); i++) {
 			WorldBossResults.PlayerEntry entry = shown.get(i);
 			int rowY = listTop + i * ROW_HEIGHT;
-			int visibleY = Math.round(rowY - currentScroll);
-			if (visibleY + ROW_HEIGHT < listTop || visibleY > listTop + LIST_HEIGHT) continue;
+			if (!listBar.isVisible(rowY, ROW_HEIGHT)) continue;
+			int visibleY = Math.round(rowY - listBar.scroll());
 			boolean selectedRow = entry.id().equals(selected);
 			boolean hovered = mouseInList && mouseY >= visibleY && mouseY < visibleY + ROW_HEIGHT;
 			if (selectedRow || hovered) HudRender.rect(graphics, left - 2, rowY, width + 4, ROW_HEIGHT - 1, selectedRow ? SELECTED_PLATE : HOVER_PLATE);
 			renderRow(graphics, entry, left, rowY, visibleY, best, width);
 			rowHits.add(new RowHit(left, visibleY, width, ROW_HEIGHT, entry));
 		}
-		graphics.pose().popPose();
-		graphics.disableScissor();
-
-		if (maxScroll > 0.0f) {
-			int barX = left + width + 3;
-			graphics.fill(barX, listTop, barX + 3, listTop + LIST_HEIGHT, 0xFF333333);
-			int indicatorHeight = Math.max(14, Math.round(LIST_HEIGHT * (LIST_HEIGHT / (float) totalHeight)));
-			int indicatorY = listTop + Math.round((LIST_HEIGHT - indicatorHeight) * (currentScroll / maxScroll));
-			graphics.fill(barX, indicatorY, barX + 3, indicatorY + indicatorHeight, 0xFFAAAAAA);
-		}
+		listBar.endClip(graphics);
+		listBar.renderBar(graphics, mouseX, mouseY);
 	}
 
 	private void renderRow(GuiGraphics graphics, WorldBossResults.PlayerEntry entry, int left, int rowY, int visibleY, float best, int width) {
@@ -268,17 +263,63 @@ public class WorldBossResultsScreen extends ScaledScreen {
 		int left = guiLeft + DIVIDER_X + PADDING;
 		int width = PANEL_WIDTH - DIVIDER_X - PADDING * 2;
 		TextUtil.drawStringWithBorder(graphics, font, tr("gui.dragonminez.worldboss.results.rewards"), left, guiTop + 30, TITLE_COLOR);
+		if (rewardLayoutDirty) layoutRewards(width);
 
-		WorldBossResults.PlayerEntry target = selected != null ? results.find(selected) : null;
-		int y = guiTop + LIST_TOP;
-		if (target != null) {
-			TextUtil.drawStringWithBorder(graphics, font, tr("gui.dragonminez.worldboss.results.chances_for", target.name()), left, y, MUTED_COLOR);
-			y += 10;
-			TextUtil.drawStringWithBorder(graphics, font, tr("gui.dragonminez.worldboss.results.total_points",
-					NumberFormattingUtil.formatLargeNumber(target.points()), NumberFormattingUtil.formatUpToOneDecimal(target.share() * 100.0f)), left, y, MUTED_COLOR);
-			y += 14;
+		int top = guiTop + LIST_TOP;
+		rewardBar.layout(left, top, width, REWARD_LIST_HEIGHT, rewardContentHeight).barAt(left + width + 2);
+
+		boolean mouseInList = rewardBar.isInView(mouseX, mouseY);
+		rewardBar.beginClip(graphics);
+
+		int headerY = top;
+		for (FormattedCharSequence line : rewardHeader) {
+			TextUtil.drawStringWithBorder(graphics, font, line, left, headerY, MUTED_COLOR);
+			headerY += LINE_HEIGHT;
 		}
 
+		int textX = left + 20;
+		for (RewardBlock block : rewardBlocks) {
+			int blockY = top + block.offsetY();
+			if (!rewardBar.isVisible(blockY, block.height())) continue;
+			float visibleY = blockY - rewardBar.scroll();
+
+			if (block.icon() != null) graphics.renderItem(block.icon(), left, blockY);
+			else HudRender.blit(graphics, REWARD_GENERIC_ICON, left, blockY, 0.0f, 0.0f, 16.0f, 16.0f, 16, 16);
+
+			int lineY = blockY;
+			int nameColor = block.received() ? RECEIVED_COLOR : TEXT_COLOR;
+			for (FormattedCharSequence line : block.nameLines()) {
+				TextUtil.drawStringWithBorder(graphics, font, line, textX, lineY, nameColor);
+				lineY += LINE_HEIGHT;
+			}
+			int chanceColor = block.received() ? RECEIVED_COLOR : MUTED_COLOR;
+			for (FormattedCharSequence line : block.chanceLines()) {
+				TextUtil.drawStringWithBorder(graphics, font, line, textX, lineY, chanceColor);
+				lineY += LINE_HEIGHT;
+			}
+
+			if (mouseInList) rewardHits.add(new RewardHit(left, Math.round(visibleY), width, block.height() - 2, block.index()));
+		}
+
+		rewardBar.endClip(graphics);
+		rewardBar.renderBar(graphics, mouseX, mouseY);
+	}
+
+	private void layoutRewards(int width) {
+		rewardLayoutDirty = false;
+		rewardHeader.clear();
+		rewardBlocks.clear();
+
+		WorldBossResults.PlayerEntry target = selected != null ? results.find(selected) : null;
+		int y = 0;
+		if (target != null) {
+			rewardHeader.addAll(wrap(tr("gui.dragonminez.worldboss.results.chances_for", target.name()), width));
+			rewardHeader.addAll(wrap(tr("gui.dragonminez.worldboss.results.total_points",
+					NumberFormattingUtil.formatLargeNumber(target.points()), NumberFormattingUtil.formatUpToOneDecimal(target.share() * 100.0f)), width));
+			y = rewardHeader.size() * LINE_HEIGHT + 4;
+		}
+
+		int textWidth = width - 20;
 		for (int j = 0; j < rewards.size(); j++) {
 			QuestReward reward = rewards.get(j);
 			if (reward == null) continue;
@@ -287,20 +328,20 @@ public class WorldBossResultsScreen extends ScaledScreen {
 			float amount = target != null && j < target.rewardAmount().length ? target.rewardAmount()[j] : 0.0f;
 			boolean received = amount > 0.0f;
 
-			ItemStack icon = rewardIcon(reward);
-			if (icon != null) graphics.renderItem(icon, left, y);
-			else HudRender.blit(graphics, REWARD_GENERIC_ICON, left, y, 0.0f, 0.0f, 16.0f, 16.0f, 16, 16);
-
-			int textX = left + 20;
 			MutableComponent name = received
 					? WorldBossRewardText.describe(reward, amount).copy().withStyle(Style.EMPTY.withFont(DMZ_FONT))
 					: WorldBossRewardText.name(reward).copy().withStyle(Style.EMPTY.withFont(DMZ_FONT));
-			TextUtil.drawStringWithBorder(graphics, font, name, textX, y, received ? RECEIVED_COLOR : TEXT_COLOR);
-			TextUtil.drawStringWithBorder(graphics, font, chanceLine(baseChance, chance, received), textX, y + 10, received ? RECEIVED_COLOR : MUTED_COLOR);
-
-			rewardHits.add(new RewardHit(left, y, width, REWARD_ROW_HEIGHT - 2, j));
-			y += REWARD_ROW_HEIGHT;
+			List<FormattedCharSequence> nameLines = wrap(name, textWidth);
+			List<FormattedCharSequence> chanceLines = wrap(chanceLine(baseChance, chance, received), textWidth);
+			int height = Math.max(16, (nameLines.size() + chanceLines.size()) * LINE_HEIGHT) + 4;
+			rewardBlocks.add(new RewardBlock(j, rewardIcon(reward), nameLines, chanceLines, received, y, height));
+			y += height;
 		}
+		rewardContentHeight = y;
+	}
+
+	private List<FormattedCharSequence> wrap(Component text, int width) {
+		return TextUtil.split(font, text, width);
 	}
 
 	private MutableComponent chanceLine(float baseChance, float chance, boolean received) {
@@ -310,8 +351,8 @@ public class WorldBossResultsScreen extends ScaledScreen {
 		} else if (Math.abs(chance - baseChance) < 0.0005f) {
 			line = txt(percentText(baseChance));
 		} else {
-			line = txt(percentText(baseChance)).withStyle(ChatFormatting.STRIKETHROUGH)
-					.append(txt(" -> " + percentText(chance)).withStyle(Style.EMPTY.withFont(DMZ_FONT)));
+			line = txt("").append(txt(percentText(baseChance)).withStyle(ChatFormatting.STRIKETHROUGH))
+					.append(txt(" -> " + percentText(chance)));
 		}
 		if (received) line.append(txt(" ")).append(tr("gui.dragonminez.worldboss.results.received"));
 		return line;
@@ -417,18 +458,14 @@ public class WorldBossResultsScreen extends ScaledScreen {
 		double uiX = toUiX(mouseX);
 		double uiY = toUiY(mouseY);
 
-		int left = guiLeft + PADDING;
-		int width = DIVIDER_X - PADDING * 2;
+		if (ScrollbarState.clicked(uiX, uiY, button, listBar, rewardBar)) return true;
+
 		int listTop = guiTop + LIST_TOP;
-		if (maxScroll > 0.0f && uiX >= left + width && uiX <= left + width + 8 && uiY >= listTop && uiY <= listTop + LIST_HEIGHT) {
-			draggingScroll = true;
-			targetScroll = Mth.clamp((float) (uiY - listTop) / LIST_HEIGHT, 0.0f, 1.0f) * maxScroll;
-			return true;
-		}
 		if (uiY < listTop || uiY > listTop + LIST_HEIGHT) return false;
 		for (RowHit hit : rowHits) {
 			if (!hit.contains(uiX, uiY)) continue;
 			selected = hit.entry().id();
+			rewardLayoutDirty = true;
 			Minecraft.getInstance().getSoundManager().play(net.minecraft.client.resources.sounds.SimpleSoundInstance.forUI(
 					net.minecraft.sounds.SoundEvents.UI_BUTTON_CLICK, 1.0F));
 			return true;
@@ -439,27 +476,23 @@ public class WorldBossResultsScreen extends ScaledScreen {
 	@Override
 	public boolean mouseScrolled(double mouseX, double mouseY, double delta) {
 		double uiX = toUiX(mouseX);
+		double uiY = toUiY(mouseY);
 		int left = guiLeft + PADDING;
-		if (maxScroll > 0.0f && uiX < guiLeft + DIVIDER_X && uiX >= left) {
-			targetScroll = Mth.clamp(targetScroll - (float) (Math.signum(delta) * ROW_HEIGHT), 0.0f, maxScroll);
-			return true;
-		}
+		if (uiX < guiLeft + DIVIDER_X && uiX >= left && listBar.scrollWheel(delta)) return true;
+		boolean overRewards = uiX >= guiLeft + DIVIDER_X && uiX < guiLeft + PANEL_WIDTH && uiY >= guiTop && uiY < guiTop + PANEL_HEIGHT;
+		if (overRewards && rewardBar.scrollWheel(delta)) return true;
 		return super.mouseScrolled(mouseX, mouseY, delta);
 	}
 
 	@Override
 	public boolean mouseDragged(double mouseX, double mouseY, int button, double dragX, double dragY) {
-		if (draggingScroll && maxScroll > 0.0f) {
-			int listTop = guiTop + LIST_TOP;
-			targetScroll = Mth.clamp((float) (toUiY(mouseY) - listTop) / LIST_HEIGHT, 0.0f, 1.0f) * maxScroll;
-			return true;
-		}
+		if (ScrollbarState.dragged(toUiX(mouseX), toUiY(mouseY), listBar, rewardBar)) return true;
 		return super.mouseDragged(mouseX, mouseY, button, dragX, dragY);
 	}
 
 	@Override
 	public boolean mouseReleased(double mouseX, double mouseY, int button) {
-		draggingScroll = false;
+		if (ScrollbarState.released(listBar, rewardBar)) return true;
 		return super.mouseReleased(mouseX, mouseY, button);
 	}
 

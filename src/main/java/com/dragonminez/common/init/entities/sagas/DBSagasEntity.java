@@ -409,6 +409,27 @@ public abstract class DBSagasEntity extends Monster implements GeoEntity, ITextu
         return null;
     }
 
+    public float getHitboxScale() {
+        return 1.0F;
+    }
+
+    protected void refreshHitboxes() {
+        this.refreshDimensions();
+        if (this.hitboxParts != null) {
+            for (PartEntity<?> part : this.hitboxParts) part.refreshDimensions();
+        }
+    }
+
+    @Override
+    public void onSyncedDataUpdated(EntityDataAccessor<?> pKey) {
+        super.onSyncedDataUpdated(pKey);
+        if (SCALE_VAL.equals(pKey) && this.hitboxParts != null) this.refreshHitboxes();
+    }
+
+    public boolean questSpawnsOneAtATime() {
+        return false;
+    }
+
     private static final double GIANT_RENDER_RANGE = 512.0D;
 
     @Override
@@ -451,7 +472,7 @@ public abstract class DBSagasEntity extends Monster implements GeoEntity, ITextu
     protected float getStandingEyeHeight(Pose pPose, EntityDimensions pDimensions) {
         if (this.hitboxParts != null) {
             for (PartEntity<?> generic : this.hitboxParts) {
-                if (generic instanceof DBSagasPart part && "head".equals(part.partName)) return part.yOffset;
+                if (generic instanceof DBSagasPart part && "head".equals(part.partName)) return part.yOffset * this.getHitboxScale();
             }
         }
         return super.getStandingEyeHeight(pPose, pDimensions);
@@ -468,12 +489,13 @@ public abstract class DBSagasEntity extends Monster implements GeoEntity, ITextu
 
         Vec3 forward = Vec3.directionFromRotation(0.0F, this.yBodyRot);
         Vec3 side = new Vec3(-forward.z, 0.0, forward.x);
+        float scale = this.getHitboxScale();
 
         for (PartEntity<?> generic : this.hitboxParts) {
             if (!(generic instanceof DBSagasPart part)) continue;
-            double cx = this.getX() + forward.x * part.forwardOffset + side.x * part.sideOffset;
-            double cz = this.getZ() + forward.z * part.forwardOffset + side.z * part.sideOffset;
-            double cy = this.getY() + part.yOffset - part.getBbHeight() / 2.0;
+            double cx = this.getX() + (forward.x * part.forwardOffset + side.x * part.sideOffset) * scale;
+            double cz = this.getZ() + (forward.z * part.forwardOffset + side.z * part.sideOffset) * scale;
+            double cy = this.getY() + part.yOffset * scale - part.getBbHeight() / 2.0;
 
             double prevX = part.getX(), prevY = part.getY(), prevZ = part.getZ();
             part.setPos(cx, cy, cz);

@@ -4,14 +4,15 @@ import com.dragonminez.Reference;
 import com.dragonminez.client.events.ForgeClientEvents;
 import com.dragonminez.client.gui.buttons.CustomTextureButton;
 import com.dragonminez.client.gui.buttons.TexturedTextButton;
+import com.dragonminez.client.gui.character.util.RacialSkillParts;
 import com.dragonminez.client.gui.character.util.ScaledScreen;
 import com.dragonminez.client.gui.tutorial.TutorialButton;
 import com.dragonminez.client.gui.tutorial.TutorialManager;
 import com.dragonminez.client.gui.tutorial.TutorialRect;
 import com.dragonminez.client.gui.tutorial.TutorialStep;
+import com.dragonminez.client.util.ScrollbarState;
 import com.dragonminez.client.util.TextUtil;
 import com.dragonminez.common.config.ConfigManager;
-import com.dragonminez.common.config.GeneralServerConfig;
 import com.dragonminez.common.config.RaceCharacterConfig;
 import com.dragonminez.common.hair.HairManager;
 import com.dragonminez.common.network.C2S.StatsSyncC2S;
@@ -29,7 +30,9 @@ import net.minecraft.client.gui.screens.inventory.InventoryScreen;
 import net.minecraft.client.renderer.CubeMap;
 import net.minecraft.client.renderer.PanoramaRenderer;
 import net.minecraft.network.chat.Component;
+import net.minecraft.network.chat.Style;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.util.FormattedCharSequence;
 import net.minecraft.util.Mth;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraftforge.api.distmarker.Dist;
@@ -49,6 +52,13 @@ public class RaceSelectionScreen extends ScaledScreen {
 	private static final ResourceLocation MENU_BIG = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID,
 			"textures/gui/menu/menubig.png");
 
+	private static final int RACIAL_PANEL_WIDTH = 130;
+	private static final int RACIAL_RIGHT_MARGIN = 8;
+	private static final int RACIAL_LINE_HEIGHT = 12;
+	private static final int RACIAL_MAX_LINES = 13;
+	private static final int RACIAL_BOTTOM_CLEARANCE = 30;
+	private static final int RACIAL_SCROLL_STEP = 24;
+
 	private final Map<String, PanoramaRenderer> panoramaCache = new HashMap<>();
 	private PanoramaRenderer currentPanorama;
 	private PanoramaRenderer previousPanorama;
@@ -56,6 +66,7 @@ public class RaceSelectionScreen extends ScaledScreen {
 	private float carouselAnim = 0.0f;
 	private long lastFrameNanos;
 	private int racialInfoBottom;
+	private final ScrollbarState racialBar = new ScrollbarState().step(RACIAL_SCROLL_STEP);
 
 	protected static boolean GLOBAL_SWITCHING = false;
 
@@ -224,7 +235,7 @@ public class RaceSelectionScreen extends ScaledScreen {
 		super.render(graphics, uiMouseX, uiMouseY, partialTick);
 
 		renderRaceInfo(graphics);
-		renderRacialInfo(graphics);
+		renderRacialInfo(graphics, uiMouseX, uiMouseY);
 
 		endUiScale(graphics);
 	}
@@ -351,88 +362,52 @@ public class RaceSelectionScreen extends ScaledScreen {
 		graphics.pose().popPose();
 	}
 
-	private void renderRacialInfo(GuiGraphics graphics) {
+	private void renderRacialInfo(GuiGraphics graphics, int mouseX, int mouseY) {
+		racialBar.clear();
 		List<String> races = getAvailableRaces();
 		if (races.isEmpty()) return;
 		if (selectedRaceIndex >= races.size()) selectedRaceIndex = 0;
 		String currentRace = races.get(selectedRaceIndex);
 
 		if (ConfigManager.getRaceCharacter(currentRace) == null) return;
-		GeneralServerConfig.RacialSkillsConfig config = ConfigManager.getServerConfig().getRacialSkills();
 		String racialSkill = ConfigManager.getRaceCharacter(currentRace).getRacialSkill();
 		if (racialSkill == null || racialSkill.isEmpty()) return;
 
-		String titleKey = "skill.dragonminez.racial_" + racialSkill;
-		String descKey = "skill.dragonminez.racial_" + racialSkill + ".desc";
-
-		Component titleComp = tr(titleKey);
-		String description = "";
-
-		switch (racialSkill) {
-			case "human" -> {
-				var human = config.getHuman();
-				description = tr(descKey,
-						percent(human.getTechniqueXpBonus()), percent(human.getAdrenalineThreshold()), human.getAdrenalineSeconds(),
-						percent(human.getAdrenalineDamageReduction()), percent(human.getAdrenalineAttackSpeed()),
-						percent(human.getAdrenalineMoveSpeed()), human.getAdrenalineCooldownSeconds(),
-						human.getAndroidBarrierMaxSeconds(), percent(human.getAndroidBarrierKiConversion()),
-						percent(human.getAndroidBarrierSurgeOverflow()), percent(human.getAndroidBarrierBreakOverflow()),
-						human.getAndroidBarrierCooldownSeconds(), human.getAndroidBarrierBrokenCooldownSeconds()).getString();
-			}
-			case "saiyan" -> {
-				int zenkaiHealth = (int) Math.round(config.getSaiyanZenkaiHealthRegen() * 100);
-				int zenkaiStat = (int) Math.round(config.getSaiyanZenkaiStatBoost() * 100);
-				int cooldown = config.getSaiyanZenkaiCooldownSeconds();
-				int maxUses = config.getSaiyanZenkaiAmount();
-				description = tr(descKey, zenkaiHealth, zenkaiStat, cooldown, maxUses).getString();
-			}
-			case "namekian" -> {
-				int assimHealth = (int) Math.round(config.getNamekianAssimilationHealthRegen() * 100);
-				int assimStat = (int) Math.round(config.getNamekianAssimilationStatBoost() * 100);
-				int maxUses = config.getNamekianAssimilationAmount();
-				description = tr(descKey, assimHealth, assimStat, maxUses).getString();
-			}
-			case "frostdemon" -> {
-				int tpBoost = (int) Math.round((config.getFrostDemonTPBoost() - 1.0) * 100);
-				description = tr(descKey, tpBoost).getString();
-			}
-			case "bioandroid" -> {
-				int drainRatio = (int) Math.round(config.getBioAndroidDrainRatio() * 100);
-				int cooldown = config.getBioAndroidCooldownSeconds();
-				description = tr(descKey, drainRatio, cooldown).getString();
-			}
-			case "majin" -> {
-				int absHealth = (int) Math.round(config.getMajinAbsorptionHealthRegen() * 100);
-				int absStat = (int) Math.round(config.getMajinAbsorptionStatCopy() * 100);
-				int maxUses = config.getMajinAbsorptionAmount();
-				description = tr(descKey, absHealth, absStat, maxUses).getString();
-			}
-			default -> description = tr(descKey).getString();
+		List<Component> paragraphs = new ArrayList<>();
+		for (RacialSkillParts.Part part : RacialSkillParts.forRace(racialSkill)) {
+			paragraphs.add(Component.empty().withStyle(Style.EMPTY.withFont(DMZ_FONT))
+					.append(part.name().withStyle(ChatFormatting.GOLD))
+					.append(Component.literal(": "))
+					.append(part.description()));
 		}
 
 		int uiWidth = getUiWidth();
 		int uiHeight = getUiHeight();
 
-		int panelWidth = 130;
-		int marginFromEdge = 68;
-		int boxStartX = uiWidth - marginFromEdge - panelWidth;
-		int centerX = boxStartX + (panelWidth / 2);
+		int panelRight = uiWidth - RACIAL_RIGHT_MARGIN;
+		int panelLeft = panelRight - RACIAL_PANEL_WIDTH;
 		int startY = (uiHeight / 2) - 50;
+		int viewHeight = Math.max(RACIAL_LINE_HEIGHT * 2, Math.min(RACIAL_MAX_LINES * RACIAL_LINE_HEIGHT, uiHeight - RACIAL_BOTTOM_CLEARANCE - startY));
 
 		graphics.pose().pushPose();
 		graphics.pose().translate(0.0D, 0.0D, 400.0D);
 
-		TextUtil.drawCenteredStringWithBorder(graphics, this.font, titleComp.copy().withStyle(ChatFormatting.BOLD), centerX + 60, startY - 12, 0xFF55FF55);
-		List<String> wrappedDesc = wrapText(description, panelWidth);
-		int textY = startY;
-
-		for (String line : wrappedDesc) {
-			TextUtil.drawCenteredStringWithBorder(graphics, this.font, txt(line), centerX + 60, textY, 0xFFCCCCCC);
-			textY += 12;
+		List<FormattedCharSequence> titleLines = TextUtil.split(this.font, tr("gui.dragonminez.race_selection.racial_skills").withStyle(ChatFormatting.BOLD), RACIAL_PANEL_WIDTH);
+		int titleY = startY - 12 - (titleLines.size() - 1) * RACIAL_LINE_HEIGHT;
+		for (FormattedCharSequence line : titleLines) {
+			TextUtil.drawCenteredStringWithBorder(graphics, this.font, line, panelLeft + RACIAL_PANEL_WIDTH / 2, titleY, 0xFF55FF55);
+			titleY += RACIAL_LINE_HEIGHT;
 		}
-		racialInfoBottom = textY;
+
+		List<FormattedCharSequence> lines = TextUtil.wrapScrollable(this.font, paragraphs, RACIAL_PANEL_WIDTH, viewHeight, RACIAL_LINE_HEIGHT, racialBar);
+		TextUtil.renderScrollableText(graphics, this.font, racialBar, lines, panelLeft, startY, RACIAL_PANEL_WIDTH, viewHeight, RACIAL_LINE_HEIGHT, 0xFFCCCCCC, false, mouseX, mouseY);
+		racialInfoBottom = startY + Math.min(lines.size() * RACIAL_LINE_HEIGHT, viewHeight);
 
 		graphics.pose().popPose();
+	}
+
+	private void resetRacialScroll() {
+		racialBar.reset();
 	}
 
 	private void renderPlayerModel(GuiGraphics graphics, int x, int y, int scale, float mouseX, float mouseY) {
@@ -543,6 +518,7 @@ public class RaceSelectionScreen extends ScaledScreen {
 		carouselAnim = -1.0f;
 
 		selectedRaceIndex = (selectedRaceIndex - 1 + races.size()) % races.size();
+		resetRacialScroll();
 		updateCharacterRace();
 
 		currentPanorama = getPanorama(races.get(selectedRaceIndex));
@@ -557,6 +533,7 @@ public class RaceSelectionScreen extends ScaledScreen {
 		carouselAnim = 1.0f;
 
 		selectedRaceIndex = (selectedRaceIndex + 1) % races.size();
+		resetRacialScroll();
 		updateCharacterRace();
 
 		currentPanorama = getPanorama(races.get(selectedRaceIndex));
@@ -582,6 +559,7 @@ public class RaceSelectionScreen extends ScaledScreen {
 		if (transitionState == TransitionState.CLOSING) return true;
 		double uiMouseX = toUiX(mouseX);
 		double uiMouseY = toUiY(mouseY);
+		if (racialBar.mouseClicked(uiMouseX, uiMouseY, button)) return true;
 		int centerX = getUiWidth() / 2 + 5;
 		int centerY = getUiHeight() / 2 + 70;
 		int modelRadius = 60;
@@ -600,12 +578,14 @@ public class RaceSelectionScreen extends ScaledScreen {
 	public boolean mouseReleased(double mouseX, double mouseY, int button) {
 		if (transitionState == TransitionState.CLOSING) return true;
 		isDraggingModel = false;
+		if (racialBar.mouseReleased()) return true;
 		return super.mouseReleased(mouseX, mouseY, button);
 	}
 
 	@Override
 	public boolean mouseDragged(double mouseX, double mouseY, int button, double dragX, double dragY) {
 		if (transitionState == TransitionState.CLOSING) return true;
+		if (racialBar.mouseDragged(toUiX(mouseX), toUiY(mouseY))) return true;
 		if (isDraggingModel) {
 			double uiMouseX = toUiX(mouseX);
 			double deltaX = uiMouseX - lastMouseX;
@@ -614,6 +594,13 @@ public class RaceSelectionScreen extends ScaledScreen {
 			return true;
 		}
 		return super.mouseDragged(mouseX, mouseY, button, dragX, dragY);
+	}
+
+	@Override
+	public boolean mouseScrolled(double mouseX, double mouseY, double delta) {
+		if (transitionState == TransitionState.CLOSING) return true;
+		if (racialBar.mouseScrolled(toUiX(mouseX), toUiY(mouseY), delta)) return true;
+		return super.mouseScrolled(mouseX, mouseY, delta);
 	}
 
 	@Override
@@ -671,9 +658,5 @@ public class RaceSelectionScreen extends ScaledScreen {
 		if (duration <= 0L) return 1.0f;
 		long elapsed = System.currentTimeMillis() - animationStartTime;
 		return net.minecraft.util.Mth.clamp(elapsed / (float) duration, 0.0f, 1.0f);
-	}
-
-	private static int percent(double ratio) {
-		return (int) Math.round(ratio * 100);
 	}
 }

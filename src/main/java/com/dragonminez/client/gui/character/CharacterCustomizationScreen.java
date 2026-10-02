@@ -104,18 +104,13 @@ public class CharacterCustomizationScreen extends ScaledScreen {
 	private int previewFormIndex = -1;
 
 	private int currentTabIndex = 0;
-	private int bodyTypePreviewScrollRows = 0;
-	private int hairPreviewScrollRows = 0;
-	private int eyesPreviewScrollRows = 0;
-	private int nosePreviewScrollRows = 0;
-	private int mouthPreviewScrollRows = 0;
-	private int tattooPreviewScrollRows = 0;
-	private final ScrollbarState bodyTypeBar = new ScrollbarState();
-	private final ScrollbarState hairBar = new ScrollbarState();
-	private final ScrollbarState eyesBar = new ScrollbarState();
-	private final ScrollbarState noseBar = new ScrollbarState();
-	private final ScrollbarState mouthBar = new ScrollbarState();
-	private final ScrollbarState tattooBar = new ScrollbarState();
+	private final ScrollbarState bodyTypeBar = previewGridBar();
+	private final ScrollbarState hairBar = previewGridBar();
+	private final ScrollbarState eyesBar = previewGridBar();
+	private final ScrollbarState noseBar = previewGridBar();
+	private final ScrollbarState mouthBar = previewGridBar();
+	private final ScrollbarState tattooBar = previewGridBar();
+	private final ScrollbarState[] previewGridBars = {bodyTypeBar, hairBar, eyesBar, noseBar, mouthBar, tattooBar};
 	private float playerRotation = 180.0f;
 	private float playerPitch = 12.0f;
 	private boolean isDraggingModel = false;
@@ -321,6 +316,11 @@ public class CharacterCustomizationScreen extends ScaledScreen {
 		return !activeTabs.contains(TabId.HAIR);
 	}
 
+	private int presetGridRows() {
+		boolean contentBelow = Character.GENDER_FEMALE.equalsIgnoreCase(character.getGender()) || shouldRenderFormPreviewInPreset();
+		return contentBelow ? PREVIEW_GRID_VISIBLE_ROWS - 1 : PREVIEW_GRID_VISIBLE_ROWS;
+	}
+
 	private void initEyesTab(int top) {
 		int y = top + 8;
 		addRenderableWidget(createColorButton(LEFT_PANEL_X + 33, y + 2, "eye1Color"));
@@ -512,7 +512,8 @@ public class CharacterCustomizationScreen extends ScaledScreen {
 				.size(sliderWidth, 10)
 				.range(0, 360)
 				.value(0)
-				.message(txt("Hue"))
+				.message(tr("gui.dragonminez.customization.hue"))
+				.gradient(ColorSlider.Gradient.HUE)
 				.onValueChange(val -> updateColorFromSliders())
 				.build();
 
@@ -521,7 +522,8 @@ public class CharacterCustomizationScreen extends ScaledScreen {
 				.size(sliderWidth, 10)
 				.range(100, 0)
 				.value(100)
-				.message(txt("Saturation"))
+				.message(tr("gui.dragonminez.customization.saturation"))
+				.gradient(ColorSlider.Gradient.SATURATION)
 				.onValueChange(val -> updateColorFromSliders())
 				.build();
 
@@ -530,7 +532,8 @@ public class CharacterCustomizationScreen extends ScaledScreen {
 				.size(sliderWidth, 10)
 				.range(100, 0)
 				.value(100)
-				.message(txt("Value"))
+				.message(tr("gui.dragonminez.customization.value"))
+				.gradient(ColorSlider.Gradient.VALUE)
 				.onValueChange(val -> updateColorFromSliders())
 				.build();
 
@@ -636,11 +639,13 @@ public class CharacterCustomizationScreen extends ScaledScreen {
 			case BODY -> renderBodyText(graphics, centerX, top);
 			case AURA_CLASS -> renderAuraClassText(graphics, centerX, top, mouseX, mouseY);
 		}
+
+		for (ScrollbarState bar : previewGridBars) bar.renderBar(graphics, mouseX, mouseY);
 	}
 
 	private void renderPresetText(GuiGraphics graphics, int centerX, int top) {
 		TextUtil.drawCenteredStringWithBorder(graphics, this.font, tr("gui.dragonminez.customization.body_type"), centerX, top + 2, 0xFF9B9B);
-		renderPreviewGrid(graphics, bodyTypeBar, top + 40, 0, getCombinedBodyTypeCount(), getCurrentCombinedBodyTypeValue(), PreviewRenderMode.FULL_BODY, false, PREVIEW_GRID_VISIBLE_ROWS, bodyTypePreviewScrollRows);
+		renderPreviewGrid(graphics, bodyTypeBar, top + 40, character.getMinBodyType(), getCombinedBodyTypeCount(), getCurrentCombinedBodyTypeValue(), PreviewRenderMode.FULL_BODY, false, presetGridRows());
 		if (Character.GENDER_FEMALE.equalsIgnoreCase(character.getGender())) {
 			TextUtil.drawCenteredStringWithBorder(graphics, this.font, txt(tr("gui.dragonminez.customization.chest_size").getString() + " x" + String.format("%.2f", character.getBoobScale())), centerX, top + 150, 0xFF9B9B);
 		}
@@ -653,44 +658,45 @@ public class CharacterCustomizationScreen extends ScaledScreen {
 		TextUtil.drawCenteredStringWithBorder(graphics, this.font, tr("gui.dragonminez.customization.hair"), centerX, top + 2, 0xFF9B9B);
 		int maxHairIndex = Math.max(0, getMaxHairForCurrentState() - 1);
 		Set<Integer> selected = getSelectedHeadBoneValues();
-		renderPreviewGrid(graphics, hairBar, top + 30, 0, maxHairIndex, selected::contains, PreviewRenderMode.HAIR_ONLY, true, PREVIEW_GRID_VISIBLE_ROWS, hairPreviewScrollRows);
+		renderPreviewGrid(graphics, hairBar, top + 30, 0, maxHairIndex, selected::contains, PreviewRenderMode.HAIR_ONLY, true, PREVIEW_GRID_VISIBLE_ROWS);
 		TextUtil.drawCenteredStringWithBorder(graphics, this.font, txt(getCurrentPreviewTransformationName()), centerX, top + 178, 0xFFFFFF);
 	}
 
 	private void renderEyesText(GuiGraphics graphics, int centerX, int top) {
 		TextUtil.drawCenteredStringWithBorder(graphics, this.font, tr("gui.dragonminez.customization.eyes"), centerX, top + 2, 0xFF9B9B);
-		renderPreviewGrid(graphics, eyesBar, top + 30, 0, Math.max(1, TextureCounter.getMaxEyesTypes(getEffectiveModelBase())), character.getEyesType(), PreviewRenderMode.EYES_ONLY, true, PREVIEW_GRID_VISIBLE_ROWS, eyesPreviewScrollRows);
+		renderPreviewGrid(graphics, eyesBar, top + 30, 0, Math.max(1, TextureCounter.getMaxEyesTypes(getEffectiveModelBase())), character.getEyesType(), PreviewRenderMode.EYES_ONLY, true, PREVIEW_GRID_VISIBLE_ROWS);
 	}
 
 	private void renderFaceText(GuiGraphics graphics, int centerX, int top) {
 		TextUtil.drawCenteredStringWithBorder(graphics, this.font, tr("gui.dragonminez.customization.nose"), centerX, top + 2, 0xFF9B9B);
-		renderPreviewGrid(graphics, noseBar, top + 20, 0, Math.max(1, TextureCounter.getMaxNoseTypes(getEffectiveModelBase())), character.getNoseType(), PreviewRenderMode.NOSE_ONLY, true, 1, nosePreviewScrollRows);
+		renderPreviewGrid(graphics, noseBar, top + 20, 0, Math.max(1, TextureCounter.getMaxNoseTypes(getEffectiveModelBase())), character.getNoseType(), PreviewRenderMode.NOSE_ONLY, true, 1);
 
 		TextUtil.drawCenteredStringWithBorder(graphics, this.font, tr("gui.dragonminez.customization.mouth"), centerX, top + 74, 0xFF9B9B);
-		renderPreviewGrid(graphics, mouthBar, top + 94, 0, Math.max(1, TextureCounter.getMaxMouthTypes(getEffectiveModelBase())), character.getMouthType(), PreviewRenderMode.MOUTH_ONLY, true, 2, mouthPreviewScrollRows);
+		renderPreviewGrid(graphics, mouthBar, top + 94, 0, Math.max(1, TextureCounter.getMaxMouthTypes(getEffectiveModelBase())), character.getMouthType(), PreviewRenderMode.MOUTH_ONLY, true, 2);
 	}
 
 	private void renderBodyText(GuiGraphics graphics, int centerX, int top) {
 		TextUtil.drawCenteredStringWithBorder(graphics, this.font, tr("gui.dragonminez.customization.tattoo"), centerX, top + 2, 0xFF9B9B);
-		renderPreviewGrid(graphics, tattooBar, top + 30, 0, tattooGridMax(), tattooGridValueForType(character.getTattooType()), PreviewRenderMode.TATTOO_ONLY, false, PREVIEW_GRID_VISIBLE_ROWS, tattooPreviewScrollRows);
-		int[] customCard = previewCardPosition(top + 30, 0, tattooGridMax(), tattooGridMax(), PREVIEW_GRID_VISIBLE_ROWS, tattooPreviewScrollRows);
+		renderPreviewGrid(graphics, tattooBar, top + 30, 0, tattooGridMax(), tattooGridValueForType(character.getTattooType()), PreviewRenderMode.TATTOO_ONLY, false, PREVIEW_GRID_VISIBLE_ROWS);
+		int[] customCard = previewCardPosition(tattooBar, top + 30, 0, tattooGridMax(), tattooGridMax());
 		if (customCard != null) {
+			tattooBar.beginClip(graphics, false);
 			graphics.pose().pushPose();
 			graphics.pose().translate(0.0D, 0.0D, 400.0D);
 			TextUtil.drawCenteredStringWithBorder(graphics, this.font, tr("gui.dragonminez.customization.tattoo.custom"), customCard[0] + PREVIEW_CARD_WIDTH / 2, customCard[1] + PREVIEW_CARD_HEIGHT - 11, 0xFFE8D0A1);
 			graphics.pose().popPose();
+			tattooBar.endClip(graphics);
 		}
 	}
 
-	private int[] previewCardPosition(int startY, int minValue, int maxValue, int value, int visibleRows, int scrollRows) {
+	private int[] previewCardPosition(ScrollbarState bar, int startY, int minValue, int maxValue, int value) {
 		if (value < minValue || value > maxValue) return null;
 		int startX = LEFT_PANEL_X + (LEFT_PANEL_WIDTH - (PREVIEW_GRID_COLUMNS * PREVIEW_CARD_WIDTH + (PREVIEW_GRID_COLUMNS - 1) * PREVIEW_CARD_GAP)) / 2;
-		int firstIndex = Mth.clamp(scrollRows, 0, getMaxScrollRows(minValue, maxValue, visibleRows)) * PREVIEW_GRID_COLUMNS;
-		int index = value - minValue - firstIndex;
-		if (index < 0 || index >= PREVIEW_GRID_COLUMNS * visibleRows) return null;
+		int index = value - minValue;
 		int col = index % PREVIEW_GRID_COLUMNS;
-		int row = index / PREVIEW_GRID_COLUMNS;
-		return new int[]{startX + col * (PREVIEW_CARD_WIDTH + PREVIEW_CARD_GAP), startY + row * (PREVIEW_CARD_HEIGHT + PREVIEW_CARD_GAP)};
+		int rowY = startY + (index / PREVIEW_GRID_COLUMNS) * (PREVIEW_CARD_HEIGHT + PREVIEW_CARD_GAP);
+		if (!bar.isVisible(rowY, PREVIEW_CARD_HEIGHT)) return null;
+		return new int[]{startX + col * (PREVIEW_CARD_WIDTH + PREVIEW_CARD_GAP), rowY - bar.scrollPixels()};
 	}
 
 	private void renderAuraClassText(GuiGraphics graphics, int centerX, int top, int mouseX, int mouseY) {
@@ -969,7 +975,7 @@ public class CharacterCustomizationScreen extends ScaledScreen {
 			return false;
 		}
 
-		if (button == 0 && tryStartGridScrollDrag(uiMouseX, uiMouseY)) {
+		if (ScrollbarState.clicked(uiMouseX, uiMouseY, button, previewGridBars)) {
 			return true;
 		}
 
@@ -997,42 +1003,13 @@ public class CharacterCustomizationScreen extends ScaledScreen {
 	@Override
 	public boolean mouseReleased(double mouseX, double mouseY, int button) {
 		isDraggingModel = false;
-		stopGridScrollDrag();
+		ScrollbarState.released(previewGridBars);
 		return super.mouseReleased(mouseX, mouseY, button);
-	}
-
-	private boolean tryStartGridScrollDrag(double mx, double my) {
-		if (bodyTypeBar.tryStartDrag(mx, my)) { bodyTypePreviewScrollRows = Math.round(bodyTypeBar.scrollFor(my)); return true; }
-		if (hairBar.tryStartDrag(mx, my)) { hairPreviewScrollRows = Math.round(hairBar.scrollFor(my)); return true; }
-		if (eyesBar.tryStartDrag(mx, my)) { eyesPreviewScrollRows = Math.round(eyesBar.scrollFor(my)); return true; }
-		if (noseBar.tryStartDrag(mx, my)) { nosePreviewScrollRows = Math.round(noseBar.scrollFor(my)); return true; }
-		if (mouthBar.tryStartDrag(mx, my)) { mouthPreviewScrollRows = Math.round(mouthBar.scrollFor(my)); return true; }
-		if (tattooBar.tryStartDrag(mx, my)) { tattooPreviewScrollRows = Math.round(tattooBar.scrollFor(my)); return true; }
-		return false;
-	}
-
-	private boolean updateGridScrollDrag(double my) {
-		if (bodyTypeBar.isDragging()) { bodyTypePreviewScrollRows = Math.round(bodyTypeBar.scrollFor(my)); return true; }
-		if (hairBar.isDragging()) { hairPreviewScrollRows = Math.round(hairBar.scrollFor(my)); return true; }
-		if (eyesBar.isDragging()) { eyesPreviewScrollRows = Math.round(eyesBar.scrollFor(my)); return true; }
-		if (noseBar.isDragging()) { nosePreviewScrollRows = Math.round(noseBar.scrollFor(my)); return true; }
-		if (mouthBar.isDragging()) { mouthPreviewScrollRows = Math.round(mouthBar.scrollFor(my)); return true; }
-		if (tattooBar.isDragging()) { tattooPreviewScrollRows = Math.round(tattooBar.scrollFor(my)); return true; }
-		return false;
-	}
-
-	private void stopGridScrollDrag() {
-		bodyTypeBar.stopDrag();
-		hairBar.stopDrag();
-		eyesBar.stopDrag();
-		noseBar.stopDrag();
-		mouthBar.stopDrag();
-		tattooBar.stopDrag();
 	}
 
 	@Override
 	public boolean mouseDragged(double mouseX, double mouseY, int button, double dragX, double dragY) {
-		if (updateGridScrollDrag(toUiY(mouseY))) {
+		if (ScrollbarState.dragged(toUiX(mouseX), toUiY(mouseY), previewGridBars)) {
 			return true;
 		}
 		if (isDraggingModel && !colorPickerVisible) {
@@ -1053,52 +1030,11 @@ public class CharacterCustomizationScreen extends ScaledScreen {
 	public boolean mouseScrolled(double mouseX, double mouseY, double delta) {
 		double uiMouseX = toUiX(mouseX);
 		double uiMouseY = toUiY(mouseY);
-		int top = getUiHeight() / 2 - LEFT_PANEL_HEIGHT / 2 + LEFT_PANEL_PADDING;
-		int direction = delta < 0 ? 1 : -1;
 
-		TabId tab = activeTabs.get(currentTabIndex);
-		switch (tab) {
-			case PRESET -> {
-				if (tryScrollGrid(uiMouseX, uiMouseY, top + 40, 0, getCombinedBodyTypeCount(), PREVIEW_GRID_VISIBLE_ROWS, direction, bodyTypePreviewScrollRows)) {
-					bodyTypePreviewScrollRows = clampScrollRows(0, getCombinedBodyTypeCount(), PREVIEW_GRID_VISIBLE_ROWS, bodyTypePreviewScrollRows + direction);
-					return true;
-				}
-			}
-			case HAIR -> {
-				int maxHair = Math.max(0, getMaxHairForCurrentState() - 1);
-				if (tryScrollGrid(uiMouseX, uiMouseY, top + 30, 0, maxHair, PREVIEW_GRID_VISIBLE_ROWS, direction, hairPreviewScrollRows)) {
-					hairPreviewScrollRows = clampScrollRows(0, maxHair, PREVIEW_GRID_VISIBLE_ROWS, hairPreviewScrollRows + direction);
-					return true;
-				}
-			}
-			case EYES -> {
-				int maxEyes = Math.max(1, TextureCounter.getMaxEyesTypes(getEffectiveModelBase()));
-				if (tryScrollGrid(uiMouseX, uiMouseY, top + 30, 0, maxEyes, PREVIEW_GRID_VISIBLE_ROWS, direction, eyesPreviewScrollRows)) {
-					eyesPreviewScrollRows = clampScrollRows(0, maxEyes, PREVIEW_GRID_VISIBLE_ROWS, eyesPreviewScrollRows + direction);
-					return true;
-				}
-			}
-			case FACE -> {
-				int maxNose = Math.max(1, TextureCounter.getMaxNoseTypes(getEffectiveModelBase()));
-				if (tryScrollGrid(uiMouseX, uiMouseY, top + 20, 0, maxNose, 1, direction, nosePreviewScrollRows)) {
-					nosePreviewScrollRows = clampScrollRows(0, maxNose, 1, nosePreviewScrollRows + direction);
-					return true;
-				}
-				int maxMouth = Math.max(1, TextureCounter.getMaxMouthTypes(getEffectiveModelBase()));
-				if (tryScrollGrid(uiMouseX, uiMouseY, top + 94, 0, maxMouth, 2, direction, mouthPreviewScrollRows)) {
-					mouthPreviewScrollRows = clampScrollRows(0, maxMouth, 2, mouthPreviewScrollRows + direction);
-					return true;
-				}
-			}
-			case BODY -> {
-				int maxTattoo = tattooGridMax();
-				if (tryScrollGrid(uiMouseX, uiMouseY, top + 30, 0, maxTattoo, PREVIEW_GRID_VISIBLE_ROWS, direction, tattooPreviewScrollRows)) {
-					tattooPreviewScrollRows = clampScrollRows(0, maxTattoo, PREVIEW_GRID_VISIBLE_ROWS, tattooPreviewScrollRows + direction);
-					return true;
-				}
-			}
-			default -> {
-			}
+		for (ScrollbarState bar : previewGridBars) {
+			if (!bar.canScroll() || !bar.contains(uiMouseX, uiMouseY)) continue;
+			if (delta > 0 ? bar.targetScroll() <= 0.0f : bar.targetScroll() >= bar.maxScroll()) continue;
+			if (bar.scrollWheel(delta)) return true;
 		}
 
 		return super.mouseScrolled(mouseX, mouseY, delta);
@@ -1743,12 +1679,12 @@ public class CharacterCustomizationScreen extends ScaledScreen {
 		TabId tab = activeTabs.get(currentTabIndex);
 
 		return switch (tab) {
-			case PRESET -> handlePreviewGridSelection(uiMouseX, uiMouseY, top + 40, 0, getCombinedBodyTypeCount(), PREVIEW_GRID_VISIBLE_ROWS, bodyTypePreviewScrollRows, this::setBodyTypeFromPreview);
-			case HAIR -> handlePreviewGridSelection(uiMouseX, uiMouseY, top + 30, 0, Math.max(0, getMaxHairForCurrentState() - 1), PREVIEW_GRID_VISIBLE_ROWS, hairPreviewScrollRows, this::setHairFromPreview);
-			case EYES -> handlePreviewGridSelection(uiMouseX, uiMouseY, top + 30, 0, Math.max(1, TextureCounter.getMaxEyesTypes(getEffectiveModelBase())), PREVIEW_GRID_VISIBLE_ROWS, eyesPreviewScrollRows, this::setEyesFromPreview);
-			case FACE -> handlePreviewGridSelection(uiMouseX, uiMouseY, top + 20, 0, Math.max(1, TextureCounter.getMaxNoseTypes(getEffectiveModelBase())), 1, nosePreviewScrollRows, this::setNoseFromPreview)
-					|| handlePreviewGridSelection(uiMouseX, uiMouseY, top + 94, 0, Math.max(1, TextureCounter.getMaxMouthTypes(getEffectiveModelBase())), 2, mouthPreviewScrollRows, this::setMouthFromPreview);
-			case BODY -> handlePreviewGridSelection(uiMouseX, uiMouseY, top + 30, 0, tattooGridMax(), PREVIEW_GRID_VISIBLE_ROWS, tattooPreviewScrollRows, this::setTattooFromPreview);
+			case PRESET -> handlePreviewGridSelection(uiMouseX, uiMouseY, top + 40, character.getMinBodyType(), getCombinedBodyTypeCount(), presetGridRows(), bodyTypeBar, this::setBodyTypeFromPreview);
+			case HAIR -> handlePreviewGridSelection(uiMouseX, uiMouseY, top + 30, 0, Math.max(0, getMaxHairForCurrentState() - 1), PREVIEW_GRID_VISIBLE_ROWS, hairBar, this::setHairFromPreview);
+			case EYES -> handlePreviewGridSelection(uiMouseX, uiMouseY, top + 30, 0, Math.max(1, TextureCounter.getMaxEyesTypes(getEffectiveModelBase())), PREVIEW_GRID_VISIBLE_ROWS, eyesBar, this::setEyesFromPreview);
+			case FACE -> handlePreviewGridSelection(uiMouseX, uiMouseY, top + 20, 0, Math.max(1, TextureCounter.getMaxNoseTypes(getEffectiveModelBase())), 1, noseBar, this::setNoseFromPreview)
+					|| handlePreviewGridSelection(uiMouseX, uiMouseY, top + 94, 0, Math.max(1, TextureCounter.getMaxMouthTypes(getEffectiveModelBase())), 2, mouthBar, this::setMouthFromPreview);
+			case BODY -> handlePreviewGridSelection(uiMouseX, uiMouseY, top + 30, 0, tattooGridMax(), PREVIEW_GRID_VISIBLE_ROWS, tattooBar, this::setTattooFromPreview);
 			default -> false;
 		};
 	}
@@ -1791,45 +1727,52 @@ public class CharacterCustomizationScreen extends ScaledScreen {
 		return builder.isEmpty() ? rawName : builder.toString();
 	}
 
-	private boolean handlePreviewGridSelection(double uiMouseX, double uiMouseY, int startY, int minValue, int maxValue, int visibleRows, int scrollRows, IntConsumer onSelect) {
+	private boolean handlePreviewGridSelection(double uiMouseX, double uiMouseY, int startY, int minValue, int maxValue, int visibleRows, ScrollbarState bar, IntConsumer onSelect) {
 		if (maxValue < minValue) return false;
+		if (!isPointInsideGrid(uiMouseX, uiMouseY, startY, visibleRows)) return false;
 		int total = maxValue - minValue + 1;
 		int startX = LEFT_PANEL_X + (LEFT_PANEL_WIDTH - (PREVIEW_GRID_COLUMNS * PREVIEW_CARD_WIDTH + (PREVIEW_GRID_COLUMNS - 1) * PREVIEW_CARD_GAP)) / 2;
-		int firstIndex = Mth.clamp(scrollRows, 0, getMaxScrollRows(minValue, maxValue, visibleRows)) * PREVIEW_GRID_COLUMNS;
-		int visible = Math.min(PREVIEW_GRID_COLUMNS * visibleRows, Math.max(0, total - firstIndex));
-
-		for (int i = 0; i < visible; i++) {
-			int value = minValue + firstIndex + i;
-			int col = i % PREVIEW_GRID_COLUMNS;
-			int row = i / PREVIEW_GRID_COLUMNS;
-			int cardX = startX + col * (PREVIEW_CARD_WIDTH + PREVIEW_CARD_GAP);
-			int cardY = startY + row * (PREVIEW_CARD_HEIGHT + PREVIEW_CARD_GAP);
-			if (uiMouseX >= cardX && uiMouseX <= cardX + PREVIEW_CARD_WIDTH && uiMouseY >= cardY && uiMouseY <= cardY + PREVIEW_CARD_HEIGHT) {
-				onSelect.accept(value);
-				return true;
-			}
-		}
-
-		return false;
+		double localX = uiMouseX - startX;
+		double localY = uiMouseY - startY + bar.scrollPixels();
+		int col = (int) (localX / (PREVIEW_CARD_WIDTH + PREVIEW_CARD_GAP));
+		int row = (int) (localY / (PREVIEW_CARD_HEIGHT + PREVIEW_CARD_GAP));
+		if (col >= PREVIEW_GRID_COLUMNS) return false;
+		if (localX - col * (PREVIEW_CARD_WIDTH + PREVIEW_CARD_GAP) > PREVIEW_CARD_WIDTH) return false;
+		if (localY - row * (PREVIEW_CARD_HEIGHT + PREVIEW_CARD_GAP) > PREVIEW_CARD_HEIGHT) return false;
+		int index = row * PREVIEW_GRID_COLUMNS + col;
+		if (index >= total) return false;
+		onSelect.accept(minValue + index);
+		return true;
 	}
 
-	private void renderPreviewGrid(GuiGraphics graphics, ScrollbarState bar, int startY, int minValue, int maxValue, int selectedValue, PreviewRenderMode mode, boolean headZoom, int visibleRows, int scrollRows) {
-		renderPreviewGrid(graphics, bar, startY, minValue, maxValue, (IntPredicate) (v -> v == selectedValue), mode, headZoom, visibleRows, scrollRows);
+	private static ScrollbarState previewGridBar() {
+		return new ScrollbarState().colors(0x88000000, 0xFFDDDDDD, 0xFFFFFFFF).minThumb(8).step(PREVIEW_CARD_HEIGHT + PREVIEW_CARD_GAP);
 	}
 
-	private void renderPreviewGrid(GuiGraphics graphics, ScrollbarState bar, int startY, int minValue, int maxValue, IntPredicate selectedPredicate, PreviewRenderMode mode, boolean headZoom, int visibleRows, int scrollRows) {
+	private void renderPreviewGrid(GuiGraphics graphics, ScrollbarState bar, int startY, int minValue, int maxValue, int selectedValue, PreviewRenderMode mode, boolean headZoom, int visibleRows) {
+		renderPreviewGrid(graphics, bar, startY, minValue, maxValue, (IntPredicate) (v -> v == selectedValue), mode, headZoom, visibleRows);
+	}
+
+	private void renderPreviewGrid(GuiGraphics graphics, ScrollbarState bar, int startY, int minValue, int maxValue, IntPredicate selectedPredicate, PreviewRenderMode mode, boolean headZoom, int visibleRows) {
 		if (maxValue < minValue) return;
 		int total = maxValue - minValue + 1;
-		int startX = LEFT_PANEL_X + (LEFT_PANEL_WIDTH - (PREVIEW_GRID_COLUMNS * PREVIEW_CARD_WIDTH + (PREVIEW_GRID_COLUMNS - 1) * PREVIEW_CARD_GAP)) / 2;
-		int firstIndex = Mth.clamp(scrollRows, 0, getMaxScrollRows(minValue, maxValue, visibleRows)) * PREVIEW_GRID_COLUMNS;
-		int visible = Math.min(PREVIEW_GRID_COLUMNS * visibleRows, Math.max(0, total - firstIndex));
+		int gridWidth = PREVIEW_GRID_COLUMNS * PREVIEW_CARD_WIDTH + (PREVIEW_GRID_COLUMNS - 1) * PREVIEW_CARD_GAP;
+		int startX = LEFT_PANEL_X + (LEFT_PANEL_WIDTH - gridWidth) / 2;
+		int rowPitch = PREVIEW_CARD_HEIGHT + PREVIEW_CARD_GAP;
+		int gridHeight = visibleRows * PREVIEW_CARD_HEIGHT + (visibleRows - 1) * PREVIEW_CARD_GAP;
+		int totalRows = Mth.ceil(total / (float) PREVIEW_GRID_COLUMNS);
+		int scrollbarX = startX + PREVIEW_GRID_COLUMNS * (PREVIEW_CARD_WIDTH + PREVIEW_CARD_GAP) - 4;
+		bar.layout(startX - 1, startY - 1, gridWidth + 2, gridHeight + 3, totalRows * rowPitch - PREVIEW_CARD_GAP + 3).barAt(scrollbarX).track(startY, gridHeight);
+		int scroll = bar.scrollPixels();
 
-		for (int i = 0; i < visible; i++) {
-			int value = minValue + firstIndex + i;
+		bar.beginClip(graphics, false);
+		for (int i = 0; i < total; i++) {
+			int value = minValue + i;
 			int col = i % PREVIEW_GRID_COLUMNS;
-			int row = i / PREVIEW_GRID_COLUMNS;
+			int rowY = startY + (i / PREVIEW_GRID_COLUMNS) * rowPitch;
+			if (!bar.isVisible(rowY - 1, PREVIEW_CARD_HEIGHT + 2)) continue;
 			int cardX = startX + col * (PREVIEW_CARD_WIDTH + PREVIEW_CARD_GAP);
-			int cardY = startY + row * (PREVIEW_CARD_HEIGHT + PREVIEW_CARD_GAP);
+			int cardY = rowY - scroll;
 			boolean selected = selectedPredicate.test(value);
 
 			int borderColor = selected ? 0xFFE8D0A1 : 0xFF2A2A2A;
@@ -1840,29 +1783,7 @@ public class CharacterCustomizationScreen extends ScaledScreen {
 			int previewY = headZoom ? cardY + PREVIEW_CARD_HEIGHT + 12 : cardY + PREVIEW_CARD_HEIGHT - 2;
 			renderPreviewModelVariant(graphics, cardX, cardY, cardX + PREVIEW_CARD_WIDTH / 2, previewY, previewScale, headZoom, mode, value);
 		}
-
-		int maxScrollRows = getMaxScrollRows(minValue, maxValue, visibleRows);
-		int gridHeight = visibleRows * PREVIEW_CARD_HEIGHT + (visibleRows - 1) * PREVIEW_CARD_GAP;
-		int scrollbarX = startX + PREVIEW_GRID_COLUMNS * (PREVIEW_CARD_WIDTH + PREVIEW_CARD_GAP) - 4;
-		int scrollbarW = 3;
-		bar.update(scrollbarX, scrollbarW, startY, gridHeight, maxScrollRows);
-		if (maxScrollRows > 0) {
-			graphics.fill(scrollbarX, startY, scrollbarX + scrollbarW, startY + gridHeight, 0x88000000);
-
-			int thumbHeight = Math.max(8, gridHeight / (maxScrollRows + 1));
-			int clampedScrollRows = Mth.clamp(scrollRows, 0, maxScrollRows);
-			int thumbY = startY + (clampedScrollRows * (gridHeight - thumbHeight) / maxScrollRows);
-
-			graphics.fill(scrollbarX, thumbY, scrollbarX + scrollbarW, thumbY + thumbHeight, 0xFFFFFFFF);
-		}
-	}
-
-	private boolean tryScrollGrid(double uiMouseX, double uiMouseY, int startY, int minValue, int maxValue, int visibleRows, int direction, int currentScrollRows) {
-		int maxScrollRows = getMaxScrollRows(minValue, maxValue, visibleRows);
-		if (maxScrollRows <= 0) return false;
-		if (!isPointInsideGrid(uiMouseX, uiMouseY, startY, visibleRows)) return false;
-		int next = Mth.clamp(currentScrollRows + direction, 0, maxScrollRows);
-		return next != currentScrollRows;
+		bar.endClip(graphics);
 	}
 
 	private boolean isPointInsideGrid(double uiMouseX, double uiMouseY, int startY, int visibleRows) {
@@ -1870,17 +1791,6 @@ public class CharacterCustomizationScreen extends ScaledScreen {
 		int width = PREVIEW_GRID_COLUMNS * PREVIEW_CARD_WIDTH + (PREVIEW_GRID_COLUMNS - 1) * PREVIEW_CARD_GAP;
 		int height = visibleRows * PREVIEW_CARD_HEIGHT + (visibleRows - 1) * PREVIEW_CARD_GAP;
 		return uiMouseX >= startX && uiMouseX <= startX + width && uiMouseY >= startY && uiMouseY <= startY + height;
-	}
-
-	private int getMaxScrollRows(int minValue, int maxValue, int visibleRows) {
-		if (maxValue < minValue) return 0;
-		int totalEntries = maxValue - minValue + 1;
-		int totalRows = Mth.ceil(totalEntries / (float) PREVIEW_GRID_COLUMNS);
-		return Math.max(0, totalRows - visibleRows);
-	}
-
-	private int clampScrollRows(int minValue, int maxValue, int visibleRows, int scrollRows) {
-		return Mth.clamp(scrollRows, 0, getMaxScrollRows(minValue, maxValue, visibleRows));
 	}
 
 	private void renderPreviewModelVariant(GuiGraphics graphics, int cardX, int cardY, int x, int y, int scale, boolean headZoom, PreviewRenderMode mode, int value) {

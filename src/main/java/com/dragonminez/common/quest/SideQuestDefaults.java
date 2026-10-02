@@ -48,6 +48,7 @@ final class SideQuestDefaults {
 		createBulmaErrandsCategory(sideQuestDir);
 		createMoviesCategory(sideQuestDir);
 		createGTCategory(sideQuestDir);
+		createDaimaCategory(sideQuestDir);
 	}
 
 	// ---- Helpers ----
@@ -121,6 +122,30 @@ final class SideQuestDefaults {
 		o.addProperty("meleeDamage", melee);
 		o.addProperty("kiDamage", ki);
 		return o;
+	}
+
+	private static JsonObject objQuestSpar(String entity, double hp, double melee, double ki) {
+		JsonObject o = objQuestKill(entity, 1, hp, melee, ki);
+		o.addProperty("type", "SPAR");
+		return o;
+	}
+
+	private static JsonObject noTransform(JsonObject killObjective) {
+		killObjective.addProperty("canTransform", false);
+		return killObjective;
+	}
+
+	private static JsonObject transformStats(JsonObject killObjective, double hp, double melee, double ki) {
+		killObjective.addProperty("TransformHealth", hp);
+		killObjective.addProperty("TransformMeleeDamage", melee);
+		killObjective.addProperty("TransformKiDamage", ki);
+		return killObjective;
+	}
+
+	private static JsonObject repeatable(JsonObject quest, int cooldownSeconds) {
+		quest.addProperty("repeatable", true);
+		quest.addProperty("repeat_cooldown_seconds", cooldownSeconds);
+		return quest;
 	}
 
 	private static JsonObject objKill(String entity, int count, String spawnMode, String countMode) {
@@ -1518,6 +1543,66 @@ final class SideQuestDefaults {
 						objTalkTo("goku")
 				},
 				new JsonObject[]{ rewTPS(400000), rewItem("dragonminez:senzu_bean", 5) }));
+	}
+
+	private static void createDaimaCategory(Path baseDir) {
+		Path dir = baseDir.resolve("daima");
+
+		writeQuestFile(dir, "daima_piccolo_training.json", sidequest(
+				"daima_piccolo_training", "dmz.sidequest.daima_piccolo_training.name", "dmz.sidequest.daima_piccolo_training.desc",
+				"training", false, "piccolo", "piccolo",
+				prereqs("AND", condSaga("daima_saga", 2)),
+				requirements("AND", condDimension("minecraft:overworld")),
+				new JsonObject[]{
+						objQuestSpar("dragonminez:saga_piccolo_kami", 300000, 12610, 11410),
+						objTalkTo("piccolo")
+				},
+				new JsonObject[]{ rewTPS(100000) }));
+
+		writeQuestFile(dir, "daima_medi_bug_market.json", repeatable(sidequest(
+				"daima_medi_bug_market", "dmz.sidequest.daima_medi_bug_market.name", "dmz.sidequest.daima_medi_bug_market.desc",
+				"collection", false, "bulma", "bulma",
+				prereqs("AND", condSaga("daima_saga", 4)),
+				new JsonObject[]{
+						objDeliver("minecraft:emerald", 12, "bulma"),
+						objDeliver("minecraft:gold_ingot", 8, "bulma"),
+						objTalkTo("bulma")
+				},
+				new JsonObject[]{
+						rewItem("dragonminez:medi_bug_ant", 4),
+						rewItem("dragonminez:medi_bug_rhino", 4),
+						rewItem("dragonminez:medi_bug_worm", 4),
+						rewItem("dragonminez:medi_bug_beetle_pair", 1)
+				}), 3600));
+
+		writeQuestFile(dir, "daima_mini_goku.json", sidequest(
+				"daima_mini_goku", "dmz.sidequest.daima_mini_goku.name", "dmz.sidequest.daima_mini_goku.desc",
+				"training", false, null, null,
+				prereqs("AND", condSaga("daima_saga", 6)),
+				requirements("AND", condDimension("dragonminez:demon_realm")),
+				new JsonObject[]{ noTransform(objQuestSpar("dragonminez:saga_goku_mini", 420000, 17650, 15970)) },
+				new JsonObject[]{ rewTPS(140000) }));
+
+		writeQuestFile(dir, "daima_majilite_research.json", sidequest(
+				"daima_majilite_research", "dmz.sidequest.daima_majilite_research.name", "dmz.sidequest.daima_majilite_research.desc",
+				"collection", false, "bulma", "bulma",
+				prereqs("AND", condSaga("daima_saga", 9)),
+				new JsonObject[]{
+						objDeliver("dragonminez:majilite", 16, "bulma"),
+						objTalkTo("bulma")
+				},
+				new JsonObject[]{ rewTPS(200000), rewItem("dragonminez:senzu_bean", 2) }));
+
+		writeQuestFile(dir, "daima_goku_full_power.json", sidequest(
+				"daima_goku_full_power", "dmz.sidequest.daima_goku_full_power.name", "dmz.sidequest.daima_goku_full_power.desc",
+				"combat", false, "goku", "goku",
+				prereqs("AND", condSaga("daima_saga", 17)),
+				requirements("AND", condDimension("minecraft:overworld"), condBiome("#dragonminez:is_plains")),
+				new JsonObject[]{
+						transformStats(objQuestKill("dragonminez:saga_goku_daima", 1, 287500, 66400, 60100), 431000, 76360, 69120),
+						objTalkTo("goku")
+				},
+				new JsonObject[]{ rewTPS(450000), rewItem("dragonminez:senzu_bean", 3) }));
 	}
 }
 

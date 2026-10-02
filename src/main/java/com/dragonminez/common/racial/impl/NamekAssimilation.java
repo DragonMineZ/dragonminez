@@ -158,11 +158,17 @@ public class NamekAssimilation implements RacialAbility {
 	}
 
 	public static void refreshWaterRegenBuff(StatsData data, GeneralServerConfig.NamekianRacialConfig config) {
-		double factor = 1.0 + config.getWaterRegenBonus();
+		double factor = config.getWaterRegenBonus();
 		int durationTicks = config.getWaterRegenSeconds() * 20;
-		data.getSecondaryStatEffects().apply(SecondaryStatEffects.HP_REGEN, factor, durationTicks);
-		data.getSecondaryStatEffects().apply(SecondaryStatEffects.ENE_REGEN, factor, durationTicks);
-		data.getSecondaryStatEffects().apply(SecondaryStatEffects.STM_REGEN, factor, durationTicks);
+		SecondaryStatEffects effects = data.getSecondaryStatEffects();
+		applyWaterBuff(effects, SecondaryStatEffects.HP_REGEN, factor, durationTicks);
+		applyWaterBuff(effects, SecondaryStatEffects.ENE_REGEN, factor, durationTicks);
+		applyWaterBuff(effects, SecondaryStatEffects.STM_REGEN, factor, durationTicks);
+	}
+
+	private static void applyWaterBuff(SecondaryStatEffects effects, String stat, double factor, int durationTicks) {
+		if (effects.getMultiplier(stat) < 1.0) return;
+		effects.apply(stat, factor, durationTicks);
 	}
 
 	public static void applyAssimilation(ServerPlayer player, StatsData data, LivingEntity target) {

@@ -347,6 +347,7 @@ public class PixelEditorScreen extends ScaledScreen {
 				.range(0, 360)
 				.value(Math.round(hsv[0]))
 				.message(tr("gui.dragonminez.customization.hue"))
+				.gradient(ColorSlider.Gradient.HUE)
 				.onValueChange(v -> updateColorFromSliders())
 				.build();
 		saturationSlider = new ColorSlider.Builder()
@@ -355,6 +356,7 @@ public class PixelEditorScreen extends ScaledScreen {
 				.range(100, 0)
 				.value(Math.round(hsv[1]))
 				.message(tr("gui.dragonminez.customization.saturation"))
+				.gradient(ColorSlider.Gradient.SATURATION)
 				.onValueChange(v -> updateColorFromSliders())
 				.build();
 		valueSlider = new ColorSlider.Builder()
@@ -363,6 +365,7 @@ public class PixelEditorScreen extends ScaledScreen {
 				.range(100, 0)
 				.value(Math.round(hsv[2]))
 				.message(tr("gui.dragonminez.customization.value"))
+				.gradient(ColorSlider.Gradient.VALUE)
 				.onValueChange(v -> updateColorFromSliders())
 				.build();
 		saturationSlider.setCurrentHue(hsv[0]);

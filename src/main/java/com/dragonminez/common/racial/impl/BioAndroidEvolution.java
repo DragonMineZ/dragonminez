@@ -49,9 +49,9 @@ import java.util.List;
 import java.util.UUID;
 
 public class BioAndroidEvolution implements RacialAbility {
-	private static final int STUN_DURATION_TICKS = 120;
-	private static final int CELL_JR_CHARGE_SECONDS = 5;
-	private static final float EXPLODE_SURVIVAL_HEALTH_RATIO = 0.01f;
+	public static final int STUN_DURATION_TICKS = 120;
+	public static final int CELL_JR_CHARGE_SECONDS = 5;
+	public static final float EXPLODE_SURVIVAL_HEALTH_RATIO = 0.01f;
 	private static final String EXPLODE_ANIMATION = "base.explodecell";
 	private static final int BLAST_TICKS = 20;
 	private static final int BLAST_DUST_PER_TICK = 14;
@@ -59,7 +59,7 @@ public class BioAndroidEvolution implements RacialAbility {
 	private static final int BLAST_COLOR_MAIN = 0xFFFC42;
 	private static final int BLAST_COLOR_BORDER = 0xFF8A3D;
 	private static final int BLAST_COLOR_OUTLINE = 0xFFFFFF;
-	private static final float CHANNEL_SECONDS = 5.0f;
+	public static final float CHANNEL_SECONDS = 5.0f;
 	private static final float DRAIN_RANGE = 6.0f;
 
 	@Override
@@ -531,7 +531,7 @@ public class BioAndroidEvolution implements RacialAbility {
 		});
 	}
 
-	private static void despawnAllCellJrs(RacialContext ctx) {
+	public static void despawnAllCellJrs(RacialContext ctx) {
 		if (!(ctx.player().level() instanceof ServerLevel serverLevel)) return;
 		for (UUID id : new ArrayList<>(ctx.data().getRacialData().getCellJrs())) {
 			if (serverLevel.getEntity(id) instanceof CellJrEntity jr) {

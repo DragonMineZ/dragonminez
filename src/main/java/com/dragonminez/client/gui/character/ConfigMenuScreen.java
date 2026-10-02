@@ -60,6 +60,7 @@ public class ConfigMenuScreen extends BaseMenuScreen {
 	private static final int SEARCH_HEIGHT = 14;
 	private static final int LIST_TOP = 52;
 	private static final int LIST_HEIGHT = 148;
+	private static final int LIST_CLIP_WIDTH = 131;
 	private static final float TEXT_SCALE = 0.75f;
 	private static final long FLASH_MILLIS = 1500L;
 
@@ -84,15 +85,11 @@ public class ConfigMenuScreen extends BaseMenuScreen {
 	private final Map<Category, HudSmoother> openProgress = new EnumMap<>(Category.class);
 	private final List<ConfigOption> configOptions = new ArrayList<>();
 	private final List<LayoutRow> layoutRows = new ArrayList<>();
-	private final ScrollbarState scrollBar = new ScrollbarState();
+	private final ScrollbarState scrollBar = new ScrollbarState().step(ROW_HEIGHT).minThumb(20);
 
 	private GeneralUserConfig userConfig;
 	private EditBox searchBox;
 	private String query = "";
-	private float scroll;
-	private float targetScroll;
-	private float maxScroll;
-	private long lastFrameNanos;
 	private int holdTicks;
 	private String heldKey;
 	private int heldDelta;
@@ -123,7 +120,7 @@ public class ConfigMenuScreen extends BaseMenuScreen {
 			String normalized = value.trim().toLowerCase(Locale.ROOT);
 			if (normalized.equals(query)) return;
 			query = normalized;
-			targetScroll = 0.0f;
+			scrollBar.scrollTo(0.0f);
 		});
 		this.addRenderableWidget(searchBox);
 	}
@@ -258,8 +255,8 @@ public class ConfigMenuScreen extends BaseMenuScreen {
 			cursor = blockBottom;
 		}
 
-		maxScroll = Math.max(0.0f, cursor - LIST_HEIGHT);
-		targetScroll = Mth.clamp(targetScroll, 0.0f, maxScroll);
+		int leftX = getLeftPanelX();
+		scrollBar.layout(leftX + 5, listTop(), LIST_CLIP_WIDTH, LIST_HEIGHT, cursor).barAt(leftX + 128);
 	}
 
 	private static float easeInOut(float t) {
@@ -272,14 +269,7 @@ public class ConfigMenuScreen extends BaseMenuScreen {
 		int uiMouseX = (int) Math.round(toUiX(mouseX));
 		int uiMouseY = (int) Math.round(toUiY(mouseY));
 
-		long now = System.nanoTime();
-		float dt = lastFrameNanos == 0L ? 0.0f : Math.min(0.1f, (now - lastFrameNanos) / 1_000_000_000.0f);
-		lastFrameNanos = now;
-
 		updateLayout();
-		if (scrollBar.isDragging()) scroll = targetScroll;
-		else scroll += (targetScroll - scroll) * (dt <= 0.0f ? 1.0f : 1.0f - (float) Math.exp(-dt / 0.07f));
-		scroll = Mth.clamp(scroll, 0.0f, maxScroll);
 
 		beginUiScale(graphics);
 		applyZoom(graphics, partialTick);
@@ -290,19 +280,19 @@ public class ConfigMenuScreen extends BaseMenuScreen {
 
 		graphics.pose().pushPose();
 		graphics.pose().translate(leftOffset, 0.0f, 0.0f);
-		renderLeftPanel(graphics, uiMouseX - Math.round(leftOffset), uiMouseY, leftOffset);
+		renderLeftPanel(graphics, uiMouseX - Math.round(leftOffset), uiMouseY);
 		graphics.pose().popPose();
 
 		graphics.pose().pushPose();
 		graphics.pose().translate(rightOffset, 0.0f, 0.0f);
-		renderRightPanel(graphics, uiMouseX - Math.round(rightOffset), uiMouseY, rightOffset);
+		renderRightPanel(graphics, uiMouseX - Math.round(rightOffset), uiMouseY);
 		graphics.pose().popPose();
 
 		super.render(graphics, uiMouseX, uiMouseY, partialTick);
 		endUiScale(graphics);
 	}
 
-	private void renderLeftPanel(GuiGraphics graphics, int mouseX, int mouseY, float slide) {
+	private void renderLeftPanel(GuiGraphics graphics, int mouseX, int mouseY) {
 		int panelX = getLeftPanelX();
 		int panelY = getPanelY();
 
@@ -317,10 +307,10 @@ public class ConfigMenuScreen extends BaseMenuScreen {
 		HudRender.nineSlice(graphics, STAT_BUTTONS, panelX + 12, panelY + SEARCH_TOP, 117, SEARCH_HEIGHT, 0, editing ? 126 : 108, 107, 18, 3, 256, 256);
 
 		int top = listTop();
-		enableListScissor(graphics, panelX + 5, panelX + 136, slide);
+		scrollBar.beginClip(graphics, panelX + 5, LIST_CLIP_WIDTH, false);
 		for (LayoutRow row : layoutRows) {
-			float y = top + row.y() - scroll;
-			if (y + ROW_HEIGHT < top || y > top + LIST_HEIGHT) continue;
+			if (!scrollBar.isVisible(top + row.y(), ROW_HEIGHT)) continue;
+			float y = top + row.y() - scrollBar.scroll();
 			boolean hovered = isRowHovered(row, mouseX, mouseY, panelX + 8, panelX + 126) || isRowHovered(row, mouseX + getLeftPanelX() - getRightPanelX(), mouseY, panelX + 8, panelX + 126);
 
 			if (row.isHeader()) {
@@ -328,18 +318,18 @@ public class ConfigMenuScreen extends BaseMenuScreen {
 				continue;
 			}
 
-			enableBlockScissor(graphics, row, panelX + 5, panelX + 136, slide);
+			enableBlockScissor(graphics, row, panelX + 5, panelX + 136);
 			if (hovered) HudRender.rect(graphics, panelX + 9, y, 117, ROW_HEIGHT - 1, 0x16FFFFFF);
 			drawScaledText(graphics, tr("gui.dragonminez." + row.option().key), panelX + 15, y + 6, 0xFFFFFFFF, false);
 			graphics.disableScissor();
 		}
-		graphics.disableScissor();
+		scrollBar.endClip(graphics);
 
 		if (layoutRows.isEmpty()) {
 			drawScaledText(graphics, tr("gui.dragonminez.config.no_results").withStyle(ChatFormatting.GRAY), panelX + 70, top + 8, 0xFFAAAAAA, true);
 		}
 
-		renderScrollBar(graphics, panelX + 128, top);
+		scrollBar.renderBar(graphics, mouseX, mouseY);
 	}
 
 	private void renderHeader(GuiGraphics graphics, Category category, int panelX, float y, boolean hovered) {
@@ -361,18 +351,7 @@ public class ConfigMenuScreen extends BaseMenuScreen {
 		drawScaledText(graphics, counter, panelX + 122 - this.font.width(counter) * TEXT_SCALE, y + 6, 0xFF9FB8AE, false);
 	}
 
-	private void renderScrollBar(GuiGraphics graphics, int barX, int top) {
-		scrollBar.update(barX, 3, top, LIST_HEIGHT, maxScroll);
-		if (maxScroll <= 0.0f) return;
-
-		float contentHeight = maxScroll + LIST_HEIGHT;
-		float thumbHeight = Math.max(20.0f, LIST_HEIGHT * (LIST_HEIGHT / contentHeight));
-		float thumbY = top + (LIST_HEIGHT - thumbHeight) * (scroll / maxScroll);
-		HudRender.rect(graphics, barX, top, 3, LIST_HEIGHT, 0xFF333333);
-		HudRender.rect(graphics, barX, thumbY, 3, thumbHeight, scrollBar.isDragging() ? 0xFFFFFFFF : 0xFFAAAAAA);
-	}
-
-	private void renderRightPanel(GuiGraphics graphics, int mouseX, int mouseY, float slide) {
+	private void renderRightPanel(GuiGraphics graphics, int mouseX, int mouseY) {
 		int panelX = getRightPanelX();
 		int panelY = getPanelY();
 
@@ -384,10 +363,10 @@ public class ConfigMenuScreen extends BaseMenuScreen {
 				panelX + 70, panelY + 17, 0xFFFFD700);
 
 		int top = listTop();
-		enableListScissor(graphics, panelX + 5, panelX + 136, slide);
+		scrollBar.beginClip(graphics, panelX + 5, LIST_CLIP_WIDTH, false);
 		for (LayoutRow row : layoutRows) {
-			float y = top + row.y() - scroll;
-			if (y + ROW_HEIGHT < top || y > top + LIST_HEIGHT) continue;
+			if (!scrollBar.isVisible(top + row.y(), ROW_HEIGHT)) continue;
+			float y = top + row.y() - scrollBar.scroll();
 			boolean hovered = isRowHovered(row, mouseX, mouseY, panelX + 8, panelX + 132) || isRowHovered(row, mouseX + getRightPanelX() - getLeftPanelX(), mouseY, panelX + 8, panelX + 132);
 
 			if (row.isHeader()) {
@@ -396,12 +375,12 @@ public class ConfigMenuScreen extends BaseMenuScreen {
 				continue;
 			}
 
-			enableBlockScissor(graphics, row, panelX + 5, panelX + 136, slide);
+			enableBlockScissor(graphics, row, panelX + 5, panelX + 136);
 			if (hovered) HudRender.rect(graphics, panelX + 15, y, 111, ROW_HEIGHT - 1, 0x16FFFFFF);
 			renderValue(graphics, row.option(), panelX, y, mouseX, mouseY, isInteractable(row, mouseY));
 			graphics.disableScissor();
 		}
-		graphics.disableScissor();
+		scrollBar.endClip(graphics);
 	}
 
 	private void renderValue(GuiGraphics graphics, ConfigOption option, int panelX, float y, int mouseX, int mouseY, boolean interactable) {
@@ -445,15 +424,9 @@ public class ConfigMenuScreen extends BaseMenuScreen {
 		graphics.pose().popPose();
 	}
 
-	private void enableListScissor(GuiGraphics graphics, int left, int right, float slide) {
+	private void enableBlockScissor(GuiGraphics graphics, LayoutRow row, int left, int right) {
 		int top = listTop();
-		graphics.enableScissor(toScreenCoord(left + slide), toScreenCoord(top), toScreenCoord(right + slide), toScreenCoord(top + LIST_HEIGHT));
-	}
-
-	private void enableBlockScissor(GuiGraphics graphics, LayoutRow row, int left, int right, float slide) {
-		int top = listTop();
-		graphics.enableScissor(toScreenCoord(left + slide), toScreenCoord(top + row.blockTop() - scroll),
-				toScreenCoord(right + slide), toScreenCoord(top + row.blockBottom() - scroll));
+		HudRender.scissor(graphics, left, top + row.blockTop() - scrollBar.scroll(), right, top + row.blockBottom() - scrollBar.scroll());
 	}
 
 	private static boolean inside(double mouseX, double mouseY, float x, float y, float width, float height) {
@@ -463,12 +436,12 @@ public class ConfigMenuScreen extends BaseMenuScreen {
 	private boolean isInteractable(LayoutRow row, double mouseY) {
 		int top = listTop();
 		if (mouseY < top || mouseY >= top + LIST_HEIGHT) return false;
-		return mouseY >= top + row.blockTop() - scroll && mouseY < top + row.blockBottom() - scroll;
+		return mouseY >= top + row.blockTop() - scrollBar.scroll() && mouseY < top + row.blockBottom() - scrollBar.scroll();
 	}
 
 	private boolean isRowHovered(LayoutRow row, double mouseX, double mouseY, int left, int right) {
 		if (mouseX < left || mouseX >= right || !isInteractable(row, mouseY)) return false;
-		float y = listTop() + row.y() - scroll;
+		float y = listTop() + row.y() - scrollBar.scroll();
 		return mouseY >= y && mouseY < y + ROW_HEIGHT;
 	}
 
@@ -518,7 +491,7 @@ public class ConfigMenuScreen extends BaseMenuScreen {
 
 		boolean overPanels = uiMouseX >= getLeftPanelX() && uiMouseX <= getRightPanelX() + 141;
 		if (overPanels && uiMouseY >= panelY && uiMouseY <= panelY + 213) {
-			targetScroll = Mth.clamp(targetScroll - (float) delta * ROW_HEIGHT, 0.0f, maxScroll);
+			scrollBar.scrollWheel(delta);
 			return true;
 		}
 		return super.mouseScrolled(mouseX, mouseY, delta);
@@ -534,10 +507,7 @@ public class ConfigMenuScreen extends BaseMenuScreen {
 			this.setFocused(null);
 		}
 
-		if (button == 0 && scrollBar.tryStartDrag(uiMouseX, uiMouseY)) {
-			targetScroll = Mth.clamp(scrollBar.scrollFor(uiMouseY), 0.0f, maxScroll);
-			return true;
-		}
+		if (scrollBar.mouseClicked(uiMouseX, uiMouseY, button)) return true;
 
 		if (button == 0) {
 			LayoutRow row = rowAt(uiMouseX, uiMouseY);
@@ -556,7 +526,7 @@ public class ConfigMenuScreen extends BaseMenuScreen {
 
 		ConfigOption option = row.option();
 		int panelX = getRightPanelX();
-		float y = listTop() + row.y() - scroll;
+		float y = listTop() + row.y() - scrollBar.scroll();
 
 		switch (option.type) {
 			case BOOLEAN -> {
@@ -587,10 +557,7 @@ public class ConfigMenuScreen extends BaseMenuScreen {
 
 	@Override
 	public boolean mouseDragged(double mouseX, double mouseY, int button, double dragX, double dragY) {
-		if (scrollBar.isDragging()) {
-			targetScroll = Mth.clamp(scrollBar.scrollFor(toUiY(mouseY)), 0.0f, maxScroll);
-			return true;
-		}
+		if (scrollBar.mouseDragged(toUiX(mouseX), toUiY(mouseY))) return true;
 		return super.mouseDragged(mouseX, mouseY, button, dragX, dragY);
 	}
 
@@ -598,10 +565,7 @@ public class ConfigMenuScreen extends BaseMenuScreen {
 	public boolean mouseReleased(double mouseX, double mouseY, int button) {
 		heldKey = null;
 
-		if (scrollBar.isDragging()) {
-			scrollBar.stopDrag();
-			return true;
-		}
+		if (scrollBar.mouseReleased()) return true;
 		return super.mouseReleased(mouseX, mouseY, button);
 	}
 

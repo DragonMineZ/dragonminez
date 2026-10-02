@@ -4,6 +4,7 @@ import com.dragonminez.common.config.ConfigManager;
 import com.dragonminez.common.config.FormConfig;
 import com.dragonminez.common.init.MainItems;
 import com.dragonminez.common.init.entities.ki.KiBlastEntity;
+import com.dragonminez.common.racial.impl.GlindDivinity;
 import com.dragonminez.common.stats.StatsData;
 import com.dragonminez.common.stats.extras.ActionMode;
 import com.dragonminez.common.util.lists.FrostDemonForms;
@@ -841,6 +842,7 @@ public class TransformationsHelper {
 
 	public static boolean isInstantTransmissionBlocked(StatsData requester, StatsData target) {
 		if (target.getStatus().isAndroidUpgraded()) return true;
+		if (GlindDivinity.isHiddenFrom(target, requester)) return true;
 		return hasGodFormActive(target) && requester.getSkills().getSkillLevel("godforms") < 1;
 	}
 

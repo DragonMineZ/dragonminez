@@ -167,6 +167,7 @@ public class FormConfig {
 		private String formCombo = "";
 		private String customModel = "";
 		private boolean keepBaseFormHeadBones = false;
+		private Boolean hideTail = false;
 		private String transformationAnimation = "transf.generic";
 		private String bodyColor1 = "";
 		private String bodyColor2 = "";
@@ -176,6 +177,7 @@ public class FormConfig {
 		private String hairType = "";
 		private String forcedHairCode = "";
 		private String hairColor = "";
+		private Boolean furUsesHairColor = false;
 		private String eye1Color = "";
 		private String eye2Color = "";
 		private String auraType = "kakarot";
@@ -403,6 +405,14 @@ public class FormConfig {
 
 		public Double getStackDrainMultiplier() {
 			return Math.max(0.01, stackDrainMultiplier);
+		}
+
+		public boolean hidesTail() {
+			return Boolean.TRUE.equals(hideTail);
+		}
+
+		public boolean usesHairColorForFur() {
+			return Boolean.TRUE.equals(furUsesHairColor);
 		}
 
 		public Boolean hasCustomModel() {

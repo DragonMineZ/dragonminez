@@ -55,7 +55,7 @@ public class ConfigManager {
 	private static final Path RACES_DIR = CONFIG_DIR.resolve("races");
 	private static final Path RAIDS_DIR = CONFIG_DIR.resolve("raids");
 	private static final Path TOURNAMENTS_DIR = CONFIG_DIR.resolve("tournaments");
-	private static final String[] DEFAULT_RACES = {"human", "saiyan", "namekian", "frostdemon", "bioandroid", "majin"};
+	private static final String[] DEFAULT_RACES = {"human", "saiyan", "namekian", "frostdemon", "bioandroid", "majin", "glind"};
 	private static final Set<String> RACES_WITH_GENDER = new HashSet<>(Arrays.asList("human", "saiyan", "majin"));
 
 	private static final Map<String, RaceStatsConfig> RACE_STATS = new HashMap<>();
@@ -887,6 +887,7 @@ public class ConfigManager {
 				case "frostdemon" -> setupFrostDemonCharacter(config);
 				case "bioandroid" -> setupBioAndroidCharacter(config);
 				case "majin" -> setupMajinCharacter(config);
+				case "glind" -> setupGlindCharacter(config);
 				default -> setupDefaultCharacter(config);
 			}
 		} else {
@@ -1034,6 +1035,31 @@ public class ConfigManager {
 		config.setDefaultEye2Color("#B40000");
 		config.setDefaultAuraColor("#FF6DFF");
 		config.setFormSkillTpCosts("superforms", new Integer[]{23000, 47000, 78000, 114000});
+		config.setFormSkillTpCosts("godforms", new Integer[]{});
+		config.setFormSkillTpCosts("legendaryforms", new Integer[]{-1, -1, -1});
+	}
+
+	private static void setupGlindCharacter(RaceCharacterConfig config) {
+		config.setCustomModel("human");
+		config.setIsLayered(true);
+		config.setRacialSkill("glind");
+		config.setHeadBones(new String[]{"hair"});
+		config.setDefaultModelScaling(new Float[]{0.9375f, 0.9375f, 0.9375f});
+		config.setDefaultBodyType(1);
+		config.setSlimBodyTypes(new Integer[]{2});
+		config.setDefaultHairType(28);
+		config.setDefaultEyesType(0);
+		config.setDefaultNoseType(0);
+		config.setDefaultMouthType(0);
+		config.setDefaultTattooType(0);
+		config.setDefaultBodyColor("#D2A3DA");
+		config.setDefaultBodyColor2("#D2A3DA");
+		config.setDefaultBodyColor3("#D2A3DA");
+		config.setDefaultHairColor("#EDEDED");
+		config.setDefaultEye1Color("#222629");
+		config.setDefaultEye2Color("#222629");
+		config.setDefaultAuraColor("#E3C4FF");
+		config.setFormSkillTpCosts("superforms", new Integer[]{18000, 31000, 52000, 83000, 117000});
 		config.setFormSkillTpCosts("godforms", new Integer[]{});
 		config.setFormSkillTpCosts("legendaryforms", new Integer[]{-1, -1, -1});
 	}

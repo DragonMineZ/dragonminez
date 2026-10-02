@@ -190,12 +190,6 @@ public abstract class BaseMenuScreen extends ScaledScreen {
 		}
 	}
 
-	protected int calculateScrollOffset(double uiMouseY, int startY, int scrollBarHeight, int maxScrollValue) {
-		float scrollPercent = (float) (uiMouseY - startY) / scrollBarHeight;
-		scrollPercent = Mth.clamp(scrollPercent, 0.0f, 1.0f);
-		return Math.round(scrollPercent * maxScrollValue);
-	}
-
 	@Override
 	public boolean isPauseScreen() {
 		return false;

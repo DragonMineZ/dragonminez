@@ -43,12 +43,8 @@ public class MinigamesScreen extends BaseMenuScreen {
 	private static final int LIST_ITEM_HEIGHT = 20;
 
 	private int selectedIndex = 0;
-	private float descScrollY = 0;
-	private float targetDescScrollY = 0;
 	private float panelSlide;
-	private int descContentHeight = 0;
-	private int descViewportHeight = 0;
-	private final ScrollbarState descBar = new ScrollbarState();
+	private final ScrollbarState descBar = new ScrollbarState().step(12).minThumb(20);
 	private int shadowDummyPercent = 50;
 
 	private TexturedTextButton playButton;
@@ -169,7 +165,6 @@ public class MinigamesScreen extends BaseMenuScreen {
 
 		beginUiScale(graphics);
 		applyZoom(graphics, partialTick);
-		this.descScrollY = Mth.lerp(frameEase(0.07f), this.descScrollY, this.targetDescScrollY);
 		renderPlayerModel(graphics, getUiWidth() / 2 + 5, getUiHeight() / 2 + 70, 75, uiMouseX, uiMouseY);
 
 		float leftOffset = getLeftPanelSwitchOffset(partialTick);
@@ -245,10 +240,11 @@ public class MinigamesScreen extends BaseMenuScreen {
 				rightPanelX + 70, rightPanelY + 17, 0xFFFFD700);
 
 		if (isShadowDummyEntry(selectedIndex)) {
+			descBar.clear();
 			renderShadowDummyPanel(graphics, rightPanelX, rightPanelY, centerY);
 		} else {
 			if (hasAccess(selectedIndex)) {
-				renderDescription(graphics, rightPanelX, rightPanelY, 142);
+				renderDescription(graphics, rightPanelX, rightPanelY, 142, mouseX, mouseY);
 			} else {
 				TrainingConfig trainingConfig = ConfigManager.getTrainingConfig();
 				Component learnLine = tr("gui.dragonminez.minigames.learn").append(" ").append(tr("entity.dragonminez.questnpc." + master(selectedIndex)));
@@ -257,7 +253,7 @@ public class MinigamesScreen extends BaseMenuScreen {
 				int wrapWidth = (int) (118 / 0.75f);
 				int blockHeight = (this.font.split(learnLine, wrapWidth).size() + this.font.split(progressLine, wrapWidth).size()) * 9 + 3;
 				int blockTop = rightPanelY + 213 - 12 - blockHeight;
-				renderDescription(graphics, rightPanelX, rightPanelY, Math.max(40, Math.min(142, blockTop - 4 - (rightPanelY + 40))));
+				renderDescription(graphics, rightPanelX, rightPanelY, Math.max(40, Math.min(142, blockTop - 4 - (rightPanelY + 40))), mouseX, mouseY);
 				int y = drawWrappedCentered(graphics, learnLine, rightPanelX, blockTop, 0xFFFF7777) + 3;
 				drawWrappedCentered(graphics, progressLine, rightPanelX, y, 0xFFFFAA55);
 			}
@@ -321,46 +317,28 @@ public class MinigamesScreen extends BaseMenuScreen {
 		return StatsProvider.get(StatsCapability.INSTANCE, mc.player).map(d -> d.getSkills().getSkillLevel(skill)).orElse(0);
 	}
 
-	private void renderDescription(GuiGraphics graphics, int panelX, int panelY, int viewportHeight) {
+	private void renderDescription(GuiGraphics graphics, int panelX, int panelY, int viewportHeight, int mouseX, int mouseY) {
 		int textX = panelX + 12;
 		int top = panelY + 40;
-		descViewportHeight = viewportHeight;
 		int wrapWidth = (int) (118 / 0.75f);
 
 		FormattedText desc = tr("gui.dragonminez.minigame." + MINIGAMES[selectedIndex] + ".desc");
-		List<FormattedCharSequence> lines = this.font.split(desc, wrapWidth);
+		List<FormattedCharSequence> lines = TextUtil.split(this.font, desc, wrapWidth);
 		int lineHeight = 9;
-		descContentHeight = lines.size() * lineHeight;
 
-		graphics.enableScissor(
-				toScreenCoord(textX - 2 + panelSlide),
-				toScreenCoord(top),
-				toScreenCoord(panelX + 130 + panelSlide),
-				toScreenCoord(top + descViewportHeight)
-		);
-
-		graphics.pose().pushPose();
-		graphics.pose().translate(0.0f, -descScrollY, 0.0f);
+		descBar.layout(textX - 2, top, panelX + 130 - (textX - 2), viewportHeight, lines.size() * lineHeight).barAt(panelX + 130);
+		descBar.beginClip(graphics);
 		graphics.pose().scale(0.75f, 0.75f, 0.75f);
 		int drawY = top;
 		for (FormattedCharSequence line : lines) {
-			TextUtil.drawStringWithBorder(graphics, this.font, line,
-					(int) (textX / 0.75f), (int) (drawY / 0.75f), 0xFFE0E0E0);
+			if (descBar.isVisible(drawY, lineHeight)) {
+				TextUtil.drawStringWithBorder(graphics, this.font, line,
+						(int) (textX / 0.75f), (int) (drawY / 0.75f), 0xFFE0E0E0);
+			}
 			drawY += lineHeight;
 		}
-		graphics.pose().popPose();
-		graphics.disableScissor();
-
-		int maxScroll = Math.max(0, descContentHeight - descViewportHeight);
-		descBar.update(panelX + 130, 3, top, descViewportHeight, maxScroll);
-		if (maxScroll > 0) {
-			int barX = panelX + 130;
-			graphics.fill(barX, top, barX + 3, top + descViewportHeight, 0xFF333333);
-			float percent = Mth.clamp(descScrollY / maxScroll, 0f, 1f);
-			int indicatorH = Math.max(20, (int) (descViewportHeight * ((float) descViewportHeight / descContentHeight)));
-			int indicatorY = top + (int) ((descViewportHeight - indicatorH) * percent);
-			graphics.fill(barX, indicatorY, barX + 3, indicatorY + indicatorH, 0xFFAAAAAA);
-		}
+		descBar.endClip(graphics);
+		descBar.renderBar(graphics, mouseX, mouseY);
 	}
 
 	@Override
@@ -368,17 +346,13 @@ public class MinigamesScreen extends BaseMenuScreen {
 		double uiMouseX = toUiX(mouseX);
 		double uiMouseY = toUiY(mouseY);
 
-		if (descBar.tryStartDrag(uiMouseX, uiMouseY)) {
-			targetDescScrollY = descBar.scrollFor(uiMouseY);
-			return true;
-		}
+		if (descBar.mouseClicked(uiMouseX - panelSlide, uiMouseY, button)) return true;
 
 		for (int i = 0; i < MINIGAMES.length; i++) {
 			if (isOverListItem(uiMouseX, uiMouseY, i)) {
 				if (selectedIndex != i) {
 					selectedIndex = i;
-					targetDescScrollY = 0;
-					descScrollY = 0;
+					descBar.reset();
 					refreshPlayButton();
 				}
 				return true;
@@ -389,35 +363,19 @@ public class MinigamesScreen extends BaseMenuScreen {
 
 	@Override
 	public boolean mouseDragged(double mouseX, double mouseY, int button, double dragX, double dragY) {
-		if (descBar.isDragging()) {
-			targetDescScrollY = descBar.scrollFor(toUiY(mouseY));
-			return true;
-		}
+		if (descBar.mouseDragged(toUiX(mouseX) - panelSlide, toUiY(mouseY))) return true;
 		return super.mouseDragged(mouseX, mouseY, button, dragX, dragY);
 	}
 
 	@Override
 	public boolean mouseReleased(double mouseX, double mouseY, int button) {
-		if (descBar.isDragging()) {
-			descBar.stopDrag();
-			return true;
-		}
+		if (descBar.mouseReleased()) return true;
 		return super.mouseReleased(mouseX, mouseY, button);
 	}
 
 	@Override
 	public boolean mouseScrolled(double mouseX, double mouseY, double delta) {
-		double uiMouseX = toUiX(mouseX);
-		double uiMouseY = toUiY(mouseY);
-		int rightPanelX = getUiWidth() - 158;
-		int centerY = getUiHeight() / 2;
-		int top = (centerY - 105) + 35;
-
-		if (uiMouseX >= rightPanelX && uiMouseX <= rightPanelX + 141 && uiMouseY >= top && uiMouseY <= top + descViewportHeight) {
-			int maxScroll = Math.max(0, descContentHeight - descViewportHeight);
-			targetDescScrollY = Mth.clamp(targetDescScrollY - (float) (delta * 12.0), 0f, maxScroll);
-			return true;
-		}
+		if (descBar.mouseScrolled(toUiX(mouseX) - panelSlide, toUiY(mouseY), delta)) return true;
 		return super.mouseScrolled(mouseX, mouseY, delta);
 	}
 

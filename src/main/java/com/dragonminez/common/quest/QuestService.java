@@ -6,6 +6,7 @@ import com.dragonminez.common.events.DMZEvent;
 import com.dragonminez.common.init.entities.MastersEntity;
 import com.dragonminez.common.init.entities.ai.AiTierResolver;
 import com.dragonminez.common.init.entities.questnpc.QuestNPCEntity;
+import com.dragonminez.common.init.entities.sagas.DBSagasEntity;
 import com.dragonminez.common.network.NetworkHandler;
 import com.dragonminez.common.network.S2C.ProgressionSyncS2C;
 import com.dragonminez.common.network.S2C.SagaTitleCardS2C;
@@ -17,6 +18,7 @@ import com.dragonminez.common.stats.StatsData;
 import com.dragonminez.common.stats.StatsProvider;
 import net.minecraft.ChatFormatting;
 import net.minecraft.core.BlockPos;
+import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerLevel;
@@ -741,8 +743,38 @@ public final class QuestService {
 				}
 
 				requester.serverLevel().addFreshEntity(entity);
+				if (entity instanceof DBSagasEntity sagasEntity && sagasEntity.questSpawnsOneAtATime()) {
+					break;
+				}
 			}
 		}
+	}
+
+	public static boolean hasPendingKills(ServerLevel level, CompoundTag questTags) {
+		if (!questTags.contains(QUEST_KEY_TAG) || !questTags.contains(QUEST_OBJECTIVE_INDEX_TAG)
+				|| !questTags.contains(QUEST_OWNER_TAG)) {
+			return false;
+		}
+
+		ServerPlayer owner;
+		try {
+			owner = level.getServer().getPlayerList().getPlayer(UUID.fromString(questTags.getString(QUEST_OWNER_TAG)));
+		} catch (IllegalArgumentException e) {
+			return false;
+		}
+		if (owner == null) return false;
+
+		String questKey = questTags.getString(QUEST_KEY_TAG);
+		int objectiveIndex = questTags.getInt(QUEST_OBJECTIVE_INDEX_TAG);
+		Quest quest = QuestRegistry.getQuest(questKey);
+		if (quest == null || objectiveIndex < 0 || objectiveIndex >= quest.getObjectives().size()) return false;
+
+		ServerPlayer controller = PartyManager.resolveQuestController(owner);
+		PlayerQuestData pqd = StatsProvider.get(StatsCapability.INSTANCE, controller).resolve()
+				.map(StatsData::getPlayerQuestData).orElse(null);
+		if (pqd == null || pqd.getQuestStatus(questKey) != PlayerQuestData.QuestStatus.ACCEPTED) return false;
+
+		return pqd.getObjectiveProgress(questKey, objectiveIndex) < quest.getObjectiveRequired(pqd, questKey, objectiveIndex);
 	}
 
 	// Quest-spawned enemies used to appear on top of the player. Instead, drop them ~10 blocks away in a

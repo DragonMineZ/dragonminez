@@ -3,19 +3,25 @@ package com.dragonminez.client.render.layer;
 import com.dragonminez.client.render.DMZRendererCache;
 import com.dragonminez.Reference;
 import com.dragonminez.client.render.HeadPortraitRenderer;
+import com.dragonminez.client.render.hair.SaiyanTailMeshBuilder;
 import com.dragonminez.client.render.firstperson.dto.FirstPersonManager;
+import com.dragonminez.client.render.util.DonorBoneRenderer;
 import com.dragonminez.client.render.util.ModRenderTypes;
 import com.dragonminez.client.util.ColorUtils;
+import com.dragonminez.client.util.SaiyanTailRules;
+import com.dragonminez.client.util.SkinGathererProvider;
 import com.dragonminez.common.config.ConfigManager;
 import com.dragonminez.common.config.FormConfig;
 import com.dragonminez.common.config.RaceCharacterConfig;
 import com.dragonminez.common.init.MainEffects;
 import com.dragonminez.common.init.MainItems;
 import com.dragonminez.common.init.item.WeightItem;
+import com.dragonminez.common.stats.FusedData;
 import com.dragonminez.common.stats.StatsCapability;
 import com.dragonminez.common.stats.StatsData;
 import com.dragonminez.common.stats.StatsProvider;
 import com.dragonminez.common.stats.extras.ActionMode;
+import com.dragonminez.common.util.FusionTraits;
 import com.dragonminez.common.util.TransformationsHelper;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
@@ -34,6 +40,9 @@ import software.bernie.geckolib.core.animatable.GeoAnimatable;
 import software.bernie.geckolib.renderer.GeoRenderer;
 import software.bernie.geckolib.renderer.layer.GeoRenderLayer;
 import top.theillusivec4.curios.api.CuriosApi;
+
+import java.util.ArrayList;
+import java.util.List;
 
 public class DMZRacePartsLayer<T extends AbstractClientPlayer & GeoAnimatable> extends GeoRenderLayer<T> {
 	private static final ResourceLocation RACES_PARTS_MODEL = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "geo/entity/raceparts.geo.json");
@@ -62,6 +71,15 @@ public class DMZRacePartsLayer<T extends AbstractClientPlayer & GeoAnimatable> e
 
 	private static final ResourceLocation WEIGHTED_ITEMS_MODEL = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "geo/entity/races/weighted_items.geo.json");
 	private static final ResourceLocation WEIGHTED_ITEMS_TEXTURE = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "textures/entity/races/weighted_items.png");
+
+	private static final ResourceLocation SAIYAN_TAIL_MODEL = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "geo/entity/races/human.geo.json");
+	private static final ResourceLocation FROST_DEMON_MODEL = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "geo/entity/races/frostdemon.geo.json");
+	private static final ResourceLocation BIO_ANDROID_MODEL = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "geo/entity/races/bioandroid.geo.json");
+	private static final float[] HORN_COLOR = ColorUtils.hexToRgb("#1A1A1A");
+	private static final float PARTS_AURA_TINT = 0.4f;
+	private static final float BODY_AURA_TINT = 0.2f;
+
+	private final SaiyanTailMeshBuilder tailMesh = new SaiyanTailMeshBuilder();
 
 	public DMZRacePartsLayer(GeoRenderer<T> entityRendererIn) {
 		super(entityRendererIn);
@@ -119,7 +137,7 @@ public class DMZRacePartsLayer<T extends AbstractClientPlayer & GeoAnimatable> e
 
 		BakedGeoModel playerModel = getGeoModel().getBakedModel(getGeoModel().getModelResource(animatable));
 
-		renderRacePartsForAnchor(poseStack, animatable, playerModel, bufferSource, stats, anchor, partialTick, packedLight, alpha, tintProgress);
+		renderRacePartsForAnchor(poseStack, animatable, playerModel, bufferSource, stats, anchor, partialTick, packedLight, packedOverlay, alpha, tintProgress);
 
 		if (!animatable.isSpectator()) {
 			if ("head".equals(anchor) && !stats.getCharacter().isOozaruCached()) {
@@ -135,7 +153,7 @@ public class DMZRacePartsLayer<T extends AbstractClientPlayer & GeoAnimatable> e
 		bufferSource.getBuffer(renderType);
 	}
 
-	private void renderRacePartsForAnchor(PoseStack poseStack, T animatable, BakedGeoModel playerModel, MultiBufferSource bufferSource, StatsData stats, String anchor, float partialTick, int packedLight, float alpha, float tintProgress) {
+	private void renderRacePartsForAnchor(PoseStack poseStack, T animatable, BakedGeoModel playerModel, MultiBufferSource bufferSource, StatsData stats, String anchor, float partialTick, int packedLight, int packedOverlay, float alpha, float tintProgress) {
 		var character = stats.getCharacter();
 		var isAlive = stats.getStatus().isAlive();
 		String race = character.getRaceName().toLowerCase();
@@ -301,38 +319,11 @@ public class DMZRacePartsLayer<T extends AbstractClientPlayer & GeoAnimatable> e
 			boolean isSaiyanLogic = race.equals("saiyan");
 			boolean hasSaiyanTail = raceConfig.getHasSaiyanTail() != null && raceConfig.getHasSaiyanTail();
 
-			if ((isSaiyanLogic || hasSaiyanTail) && !stats.getStatus().isTailVisible() && character.isHasSaiyanTail()) {
+			if ((isSaiyanLogic || hasSaiyanTail) && !stats.getStatus().isTailVisible() && SaiyanTailRules.hasTail(character)) {
 				RenderType tailRenderType = RenderType.entityTranslucentCull(RACES_PARTS_TEXTURE);
 				partsModel.getBone("tailenrolled").ifPresent(targetBone -> {
 					syncTargetBoneAndParents(targetBone, playerModel);
-					float[] tailColor = ColorUtils.hexToRgb("#572117");
-
-					if (character.getBodyColor2() != null && !character.getBodyColor2().isEmpty()) {
-						tailColor = character.getRgbBodyColor2();
-					}
-					if (character.hasActiveForm() && character.getActiveFormData() != null && !character.getActiveFormData().getBodyColor2().isEmpty()) {
-						tailColor = character.getActiveFormData().getRgbBodyColor2();
-					}
-					if (character.hasActiveStackForm() && character.getActiveStackFormData() != null && !character.getActiveStackFormData().getBodyColor2().isEmpty()) {
-						tailColor = character.getActiveStackFormData().getRgbBodyColor2();
-					}
-
-					if (stats.getStatus().isActionCharging()) {
-						if (stats.getStatus().getSelectedAction() == ActionMode.FORM) {
-							var nextForm = TransformationsHelper.presentNextForm(stats);
-							if (nextForm != null && !nextForm.getBodyColor2().isEmpty()) {
-								float factor = Mth.clamp(stats.getResources().getActionCharge() / 100.0f, 0.0f, 1.0f);
-								tailColor = DMZSkinLayer.lerpColor(factor, tailColor, nextForm.getRgbBodyColor2());
-							}
-						} else if (stats.getStatus().getSelectedAction() == ActionMode.STACK) {
-							var nextForm = TransformationsHelper.presentNextStackForm(stats);
-							if (nextForm != null && !nextForm.getBodyColor2().isEmpty()) {
-								float factor = Mth.clamp(stats.getResources().getActionCharge() / 100.0f, 0.0f, 1.0f);
-								tailColor = DMZSkinLayer.lerpColor(factor, tailColor, nextForm.getRgbBodyColor2());
-							}
-						}
-					}
-
+					float[] tailColor = resolveTailColor(stats);
 					float[] tintedColor = applyAuraTint(tailColor[0], tailColor[1], tailColor[2], formTintColor, formTintIntensity, topAuraColor, tintProgress);
 					float[] shadowColor = tintedShadow(tailColor, formTintColor, formTintIntensity, topAuraColor, tintProgress);
 					renderTargetedBone(targetBone, poseStack, bufferSource, animatable, tailRenderType, tintedColor[0], tintedColor[1], tintedColor[2], alpha, partialTick, packedLight);
@@ -340,6 +331,128 @@ public class DMZRacePartsLayer<T extends AbstractClientPlayer & GeoAnimatable> e
 				});
 			}
 		}
+
+		FusedData fused = stats.getFusedData();
+		if (fused != null) {
+			renderFusionParts(poseStack, animatable, playerModel, partsModel, bufferSource, stats, fused, anchor, partialTick, packedLight, packedOverlay, alpha,
+					formTintColor, formTintIntensity, topAuraColor, tintProgress, accessoryColor);
+		}
+	}
+
+	private void renderFusionParts(PoseStack poseStack, T animatable, BakedGeoModel playerModel, BakedGeoModel partsModel, MultiBufferSource bufferSource,
+								   StatsData stats, FusedData fused, String anchor, float partialTick, int packedLight, int packedOverlay, float alpha,
+								   float[] formTint, float formTintIntensity, float[] auraColor, float tintProgress, float[] accessoryColor) {
+		boolean body = anchor.equals("body");
+		float[][] bodyColors = null;
+		for (FusionTraits.Part part : fused.traitPlan(stats.getCharacter()).borrowed()) {
+			if (part.onBody() != body) continue;
+			switch (part.source()) {
+				case RACE_PARTS -> {
+					GeoBone bone = partsModel.getBone(part.bone()).orElse(null);
+					if (bone == null) continue;
+					syncTargetBoneAndParents(bone, playerModel);
+					float[] color = part.category() == FusionTraits.Category.HORNS ? HORN_COLOR
+							: tint(part.category() == FusionTraits.Category.OTHER ? accessoryColor : resolveBodyColor1(stats), formTint, formTintIntensity, auraColor, tintProgress, PARTS_AURA_TINT);
+					renderTargetedBone(bone, poseStack, bufferSource, animatable, RenderType.entityTranslucent(RACES_PARTS_TEXTURE), color[0], color[1], color[2], alpha, partialTick, packedLight);
+				}
+				case SAIYAN_TAIL -> renderBorrowedSaiyanTail(poseStack, animatable, playerModel, partsModel, bufferSource, stats, part.leader(), partialTick, packedLight, packedOverlay, alpha, formTint, formTintIntensity, auraColor, tintProgress);
+				case FROST_DEMON, BIO_ANDROID -> {
+					if (bodyColors == null) bodyColors = SkinGathererProvider.resolveBodyColors(stats);
+					renderBorrowedModelPart(poseStack, animatable, playerModel, bufferSource, stats, fused, part, bodyColors, partialTick, packedLight, packedOverlay, alpha, formTint, formTintIntensity, auraColor, tintProgress);
+				}
+			}
+		}
+	}
+
+	private void renderBorrowedSaiyanTail(PoseStack poseStack, T animatable, BakedGeoModel playerModel, BakedGeoModel partsModel, MultiBufferSource bufferSource, StatsData stats, boolean leaderTail,
+										  float partialTick, int packedLight, int packedOverlay, float alpha, float[] formTint, float formTintIntensity, float[] auraColor, float tintProgress) {
+		float[] tailColor = resolveTailColor(stats);
+		if (stats.getStatus().isTailVisible()) {
+			float[] color = tint(tailColor, formTint, formTintIntensity, auraColor, tintProgress, BODY_AURA_TINT);
+			tailMesh.reset();
+			DonorBoneRenderer.visit(animatable, playerModel, SAIYAN_TAIL_MODEL, "tail1", true, poseStack, partialTick, (bone, stack) -> {
+				if (SaiyanTailMeshBuilder.isTailBone(bone.getName())) tailMesh.add(bone, stack.last().pose(), stack.last().normal());
+			});
+			RenderType type = alpha < 1.0f ? RenderType.entityTranslucent(SaiyanTailMeshBuilder.TEXTURE) : RenderType.entityCutoutNoCull(SaiyanTailMeshBuilder.TEXTURE);
+			tailMesh.emit(bufferSource.getBuffer(type), color, packedLight, packedOverlay, alpha, DMZHairLayer.wantsPixelDetail(animatable));
+			return;
+		}
+		if (leaderTail) return;
+		GeoBone enrolled = partsModel.getBone("tailenrolled").orElse(null);
+		if (enrolled == null) return;
+		syncTargetBoneAndParents(enrolled, playerModel);
+		float[] color = tint(tailColor, formTint, formTintIntensity, auraColor, tintProgress, PARTS_AURA_TINT);
+		renderTargetedBone(enrolled, poseStack, bufferSource, animatable, RenderType.entityTranslucentCull(RACES_PARTS_TEXTURE), color[0], color[1], color[2], alpha, partialTick, packedLight);
+	}
+
+	private void renderBorrowedModelPart(PoseStack poseStack, T animatable, BakedGeoModel playerModel, MultiBufferSource bufferSource, StatsData stats, FusedData fused, FusionTraits.Part part,
+										 float[][] bodyColors, float partialTick, int packedLight, int packedOverlay, float alpha, float[] formTint, float formTintIntensity, float[] auraColor, float tintProgress) {
+		boolean frost = part.source() == FusionTraits.Source.FROST_DEMON;
+		List<DonorBoneRenderer.Layer> layers = new ArrayList<>();
+		SkinGathererProvider.BodyLayerSink sink = new SkinGathererProvider.BodyLayerSink() {
+			@Override
+			public void base(ResourceLocation texture, float[] color) {
+				add(alpha < 1.0f ? RenderType.entityTranslucent(texture) : RenderType.entityCutoutNoCull(texture), color, 1.0f);
+			}
+
+			@Override
+			public void overlay(ResourceLocation texture, float[] color) {
+				add(alpha < 1.0f ? ModRenderTypes.skinOverlayTranslucent(texture) : ModRenderTypes.skinOverlayCutout(texture), color, 1.0f);
+			}
+
+			@Override
+			public void translucent(ResourceLocation texture, float[] color) {
+				add(RenderType.entityTranslucent(texture), color, 1.0f);
+			}
+
+			@Override
+			public void fading(String layerId, ResourceLocation texture, float[] color, float targetAlpha) {
+				add(alpha < 1.0f || targetAlpha < 1.0f ? ModRenderTypes.skinOverlayTranslucent(texture) : ModRenderTypes.skinOverlayCutout(texture), color, targetAlpha);
+			}
+
+			private void add(RenderType type, float[] color, float opacity) {
+				if (opacity <= 0.001f) return;
+				float[] tinted = tint(color, formTint, formTintIntensity, auraColor, tintProgress, BODY_AURA_TINT);
+				layers.add(new DonorBoneRenderer.Layer(type, tinted[0], tinted[1], tinted[2], alpha * opacity));
+			}
+		};
+		int bodyType = part.leader() ? stats.getCharacter().getBodyType() : fused.getPartnerBodyType();
+		String gender = part.leader() ? stats.getCharacter().getGender() : fused.getPartnerGender();
+		SkinGathererProvider.INSTANCE.gatherDonorLayers(frost ? "frostdemon" : "bioandroid", bodyType, gender, bodyColors, sink);
+		DonorBoneRenderer.render(getRenderer(), animatable, playerModel, frost ? FROST_DEMON_MODEL : BIO_ANDROID_MODEL, part.bone(),
+				part.category() == FusionTraits.Category.TAIL, layers, poseStack, bufferSource, partialTick, packedLight, packedOverlay);
+	}
+
+	private float[] resolveTailColor(StatsData stats) {
+		var character = stats.getCharacter();
+		float[] tailColor = ColorUtils.hexToRgb("#572117");
+
+		if (character.getBodyColor2() != null && !character.getBodyColor2().isEmpty()) {
+			tailColor = character.getRgbBodyColor2();
+		}
+		if (character.hasActiveForm() && character.getActiveFormData() != null && !character.getActiveFormData().getBodyColor2().isEmpty()) {
+			tailColor = character.getActiveFormData().getRgbBodyColor2();
+		}
+		if (character.hasActiveStackForm() && character.getActiveStackFormData() != null && !character.getActiveStackFormData().getBodyColor2().isEmpty()) {
+			tailColor = character.getActiveStackFormData().getRgbBodyColor2();
+		}
+
+		if (stats.getStatus().isActionCharging()) {
+			if (stats.getStatus().getSelectedAction() == ActionMode.FORM) {
+				var nextForm = TransformationsHelper.presentNextForm(stats);
+				if (nextForm != null && !nextForm.getBodyColor2().isEmpty()) {
+					float factor = Mth.clamp(stats.getResources().getActionCharge() / 100.0f, 0.0f, 1.0f);
+					tailColor = DMZSkinLayer.lerpColor(factor, tailColor, nextForm.getRgbBodyColor2());
+				}
+			} else if (stats.getStatus().getSelectedAction() == ActionMode.STACK) {
+				var nextForm = TransformationsHelper.presentNextStackForm(stats);
+				if (nextForm != null && !nextForm.getBodyColor2().isEmpty()) {
+					float factor = Mth.clamp(stats.getResources().getActionCharge() / 100.0f, 0.0f, 1.0f);
+					tailColor = DMZSkinLayer.lerpColor(factor, tailColor, nextForm.getRgbBodyColor2());
+				}
+			}
+		}
+		return tailColor;
 	}
 
 	private float[] tintedShadow(float[] color, float[] formTintColor, float formTintIntensity, float[] auraColor, float tintProgress) {
@@ -397,8 +510,16 @@ public class DMZRacePartsLayer<T extends AbstractClientPlayer & GeoAnimatable> e
 	}
 
 	private float[] applyAuraTint(float r, float g, float b, float[] formTintColor, float formTintIntensity, float[] auraColor, float tintProgress) {
+		return applyAuraTint(r, g, b, formTintColor, formTintIntensity, auraColor, tintProgress, PARTS_AURA_TINT);
+	}
+
+	private float[] tint(float[] rgb, float[] formTintColor, float formTintIntensity, float[] auraColor, float tintProgress, float auraStrength) {
+		return applyAuraTint(rgb[0], rgb[1], rgb[2], formTintColor, formTintIntensity, auraColor, tintProgress, auraStrength);
+	}
+
+	private float[] applyAuraTint(float r, float g, float b, float[] formTintColor, float formTintIntensity, float[] auraColor, float tintProgress, float auraStrength) {
 		boolean hasFormTint = formTintIntensity > 0.0f && formTintColor != null;
-		float intensity = hasFormTint ? Mth.clamp(formTintIntensity, 0.0f, 1.0f) : 0.4f * tintProgress;
+		float intensity = hasFormTint ? Mth.clamp(formTintIntensity, 0.0f, 1.0f) : auraStrength * tintProgress;
 		intensity *= AuraTintTracker.darkTintScale(r, g, b);
 
 		if (intensity <= 0.001f) return new float[]{r, g, b};

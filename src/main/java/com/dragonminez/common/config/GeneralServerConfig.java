@@ -709,9 +709,6 @@ public class GeneralServerConfig {
 		private Double releaseBonusCap = 0.15;
 		private String[] buffStats = {"STR", "SKP", "PWR"};
 
-		private Double triggerHealthRegen = 0.20;
-		private Double triggerStatBoost = 0.075;
-
 		public Integer getMinLevel() {
 			return Math.max(0, Math.min(minLevel != null ? minLevel : 100, Integer.MAX_VALUE));
 		}
@@ -722,14 +719,6 @@ public class GeneralServerConfig {
 
 		public Integer getPermanentMaxBuffs() {
 			return Math.max(0, Math.min(permanentMaxBuffs, Integer.MAX_VALUE));
-		}
-
-		public Double getTriggerHealthRegen() {
-			return Math.max(0, Math.min(triggerHealthRegen, Double.MAX_VALUE));
-		}
-
-		public Double getTriggerStatBoost() {
-			return Math.max(0, Math.min(triggerStatBoost, Double.MAX_VALUE));
 		}
 	}
 
@@ -782,9 +771,6 @@ public class GeneralServerConfig {
 		private Double kiHealDealtBonus = 0.25;
 		private Double healTechniqueCooldownReduction = 0.10;
 		private Double healTechniqueCostReduction = 0.10;
-		private Boolean reviveSkill = true;
-		private Integer reviveCooldownSeconds = 3600;
-		private Double reviveHealthRatioPerBlop = 0.25;
 
 		public Integer getAbsorptionAmount() {
 			return Math.max(0, Math.min(absorptionAmount, Integer.MAX_VALUE));
@@ -797,21 +783,12 @@ public class GeneralServerConfig {
 		public Double getAbsorptionStatCopy() {
 			return Math.max(0, Math.min(absorptionStatCopy, Double.MAX_VALUE));
 		}
-
-		public Integer getReviveCooldownSeconds() {
-			return Math.max(0, Math.min(reviveCooldownSeconds, Integer.MAX_VALUE));
-		}
-
-		public Double getReviveHealthRatioPerBlop() {
-			return Math.max(0, Math.min(reviveHealthRatioPerBlop, Double.MAX_VALUE));
-		}
 	}
 
 	@Getter
 	@NoArgsConstructor
 	public static class HumanRacialConfig {
 		private Boolean enabled = true;
-		private Double kiRegenBoost = 1.40;
 		private Double techniqueXpBonus = 0.35;
 		private Double adrenalineThreshold = 0.25;
 		private Integer adrenalineSeconds = 15;
@@ -828,9 +805,10 @@ public class GeneralServerConfig {
 		private Double androidBarrierSurgeOverflow = 0.50;
 		private Double androidBarrierBreakOverflow = 0.75;
 		private Double androidBarrierSize = 2.6;
+		private Double androidKiRegenMultiplier = 2.0;
 
-		public Double getKiRegenBoost() {
-			return Math.max(0, Math.min(kiRegenBoost, Double.MAX_VALUE));
+		public double getAndroidKiRegenMultiplier() {
+			return androidKiRegenMultiplier == null ? 2.0 : Math.max(0.0, androidKiRegenMultiplier);
 		}
 	}
 
@@ -859,6 +837,57 @@ public class GeneralServerConfig {
 
 		public Integer getReserveDurationSeconds() {
 			return Math.max(1, reserveDurationSeconds);
+		}
+	}
+
+	@Getter
+	@NoArgsConstructor
+	public static class GlindRacialConfig {
+		private Boolean enabled = true;
+		private Boolean divineKi = true;
+		private Double meditationDodgeMultiplier = 1.5;
+		private Double regenMultiplier = 1.25;
+		private Double healingReductionBase = 0.20;
+		private Double healingReductionStackEfficiency = 0.5;
+		private Integer evilAttackerMaxAlignment = 25;
+		private Integer goodTargetMinAlignment = 60;
+		private Integer goodAttackerMinAlignment = 75;
+		private Integer evilTargetMaxAlignment = 40;
+		private Double playerDamageBonus = 0.10;
+		private Double frostDemonDamageBonus = 0.15;
+		private Double majinDamageBonus = 0.05;
+		private Double npcDamageBonus = 0.075;
+
+		public Double getMeditationDodgeMultiplier() {
+			return Math.max(0, Math.min(meditationDodgeMultiplier, Double.MAX_VALUE));
+		}
+
+		public Double getRegenMultiplier() {
+			return Math.max(0, Math.min(regenMultiplier, Double.MAX_VALUE));
+		}
+
+		public Double getHealingReductionBase() {
+			return Math.max(0, Math.min(healingReductionBase, 1.0));
+		}
+
+		public Double getHealingReductionStackEfficiency() {
+			return Math.max(0, Math.min(healingReductionStackEfficiency, Double.MAX_VALUE));
+		}
+
+		public Double getPlayerDamageBonus() {
+			return Math.max(0, Math.min(playerDamageBonus, Double.MAX_VALUE));
+		}
+
+		public Double getFrostDemonDamageBonus() {
+			return Math.max(0, Math.min(frostDemonDamageBonus, Double.MAX_VALUE));
+		}
+
+		public Double getMajinDamageBonus() {
+			return Math.max(0, Math.min(majinDamageBonus, Double.MAX_VALUE));
+		}
+
+		public Double getNpcDamageBonus() {
+			return Math.max(0, Math.min(npcDamageBonus, Double.MAX_VALUE));
 		}
 	}
 
@@ -902,14 +931,12 @@ public class GeneralServerConfig {
 		private HumanRacialConfig human = new HumanRacialConfig();
 		private FrostDemonRacialConfig frostdemon = new FrostDemonRacialConfig();
 		private BioAndroidRacialConfig bioandroid = new BioAndroidRacialConfig();
+		private GlindRacialConfig glind = new GlindRacialConfig();
 
 		public Boolean getHumanRacialSkill() { return human.getEnabled(); }
-		public Double getHumanKiRegenBoost() { return human.getKiRegenBoost(); }
 		public Boolean getSaiyanRacialSkill() { return saiyan.getEnabled(); }
 		public Integer getSaiyanZenkaiMinLevel() { return saiyan.getMinLevel(); }
 		public Integer getSaiyanZenkaiAmount() { return saiyan.getPermanentMaxBuffs(); }
-		public Double getSaiyanZenkaiHealthRegen() { return saiyan.getTriggerHealthRegen(); }
-		public Double getSaiyanZenkaiStatBoost() { return saiyan.getTriggerStatBoost(); }
 		public String[] getSaiyanZenkaiBoosts() { return saiyan.getBuffStats(); }
 		public Integer getSaiyanZenkaiCooldownSeconds() { return saiyan.getCooldownSeconds(); }
 		public Boolean getNamekianRacialSkill() { return namekian.getEnabled(); }
@@ -924,14 +951,11 @@ public class GeneralServerConfig {
 		public Integer getBioAndroidCooldownSeconds() { return bioandroid.getCooldownSeconds(); }
 		public Double getBioAndroidDrainRatio() { return bioandroid.getDrainRatio(); }
 		public Boolean getMajinAbsoprtionSkill() { return majin.getEnabled(); }
-		public Boolean getMajinReviveSkill() { return majin.getReviveSkill(); }
 		public Integer getMajinAbsorptionAmount() { return majin.getAbsorptionAmount(); }
 		public Double getMajinAbsorptionHealthRegen() { return majin.getAbsorptionHealthRegen(); }
 		public Double getMajinAbsorptionStatCopy() { return majin.getAbsorptionStatCopy(); }
 		public String[] getMajinAbsorptionBoosts() { return majin.getAbsorptionBoosts(); }
 		public Boolean getMajinAbsorptionOnMobs() { return majin.getAbsorptionOnMobs(); }
-		public Integer getMajinReviveCooldownSeconds() { return majin.getReviveCooldownSeconds(); }
-		public Double getMajinReviveHealthRatioPerBlop() { return majin.getReviveHealthRatioPerBlop(); }
 	}
 
 	@Getter

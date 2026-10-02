@@ -27,8 +27,7 @@ public class DMZModConfigScreen extends Screen {
 	private final List<String> allFiles = new ArrayList<>();
 	private final List<String> files = new ArrayList<>();
 	private EditBox searchBox;
-	private int scrollOffset = 0;
-	private final ScrollbarState scrollBar = new ScrollbarState();
+	private final ScrollbarState scrollBar = new ScrollbarState().minThumb(20).step(ROW_HEIGHT);
 
 	public DMZModConfigScreen(Screen parent) {
 		super(Component.translatable("gui.dragonminez.modconfig.title"));
@@ -37,14 +36,6 @@ public class DMZModConfigScreen extends Screen {
 
 	private int listBottom() {
 		return this.height - LIST_BOTTOM_MARGIN;
-	}
-
-	private int visibleRows() {
-		return Math.max(1, (listBottom() - LIST_TOP) / ROW_HEIGHT);
-	}
-
-	private int maxScroll() {
-		return Math.max(0, files.size() - visibleRows());
 	}
 
 	@Override
@@ -59,7 +50,7 @@ public class DMZModConfigScreen extends Screen {
 		searchBox.setHint(Component.translatable("gui.dragonminez.modconfig.search"));
 		searchBox.setResponder(v -> {
 			applyFilter(v);
-			scrollOffset = 0;
+			scrollBar.reset();
 		});
 		addWidget(searchBox);
 
@@ -103,49 +94,39 @@ public class DMZModConfigScreen extends Screen {
 
 		int top = LIST_TOP;
 		int bottom = listBottom();
-		graphics.enableScissor(0, top, this.width, bottom);
-		int start = scrollOffset;
-		int end = Math.min(files.size(), start + visibleRows());
-		for (int i = start; i < end; i++) {
-			int y = top + (i - start) * ROW_HEIGHT;
-			boolean hovered = mouseX >= this.width / 2 - 150 && mouseX <= this.width / 2 + 150
-					&& mouseY >= y && mouseY < y + ROW_HEIGHT;
+		scrollBar.layout(0, top, this.width, bottom - top, files.size() * ROW_HEIGHT).barAt(this.width / 2 + 156);
+		boolean overList = scrollBar.isInView(mouseX, mouseY);
+		double contentMouseY = scrollBar.toContent(mouseY);
+		scrollBar.beginClip(graphics);
+		for (int i = 0; i < files.size(); i++) {
+			int y = top + i * ROW_HEIGHT;
+			if (!scrollBar.isVisible(y, ROW_HEIGHT)) continue;
+			boolean hovered = overList && mouseX >= this.width / 2 - 150 && mouseX <= this.width / 2 + 150
+					&& contentMouseY >= y && contentMouseY < y + ROW_HEIGHT;
 			int color = hovered ? 0xFFFFD700 : 0xFFCCCCCC;
 			graphics.drawString(this.font, files.get(i), this.width / 2 - 150, y + 2, color);
 		}
-		graphics.disableScissor();
+		scrollBar.endClip(graphics);
 
 		if (files.isEmpty()) {
 			graphics.drawCenteredString(this.font, Component.translatable("gui.dragonminez.modconfig.empty"),
 					this.width / 2, top + 10, 0xFF888888);
 		}
 
-		scrollBar.update(this.width / 2 + 156, 3, top, bottom - top, maxScroll());
-		if (maxScroll() > 0) {
-			int barX = this.width / 2 + 156;
-			int trackH = bottom - top;
-			graphics.fill(barX, top, barX + 3, bottom, 0xFF333333);
-			float pct = (float) scrollOffset / maxScroll();
-			int handleH = Math.max(20, (int) (trackH * ((float) visibleRows() / files.size())));
-			int handleY = top + (int) ((trackH - handleH) * pct);
-			graphics.fill(barX, handleY, barX + 3, handleY + handleH, 0xFFAAAAAA);
-		}
+		scrollBar.renderBar(graphics, mouseX, mouseY);
 
 		super.render(graphics, mouseX, mouseY, partialTick);
 	}
 
 	@Override
 	public boolean mouseClicked(double mouseX, double mouseY, int button) {
-		if (button == 0 && scrollBar.tryStartDrag(mouseX, mouseY)) {
-			scrollOffset = Math.round(scrollBar.scrollFor(mouseY));
-			return true;
-		}
+		if (scrollBar.mouseClicked(mouseX, mouseY, button)) return true;
 		if (button == 0) {
 			int top = LIST_TOP;
 			int bottom = listBottom();
 			if (mouseX >= this.width / 2.0 - 150 && mouseX <= this.width / 2.0 + 150
 					&& mouseY >= top && mouseY < bottom) {
-				int index = scrollOffset + (int) ((mouseY - top) / ROW_HEIGHT);
+				int index = (int) ((mouseY - top + scrollBar.scroll()) / ROW_HEIGHT);
 				if (index >= 0 && index < files.size() && this.minecraft != null) {
 					this.minecraft.setScreen(new DMZConfigEditScreen(this, files.get(index)));
 					return true;
@@ -157,29 +138,19 @@ public class DMZModConfigScreen extends Screen {
 
 	@Override
 	public boolean mouseDragged(double mouseX, double mouseY, int button, double dragX, double dragY) {
-		if (scrollBar.isDragging()) {
-			scrollOffset = Math.round(scrollBar.scrollFor(mouseY));
-			return true;
-		}
+		if (scrollBar.mouseDragged(mouseX, mouseY)) return true;
 		return super.mouseDragged(mouseX, mouseY, button, dragX, dragY);
 	}
 
 	@Override
 	public boolean mouseReleased(double mouseX, double mouseY, int button) {
-		if (scrollBar.isDragging()) {
-			scrollBar.stopDrag();
-			return true;
-		}
+		if (scrollBar.mouseReleased()) return true;
 		return super.mouseReleased(mouseX, mouseY, button);
 	}
 
 	@Override
 	public boolean mouseScrolled(double mouseX, double mouseY, double delta) {
-		int max = maxScroll();
-		if (max > 0) {
-			scrollOffset = Math.max(0, Math.min(max, scrollOffset - (int) Math.signum(delta)));
-			return true;
-		}
+		if (scrollBar.scrollWheel(delta)) return true;
 		return super.mouseScrolled(mouseX, mouseY, delta);
 	}
 

@@ -3,6 +3,7 @@ package com.dragonminez.client.gui.character.minigames;
 import com.dragonminez.Env;
 import com.dragonminez.LogUtil;
 import com.dragonminez.Reference;
+import com.dragonminez.common.training.RhythmAudioPrint;
 import com.dragonminez.common.training.RhythmAutoCharter;
 import com.dragonminez.common.training.RhythmChart;
 import com.google.gson.Gson;
@@ -76,10 +77,24 @@ final class RhythmClientCharts {
 				}
 				String audioHash = HexFormat.of().formatHex(MessageDigest.getInstance("SHA-1").digest(bytes));
 
-				RhythmChart bundled = readBundled(key, audioHash);
-				if (bundled != null) {
+				RhythmChart bundled = readBundled(key);
+				if (bundled != null && bundled.matchesAudio(audioHash)) {
 					CACHE.put(key, bundled);
 					return bundled;
+				}
+
+				float[][] channels = null;
+				if (bundled != null) {
+					channels = decode(bytes);
+					if (channels == null) return null;
+					int actualMs = (int) (channels[0].length * 1000L / RhythmAutoCharter.SAMPLE_RATE);
+					String actualPrint = RhythmAudioPrint.compute(channels[0], channels[1], RhythmAutoCharter.SAMPLE_RATE);
+					String mismatch = RhythmAudioPrint.compare(bundled.audioPrint, bundled.durationMs, actualPrint, actualMs);
+					if (mismatch == null) {
+						CACHE.put(key, bundled);
+						return bundled;
+					}
+					LogUtil.info(Env.CLIENT, "Bundled rhythm chart for {} ignored: the song audio is different ({})", key, mismatch);
 				}
 
 				RhythmChart stored = readStored(key, audioHash);
@@ -88,7 +103,7 @@ final class RhythmClientCharts {
 					return stored;
 				}
 
-				float[][] channels = decode(bytes);
+				if (channels == null) channels = decode(bytes);
 				if (channels == null) return null;
 				RhythmChart chart = RhythmAutoCharter.generate("auto:" + key, key, soundId.toString(), channels[0], channels[1], phase);
 				if (chart != null && RhythmAutoCharter.validate(chart, 0) == null) {
@@ -104,7 +119,7 @@ final class RhythmClientCharts {
 		}, Util.backgroundExecutor());
 	}
 
-	private static RhythmChart readBundled(String key, String audioHash) {
+	private static RhythmChart readBundled(String key) {
 		ResourceLocation location = ResourceLocation.tryBuild(Reference.MOD_ID, "rhythm_charts/" + fileStem(key).toLowerCase(java.util.Locale.ROOT) + ".json");
 		if (location == null) return null;
 		try {
@@ -113,10 +128,6 @@ final class RhythmClientCharts {
 			try (InputStream in = resource.get().open()) {
 				JsonObject root = JsonParser.parseString(new String(in.readAllBytes(), StandardCharsets.UTF_8)).getAsJsonObject();
 				RhythmChart chart = RhythmChart.fromJson("auto:" + key, root);
-				if (!chart.matchesAudio(audioHash)) {
-					LogUtil.info(Env.CLIENT, "Bundled rhythm chart for {} ignored: the song audio was replaced by a resource pack", key);
-					return null;
-				}
 				return RhythmAutoCharter.validate(chart, 0) == null ? chart : null;
 			}
 		} catch (Exception e) {

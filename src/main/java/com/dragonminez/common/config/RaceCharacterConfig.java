@@ -36,6 +36,7 @@ public class RaceCharacterConfig {
 	private FormConfig.Aura3DStyle aura3DStyle = new FormConfig.Aura3DStyle();
 	private Float[] defaultModelScaling = {0.9375f, 0.9375f, 0.9375f};
 	private Integer defaultBodyType = 0;
+	private Integer[] slimBodyTypes = new Integer[0];
 	private Integer defaultHairType = 0;
 	private Integer defaultEyesType = 0;
 	private Integer defaultNoseType = 0;
@@ -52,6 +53,12 @@ public class RaceCharacterConfig {
 
 	public FormConfig.Aura3DStyle getAura3DStyle() {
 		return aura3DStyle != null ? aura3DStyle : FormConfig.Aura3DStyle.DEFAULT;
+	}
+
+	public boolean isSlimBodyType(int bodyType) {
+		if (slimBodyTypes == null) return false;
+		for (Integer slim : slimBodyTypes) if (slim != null && slim == bodyType) return true;
+		return false;
 	}
 
 	private FormSkillCost getFormSkillEntry(String form) {
