@@ -82,6 +82,7 @@ public abstract class PlayerGeoAnimatableMixin implements GeoAnimatable, IPlayer
 	@Unique private String dragonminez$currentPoseAnim = null;
 	@Unique private boolean dragonminez$poseInstantResume = false;
 	@Unique private float dragonminez$currentMeleeSpeed = 1.0F;
+	@Unique private AnimationController<?> dragonminez$attackController = null;
 
 	@Unique private static final int POSE_TRANSITION_TICKS = 4;
 
@@ -245,7 +246,9 @@ public abstract class PlayerGeoAnimatableMixin implements GeoAnimatable, IPlayer
 	@Override
 	public void registerControllers(AnimatableManager.ControllerRegistrar registrar) {
 		registrar.add(new AnimationController<>(this, "controller", 4, dragonminez$gated(this::predicate)));
-		registrar.add(new AnimationController<>(this, "attack_controller", 0, dragonminez$gated(this::attackPredicate)));
+		AnimationController<PlayerGeoAnimatableMixin> attackController = new AnimationController<>(this, "attack_controller", 0, dragonminez$gated(this::attackPredicate));
+		dragonminez$attackController = attackController;
+		registrar.add(attackController);
 		registrar.add(new AnimationController<>(this, "mining_controller", 0, dragonminez$gated(this::miningPredicate)));
 		registrar.add(new AnimationController<>(this, "block_controller", 3, dragonminez$gated(this::blockPredicate)));
 		registrar.add(new AnimationController<>(this, "shield_controller", 3, dragonminez$gated(this::shieldPredicate)));
@@ -538,7 +541,10 @@ public abstract class PlayerGeoAnimatableMixin implements GeoAnimatable, IPlayer
 			return PlayState.CONTINUE;
 		}
 
-		if (dragonminez$attackAnimTicks > 0) return PlayState.CONTINUE;
+		if (dragonminez$attackAnimTicks > 0) {
+			if (ctl.getAnimationState() != AnimationController.State.STOPPED) return PlayState.CONTINUE;
+			dragonminez$attackAnimTicks = 0;
+		}
 
 		ctl.setAnimationSpeed(1.0D);
 		return PlayState.STOP;
@@ -830,7 +836,9 @@ public abstract class PlayerGeoAnimatableMixin implements GeoAnimatable, IPlayer
 	public float dragonminez$getCombatPlacementWeight() {
 		// Snap the held item between combat placement and its rest grip: full weight while the
 		// attack animation plays, none the moment it ends (no eased "swing back" of the item).
-		return dragonminez$attackAnimTicks > 0 ? 1.0F : 0.0F;
+		if (dragonminez$attackAnimTicks <= 0) return 0.0F;
+		if (dragonminez$attackController != null && dragonminez$attackController.getAnimationState() == AnimationController.State.STOPPED) return 0.0F;
+		return 1.0F;
 	}
 
 	@Override
