@@ -517,7 +517,7 @@ public class QuestTreeScreen extends BaseMenuScreen {
 			new SagaCatalogEntry("future_saga", "Future Saga", false),
 			new SagaCatalogEntry("buu_saga", "Buu Saga", false),
 			new SagaCatalogEntry("movies_saga", "Movies Saga", false),
-			new SagaCatalogEntry("daima_saga", "Daima Saga", true),
+			new SagaCatalogEntry("daima_saga", "Daima Saga", false),
 			new SagaCatalogEntry("gt_saga", "GT Saga", false),
 			new SagaCatalogEntry("beerus_saga", "Beerus Saga", true),
 			new SagaCatalogEntry("rof_saga", "RoF Saga", true),
