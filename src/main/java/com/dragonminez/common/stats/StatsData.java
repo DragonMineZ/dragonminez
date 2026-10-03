@@ -306,11 +306,7 @@ public class StatsData {
 	}
 
 	public double getVitalityCurveKnee() {
-		var gameplay = ConfigManager.getServerConfig().getGameplay();
-		boolean levelMode = isMaxLevelValueInsteadOfStats();
-		double maxPossibleVit = levelMode ? getConfiguredMaxTotalStatsRaw() : getConfiguredMaxValue();
-		double kneeFraction = levelMode ? gameplay.getVitCurveKneeLevelMode() : gameplay.getVitCurveKneeStatMode();
-		return Math.max(1.0, maxPossibleVit * kneeFraction);
+		return ConfigManager.getServerConfig().getGameplay().getVitCurveKnee();
 	}
 
 	public double getDefenseScalingAt(double resistance) {
@@ -325,11 +321,7 @@ public class StatsData {
 	}
 
 	public double getDefenseCurveKnee() {
-		var gameplay = ConfigManager.getServerConfig().getGameplay();
-		boolean levelMode = isMaxLevelValueInsteadOfStats();
-		double maxPossibleRes = levelMode ? getConfiguredMaxTotalStatsRaw() : getConfiguredMaxValue();
-		double kneeFraction = levelMode ? gameplay.getDefCurveKneeLevelMode() : gameplay.getDefCurveKneeStatMode();
-		return Math.max(1.0, maxPossibleRes * kneeFraction);
+		return ConfigManager.getServerConfig().getGameplay().getDefCurveKnee();
 	}
 
 	private static double curveScalingAt(double value, double minScaling, double maxScaling, double knee) {
