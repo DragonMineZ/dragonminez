@@ -39,7 +39,7 @@ public class DMZStructureSets {
 			BABA_PALACE = createKey("baba_palace"), TREE_OF_MIGHT = createKey("tree_of_might"),
 			SAIYAN_CRATER = createKey("saiyan_crater"), GETE_STAR = createKey("gete_star"),
 			DEMON_VILLAGE = createKey("demon_village"),
-			GOMAH_CAMP = createKey("gomah_camp");
+			GOMAH_CAMP = createKey("gomah_camp"), BUU_HOUSE = createKey("buu_house");
 
 	public static void bootstrap(BootstapContext<StructureSet> context) {
 		HolderGetter<Structure> structures = context.lookup(Registries.STRUCTURE);
@@ -96,6 +96,8 @@ public class DMZStructureSets {
 				66332211, biomes.getOrThrow(MainTags.Biomes.IS_LAND));
 		unique(context, VEGETA_POD, structures.getOrThrow(DMZStructures.VEGETA_POD),
 				77889900, biomes.getOrThrow(MainTags.Biomes.IS_ROCKYBIOME));
+		unique(context, BUU_HOUSE, structures.getOrThrow(DMZStructures.BUU_HOUSE),
+				71727374, biomes.getOrThrow(MainTags.Biomes.IS_PLAINSLIKE));
 		unique(context, TREE_OF_MIGHT, structures.getOrThrow(DMZStructures.TREE_OF_MIGHT),
 				TREE_OF_MIGHT_SALT, biomes.getOrThrow(MainTags.Biomes.IS_SWAMPLIKE), TREE_OF_MIGHT_MIN_DISTANCE);
 		unique(context, GETE_STAR, structures.getOrThrow(DMZStructures.GETE_STAR),

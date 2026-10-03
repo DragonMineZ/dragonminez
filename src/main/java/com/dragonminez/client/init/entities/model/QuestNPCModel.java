@@ -41,6 +41,7 @@ public class QuestNPCModel extends GeoModel<QuestNPCEntity> {
 			Map.entry("trunks", saga("saga_trunks", "saga_ftrunks_base")),
 			Map.entry("videl", saga("saga_videl", "saga_videl")),
 			Map.entry("shin", saga("saga_shin", "saga_shin")),
+			Map.entry("buu", saga("saga_buufat", "saga_buufat")),
 			Map.entry("namek_elder", master("master_guru")),
 			Map.entry("hell_ogre", saga("saga_ogre", "saga_ogre_blue"))
 	);
@@ -74,7 +75,9 @@ public class QuestNPCModel extends GeoModel<QuestNPCEntity> {
 	@Override
 	public ResourceLocation getAnimationResource(QuestNPCEntity animatable) {
 		AssetPaths asset = resolveAsset(animatable);
-		return existingOrFallback(asset.animation(), fallbackAnimation(), VALID_ANIMATION_KEYS, MISSING_ANIMATION_KEYS);
+		ResourceLocation animation = existingOrFallback(asset.animation(), fallbackAnimation(), VALID_ANIMATION_KEYS, MISSING_ANIMATION_KEYS);
+		animatable.setSagaRig(animation.getPath().equals(SAGA_BASE_ANIMATION));
+		return animation;
 	}
 
 	@Override

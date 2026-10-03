@@ -44,7 +44,7 @@ public class DMZStructures {
 			BABA_PALACE = createKey("baba_palace"), TREE_OF_MIGHT = createKey("tree_of_might"),
 			SAIYAN_CRATER = createKey("saiyan_crater"), NAMEK_RUINS = createKey("namek_ruins"),
 			GETE_STAR = createKey("gete_star"), DEMON_VILLAGE = createKey("demon_village"),
-			GOMAH_CAMP = createKey("gomah_camp");
+			GOMAH_CAMP = createKey("gomah_camp"), BUU_HOUSE = createKey("buu_house");
 
 	public static void bootstrap(BootstapContext<Structure> context) {
 		HolderGetter<Biome> biomes = context.lookup(Registries.BIOME);
@@ -233,6 +233,20 @@ public class DMZStructures {
 						TerrainAdjustment.NONE
 				),
 				pools.getOrThrow(DMZPools.YAMCHA_HOUSE),
+				1,
+				ConstantHeight.of(VerticalAnchor.absolute(1)),
+				false,
+				Heightmap.Types.WORLD_SURFACE_WG
+		));
+
+		context.register(BUU_HOUSE, new JigsawStructure(
+				new Structure.StructureSettings(
+						biomes.getOrThrow(BiomeTags.IS_OVERWORLD),
+						Map.of(),
+						GenerationStep.Decoration.SURFACE_STRUCTURES,
+						TerrainAdjustment.NONE
+				),
+				pools.getOrThrow(DMZPools.BUU_HOUSE),
 				1,
 				ConstantHeight.of(VerticalAnchor.absolute(1)),
 				false,

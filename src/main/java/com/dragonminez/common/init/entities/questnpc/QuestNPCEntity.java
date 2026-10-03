@@ -1,7 +1,9 @@
 package com.dragonminez.common.init.entities.questnpc;
 
 import com.dragonminez.common.combat.logic.player.TargetHelper;
+import com.dragonminez.common.dialogue.DialogueService;
 import com.dragonminez.common.init.entities.MastersEntity;
+import com.dragonminez.common.init.entities.sagas.helper.DBSagasAnimations;
 import com.dragonminez.common.network.NetworkHandler;
 import com.dragonminez.common.alignment.NpcDispositionService;
 import com.dragonminez.common.network.S2C.OpenQuestNPCDialogueS2C;
@@ -23,6 +25,9 @@ import net.minecraft.world.entity.PathfinderMob;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.Level;
 import org.jspecify.annotations.NonNull;
+import software.bernie.geckolib.core.animation.AnimatableManager;
+import software.bernie.geckolib.core.animation.AnimationController;
+import software.bernie.geckolib.core.object.PlayState;
 
 /**
  * A single, generic, data-driven quest NPC entity.
@@ -41,9 +46,13 @@ public class QuestNPCEntity extends MastersEntity {
 	private static final EntityDataAccessor<String> NPC_TEXTURE =
 			SynchedEntityData.defineId(QuestNPCEntity.class, EntityDataSerializers.STRING);
 
+	private static final EntityDataAccessor<Boolean> NPC_MASTER =
+			SynchedEntityData.defineId(QuestNPCEntity.class, EntityDataSerializers.BOOLEAN);
+
 	/** Squared horizontal distance (in blocks) the NPC may drift from home before it is pulled back. */
 	private static final double HOME_DRIFT_THRESHOLD_SQR = 1.0D;
 
+	private boolean sagaRig = false;
 	private boolean hasHome = false;
 	private double homeX;
 	private double homeZ;
@@ -106,6 +115,7 @@ public class QuestNPCEntity extends MastersEntity {
 		this.entityData.define(NPC_ID, "generic_npc");
 		this.entityData.define(NPC_MODEL, "");
 		this.entityData.define(NPC_TEXTURE, "");
+		this.entityData.define(NPC_MASTER, false);
 	}
 
 	// ---- NPC identity ----
@@ -137,6 +147,30 @@ public class QuestNPCEntity extends MastersEntity {
 
 	public void setNpcTexture(String texture) {
 		this.entityData.set(NPC_TEXTURE, texture != null ? texture : "");
+	}
+
+	public boolean isMasterNpc() {
+		return this.entityData.get(NPC_MASTER);
+	}
+
+	public void setMasterNpc(boolean master) {
+		this.entityData.set(NPC_MASTER, master);
+	}
+
+	public void setSagaRig(boolean sagaRig) {
+		this.sagaRig = sagaRig;
+	}
+
+	@Override
+	public void registerControllers(AnimatableManager.ControllerRegistrar controllers) {
+		super.registerControllers(controllers);
+		controllers.add(new AnimationController<>(this, "cape_controller", 5,
+				event -> this.sagaRig ? event.setAndContinue(DBSagasAnimations.ANIM_CAPE) : PlayState.STOP));
+	}
+
+	@Override
+	public String getMasterName() {
+		return isMasterNpc() ? getNpcId() : super.getMasterName();
 	}
 
 	/**
@@ -179,6 +213,9 @@ public class QuestNPCEntity extends MastersEntity {
 		if (texture != null && !texture.isEmpty()) {
 			tag.putString("QuestNpcTexture", texture);
 		}
+		if (isMasterNpc()) {
+			tag.putBoolean("QuestNpcMaster", true);
+		}
 		if (this.hasHome) {
 			tag.putBoolean("QuestNpcHasHome", true);
 			tag.putDouble("QuestNpcHomeX", this.homeX);
@@ -198,6 +235,7 @@ public class QuestNPCEntity extends MastersEntity {
 		if (tag.contains("QuestNpcTexture")) {
 			setNpcTexture(tag.getString("QuestNpcTexture"));
 		}
+		setMasterNpc(tag.getBoolean("QuestNpcMaster"));
 		if (tag.getBoolean("QuestNpcHasHome")) {
 			setHomePosition(tag.getDouble("QuestNpcHomeX"), tag.getDouble("QuestNpcHomeZ"));
 		}
@@ -222,12 +260,15 @@ public class QuestNPCEntity extends MastersEntity {
 					return;
 				}
 
+				boolean master = isMasterNpc();
+				if (master && DialogueService.openDialogue(serverPlayer, npcId, getId())) return;
+
 				QuestService.NPCQuestOptions options = QuestService.collectNpcQuestOptions(npcId, data);
 
 				// Send dialogue packet to client
 				NetworkHandler.sendToPlayer(
 						new OpenQuestNPCDialogueS2C(npcId, options.offerableQuestIds(),
-								options.turnInQuestIds(), options.inProgressQuestIds(), false, getId()),
+								options.turnInQuestIds(), options.inProgressQuestIds(), master, getId()),
 						serverPlayer
 				);
 			});

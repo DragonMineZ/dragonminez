@@ -12,6 +12,7 @@ import com.dragonminez.client.util.ScrollbarState;
 import com.dragonminez.client.util.TextUtil;
 import com.dragonminez.common.config.ConfigManager;
 import com.dragonminez.common.init.MainSounds;
+import com.dragonminez.common.init.entities.questnpc.QuestNPCEntity;
 import com.dragonminez.common.network.C2S.NPCActionC2S;
 import com.dragonminez.common.network.C2S.QuestActionC2S;
 import com.dragonminez.common.network.NetworkHandler;
@@ -604,7 +605,7 @@ public class QuestNPCDialogueScreen extends ScaledScreen {
 		if (masterNpc) {
 			Minecraft mc = Minecraft.getInstance();
 			Entity entity = entityId >= 0 && mc.level != null ? mc.level.getEntity(entityId) : null;
-			if (entity != null && I18n.exists(entity.getType().getDescriptionId())) return tr(entity.getType().getDescriptionId());
+			if (entity != null && !(entity instanceof QuestNPCEntity) && I18n.exists(entity.getType().getDescriptionId())) return tr(entity.getType().getDescriptionId());
 			if (I18n.exists(masterKey)) return tr(masterKey);
 		}
 

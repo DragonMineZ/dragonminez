@@ -348,7 +348,6 @@ public class GeneralServerConfig {
 		private Integer demonEyeAlignmentLossIntervalSeconds = 10;
 		private Double demonEyeMaxGrowth = 0.5;
 		private Integer demonEyeGrowthSeconds = 300;
-		private Integer demonEyeShrinkSeconds = 30;
 		private Integer demonEyeBackHitsToRemove = 3;
 		private Integer demonEyeBackHitWindowSeconds = 10;
 		private Double metamoruFusionThreshold = 0.5;
@@ -569,10 +568,6 @@ public class GeneralServerConfig {
 
 		public Integer getDemonEyeGrowthSeconds() {
 			return demonEyeGrowthSeconds == null ? 300 : Math.max(0, demonEyeGrowthSeconds);
-		}
-
-		public Integer getDemonEyeShrinkSeconds() {
-			return demonEyeShrinkSeconds == null ? 30 : Math.max(0, demonEyeShrinkSeconds);
 		}
 
 		public Integer getDemonEyeBackHitsToRemove() {
