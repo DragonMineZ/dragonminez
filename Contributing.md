@@ -22,13 +22,43 @@ Please follow the guidelines below to ensure a smooth process for all contributo
    ```bash
    git clone https://github.com/your-username/DragonMineZ.git
    ```
-4. **Set Up Your Environment**Ensure you have the necessary tools installed:
+4. **Set Up Your Environment** — Ensure you have the necessary tools installed:
 
-   - Java Development Kit (JDK) version 17+
-   - Gradle or Maven for builds
-   - Minecraft Forge for modding support
+   - Java Development Kit (JDK) 17 (the build uses a Java 17 toolchain)
+   - Git
+   - An IDE with Gradle support (IntelliJ IDEA or Eclipse)
 
-If you are not forking and/or creating an **addon**, there is no need to follow step 3.
+   You don't need to install Gradle or Forge yourself: the repository ships the Gradle wrapper (`gradlew` / `gradlew.bat`),
+   which downloads Gradle, Minecraft Forge (`1.20.1-47.4.10`) and every dependency on the first build.
+
+If you are not forking and/or creating an **addon**, there is no need to follow step 3. For addon development, see
+[[Getting Started|Getting-Started]] instead.
+
+## 🛠️ Building and Running
+
+Run these from the repository root (`./gradlew` on Linux/macOS, `.\gradlew.bat` on Windows):
+
+| Command | What it does |
+| :-- | :-- |
+| `./gradlew build` | Full build. The shippable jar is `build/libs/dragonminez-<version>.jar` (it bundles the database libraries); the `-slim` jar is not meant to be shipped. |
+| `./gradlew runClient` | Starts a dev client (working directory `run/`). |
+| `./gradlew runServer` | Starts a dev dedicated server (working directory `run/`). |
+| `./gradlew runData` | Runs data generation (working directory `run-data/`) and writes to `src/generated/resources/`. Run it after changing datagen providers and review the generated diff. |
+
+- There is **no automated test suite**. Validate your change with `build` and, when it affects gameplay, by testing it in
+  `runClient` and/or `runServer`.
+- Client-only dev mods (JEI runtime, shaders, etc.) are only added to `runClient`; keep it that way so they can't leak into
+  generated data or the dedicated server.
+- Resource optimization (PackSquash) runs on CI and is off for local builds by default. Force it with
+  `-PoptimizeResources=true` or `-PoptimizeResources=false`.
+
+## 🌐 Translations
+
+- `src/main/resources/assets/dragonminez/lang/en_us.json` is the source language file. Add an entry there for every new
+  piece of player-visible text, and keep existing keys stable.
+- Other languages are translated by the community on Crowdin. The English file is uploaded to Crowdin automatically
+  when it changes on `main`.
+- Check that every language file is valid JSON before opening a PR with `scripts/check_lang.sh` (requires `jq`).
 
 ## How to Contribute
 
@@ -70,6 +100,9 @@ a [Feature Request](https://github.com/DragonMineZ/DragonMineZ/issues/new?templa
 
 #### Step 1: Create a Branch
 
+`main` holds the current stable release line; the next version is developed on its own version branch (for example
+`v2.2`). Base your branch on the one your change is meant for — if you're unsure, ask on Discord.
+
 Use a descriptive branch name:
 
 ```bash
@@ -102,8 +135,19 @@ Go to your fork on GitHub and submit a [Pull Request](https://github.com/DragonM
 
 - Describe the changes and link related issues.
 - Be prepared to discuss and revise your code based on feedback.
-- Note: We do manually run GitHub Actions checks on PRs, so ensure your code passes all tests, if these fail, your PR
-  will not be merged.
+- Every pull request is compiled automatically by the **Compile Check** workflow (`./gradlew build`). If it fails, your
+  PR will not be merged. Workflow runs for first-time contributors may need a maintainer's approval before they start.
+
+#### Automated checks
+
+| Workflow | When it runs | What it does |
+| :-- | :-- | :-- |
+| Compile Check | Every pull request, and pushes to any branch except `main` that touch code, resources or Gradle files | Runs `./gradlew build` |
+| Java CI | Pull requests and pushes to `main` that touch Java or `build.gradle.kts` | Runs `./gradlew build` and submits the dependency graph |
+| Crowdin Check & Upload | Pushes to `main` that touch the lang folder, every 2 days, or manually | Validates the language files with `scripts/check_lang.sh` and uploads `en_us.json` to Crowdin |
+| CodeQL | Daily | Security analysis of the Java code and workflows |
+
+Releases are published to Modrinth and CurseForge from `main` by the maintainers' release workflows.
 
 ## 📚 Contributor Guidelines
 
@@ -118,12 +162,27 @@ Go to your fork on GitHub and submit a [Pull Request](https://github.com/DragonM
    - Ensure the [[Wiki|Home]] reflects major changes.
 3. **Testing**
 
-   - Test thoroughly across relevant scenarios.
+   - Test thoroughly across relevant scenarios, including a dedicated server (`runServer`) when your change touches
+     client classes, networking or server logic.
    - Fix any linting or compilation issues before submitting your PR.
+4. **Compatibility**
+
+   - Many systems read JSON that players, server owners and addon authors edit (configs, quests, wishes, dragon ball
+     packs). Don't rename or remove config keys, JSON fields, NBT save keys or registry names without discussing it
+     first — older worlds and configs must still load.
+   - Network packets are identified by registration order: add new packets at the end of `NetworkHandler.register()`,
+     never in the middle.
+   - Validate everything a client sends on the server; never trust the client for stats, unlocks, quests, wishes or
+     progression.
+5. **Project docs**
+
+   - `CLAUDE.md` and the `AI/` folder (`Agents.md`, `Context.md`, `Memory.md`, `QuestAddonAPI.md`) describe the
+     architecture, data systems, build and release automation in detail. They are written for AI coding assistants but
+     are just as useful for human contributors — read `AI/Context.md` before larger changes.
 
 ## 💬 Community Communication
 
-- Join our Discord server (link in the repository’s README) for real-time discussions.
+- Join our [Discord server](https://discord.gg/b5MgRNb3D7) for real-time discussions.
 
 ## 🫴 Supporting the Project on Patreon
 

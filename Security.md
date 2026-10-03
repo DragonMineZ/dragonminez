@@ -39,12 +39,23 @@ The following versions are actively supported with security updates:
 
 | Version        | Supported |
 |----------------|-----------|
-| 1.x (Latest)   | ✅         |
+| 2.x (Latest)   | ✅         |
 | Older Versions | ❌         |
 
-## Learning More About Security
+## Securing Your Server
 
-For tips on securely using DragonMineZ, stay tuned for detailed documentation in
-the [[Wiki|Home]] and tutorials.
+A few settings matter for keeping a DragonMineZ server safe:
+
+- **Database credentials** — if you use the `DATABASE` storage backend, replace the default `username`/`password`
+  (`root`/`password`) in the `storage` section of `general-server.json`, and give DragonMineZ its own database user
+  with access to its database only. See [[General Server|General-Server#storage]].
+- **Permissions** — DragonMineZ commands are protected by permission nodes. Only give admin-level nodes (stat editing,
+  config reloads, quest management, etc.) to trusted staff. See [[Permissions|Permissions]].
+- **Backups** — back up the world folder (and your database, if you use one) before switching storage backends or
+  updating the mod. See [[Notice to Server Owners/Developers|Notice-to-server-owners-developers]].
+- **Official downloads only** — install DragonMineZ only from its official Modrinth and CurseForge pages.
+
+For addon developers: never trust values sent by the client in your own packets. Validate on the server anything that
+changes stats, unlocks, quests, wishes or progression (see [[Implementation & Events|Implementation-&-Events#networking]]).
 
 Thank you for helping us maintain the security and integrity of DragonMineZ!
