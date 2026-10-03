@@ -1,6 +1,7 @@
 package com.dragonminez.common.config;
 
 import com.dragonminez.common.init.item.consumables.CapsuleType;
+import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -319,10 +320,12 @@ public class GeneralServerConfig {
 		private Double otherworldDeadTpMultiplier = 2.0;
 		private Boolean maxLevelValueInsteadOfStats = true;
 		private Integer maxValue = 1000000;
-		private Double vitCurveKneeLevelMode = 0.1125;
-		private Double vitCurveKneeStatMode = 0.225;
-		private Double defCurveKneeLevelMode = 0.1125;
-		private Double defCurveKneeStatMode = 0.225;
+		private Double vitCurveKnee = 16000.0;
+		private Double defCurveKnee = 20000.0;
+		@Getter(AccessLevel.NONE) private Double vitCurveKneeLevelMode = null;
+		@Getter(AccessLevel.NONE) private Double vitCurveKneeStatMode = null;
+		@Getter(AccessLevel.NONE) private Double defCurveKneeLevelMode = null;
+		@Getter(AccessLevel.NONE) private Double defCurveKneeStatMode = null;
 		private CapsulesConfig capsules = new CapsulesConfig();
 		private Boolean storyModeEnabled = true;
 		private Boolean createDefaultSagas = true;
@@ -503,20 +506,12 @@ public class GeneralServerConfig {
 			return maxLevelValueInsteadOfStats != null ? maxLevelValueInsteadOfStats : true;
 		}
 
-		public Double getVitCurveKneeLevelMode() {
-			return Math.max(0.01, Math.min(vitCurveKneeLevelMode != null ? vitCurveKneeLevelMode : 0.225, 1.0));
+		public Double getVitCurveKnee() {
+			return vitCurveKnee != null && Double.isFinite(vitCurveKnee) ? Math.max(1.0, vitCurveKnee) : 16000.0;
 		}
 
-		public Double getVitCurveKneeStatMode() {
-			return Math.max(0.01, Math.min(vitCurveKneeStatMode != null ? vitCurveKneeStatMode : 0.45, 1.0));
-		}
-
-		public Double getDefCurveKneeLevelMode() {
-			return Math.max(0.01, Math.min(defCurveKneeLevelMode != null ? defCurveKneeLevelMode : 0.225, 1.0));
-		}
-
-		public Double getDefCurveKneeStatMode() {
-			return Math.max(0.01, Math.min(defCurveKneeStatMode != null ? defCurveKneeStatMode : 0.45, 1.0));
+		public Double getDefCurveKnee() {
+			return defCurveKnee != null && Double.isFinite(defCurveKnee) ? Math.max(1.0, defCurveKnee) : 20000.0;
 		}
 
 		public Integer getSenzuCooldownTicks() {
