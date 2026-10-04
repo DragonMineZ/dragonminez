@@ -188,7 +188,11 @@ public class ForgeCommonEvents {
 							§fAre you a §cPatreon§f? Use the §cVerify here§f button to connect Discord and request access automatically.
 							
 							§7If you have been recently whitelisted, restart Minecraft to apply the changes!
-							§7Your Minecraft nickname is: §f""" + username));
+							§7Your Minecraft nickname is: §f""" + username + """
+							
+							
+							§eAn active internet connection is required to play, even in singleplayer, since your access is checked online.
+							§8We only check your Minecraft username. No other data is collected."""));
 				} else {
 					throw new IllegalStateException("DMZ: User not allowed.");
 				}
