@@ -6,9 +6,11 @@ import com.dragonminez.client.animation.IPlayerAnimatable;
 import com.dragonminez.client.render.util.RenderUtil;
 import com.dragonminez.client.util.SkinGathererProvider;
 import com.dragonminez.common.config.ConfigManager;
+import com.dragonminez.common.config.FormConfig;
 import com.dragonminez.common.config.RaceCharacterConfig;
 import com.dragonminez.common.init.MainEffects;
 import com.dragonminez.common.stats.StatsCapability;
+import com.dragonminez.common.stats.StatsData;
 import com.dragonminez.common.stats.StatsProvider;
 import com.dragonminez.common.stats.character.Character;
 import com.dragonminez.common.util.lists.SaiyanForms;
@@ -16,6 +18,7 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.client.player.AbstractClientPlayer;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.Mth;
+import software.bernie.geckolib.cache.object.BakedGeoModel;
 import software.bernie.geckolib.constant.DataTickets;
 import software.bernie.geckolib.core.animatable.GeoAnimatable;
 import software.bernie.geckolib.core.animatable.model.CoreGeoBone;
@@ -97,6 +100,7 @@ public class DMZPlayerModel<T extends AbstractClientPlayer & GeoAnimatable> exte
 
     private final ResourceLocation textureLocation;
     private final String customModel;
+    private BakedGeoModel activeModel;
 
     public DMZPlayerModel(String raceName, String customModel) {
         this.customModel = customModel;
@@ -111,95 +115,111 @@ public class DMZPlayerModel<T extends AbstractClientPlayer & GeoAnimatable> exte
 
         return StatsProvider.get(StatsCapability.INSTANCE, player).map(data -> {
             Character character = data.getCharacter();
-            String race = character.getRaceName().toLowerCase();
-            String gender = character.getGender().toLowerCase();
-            String currentForm = character.getActiveForm();
-            String playerModelName = player.getModelName();
-
-            RaceCharacterConfig raceConfig = ConfigManager.getRaceCharacter(race);
-            var activeStackFormData = character.getActiveStackFormData();
-            var activeFormData = character.getActiveFormData();
-            String activeCustomModel;
-            if (activeStackFormData != null && Boolean.TRUE.equals(activeStackFormData.hasCustomModel()) && !activeStackFormData.getCustomModel().isEmpty()) {
-                activeCustomModel = activeStackFormData.getCustomModel().toLowerCase();
-            } else if (activeFormData != null && activeFormData.hasCustomModel() && !activeFormData.getCustomModel().isEmpty()) {
-                activeCustomModel = activeFormData.getCustomModel().toLowerCase();
-            } else {
-                activeCustomModel = "";
-            }
-            String raceCustomModel = (raceConfig != null && raceConfig.hasCustomModel()) ? raceConfig.getCustomModel().toLowerCase() : "";
-            boolean partnerModel = data.getFusedData() != null && data.getFusedData().usesPartnerModel(character);
-            String ownSkinKey = raceCustomModel.isEmpty() ? race : raceCustomModel;
-            int bodyType = partnerModel && character.getBodyType() == 0 && !SkinGathererProvider.isHumanoidKey(ownSkinKey) ? 1 : character.getBodyType();
-            String fallbackCustomModel = this.customModel != null ? this.customModel.toLowerCase() : "";
-            String formKey = currentForm != null ? currentForm.toLowerCase() : "";
-            boolean isSlimSkin = playerModelName.contains("slim");
-            boolean slimBody = bodyType == 0 ? isSlimSkin : raceConfig != null && raceConfig.isSlimBodyType(bodyType);
-            String stateKey = String.join("|",
-                    race,
-                    gender,
-                    formKey,
-                    Integer.toString(bodyType),
-                    playerModelName,
-                    activeCustomModel,
-                    raceCustomModel,
-                    fallbackCustomModel,
-                    Boolean.toString(raceConfig != null && raceConfig.getHasGender()),
-                    Boolean.toString(slimBody)
-            );
-
-            return MODEL_RESOLUTION_CACHE.computeIfAbsent(stateKey, ignored -> {
-                boolean isMale = gender.equals(Character.GENDER_MALE);
-                boolean isBaseForm = currentForm == null || currentForm.isEmpty() || currentForm.equalsIgnoreCase("base");
-
-                if (race.equals("saiyan") && (Objects.equals(currentForm, SaiyanForms.OOZARU) || Objects.equals(currentForm, SaiyanForms.GOLDEN_OOZARU))) {
-                    return OOZARU;
-                }
-
-                String modelKey = "";
-                if (!activeCustomModel.isEmpty()) {
-                    modelKey = activeCustomModel;
-                } else if (!raceCustomModel.isEmpty()) {
-                    modelKey = raceCustomModel;
-                } else if (!fallbackCustomModel.isEmpty()) {
-                    modelKey = fallbackCustomModel;
-                }
-
-                if (!modelKey.isEmpty()) {
-                    String customRaceGender = (raceConfig != null && raceConfig.getHasGender()) ? gender : "";
-                    if (modelKey.equals("finalbase")) {
-                        switch (raceCustomModel.isEmpty() ? race : raceCustomModel) {
-                            case "human", "saiyan":
-                                if (!isMale) return MAJIN_SLIM;
-                                return slimBody ? BASE_SLIM : BASE_DEFAULT;
-                            case "majin": return isMale ? BASE_DEFAULT : MAJIN_SLIM;
-                            case "namekian": return BASE_DEFAULT;
-                            case "frostdemon": return FROST_DEMON;
-                            case "bioandroid": return BIO_ANDROID_PERFECT;
-                        }
-                    }
-                    return resolveCustomModel(modelKey, isSlimSkin, slimBody, isMale, bodyType, customRaceGender);
-                }
-
-                if (race.equals("bioandroid")) return isBaseForm ? BIO_ANDROID : BIO_ANDROID_PERFECT;
-                if (race.equals("frostdemon")) return FROST_DEMON;
-                if (race.equals("namekian")) return BASE_DEFAULT;
-
-                if (race.equals("majin")) {
-                    if (bodyType == 2) return isMale ? BASE_DEFAULT : MAJIN_SLIM;
-                    if (!isMale) return MAJIN_SLIM;
-                    return MAJIN_FAT;
-                }
-
-                if (race.equals("human") || race.equals("saiyan")) {
-                    if (!isMale) return MAJIN_SLIM;
-                    return slimBody ? BASE_SLIM : BASE_DEFAULT;
-                }
-
-                if (!isMale) return MAJIN_SLIM;
-                return isSlimSkin ? BASE_SLIM : BASE_DEFAULT;
-            });
+            ResourceLocation current = resolveModel(player, data, character.getActiveForm(), customModelOf(character.getActiveFormData(), character.getActiveStackFormData()));
+            return ModelMorph.select(player, data, current, look -> resolveModel(player, data, look.form(), customModelOf(look.formData(), look.stackData())));
         }).orElse(BASE_DEFAULT);
+    }
+
+    @Override
+    public BakedGeoModel getBakedModel(ResourceLocation location) {
+        BakedGeoModel morph = ModelMorph.baked(location);
+        BakedGeoModel model = morph != null ? morph : super.getBakedModel(ModelMorph.source(location, BASE_DEFAULT));
+        if (model != this.activeModel) {
+            this.getAnimationProcessor().setActiveModel(model);
+            this.activeModel = model;
+        }
+        return model;
+    }
+
+    private static String customModelOf(FormConfig.FormData formData, FormConfig.FormData stackFormData) {
+        if (stackFormData != null && Boolean.TRUE.equals(stackFormData.hasCustomModel()) && !stackFormData.getCustomModel().isEmpty()) {
+            return stackFormData.getCustomModel().toLowerCase();
+        }
+        if (formData != null && Boolean.TRUE.equals(formData.hasCustomModel()) && !formData.getCustomModel().isEmpty()) {
+            return formData.getCustomModel().toLowerCase();
+        }
+        return "";
+    }
+
+    private ResourceLocation resolveModel(T player, StatsData data, String currentForm, String activeCustomModel) {
+        Character character = data.getCharacter();
+        String race = character.getRaceName().toLowerCase();
+        String gender = character.getGender().toLowerCase();
+        String playerModelName = player.getModelName();
+
+        RaceCharacterConfig raceConfig = ConfigManager.getRaceCharacter(race);
+        String raceCustomModel = (raceConfig != null && raceConfig.hasCustomModel()) ? raceConfig.getCustomModel().toLowerCase() : "";
+        boolean partnerModel = data.getFusedData() != null && data.getFusedData().usesPartnerModel(character);
+        String ownSkinKey = raceCustomModel.isEmpty() ? race : raceCustomModel;
+        int bodyType = partnerModel && character.getBodyType() == 0 && !SkinGathererProvider.isHumanoidKey(ownSkinKey) ? 1 : character.getBodyType();
+        String fallbackCustomModel = this.customModel != null ? this.customModel.toLowerCase() : "";
+        String formKey = currentForm != null ? currentForm.toLowerCase() : "";
+        boolean isSlimSkin = playerModelName.contains("slim");
+        boolean slimBody = bodyType == 0 ? isSlimSkin : raceConfig != null && raceConfig.isSlimBodyType(bodyType);
+        String stateKey = String.join("|",
+                race,
+                gender,
+                formKey,
+                Integer.toString(bodyType),
+                playerModelName,
+                activeCustomModel,
+                raceCustomModel,
+                fallbackCustomModel,
+                Boolean.toString(raceConfig != null && raceConfig.getHasGender()),
+                Boolean.toString(slimBody)
+        );
+
+        return MODEL_RESOLUTION_CACHE.computeIfAbsent(stateKey, ignored -> {
+            boolean isMale = gender.equals(Character.GENDER_MALE);
+            boolean isBaseForm = currentForm == null || currentForm.isEmpty() || currentForm.equalsIgnoreCase("base");
+
+            if (race.equals("saiyan") && (Objects.equals(currentForm, SaiyanForms.OOZARU) || Objects.equals(currentForm, SaiyanForms.GOLDEN_OOZARU))) {
+                return OOZARU;
+            }
+
+            String modelKey = "";
+            if (!activeCustomModel.isEmpty()) {
+                modelKey = activeCustomModel;
+            } else if (!raceCustomModel.isEmpty()) {
+                modelKey = raceCustomModel;
+            } else if (!fallbackCustomModel.isEmpty()) {
+                modelKey = fallbackCustomModel;
+            }
+
+            if (!modelKey.isEmpty()) {
+                String customRaceGender = (raceConfig != null && raceConfig.getHasGender()) ? gender : "";
+                if (modelKey.equals("finalbase")) {
+                    switch (raceCustomModel.isEmpty() ? race : raceCustomModel) {
+                        case "human", "saiyan":
+                            if (!isMale) return MAJIN_SLIM;
+                            return slimBody ? BASE_SLIM : BASE_DEFAULT;
+                        case "majin": return isMale ? BASE_DEFAULT : MAJIN_SLIM;
+                        case "namekian": return BASE_DEFAULT;
+                        case "frostdemon": return FROST_DEMON;
+                        case "bioandroid": return BIO_ANDROID_PERFECT;
+                    }
+                }
+                return resolveCustomModel(modelKey, isSlimSkin, slimBody, isMale, bodyType, customRaceGender);
+            }
+
+            if (race.equals("bioandroid")) return isBaseForm ? BIO_ANDROID : BIO_ANDROID_PERFECT;
+            if (race.equals("frostdemon")) return FROST_DEMON;
+            if (race.equals("namekian")) return BASE_DEFAULT;
+
+            if (race.equals("majin")) {
+                if (bodyType == 2) return isMale ? BASE_DEFAULT : MAJIN_SLIM;
+                if (!isMale) return MAJIN_SLIM;
+                return MAJIN_FAT;
+            }
+
+            if (race.equals("human") || race.equals("saiyan")) {
+                if (!isMale) return MAJIN_SLIM;
+                return slimBody ? BASE_SLIM : BASE_DEFAULT;
+            }
+
+            if (!isMale) return MAJIN_SLIM;
+            return isSlimSkin ? BASE_SLIM : BASE_DEFAULT;
+        });
     }
 
     private static ResourceLocation humanoidVariant(boolean slimBody, boolean isMale, int bodyType, ResourceLocation wide, ResourceLocation slim, ResourceLocation female) {
