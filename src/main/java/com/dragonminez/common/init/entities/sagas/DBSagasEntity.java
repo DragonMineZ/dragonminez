@@ -1594,6 +1594,7 @@ public abstract class DBSagasEntity extends Monster implements GeoEntity, ITextu
 
     public void setCasting(boolean casting) {this.entityData.set(IS_CASTING, casting);}
     public boolean isCasting() {return this.entityData.get(IS_CASTING);}
+    public int getCastTimer() {return this.castTimer;}
 
     public void setFlying(boolean flying) {this.entityData.set(IS_FLYING, flying);}
     public boolean isFlying() {return this.entityData.get(IS_FLYING);}

@@ -49,7 +49,9 @@ public class KiWaveEntity extends AbstractKiProjectile {
     private static final EntityDataAccessor<Boolean> IS_FIRING = SynchedEntityData.defineId(KiWaveEntity.class, EntityDataSerializers.BOOLEAN);
     private static final EntityDataAccessor<Float> STEER_RATE = SynchedEntityData.defineId(KiWaveEntity.class, EntityDataSerializers.FLOAT);
 
-    private static final float MOUTH_BLAST_STEER_RATE = 6.0F;
+    private static final float MOUTH_BLAST_STEER_RATE = 2.5F;
+    private static final float STEER_EASE = 0.2F;
+    private static final float STEER_MIN_STEP = 0.15F;
     private static final float MOUTH_OFFSET_Y = -0.25F;
     private static final float MOUTH_OFFSET_FORWARD = 0.3F;
 
@@ -340,6 +342,7 @@ public class KiWaveEntity extends AbstractKiProjectile {
         this.setKiSpeed(speed);
         this.setColors(color, colorBorder, colorOutline);
         this.setContinuousFollow(true);
+        this.setSteerRate(MOUTH_BLAST_STEER_RATE);
         this.setFiring(false);
         this.setCastWave(castTime);
         this.setMaxLife(castTime * 2);
@@ -510,14 +513,21 @@ public class KiWaveEntity extends AbstractKiProjectile {
 
         float steerRate = this.getSteerRate();
         if (steerRate > 0.0F && this.isFiring()) {
-            exactYaw = Mth.approachDegrees(this.getFixedYaw(), exactYaw, steerRate);
-            exactPitch = Mth.approachDegrees(this.getFixedPitch(), exactPitch, steerRate);
+            exactYaw = steerToward(this.getFixedYaw(), exactYaw, steerRate);
+            exactPitch = steerToward(this.getFixedPitch(), exactPitch, steerRate);
         }
 
         this.entityData.set(FIXED_YAW, exactYaw);
         this.entityData.set(FIXED_PITCH, exactPitch);
         this.setYRot(exactYaw);
         this.setXRot(exactPitch);
+    }
+
+    private static float steerToward(float current, float target, float maxStep) {
+        float diff = Mth.wrapDegrees(target - current);
+        float distance = Math.abs(diff);
+        float step = Mth.clamp(distance * STEER_EASE, Math.min(distance, STEER_MIN_STEP), maxStep);
+        return current + Math.signum(diff) * step;
     }
 
     @Override

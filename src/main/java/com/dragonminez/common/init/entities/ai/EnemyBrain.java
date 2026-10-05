@@ -28,6 +28,7 @@ public final class EnemyBrain {
     public static final double MID_RANGE = 12.0D;
     public static final double OUT_RANGE = 28.0D;
     private static final double THREAT_SCAN_RADIUS = 40.0D;
+    private static final float MOUTH_BLAST_TURN_RATE = 3.0F;
     private static final double ALLY_SCAN_RADIUS = 24.0D;
     private static final double APPROACH_THRESHOLD = 0.05D;
     private static final int[] STUN_COMBOS = {1, 3, 8};
@@ -493,6 +494,11 @@ public final class EnemyBrain {
                 double cosP = Math.cos(pitch);
                 point = eye.add(Math.cos(yaw) * cosP * len, Math.sin(pitch) * len, Math.sin(yaw) * cosP * len);
             }
+        }
+        if (KiSkillType.fromId(skill) == KiSkillType.OOZARU_BEAM
+                && this.self.getCastTimer() > SkillManager.getFireTick(this.self, skill)) {
+            AimHelper.faceLimited(this.self, point, MOUTH_BLAST_TURN_RATE);
+            return;
         }
         AimHelper.face(this.self, point);
     }

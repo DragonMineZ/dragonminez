@@ -53,4 +53,20 @@ public final class AimHelper {
         self.yRotO = yaw;
         self.xRotO = self.getXRot();
     }
+
+    public static void faceLimited(Mob self, Vec3 point, float maxDegreesPerTick) {
+        Vec3 eye = self.getEyePosition();
+        double dx = point.x - eye.x;
+        double dy = point.y - eye.y;
+        double dz = point.z - eye.z;
+        double horiz = Math.sqrt(dx * dx + dz * dz);
+        float targetYaw = (float) (Mth.atan2(dz, dx) * (180.0D / Math.PI)) - 90.0F;
+        float targetPitch = Mth.clamp((float) -(Mth.atan2(dy, horiz) * (180.0D / Math.PI)), -89.0F, 89.0F);
+        float yaw = Mth.approachDegrees(self.yRotO, targetYaw, maxDegreesPerTick);
+        float pitch = Mth.approach(self.xRotO, targetPitch, maxDegreesPerTick);
+        self.setYRot(yaw);
+        self.setYHeadRot(yaw);
+        self.setYBodyRot(yaw);
+        self.setXRot(pitch);
+    }
 }
