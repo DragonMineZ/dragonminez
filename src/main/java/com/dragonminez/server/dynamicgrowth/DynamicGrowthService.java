@@ -42,40 +42,42 @@ public final class DynamicGrowthService {
 		if (player == null || data == null) return;
 		DynamicGrowthConfig cfg = config();
 		if (!cfg.isEnabled()) return;
-		if (baseXp <= 0.0) return;
+		if (!Double.isFinite(baseXp) || baseXp <= 0.0) return;
 		if (player.isCreative() || player.isSpectator()) return;
 		if (!data.getStatus().isHasCreatedCharacter()) return;
 
 		DynamicGrowthData growth = data.getDynamicGrowth();
-		if (!growth.isGrowthEnabled(stat)) return;
-		long nowMs = System.currentTimeMillis();
-		double xp = baseXp;
+		DynamicGrowthStat linked = stat.linked();
+		double linkedShare = cfg.getLinkedStatXpShare();
+		boolean mainEnabled = growth.isGrowthEnabled(stat);
+		boolean linkedEnabled = linkedShare > 0.0 && growth.isGrowthEnabled(linked);
+		if (!mainEnabled && !linkedEnabled) return;
 
+		double xp = baseXp * cfg.getPracticeXpMultiplier();
 		if (repeatedTarget != null) {
-			double repeatMultiplier = growth.recordTargetAndGetMultiplier(
+			xp *= growth.recordTargetAndGetMultiplier(
 					repeatedTarget.getUUID().toString(),
-					nowMs,
+					System.currentTimeMillis(),
 					cfg.getRepeatTargetWindowSeconds(),
 					cfg.getRepeatTargetSoftCap(),
 					cfg.getRepeatTargetHardCap(),
 					cfg.getRepeatTargetSoftMultiplier(),
 					cfg.getRepeatTargetHardMultiplier()
 			);
-			xp = baseXp * repeatMultiplier;
 		}
 
-		xp *= cfg.getPracticeXpMultiplier();
-		xp *= cfg.getStatPracticeMultiplier(stat.key());
+		if (mainEnabled) addPracticeXp(player, data, stat, xp);
+		if (linkedEnabled) addPracticeXp(player, data, linked, xp * linkedShare);
+	}
+
+	private static void addPracticeXp(ServerPlayer player, StatsData data, DynamicGrowthStat stat, double xp) {
+		xp *= config().getStatPracticeMultiplier(stat.key());
 		if (!Double.isFinite(xp) || xp <= 0.0) return;
 
-		int currentStat = data.getCurrentStatValue(stat.key());
-		int requiredXp = DynamicGrowthMath.requiredXp(currentStat);
-		if (requiredXp > 0) {
-			double perInstanceCap = requiredXp * 0.10;
-			if (xp > perInstanceCap) xp = perInstanceCap;
-		}
+		int requiredXp = DynamicGrowthMath.requiredXp(data.getCurrentStatValue(stat.key()));
+		if (requiredXp > 0) xp = Math.min(xp, requiredXp * 0.10);
 
-		growth.addPracticeXp(stat, xp);
+		data.getDynamicGrowth().addPracticeXp(stat, xp);
 		processLevelUps(player, data, stat);
 	}
 
@@ -155,6 +157,7 @@ public final class DynamicGrowthService {
 	}
 
 	private static void grantStatPoint(ServerPlayer player, StatsData data, DynamicGrowthStat stat) {
+		int before = data.getCurrentStatValue(stat.key());
 		switch (stat) {
 			case RES -> {
 				float oldMaxStamina = data.getMaxStamina();
@@ -179,6 +182,7 @@ public final class DynamicGrowthService {
 			case SKP -> data.getStats().addStrikePower(1);
 			case PWR -> data.getStats().addKiPower(1);
 		}
+		data.getDynamicGrowth().addGrowthStats(data.getCurrentStatValue(stat.key()) - before);
 	}
 
 	private static void notifyStatGain(ServerPlayer player, DynamicGrowthStat stat, int newValue) {
