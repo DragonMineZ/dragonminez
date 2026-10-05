@@ -149,11 +149,19 @@ public class ModRenderTypes extends RenderType {
         RenderSystem.applyModelViewMatrix();
     });
 
+    private static final RenderStateShard.LayeringStateShard MASK_BODY_LAYERING = new RenderStateShard.LayeringStateShard("dmz_mask_body_layering", () -> {
+        SKIN_OVERLAY_LAYERING.setupRenderState();
+        POLYGON_OFFSET_LAYERING.setupRenderState();
+    }, () -> {
+        POLYGON_OFFSET_LAYERING.clearRenderState();
+        SKIN_OVERLAY_LAYERING.clearRenderState();
+    });
+
     private static RenderStateShard.LayeringStateShard layeringOf(@Nullable RenderType sourceRenderType) {
         String name = sourceRenderType != null ? sourceRenderType.toString() : "";
         if (name.contains(VIEW_OFFSET_LAYERING_TOKEN)) return VIEW_OFFSET_Z_LAYERING;
         if (name.contains(SKIN_OVERLAY_LAYERING_TOKEN)) return SKIN_OVERLAY_LAYERING;
-        return POLYGON_OFFSET_LAYERING;
+        return MASK_BODY_LAYERING;
     }
 
     private static final RenderType TRANSFORMATION_MASK = create(
@@ -171,7 +179,7 @@ public class ModRenderTypes extends RenderType {
                     .setDepthTestState(LEQUAL_DEPTH_TEST)
                     .setLightmapState(NO_LIGHTMAP)
                     .setOverlayState(NO_OVERLAY)
-                    .setLayeringState(POLYGON_OFFSET_LAYERING)
+                    .setLayeringState(MASK_BODY_LAYERING)
                     .setWriteMaskState(COLOR_WRITE)
                     .setOutputState(TRANSFORMATION_MASK_TARGET)
                     .createCompositeState(false)
@@ -398,7 +406,9 @@ public class ModRenderTypes extends RenderType {
         return DMZShaders.outlineShader != null;
     }
 
+    @Nullable
     public static RenderType transformationMask(RenderType sourceRenderType) {
+        if (isGlint(sourceRenderType)) return null;
         ResourceLocation texture = resolveSourceTexture(sourceRenderType);
         RenderStateShard.LayeringStateShard layering = layeringOf(sourceRenderType);
         if (texture != null) {
@@ -410,6 +420,12 @@ public class ModRenderTypes extends RenderType {
         if (layering == VIEW_OFFSET_Z_LAYERING) return TRANSFORMATION_MASK_VIEW_OFFSET;
         if (layering == SKIN_OVERLAY_LAYERING) return TRANSFORMATION_MASK_SKIN_OVERLAY;
         return TRANSFORMATION_MASK;
+    }
+
+    private static boolean isGlint(@Nullable RenderType sourceRenderType) {
+        if (!(sourceRenderType instanceof CompositeRenderTypeAccessor accessor)) return false;
+        RenderType.CompositeState state = accessor.dmz$state();
+        return state != null && ((CompositeStateAccessor) (Object) state).dmz$transparencyState() == GLINT_TRANSPARENCY;
     }
 
     @Nullable

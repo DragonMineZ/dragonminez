@@ -70,14 +70,15 @@ public final class TransformationMaskBufferSource implements MultiBufferSource {
 
 	@Override
 	public VertexConsumer getBuffer(RenderType renderType) {
-		if (this.maskCaptureBlocked || (!this.maskCaptureEnabled && !this.forceCaptureAll)) {
+		boolean capture = !this.maskCaptureBlocked && (this.maskCaptureEnabled || this.forceCaptureAll);
+		RenderType maskRenderType = capture ? ModRenderTypes.transformationMask(renderType) : null;
+		if (maskRenderType == null) {
 			if (this.delegate == null || !this.includeOriginal) {
 				return new EmptyVertexConsumer();
 			}
 			return this.delegate.getBuffer(renderType);
 		}
 
-		RenderType maskRenderType = ModRenderTypes.transformationMask(renderType);
 		if (this.delegate == null) {
 			VertexConsumer maskDelegate = this.maskBufferSource.getBuffer(maskRenderType);
 			return new TransformationMaskVertexConsumer(maskDelegate, this.packedR, this.packedG, this.packedB, 255);
