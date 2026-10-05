@@ -16,6 +16,7 @@ import com.dragonminez.common.init.CapsuleCorpMapTrade;
 import com.dragonminez.common.init.MainAttributes;
 import com.dragonminez.common.init.MainEffects;
 import com.dragonminez.common.init.MainEnchants;
+import com.dragonminez.common.init.MainEntities;
 import com.dragonminez.common.init.MainItems;
 import com.dragonminez.common.init.MainVillagers;
 import com.dragonminez.common.init.MainParticles;
@@ -610,7 +611,8 @@ public class ForgeCommonEvents {
 	@SubscribeEvent
 	public static void onMobSpawn(MobSpawnEvent.FinalizeSpawn event) {
 		Mob mob = event.getEntity();
-		if (mob.getType().getCategory() != MobCategory.MONSTER) return;
+		MobCategory category = mob.getType().getCategory();
+		if (category != MobCategory.MONSTER && category != MainEntities.WILD_ENEMY) return;
 		if (mob.level().dimension().equals(HTCDimension.HTC_KEY)) return;
 
 		List<MastersEntity> masters = mob.level().getEntitiesOfClass(MastersEntity.class, new AABB(mob.blockPosition()).inflate(80));

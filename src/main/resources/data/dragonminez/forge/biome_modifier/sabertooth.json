@@ -5,11 +5,11 @@
     "type": "dragonminez:sabertooth",
     "weight": 18,
     "minCount": 1,
-    "maxCount": 3
+    "maxCount": 2
   },{
     "type": "dragonminez:bandit",
     "weight": 12,
     "minCount": 1,
-    "maxCount": 3
+    "maxCount": 2
   }]
 }

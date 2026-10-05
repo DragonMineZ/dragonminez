@@ -14,6 +14,7 @@ import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.util.Mth;
 import net.minecraft.util.RandomSource;
+import net.minecraft.world.Difficulty;
 import net.minecraft.world.phys.Vec3;
 import net.minecraftforge.event.TickEvent;
 import net.minecraftforge.event.entity.player.PlayerEvent;
@@ -28,7 +29,8 @@ import java.util.UUID;
 public class HellStampedeEvents {
 
 	private static final int CHECK_INTERVAL_TICKS = 20;
-	private static final int TICKS_BEFORE_STAMPEDE = 20 * 60 * 5;
+	private static final int MIN_TICKS_BEFORE_STAMPEDE = 20 * 60 * 8;
+	private static final int MAX_TICKS_BEFORE_STAMPEDE = 20 * 60 * 14;
 	private static final int MIN_JANEMBAS = 20;
 	private static final int MAX_JANEMBAS = 20;
 	private static final double SPAWN_DISTANCE = 20.0D;
@@ -37,7 +39,7 @@ public class HellStampedeEvents {
 	private static final int GROUND_SEARCH_UP = 6;
 	private static final int GROUND_SEARCH_DOWN = 10;
 
-	private static final Map<UUID, Integer> HELL_TIME = new HashMap<>();
+	private static final Map<UUID, Integer> TICKS_UNTIL_STAMPEDE = new HashMap<>();
 
 	@SubscribeEvent
 	public static void onPlayerTick(TickEvent.PlayerTickEvent event) {
@@ -46,24 +48,33 @@ public class HellStampedeEvents {
 
 		UUID id = player.getUUID();
 		if (!isInHell(player)) {
-			HELL_TIME.remove(id);
+			TICKS_UNTIL_STAMPEDE.remove(id);
 			return;
 		}
 
-		int time = HELL_TIME.merge(id, CHECK_INTERVAL_TICKS, Integer::sum);
-		if (time < TICKS_BEFORE_STAMPEDE) return;
+		Integer stored = TICKS_UNTIL_STAMPEDE.get(id);
+		int remaining = (stored != null ? stored : rollDelay(player.getRandom())) - CHECK_INTERVAL_TICKS;
+		if (remaining > 0) {
+			TICKS_UNTIL_STAMPEDE.put(id, remaining);
+			return;
+		}
 
-		HELL_TIME.remove(id);
+		TICKS_UNTIL_STAMPEDE.remove(id);
 		spawnStampede(player);
 	}
 
 	@SubscribeEvent
 	public static void onPlayerLogout(PlayerEvent.PlayerLoggedOutEvent event) {
-		HELL_TIME.remove(event.getEntity().getUUID());
+		TICKS_UNTIL_STAMPEDE.remove(event.getEntity().getUUID());
+	}
+
+	private static int rollDelay(RandomSource random) {
+		return Mth.randomBetweenInclusive(random, MIN_TICKS_BEFORE_STAMPEDE, MAX_TICKS_BEFORE_STAMPEDE);
 	}
 
 	private static boolean isInHell(ServerPlayer player) {
 		if (player.isSpectator() || player.isCreative()) return false;
+		if (player.level().getDifficulty() == Difficulty.PEACEFUL) return false;
 		return player.level().dimension().equals(OtherworldDimension.OTHERWORLD_KEY)
 				&& player.getY() < OtherworldGeneration.HELL_CEILING;
 	}

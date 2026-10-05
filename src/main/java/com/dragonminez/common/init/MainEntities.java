@@ -15,7 +15,6 @@ import com.dragonminez.common.init.entities.namek.NamekTraderEntity;
 import com.dragonminez.common.init.entities.namek.NamekWarriorEntity;
 import com.dragonminez.common.init.entities.questnpc.QuestNPCEntity;
 import com.dragonminez.common.init.entities.redribbon.BanditEntity;
-import com.dragonminez.common.init.entities.redribbon.RedRibbonEntity;
 import com.dragonminez.common.init.entities.redribbon.RedRibbonSoldierEntity;
 import com.dragonminez.common.init.entities.redribbon.RobotEntity;
 import com.dragonminez.common.init.entities.sagas.*;
@@ -43,10 +42,21 @@ public class MainEntities {
     public static final DeferredRegister<EntityType<?>> ENTITY_TYPES =
             DeferredRegister.create(ForgeRegistries.ENTITY_TYPES, Reference.MOD_ID);
 
+    public static final int WILD_ENEMY_CAP = 14;
+    public static final MobCategory WILD_ENEMY =
+            MobCategory.create("DRAGONMINEZ_WILD_ENEMY", "dragonminez:wild_enemy", WILD_ENEMY_CAP, false, false, 128);
+
     private static final Map<String, RegistryObject<EntityType<DragonWishEntity>>> DRAGON_WISH_ENTITIES = registerDragonWishEntities();
 
     public static final RegistryObject<EntityType<DragonWishEntity>> SHENRON = getDragonWishEntityOrThrow("shenron");
     public static final RegistryObject<EntityType<DragonWishEntity>> PORUNGA = getDragonWishEntityOrThrow("porunga");
+
+    public static List<RegistryObject<? extends EntityType<? extends Mob>>> getWildEnemies() {
+        return List.of(
+                BANDIT, RED_RIBBON_ROBOT1, RED_RIBBON_ROBOT2, RED_RIBBON_ROBOT3, RED_RIBBON_SOLDIER, SABERTOOTH,
+                MINI_BUU, SAGA_FRIEZA_SOLDIER, SAGA_FRIEZA_SOLDIER2, SAGA_FRIEZA_SOLDIER3
+        );
+    }
 
     public static List<RegistryObject<? extends EntityType<?>>> getMasterEntities() {
         return List.of(
@@ -322,7 +332,7 @@ public class MainEntities {
                             .build(ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "dinokid").toString()));
     public static final RegistryObject<EntityType<SabertoothEntity>> SABERTOOTH =
             ENTITY_TYPES.register("sabertooth",
-                    () -> EntityType.Builder.of(SabertoothEntity::new, MobCategory.MONSTER)
+                    () -> EntityType.Builder.of(SabertoothEntity::new, WILD_ENEMY)
                             .sized(1.8f, 1.2f)
                             .build(ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "sabertooth").toString()));
     public static final RegistryObject<EntityType<NamekFrogEntity>> NAMEK_FROG =
@@ -350,27 +360,27 @@ public class MainEntities {
 
     public static final RegistryObject<EntityType<BanditEntity>> BANDIT =
             ENTITY_TYPES.register("bandit",
-                    () -> EntityType.Builder.of(BanditEntity::new, MobCategory.MONSTER)
+                    () -> EntityType.Builder.of(BanditEntity::new, WILD_ENEMY)
                             .sized(1.4f, 3.2f)
                             .build(ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "bandit").toString()));
     public static final RegistryObject<EntityType<RobotEntity>> RED_RIBBON_ROBOT1 =
             ENTITY_TYPES.register("robot1",
-                    () -> EntityType.Builder.of(RobotEntity::new, MobCategory.MONSTER)
+                    () -> EntityType.Builder.of(RobotEntity::new, WILD_ENEMY)
                             .sized(1.7f, 4.5f)
                             .build(ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "robot1").toString()));
     public static final RegistryObject<EntityType<RobotEntity>> RED_RIBBON_ROBOT2 =
             ENTITY_TYPES.register("robot2",
-                    () -> EntityType.Builder.of(RobotEntity::new, MobCategory.MONSTER)
+                    () -> EntityType.Builder.of(RobotEntity::new, WILD_ENEMY)
                             .sized(1.7f, 4.5f)
                             .build(ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "robot2").toString()));
     public static final RegistryObject<EntityType<RobotEntity>> RED_RIBBON_ROBOT3 =
             ENTITY_TYPES.register("robot3",
-                    () -> EntityType.Builder.of(RobotEntity::new, MobCategory.MONSTER)
+                    () -> EntityType.Builder.of(RobotEntity::new, WILD_ENEMY)
                             .sized(1.7f, 4.5f)
                             .build(ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "robot3").toString()));
     public static final RegistryObject<EntityType<RedRibbonSoldierEntity>> RED_RIBBON_SOLDIER =
             ENTITY_TYPES.register("red_ribbon_soldier",
-                    () -> EntityType.Builder.of(RedRibbonSoldierEntity::new, MobCategory.MONSTER)
+                    () -> EntityType.Builder.of(RedRibbonSoldierEntity::new, WILD_ENEMY)
                             .sized(1.0f, 2.0f)
                             .build(ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "red_ribbon_soldier").toString()));
     public static final RegistryObject<EntityType<NamekTraderEntity>> NAMEK_TRADER =
@@ -749,17 +759,17 @@ public class MainEntities {
 
     public static final RegistryObject<EntityType<SagaFriezaSoldier01Entity>> SAGA_FRIEZA_SOLDIER =
             ENTITY_TYPES.register("saga_friezasoldier01",
-                    () -> EntityType.Builder.of(SagaFriezaSoldier01Entity::new, MobCategory.MONSTER)
+                    () -> EntityType.Builder.of(SagaFriezaSoldier01Entity::new, WILD_ENEMY)
                             .sized(0.6f, 1.8f)
                             .build(ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "saga_friezasoldier01").toString()));
     public static final RegistryObject<EntityType<SagaFriezaSoldier02Entity>> SAGA_FRIEZA_SOLDIER2 =
             ENTITY_TYPES.register("saga_friezasoldier02",
-                    () -> EntityType.Builder.of(SagaFriezaSoldier02Entity::new, MobCategory.MONSTER)
+                    () -> EntityType.Builder.of(SagaFriezaSoldier02Entity::new, WILD_ENEMY)
                             .sized(0.6f, 1.8f)
                             .build(ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "saga_friezasoldier02").toString()));
     public static final RegistryObject<EntityType<SagaFriezaSoldier02Entity>> SAGA_FRIEZA_SOLDIER3 =
             ENTITY_TYPES.register("saga_friezasoldier03",
-                    () -> EntityType.Builder.of(SagaFriezaSoldier02Entity::new, MobCategory.MONSTER)
+                    () -> EntityType.Builder.of(SagaFriezaSoldier02Entity::new, WILD_ENEMY)
                             .sized(0.6f, 1.8f)
                             .build(ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "saga_friezasoldier03").toString()));
     public static final RegistryObject<EntityType<SagaFriezaSoldier01Entity>> SAGA_MORO_SOLDIER =
@@ -1174,7 +1184,7 @@ public class MainEntities {
                             .build(ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "saga_evilbuu").toString()));
     public static final RegistryObject<EntityType<SagaBuuEntity.MiniBuuEntity>> MINI_BUU =
             ENTITY_TYPES.register("mini_buu",
-                    () -> EntityType.Builder.of(SagaBuuEntity.MiniBuuEntity::new, MobCategory.MONSTER)
+                    () -> EntityType.Builder.of(SagaBuuEntity.MiniBuuEntity::new, WILD_ENEMY)
                             .sized(0.4f, 0.9f)
                             .build(ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "mini_buu").toString()));
     public static final RegistryObject<EntityType<SagaBuuEntity.SuperBuuEntity>> SAGA_SUPERBUU=
@@ -2168,17 +2178,14 @@ public class MainEntities {
         }
 
         List<RegistryObject<? extends EntityType<? extends Mob>>> dinoEntities = List.of(
-                DINOSAUR1, DINOSAUR2, DINOSAUR3, DINO_KID, SABERTOOTH);
+                DINOSAUR1, DINOSAUR2, DINOSAUR3, DINO_KID);
 
         for (RegistryObject<? extends EntityType<? extends Mob>> dE : dinoEntities) {
             registerDinoSpawn(event, dE.get());
         }
 
-        List<RegistryObject<? extends EntityType<? extends Mob>>> redRibbonEntities = List.of(
-                BANDIT, RED_RIBBON_ROBOT1, RED_RIBBON_ROBOT2, RED_RIBBON_ROBOT3, RED_RIBBON_SOLDIER, MINI_BUU);
-
-        for (RegistryObject<? extends EntityType<? extends Mob>> rrE : redRibbonEntities) {
-            registerRedRibbonSpawn(event, rrE.get());
+        for (RegistryObject<? extends EntityType<? extends Mob>> wE : getWildEnemies()) {
+            registerWildSpawn(event, wE.get());
         }
 
         event.register(GIANT_FISH.get(), SpawnPlacements.Type.IN_WATER,
@@ -2213,10 +2220,10 @@ public class MainEntities {
                 SpawnPlacementRegisterEvent.Operation.REPLACE);
     }
 
-    private static <T extends Mob> void registerRedRibbonSpawn(SpawnPlacementRegisterEvent event, EntityType<T> entityType) {
+    private static <T extends Mob> void registerWildSpawn(SpawnPlacementRegisterEvent event, EntityType<T> entityType) {
         event.register(entityType, SpawnPlacements.Type.ON_GROUND,
-                Heightmap.Types.MOTION_BLOCKING,
-                (e, w, r, p, rand) -> RedRibbonEntity.canSpawnHere((EntityType<? extends RedRibbonEntity>) e, w, r, p, rand),
+                Heightmap.Types.MOTION_BLOCKING_NO_LEAVES,
+                WildSpawnRules::canSpawn,
                 SpawnPlacementRegisterEvent.Operation.REPLACE);
     }
 }
