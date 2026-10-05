@@ -2,6 +2,7 @@ package com.dragonminez.client.render.layer;
 
 import com.dragonminez.client.animation.IPlayerAnimatable;
 import com.dragonminez.client.render.util.WeaponGripProfile;
+import com.dragonminez.client.systems.FormVisualTransition;
 import com.dragonminez.common.combat.logic.player.PlayerAttackHelper;
 import com.dragonminez.common.combat.logic.weapon.WeaponRegistry;
 import com.dragonminez.common.stats.StatsCapability;
@@ -195,11 +196,9 @@ public class DMZPlayerItemInHandLayer<T extends AbstractClientPlayer & GeoAnimat
 		var stats = StatsProvider.get(StatsCapability.INSTANCE, animatable).orElse(null);
 		if (stats == null) return 1.0F;
 
-		var character = stats.getCharacter();
-		if (character == null) return 1.0F;
+		if (stats.getCharacter() == null) return 1.0F;
 
-		Float[] resolved = character.getResolvedModelScaling();
-		if (resolved == null || resolved.length < 3) return 1.0F;
+		float[] resolved = FormVisualTransition.modelScale(stats);
 
 		float uniform = (resolved[0] + resolved[1] + resolved[2]) / 3.0F;
 		return Math.max(0.25F, Math.min(dampenScale(uniform), 8.0F));

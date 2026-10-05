@@ -3,6 +3,7 @@ package com.dragonminez.client.render.effects;
 import com.dragonminez.Reference;
 import com.dragonminez.client.render.DMZRendererCache;
 import com.dragonminez.client.render.util.IrisCompat;
+import com.dragonminez.client.systems.FormVisualTransition;
 import com.dragonminez.common.init.entities.sagas.DBSagasEntity;
 import com.dragonminez.common.stats.StatsCapability;
 import com.dragonminez.common.stats.StatsProvider;
@@ -306,7 +307,7 @@ public final class DimensionalFistEffect {
 			placement.scaleZ = scale;
 		} else if (owner instanceof AbstractClientPlayer player) {
 			StatsProvider.get(StatsCapability.INSTANCE, player).ifPresent(stats -> {
-				Float[] resolved = stats.getCharacter().getResolvedModelScaling();
+				float[] resolved = FormVisualTransition.modelScale(stats);
 				if (resolved == null || resolved.length < 3) return;
 				placement.scaleX = resolved[0];
 				placement.scaleY = resolved[1];
@@ -425,7 +426,7 @@ public final class DimensionalFistEffect {
 		if (entity instanceof DBSagasEntity saga) return saga.getScale();
 		if (entity instanceof AbstractClientPlayer player) {
 			return StatsProvider.get(StatsCapability.INSTANCE, player).map(stats -> {
-				Float[] resolved = stats.getCharacter().getResolvedModelScaling();
+				float[] resolved = FormVisualTransition.modelScale(stats);
 				return resolved != null && resolved.length >= 3 ? resolved[2] : 1.0F;
 			}).orElse(1.0F);
 		}

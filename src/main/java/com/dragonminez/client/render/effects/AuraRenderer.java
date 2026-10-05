@@ -7,6 +7,7 @@ import com.dragonminez.client.render.util.AuraMeshFactory;
 import com.dragonminez.client.render.util.IrisCompat;
 import com.dragonminez.client.render.util.ModRenderTypes;
 import com.dragonminez.client.render.util.PlayerEffectQueue;
+import com.dragonminez.client.systems.FormVisualTransition;
 import com.dragonminez.client.util.ColorUtils;
 import com.dragonminez.common.config.ConfigManager;
 import com.dragonminez.common.config.FormConfig;
@@ -89,8 +90,6 @@ public class AuraRenderer {
 
 	private static final Map<Integer, Long> FUSION_START_TIME = new ConcurrentHashMap<>();
 	private static final Map<Integer, Boolean> WAS_FUSED_CACHE = new ConcurrentHashMap<>();
-	private static final Map<Integer, Float> COLOR_PROGRESS_MAP = new ConcurrentHashMap<>();
-	private static final Map<Integer, Long> COLOR_TICK_MAP = new ConcurrentHashMap<>();
 	private static final Map<Integer, Float> PULSE_PROGRESS = new ConcurrentHashMap<>();
 	private static final Map<Integer, Long> PULSE_LAST_RENDER_TIME = new ConcurrentHashMap<>();
 	private static final Map<Integer, Float> RELEASE_SCALE_PROGRESS = new ConcurrentHashMap<>();
@@ -501,8 +500,6 @@ public class AuraRenderer {
 		RenderSystem.stencilMask(0x00);
 
 		LAST_RENDER_TIME.keySet().removeIf(id -> !currentFramePlayers.contains(id) && !AURA_CACHE.containsKey(id));
-		COLOR_PROGRESS_MAP.keySet().removeIf(id -> !currentFramePlayers.contains(id) && !AURA_CACHE.containsKey(id));
-		COLOR_TICK_MAP.keySet().removeIf(id -> !currentFramePlayers.contains(id) && !AURA_CACHE.containsKey(id));
 		PULSE_LAST_RENDER_TIME.keySet().removeIf(id -> !currentFramePlayers.contains(id) && !AURA_CACHE.containsKey(id));
 		PULSE_PROGRESS.keySet().removeIf(id -> !currentFramePlayers.contains(id) && !AURA_CACHE.containsKey(id));
 		RELEASE_SCALE_PROGRESS.keySet().removeIf(id -> !currentFramePlayers.contains(id) && !AURA_CACHE.containsKey(id));
@@ -516,8 +513,7 @@ public class AuraRenderer {
 	}
 
 	private static float[] getModelScale(StatsData stats) {
-		Float[] resolved = stats.getCharacter().getResolvedModelScaling();
-		return new float[]{resolved[0], resolved[1], resolved[2]};
+		return FormVisualTransition.modelScale(stats);
 	}
 
 	private static float[] getBodyScale(StatsData stats) {
@@ -595,7 +591,6 @@ public class AuraRenderer {
 
 	private static List<AuraLayer> getAuraLayers(Player player, StatsData stats, float partialTick, boolean use3D) {
 		var character = stats.getCharacter();
-		int entityId = player.getId();
 
 		FormConfig.FormData nextForm = null;
 		boolean chargingNormal = false;
@@ -613,30 +608,7 @@ public class AuraRenderer {
 			}
 		}
 
-		float chargeProgress = 0.0f;
-		if (chargingNormal || chargingStack) {
-			int mastery;
-			if (chargingStack) {
-				String mGroup = character.hasActiveStackForm() ? character.getActiveStackFormGroup() : character.getSelectedStackFormGroup();
-				mastery = (int) character.getStackFormMasteries().getMastery(mGroup, nextForm.getName());
-			} else {
-				String mGroup = character.hasActiveForm() ? character.getActiveFormGroup() : character.getSelectedFormGroup();
-				mastery = (int) character.getFormMasteries().getMastery(mGroup, nextForm.getName());
-			}
-			float ratePerTick = (5 + Math.min(20, (int)(mastery * 0.2))) / 2000.0f;
-
-			float lastProgress = COLOR_PROGRESS_MAP.getOrDefault(entityId, 0.0f);
-			long lastTick = COLOR_TICK_MAP.getOrDefault(entityId, 0L);
-			long currentTick = player.tickCount;
-
-			if (currentTick != lastTick) {
-				long ticksElapsed = lastTick == 0L ? 1L : Math.max(1L, currentTick - lastTick);
-				lastProgress = Math.min(1.0f, lastProgress + ratePerTick * ticksElapsed);
-				COLOR_TICK_MAP.put(entityId, currentTick);
-				COLOR_PROGRESS_MAP.put(entityId, lastProgress);
-			}
-			chargeProgress = Math.max(0.0f, Math.min(1.0f, lastProgress + ratePerTick * partialTick));
-		} else COLOR_PROGRESS_MAP.put(entityId, 0.0f);
+		float chargeProgress = chargingNormal || chargingStack ? FormVisualTransition.chargeFactor(stats) : 0.0f;
 
 		Map<Integer, AuraLayer> layerMap = new HashMap<>();
 

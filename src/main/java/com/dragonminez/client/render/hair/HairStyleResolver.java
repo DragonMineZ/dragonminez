@@ -2,6 +2,8 @@ package com.dragonminez.client.render.hair;
 
 import com.dragonminez.client.render.layer.AuraTintTracker;
 import com.dragonminez.client.render.layer.DMZSkinLayer;
+import com.dragonminez.client.systems.FormVisualTransition;
+import com.dragonminez.common.stats.FormTransition;
 import com.dragonminez.common.config.ConfigManager;
 import com.dragonminez.common.config.FormConfig;
 import com.dragonminez.common.hair.CustomHair;
@@ -9,8 +11,6 @@ import com.dragonminez.common.hair.HairCodec;
 import com.dragonminez.common.hair.HairStyleSlot;
 import com.dragonminez.common.stats.StatsData;
 import com.dragonminez.common.stats.character.Character;
-import com.dragonminez.common.stats.extras.ActionMode;
-import com.dragonminez.common.util.TransformationsHelper;
 import com.dragonminez.common.util.lists.SaiyanForms;
 import net.minecraft.Util;
 import net.minecraft.util.Mth;
@@ -23,7 +23,6 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
 public final class HairStyleResolver {
-	private static final float FADE_OUT_RATE = 0.05f;
 	private static final float MILLIS_PER_TICK = 50.0f;
 	private static final float MAX_DELTA_TICKS = 5.0f;
 	private static final float KI_CHARGE_RISE = 0.25f;
@@ -61,11 +60,7 @@ public final class HairStyleResolver {
 	}
 
 	private static final class Tracking {
-		private float progress;
 		private float kiCharge;
-		private StyleChoice fadeTarget;
-		private float[] fadeRgb;
-		private boolean fadeForce;
 		private long lastUpdateMs;
 		private long lastSeenMs;
 	}
@@ -81,47 +76,32 @@ public final class HairStyleResolver {
 		track.lastUpdateMs = nowMs;
 		track.lastSeenMs = nowMs;
 
-		StyleChoice from = new StyleChoice(style(player, character, HairStyleSlot.BASE), HairStyleSlot.BASE);
-		float[] rgbFrom = character.getRgbRenderHairColor();
-		if (character.hasActiveForm()) {
-			from = styleForForm(player, character, character.getActiveFormGroup(), character.getActiveForm());
-			rgbFrom = rgbForForm(character, character.getActiveFormGroup(), character.getActiveForm());
-		}
-		if (character.hasActiveStackForm()) {
-			from = styleForStackForm(player, character, character.getActiveStackFormGroup(), character.getActiveStackForm(), from);
-			rgbFrom = rgbForStackForm(character.getActiveStackFormGroup(), character.getActiveStackForm(), rgbFrom);
-		}
-
-		float[] hairFrom = rgbFrom;
-		boolean oozaruFrom = character.isOozaruCached();
-		if (oozaruFrom) rgbFrom = activeBodyColor2(character);
-
-		boolean overrideFrom = oozaruFrom
-				|| hasColorOverride(character.hasActiveForm() ? character.getActiveFormData() : null)
-				|| hasColorOverride(character.hasActiveStackForm() ? character.getActiveStackFormData() : null);
+		LookHair current = lookHair(player, character, FormTransition.Look.current(character), character.isOozaruCached());
+		StyleChoice from = current.style();
+		float[] rgbFrom = current.rgb();
+		boolean overrideFrom = current.force();
 
 		StyleChoice to = from;
 		float[] rgbTo = rgbFrom;
 		boolean forceTo = overrideFrom;
 		float factor = 0.0f;
+		float chargeFactor = 0.0f;
 
-		if (stats.getStatus().isActionCharging() && resolveChargeTarget(player, stats, character, from, hairFrom, oozaruFrom, overrideFrom, track, deltaTicks)) {
-			to = track.fadeTarget;
-			rgbTo = track.fadeRgb;
-			forceTo = track.fadeForce;
-			factor = track.progress;
-		} else if (track.progress > 0.0f && track.fadeTarget != null) {
-			track.progress = Math.max(0.0f, track.progress - FADE_OUT_RATE * deltaTicks);
-			if (track.progress > 0.0f) {
-				to = track.fadeTarget;
-				rgbTo = track.fadeRgb != null ? track.fadeRgb : rgbFrom;
-				forceTo = track.fadeForce;
-				factor = track.progress;
-			} else {
-				clearFade(track);
-			}
-		} else {
-			clearFade(track);
+		FormTransition.Revert revert = FormVisualTransition.revert(stats);
+		FormTransition.Charge charge = revert == null ? FormVisualTransition.charge(stats) : null;
+		LookHair blendTarget = null;
+		if (revert != null) {
+			blendTarget = lookHair(player, character, revert.look(), isOozaru(revert.look()));
+			factor = revert.factor();
+		} else if (charge != null) {
+			blendTarget = lookHair(player, character, charge.look(), isOozaru(charge.look()));
+			factor = charge.factor();
+			chargeFactor = factor;
+		}
+		if (blendTarget != null) {
+			to = blendTarget.style();
+			rgbTo = blendTarget.rgb();
+			forceTo = blendTarget.force();
 		}
 
 		FormConfig.FormData tintForm = DMZSkinLayer.resolveTintForm(stats);
@@ -163,7 +143,7 @@ public final class HairStyleResolver {
 		out.forceColorFrom = overrideFrom;
 		out.forceColorTo = forceTo;
 		out.kiChargeProgress = track.kiCharge;
-		out.auraIntensity = Math.max(auraTint, factor);
+		out.auraIntensity = Math.max(auraTint, chargeFactor);
 		return out;
 	}
 
@@ -178,58 +158,28 @@ public final class HairStyleResolver {
 		return PUBLISHED_BASE_COLOR.get(entityId);
 	}
 
-	private boolean resolveChargeTarget(Player player, StatsData stats, Character character, StyleChoice from, float[] hairFrom,
-										boolean oozaruFrom, boolean overrideFrom, Tracking track, float deltaTicks) {
-		FormConfig.FormData nextForm;
-		StyleChoice target;
-		float[] targetRgb;
-		boolean oozaruTo;
-		int mastery;
+	private record LookHair(StyleChoice style, float[] rgb, boolean force) {}
 
-		if (stats.getStatus().getSelectedAction() == ActionMode.FORM) {
-			String group = character.getSelectedFormGroup();
-			nextForm = TransformationsHelper.presentNextForm(stats);
-			if (nextForm == null) return false;
-			target = styleForForm(player, character, group, nextForm.getName());
-			targetRgb = rgbForForm(character, group, nextForm.getName());
-			oozaruTo = isOozaru(nextForm);
-			String masteryGroup = character.hasActiveForm() ? character.getActiveFormGroup() : group;
-			mastery = (int) character.getFormMasteries().getMastery(masteryGroup, nextForm.getName());
-		} else if (stats.getStatus().getSelectedAction() == ActionMode.STACK) {
-			String group = character.getSelectedStackFormGroup();
-			nextForm = TransformationsHelper.presentNextStackForm(stats);
-			if (nextForm == null) return false;
-			target = styleForStackForm(player, character, group, nextForm.getName(), from);
-			targetRgb = rgbForStackForm(group, nextForm.getName(), hairFrom);
-			oozaruTo = Boolean.TRUE.equals(nextForm.hasCustomModel()) ? isOozaru(nextForm) : oozaruFrom;
-			String masteryGroup = character.hasActiveStackForm() ? character.getActiveStackFormGroup() : group;
-			mastery = (int) character.getStackFormMasteries().getMastery(masteryGroup, nextForm.getName());
-		} else {
-			return false;
+	private static LookHair lookHair(Player player, Character character, FormTransition.Look look, boolean oozaru) {
+		StyleChoice style = new StyleChoice(style(player, character, HairStyleSlot.BASE), HairStyleSlot.BASE);
+		float[] rgb = character.getRgbRenderHairColor();
+		if (look.hasForm()) {
+			style = styleForForm(player, character, look.formGroup(), look.form());
+			rgb = rgbForForm(character, look.formGroup(), look.form());
 		}
-
-		float ratePerTick = (5 + Math.max(20, mastery)) / 2000.0f;
-		track.progress = Math.min(1.0f, track.progress + ratePerTick * deltaTicks);
-		track.fadeTarget = target;
-		if (oozaruTo) {
-			float[] bodyColor2 = nextForm.getRgbBodyColor2();
-			track.fadeRgb = bodyColor2 != null ? bodyColor2 : activeBodyColor2(character);
-			track.fadeForce = true;
-		} else if (oozaruFrom) {
-			track.fadeRgb = targetRgb;
-			track.fadeForce = nextForm.hasHairColorOverride();
-		} else {
-			track.fadeRgb = nextForm.hasHairColorOverride() ? targetRgb : hairFrom;
-			track.fadeForce = nextForm.hasHairColorOverride() || overrideFrom;
+		if (look.hasStack()) {
+			style = styleForStackForm(player, character, look.stackGroup(), look.stack(), style);
+			rgb = rgbForStackForm(look.stackGroup(), look.stack(), rgb);
 		}
-		return true;
+		if (oozaru) rgb = look.overlay(character.getRgbBodyColor2(), FormConfig.FormData::getRgbBodyColor2);
+		boolean force = oozaru || hasColorOverride(look.formData()) || hasColorOverride(look.stackData());
+		return new LookHair(style, rgb, force);
 	}
 
-	private static void clearFade(Tracking track) {
-		track.progress = 0.0f;
-		track.fadeTarget = null;
-		track.fadeRgb = null;
-		track.fadeForce = false;
+	private static boolean isOozaru(FormTransition.Look look) {
+		FormConfig.FormData stack = look.stackData();
+		if (stack != null && Boolean.TRUE.equals(stack.hasCustomModel())) return isOozaru(stack);
+		return isOozaru(look.formData());
 	}
 
 	private static CustomHair style(Player player, Character character, HairStyleSlot slot) {
@@ -278,15 +228,6 @@ public final class HairStyleResolver {
 		String name = formData.getName();
 		if (SaiyanForms.OOZARU.equalsIgnoreCase(name) || SaiyanForms.GOLDEN_OOZARU.equalsIgnoreCase(name)) return true;
 		return Boolean.TRUE.equals(formData.hasCustomModel()) && formData.getCustomModel().toLowerCase().startsWith("oozaru");
-	}
-
-	private static float[] activeBodyColor2(Character character) {
-		float[] rgb = character.getRgbBodyColor2();
-		FormConfig.FormData activeForm = character.hasActiveForm() ? character.getActiveFormData() : null;
-		FormConfig.FormData activeStackForm = character.hasActiveStackForm() ? character.getActiveStackFormData() : null;
-		if (activeForm != null && activeForm.getRgbBodyColor2() != null) rgb = activeForm.getRgbBodyColor2();
-		if (activeStackForm != null && activeStackForm.getRgbBodyColor2() != null) rgb = activeStackForm.getRgbBodyColor2();
-		return rgb;
 	}
 
 	private static boolean hasColorOverride(FormConfig.FormData formData) {

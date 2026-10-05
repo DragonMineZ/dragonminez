@@ -459,6 +459,9 @@ public class TickHandler {
 				}
 			}
 
+			data.getFormTransition().tick(data, serverPlayer.tickCount);
+			if (data.getFormTransition().consumeDimensionRefresh()) serverPlayer.refreshDimensions();
+
 			if (shouldSync) NetworkHandler.sendToTrackingEntityAndSelf(new StatsSyncS2C(serverPlayer), serverPlayer);
 			if (shouldSync) PartyPackets.sendHudSync(serverPlayer);
 		});

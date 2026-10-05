@@ -7,6 +7,7 @@ import com.dragonminez.client.render.hair.SaiyanTailMeshBuilder;
 import com.dragonminez.client.render.firstperson.dto.FirstPersonManager;
 import com.dragonminez.client.render.util.DonorBoneRenderer;
 import com.dragonminez.client.render.util.ModRenderTypes;
+import com.dragonminez.client.systems.FormVisualTransition;
 import com.dragonminez.client.util.ColorUtils;
 import com.dragonminez.client.util.SaiyanTailRules;
 import com.dragonminez.client.util.SkinGathererProvider;
@@ -20,9 +21,7 @@ import com.dragonminez.common.stats.FusedData;
 import com.dragonminez.common.stats.StatsCapability;
 import com.dragonminez.common.stats.StatsData;
 import com.dragonminez.common.stats.StatsProvider;
-import com.dragonminez.common.stats.extras.ActionMode;
 import com.dragonminez.common.util.FusionTraits;
-import com.dragonminez.common.util.TransformationsHelper;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
 import com.mojang.math.Axis;
@@ -194,30 +193,7 @@ public class DMZRacePartsLayer<T extends AbstractClientPlayer & GeoAnimatable> e
 		float formTintIntensity = tintForm != null ? (float) tintForm.getTintIntensity() : 0.0f;
 		float[] topAuraColor = getTopAuraColor(stats);
 
-		float[] accessoryColor = character.getRgbHairColor();
-
-		if (character.hasActiveForm() && character.getActiveFormData() != null && !character.getActiveFormData().getHairColor().isEmpty()) {
-			accessoryColor = character.getActiveFormData().getRgbHairColor();
-		}
-		if (character.hasActiveStackForm() && character.getActiveStackFormData() != null && !character.getActiveStackFormData().getHairColor().isEmpty()) {
-			accessoryColor = character.getActiveStackFormData().getRgbHairColor();
-		}
-
-		if (stats.getStatus().isActionCharging()) {
-			if (stats.getStatus().getSelectedAction() == ActionMode.FORM) {
-				var nextForm = TransformationsHelper.presentNextForm(stats);
-				if (nextForm != null && !nextForm.getHairColor().isEmpty()) {
-					float factor = Mth.clamp(stats.getResources().getActionCharge() / 100.0f, 0.0f, 1.0f);
-					accessoryColor = DMZSkinLayer.lerpColor(factor, accessoryColor, nextForm.getRgbHairColor());
-				}
-			} else if (stats.getStatus().getSelectedAction() == ActionMode.STACK) {
-				var nextForm = TransformationsHelper.presentNextStackForm(stats);
-				if (nextForm != null && !nextForm.getHairColor().isEmpty()) {
-					float factor = Mth.clamp(stats.getResources().getActionCharge() / 100.0f, 0.0f, 1.0f);
-					accessoryColor = DMZSkinLayer.lerpColor(factor, accessoryColor, nextForm.getRgbHairColor());
-				}
-			}
-		}
+		float[] accessoryColor = FormVisualTransition.color(stats, character.getRgbHairColor(), FormConfig.FormData::getRgbHairColor);
 
 		if (anchor.equals("head")) {
 			boolean extraHeadBonesEnabled = character.areExtraHeadBonesEnabled();
@@ -429,34 +405,10 @@ public class DMZRacePartsLayer<T extends AbstractClientPlayer & GeoAnimatable> e
 
 	private float[] resolveTailColor(StatsData stats) {
 		var character = stats.getCharacter();
-		float[] tailColor = ColorUtils.hexToRgb("#572117");
-
-		if (character.getBodyColor2() != null && !character.getBodyColor2().isEmpty()) {
-			tailColor = character.getRgbBodyColor2();
-		}
-		if (character.hasActiveForm() && character.getActiveFormData() != null && !character.getActiveFormData().getBodyColor2().isEmpty()) {
-			tailColor = character.getActiveFormData().getRgbBodyColor2();
-		}
-		if (character.hasActiveStackForm() && character.getActiveStackFormData() != null && !character.getActiveStackFormData().getBodyColor2().isEmpty()) {
-			tailColor = character.getActiveStackFormData().getRgbBodyColor2();
-		}
-
-		if (stats.getStatus().isActionCharging()) {
-			if (stats.getStatus().getSelectedAction() == ActionMode.FORM) {
-				var nextForm = TransformationsHelper.presentNextForm(stats);
-				if (nextForm != null && !nextForm.getBodyColor2().isEmpty()) {
-					float factor = Mth.clamp(stats.getResources().getActionCharge() / 100.0f, 0.0f, 1.0f);
-					tailColor = DMZSkinLayer.lerpColor(factor, tailColor, nextForm.getRgbBodyColor2());
-				}
-			} else if (stats.getStatus().getSelectedAction() == ActionMode.STACK) {
-				var nextForm = TransformationsHelper.presentNextStackForm(stats);
-				if (nextForm != null && !nextForm.getBodyColor2().isEmpty()) {
-					float factor = Mth.clamp(stats.getResources().getActionCharge() / 100.0f, 0.0f, 1.0f);
-					tailColor = DMZSkinLayer.lerpColor(factor, tailColor, nextForm.getRgbBodyColor2());
-				}
-			}
-		}
-		return tailColor;
+		float[] baseTail = character.getBodyColor2() != null && !character.getBodyColor2().isEmpty()
+				? character.getRgbBodyColor2()
+				: ColorUtils.hexToRgb("#572117");
+		return FormVisualTransition.color(stats, baseTail, FormConfig.FormData::getRgbBodyColor2);
 	}
 
 	private float[] tintedShadow(float[] color, float[] formTintColor, float formTintIntensity, float[] auraColor, float tintProgress) {
@@ -470,32 +422,7 @@ public class DMZRacePartsLayer<T extends AbstractClientPlayer & GeoAnimatable> e
 	}
 
 	private float[] resolveBodyColor1(StatsData stats) {
-		var character = stats.getCharacter();
-		float[] color = character.getRgbBodyColor();
-
-		if (character.hasActiveForm() && character.getActiveFormData() != null && !character.getActiveFormData().getBodyColor1().isEmpty()) {
-			color = character.getActiveFormData().getRgbBodyColor1();
-		}
-		if (character.hasActiveStackForm() && character.getActiveStackFormData() != null && !character.getActiveStackFormData().getBodyColor1().isEmpty()) {
-			color = character.getActiveStackFormData().getRgbBodyColor1();
-		}
-
-		if (stats.getStatus().isActionCharging()) {
-			float factor = Mth.clamp(stats.getResources().getActionCharge() / 100.0f, 0.0f, 1.0f);
-			if (stats.getStatus().getSelectedAction() == ActionMode.FORM) {
-				var nextForm = TransformationsHelper.presentNextForm(stats);
-				if (nextForm != null && !nextForm.getBodyColor1().isEmpty()) {
-					color = DMZSkinLayer.lerpColor(factor, color, nextForm.getRgbBodyColor1());
-				}
-			} else if (stats.getStatus().getSelectedAction() == ActionMode.STACK) {
-				var nextForm = TransformationsHelper.presentNextStackForm(stats);
-				if (nextForm != null && !nextForm.getBodyColor1().isEmpty()) {
-					color = DMZSkinLayer.lerpColor(factor, color, nextForm.getRgbBodyColor1());
-				}
-			}
-		}
-
-		return color;
+		return FormVisualTransition.color(stats, stats.getCharacter().getRgbBodyColor(), FormConfig.FormData::getRgbBodyColor1);
 	}
 
 	private float[] getTopAuraColor(StatsData stats) {

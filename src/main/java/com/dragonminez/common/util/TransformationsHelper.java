@@ -563,6 +563,10 @@ public class TransformationsHelper {
 		return (hasFormSkillAccess(statsData, group, config.getFormType(), nextFormConfig.getUnlockOnSkillLevel()) && meetsMasteryRequisite(statsData, group, nextFormConfig)) ? nextFormConfig : null;
 	}
 
+	public static int formChargeStep(int mastery) {
+		return 10 + Math.min(15, (int) (mastery * 0.2));
+	}
+
 	public static FormConfig.FormData presentNextForm(StatsData statsData) {
 		FormConfig.FormData next = getNextAvailableForm(statsData);
 		if (next == null || !statsData.getCharacter().isFused()) return next;

@@ -1,6 +1,7 @@
 package com.dragonminez.client.render.firstperson.dto;
 
 import com.dragonminez.client.gui.UtilityMenuScreen;
+import com.dragonminez.client.systems.FormVisualTransition;
 import com.dragonminez.common.config.ConfigManager;
 import com.dragonminez.common.stats.StatsCapability;
 import com.dragonminez.common.stats.StatsProvider;
@@ -30,7 +31,7 @@ public class FirstPersonManager {
 		final float[][] scaling = {{BASE_SCALE, BASE_SCALE, BASE_SCALE}};
 
 		StatsProvider.get(StatsCapability.INSTANCE, player).ifPresent(data -> {
-			Float[] resolved = data.getCharacter().getResolvedModelScaling();
+			float[] resolved = FormVisualTransition.modelScale(data);
 			if (resolved != null && resolved.length >= 2) {
 				scaling[0][0] = resolved[0];
 				scaling[0][1] = resolved[1];

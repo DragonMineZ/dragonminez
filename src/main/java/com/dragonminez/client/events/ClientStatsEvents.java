@@ -5,6 +5,7 @@ import com.dragonminez.client.clash.ClientBeamClashState;
 import com.dragonminez.client.flight.FlightSoundInstance;
 import com.dragonminez.client.gui.hud.ScouterHUD;
 import com.dragonminez.client.systems.BioSwellRenderState;
+import com.dragonminez.client.systems.FormVisualTransition;
 import com.dragonminez.client.systems.kisense.CombatIndicators;
 import com.dragonminez.client.systems.kisense.KiSenseScan;
 import com.dragonminez.client.systems.kisense.KiSenseState;
@@ -88,6 +89,11 @@ public class ClientStatsEvents {
 	private static boolean chargePending = false;
 	private static int chargePendingTicks = 0;
 	private static final boolean[] wasSlotKeyDown = new boolean[TECHNIQUE_VISIBLE_SLOTS];
+	private static boolean localActionChargeReleased = false;
+
+	public static boolean isLocalActionChargeReleased() {
+		return localActionChargeReleased;
+	}
 
 	private static ActionMode lastActionMode = null;
 
@@ -133,6 +139,7 @@ public class ClientStatsEvents {
 				StatsProvider.get(StatsCapability.INSTANCE, player)
 						.ifPresent(data -> BioSwellRenderState.tick(player, data));
 			}
+			FormVisualTransition.tick(mc.level.players());
 		}
 
 		StatsProvider.get(StatsCapability.INSTANCE, localPlayer).ifPresent(data -> {
@@ -185,6 +192,7 @@ public class ClientStatsEvents {
 			}
 		}
 
+		localActionChargeReleased = false;
 		if (mc.screen != null) {
 			StatsProvider.get(StatsCapability.INSTANCE, localPlayer).ifPresent(data -> {
 				if (data.getStatus().isBlocking()) {
@@ -251,6 +259,7 @@ public class ClientStatsEvents {
 			// secondary packet is ever sent.
 			boolean racialSecondaryChord = isDescendKeyPressed && data.getStatus().getSelectedAction() == ActionMode.RACIAL;
 			boolean shouldChargeAction = (isActionKeyPressed && !racialSecondaryChord) || canAutoChargeOozaru;
+			localActionChargeReleased = !shouldChargeAction;
 
 			boolean kiWeaponActive = PlayerAttackHelper.isKiWeaponActive(localPlayer);
 			boolean handsEmpty = localPlayer.getItemInHand(InteractionHand.MAIN_HAND).isEmpty() && localPlayer.getItemInHand(InteractionHand.OFF_HAND).isEmpty();
@@ -661,8 +670,7 @@ public class ClientStatsEvents {
 	}
 
 	private static float[] getBodyScale(StatsData stats) {
-		Float[] resolved = stats.getCharacter().getResolvedModelScaling();
-		return new float[]{resolved[0], resolved[1], resolved[2]};
+		return FormVisualTransition.modelScale(stats);
 	}
 
 	private static boolean characterHasAuraColor(Character character) {

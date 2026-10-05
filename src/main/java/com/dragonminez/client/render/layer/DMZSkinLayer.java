@@ -12,6 +12,8 @@ import com.dragonminez.client.render.util.ModRenderTypes;
 import com.dragonminez.client.render.util.SkinPixelTextures;
 import com.dragonminez.client.render.util.SkinPaintContext;
 import com.dragonminez.client.util.ColorUtils;
+import com.dragonminez.client.systems.FormVisualTransition;
+import com.dragonminez.common.stats.FormTransition;
 import com.dragonminez.client.util.SkinGathererProvider;
 import com.dragonminez.client.util.TextureCounter;
 import com.dragonminez.common.config.ConfigManager;
@@ -21,8 +23,6 @@ import com.dragonminez.common.init.MainEffects;
 import com.dragonminez.common.stats.*;
 import com.dragonminez.common.stats.character.Character;
 import com.dragonminez.common.stats.character.SkinPixels;
-import com.dragonminez.common.stats.extras.ActionMode;
-import com.dragonminez.common.util.TransformationsHelper;
 import com.dragonminez.common.util.lists.BioAndroidForms;
 import com.dragonminez.common.util.lists.FrostDemonForms;
 import com.dragonminez.common.util.lists.SaiyanForms;
@@ -238,37 +238,14 @@ public class DMZSkinLayer<T extends AbstractClientPlayer & GeoAnimatable> extend
 			return;
 		}
 
-		float[] currentTint = character.getRgbRenderHairColor();
-
 		if (character.hasActiveForm() && character.getActiveFormData() != null) {
 			if (character.getActiveFormData().hasDefinedHairType() && HairStyleSlot.byHairType(character.getActiveFormData().getHairType()) == null) return;
-			if (!character.getActiveFormData().getHairColor().isEmpty()) {
-				currentTint = character.getActiveFormData().getRgbHairColor();
-			}
 		}
 		if (character.hasActiveStackForm() && character.getActiveStackFormData() != null) {
 			if (character.getActiveStackFormData().hasDefinedHairType() && HairStyleSlot.byHairType(character.getActiveStackFormData().getHairType()) == null) return;
-			if (!character.getActiveStackFormData().getHairColor().isEmpty()) {
-				currentTint = character.getActiveStackFormData().getRgbHairColor();
-			}
 		}
 
-		float[] finalTint = currentTint;
-		if (stats.getStatus().isActionCharging()) {
-			if (stats.getStatus().getSelectedAction() == ActionMode.FORM) {
-				var nextForm = TransformationsHelper.presentNextForm(stats);
-				if (nextForm != null && !nextForm.getHairColor().isEmpty()) {
-					float chargeProgress = Mth.clamp(stats.getResources().getActionCharge() / 100.0f, 0.0f, 1.0f);
-					finalTint = lerpColor(chargeProgress, currentTint, nextForm.getRgbHairColor());
-				}
-			} else if (stats.getStatus().getSelectedAction() == ActionMode.STACK) {
-				var nextForm = TransformationsHelper.presentNextStackForm(stats);
-				if (nextForm != null && !nextForm.getHairColor().isEmpty()) {
-					float chargeProgress = Mth.clamp(stats.getResources().getActionCharge() / 100.0f, 0.0f, 1.0f);
-					finalTint = lerpColor(chargeProgress, currentTint, nextForm.getRgbHairColor());
-				}
-			}
-		}
+		float[] finalTint = FormVisualTransition.color(stats, character.getRgbRenderHairColor(), FormConfig.FormData::getRgbHairColor);
 
 		float[] publishedHair = HairStyleResolver.getPublishedBaseColor(player.getId(), player.level().getGameTime());
 		final float[] hairTint = publishedHair != null ? publishedHair : applyColorTint(finalTint, stats);
@@ -352,63 +329,11 @@ public class DMZSkinLayer<T extends AbstractClientPlayer & GeoAnimatable> extend
 
 	private void dispatchFaceRender(BakedGeoModel model, PoseStack poseStack, T animatable, MultiBufferSource bufferSource, StatsData stats, Character character, String faceKey, boolean isModelEmpty, String race, float pt, int pl, int po, float alpha) {
 
-		float[] eye1 = character.getRgbEye1Color();
-		float[] eye2 = character.getRgbEye2Color();
-		float[] skin = character.getRgbBodyColor();
-		float[] b2 = character.getRgbBodyColor2();
-		float[] hair = character.getRgbHairColor();
-
-		if (character.hasActiveForm() && character.getActiveFormData() != null) {
-			var f = character.getActiveFormData();
-			if (!f.getEye1Color().isEmpty()) eye1 = f.getRgbEye1Color();
-			if (!f.getEye2Color().isEmpty()) eye2 = f.getRgbEye2Color();
-			if (!f.getHairColor().isEmpty()) hair = f.getRgbHairColor();
-			if (!f.getBodyColor1().isEmpty()) skin = f.getRgbBodyColor1();
-			if (!f.getBodyColor2().isEmpty()) b2 = f.getRgbBodyColor2();
-		}
-
-		if (character.hasActiveStackForm() && character.getActiveStackFormData() != null) {
-			var sf = character.getActiveStackFormData();
-			if (!sf.getEye1Color().isEmpty()) eye1 = sf.getRgbEye1Color();
-			if (!sf.getEye2Color().isEmpty()) eye2 = sf.getRgbEye2Color();
-			if (!sf.getHairColor().isEmpty()) hair = sf.getRgbHairColor();
-			if (!sf.getBodyColor1().isEmpty()) skin = sf.getRgbBodyColor1();
-			if (!sf.getBodyColor2().isEmpty()) b2 = sf.getRgbBodyColor2();
-		}
-
-		if (stats.getStatus().isActionCharging()) {
-			if (stats.getStatus().getSelectedAction() == ActionMode.FORM) {
-				var nextForm = TransformationsHelper.presentNextForm(stats);
-				if (nextForm != null) {
-					float factor = Mth.clamp(stats.getResources().getActionCharge() / 100.0f, 0.0f, 1.0f);
-					if (!nextForm.getEye1Color().isEmpty())
-						eye1 = lerpColor(factor, eye1, nextForm.getRgbEye1Color());
-					if (!nextForm.getEye2Color().isEmpty())
-						eye2 = lerpColor(factor, eye2, nextForm.getRgbEye2Color());
-					if (!nextForm.getBodyColor1().isEmpty())
-						skin = lerpColor(factor, skin, nextForm.getRgbBodyColor1());
-					if (!nextForm.getBodyColor2().isEmpty())
-						b2 = lerpColor(factor, b2, nextForm.getRgbBodyColor2());
-					if (!nextForm.getHairColor().isEmpty())
-						hair = lerpColor(factor, hair, nextForm.getRgbHairColor());
-				}
-			} else if (stats.getStatus().getSelectedAction() == ActionMode.STACK) {
-				var nextForm = TransformationsHelper.presentNextStackForm(stats);
-				if (nextForm != null) {
-					float factor = Mth.clamp(stats.getResources().getActionCharge() / 100.0f, 0.0f, 1.0f);
-					if (!nextForm.getEye1Color().isEmpty())
-						eye1 = lerpColor(factor, eye1, nextForm.getRgbEye1Color());
-					if (!nextForm.getEye2Color().isEmpty())
-						eye2 = lerpColor(factor, eye2, nextForm.getRgbEye2Color());
-					if (!nextForm.getBodyColor1().isEmpty())
-						skin = lerpColor(factor, skin, nextForm.getRgbBodyColor1());
-					if (!nextForm.getBodyColor2().isEmpty())
-						b2 = lerpColor(factor, b2, nextForm.getRgbBodyColor2());
-					if (!nextForm.getHairColor().isEmpty())
-						hair = lerpColor(factor, hair, nextForm.getRgbHairColor());
-				}
-			}
-		}
+		float[] eye1 = FormVisualTransition.color(stats, character.getRgbEye1Color(), FormConfig.FormData::getRgbEye1Color);
+		float[] eye2 = FormVisualTransition.color(stats, character.getRgbEye2Color(), FormConfig.FormData::getRgbEye2Color);
+		float[] skin = FormVisualTransition.color(stats, character.getRgbBodyColor(), FormConfig.FormData::getRgbBodyColor1);
+		float[] b2 = FormVisualTransition.color(stats, character.getRgbBodyColor2(), FormConfig.FormData::getRgbBodyColor2);
+		float[] hair = FormVisualTransition.color(stats, character.getRgbHairColor(), FormConfig.FormData::getRgbHairColor);
 
 		skin = applyColorTint(skin, stats);
 		hair = applyColorTint(hair, stats);
@@ -665,29 +590,27 @@ public class DMZSkinLayer<T extends AbstractClientPlayer & GeoAnimatable> extend
 
 	private record PixelPaint(float[] rgb, float alpha) {}
 
-	private PixelPaint resolvePixelPaint(StatsData stats, Function<FormConfig.FormData, String> hex, Function<FormConfig.FormData, float[]> rgb) {
-		var character = stats.getCharacter();
-		float[] base = null;
-		FormConfig.FormData form = character.hasActiveForm() ? character.getActiveFormData() : null;
-		if (form != null && hex.apply(form) != null && !hex.apply(form).isEmpty()) base = rgb.apply(form);
-		FormConfig.FormData stack = character.hasActiveStackForm() ? character.getActiveStackFormData() : null;
-		if (stack != null && hex.apply(stack) != null && !hex.apply(stack).isEmpty()) base = rgb.apply(stack);
+	private PixelPaint resolvePixelPaint(StatsData stats, Function<FormConfig.FormData, float[]> rgb) {
+		PixelPaint paint = pixelPaint(FormTransition.Look.current(stats.getCharacter()).overlay(null, rgb));
+		FormTransition.Charge charge = FormVisualTransition.charge(stats);
+		if (charge != null) paint = blendPixelPaint(paint, pixelPaint(charge.look().overlay(null, rgb)), charge.factor());
+		FormTransition.Revert revert = FormVisualTransition.revert(stats);
+		if (revert != null) paint = blendPixelPaint(paint, pixelPaint(revert.look().overlay(null, rgb)), revert.factor());
+		return paint;
+	}
 
-		float[] target = null;
-		float progress = 0.0f;
-		if (stats.getStatus().isActionCharging()) {
-			FormConfig.FormData next = null;
-			if (stats.getStatus().getSelectedAction() == ActionMode.FORM) next = TransformationsHelper.presentNextForm(stats);
-			else if (stats.getStatus().getSelectedAction() == ActionMode.STACK) next = TransformationsHelper.presentNextStackForm(stats);
-			if (next != null && hex.apply(next) != null && !hex.apply(next).isEmpty()) {
-				target = rgb.apply(next);
-				progress = Mth.clamp(stats.getResources().getActionCharge() / 100.0f, 0.0f, 1.0f);
-			}
+	private static PixelPaint pixelPaint(float[] rgb) {
+		return rgb != null ? new PixelPaint(rgb, 1.0f) : null;
+	}
+
+	private static PixelPaint blendPixelPaint(PixelPaint from, PixelPaint to, float factor) {
+		if (from == null && to == null) return null;
+		if (from == null) return factor > 0.001f ? new PixelPaint(to.rgb(), to.alpha() * factor) : null;
+		if (to == null) {
+			float alpha = from.alpha() * (1.0f - factor);
+			return alpha > 0.001f ? new PixelPaint(from.rgb(), alpha) : null;
 		}
-		if (base == null && target == null) return null;
-		if (base != null && target != null) return new PixelPaint(lerpColor(progress, base, target), 1.0f);
-		if (base != null) return new PixelPaint(base, 1.0f);
-		return progress > 0.001f ? new PixelPaint(target, progress) : null;
+		return new PixelPaint(lerpColor(factor, from.rgb(), to.rgb()), Mth.lerp(factor, from.alpha(), to.alpha()));
 	}
 
 	private void renderSkinPixelHair(BakedGeoModel model, PoseStack poseStack, T animatable, MultiBufferSource bufferSource, AbstractClientPlayer player, StatsData stats, float pt, int pl, int po, float alpha) {
@@ -702,29 +625,15 @@ public class DMZSkinLayer<T extends AbstractClientPlayer & GeoAnimatable> extend
 	}
 
 	private float[] resolveSkinHairColor(StatsData stats) {
-		var character = stats.getCharacter();
-		float[] tint = character.getRgbRenderHairColor();
-		FormConfig.FormData form = character.hasActiveForm() ? character.getActiveFormData() : null;
-		if (form != null && form.getHairColor() != null && !form.getHairColor().isEmpty()) tint = form.getRgbHairColor();
-		FormConfig.FormData stack = character.hasActiveStackForm() ? character.getActiveStackFormData() : null;
-		if (stack != null && stack.getHairColor() != null && !stack.getHairColor().isEmpty()) tint = stack.getRgbHairColor();
-		if (stats.getStatus().isActionCharging()) {
-			FormConfig.FormData next = null;
-			if (stats.getStatus().getSelectedAction() == ActionMode.FORM) next = TransformationsHelper.presentNextForm(stats);
-			else if (stats.getStatus().getSelectedAction() == ActionMode.STACK) next = TransformationsHelper.presentNextStackForm(stats);
-			if (next != null && next.getHairColor() != null && !next.getHairColor().isEmpty()) {
-				tint = lerpColor(Mth.clamp(stats.getResources().getActionCharge() / 100.0f, 0.0f, 1.0f), tint, next.getRgbHairColor());
-			}
-		}
-		return tint;
+		return FormVisualTransition.color(stats, stats.getCharacter().getRgbRenderHairColor(), FormConfig.FormData::getRgbHairColor);
 	}
 
 	private void renderSkinPixelEyes(BakedGeoModel model, PoseStack poseStack, T animatable, MultiBufferSource bufferSource, AbstractClientPlayer player, StatsData stats, float pt, int pl, int po, float alpha) {
 		var character = stats.getCharacter();
 		SkinPixels pixels = character.getSkinPixels();
 		if (!pixels.hasEyeMarks()) return;
-		PixelPaint iris = resolvePixelPaint(stats, FormConfig.FormData::getEye1Color, FormConfig.FormData::getRgbEye1Color);
-		PixelPaint brow = resolvePixelPaint(stats, FormConfig.FormData::getHairColor, FormConfig.FormData::getRgbHairColor);
+		PixelPaint iris = resolvePixelPaint(stats, FormConfig.FormData::getRgbEye1Color);
+		PixelPaint brow = resolvePixelPaint(stats, FormConfig.FormData::getRgbHairColor);
 		if (iris == null && brow == null) return;
 		ResourceLocation scleraMask = iris != null ? SkinPixelTextures.eyeMask(player, pixels, SkinPixels.MARK_SCLERA) : null;
 		ResourceLocation irisMask = iris != null ? SkinPixelTextures.eyeMask(player, pixels, SkinPixels.MARK_IRIS) : null;
@@ -801,35 +710,28 @@ public class DMZSkinLayer<T extends AbstractClientPlayer & GeoAnimatable> extend
 
 	public static Ssj4Overlay resolveSsj4Overlay(StatsData stats) {
 		var character = stats.getCharacter();
+		FormTransition.Look current = FormTransition.Look.current(character);
+		FormTransition.Charge charge = FormVisualTransition.charge(stats);
+		FormTransition.Revert revert = FormVisualTransition.revert(stats);
 
-		String activeModel = "";
-		if (character.hasActiveStackForm() && character.getActiveStackFormData() != null && Boolean.TRUE.equals(character.getActiveStackFormData().hasCustomModel())) {
-			activeModel = character.getActiveStackFormData().getCustomModel().toLowerCase();
-		} else if (character.hasActiveForm() && character.getActiveFormData() != null && Boolean.TRUE.equals(character.getActiveFormData().hasCustomModel())) {
-			activeModel = character.getActiveFormData().getCustomModel().toLowerCase();
-		}
-		boolean activeSsj4 = isSsj4Model(activeModel);
+		String currentModel = current.customModel();
+		String chargeModel = charge != null ? charge.look().customModel() : "";
+		String revertModel = revert != null ? revert.look().customModel() : "";
+		boolean currentSsj4 = isSsj4Model(currentModel);
+		boolean chargeSsj4 = isSsj4Model(chargeModel);
+		boolean revertSsj4 = isSsj4Model(revertModel);
+		if (!currentSsj4 && !chargeSsj4 && !revertSsj4) return null;
 
-		boolean chargingSsj4 = false;
-		String targetModel = "";
-		float chargeFraction = 0.0f;
-		FormConfig.FormData nextForm = null;
-		if (stats.getStatus().isActionCharging()) {
-			if (stats.getStatus().getSelectedAction() == ActionMode.FORM) nextForm = TransformationsHelper.presentNextForm(stats);
-			else if (stats.getStatus().getSelectedAction() == ActionMode.STACK) nextForm = TransformationsHelper.presentNextStackForm(stats);
+		float target = currentSsj4 ? 1.0f : 0.0f;
+		if (charge != null) target = Mth.lerp(charge.factor(), target, chargeSsj4 ? 1.0f : 0.0f);
+		if (revert != null) target = Mth.lerp(revert.factor(), target, revertSsj4 ? 1.0f : 0.0f);
 
-			if (nextForm != null && Boolean.TRUE.equals(nextForm.hasCustomModel())) {
-				targetModel = nextForm.getCustomModel().toLowerCase();
-				chargingSsj4 = isSsj4Model(targetModel);
-				chargeFraction = Mth.clamp(stats.getResources().getActionCharge() / 100.0f, 0.0f, 1.0f);
-			}
-		}
-
-		if (!activeSsj4 && !chargingSsj4) return null;
-
-		String key = activeSsj4 ? activeModel.contains("ssj4gt") ? "ssj4gt" : "ssj4d" : targetModel.contains("ssj4gt") ? "ssj4gt" : "ssj4d";
-		float target = activeSsj4 ? 1.0f : chargeFraction;
-		float[] color = resolveSsj4OverlayColor(character, chargingSsj4 ? nextForm : null, chargeFraction);
+		String model = currentSsj4 ? currentModel : chargeSsj4 ? chargeModel : revertModel;
+		String key = model.contains("ssj4gt") ? "ssj4gt" : "ssj4d";
+		boolean hairFur = furUsesHairColor(current) || (charge != null && furUsesHairColor(charge.look())) || (revert != null && furUsesHairColor(revert.look()));
+		float[] color = hairFur
+				? FormVisualTransition.color(stats, character.getRgbHairColor(), FormConfig.FormData::getRgbHairColor)
+				: FormVisualTransition.color(stats, character.getRgbBodyColor2(), FormConfig.FormData::getRgbBodyColor2);
 		return new Ssj4Overlay(key, color, target);
 	}
 
@@ -837,36 +739,12 @@ public class DMZSkinLayer<T extends AbstractClientPlayer & GeoAnimatable> extend
 		return model.contains("ssj4d") || model.contains("ssj4gt");
 	}
 
-	private static float[] resolveSsj4OverlayColor(Character character, FormConfig.FormData chargeTarget, float chargeFraction) {
-		FormConfig.FormData form = character.hasActiveForm() ? character.getActiveFormData() : null;
-		FormConfig.FormData stack = character.hasActiveStackForm() ? character.getActiveStackFormData() : null;
-		if (furUsesHairColor(chargeTarget) || furUsesHairColor(stack) || furUsesHairColor(form)) {
-			return resolveSsj4FurHairColor(character, form, stack, chargeTarget, chargeFraction);
-		}
-
-		float[] b2 = character.getRgbBodyColor2();
-		if (form != null && !form.getBodyColor2().isEmpty()) {
-			b2 = form.getRgbBodyColor2();
-		}
-		if (stack != null && !stack.getBodyColor2().isEmpty()) {
-			b2 = stack.getRgbBodyColor2();
-		}
-		if (chargeTarget != null && chargeTarget.getRgbBodyColor2() != null) {
-			b2 = lerpColor(chargeFraction, b2, chargeTarget.getRgbBodyColor2());
-		}
-		return b2;
+	private static boolean furUsesHairColor(FormTransition.Look look) {
+		return furUsesHairColor(look.formData()) || furUsesHairColor(look.stackData());
 	}
 
 	private static boolean furUsesHairColor(FormConfig.FormData form) {
 		return form != null && form.usesHairColorForFur() && Boolean.TRUE.equals(form.hasCustomModel()) && isSsj4Model(form.getCustomModel().toLowerCase());
-	}
-
-	private static float[] resolveSsj4FurHairColor(Character character, FormConfig.FormData form, FormConfig.FormData stack, FormConfig.FormData chargeTarget, float chargeFraction) {
-		float[] hair = character.getRgbHairColor();
-		if (form != null && form.getRgbHairColor() != null) hair = form.getRgbHairColor();
-		if (stack != null && stack.getRgbHairColor() != null) hair = stack.getRgbHairColor();
-		if (chargeTarget != null && chargeTarget.getRgbHairColor() != null) hair = lerpColor(chargeFraction, hair, chargeTarget.getRgbHairColor());
-		return hair;
 	}
 
 	private void renderFadingBodyLayers(BakedGeoModel model, PoseStack poseStack, T animatable, MultiBufferSource bufferSource, int entityId, long gameTime, List<BodyLayerFadeTracker.FadingLayer> activeLayers, float partialTick, int packedLight, int packedOverlay, float baseAlpha) {

@@ -445,15 +445,16 @@ public class Character {
 	}
 
 	public Float[] getResolvedModelScaling() {
-		Float[] scaling = resolveFormModelScaling();
+		return getModelScalingFor(getActiveFormData(), getActiveStackFormData());
+	}
+
+	public Float[] getModelScalingFor(FormConfig.FormData form, FormConfig.FormData stack) {
+		Float[] scaling = resolveFormModelScaling(form, stack);
 		if (demonEyeGrowth <= 1.0f) return scaling;
 		return new Float[]{scaling[0] * demonEyeGrowth, scaling[1] * demonEyeGrowth, scaling[2] * demonEyeGrowth};
 	}
 
-	private Float[] resolveFormModelScaling() {
-		FormConfig.FormData form = getActiveFormData();
-		FormConfig.FormData stack = getActiveStackFormData();
-
+	private Float[] resolveFormModelScaling(FormConfig.FormData form, FormConfig.FormData stack) {
 		if (form == null && stack == null) return safeModelScaling(getModelScaling());
 		if (form != null && stack == null) return safeModelScaling(form.getModelScaling());
 		if (form == null && stack != null) return safeModelScaling(stack.getModelScaling());

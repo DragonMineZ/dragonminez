@@ -5,22 +5,20 @@ import com.dragonminez.client.render.layer.DMZSkinLayer;
 import com.dragonminez.common.config.ConfigManager;
 import com.dragonminez.common.config.FormConfig;
 import com.dragonminez.common.config.RaceCharacterConfig;
-import com.dragonminez.common.stats.extras.ActionMode;
 import com.dragonminez.common.stats.character.Character;
 import com.dragonminez.common.stats.character.SkinPixels;
 import com.dragonminez.client.render.util.SkinPixelTextures;
+import com.dragonminez.client.systems.FormVisualTransition;
 import com.dragonminez.common.stats.FusedData;
 import com.dragonminez.common.stats.StatsData;
 import com.dragonminez.common.util.FusionForms;
 import com.dragonminez.common.util.FusionTraits;
-import com.dragonminez.common.util.TransformationsHelper;
 import com.dragonminez.common.util.lists.FrostDemonForms;
 import com.dragonminez.common.util.lists.MajinForms;
 import com.dragonminez.common.util.lists.SaiyanForms;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.player.AbstractClientPlayer;
 import net.minecraft.resources.ResourceLocation;
-import net.minecraft.util.Mth;
 
 import java.util.Map;
 import java.util.Objects;
@@ -260,41 +258,12 @@ public class SkinGathererProvider {
 
 	public static float[][] resolveBodyColors(StatsData stats) {
 		var character = stats.getCharacter();
-		float[] b1 = character.getRgbBodyColor();
-		float[] b2 = character.getRgbBodyColor2();
-		float[] b3 = character.getRgbBodyColor3();
-		float[] hair = character.getRgbHairColor();
-
-		var form = character.hasActiveForm() ? character.getActiveFormData() : null;
-		if (form != null) {
-			if (form.getRgbBodyColor1() != null) b1 = form.getRgbBodyColor1();
-			if (form.getRgbBodyColor2() != null) b2 = form.getRgbBodyColor2();
-			if (form.getRgbBodyColor3() != null) b3 = form.getRgbBodyColor3();
-			if (form.getRgbHairColor() != null) hair = form.getRgbHairColor();
-		}
-
-		var stackForm = character.hasActiveStackForm() ? character.getActiveStackFormData() : null;
-		if (stackForm != null) {
-			if (stackForm.getRgbBodyColor1() != null) b1 = stackForm.getRgbBodyColor1();
-			if (stackForm.getRgbBodyColor2() != null) b2 = stackForm.getRgbBodyColor2();
-			if (stackForm.getRgbBodyColor3() != null) b3 = stackForm.getRgbBodyColor3();
-			if (stackForm.getRgbHairColor() != null) hair = stackForm.getRgbHairColor();
-		}
-
-		if (stats.getStatus().isActionCharging()) {
-			FormConfig.FormData nextForm = null;
-			if (stats.getStatus().getSelectedAction() == ActionMode.FORM) nextForm = TransformationsHelper.presentNextForm(stats);
-			else if (stats.getStatus().getSelectedAction() == ActionMode.STACK) nextForm = TransformationsHelper.presentNextStackForm(stats);
-
-			if (nextForm != null) {
-				float factor = Mth.clamp(stats.getResources().getActionCharge() / 100.0f, 0.0f, 1.0f);
-				if (nextForm.getRgbBodyColor1() != null) b1 = DMZSkinLayer.lerpColor(factor, b1, nextForm.getRgbBodyColor1());
-				if (nextForm.getRgbBodyColor2() != null) b2 = DMZSkinLayer.lerpColor(factor, b2, nextForm.getRgbBodyColor2());
-				if (nextForm.getRgbBodyColor3() != null) b3 = DMZSkinLayer.lerpColor(factor, b3, nextForm.getRgbBodyColor3());
-				if (nextForm.getRgbHairColor() != null) hair = DMZSkinLayer.lerpColor(factor, hair, nextForm.getRgbHairColor());
-			}
-		}
-		return new float[][]{b1, b2, b3, hair};
+		return new float[][]{
+				FormVisualTransition.color(stats, character.getRgbBodyColor(), FormConfig.FormData::getRgbBodyColor1),
+				FormVisualTransition.color(stats, character.getRgbBodyColor2(), FormConfig.FormData::getRgbBodyColor2),
+				FormVisualTransition.color(stats, character.getRgbBodyColor3(), FormConfig.FormData::getRgbBodyColor3),
+				FormVisualTransition.color(stats, character.getRgbHairColor(), FormConfig.FormData::getRgbHairColor)
+		};
 	}
 
 	private Character baseLook(Character character) {

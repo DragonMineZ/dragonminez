@@ -30,9 +30,11 @@ import com.dragonminez.common.passives.PassiveEventHandler;
 import com.dragonminez.common.network.S2C.StatsSyncS2C;
 import com.dragonminez.common.racial.impl.MajinAbsorption;
 import com.dragonminez.common.racial.impl.NamekAssimilation;
+import com.dragonminez.common.stats.FormTransition;
 import com.dragonminez.common.stats.StatsCapability;
 import com.dragonminez.common.stats.StatsData;
 import com.dragonminez.common.stats.StatsProvider;
+import com.dragonminez.common.stats.character.Character;
 import com.dragonminez.common.stats.character.SecondaryStatEffects;
 import com.dragonminez.common.stats.techniques.KiAttackData;
 import com.dragonminez.common.stats.techniques.TechniqueData;
@@ -932,10 +934,6 @@ public class StatsEvents {
         if (!(entity instanceof Player)) return;
 
         StatsProvider.get(StatsCapability.INSTANCE, entity).ifPresent(data -> {
-            Float[] resolved = data.getCharacter().getResolvedModelScaling();
-            float scalingX = resolved[0];
-            float scalingY = resolved[1];
-
             Pose pose = event.getPose();
 
             if (pose == Pose.DYING || pose == Pose.SLEEPING) {
@@ -944,33 +942,40 @@ public class StatsEvents {
                 return;
             }
 
-            float rawWidth = 0.6F * scalingX;
-            float rawHeight = 1.9F * scalingY;
+            Character character = data.getCharacter();
+            float[] dimensions = formDimensions(character.getResolvedModelScaling(), pose);
 
-            float finalWidth = Math.round(rawWidth * 10.0F) / 10.0F;
-            float finalHeight = Math.round(rawHeight * 10.0F) / 10.0F;
-
-            float poseHeightMultiplier = 1.0F;
-            float eyeHeightMultiplier = 1.0F;
-
-            if (pose == Pose.CROUCHING) {
-                poseHeightMultiplier = 1.5F / 1.8F;
-                eyeHeightMultiplier = 1.27F / 1.62F;
-            } else if (pose == Pose.SWIMMING || pose == Pose.FALL_FLYING || pose == Pose.SPIN_ATTACK) {
-                poseHeightMultiplier = 0.6F / 1.8F;
-                eyeHeightMultiplier = 0.4F / 1.62F;
+            FormTransition transition = data.getFormTransition();
+            if (transition.isReady()) {
+                double time = transition.observe(data, transition.now());
+                FormTransition.Charge charge = transition.charge(character, time);
+                if (charge != null) dimensions = FormTransition.lerp(dimensions, formDimensions(charge.look().modelScaling(character), pose), charge.factor());
+                FormTransition.Revert revert = transition.revert(time);
+                if (revert != null) dimensions = FormTransition.lerp(dimensions, formDimensions(revert.look().modelScaling(character), pose), revert.factor());
             }
 
-            float heightConPose = finalHeight * poseHeightMultiplier;
-            float alturaSegura = Math.round(heightConPose * 10.0F) / 10.0F;
-
-            EntityDimensions newDims = EntityDimensions.fixed(finalWidth, alturaSegura);
-            event.setNewSize(newDims);
-
-            float rawEyeHeight = 1.7F * scalingY * eyeHeightMultiplier;
-            float finalEyeHeight = Math.round(rawEyeHeight * 10.0F) / 10.0F;
-
-            event.setNewEyeHeight(finalEyeHeight);
+            event.setNewSize(EntityDimensions.fixed(dimensions[0], dimensions[1]));
+            event.setNewEyeHeight(dimensions[2]);
         });
+    }
+
+    private static float[] formDimensions(Float[] scaling, Pose pose) {
+        float finalWidth = Math.round(0.6F * scaling[0] * 10.0F) / 10.0F;
+        float finalHeight = Math.round(1.9F * scaling[1] * 10.0F) / 10.0F;
+
+        float poseHeightMultiplier = 1.0F;
+        float eyeHeightMultiplier = 1.0F;
+
+        if (pose == Pose.CROUCHING) {
+            poseHeightMultiplier = 1.5F / 1.8F;
+            eyeHeightMultiplier = 1.27F / 1.62F;
+        } else if (pose == Pose.SWIMMING || pose == Pose.FALL_FLYING || pose == Pose.SPIN_ATTACK) {
+            poseHeightMultiplier = 0.6F / 1.8F;
+            eyeHeightMultiplier = 0.4F / 1.62F;
+        }
+
+        float alturaSegura = Math.round(finalHeight * poseHeightMultiplier * 10.0F) / 10.0F;
+        float finalEyeHeight = Math.round(1.7F * scaling[1] * eyeHeightMultiplier * 10.0F) / 10.0F;
+        return new float[]{finalWidth, alturaSegura, finalEyeHeight};
     }
 }

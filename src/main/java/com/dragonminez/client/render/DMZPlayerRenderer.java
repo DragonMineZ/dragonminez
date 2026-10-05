@@ -8,6 +8,7 @@ import com.dragonminez.client.render.hair.HairRenderContext;
 import com.dragonminez.client.render.util.SkinPaintContext;
 import com.dragonminez.client.render.layer.*;
 import com.dragonminez.client.systems.BioSwellRenderState;
+import com.dragonminez.client.systems.FormVisualTransition;
 import com.dragonminez.client.render.shader.TransformationPostShaderManager;
 import com.dragonminez.client.render.effects.AuraBorderRenderer;
 import com.dragonminez.client.render.effects.DimensionalFistEffect;
@@ -105,8 +106,7 @@ public class DMZPlayerRenderer<T extends AbstractClientPlayer & GeoAnimatable> e
 
 		var statsCap = StatsProvider.get(StatsCapability.INSTANCE, entity);
 		var stats = statsCap.orElse(new StatsData(entity));
-		var character = stats.getCharacter();
-		Float[] resolved = character.getResolvedModelScaling();
+		float[] resolved = FormVisualTransition.modelScale(stats);
 		float scalingX = resolved[0];
 		float scalingY = resolved[1];
 		float scalingZ = resolved[2];

@@ -68,6 +68,7 @@ public class StatsData {
 	private final Techniques techniques;
 	private final DynamicGrowthData dynamicGrowth;
 	private final RacialData racialData;
+	private final transient FormTransition formTransition = new FormTransition();
 	private FusedData fusedData;
 
 	private boolean hasInitializedHealth = false;
