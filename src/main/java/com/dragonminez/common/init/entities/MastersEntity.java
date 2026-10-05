@@ -191,8 +191,7 @@ public class MastersEntity extends PathfinderMob implements GeoEntity {
 
 				QuestService.NPCQuestOptions options = QuestService.collectNpcQuestOptions(masterName, data);
 				NetworkHandler.sendToPlayer(
-						new OpenQuestNPCDialogueS2C(masterName, options.offerableQuestIds(),
-								options.turnInQuestIds(), options.inProgressQuestIds(), true, getId()),
+						new OpenQuestNPCDialogueS2C(masterName, options, true, getId()),
 						serverPlayer
 				);
 			});

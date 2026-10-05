@@ -272,7 +272,6 @@ public class ConfigMenuScreen extends BaseMenuScreen {
 		updateLayout();
 
 		beginUiScale(graphics);
-		applyZoom(graphics, partialTick);
 
 		float leftOffset = getLeftPanelSwitchOffset(partialTick);
 		float rightOffset = getRightPanelSwitchOffset(partialTick);

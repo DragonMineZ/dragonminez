@@ -27,7 +27,6 @@ import net.minecraftforge.common.capabilities.CapabilityManager;
 import net.minecraftforge.common.capabilities.CapabilityToken;
 import net.minecraftforge.common.capabilities.RegisterCapabilitiesEvent;
 import net.minecraftforge.event.AttachCapabilitiesEvent;
-import net.minecraftforge.event.TickEvent;
 import net.minecraftforge.event.entity.player.PlayerEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
@@ -128,13 +127,6 @@ public class StatsCapability {
 			});
 		}
 		event.getEntity().refreshDimensions();
-	}
-
-	@SubscribeEvent
-	public static void onPlayerTick(TickEvent.PlayerTickEvent event) {
-		if (event.phase == TickEvent.Phase.END && !event.player.level().isClientSide) {
-			StatsProvider.get(INSTANCE, event.player).ifPresent(StatsData::tick);
-		}
 	}
 
 	@SubscribeEvent

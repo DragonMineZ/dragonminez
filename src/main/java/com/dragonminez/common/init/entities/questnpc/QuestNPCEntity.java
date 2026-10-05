@@ -267,8 +267,7 @@ public class QuestNPCEntity extends MastersEntity {
 
 				// Send dialogue packet to client
 				NetworkHandler.sendToPlayer(
-						new OpenQuestNPCDialogueS2C(npcId, options.offerableQuestIds(),
-								options.turnInQuestIds(), options.inProgressQuestIds(), master, getId()),
+						new OpenQuestNPCDialogueS2C(npcId, options, master, getId()),
 						serverPlayer
 				);
 			});

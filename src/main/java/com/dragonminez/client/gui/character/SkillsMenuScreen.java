@@ -906,7 +906,6 @@ public class SkillsMenuScreen extends BaseMenuScreen {
 		int uiMouseY = (int) Math.round(toUiY(mouseY));
 
 		beginUiScale(graphics);
-		applyZoom(graphics, partialTick);
 
 		float step = frameDelta() / 0.24f;
 		formsTransitionProgress = approach01(formsTransitionProgress, currentCategory == SkillCategory.FORMS ? 1.0f : 0.0f, step);
@@ -942,7 +941,7 @@ public class SkillsMenuScreen extends BaseMenuScreen {
 		float currentModelX = Mth.lerp(easeInOutCubic(formsTransitionProgress), getUiWidth() / 2 + 5, getUiWidth() - 80);
 		int modelX = Mth.floor(currentModelX);
 		graphics.pose().pushPose();
-		graphics.pose().translate(currentModelX - modelX, 0.0f, 0.0f);
+		graphics.pose().translate(currentModelX - modelX, getCenterPanelSwitchOffset(partialTick), 0.0f);
 		renderPlayerModel(graphics, modelX, getUiHeight() / 2 + 70, 75, uiMouseX, uiMouseY, formsTransitionProgress > 0.5f);
 		graphics.pose().popPose();
 

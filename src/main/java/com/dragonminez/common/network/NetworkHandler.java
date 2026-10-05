@@ -786,6 +786,12 @@ public class NetworkHandler {
 				.encoder(SkinPixelsSyncS2C::encode)
 				.consumerMainThread(SkinPixelsSyncS2C::handle)
 				.add();
+
+		net.messageBuilder(DialogueResultS2C.class, id(), NetworkDirection.PLAY_TO_CLIENT)
+				.decoder(DialogueResultS2C::new)
+				.encoder(DialogueResultS2C::encode)
+				.consumerMainThread(DialogueResultS2C::handle)
+				.add();
 	}
 
 	public static <MSG> void sendToServer(MSG message) {

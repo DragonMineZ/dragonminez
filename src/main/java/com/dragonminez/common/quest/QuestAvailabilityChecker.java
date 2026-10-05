@@ -56,6 +56,29 @@ public class QuestAvailabilityChecker {
 		);
 	}
 
+	public static QuestPrerequisites.Condition firstFailingCondition(Quest quest, StatsData statsData) {
+		if (quest == null || statsData == null || !quest.hasPrerequisites()) return null;
+		return firstFailing(quest.getPrerequisites(), new EvaluationContext(statsData, statsData.getPlayer(), null), EvalOptions.STRICT);
+	}
+
+	private static QuestPrerequisites.Condition firstFailing(QuestPrerequisites prereqs, EvaluationContext context, EvalOptions options) {
+		if (prereqs == null || prereqs.conditions().isEmpty()) return null;
+		QuestPrerequisites.Condition first = null;
+		for (QuestPrerequisites.Condition condition : prereqs.conditions()) {
+			if (condition == null) continue;
+			QuestPrerequisites.Condition failing = condition.isNestedGroup()
+					? firstFailing(condition.getNested(), context, options)
+					: evaluateCondition(condition, context, options) ? null : condition;
+			if (prereqs.operator() == QuestPrerequisites.Operator.AND) {
+				if (failing != null) return failing;
+			} else {
+				if (failing == null) return null;
+				if (first == null) first = failing;
+			}
+		}
+		return first;
+	}
+
 	public static Component describeAvailabilityFailure(Quest quest, StatsData statsData) {
 		return describeAvailabilityFailure(quest, statsData, EvalOptions.STRICT);
 	}

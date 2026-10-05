@@ -1817,10 +1817,6 @@ public class StatsData {
 		player.setHealth(20.0F);
 	}
 
-	public void tick() {
-		cooldowns.tick();
-	}
-
 	public CompoundTag save() {
 		CompoundTag nbt = new CompoundTag();
 		nbt.put("Stats", stats.save());

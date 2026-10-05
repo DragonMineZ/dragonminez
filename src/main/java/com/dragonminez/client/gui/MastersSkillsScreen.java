@@ -302,13 +302,26 @@ public class MastersSkillsScreen extends BaseMenuScreen {
 		int uiMouseY = (int) Math.round(toUiY(mouseY));
 
 		beginUiScale(graphics);
-		applyZoom(graphics, partialTick);
+		float leftOffset = getLeftPanelSwitchOffset(partialTick);
+		float rightOffset = getRightPanelSwitchOffset(partialTick);
 
 		updateButtonAnimations(uiMouseX, uiMouseY, partialTick);
+		graphics.pose().pushPose();
+		graphics.pose().translate(0.0f, getCenterPanelSwitchOffset(partialTick), 0.0f);
 		renderMasterEntity(graphics, getUiWidth() / 2 + 5, getUiHeight() / 2 + 90, uiMouseX, uiMouseY);
-		renderLeftPanel(graphics, uiMouseX, uiMouseY);
-		renderRightPanel(graphics, uiMouseX, uiMouseY);
-		super.render(graphics, uiMouseX, uiMouseY, partialTick);
+		graphics.pose().popPose();
+
+		graphics.pose().pushPose();
+		graphics.pose().translate(leftOffset, 0.0f, 0.0f);
+		renderLeftPanel(graphics, uiMouseX - Math.round(leftOffset), uiMouseY);
+		graphics.pose().popPose();
+
+		graphics.pose().pushPose();
+		graphics.pose().translate(rightOffset, 0.0f, 0.0f);
+		renderRightPanel(graphics, uiMouseX - Math.round(rightOffset), uiMouseY);
+		graphics.pose().popPose();
+
+		renderWidgetsWithPanelOffsets(graphics, uiMouseX, uiMouseY, partialTick, leftOffset, rightOffset);
 		endUiScale(graphics);
 	}
 

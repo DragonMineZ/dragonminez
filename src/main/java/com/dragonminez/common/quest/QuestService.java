@@ -61,7 +61,10 @@ public final class QuestService {
 	}
 
 	public record NPCQuestOptions(List<String> offerableQuestIds, List<String> turnInQuestIds,
-								  List<String> inProgressQuestIds) {
+								  List<String> inProgressQuestIds, List<LockedNpcQuest> lockedQuests) {
+	}
+
+	public record LockedNpcQuest(String questId, Component reason, long cooldownSeconds) {
 	}
 
 	@Nullable
@@ -259,21 +262,28 @@ public final class QuestService {
 		List<String> offerableQuestIds = new ArrayList<>();
 		List<String> turnInQuestIds = new ArrayList<>();
 		List<String> inProgressQuestIds = new ArrayList<>();
+		List<LockedNpcQuest> lockedQuests = new ArrayList<>();
 
 		if (npcId == null || npcId.isBlank() || data == null) {
-			return new NPCQuestOptions(offerableQuestIds, turnInQuestIds, inProgressQuestIds);
+			return new NPCQuestOptions(offerableQuestIds, turnInQuestIds, inProgressQuestIds, lockedQuests);
 		}
 
 		PlayerQuestData pqd = data.getPlayerQuestData();
 		Map<String, Quest> allQuests = QuestRegistry.getAllQuests();
+		long now = System.currentTimeMillis();
 
 		for (String questId : QuestRegistry.getQuestIdsByGiver(npcId)) {
 			Quest quest = allQuests.get(questId);
 			if (quest == null) {
 				continue;
 			}
-			if (pqd.isQuestCompleted(questId)
-					&& !quest.isRepeatReady(pqd.getLastCompletedRealMs(questId), System.currentTimeMillis())) {
+			if (pqd.isQuestCompleted(questId) && !quest.isRepeatReady(pqd.getLastCompletedRealMs(questId), now)) {
+				if (quest.isRepeatable() && !pqd.isQuestAccepted(questId)) {
+					long elapsedSeconds = Math.max(0L, now - pqd.getLastCompletedRealMs(questId)) / 1000L;
+					long remaining = Math.max(1L, quest.getRepeatCooldownSeconds() - elapsedSeconds);
+					lockedQuests.add(new LockedNpcQuest(questId,
+							Component.translatable("gui.dragonminez.dialogue.quest.repeat_cooldown"), remaining));
+				}
 				continue;
 			}
 
@@ -281,6 +291,10 @@ public final class QuestService {
 				inProgressQuestIds.add(questId);
 			} else if (isOfferableNpcQuest(questId, quest, data)) {
 				offerableQuestIds.add(questId);
+			} else if (!quest.isSecret()) {
+				Component reason = QuestAvailabilityChecker.describeAvailabilityFailure(quest, data);
+				lockedQuests.add(new LockedNpcQuest(questId,
+						reason != null ? reason : Component.translatable("message.dragonminez.quest.start.unavailable"), 0L));
 			}
 		}
 
@@ -303,7 +317,7 @@ public final class QuestService {
 			}
 		}
 
-		return new NPCQuestOptions(offerableQuestIds, turnInQuestIds, inProgressQuestIds);
+		return new NPCQuestOptions(offerableQuestIds, turnInQuestIds, inProgressQuestIds, lockedQuests);
 	}
 
 	public static void spawnKillObjectivesForQuest(ServerPlayer requester, String questKey, int partySize, Difficulty difficulty) {

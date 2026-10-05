@@ -394,7 +394,6 @@ public class PartyMenuScreen extends BaseMenuScreen {
 		int uiMouseY = (int) Math.round(toUiY(mouseY));
 
 		beginUiScale(graphics);
-		applyZoom(graphics, partialTick);
 
 		if (currentView == View.WELCOME) {
 			listScroll.clear();

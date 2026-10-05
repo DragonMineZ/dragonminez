@@ -95,7 +95,7 @@ public final class NpcDispositionService {
 		}
 
 		if (npc instanceof MastersEntity master && master.getMasterName() != null && !master.getMasterName().isBlank()) {
-			return masterAlignmentBlocker(data, master.getMasterName());
+			return null;
 		}
 
 		TargetHelper.Relation relation = getRelation(player, npc);
@@ -130,14 +130,14 @@ public final class NpcDispositionService {
 	}
 
 	@Nullable
-	private static Component masterAlignmentBlocker(StatsData data, String masterName) {
+	public static Component masterAlignmentBlocker(StatsData data, String masterName) {
 		String key = normalizeNpcKey(masterName);
 		int alignment = data.getResources().getAlignment();
 		if (GOOD_ALIGNED_MASTERS.contains(key) && alignment < GOOD_ALIGNMENT_MIN) {
-			return Component.translatable("message.dragonminez.npc.alignment_too_low", GOOD_ALIGNMENT_MIN);
+			return Component.translatable("message.dragonminez.npc.master_alignment_too_low", GOOD_ALIGNMENT_MIN);
 		}
 		if (EVIL_ALIGNED_MASTERS.contains(key) && alignment > EVIL_ALIGNMENT_MAX) {
-			return Component.translatable("message.dragonminez.npc.alignment_too_high", EVIL_ALIGNMENT_MAX);
+			return Component.translatable("message.dragonminez.npc.master_alignment_too_high", EVIL_ALIGNMENT_MAX);
 		}
 		return null;
 	}

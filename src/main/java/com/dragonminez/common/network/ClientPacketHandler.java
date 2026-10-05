@@ -8,12 +8,15 @@ import com.dragonminez.client.events.FlySkillEvent;
 import com.dragonminez.client.flight.CombatFlightHandler;
 import com.dragonminez.client.gui.InstantTransmissionScreen;
 import com.dragonminez.client.gui.character.CharacterCustomizationScreen;
-import com.dragonminez.client.gui.quest.QuestNPCDialogueScreen;
+import com.dragonminez.client.gui.dialogue.NpcDialogueScreen;
 import com.dragonminez.client.gui.quest.StoryNotificationManager;
 import com.dragonminez.client.gui.hud.NotificationHUD;
 import com.dragonminez.client.clash.ClientBeamClashState;
 import com.dragonminez.client.render.effects.AuraModeState;
 import com.dragonminez.common.network.S2C.BeamClashStateS2C;
+import com.dragonminez.common.network.S2C.DialogueResultS2C;
+import com.dragonminez.common.network.S2C.OpenDialogueNodeS2C;
+import com.dragonminez.common.network.S2C.OpenQuestNPCDialogueS2C;
 import com.dragonminez.common.network.S2C.StoryToastS2C;
 import com.dragonminez.common.network.S2C.TriggerAnimationS2C;
 import com.dragonminez.common.stats.StatsCapability;
@@ -134,13 +137,16 @@ public class ClientPacketHandler {
 		}
 	}
 
-	public static void handleOpenQuestNpcDialoguePacket(String npcId, List<String> offerableQuestIds,
-			List<String> turnInQuestIds, List<String> inProgressQuestIds, boolean masterNpc, int entityId) {
-		Minecraft mc = Minecraft.getInstance();
-		if (mc.player != null) {
-			mc.setScreen(new QuestNPCDialogueScreen(npcId, offerableQuestIds, turnInQuestIds, inProgressQuestIds,
-					masterNpc, entityId));
-		}
+	public static void handleOpenQuestNpcDialoguePacket(OpenQuestNPCDialogueS2C msg) {
+		NpcDialogueScreen.open(msg);
+	}
+
+	public static void handleDialogueNodePacket(OpenDialogueNodeS2C msg) {
+		NpcDialogueScreen.handleNode(msg);
+	}
+
+	public static void handleDialogueResult(DialogueResultS2C msg) {
+		NpcDialogueScreen.handleResult(msg);
 	}
 
 	public static void handleStoryToastPacket(StoryToastS2C message) {

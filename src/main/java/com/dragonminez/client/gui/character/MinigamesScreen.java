@@ -164,8 +164,10 @@ public class MinigamesScreen extends BaseMenuScreen {
 		int uiMouseY = (int) Math.round(toUiY(mouseY));
 
 		beginUiScale(graphics);
-		applyZoom(graphics, partialTick);
+		graphics.pose().pushPose();
+		graphics.pose().translate(0.0f, getCenterPanelSwitchOffset(partialTick), 0.0f);
 		renderPlayerModel(graphics, getUiWidth() / 2 + 5, getUiHeight() / 2 + 70, 75, uiMouseX, uiMouseY);
+		graphics.pose().popPose();
 
 		float leftOffset = getLeftPanelSwitchOffset(partialTick);
 		graphics.pose().pushPose();

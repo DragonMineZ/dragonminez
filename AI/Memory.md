@@ -110,6 +110,18 @@ Use this schema for each memory entry:
 
 Add durable memories below this line, newest first.
 
+### 2026-10-05 - Player Cooldowns Tick Once, Only In TickHandler
+
+- Type: decision
+- Status: active
+- Source: user
+- Scope: `common/stats/character/Cooldowns`, `server/events/players/TickHandler`
+- Summary: From 2026-01-19 (5b938e478) to 2026-10-05 `StatsCapability.onPlayerTick` and `TickHandler.onPlayerTick` both called `Cooldowns.tick()`, so every `StatsData` cooldown and duration (dash, techniques, knockdowns, Senzu gift, Kami, Baba revive, racial abilities...) lasted half its configured value, released 2.1.x included. The user chose to keep every configured value and remove the extra tick, so from 2.2 they all last their full written length.
+- Guidance: Treat cooldown values as real ticks (`xxxSeconds * 20` = real seconds). Before adding a `PlayerTickEvent` subscriber that advances player state, check that nothing else already advances it.
+- Do Not: Do not tick `Cooldowns` from a second place, and do not halve config values or constants to "restore" the old 2.1 timing without asking.
+- Verification: `grep -rn "getCooldowns().tick()" src/main/java` has exactly one hit, in `TickHandler`.
+- Related: `AI/Context.md` (Player state ticking), `client/gui/dialogue/CooldownClock`
+
 ### 2026-10-01 - Client Code Must Not Recompute Server-Only Gameplay State
 
 - Type: pitfall

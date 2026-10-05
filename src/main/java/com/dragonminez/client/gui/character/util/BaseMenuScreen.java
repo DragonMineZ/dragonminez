@@ -8,9 +8,10 @@ import com.dragonminez.common.init.MainSounds;
 import com.dragonminez.common.stats.StatsCapability;
 import com.dragonminez.common.stats.StatsProvider;
 import com.mojang.blaze3d.platform.InputConstants;
-import com.mojang.blaze3d.vertex.PoseStack;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.components.AbstractWidget;
+import net.minecraft.client.gui.components.Renderable;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
@@ -38,19 +39,19 @@ public abstract class BaseMenuScreen extends ScaledScreen {
 	protected static boolean GLOBAL_SWITCHING = false;
 	protected boolean isSwitchingMenu = false;
 	private static final ResourceLocation SCREEN_BUTTONS = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "textures/gui/buttons/menubuttons.png");
-	private static final long OPEN_ANIMATION_DURATION = 200;
 	private static final long PANEL_ENTER_ANIMATION_DURATION = 520;
 	private static final long PANEL_EXIT_ANIMATION_DURATION = 140;
+	private static final long MENU_CLOSE_ANIMATION_DURATION = 180;
 	private static final int PANEL_SWITCH_DISTANCE = 190;
 	private static final int TOP_PANEL_SWITCH_DISTANCE = 90;
+	private static final int CENTER_PANEL_SWITCH_DISTANCE = 260;
 	private static final long STATS_MENU_REOPEN_COOLDOWN_MS = 450L;
 	private static long statsMenuReopenBlockedUntilMs = 0L;
 
-	private enum TransitionState { NONE, OPENING, CLOSING }
-
-	private long animationStartTime;
-	private TransitionState transitionState = TransitionState.NONE;
 	private boolean suppressOpenAnimationOnce = false;
+	private boolean fadingMenu = false;
+	private boolean closingMenu = false;
+	private boolean entered = false;
 
 	private enum PanelSwitchState { NONE, ENTERING, EXITING }
 
@@ -80,9 +81,13 @@ public abstract class BaseMenuScreen extends ScaledScreen {
 		super.init();
 		if (GLOBAL_SWITCHING) {
 			GLOBAL_SWITCHING = false;
-			transitionState = TransitionState.NONE;
+			fadingMenu = false;
 			startPanelEnterTransition();
-		} else if (!suppressOpenAnimationOnce) startOpenTransition();
+		} else if (!entered && !suppressOpenAnimationOnce) {
+			fadingMenu = true;
+			startPanelEnterTransition();
+		}
+		entered = true;
 
 		initNavigationButtons();
 	}
@@ -91,19 +96,20 @@ public abstract class BaseMenuScreen extends ScaledScreen {
 	public void tick() {
 		super.tick();
 		this.tooltipScrollY = Mth.lerp(0.5f, this.tooltipScrollY, this.targetTooltipScrollY);
-		if (panelSwitchState == PanelSwitchState.ENTERING && getPanelSwitchProgress(getMinecraft().getPartialTick()) >= 1.0f) panelSwitchState = PanelSwitchState.NONE;
-
-		if (panelSwitchState == PanelSwitchState.EXITING && getPanelSwitchProgress(getMinecraft().getPartialTick()) >= 1.0f) {
+		if (panelSwitchState == PanelSwitchState.ENTERING && getPanelSwitchProgress(getMinecraft().getPartialTick()) >= 1.0f) {
 			panelSwitchState = PanelSwitchState.NONE;
-			if (this.minecraft != null) {
-				GLOBAL_SWITCHING = true;
-				this.minecraft.setScreen(pendingSwitchScreen);
-			}
+			fadingMenu = false;
 		}
 
-		if (transitionState == TransitionState.OPENING && getTransitionProgress(getMinecraft().getPartialTick()) >= 1.0f) transitionState = TransitionState.NONE;
-		if (transitionState == TransitionState.CLOSING && getTransitionProgress(getMinecraft().getPartialTick()) >= 1.0f)
-			if (this.minecraft != null) this.minecraft.setScreen(null);
+		if (panelSwitchState == PanelSwitchState.EXITING && getPanelSwitchProgress(getMinecraft().getPartialTick()) >= 1.0f && this.minecraft != null) {
+			if (closingMenu) {
+				this.minecraft.setScreen(null);
+				return;
+			}
+			panelSwitchState = PanelSwitchState.NONE;
+			GLOBAL_SWITCHING = true;
+			this.minecraft.setScreen(pendingSwitchScreen);
+		}
 	}
 
 	protected void initNavigationButtons() {
@@ -184,6 +190,7 @@ public abstract class BaseMenuScreen extends ScaledScreen {
 	}
 
 	protected void switchMenu(Screen nextScreen) {
+		if (closingMenu) return;
 		if (this.minecraft != null && this.minecraft.screen != null && !(this.minecraft.screen.getClass().equals(nextScreen.getClass()))) {
 			this.isSwitchingMenu = true;
 			startPanelExitTransition(nextScreen);
@@ -196,28 +203,11 @@ public abstract class BaseMenuScreen extends ScaledScreen {
 	}
 
 	public boolean isNotAnimating() {
-		return transitionState == TransitionState.NONE || !(getTransitionProgress(getMinecraft().getPartialTick()) < 1.0f);
+		return panelSwitchState == PanelSwitchState.NONE;
 	}
 
 	public static boolean isStatsMenuReopenBlocked() {
 		return System.currentTimeMillis() < statsMenuReopenBlockedUntilMs;
-	}
-
-	protected void applyZoom(GuiGraphics graphics, float partialTick) {
-		if (transitionState == TransitionState.NONE) return;
-
-		float progress = getTransitionProgress(partialTick);
-		if (progress >= 1.0f) return;
-
-		float scale = transitionState == TransitionState.OPENING ? easeOutBack(progress) : easeOutBack(1.0f - progress);
-		scale = Math.max(0.001f, scale);
-
-		PoseStack pose = graphics.pose();
-		int uiWidth = getUiWidth();
-		int uiHeight = getUiHeight();
-		pose.translate(uiWidth / 2.0, uiHeight / 2.0, 0);
-		pose.scale(scale, scale, 1.0f);
-		pose.translate(-uiWidth / 2.0, -uiHeight / 2.0, 0);
 	}
 
 	protected float getLeftPanelSwitchOffset(float partialTick) {
@@ -248,10 +238,37 @@ public abstract class BaseMenuScreen extends ScaledScreen {
 		return -getTopPanelSwitchOffset(partialTick);
 	}
 
+	protected void renderWidgetsWithPanelOffsets(GuiGraphics graphics, int mouseX, int mouseY, float partialTick, float leftOffset, float rightOffset) {
+		int center = getUiWidth() / 2;
+		for (Renderable renderable : this.renderables) {
+			if (!(renderable instanceof AbstractWidget widget)) {
+				renderable.render(graphics, mouseX, mouseY, partialTick);
+				continue;
+			}
+			float offset = widget.getX() + widget.getWidth() / 2 < center ? leftOffset : rightOffset;
+			graphics.pose().pushPose();
+			graphics.pose().translate(offset, 0.0f, 0.0f);
+			widget.render(graphics, mouseX - Math.round(offset), mouseY, partialTick);
+			graphics.pose().popPose();
+		}
+	}
+
+	protected float getPanelExitProgress(float partialTick) {
+		return panelSwitchState == PanelSwitchState.EXITING ? easeInBack(getPanelSwitchProgress(partialTick)) : 0.0f;
+	}
+
+	protected float getCenterPanelSwitchOffset(float partialTick) {
+		if (panelSwitchState == PanelSwitchState.NONE) return 0.0f;
+		float p = getPanelSwitchProgress(partialTick);
+
+		if (panelSwitchState == PanelSwitchState.ENTERING) return (1.0f - easeOutBack(p)) * CENTER_PANEL_SWITCH_DISTANCE;
+		return easeInBack(p) * CENTER_PANEL_SWITCH_DISTANCE;
+	}
+
 	protected void renderMenuBackground(GuiGraphics graphics, float partialTick) {
 		float visibility = 1.0f;
-		if (transitionState == TransitionState.OPENING) visibility = getTransitionProgress(partialTick);
-		else if (transitionState == TransitionState.CLOSING) visibility = 1.0f - getTransitionProgress(partialTick);
+		if (fadingMenu && panelSwitchState == PanelSwitchState.ENTERING) visibility = easeOutCubic(getPanelSwitchProgress(partialTick) * 2.0f);
+		else if (fadingMenu && panelSwitchState == PanelSwitchState.EXITING) visibility = 1.0f - getPanelSwitchProgress(partialTick);
 		visibility = Mth.clamp(visibility, 0.0f, 1.0f);
 		if (visibility <= 0.0f) return;
 
@@ -263,7 +280,6 @@ public abstract class BaseMenuScreen extends ScaledScreen {
 	@Override
 	public boolean keyPressed(int keyCode, int scanCode, int modifiers) {
 		if (panelSwitchState == PanelSwitchState.EXITING) return true;
-		if (transitionState == TransitionState.CLOSING) return true;
 
 		int statsMenuKeyCode = KeyBinds.STATS_MENU.getKey().getValue();
 		if (keyCode == statsMenuKeyCode) {
@@ -330,34 +346,34 @@ public abstract class BaseMenuScreen extends ScaledScreen {
 
 	private void startPanelExitTransition(Screen nextScreen) {
 		if (panelSwitchState == PanelSwitchState.EXITING) return;
+		fadingMenu = false;
 		pendingSwitchScreen = nextScreen;
 		panelSwitchState = PanelSwitchState.EXITING;
 		panelSwitchAnimationStartTime = System.currentTimeMillis();
 	}
 
-	private void startOpenTransition() {
-		transitionState = TransitionState.OPENING;
-		animationStartTime = System.currentTimeMillis();
-	}
-
 	private void startCloseTransition() {
-		if (transitionState == TransitionState.CLOSING) return;
+		if (closingMenu) return;
 		long now = System.currentTimeMillis();
-		transitionState = TransitionState.CLOSING;
-		animationStartTime = now;
+		closingMenu = true;
+		fadingMenu = true;
+		pendingSwitchScreen = null;
+		panelSwitchState = PanelSwitchState.EXITING;
+		panelSwitchAnimationStartTime = now;
 		statsMenuReopenBlockedUntilMs = Math.max(statsMenuReopenBlockedUntilMs, now + STATS_MENU_REOPEN_COOLDOWN_MS);
 		while (KeyBinds.STATS_MENU.consumeClick()) {}
 	}
 
-	protected float getTransitionProgress(float partialTick) {
-		long elapsed = System.currentTimeMillis() - animationStartTime;
-		return Mth.clamp(elapsed / (float) OPEN_ANIMATION_DURATION, 0.0f, 1.0f);
-	}
-
 	protected float getPanelSwitchProgress(float partialTick) {
 		long elapsed = System.currentTimeMillis() - panelSwitchAnimationStartTime;
-		long duration = panelSwitchState == PanelSwitchState.EXITING ? PANEL_EXIT_ANIMATION_DURATION : PANEL_ENTER_ANIMATION_DURATION;
+		long duration = panelSwitchState != PanelSwitchState.EXITING ? PANEL_ENTER_ANIMATION_DURATION
+				: closingMenu ? MENU_CLOSE_ANIMATION_DURATION : PANEL_EXIT_ANIMATION_DURATION;
 		return Mth.clamp(elapsed / (float) duration, 0.0f, 1.0f);
+	}
+
+	private static float easeOutCubic(float t) {
+		float inverse = 1.0f - Mth.clamp(t, 0.0f, 1.0f);
+		return 1.0f - inverse * inverse * inverse;
 	}
 
 	private float easeOutBack(float t) {

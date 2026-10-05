@@ -1606,7 +1606,6 @@ public class QuestTreeScreen extends BaseMenuScreen {
 		updatePanelInteractionAnimations(uiMouseX, uiMouseY, dt);
 
 		beginUiScale(graphics);
-		applyZoom(graphics, partialTick);
 		syncActionButtonPosition();
 		syncClaimAllButtonPosition();
 		syncPartyButtonPositions();
@@ -2331,7 +2330,7 @@ public class QuestTreeScreen extends BaseMenuScreen {
 		return ConfigManager.getSkillsConfig().getStackSkills().contains(stackGroup.getFormType().toLowerCase());
 	}
 
-	private ItemStack rewardIconStack(QuestReward reward) {
+	public static ItemStack rewardIconStack(QuestReward reward) {
 		switch (reward.getType()) {
 			case ITEM -> {
 				if (reward instanceof ItemReward itemReward) {
@@ -3852,7 +3851,8 @@ public class QuestTreeScreen extends BaseMenuScreen {
 
 	private PanelRect getLeftPanelRect() {
 		PanelRect base = getBaseLeftPanelRect();
-		float offset = getPanelIntroOffsetX(true, base.width) + getLeftPanelRevealOffset(base.width);
+		float offset = getPanelIntroOffsetX(true, base.width) + getLeftPanelRevealOffset(base.width)
+				- getPanelExitProgress(0.0f) * (base.width + 22);
 		int whole = Mth.floor(offset);
 		leftPanelFraction = offset - whole;
 		return new PanelRect(base.x + whole, base.y, base.width, base.height);
@@ -3860,7 +3860,8 @@ public class QuestTreeScreen extends BaseMenuScreen {
 
 	private PanelRect getRightPanelRect() {
 		PanelRect base = getBaseRightPanelRect();
-		float offset = getPanelIntroOffsetX(false, base.width) + getRightPanelRevealOffset(base.width);
+		float offset = getPanelIntroOffsetX(false, base.width) + getRightPanelRevealOffset(base.width)
+				+ getPanelExitProgress(0.0f) * (base.width + 22);
 		int whole = Mth.floor(offset);
 		rightPanelFraction = offset - whole;
 		return new PanelRect(base.x + whole, base.y, base.width, base.height);

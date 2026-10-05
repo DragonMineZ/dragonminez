@@ -1,6 +1,6 @@
 package com.dragonminez.common.network.S2C;
 
-import com.dragonminez.client.gui.quest.DialogueScreen;
+import com.dragonminez.common.network.ClientPacketHandler;
 import lombok.Getter;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraftforge.api.distmarker.Dist;
@@ -68,7 +68,7 @@ public class OpenDialogueNodeS2C {
 
 	public static void handle(OpenDialogueNodeS2C msg, Supplier<NetworkEvent.Context> ctx) {
 		ctx.get().enqueueWork(() -> DistExecutor.unsafeRunWhenOn(Dist.CLIENT,
-				() -> () -> DialogueScreen.handleNodePacket(msg)));
+				() -> () -> ClientPacketHandler.handleDialogueNodePacket(msg)));
 		ctx.get().setPacketHandled(true);
 	}
 }

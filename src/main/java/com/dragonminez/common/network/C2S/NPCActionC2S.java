@@ -12,7 +12,9 @@ import com.dragonminez.common.init.item.WeightItem;
 import com.dragonminez.common.init.entities.MastersEntity;
 import com.dragonminez.common.init.entities.ShadowDummyEntity;
 import com.dragonminez.common.init.entities.questnpc.QuestNPCEntity;
+import com.dragonminez.common.network.NetworkHandler;
 import com.dragonminez.common.network.PacketRateLimiter;
+import com.dragonminez.common.network.S2C.DialogueResultS2C;
 import com.dragonminez.common.network.S2C.StatsSyncS2C;
 import com.dragonminez.common.stats.character.Cooldowns;
 import com.dragonminez.server.util.BabaReviveService;
@@ -69,46 +71,75 @@ public class NPCActionC2S {
 		context.enqueueWork(() -> {
 			ServerPlayer player = context.getSender();
 			if (player == null || StorageManager.isLoadPending(player)) return;
-			if (!PacketRateLimiter.allow(player.getUUID(), "npc_action", player.level().getGameTime(), 4L)) return;
+			if (!PacketRateLimiter.allow(player.getUUID(), "npc_action", player.level().getGameTime(), 4L)) {
+				reply(player, packet, false);
+				return;
+			}
 
 			StatsProvider.get(StatsCapability.INSTANCE, player).ifPresent(data -> {
 				boolean shadowDummySpar = "popo".equals(packet.npcName) && packet.actionId == 1;
 
-				Component blocker = NpcDispositionService.getServiceBlocker(player, packet.npcName);
-				if (blocker != null) {
-					if (shadowDummySpar) {
-						LogUtil.warn(Env.SERVER, "Shadow clone FAILED to spawn (service blocked) for player {} at master {}",
-								player.getGameProfile().getName(), resolveNearestMasterName(player));
+				if (shadowDummySpar) {
+					String master = resolveNearestMasterName(player);
+					Component blocker = NpcDispositionService.getServiceBlocker(player, master);
+					if (blocker != null) {
+						LogUtil.warn(Env.SERVER, "Shadow clone FAILED to spawn (training blocked by alignment) for player {} at master {}",
+								player.getGameProfile().getName(), master);
+						player.displayClientMessage(blocker, true);
+						reply(player, packet, false);
+						return;
 					}
-					player.displayClientMessage(blocker, true);
-					return;
 				}
 				if (shadowDummySpar ? !isAnyMasterInRange(player) : !isNpcInRange(player, packet.npcName)) {
 					if (shadowDummySpar) {
 						LogUtil.warn(Env.SERVER, "Shadow clone FAILED to spawn (no master/quest-NPC in range) for player {}",
 								player.getGameProfile().getName());
 					}
+					reply(player, packet, false);
 					return;
 				}
-				switch (packet.npcName) {
-					case "karin" -> handleKarin(player, data, packet.actionId);
-					case "guru" -> handleGuru(player, data, packet.actionId);
-					case "dende" -> handleDende(player, data, packet.actionId);
-					case "enma" -> handleEnma(player, data, packet.actionId);
-					case "baba" -> handleBaba(player, data, packet.actionId);
-					case "popo" -> handlePopo(player, data, packet.actionId);
-					case "gero" -> handleGero(player, data, packet.actionId);
-					case "piccolo" -> handlePiccolo(player, data, packet.actionId, packet.value);
-					case "roshi" -> { if (packet.actionId == 2) giveWeight(player, packet.value, "message.dragonminez.roshi.weight_given", MainItems.WEIGHT_TURTLE_SHELL.get()); }
-					case "kingkai" -> { if (packet.actionId == 2) giveWeight(player, packet.value, "message.dragonminez.kingkai.weight_given", MainItems.WORKOUT_WEIGHTS.get()); }
-					case "babidi" -> handleBabidi(player, data, packet.actionId);
-					case "grandkai" -> { if (packet.actionId == 1) OtherworldTournamentGrounds.teleportFromGrandKai(player); }
-					case "otherworld_announcer" -> { if (packet.actionId == 1) OtherworldTournamentGrounds.teleportBackToGrandKai(player); }
+				boolean success;
+				try {
+					success = perform(player, data, packet);
+				} catch (RuntimeException exception) {
+					LogUtil.error(Env.SERVER, "Failed to handle NPC action " + packet.actionId + " of '" + packet.npcName
+							+ "' requested by " + player.getGameProfile().getName(), exception);
+					success = false;
 				}
 				StatsSyncS2C.sendRequested(player);
+				reply(player, packet, success);
 			});
 		});
 		context.setPacketHandled(true);
+	}
+
+	private static boolean perform(ServerPlayer player, StatsData data, NPCActionC2S packet) {
+		return switch (packet.npcName) {
+			case "karin" -> handleKarin(player, data, packet.actionId);
+			case "guru" -> handleGuru(data, packet.actionId);
+			case "dende" -> handleDende(player, data, packet.actionId);
+			case "enma" -> handleEnma(player, data, packet.actionId);
+			case "baba" -> handleBaba(player, data, packet.actionId);
+			case "popo" -> handlePopo(player, packet.actionId);
+			case "gero" -> handleGero(player, data, packet.actionId);
+			case "piccolo" -> handlePiccolo(player, data, packet.actionId, packet.value);
+			case "roshi" -> packet.actionId == 2 && giveWeight(player, packet.value, MainItems.WEIGHT_TURTLE_SHELL.get());
+			case "kingkai" -> packet.actionId == 2 && giveWeight(player, packet.value, MainItems.WORKOUT_WEIGHTS.get());
+			case "babidi" -> handleBabidi(player, data, packet.actionId);
+			case "grandkai" -> {
+				if (packet.actionId == 1) OtherworldTournamentGrounds.teleportFromGrandKai(player);
+				yield packet.actionId == 1;
+			}
+			case "otherworld_announcer" -> {
+				if (packet.actionId == 1) OtherworldTournamentGrounds.teleportBackToGrandKai(player);
+				yield packet.actionId == 1;
+			}
+			default -> false;
+		};
+	}
+
+	private static void reply(ServerPlayer player, NPCActionC2S packet, boolean success) {
+		NetworkHandler.sendToPlayer(new DialogueResultS2C(packet.npcName, DialogueResultS2C.npcAction(packet.actionId), success), player);
 	}
 
 	private static final double NPC_INTERACTION_RANGE = 8.0;
@@ -133,72 +164,80 @@ public class NPCActionC2S {
 				.isEmpty();
 	}
 
-	private static void handleKarin(ServerPlayer player, StatsData data, int action) {
+	private static boolean handleKarin(ServerPlayer player, StatsData data, int action) {
 		if (action == 1) {
-			if (player.getInventory().hasAnyOf(Set.of(MainItems.NUBE_ITEM.get(), MainItems.NUBE_NEGRA_ITEM.get()))) return;
+			if (player.getInventory().hasAnyOf(Set.of(MainItems.NUBE_ITEM.get(), MainItems.NUBE_NEGRA_ITEM.get()))) return false;
 			if (data.getResources().getAlignment() > 50) {
 				player.addItem(new ItemStack(MainItems.NUBE_ITEM.get()));
 			} else {
 				player.addItem(new ItemStack(MainItems.NUBE_NEGRA_ITEM.get()));
 			}
-		} else if (action == 2) {
-			if (!data.getCooldowns().hasCooldown(Cooldowns.SENZU_KARIN)) {
-				player.addItem(
-						new ItemStack(
-								MainItems.SENZU_BEAN.get(),
-								ConfigManager.getServerConfig().getGameplay().getSenzuGiftAmount()
-						)
-				);
-				data.getCooldowns().addCooldown(
-						Cooldowns.SENZU_KARIN,
-						ConfigManager.getServerConfig().getGameplay().getSenzuGiftCooldownTicks()
-				);
-			}
+			return true;
 		}
+		if (action == 2) {
+			if (data.getCooldowns().hasCooldown(Cooldowns.SENZU_KARIN)) return false;
+			player.addItem(new ItemStack(MainItems.SENZU_BEAN.get(), ConfigManager.getServerConfig().getGameplay().getSenzuGiftAmount()));
+			data.getCooldowns().addCooldown(Cooldowns.SENZU_KARIN, ConfigManager.getServerConfig().getGameplay().getSenzuGiftCooldownTicks());
+			return true;
+		}
+		return false;
 	}
 
-	private static void handleGuru(ServerPlayer player, StatsData data, int action) {
-		if (action == 1) {
-			if (data.getResources().getAlignment() >= 50 && data.getBaseSkills().getSkillLevel("potentialunlock") == 10) {
-				data.grantSkillLevel("potentialunlock", 11);
-			}
-		}
+	private static boolean handleGuru(StatsData data, int action) {
+		if (action != 1) return false;
+		if (data.getResources().getAlignment() < 50 || data.getBaseSkills().getSkillLevel("potentialunlock") != 10) return false;
+		data.grantSkillLevel("potentialunlock", 11);
+		return true;
 	}
 
-	private static void handleDende(ServerPlayer player, StatsData data, int action) {
-		if (action == 1) {
-			if (BabaReviveService.isHealingBlocked(data)) return;
-			player.setHealth(player.getMaxHealth());
-			data.getResources().setCurrentPoise(data.getMaxPoise());
-			data.getResources().setCurrentEnergy(data.getMaxEnergy());
-			data.getResources().setCurrentStamina(data.getMaxStamina());
-		} else if (action == 2) {
+	private static boolean handleDende(ServerPlayer player, StatsData data, int action) {
+		if (action == 1) return heal(player, data);
+		if (action == 2) {
 			data.resetPlayerProgress(player, null, false, true);
-		} else if (action == 3) {
+			return true;
+		}
+		if (action == 3) {
 			var raceCharacter = ConfigManager.getRaceCharacter(data.getCharacter().getRace());
-			if (raceCharacter == null || !raceCharacter.getHasSaiyanTail()) return;
+			if (raceCharacter == null || !raceCharacter.getHasSaiyanTail()) return false;
 			data.getCharacter().setHasSaiyanTail(!data.getCharacter().isHasSaiyanTail());
-		} else if (action == 4) {
-			if (AlignmentBand.fromValue(data.getResources().getAlignment()) != AlignmentBand.GOOD) return;
-			if (data.getCooldowns().hasCooldown(Cooldowns.KAMI_BLESS)) return;
+			return true;
+		}
+		if (action == 4) {
+			if (AlignmentBand.fromValue(data.getResources().getAlignment()) != AlignmentBand.GOOD) return false;
+			if (data.getCooldowns().hasCooldown(Cooldowns.KAMI_BLESS)) return false;
 			var gameplay = ConfigManager.getServerConfig().getGameplay();
 			player.addEffect(new MobEffectInstance(MainEffects.KAMI_BLESS.get(), gameplay.getKamiBlessDurationSeconds() * 20, 0, false, false, true));
 			data.getCooldowns().setCooldown(Cooldowns.KAMI_BLESS, gameplay.getKamiBlessCooldownSeconds() * 20);
-			player.sendSystemMessage(Component.translatable("message.dragonminez.dende.bless_given"));
+			return true;
 		}
+		return false;
 	}
 
-	private static void handleEnma(ServerPlayer player, StatsData data, int action) {
-		if (action == 1) BabaReviveService.handleEnmaReturn(player, data);
+	private static boolean heal(ServerPlayer player, StatsData data) {
+		if (BabaReviveService.isHealingBlocked(data)) return false;
+		player.setHealth(player.getMaxHealth());
+		data.getResources().setCurrentPoise(data.getMaxPoise());
+		data.getResources().setCurrentEnergy(data.getMaxEnergy());
+		data.getResources().setCurrentStamina(data.getMaxStamina());
+		return true;
 	}
 
-	private static void handleBaba(ServerPlayer player, StatsData data, int action) {
-		if (action == 1) BabaReviveService.handleBabaRevive(player, data);
+	private static boolean handleEnma(ServerPlayer player, StatsData data, int action) {
+		if (action != 1 || !BabaReviveService.canEnmaReturn(data)) return false;
+		BabaReviveService.handleEnmaReturn(player, data);
+		return true;
 	}
 
-	private static void handlePopo(ServerPlayer player, StatsData data, int action) {
+	private static boolean handleBaba(ServerPlayer player, StatsData data, int action) {
+		if (action != 1) return false;
+		boolean before = data.getStatus().isAlive() || BabaReviveService.isTempReviveActive(data);
+		BabaReviveService.handleBabaRevive(player, data);
+		return !before && (data.getStatus().isAlive() || BabaReviveService.isTempReviveActive(data));
+	}
+
+	private static boolean handlePopo(ServerPlayer player, int action) {
 		if (action == 1) {
-			if (!PacketRateLimiter.allow(player.getUUID(), "popo_spar", player.level().getGameTime(), 40L)) return;
+			if (!PacketRateLimiter.allow(player.getUUID(), "popo_spar", player.level().getGameTime(), 40L)) return false;
 			discardPopoDummies(player);
 			String master = resolveNearestMasterName(player);
 			String playerName = player.getGameProfile().getName();
@@ -206,7 +245,7 @@ public class NPCActionC2S {
 			EntityType<?> entityType = MainEntities.SHADOW_DUMMY.get();
 			if (!(entityType.create(level) instanceof ShadowDummyEntity shadowDummy)) {
 				LogUtil.warn(Env.SERVER, "Shadow clone FAILED to spawn (entity creation returned null) for player {} at master {}", playerName, master);
-				return;
+				return false;
 			}
 			shadowDummy.setPos(player.getX(), player.getY(), player.getZ());
 			shadowDummy.copyStatsFromPlayer(player);
@@ -215,11 +254,12 @@ public class NPCActionC2S {
 			if (level.addFreshEntity(shadowDummy)) {
 				LogUtil.info(Env.SERVER, "Shadow clone spawned for player {} at master {} ({}, {}, {})",
 						playerName, master, (int) player.getX(), (int) player.getY(), (int) player.getZ());
-			} else {
-				shadowDummy.discard();
-				LogUtil.warn(Env.SERVER, "Shadow clone FAILED to spawn (addFreshEntity rejected, e.g. protected/spawn-blocked area) for player {} at master {}", playerName, master);
+				return true;
 			}
+			shadowDummy.discard();
+			LogUtil.warn(Env.SERVER, "Shadow clone FAILED to spawn (addFreshEntity rejected, e.g. protected/spawn-blocked area) for player {} at master {}", playerName, master);
 		}
+		return false;
 	}
 
 	private static void discardPopoDummies(ServerPlayer player) {
@@ -241,24 +281,24 @@ public class NPCActionC2S {
 						.orElse("unknown"));
 	}
 
-	private static void handleGero(ServerPlayer player, StatsData data, int action) {
+	private static boolean handleGero(ServerPlayer player, StatsData data, int action) {
 		if (action == 1) {
 			boolean canBeUpgraded = ConfigManager.getRaceCharacter(
 					data.getCharacter().getRaceName()
 			).getFormSkillTpCosts("androidforms").length > 0;
 			if (!canBeUpgraded) {
 				player.sendSystemMessage(Component.translatable("message.dragonminez.gero.not_human"));
-				return;
+				return false;
 			}
 
 			if (data.getStatus().isAndroidUpgraded()) {
 				player.sendSystemMessage(Component.translatable("message.dragonminez.gero.already_android"));
-				return;
+				return false;
 			}
 
 			if (data.getStatus().isFused() || data.getStatus().getFusionPartnerUUID() != null) {
 				player.sendSystemMessage(Component.translatable("message.dragonminez.fusion.action_blocked"));
-				return;
+				return false;
 			}
 
 			data.getStatus().setAndroidUpgraded(true);
@@ -272,29 +312,24 @@ public class NPCActionC2S {
 			data.getCharacter().setActiveForm("androidforms", "androidbase");
 			data.getCharacter().clearActiveStackForm();
 			player.refreshDimensions();
-			player.sendSystemMessage(Component.translatable("message.dragonminez.gero.upgrade_success"));
+			return true;
 		}
+		return false;
 	}
 
-	private static void handlePiccolo(ServerPlayer player, StatsData data, int action, int value) {
-		if (action == 1) {
-			if (BabaReviveService.isHealingBlocked(data)) return;
-			player.setHealth(player.getMaxHealth());
-			data.getResources().setCurrentPoise(data.getMaxPoise());
-			data.getResources().setCurrentEnergy(data.getMaxEnergy());
-			data.getResources().setCurrentStamina(data.getMaxStamina());
-		} else if (action == 2) {
-			giveWeight(player, value, "message.dragonminez.piccolo.weight_given", MainItems.WEIGHT_PICCOLO_CAPE.get());
-		}
+	private static boolean handlePiccolo(ServerPlayer player, StatsData data, int action, int value) {
+		if (action == 1) return heal(player, data);
+		if (action == 2) return giveWeight(player, value, MainItems.WEIGHT_PICCOLO_CAPE.get());
+		return false;
 	}
 
-	private static void giveWeight(ServerPlayer player, int value, String messageKey, Item itemStack) {
+	private static boolean giveWeight(ServerPlayer player, int value, Item itemStack) {
 		Double maxWeight = ConfigManager.getServerConfig().getGravity().getMaxWeightRequestable();
 		int weight = Math.max(1, Math.min(maxWeight.intValue(), value));
 		ItemStack weightStack = new ItemStack(itemStack);
 		WeightItem.setWeight(weightStack, weight);
 		player.addItem(weightStack);
-		player.sendSystemMessage(Component.translatable(messageKey, weight));
+		return true;
 	}
 
 	private static final String OLDKAI_ZSWORD_COOLDOWN = Cooldowns.OLDKAI_ZSWORD;
@@ -322,18 +357,17 @@ public class NPCActionC2S {
 		data.getCooldowns().addCooldown(OLDKAI_ZSWORD_COOLDOWN, Integer.MAX_VALUE);
 	}
 
-	private static void handleBabidi(ServerPlayer player, StatsData data, int action) {
-		if (action == 1) {
-			if (data.getEffects().hasEffect("majin")) {
-				player.sendSystemMessage(Component.translatable("message.dragonminez.babidi.already"));
-				return;
-			}
-			if (data.getResources().getAlignment() >= 39) {
-				player.sendSystemMessage(Component.translatable("message.dragonminez.babidi.too_good"));
-				return;
-			}
-			data.getEffects().addEffect("majin", ConfigManager.getServerConfig().getGameplay().getMajinPower(), -1);
-			player.sendSystemMessage(Component.translatable("message.dragonminez.babidi.marked"));
+	private static boolean handleBabidi(ServerPlayer player, StatsData data, int action) {
+		if (action != 1) return false;
+		if (data.getEffects().hasEffect("majin")) {
+			player.sendSystemMessage(Component.translatable("message.dragonminez.babidi.already"));
+			return false;
 		}
+		if (data.getResources().getAlignment() >= 39) {
+			player.sendSystemMessage(Component.translatable("message.dragonminez.babidi.too_good"));
+			return false;
+		}
+		data.getEffects().addEffect("majin", ConfigManager.getServerConfig().getGameplay().getMajinPower(), -1);
+		return true;
 	}
 }

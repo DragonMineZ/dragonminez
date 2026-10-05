@@ -108,8 +108,7 @@ public final class DialogueService {
 	private static void openQuestScreen(ServerPlayer player, StatsData data, String npcId, int entityId) {
 		QuestService.NPCQuestOptions options = QuestService.collectNpcQuestOptions(npcId, data);
 		NetworkHandler.sendToPlayer(
-				new OpenQuestNPCDialogueS2C(npcId, options.offerableQuestIds(),
-						options.turnInQuestIds(), options.inProgressQuestIds(), true, entityId),
+				new OpenQuestNPCDialogueS2C(npcId, options, true, entityId),
 				player);
 	}
 
