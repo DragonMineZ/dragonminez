@@ -38,6 +38,9 @@ public class SPBlueHurricaneEntity extends AbstractKiProjectile {
     private static final double VORTEX_HEIGHT = 13.0D;
     private static final double OWNER_MAX_SPEED = 0.07D;
     private static final double OWNER_MAX_FALL_SPEED = 0.6D;
+    private static final double PULL_RADIUS = 14.0D;
+    private static final double PULL_CORE_RADIUS = 2.0D;
+    private static final double PULL_MAX_SPEED = 0.9D;
 
     private static final EntityDataAccessor<Integer> CAST_TIME = SynchedEntityData.defineId(SPBlueHurricaneEntity.class, EntityDataSerializers.INT);
     private static final EntityDataAccessor<Boolean> IS_FIRING = SynchedEntityData.defineId(SPBlueHurricaneEntity.class, EntityDataSerializers.BOOLEAN);
@@ -204,6 +207,8 @@ public class SPBlueHurricaneEntity extends AbstractKiProjectile {
             }
 
             if (!this.level().isClientSide) {
+                pullNearby();
+
                 if (this.tickCount % 10 == 0) {
                     pulseDamage();
                 }
@@ -221,6 +226,37 @@ public class SPBlueHurricaneEntity extends AbstractKiProjectile {
         double scale = horizontal > OWNER_MAX_SPEED ? OWNER_MAX_SPEED / horizontal : 1.0D;
         double y = Mth.clamp(motion.y, -OWNER_MAX_FALL_SPEED, OWNER_MAX_SPEED);
         if (scale < 1.0D || y != motion.y) owner.setDeltaMovement(motion.x * scale, y, motion.z * scale);
+    }
+
+    private void pullNearby() {
+        AABB area = new AABB(this.getX() - PULL_RADIUS, this.getY() - 4.0D, this.getZ() - PULL_RADIUS,
+                this.getX() + PULL_RADIUS, this.getY() + VORTEX_HEIGHT, this.getZ() + PULL_RADIUS);
+
+        for (LivingEntity target : MultipartTargeting.collectTargets(this.level(), area)) {
+            if (!shouldDamage(target) || target.is(this.getOwner())) continue;
+
+            double dx = this.getX() - target.getX();
+            double dz = this.getZ() - target.getZ();
+            double distance = Math.sqrt(dx * dx + dz * dz);
+            if (distance <= PULL_CORE_RADIUS || distance > PULL_RADIUS) continue;
+
+            dx /= distance;
+            dz /= distance;
+
+            double strength = 0.06D + 0.14D * (1.0D - distance / PULL_RADIUS);
+            Vec3 motion = target.getDeltaMovement();
+            double mx = motion.x + dx * strength - dz * strength * 0.35D;
+            double mz = motion.z + dz * strength + dx * strength * 0.35D;
+            double horizontal = Math.sqrt(mx * mx + mz * mz);
+            if (horizontal > PULL_MAX_SPEED) {
+                mx *= PULL_MAX_SPEED / horizontal;
+                mz *= PULL_MAX_SPEED / horizontal;
+            }
+
+            target.setDeltaMovement(mx, motion.y, mz);
+            target.hasImpulse = true;
+            target.hurtMarked = true;
+        }
     }
 
     private void pulseDamage() {
