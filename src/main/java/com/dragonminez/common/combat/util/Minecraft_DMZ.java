@@ -9,6 +9,7 @@ import org.jetbrains.annotations.Nullable;
 public interface Minecraft_DMZ {
     int getComboCount();
     boolean hasTargetsInReach();
+    boolean isTargetInReach(Entity entity);
 
     @Nullable
     default Entity getCursorTarget() {

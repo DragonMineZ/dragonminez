@@ -4,6 +4,9 @@ import com.dragonminez.Reference;
 import com.dragonminez.client.clash.BeamClashCinematicCamera;
 import com.dragonminez.client.events.FlySkillEvent;
 import com.dragonminez.client.events.LockOnEvent;
+import com.dragonminez.client.flight.RollCamera;
+import com.dragonminez.common.combat.logic.player.TargetHelper;
+import com.dragonminez.common.combat.util.Minecraft_DMZ;
 import com.dragonminez.common.config.ConfigManager;
 import com.dragonminez.common.config.GeneralUserConfig;
 import lombok.Getter;
@@ -15,6 +18,7 @@ import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.util.Mth;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.entity.decoration.ArmorStand;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.entity.projectile.ProjectileUtil;
 import net.minecraft.world.level.BlockGetter;
@@ -24,10 +28,13 @@ import net.minecraft.world.phys.EntityHitResult;
 import net.minecraft.world.phys.HitResult;
 import net.minecraft.world.phys.Vec3;
 import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.client.event.RenderLevelStageEvent;
 import net.minecraftforge.event.TickEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
+import org.joml.Matrix4f;
 import org.joml.Vector3f;
+import org.joml.Vector4f;
 
 @Mod.EventBusSubscriber(modid = Reference.MOD_ID, value = Dist.CLIENT)
 public final class OverShoulderCamera {
@@ -42,9 +49,15 @@ public final class OverShoulderCamera {
 	private static final double AIM_MIN_AHEAD = 1.0;
 	private static final double AIM_FOCUS_IN_RATE = 28.0;
 	private static final double AIM_FOCUS_OUT_RATE = 7.0;
-	private static final float AIM_MAX_YAW_OFFSET = 50.0F;
-	private static final float AIM_MAX_PITCH_OFFSET = 35.0F;
 	private static final double MAX_FRAME_SECONDS = 0.1;
+
+	private static final float ENTITY_LOCK_MAX_DEGREES = 45.0F;
+	private static final float BLOCK_LOCK_FULL_DEGREES = 2.5F;
+	private static final float BLOCK_LOCK_NONE_DEGREES = 5.5F;
+	private static final double LOCK_RATE = 18.0;
+	private static final double CROSSHAIR_DEPTH_IN_RATE = 18.0;
+	private static final double CROSSHAIR_DEPTH_OUT_RATE = 9.0;
+	private static final double CROSSHAIR_CENTRE_RATE = 14.0;
 
 	private static double curBack;
 	private static double curUp;
@@ -66,6 +79,26 @@ public final class OverShoulderCamera {
 	private static double focus;
 	private static double targetFocus;
 	private static long lastFrameNanos;
+
+	@Getter
+	private static float lockYaw;
+	@Getter
+	private static float lockPitch;
+	@Getter
+	private static float lockNeeded;
+
+	private static Entity aimEntity;
+	private static boolean aimEntityLockable;
+	private static double lookDistance = -1.0;
+
+	private static final Matrix4f PROJECTION = new Matrix4f();
+	private static final Matrix4f VIEW = new Matrix4f();
+	private static Vec3 projectionCamera = Vec3.ZERO;
+	private static boolean projectionReady;
+	private static double crosshairFocus;
+	private static float crosshairCentring;
+	private static long lastCrosshairNanos;
+	private static boolean crosshairPlaced;
 
 	private OverShoulderCamera() {}
 
@@ -115,6 +148,9 @@ public final class OverShoulderCamera {
 			appliedMove = Vec3.ZERO;
 			focus = 0.0;
 			targetFocus = 0.0;
+			lockYaw = 0.0F;
+			lockPitch = 0.0F;
+			crosshairPlaced = false;
 		} else {
 			cameraYaw += player.getYRot() - writtenYaw;
 			cameraPitch = Mth.clamp(cameraPitch + player.getXRot() - writtenPitch, -90.0F, 90.0F);
@@ -123,38 +159,48 @@ public final class OverShoulderCamera {
 		double rate = targetFocus > focus ? AIM_FOCUS_IN_RATE : AIM_FOCUS_OUT_RATE;
 		focus += (targetFocus - focus) * (1.0 - Math.exp(-dt * rate));
 
-		aim(player, partialTick);
+		aim(player, partialTick, dt);
 	}
 
-	private static void aim(LocalPlayer player, float partialTick) {
+	private static void aim(LocalPlayer player, float partialTick, double dt) {
 		Vec3 eye = player.getEyePosition(partialTick);
 		Vec3 forward = Vec3.directionFromRotation(cameraPitch, cameraYaw);
 		Vec3 camera = cameraPosition(eye);
 
 		LivingEntity locked = LockOnEvent.getLockedTarget();
 		boolean lockedOn = locked != null && locked.isAlive();
-		Vec3 point;
-		if (lockedOn) point = locked.getPosition(partialTick).add(0.0, locked.getBbHeight() * 0.5, 0.0);
-		else point = camera.add(forward.scale(focus > 1.0 / AIM_BLOCK_RANGE ? 1.0 / focus : AIM_BLOCK_RANGE * 4.0));
+		double depth = focus > 1.0 / AIM_BLOCK_RANGE ? 1.0 / focus : AIM_BLOCK_RANGE * 4.0;
+		Vec3 point = lockedOn
+				? locked.getPosition(partialTick).add(0.0, locked.getBbHeight() * 0.5, 0.0)
+				: camera.add(forward.scale(depth));
+
+		float targetYaw = 0.0F;
+		float targetPitch = 0.0F;
+		lockNeeded = 0.0F;
 
 		Vec3 direction = point.subtract(eye);
-		double horizontal = Math.sqrt(direction.x * direction.x + direction.z * direction.z);
-		if (direction.lengthSqr() < 0.25) {
-			writeRotation(player, cameraYaw, cameraPitch);
-			return;
+		if (direction.lengthSqr() >= 0.25) {
+			double horizontal = Math.sqrt(direction.x * direction.x + direction.z * direction.z);
+			float yaw = horizontal < 1.0E-4 ? cameraYaw : (float) (Mth.atan2(direction.z, direction.x) * Mth.RAD_TO_DEG) - 90.0F;
+			float pitch = Mth.clamp((float) -(Mth.atan2(direction.y, horizontal) * Mth.RAD_TO_DEG), -90.0F, 90.0F);
+			float yawOffset = Mth.wrapDegrees(yaw - cameraYaw);
+			float pitchOffset = pitch - cameraPitch;
+			lockNeeded = (float) Math.sqrt(yawOffset * yawOffset + pitchOffset * pitchOffset);
+
+			float strength;
+			if (lockedOn) strength = 1.0F;
+			else if (aimEntityLockable) strength = lockNeeded > ENTITY_LOCK_MAX_DEGREES ? ENTITY_LOCK_MAX_DEGREES / lockNeeded : 1.0F;
+			else strength = 1.0F - smoothstep(BLOCK_LOCK_FULL_DEGREES, BLOCK_LOCK_NONE_DEGREES, lockNeeded);
+
+			targetYaw = yawOffset * strength;
+			targetPitch = pitchOffset * strength;
 		}
 
-		float yaw = horizontal < 1.0E-4 ? cameraYaw : (float) (Mth.atan2(direction.z, direction.x) * Mth.RAD_TO_DEG) - 90.0F;
-		float pitch = (float) -(Mth.atan2(direction.y, horizontal) * Mth.RAD_TO_DEG);
+		float ease = lockedOn ? 1.0F : (float) (1.0 - Math.exp(-dt * LOCK_RATE));
+		lockYaw += (targetYaw - lockYaw) * ease;
+		lockPitch += (targetPitch - lockPitch) * ease;
 
-		float yawOffset = Mth.wrapDegrees(yaw - cameraYaw);
-		float pitchOffset = pitch - cameraPitch;
-		if (!lockedOn) {
-			yawOffset = Mth.clamp(yawOffset, -AIM_MAX_YAW_OFFSET, AIM_MAX_YAW_OFFSET);
-			pitchOffset = Mth.clamp(pitchOffset, -AIM_MAX_PITCH_OFFSET, AIM_MAX_PITCH_OFFSET);
-		}
-
-		writeRotation(player, cameraYaw + yawOffset, Mth.clamp(cameraPitch + pitchOffset, -90.0F, 90.0F));
+		writeRotation(player, cameraYaw + lockYaw, Mth.clamp(cameraPitch + lockPitch, -90.0F, 90.0F));
 	}
 
 	private static void writeRotation(LocalPlayer player, float yaw, float pitch) {
@@ -178,7 +224,8 @@ public final class OverShoulderCamera {
 	@SubscribeEvent
 	public static void onClientTick(TickEvent.ClientTickEvent event) {
 		if (event.phase != TickEvent.Phase.END || !decoupled) return;
-		LocalPlayer player = Minecraft.getInstance().player;
+		Minecraft mc = Minecraft.getInstance();
+		LocalPlayer player = mc.player;
 		if (player == null || player.level() == null) {
 			decoupled = false;
 			return;
@@ -190,26 +237,91 @@ public final class OverShoulderCamera {
 		double ahead = Math.max(0.0, eye.subtract(camera).dot(forward));
 		Vec3 start = camera.add(forward.scale(ahead));
 
-		double reach = AIM_BLOCK_RANGE;
-		boolean found = false;
+		HitResult cameraHit = trace(player, start, forward, AIM_BLOCK_RANGE);
+		aimEntity = cameraHit instanceof EntityHitResult entityHit ? entityHit.getEntity() : null;
+		aimEntityLockable = aimEntity != null && isLockable(player, aimEntity);
+		targetFocus = cameraHit.getType() == HitResult.Type.MISS ? 0.0
+				: 1.0 / (ahead + Math.max(AIM_MIN_AHEAD, cameraHit.getLocation().distanceTo(start)));
 
-		HitResult block = player.level().clip(new ClipContext(start, start.add(forward.scale(AIM_BLOCK_RANGE)),
-				ClipContext.Block.OUTLINE, ClipContext.Fluid.NONE, player));
-		if (block.getType() != HitResult.Type.MISS) {
-			reach = block.getLocation().distanceTo(start);
-			found = true;
-		}
+		HitResult lookHit = trace(player, eye, player.getLookAngle(), AIM_BLOCK_RANGE);
+		lookDistance = lookHit.getType() == HitResult.Type.MISS ? -1.0 : lookHit.getLocation().distanceTo(eye);
+	}
+
+	private static HitResult trace(LocalPlayer player, Vec3 start, Vec3 direction, double range) {
+		Vec3 end = start.add(direction.scale(range));
+		HitResult block = player.level().clip(new ClipContext(start, end, ClipContext.Block.OUTLINE, ClipContext.Fluid.NONE, player));
+		double reach = block.getType() == HitResult.Type.MISS ? range : block.getLocation().distanceTo(start);
 
 		double entityReach = Math.min(reach, AIM_ENTITY_RANGE);
-		Vec3 end = start.add(forward.scale(entityReach));
-		EntityHitResult entity = ProjectileUtil.getEntityHitResult(player, start, end, new AABB(start, end).inflate(1.0),
+		Vec3 entityEnd = start.add(direction.scale(entityReach));
+		EntityHitResult entity = ProjectileUtil.getEntityHitResult(player, start, entityEnd, new AABB(start, entityEnd).inflate(1.0),
 				candidate -> !candidate.isSpectator() && candidate.isPickable(), entityReach * entityReach);
-		if (entity != null) {
-			reach = entity.getLocation().distanceTo(start);
-			found = true;
+		return entity != null ? entity : block;
+	}
+
+	private static boolean isLockable(LocalPlayer player, Entity entity) {
+		Entity target = TargetHelper.resolveHittable(entity);
+		if (!(target instanceof LivingEntity) || target instanceof ArmorStand || !target.isAttackable()) return false;
+		return TargetHelper.getRelation(player, target) == TargetHelper.Relation.HOSTILE;
+	}
+
+	@SubscribeEvent
+	public static void onRenderLevelStage(RenderLevelStageEvent event) {
+		if (event.getStage() != RenderLevelStageEvent.Stage.AFTER_SKY) return;
+		Camera camera = event.getCamera();
+		PROJECTION.set(event.getProjectionMatrix());
+		VIEW.identity()
+				.rotateZ(((RollCamera) camera).dragonminez$getRoll() * Mth.DEG_TO_RAD)
+				.rotateX(camera.getXRot() * Mth.DEG_TO_RAD)
+				.rotateY((camera.getYRot() + 180.0F) * Mth.DEG_TO_RAD);
+		projectionCamera = camera.getPosition();
+		projectionReady = true;
+	}
+
+	public static float[] crosshairOffset(int guiWidth, int guiHeight) {
+		long now = System.nanoTime();
+		double dt = lastCrosshairNanos == 0L ? 0.0 : Math.min(MAX_FRAME_SECONDS, (now - lastCrosshairNanos) / 1.0E9);
+		lastCrosshairNanos = now;
+
+		Minecraft mc = Minecraft.getInstance();
+		LocalPlayer player = mc.player;
+		if (!decoupled || player == null || !projectionReady) {
+			crosshairPlaced = false;
+			return new float[]{0.0F, 0.0F};
 		}
 
-		targetFocus = found ? 1.0 / (ahead + Math.max(AIM_MIN_AHEAD, reach)) : 0.0;
+		float partialTick = mc.getFrameTime();
+		Vec3 eye = player.getEyePosition(partialTick);
+		HitResult pick = mc.hitResult;
+		double distance = pick != null && pick.getType() != HitResult.Type.MISS ? pick.getLocation().distanceTo(eye)
+				: lookDistance > 0.0 ? lookDistance : AIM_BLOCK_RANGE * 4.0;
+		double targetFocus = 1.0 / Math.max(AIM_MIN_AHEAD, distance);
+
+		boolean centre = aimEntityLockable && aimEntity != null && ((Minecraft_DMZ) mc).isTargetInReach(aimEntity);
+		if (!crosshairPlaced) {
+			crosshairFocus = targetFocus;
+			crosshairCentring = centre ? 1.0F : 0.0F;
+			crosshairPlaced = true;
+		} else {
+			double rate = targetFocus > crosshairFocus ? CROSSHAIR_DEPTH_IN_RATE : CROSSHAIR_DEPTH_OUT_RATE;
+			crosshairFocus += (targetFocus - crosshairFocus) * (1.0 - Math.exp(-dt * rate));
+			crosshairCentring += ((centre ? 1.0F : 0.0F) - crosshairCentring) * (float) (1.0 - Math.exp(-dt * CROSSHAIR_CENTRE_RATE));
+		}
+
+		Vec3 point = eye.add(Vec3.directionFromRotation(writtenPitch, writtenYaw).scale(1.0 / crosshairFocus));
+		Vector4f clip = new Vector4f(
+				(float) (point.x - projectionCamera.x),
+				(float) (point.y - projectionCamera.y),
+				(float) (point.z - projectionCamera.z), 1.0F);
+		VIEW.transform(clip);
+		PROJECTION.transform(clip);
+		if (clip.w <= 1.0E-4F) return new float[]{0.0F, 0.0F};
+
+		float keep = 1.0F - crosshairCentring;
+		float x = Mth.clamp(clip.x / clip.w, -1.0F, 1.0F) * guiWidth * 0.5F * keep;
+		float y = -Mth.clamp(clip.y / clip.w, -1.0F, 1.0F) * guiHeight * 0.5F * keep;
+		double scale = mc.getWindow().getGuiScale();
+		return new float[]{(float) (Math.round(x * scale) / scale), (float) (Math.round(y * scale) / scale)};
 	}
 
 	public static void steerToward(LocalPlayer player, Vec3 target, float partialTick, float amount) {
@@ -301,5 +413,10 @@ public final class OverShoulderCamera {
 		}
 
 		return distance;
+	}
+
+	private static float smoothstep(float edge0, float edge1, float value) {
+		float t = Mth.clamp((value - edge0) / (edge1 - edge0), 0.0F, 1.0F);
+		return t * t * (3.0F - 2.0F * t);
 	}
 }

@@ -13,6 +13,7 @@ import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.resources.ResourceLocation;
 import org.spongepowered.asm.mixin.Mixin;
+import org.spongepowered.asm.mixin.Unique;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.Redirect;
@@ -23,8 +24,17 @@ public abstract class InGameHudMixin {
 	private static final ResourceLocation DMZ$BLOCK_SHIELD = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "textures/gui/hud/block_shield.png");
 	private static final int DMZ$SHIELD_SIZE = 18;
 
+	@Unique
+	private boolean dragonminez$crosshairShifted;
+
 	@Inject(method = "renderCrosshair", at = @At("HEAD"), cancellable = true)
 	private void dragonminez$pre_renderCrosshair(GuiGraphics guiGraphics, CallbackInfo ci) {
+		float[] offset = OverShoulderCamera.crosshairOffset(guiGraphics.guiWidth(), guiGraphics.guiHeight());
+		this.dragonminez$crosshairShifted = offset[0] != 0.0F || offset[1] != 0.0F;
+		if (this.dragonminez$crosshairShifted) {
+			guiGraphics.pose().pushPose();
+			guiGraphics.pose().translate(offset[0], offset[1], 0.0F);
+		}
 		if (dragonminez$isBlocking() && dragonminez$crosshairVisible()) {
 			int x = (guiGraphics.guiWidth() - DMZ$SHIELD_SIZE) / 2;
 			int y = (guiGraphics.guiHeight() - DMZ$SHIELD_SIZE) / 2;
@@ -33,6 +43,7 @@ public abstract class InGameHudMixin {
 			RenderSystem.setShaderColor(1.0F, 1.0F, 1.0F, 1.0F);
 			guiGraphics.blit(DMZ$BLOCK_SHIELD, x, y, 0, 0, DMZ$SHIELD_SIZE, DMZ$SHIELD_SIZE, DMZ$SHIELD_SIZE, DMZ$SHIELD_SIZE);
 			RenderSystem.disableBlend();
+			dragonminez$restoreCrosshairPose(guiGraphics);
 			ci.cancel();
 			return;
 		}
@@ -47,6 +58,14 @@ public abstract class InGameHudMixin {
 	@Inject(method = "renderCrosshair", at = @At("TAIL"))
 	private void dragonminez$post_renderCrosshair(GuiGraphics guiGraphics, CallbackInfo ci) {
 		RenderSystem.setShaderColor(1.0F, 1.0F, 1.0F, 1.0F);
+		dragonminez$restoreCrosshairPose(guiGraphics);
+	}
+
+	@Unique
+	private void dragonminez$restoreCrosshairPose(GuiGraphics guiGraphics) {
+		if (!this.dragonminez$crosshairShifted) return;
+		this.dragonminez$crosshairShifted = false;
+		guiGraphics.pose().popPose();
 	}
 
 	private static boolean dragonminez$isBlocking() {

@@ -307,6 +307,11 @@ public abstract class MinecraftMixin implements Minecraft_DMZ {
 	}
 
 	@Override
+	public boolean isTargetInReach(Entity entity) {
+		return targetsInReach != null && targetsInReach.contains(entity);
+	}
+
+	@Override
 	public float getSwingProgress() {
 		if (lastAttacked > lastSwingDuration || lastSwingDuration <= 0) return 1F;
 		return (float) lastAttacked / lastSwingDuration;
