@@ -12,6 +12,7 @@ import com.dragonminez.client.systems.FormVisualTransition;
 import com.dragonminez.client.render.shader.TransformationPostShaderManager;
 import com.dragonminez.client.render.effects.AuraBorderRenderer;
 import com.dragonminez.client.render.effects.DimensionalFistEffect;
+import com.dragonminez.client.render.effects.TechniquePreview;
 import com.dragonminez.client.render.shader.TransformationMaskBufferSource;
 import com.dragonminez.client.render.util.IrisCompat;
 import com.dragonminez.client.init.entities.renderer.sagas.SaiyanInvaderRenderer;
@@ -112,6 +113,8 @@ public class DMZPlayerRenderer<T extends AbstractClientPlayer & GeoAnimatable> e
 		float scalingZ = resolved[2];
 
 		poseStack.pushPose();
+		float previewLift = TechniquePreview.modelLift(entity, partialTick);
+		if (previewLift != 0.0F) poseStack.translate(0.0F, previewLift, 0.0F);
 
 		boolean shaderPack = IrisCompat.isShaderPackInUse();
 		boolean captureMask = !shaderPack || TransformationPostShaderManager.isShaderpackMainPass();

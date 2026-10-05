@@ -299,7 +299,7 @@ public final class MinigameSessionManager {
 		if (session.invalid || session.origin == MinigameOrigin.CHALLENGE) return 0.0;
 		TrainingConfig config = ConfigManager.getTrainingConfig();
 		TrainingConfig.MinigameSettings settings = config.getSettings(session.minigameId);
-		int tpc = data.getSingleStatCost(data.getStats().getTotalStats());
+		int tpc = data.getSingleStatCost(data.getTpCostTotalStats());
 		if (tpc == Integer.MAX_VALUE) tpc = ConfigManager.getServerConfig().getGameplay().getMinTPCost();
 		double reward = session.logic.rewardUnits() * config.computeTpsPerMinute(tpc, settings);
 		reward *= data.getTpSourceMultiplier(TpSource.TRAINING);

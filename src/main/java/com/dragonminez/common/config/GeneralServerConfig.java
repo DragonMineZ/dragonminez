@@ -1005,6 +1005,7 @@ public class GeneralServerConfig {
 	@NoArgsConstructor
 	public static class DynamicGrowthConfig {
 		private Boolean enabled = true;
+		private Boolean growthStatsCountForTpCost = false;
 		private Boolean debugChat = false;
 		private Boolean practiceCurveEnabled = true;
 		private Double practiceXpMultiplier = 2.0;
@@ -1019,6 +1020,7 @@ public class GeneralServerConfig {
 		private Double staminaSpentXpRatio = 0.1;
 		private Double energySpentXpRatio = 0.1;
 		private Double kiWeaponMeleePwrShare = 0.25;
+		private Double linkedStatXpShare = 0.5;
 
 		private Double naturalCombatTpMultiplier = 1.0;
 		private Boolean manualTpPurchasesEnabled = true;
@@ -1037,6 +1039,10 @@ public class GeneralServerConfig {
 
 		public Boolean isEnabled() {
 			return enabled != null ? enabled : true;
+		}
+
+		public Boolean isGrowthStatsCountForTpCost() {
+			return growthStatsCountForTpCost != null && growthStatsCountForTpCost;
 		}
 
 		public Boolean isPracticeCurveEnabled() {
@@ -1069,6 +1075,10 @@ public class GeneralServerConfig {
 
 		public Double getKiWeaponMeleePwrShare() {
 			return clampNonNeg(kiWeaponMeleePwrShare, 0.25);
+		}
+
+		public Double getLinkedStatXpShare() {
+			return clampNonNeg(linkedStatXpShare, 0.5);
 		}
 
 		public Double getNaturalCombatTpMultiplier() {

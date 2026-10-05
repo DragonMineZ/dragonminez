@@ -53,6 +53,11 @@ public final class KiTrailRenderer {
 		if (tick % PRUNE_INTERVAL == 0) prune();
 	}
 
+	public static void forget(int id) {
+		TRAILS.remove(id);
+		LAST_SAMPLE_TICK.remove(id);
+	}
+
 	private static void prune() {
 		ClientLevel level = Minecraft.getInstance().level;
 		TRAILS.keySet().removeIf(id -> {

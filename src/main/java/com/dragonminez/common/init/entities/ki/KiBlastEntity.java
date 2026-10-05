@@ -136,8 +136,25 @@ public class KiBlastEntity extends AbstractKiProjectile {
         return this.getKiRenderType() == 0 ? ClashRole.MINOR : ClashRole.NONE;
     }
 
-    private float calcCenterOffsetY(float sphereSize) {
-        return -(sphereSize / 2.0F);
+    private static final float HAND_LIFT = 0.5F;
+    private static final float FEET_CLEARANCE = 0.1F;
+    private static final float OVERHEAD_GAP = 0.6F;
+
+    private float halfBoxHeight(float sphereSize) {
+        return this.getType().getDimensions().height * sphereSize * 0.5F;
+    }
+
+    private float calcCenterOffsetY(LivingEntity owner, float sphereSize) {
+        float heightScale = ownerScaleOf(owner);
+        float clearFeet = sphereSize * 0.5F + FEET_CLEARANCE - owner.getBbHeight() * 0.5F;
+        float centerLift = Math.max(HAND_LIFT * heightScale, clearFeet);
+        return (centerLift - halfBoxHeight(sphereSize)) / heightScale;
+    }
+
+    private float calcOverheadOffsetY(LivingEntity owner, float sphereSize) {
+        float heightScale = ownerScaleOf(owner);
+        float centerLift = owner.getBbHeight() * 0.5F + OVERHEAD_GAP * heightScale + sphereSize * 0.5F;
+        return (centerLift - halfBoxHeight(sphereSize)) / heightScale;
     }
 
     private float calcForwardOffset(LivingEntity owner, float sphereSize) {
@@ -156,7 +173,7 @@ public class KiBlastEntity extends AbstractKiProjectile {
         this.setFiring(false);
         this.setMaxLife(99999);
         this.setCastTime(100);
-        this.setCastOffsets(0.0f, calcCenterOffsetY(size) + 0.5f, calcForwardOffset(owner, size));
+        this.setCastOffsets(0.0f, calcCenterOffsetY(owner, size), calcForwardOffset(owner, size));
         updatePositionRelativeToOwner(owner);
 
         if (!this.level().isClientSide) { this.level().addFreshEntity(this); }
@@ -400,10 +417,10 @@ public class KiBlastEntity extends AbstractKiProjectile {
         this.setFiring(false);
         this.setMaxLife(99999);
         this.setCastTime(40);
-        this.setCastOffsets(0.0F, 5.5F, 0.0F);
+        this.setCastOffsets(0.0F, calcOverheadOffsetY(owner, size), -this.castClearanceRadius() / ownerWidthScale(owner));
         updatePositionRelativeToOwner(owner);
         if (!this.level().isClientSide) { this.level().addFreshEntity(this); }
-        
+
     }
 
     public void setupKiLargeBlastPlayer(LivingEntity owner, float damage, float speed, int color, int colorBorder, float size) {

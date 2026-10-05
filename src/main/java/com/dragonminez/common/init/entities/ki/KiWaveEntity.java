@@ -538,7 +538,7 @@ public class KiWaveEntity extends AbstractKiProjectile {
     }
 
     public float getBeamLength() { return this.entityData.get(BEAM_LENGTH); }
-    private void setBeamLength(float len) { this.entityData.set(BEAM_LENGTH, len); }
+    public void setBeamLength(float len) { this.entityData.set(BEAM_LENGTH, len); }
     public float getFixedYaw() { return this.entityData.get(FIXED_YAW); }
     public float getFixedPitch() { return this.entityData.get(FIXED_PITCH); }
     public int getCastWave() { return this.entityData.get(CAST_WAVE); }

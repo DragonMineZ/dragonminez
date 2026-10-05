@@ -1639,7 +1639,7 @@ public class SkillsMenuScreen extends BaseMenuScreen {
 	}
 
 	private void openTechniqueCreator() {
-		if (this.minecraft != null) this.minecraft.setScreen(new TechniqueCreatorScreen(this));
+		if (this.minecraft != null) this.minecraft.setScreen(new TechniqueStyleScreen(this));
 	}
 
 	private void renderPlayerModel(GuiGraphics graphics, int x, int y, int scale, float mouseX, float mouseY, boolean isFormPreview) {

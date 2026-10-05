@@ -72,8 +72,9 @@ public class TexturedTextButton extends Button implements SubpixelWidget {
         RenderSystem.defaultBlendFunc();
         RenderSystem.enableDepthTest();
 
-        int u = this.isHoveredOrFocused() ? hoverU : normalU;
-        int v = this.isHoveredOrFocused() ? hoverV : normalV;
+        boolean highlighted = this.active && this.isHoveredOrFocused();
+        int u = highlighted ? hoverU : normalU;
+        int v = highlighted ? hoverV : normalV;
 
         graphics.pose().pushPose();
         graphics.pose().translate(subpixelX, subpixelY, 0.0F);
@@ -86,7 +87,7 @@ public class TexturedTextButton extends Button implements SubpixelWidget {
         }
 
         graphics.setColor(1.0F, 1.0F, 1.0F, 1.0F);
-        int textColor = this.active ? (this.isHoveredOrFocused() ? hoverTextColor : normalTextColor) : 0xA0A0A0;
+        int textColor = this.active ? (highlighted ? hoverTextColor : normalTextColor) : 0xA0A0A0;
         int textAlpha = Math.round(this.alpha * 255.0F);
         if (textAlpha < 4) {
             graphics.pose().popPose();

@@ -1660,10 +1660,17 @@ public class StatsData {
 
 		int maxCost = getSingleStatCost(getConfiguredMaxTotalStats());
 		if (maxCost <= 0) return 1.0;
-		int currentCost = getSingleStatCost(stats.getTotalStats());
+		int currentCost = getSingleStatCost(getTpCostTotalStats());
 
 		double factor = Math.max(0.0, Math.min(1.0, (double) currentCost / maxCost));
 		return 1.0 + strength * factor;
+	}
+
+	public int getTpCostTotalStats() {
+		int total = stats.getTotalStats();
+		if (ConfigManager.getServerConfig().getDynamicGrowth().isGrowthStatsCountForTpCost()) return total;
+		int growthStats = Math.min(dynamicGrowth.getGrowthStats(), Math.max(0, total - getInitialTotalStats()));
+		return total - growthStats;
 	}
 
 	private double statCostVariableComponent(int simulatedTotalStats) {
@@ -1708,11 +1715,12 @@ public class StatsData {
 			return statsToAdd <= 0 ? 0 : Integer.MAX_VALUE;
 		long totalCost = 0L;
 		int currentTotalStats = stats.getTotalStats();
+		int costTotalStats = getTpCostTotalStats();
 		int totalCap = getConfiguredMaxTotalStats();
 
 		for (int i = 0; i < statsToAdd; i++) {
 			if (currentTotalStats + i >= totalCap) break;
-			totalCost += Math.max(0, getSingleStatCost(currentTotalStats + i));
+			totalCost += Math.max(0, getSingleStatCost(costTotalStats + i));
 			if (totalCost >= Integer.MAX_VALUE) return Integer.MAX_VALUE;
 		}
 		return (int) totalCost;
@@ -1727,12 +1735,13 @@ public class StatsData {
 		int statsIncreased = 0;
 		long costAccumulated = 0L;
 		int currentTotalStats = stats.getTotalStats();
+		int costTotalStats = getTpCostTotalStats();
 		int totalCap = getConfiguredMaxTotalStats();
 
 		while (statsIncreased < maxStatsToAdd) {
 			if (currentTotalStats + statsIncreased >= totalCap) break;
 
-			long costForNext = Math.max(0, getSingleStatCost(currentTotalStats + statsIncreased));
+			long costForNext = Math.max(0, getSingleStatCost(costTotalStats + statsIncreased));
 
 			if (costAccumulated + costForNext > availableTPs) break;
 
@@ -1763,6 +1772,7 @@ public class StatsData {
 			currentStats.setEnergy(Math.max(0, newEne));
 
 			getResources().setTrainingPointsExact(newTPs);
+			getDynamicGrowth().scaleGrowthStats(keepPercentage);
 		} else {
 			currentStats.setStrength(0);
 			currentStats.setStrikePower(0);
@@ -1771,6 +1781,7 @@ public class StatsData {
 			currentStats.setKiPower(0);
 			currentStats.setEnergy(0);
 			getResources().setTrainingPointsExact(0);
+			getDynamicGrowth().clearGrowthStats();
 		}
 
 		if (getStatus().isFused()) FusionLogic.endFusion(player, this, false);
