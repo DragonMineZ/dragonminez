@@ -95,6 +95,15 @@ public class CapsuleCorpMapTrade implements VillagerTrades.ItemListing {
 		return map;
 	}
 
+	public void ensureOffered(ServerLevel level, AbstractVillager merchant) {
+		MerchantOffers offers = merchant.getOffers();
+		for (MerchantOffer offer : offers) {
+			if (offer.getResult().is(Items.FILLED_MAP) && this.destination.equals(structureKeyFrom(level, offer.getResult()))) return;
+		}
+		MerchantOffer offer = this.getOffer(merchant, merchant.getRandom());
+		if (offer != null) offers.add(offer);
+	}
+
 	public static void refreshStaleMapOffers(ServerLevel level, AbstractVillager merchant) {
 		MerchantOffers offers = merchant.getOffers();
 		for (int i = 0; i < offers.size(); i++) {

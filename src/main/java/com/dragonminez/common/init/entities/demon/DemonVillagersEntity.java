@@ -50,8 +50,10 @@ import net.minecraftforge.registries.RegistryObject;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 public final class DemonVillagersEntity {
 
@@ -280,10 +282,18 @@ public final class DemonVillagersEntity {
 
 	public static class TimePatroller extends Resident {
 		public static final int TAMAGAMIS = 3;
-		private static final int[] TAMAGAMI_MAP_PRICES = {12, 16, 20};
-		private static final int TAMAGAMI_MAP_USES = 4;
-		private static final int TAMAGAMI_MAP_XP = 10;
+		private static final int BOSS_MAP_USES = 4;
+		private static final int BOSS_MAP_XP = 10;
 		private static final String TAMAGAMI_TAG = "dmz_tamagami";
+		private static final String BOSS_MAP_TAG = "dmz_worldboss_map";
+
+		private record BossMap(String key, int price) {}
+
+		private static final List<BossMap> BOSS_MAPS = List.of(
+				new BossMap(WorldBossEntity.TAMAGAMI_3, 12),
+				new BossMap(WorldBossEntity.TAMAGAMI_2, 16),
+				new BossMap(WorldBossEntity.TAMAGAMI_1, 20),
+				new BossMap(WorldBossEntity.GOMAH, 24));
 
 		public TimePatroller(EntityType<? extends TimePatroller> type, Level level) {
 			super(type, level);
@@ -302,24 +312,44 @@ public final class DemonVillagersEntity {
 		@Override
 		protected void updateTrades() {
 			if (!(this.level() instanceof ServerLevel level) || !level.getServer().isSameThread()) return;
-			for (int number = 1; number <= TAMAGAMIS; number++) this.offers.add(tamagamiOffer(level, number));
+			for (BossMap bossMap : BOSS_MAPS) this.offers.add(bossMapOffer(level, bossMap));
 		}
 
 		@Override
 		protected MerchantOffers prepareOffers() {
 			MerchantOffers offers = super.prepareOffers();
 			if (!(this.level() instanceof ServerLevel level)) return offers;
+			Set<String> present = new HashSet<>();
 			for (int i = 0; i < offers.size(); i++) {
 				CompoundTag tag = offers.get(i).getResult().getTag();
-				if (tag == null || !tag.getBoolean(CapsuleCorpMapTrade.PENDING_TAG) || !tag.contains(TAMAGAMI_TAG)) continue;
-				int number = tag.getInt(TAMAGAMI_TAG);
-				if (locateTamagami(level, number) != null) offers.set(i, tamagamiOffer(level, number));
+				BossMap bossMap = bossMapOf(tag);
+				if (bossMap == null) continue;
+				present.add(bossMap.key());
+				if (!tag.getBoolean(CapsuleCorpMapTrade.PENDING_TAG) && tag.contains(BOSS_MAP_TAG)) continue;
+				if (WorldBossManager.getLair(level.getServer(), bossMap.key()) != null || !tag.contains(BOSS_MAP_TAG)) {
+					offers.set(i, bossMapOffer(level, bossMap));
+				}
+			}
+			for (BossMap bossMap : BOSS_MAPS) {
+				if (!present.contains(bossMap.key())) offers.add(bossMapOffer(level, bossMap));
 			}
 			return offers;
 		}
 
-		private static MerchantOffer tamagamiOffer(ServerLevel level, int number) {
-			BlockPos lair = locateTamagami(level, number);
+		@Nullable
+		private static BossMap bossMapOf(@Nullable CompoundTag tag) {
+			if (tag == null) return null;
+			String key = tag.contains(BOSS_MAP_TAG) ? tag.getString(BOSS_MAP_TAG)
+					: tag.contains(TAMAGAMI_TAG) ? WorldBossEntity.tamagamiKey(tag.getInt(TAMAGAMI_TAG)) : null;
+			if (key == null) return null;
+			for (BossMap bossMap : BOSS_MAPS) {
+				if (bossMap.key().equals(key)) return bossMap;
+			}
+			return null;
+		}
+
+		private static MerchantOffer bossMapOffer(ServerLevel level, BossMap bossMap) {
+			BlockPos lair = WorldBossManager.getLair(level.getServer(), bossMap.key());
 			ItemStack map;
 			if (lair != null) {
 				map = MapItem.create(level, lair.getX(), lair.getZ(), (byte) 2, true, true);
@@ -329,11 +359,10 @@ public final class DemonVillagersEntity {
 				map = new ItemStack(Items.FILLED_MAP);
 				map.getOrCreateTag().putBoolean(CapsuleCorpMapTrade.PENDING_TAG, true);
 			}
-			map.setHoverName(Component.translatable("filled_map." + Reference.MOD_ID + ".tamagami_" + number));
-			map.getOrCreateTag().putInt(TAMAGAMI_TAG, number);
+			map.setHoverName(Component.translatable("filled_map." + Reference.MOD_ID + "." + bossMap.key()));
+			map.getOrCreateTag().putString(BOSS_MAP_TAG, bossMap.key());
 
-			int price = TAMAGAMI_MAP_PRICES[Math.min(number, TAMAGAMI_MAP_PRICES.length) - 1];
-			MerchantOffer offer = new MerchantOffer(new ItemStack(Items.EMERALD, price), map, TAMAGAMI_MAP_USES, TAMAGAMI_MAP_XP, 0.2F);
+			MerchantOffer offer = new MerchantOffer(new ItemStack(Items.EMERALD, bossMap.price()), map, BOSS_MAP_USES, BOSS_MAP_XP, 0.2F);
 			if (lair == null) offer.setToOutOfStock();
 			return offer;
 		}

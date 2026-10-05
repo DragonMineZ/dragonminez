@@ -131,8 +131,6 @@ public class ForgeCommonEvents {
 
 		trades.get(3).add(mapTrade(DMZStructures.KAMILOOKOUT, "dragonminez.kamilookout",
 				new ItemStack(Items.SPRUCE_SAPLING, 1)));
-		trades.get(3).add(mapTrade(DMZStructures.BABA_PALACE, "dragonminez.baba_palace",
-				new ItemStack(Items.GLASS_BOTTLE, 6)));
 		trades.get(3).add(mapTrade(DMZStructures.CELL_ARENA, "dragonminez.cell_arena",
 				new ItemStack(MainItems.T1_RADAR_CHIP.get(), 1)));
 
@@ -153,6 +151,12 @@ public class ForgeCommonEvents {
 		if (!(event.getLevel() instanceof ServerLevel serverLevel)) return;
 		if (!(event.getTarget() instanceof net.minecraft.world.entity.npc.AbstractVillager merchant)) return;
 		try {
+			if (merchant instanceof net.minecraft.world.entity.npc.Villager villager
+					&& villager.getVillagerData().getProfession().equals(MainVillagers.CAPSULE_CORP_ASSISTANT.get())) {
+				int level = villager.getVillagerData().getLevel();
+				if (level >= 3) BABA_PALACE_MAP.ensureOffered(serverLevel, villager);
+				if (level >= 5) BUU_HOUSE_MAP.ensureOffered(serverLevel, villager);
+			}
 			CapsuleCorpMapTrade.refreshStaleMapOffers(serverLevel, merchant);
 		} catch (Exception ignored) {}
 	}
@@ -160,13 +164,17 @@ public class ForgeCommonEvents {
 	private static final int MAP_XP = 40;
 
 	private static final int MAP_MAX_USES = 8;
+	private static final CapsuleCorpMapTrade BABA_PALACE_MAP = mapTrade(DMZStructures.BABA_PALACE,
+			"dragonminez.baba_palace", new ItemStack(Items.GLASS_BOTTLE, 6));
+	private static final CapsuleCorpMapTrade BUU_HOUSE_MAP = mapTrade(DMZStructures.BUU_HOUSE,
+			"dragonminez.buu_house", new ItemStack(Items.CAKE, 1));
 	private static final float MEDI_SHELL_DAMAGE_TAKEN = 0.7F;
 
 	private static ItemStack emptyMap() {
 		return new ItemStack(Items.MAP, 1);
 	}
 
-	private static VillagerTrades.ItemListing mapTrade(ResourceKey<Structure> destination, String displayName,
+	private static CapsuleCorpMapTrade mapTrade(ResourceKey<Structure> destination, String displayName,
 			ItemStack cost) {
 		return new CapsuleCorpMapTrade(emptyMap(), cost, destination, displayName,
 				MapDecoration.Type.RED_X, MAP_MAX_USES, MAP_XP);
