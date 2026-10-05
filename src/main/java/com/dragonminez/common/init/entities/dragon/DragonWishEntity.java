@@ -8,12 +8,14 @@ import com.dragonminez.common.init.MainSounds;
 import com.dragonminez.server.events.DragonBallsHandler;
 import com.dragonminez.server.world.data.DragonBallSavedData;
 import net.minecraft.client.Minecraft;
+import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.syncher.EntityDataAccessor;
 import net.minecraft.network.syncher.EntityDataSerializers;
 import net.minecraft.network.syncher.SynchedEntityData;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.util.Mth;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.damagesource.DamageSource;
@@ -43,6 +45,8 @@ public class DragonWishEntity extends Mob implements GeoEntity {
 	private static final EntityDataAccessor<String> OWNER_NAME = SynchedEntityData.defineId(DragonWishEntity.class, EntityDataSerializers.STRING);
 	private static final EntityDataAccessor<Boolean> GRANTED_WISH = SynchedEntityData.defineId(DragonWishEntity.class, EntityDataSerializers.BOOLEAN);
 	private static final EntityDataAccessor<String> DRAGON_DEFINITION_ID = SynchedEntityData.defineId(DragonWishEntity.class, EntityDataSerializers.STRING);
+	private static final EntityDataAccessor<Integer> DESPAWN_FADE = SynchedEntityData.defineId(DragonWishEntity.class, EntityDataSerializers.INT);
+	public static final int FADE_TICKS = 50;
 
 	private long invokingTime;
 	private long summonExpiresAt;
@@ -68,6 +72,7 @@ public class DragonWishEntity extends Mob implements GeoEntity {
 		this.entityData.define(OWNER_NAME, "");
 		this.entityData.define(GRANTED_WISH, false);
 		this.entityData.define(DRAGON_DEFINITION_ID, defaultDragonDefinitionId == null ? "" : defaultDragonDefinitionId);
+		this.entityData.define(DESPAWN_FADE, -1);
 	}
 
 	@Override
@@ -81,8 +86,40 @@ public class DragonWishEntity extends Mob implements GeoEntity {
 	public void tick() {
 		super.tick();
 		if (this.level() instanceof ServerLevel serverLevel && !this.isRemoved() && this.tickCount % 20 == 0) checkSummon(serverLevel);
-		if (hasGrantedWish()) despawnDelay--;
-		if (despawnDelay <= 0) this.discard();
+		if (this.level().isClientSide) {
+			if (isFading()) spawnFadeParticles();
+			return;
+		}
+		if (hasGrantedWish() && despawnDelay-- <= FADE_TICKS) beginDespawn();
+		int fade = this.entityData.get(DESPAWN_FADE);
+		if (fade < 0) return;
+		if (fade <= 0) this.discard();
+		else this.entityData.set(DESPAWN_FADE, fade - 1);
+	}
+
+	public void beginDespawn() {
+		if (this.entityData.get(DESPAWN_FADE) < 0) this.entityData.set(DESPAWN_FADE, FADE_TICKS);
+	}
+
+	public boolean isFading() {
+		return this.entityData.get(DESPAWN_FADE) >= 0;
+	}
+
+	public float getFadeProgress(float partialTick) {
+		int fade = this.entityData.get(DESPAWN_FADE);
+		if (fade < 0) return 0.0F;
+		return Mth.clamp((FADE_TICKS - fade + partialTick) / FADE_TICKS, 0.0F, 1.0F);
+	}
+
+	private void spawnFadeParticles() {
+		float progress = getFadeProgress(0.0F);
+		int count = 2 + (int) (progress * 6);
+		for (int i = 0; i < count; i++) {
+			double x = this.getX() + (this.random.nextDouble() - 0.5D) * this.getBbWidth() * 1.5D;
+			double y = this.getY() + this.random.nextDouble() * this.getBbHeight() * 1.5D;
+			double z = this.getZ() + (this.random.nextDouble() - 0.5D) * this.getBbWidth() * 1.5D;
+			this.level().addParticle(ParticleTypes.END_ROD, x, y, z, 0.0D, 0.04D + this.random.nextDouble() * 0.08D, 0.0D);
+		}
 	}
 
 	private void checkSummon(ServerLevel serverLevel) {
@@ -90,7 +127,7 @@ public class DragonWishEntity extends Mob implements GeoEntity {
 		DragonBallSavedData.Summon summon = data.getSummon(this.getUUID());
 		if (summon == null) {
 			if (this.summonExpiresAt > 0) {
-				this.discard();
+				beginDespawn();
 				return;
 			}
 			DragonDefinition definition = getDragonDefinition();
@@ -98,7 +135,7 @@ public class DragonWishEntity extends Mob implements GeoEntity {
 			DragonBallsHandler.registerSummon(serverLevel, this, definition == null ? null : definition.getBallSetId());
 			return;
 		}
-		if (!hasGrantedWish() && serverLevel.getGameTime() >= summon.expiresAt()) this.discard();
+		if (!hasGrantedWish() && serverLevel.getGameTime() >= summon.expiresAt()) beginDespawn();
 	}
 
 	@Override
@@ -211,6 +248,7 @@ public class DragonWishEntity extends Mob implements GeoEntity {
 		compound.putLong("InvokingTime", this.invokingTime);
 		compound.putLong("SummonExpiresAt", this.summonExpiresAt);
 		compound.putInt("DespawnDelay", this.despawnDelay);
+		compound.putInt("DespawnFade", this.entityData.get(DESPAWN_FADE));
 		compound.putString("OwnerName", this.getOwnerName());
 		compound.putBoolean("GrantedWish", this.hasGrantedWish());
 		compound.putString("DragonDefinitionId", this.getDragonDefinitionId());
@@ -222,6 +260,7 @@ public class DragonWishEntity extends Mob implements GeoEntity {
 		if (compound.contains("InvokingTime")) this.invokingTime = compound.getLong("InvokingTime");
 		if (compound.contains("SummonExpiresAt")) this.summonExpiresAt = compound.getLong("SummonExpiresAt");
 		if (compound.contains("DespawnDelay")) this.despawnDelay = compound.getInt("DespawnDelay");
+		if (compound.contains("DespawnFade")) this.entityData.set(DESPAWN_FADE, compound.getInt("DespawnFade"));
 		if (compound.contains("OwnerName")) this.setOwnerName(compound.getString("OwnerName"));
 		if (compound.contains("GrantedWish")) this.setGrantedWish(compound.getBoolean("GrantedWish"));
 		if (compound.contains("DragonDefinitionId")) this.setDragonDefinitionId(compound.getString("DragonDefinitionId"));

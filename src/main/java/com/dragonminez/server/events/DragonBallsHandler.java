@@ -256,7 +256,7 @@ public class DragonBallsHandler {
 			if (now < entry.getValue().expiresAt()) continue;
 			Entity entity = level.getEntity(entry.getKey());
 			if (entity instanceof DragonWishEntity dragon && !dragon.isRemoved()) {
-				dragon.discard();
+				dragon.beginDespawn();
 				continue;
 			}
 			data.removeSummon(entry.getKey());

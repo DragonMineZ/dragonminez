@@ -268,6 +268,15 @@ public class ModRenderTypes extends RenderType {
                     .setOverlayState(OVERLAY)
                     .createCompositeState(false)));
 
+    private static final Function<ResourceLocation, RenderType> WHITE_FLASH = Util.memoize((pLocation) ->
+            create("dmz_white_flash", DefaultVertexFormat.NEW_ENTITY, VertexFormat.Mode.QUADS, 256, false, true, CompositeState.builder()
+                    .setShaderState(RENDERTYPE_OUTLINE_SHADER)
+                    .setTextureState(new TextureStateShard(pLocation, false, false))
+                    .setTransparencyState(ADDITIVE_TRANSPARENCY)
+                    .setCullState(NO_CULL)
+                    .setWriteMaskState(COLOR_WRITE)
+                    .createCompositeState(false)));
+
     private static final Function<ResourceLocation, RenderType> KI_BLAST = Util.memoize((pLocation) ->
             create("ki_blastw", DefaultVertexFormat.NEW_ENTITY, VertexFormat.Mode.QUADS, 256, false, true, CompositeState.builder()
                     .setShaderState(RENDERTYPE_BEACON_BEAM_SHADER)
@@ -400,6 +409,7 @@ public class ModRenderTypes extends RenderType {
     public static RenderType skinPaintPick(ResourceLocation pLocation) { return SKIN_PAINT_PICK.apply(pLocation); }
     public static RenderType lightning(ResourceLocation pLocation) { return LIGHTNING.apply(pLocation); }
     public static RenderType kiblast(ResourceLocation pLocation) { return KI_BLAST.apply(pLocation); }
+    public static RenderType whiteFlash(ResourceLocation pLocation) { return WHITE_FLASH.apply(pLocation); }
     public static RenderType ki_rendertype(ResourceLocation pLocation) { return KI_RENDERTYPE.apply(pLocation); }
 
     public static boolean hasTransformationMaskShader() {

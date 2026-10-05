@@ -1,6 +1,7 @@
 package com.dragonminez.client.init.entities.renderer;
 
 import com.dragonminez.client.init.entities.model.DragonDBModel;
+import com.dragonminez.client.render.util.ModRenderTypes;
 import com.dragonminez.common.init.entities.dragon.DragonWishEntity;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
@@ -13,7 +14,10 @@ import net.minecraft.util.Mth;
 import net.minecraft.util.RandomSource;
 import org.jetbrains.annotations.Nullable;
 import org.joml.Matrix4f;
+import software.bernie.geckolib.cache.object.BakedGeoModel;
+import software.bernie.geckolib.core.object.Color;
 import software.bernie.geckolib.renderer.GeoEntityRenderer;
+import software.bernie.geckolib.renderer.layer.GeoRenderLayer;
 
 public class DragonDBRenderer extends GeoEntityRenderer<DragonWishEntity> {
 
@@ -22,6 +26,16 @@ public class DragonDBRenderer extends GeoEntityRenderer<DragonWishEntity> {
 
     public DragonDBRenderer(EntityRendererProvider.Context renderManager) {
 		super(renderManager, new DragonDBModel<>());
+		addRenderLayer(new GeoRenderLayer<>(this) {
+			@Override
+			public void render(PoseStack poseStack, DragonWishEntity animatable, BakedGeoModel bakedModel, RenderType renderType, MultiBufferSource bufferSource, VertexConsumer buffer, float partialTick, int packedLight, int packedOverlay) {
+				if (!animatable.isFading()) return;
+				float white = whiteIntensity(animatable.getFadeProgress(partialTick));
+				if (white <= 0.0F) return;
+				RenderType additive = ModRenderTypes.whiteFlash(getTextureLocation(animatable));
+				getRenderer().reRender(bakedModel, poseStack, bufferSource, animatable, additive, bufferSource.getBuffer(additive), partialTick, packedLight, packedOverlay, white, white, white, 1.0F);
+			}
+		});
 	}
 
 	@Override
@@ -38,7 +52,26 @@ public class DragonDBRenderer extends GeoEntityRenderer<DragonWishEntity> {
 
 	@Override
 	public RenderType getRenderType(DragonWishEntity animatable, ResourceLocation texture, @Nullable MultiBufferSource bufferSource, float partialTick) {
-		return RenderType.entityCutoutNoCull(texture);
+		return animatable.isFading() ? RenderType.entityTranslucent(texture) : RenderType.entityCutoutNoCull(texture);
+	}
+
+	@Override
+	public Color getRenderColor(DragonWishEntity animatable, float partialTick, int packedLight) {
+		if (!animatable.isFading()) return super.getRenderColor(animatable, partialTick, packedLight);
+		float progress = animatable.getFadeProgress(partialTick);
+		float alpha = 1.0F - smoothstep((progress - 0.4F) / 0.12F);
+		return Color.ofRGBA(1.0F, 1.0F, 1.0F, alpha);
+	}
+
+	private static float whiteIntensity(float progress) {
+		if (progress < 0.4F) return smoothstep(progress / 0.4F);
+		if (progress < 0.55F) return 1.0F;
+		return 1.0F - smoothstep((progress - 0.55F) / 0.45F);
+	}
+
+	private static float smoothstep(float t) {
+		t = Mth.clamp(t, 0.0F, 1.0F);
+		return t * t * (3.0F - 2.0F * t);
 	}
 
     private void renderWishEffect(DragonWishEntity entity, float partialTicks, PoseStack poseStack, MultiBufferSource buffer, int r, int g, int b) {
@@ -46,6 +79,8 @@ public class DragonDBRenderer extends GeoEntityRenderer<DragonWishEntity> {
         float rawSin = Mth.sin((entity.tickCount + partialTicks) * 0.1F);
         float normalizedFade = (rawSin + 1.0F) / 2.0F;
         float fade = 0.4F + (normalizedFade * 0.6F);
+        fade *= 1.0F - entity.getFadeProgress(partialTicks);
+        if (fade <= 0.0F) return;
         float intensity = 0.6F;
 
         RandomSource randomsource = RandomSource.create(432L);
