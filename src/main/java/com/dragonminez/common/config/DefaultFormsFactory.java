@@ -1748,7 +1748,7 @@ public class DefaultFormsFactory {
 		transcended.setName(GlindForms.TRANSCENDED);
 		transcended.setUnlockOnSkillLevel(1);
 		transcended.setCustomModel("trascended");
-		transcended.setModelScaling(new Float[]{1.6f, 1.6f, 1.6f});
+		transcended.setModelScaling(new Float[]{1.4f, 1.4f, 1.4f});
 		transcended.setStrMultiplier(3.4);
 		transcended.setSkpMultiplier(3.4);
 		transcended.setDefMultiplier(2.625);

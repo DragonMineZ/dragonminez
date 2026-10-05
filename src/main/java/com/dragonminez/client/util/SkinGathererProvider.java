@@ -222,7 +222,7 @@ public class SkinGathererProvider {
                 case "frostdemon", "frostdemon_second", "frostdemon_final", "frostdemon_fifth", "frostdemon_third", "frostdemon_fp", "frostdemon_mecha", "frostdemon_metalcore" -> resolveBodyFrostDemon(look, logicKey, b1, b2, b3, hair, consumer);
                 case "bioandroid", "bioandroid_semi", "bioandroid_perfect", "bioandroid_base", "bioandroid_ultra", "bioandroid_xeno", "bioandroid_xenofp" -> resolveBodyBioAndroid(look, logicKey, b1, b2, b3, hair, consumer);
                 case "glindtrueform" -> resolveBodyGlindTrueForm(b1, b2, consumer);
-                case "trascended" -> resolveBodyGlindTranscended(b1, b2, consumer);
+                case "trascended" -> resolveBodyGlindTranscended(look, b1, b2, consumer);
 				default -> {
 					boolean hasGender = Boolean.TRUE.equals(raceConfig.getHasGender());
 					String genSuffix = hasGender ? (character.getGender().equals(Character.GENDER_FEMALE) ? "_female" : "_male") : "";
@@ -352,8 +352,12 @@ public class SkinGathererProvider {
 		acceptWithShadow(consumer, DMZSkinLayer.getSafeTexture(getCachedTexture(basePath + "layer2.png")), bodyColor2);
 	}
 
-	protected void resolveBodyGlindTranscended(float[] bodyColor, float[] bodyColor2, BiConsumer<ResourceLocation, float[]> consumer) {
-		String bodyPath = "textures/entity/races/humansaiyan/bodytype_male_1_";
+	protected void resolveBodyGlindTranscended(Character character, float[] bodyColor, float[] bodyColor2, BiConsumer<ResourceLocation, float[]> consumer) {
+		boolean female = Character.GENDER_FEMALE.equalsIgnoreCase(character.getGender());
+		String fallbackPath = female ? "textures/entity/races/humansaiyan/bodytype_female_1_" : "textures/entity/races/humansaiyan/bodytype_male_1_";
+		String bodyPath = female ? "textures/entity/races/humansaiyan/bodytype_female_" + Math.max(1, character.getBodyType()) + "_" : fallbackPath;
+		ResourceLocation bodyLayer = getCachedTexture(bodyPath + "layer1.png");
+		if (!DMZSkinLayer.getSafeTexture(bodyLayer).equals(bodyLayer)) bodyPath = fallbackPath;
 		consumer.accept(DMZSkinLayer.getSafeTexture(getCachedTexture(bodyPath + "layer1.png")), ColorUtils.skinBaseTone(bodyColor));
 		ResourceLocation bodyShadow = getCachedTexture(bodyPath + "layer2.png");
 		if (DMZSkinLayer.getSafeTexture(bodyShadow).equals(bodyShadow)) emitTranslucentLayer(consumer, bodyShadow, ColorUtils.skinShadowTone(bodyColor));

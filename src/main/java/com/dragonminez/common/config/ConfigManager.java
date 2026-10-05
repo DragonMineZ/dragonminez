@@ -56,7 +56,7 @@ public class ConfigManager {
 	private static final Path RAIDS_DIR = CONFIG_DIR.resolve("raids");
 	private static final Path TOURNAMENTS_DIR = CONFIG_DIR.resolve("tournaments");
 	private static final String[] DEFAULT_RACES = {"human", "saiyan", "namekian", "frostdemon", "bioandroid", "majin", "glind"};
-	private static final Set<String> RACES_WITH_GENDER = new HashSet<>(Arrays.asList("human", "saiyan", "majin"));
+	private static final Set<String> RACES_WITH_GENDER = new HashSet<>(Arrays.asList("human", "saiyan", "majin", "glind"));
 
 	private static final Map<String, RaceStatsConfig> RACE_STATS = new HashMap<>();
 	private static final Map<String, RaceCharacterConfig> RACE_CHARACTER = new HashMap<>();

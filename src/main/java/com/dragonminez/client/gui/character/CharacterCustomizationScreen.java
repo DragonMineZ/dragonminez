@@ -1170,14 +1170,14 @@ public class CharacterCustomizationScreen extends ScaledScreen {
 
 	private int getCombinedBodyTypeCount() {
 		int maleCount = Math.max(0, TextureCounter.getMaxBodyTypes(getEffectiveModelBase(), Character.GENDER_MALE)) + 1;
-		int femaleCount = character.canHaveGender() ? Math.max(0, TextureCounter.getMaxBodyTypes(getEffectiveModelBase(), Character.GENDER_FEMALE)) + 1 : 0;
+		int femaleCount = character.canHaveGender() ? Math.max(0, TextureCounter.getMaxBodyTypes(getEffectiveModelBase(), Character.GENDER_FEMALE)) + 1 - character.getMinBodyType() : 0;
 		return maleCount + femaleCount - 1;
 	}
 
 	private int getCurrentCombinedBodyTypeValue() {
 		int maleCount = Math.max(0, TextureCounter.getMaxBodyTypes(getEffectiveModelBase(), Character.GENDER_MALE)) + 1;
 		if (character.getGender().equals(Character.GENDER_FEMALE)) {
-			return character.getBodyType() + maleCount;
+			return character.getBodyType() - character.getMinBodyType() + maleCount;
 		}
 		return character.getBodyType();
 	}
@@ -1269,7 +1269,7 @@ public class CharacterCustomizationScreen extends ScaledScreen {
 
 		if (character.canHaveGender() && value >= maleCount) {
 			newGender = Character.GENDER_FEMALE;
-			newBodyType = value - maleCount;
+			newBodyType = value - maleCount + character.getMinBodyType();
 		}
 
 		if (character.getGender().equals(newGender) && character.getBodyType() == newBodyType) return;
@@ -1824,7 +1824,7 @@ public class CharacterCustomizationScreen extends ScaledScreen {
 				int maleCount = Math.max(0, TextureCounter.getMaxBodyTypes(getEffectiveModelBase(), Character.GENDER_MALE)) + 1;
 				if (character.canHaveGender() && value >= maleCount) {
 					character.setGender(Character.GENDER_FEMALE);
-					character.setBodyType(value - maleCount);
+					character.setBodyType(value - maleCount + character.getMinBodyType());
 				} else {
 					character.setGender(Character.GENDER_MALE);
 					character.setBodyType(value);
