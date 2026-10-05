@@ -41,9 +41,16 @@ public class RelicItemsStatusHandler implements IStatusEffectHandler {
 
 		if (isWearingDemonEye(player)) {
 			changed |= setStatMultiplier(data, DEMON_EYE_BONUS, gameplay.getDemonEyeMultiplier());
-		} else if (hasStatMultiplier(data, DEMON_EYE_BONUS)) {
-			data.getBonusStats().removeAllBonuses(DEMON_EYE_BONUS);
-			changed = true;
+		} else {
+			if (hasStatMultiplier(data, DEMON_EYE_BONUS)) {
+				data.getBonusStats().removeAllBonuses(DEMON_EYE_BONUS);
+				changed = true;
+			}
+			if (data.getCharacter().getDemonEyeGrowth() > 1.0f) {
+				data.getCharacter().setDemonEyeGrowth(1.0f);
+				player.refreshDimensions();
+				changed = true;
+			}
 		}
 
 		if (changed) NetworkHandler.sendToTrackingEntityAndSelf(new StatsSyncS2C(player), player);
@@ -55,9 +62,9 @@ public class RelicItemsStatusHandler implements IStatusEffectHandler {
 
 	@Override
 	public void onPlayerSecond(ServerPlayer player, StatsData data) {
-		boolean wearing = isWearingDemonEye(player);
-		updateDemonEyeGrowth(player, data, wearing);
-		if (!wearing || player.isCreative() || player.isSpectator()) return;
+		if (!isWearingDemonEye(player)) return;
+		growDemonEye(player, data);
+		if (player.isCreative() || player.isSpectator()) return;
 		var gameplay = ConfigManager.getServerConfig().getGameplay();
 
 		float kiCost = (float) (data.getMaxEnergy() * gameplay.getDemonEyeKiDrainPercent());
@@ -78,21 +85,13 @@ public class RelicItemsStatusHandler implements IStatusEffectHandler {
 		NetworkHandler.sendToTrackingEntityAndSelf(new ResourceSyncS2C(player), player);
 	}
 
-	private static void updateDemonEyeGrowth(ServerPlayer player, StatsData data, boolean wearing) {
+	private static void growDemonEye(ServerPlayer player, StatsData data) {
 		var gameplay = ConfigManager.getServerConfig().getGameplay();
 		float maxGrowth = 1.0f + gameplay.getDemonEyeMaxGrowth().floatValue();
 		float current = data.getCharacter().getDemonEyeGrowth();
-		float next;
-		if (wearing) {
-			int seconds = gameplay.getDemonEyeGrowthSeconds();
-			float step = seconds > 0 ? (maxGrowth - 1.0f) / seconds : maxGrowth;
-			next = Math.min(maxGrowth, current + step);
-		} else {
-			if (current <= 1.0f) return;
-			int seconds = gameplay.getDemonEyeShrinkSeconds();
-			float step = seconds > 0 ? (Math.max(maxGrowth, current) - 1.0f) / seconds : current;
-			next = Math.max(1.0f, current - step);
-		}
+		int seconds = gameplay.getDemonEyeGrowthSeconds();
+		float step = seconds > 0 ? (maxGrowth - 1.0f) / seconds : maxGrowth;
+		float next = Math.min(maxGrowth, current + step);
 		if (Math.abs(next - current) < 1.0E-6f) return;
 
 		data.getCharacter().setDemonEyeGrowth(next);

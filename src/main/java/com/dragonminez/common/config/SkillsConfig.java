@@ -492,6 +492,12 @@ public class SkillsConfig {
 		babaEarthSkills.add("meditation");
 		skillOfferings.put("baba_earth", babaEarthSkills);
 
+		List<String> buuSkills = new ArrayList<>();
+		buuSkills.add("assault_rain");
+		buuSkills.add("gum_punch");
+		buuSkills.add("sleep_recovery");
+		skillOfferings.put("buu", buuSkills);
+
 		List<String> defaultSkills = new ArrayList<>();
 		defaultSkills.add("kicontrol");
 		defaultSkills.add("jump");

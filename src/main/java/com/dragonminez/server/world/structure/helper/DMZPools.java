@@ -31,7 +31,8 @@ public class DMZPools {
 			YAMCHA_HOUSE = createKey("yamcha_house"),
 			TRUNKS_SHIP = createKey("trunks_ship"),
 			VEGETA_POD = createKey("vegeta_pod"),
-			BABA_PALACE = createKey("baba_palace");
+			BABA_PALACE = createKey("baba_palace"),
+			BUU_HOUSE = createKey("buu_house");
 
 	public static void bootstrap(BootstapContext<StructureTemplatePool> context) {
 		Holder<StructureTemplatePool> empty = context.lookup(Registries.TEMPLATE_POOL).getOrThrow(Pools.EMPTY);
@@ -137,6 +138,12 @@ public class DMZPools {
 		context.register(YAMCHA_HOUSE, new StructureTemplatePool(
 				empty,
 				ImmutableList.of(Pair.of(StructurePoolElement.single("dragonminez:yamcha_house", foundation), 1)),
+				StructureTemplatePool.Projection.RIGID
+		));
+
+		context.register(BUU_HOUSE, new StructureTemplatePool(
+				empty,
+				ImmutableList.of(Pair.of(StructurePoolElement.single("dragonminez:buu_house", foundation), 1)),
 				StructureTemplatePool.Projection.RIGID
 		));
 
