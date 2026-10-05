@@ -10,6 +10,7 @@ import com.dragonminez.common.init.MainSounds;
 import com.dragonminez.common.init.entities.worldboss.WorldBossEntity;
 import com.dragonminez.common.network.NetworkHandler;
 import com.dragonminez.common.network.S2C.ProgressionSyncS2C;
+import com.dragonminez.common.network.S2C.RaidMusicS2C;
 import com.dragonminez.common.network.S2C.StatsSyncS2C;
 import com.dragonminez.common.network.S2C.WorldBossContributionS2C;
 import com.dragonminez.common.network.S2C.WorldBossPlayerStateS2C;
@@ -20,6 +21,7 @@ import com.dragonminez.common.stats.character.Cooldowns;
 import com.dragonminez.common.stats.techniques.ReviveTechniqueData;
 import com.dragonminez.common.worldboss.WorldBossResults;
 import com.dragonminez.server.events.players.KiSurgeService;
+import com.dragonminez.server.world.raid.RaidFeedback;
 import net.minecraft.ChatFormatting;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.protocol.game.ClientboundSetSubtitleTextPacket;
@@ -88,6 +90,7 @@ public final class WorldBossSession {
 	private final long startTick;
 	private final Map<UUID, Participant> participants = new LinkedHashMap<>();
 	private final Set<UUID> audience = new HashSet<>();
+	private final Set<UUID> musicListeners = new HashSet<>();
 	private final Map<UUID, ReviveCast> casts = new HashMap<>();
 	private final Map<UUID, Integer> reviveProgress = new HashMap<>();
 	private String bossNameKey = "";
@@ -198,6 +201,31 @@ public final class WorldBossSession {
 		audience.clear();
 		audience.addAll(next);
 		if (changed) broadcastContribution(level, false, false);
+		refreshMusic(level);
+	}
+
+	private void refreshMusic(ServerLevel level) {
+		WorldBossLair lair = WorldBossManager.lair(bossKey);
+		if (lair == null) return;
+		for (UUID id : new ArrayList<>(musicListeners)) {
+			if (audience.contains(id)) continue;
+			musicListeners.remove(id);
+			ServerPlayer player = level.getServer().getPlayerList().getPlayer(id);
+			if (player != null) NetworkHandler.sendToPlayer(new RaidMusicS2C(""), player);
+		}
+		for (UUID id : audience) {
+			if (!participants.containsKey(id) || !musicListeners.add(id)) continue;
+			ServerPlayer player = level.getServer().getPlayerList().getPlayer(id);
+			if (player != null) NetworkHandler.sendToPlayer(new RaidMusicS2C(lair.music()), player);
+		}
+	}
+
+	private void endMusic(ServerLevel level, boolean victory) {
+		for (UUID id : musicListeners) {
+			ServerPlayer player = level.getServer().getPlayerList().getPlayer(id);
+			if (player != null) NetworkHandler.sendToPlayer(new RaidMusicS2C(victory ? RaidFeedback.VICTORY_MUSIC : ""), player);
+		}
+		musicListeners.clear();
 	}
 
 	private void join(ServerLevel level, ServerPlayer player, GeneralServerConfig.WorldBossConfig config) {
@@ -632,6 +660,7 @@ public final class WorldBossSession {
 		WorldBossRewards.storeResults(results);
 		broadcastContribution(level, true, false);
 		announceVictory(level, results);
+		endMusic(level, true);
 		endSession(level);
 		LogUtil.info(Env.SERVER, "World boss {} defeated after {} ticks by {} contributors", bossKey,
 				level.getGameTime() - startTick, results.players().size());
@@ -664,6 +693,7 @@ public final class WorldBossSession {
 
 	private void endSession(ServerLevel level) {
 		ended = true;
+		endMusic(level, false);
 		casts.clear();
 		reviveProgress.clear();
 		for (Participant participant : participants.values()) {
@@ -685,6 +715,7 @@ public final class WorldBossSession {
 			}
 		}
 		audience.remove(player.getUUID());
+		musicListeners.remove(player.getUUID());
 	}
 
 	boolean onPlayerLogin(ServerPlayer player, StatsData data) {

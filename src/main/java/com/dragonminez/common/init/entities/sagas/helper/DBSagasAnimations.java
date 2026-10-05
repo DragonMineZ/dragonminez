@@ -75,6 +75,11 @@ public class DBSagasAnimations {
     public static final RawAnimation ANIM_TAMAGAMI_RAISE = RawAnimation.begin().thenPlayAndHold("ki.kienzan_cast");
     public static final RawAnimation ANIM_TAMAGAMI_RELEASE = RawAnimation.begin().thenPlayAndHold("ki.kienzan_fire");
     public static final RawAnimation ANIM_TAMAGAMI_SLAM = RawAnimation.begin().thenPlayAndHold("attack1_1");
+    public static final RawAnimation ANIM_GOMAH_SIT = RawAnimation.begin().thenLoop("base.sit");
+    public static final RawAnimation ANIM_GOMAH_SPHERE_CAST = RawAnimation.begin().thenPlayAndHold("ki.large_ball_cast");
+    public static final RawAnimation ANIM_GOMAH_SPHERE_FIRE = RawAnimation.begin().thenPlayAndHold("ki.large_ball_fire");
+    public static final RawAnimation ANIM_GOMAH_BEAM_CAST = RawAnimation.begin().thenLoop("ki.mouth_blast_cast");
+    public static final RawAnimation ANIM_GOMAH_BEAM_FIRE = RawAnimation.begin().thenLoop("ki.mouth_blast_fire");
 
     // POWER POLE = DBZSTYLE 7
     public static final RawAnimation ANIM_ATTACK1_8 = RawAnimation.begin().thenPlay("attack1_8");

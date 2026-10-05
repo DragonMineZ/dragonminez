@@ -270,6 +270,9 @@ public final class MainBlocks {
 			() -> new Block(BlockBehaviour.Properties.copy(Blocks.BLACKSTONE).mapColor(MapColor.COLOR_BLACK).requiresCorrectToolForDrops()));
 	public static final RegistryObject<Block> DEMON_HORN = registerBlock("demon_horn",
 			() -> new Block(BlockBehaviour.Properties.copy(Blocks.BLACKSTONE).mapColor(MapColor.COLOR_PURPLE).requiresCorrectToolForDrops()));
+	public static final RegistryObject<Block> DEMON_HORN_GLOW = registerBlock("demon_horn_glow",
+			() -> new Block(BlockBehaviour.Properties.copy(Blocks.BLACKSTONE).mapColor(MapColor.COLOR_MAGENTA).lightLevel(pState -> 12)
+					.emissiveRendering((pState, pLevel, pPos) -> true).requiresCorrectToolForDrops()));
 	public static final RegistryObject<Block> DEMON_BRICKS = registerBlock("demon_bricks",
 			() -> new Block(BlockBehaviour.Properties.copy(Blocks.NETHER_BRICKS).mapColor(MapColor.NETHER).requiresCorrectToolForDrops()));
 	public static final RegistryObject<Block> DEMON_BRICK_SLAB = registerBlock("demon_brick_slab",

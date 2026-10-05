@@ -4,6 +4,8 @@ import com.dragonminez.common.init.entities.worldboss.WorldBossEntity;
 import com.dragonminez.common.network.NetworkHandler;
 import com.dragonminez.common.network.S2C.WorldBossResultsS2C;
 import com.dragonminez.common.worldboss.WorldBossResults;
+import com.dragonminez.server.world.structure.helper.StructureLocator;
+import com.dragonminez.server.world.structure.placement.StructureRepairManager;
 import com.dragonminez.server.world.worldboss.WorldBossLair;
 import com.dragonminez.server.world.worldboss.WorldBossManager;
 import com.dragonminez.server.world.worldboss.WorldBossRewards;
@@ -17,16 +19,20 @@ import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.commands.Commands;
 import net.minecraft.commands.SharedSuggestionProvider;
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.registries.Registries;
 import net.minecraft.network.chat.ClickEvent;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.ComponentUtils;
 import net.minecraft.network.chat.HoverEvent;
 import net.minecraft.network.chat.MutableComponent;
+import net.minecraft.resources.ResourceKey;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.util.Mth;
 import net.minecraft.world.entity.Entity;
+import net.minecraft.world.level.levelgen.structure.Structure;
+import net.minecraft.world.level.levelgen.structure.StructureStart;
 import net.minecraft.world.phys.Vec3;
 
 public class WorldBossCommand {
@@ -48,11 +54,28 @@ public class WorldBossCommand {
 	private static LiteralArgumentBuilder<CommandSourceStack> bossCommand(String name, BossAction action) {
 		return Commands.literal(name)
 				.requires(source -> source.hasPermission(2))
-				.executes(ctx -> run(ctx, WorldBossEntity.JANEMBA, action))
+				.executes(ctx -> run(ctx, nearestKey(ctx.getSource()), action))
 				.then(Commands.argument("boss", StringArgumentType.word())
 						.suggests((ctx, builder) -> SharedSuggestionProvider.suggest(
 								WorldBossManager.lairs().stream().map(WorldBossLair::key), builder))
 						.executes(ctx -> run(ctx, StringArgumentType.getString(ctx, "boss"), action)));
+	}
+
+	private static String nearestKey(CommandSourceStack source) {
+		String best = WorldBossEntity.JANEMBA;
+		double bestDistance = Double.MAX_VALUE;
+		boolean bestInDimension = false;
+		for (WorldBossLair lair : WorldBossManager.lairs()) {
+			if (!source.getLevel().dimension().equals(lair.dimension())) continue;
+			BlockPos pos = WorldBossManager.getLair(source.getServer(), lair.key());
+			double distance = pos == null ? Double.MAX_VALUE - 1.0D : source.getPosition().distanceToSqr(Vec3.atCenterOf(pos));
+			if (!bestInDimension || distance < bestDistance) {
+				best = lair.key();
+				bestDistance = distance;
+				bestInDimension = true;
+			}
+		}
+		return best;
 	}
 
 	private static int run(CommandContext<CommandSourceStack> ctx, String key, BossAction action) throws CommandSyntaxException {
@@ -86,7 +109,7 @@ public class WorldBossCommand {
 		MinecraftServer server = source.getServer();
 		BlockPos pos = WorldBossManager.getLair(server, lair.key());
 		if (pos == null) {
-			source.sendFailure(notChosen(lair));
+			source.sendFailure(notChosen(server, lair));
 			return 0;
 		}
 
@@ -141,7 +164,11 @@ public class WorldBossCommand {
 		return rest + "s";
 	}
 
-	private static Component notChosen(WorldBossLair lair) {
+	private static Component notChosen(MinecraftServer server, WorldBossLair lair) {
+		StructureLocator.SpawnHint hint = lair.structure() == null ? null : StructureLocator.spawnHint(server, lair.structure());
+		if (hint != null) {
+			return Component.translatable("command.dragonminez.worldboss.not_generated", lair.displayName(), hint.dimensions(), hint.biomes());
+		}
 		return Component.translatable("command.dragonminez.worldboss.not_chosen", lair.displayName(), lair.dimension().location().toString());
 	}
 
@@ -149,7 +176,7 @@ public class WorldBossCommand {
 		ServerPlayer player = ctx.getSource().getPlayerOrException();
 		BlockPos pos = WorldBossManager.getLair(ctx.getSource().getServer(), lair.key());
 		if (pos == null) {
-			ctx.getSource().sendFailure(notChosen(lair));
+			ctx.getSource().sendFailure(notChosen(ctx.getSource().getServer(), lair));
 			return 0;
 		}
 
@@ -172,10 +199,13 @@ public class WorldBossCommand {
 		WorldBossManager.Data.Entry entry = data.entry(lair.key());
 
 		ServerLevel level = WorldBossManager.levelFor(ctx.getSource().getServer(), lair.key());
+		String structureNote = restoreStructure(level, lair, entry.lair);
 		WorldBossManager.endFight(lair.key(), level);
-		if (level != null && entry.bossId != null) {
-			Entity boss = level.getEntity(entry.bossId);
+		boolean unloaded = false;
+		if (entry.bossId != null) {
+			Entity boss = level != null ? level.getEntity(entry.bossId) : null;
 			if (boss != null) boss.discard();
+			else unloaded = true;
 		}
 
 		entry.lair = null;
@@ -184,9 +214,28 @@ public class WorldBossCommand {
 		entry.bossId = null;
 		entry.nextRespawnTick = 0L;
 		data.markDirty();
+		if (level != null) WorldBossManager.syncToAll(level, lair.key());
 
-		ctx.getSource().sendSuccess(() -> Component.literal("World boss state cleared for " + lair.displayName() + "."), false);
+		String message = "World boss state cleared for " + lair.displayName() + "."
+				+ (unloaded ? " The old boss was not loaded; it will be removed as soon as its chunk loads." : "")
+				+ structureNote;
+		ctx.getSource().sendSuccess(() -> Component.literal(message), false);
 		return 1;
+	}
+
+	private static String restoreStructure(ServerLevel level, WorldBossLair lair, BlockPos knownLair) {
+		if (level == null) return "";
+		ResourceKey<Structure> key = lair.structure();
+		if (key == null) return " Its arena is rebuilt when a player gets close.";
+		Structure structure = level.registryAccess().registryOrThrow(Registries.STRUCTURE).get(key);
+		BlockPos at = knownLair != null ? knownLair : lair.pickColumn(level);
+		if (structure == null || at == null) return " Its structure has not been planned yet, nothing to restore.";
+		StructureStart start = level.structureManager().getStructureAt(at, structure);
+		if (!start.isValid()) return " Its structure has not generated yet, nothing to restore.";
+		int unloaded = StructureRepairManager.restore(level, start);
+		if (unloaded == 0) return " Restoring its structure over the next few seconds.";
+		return " Restoring the loaded part of its structure; " + unloaded
+				+ " chunks are not loaded, stand next to it and run the reset again to restore the rest.";
 	}
 
 	private static int ready(CommandContext<CommandSourceStack> ctx, WorldBossLair lair) {

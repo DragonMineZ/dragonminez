@@ -281,6 +281,15 @@ public class DBSagasAnimationHandler {
             boolean erupted = entity.getBossAbilityTicks() >= AllWorldBossesEntity.Tamagami2.WHIRLWIND_ERUPT_TICK;
             return event.setAndContinue(erupted ? DBSagasAnimations.ANIM_TAMAGAMI_RELEASE : DBSagasAnimations.ANIM_TAMAGAMI_RAISE);
         }
+        if (ability == AllWorldBossesEntity.Gomah.ABILITY_GREAT_SPHERE) {
+            boolean released = entity.getBossAbilityTicks() >= AllWorldBossesEntity.Gomah.SPHERE_CHANNEL;
+            return event.setAndContinue(released ? DBSagasAnimations.ANIM_GOMAH_SPHERE_FIRE : DBSagasAnimations.ANIM_GOMAH_SPHERE_CAST);
+        }
+        if (ability == AllWorldBossesEntity.Gomah.ABILITY_QUAKE) return event.setAndContinue(DBSagasAnimations.ANIM_BOSS_SPECIAL2);
+        if (ability == AllWorldBossesEntity.Gomah.ABILITY_EYE_BEAM) {
+            boolean fired = entity.getBossAbilityTicks() >= AllWorldBossesEntity.Gomah.BEAM_FIRE_TICK;
+            return event.setAndContinue(fired ? DBSagasAnimations.ANIM_GOMAH_BEAM_FIRE : DBSagasAnimations.ANIM_GOMAH_BEAM_CAST);
+        }
         if (ability == 2) return event.setAndContinue(DBSagasAnimations.ANIM_BOSS_SPECIAL2);
         if (ability == 3) return event.setAndContinue(DBSagasAnimations.ANIM_BOSS_SPECIAL3);
         if (ability == 5) return event.setAndContinue(DBSagasAnimations.ANIM_BOSS_CUTS);

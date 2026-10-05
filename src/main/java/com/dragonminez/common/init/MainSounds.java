@@ -183,6 +183,13 @@ public final class MainSounds {
 	public static final RegistryObject<SoundEvent> VEGETA_OOZARU_DEATH = registerSoundEvent("vegeta_oozaru_death");
 
 	public static final RegistryObject<SoundEvent> RAID_OST_1 = registerSoundEvent("raid_ost_1");
+	public static final RegistryObject<SoundEvent> WORLDBOSS_MUSIC_JANEMBA = registerSoundEvent("worldboss_music.janemba");
+	public static final RegistryObject<SoundEvent> WORLDBOSS_MUSIC_TURLES = registerSoundEvent("worldboss_music.turles");
+	public static final RegistryObject<SoundEvent> WORLDBOSS_MUSIC_METAL_COOLER_CORE = registerSoundEvent("worldboss_music.metal_cooler_core");
+	public static final RegistryObject<SoundEvent> WORLDBOSS_MUSIC_TAMAGAMI_3 = registerSoundEvent("worldboss_music.tamagami_3");
+	public static final RegistryObject<SoundEvent> WORLDBOSS_MUSIC_TAMAGAMI_2 = registerSoundEvent("worldboss_music.tamagami_2");
+	public static final RegistryObject<SoundEvent> WORLDBOSS_MUSIC_TAMAGAMI_1 = registerSoundEvent("worldboss_music.tamagami_1");
+	public static final RegistryObject<SoundEvent> WORLDBOSS_MUSIC_GOMAH = registerSoundEvent("worldboss_music.gomah");
 
 	private static RegistryObject<SoundEvent> registerSoundEvent(String name) {
 		ResourceLocation id = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, name);

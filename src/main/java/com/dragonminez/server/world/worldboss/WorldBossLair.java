@@ -2,6 +2,7 @@ package com.dragonminez.server.world.worldboss;
 
 import com.dragonminez.Env;
 import com.dragonminez.LogUtil;
+import com.dragonminez.Reference;
 import com.dragonminez.common.init.MainBlocks;
 import com.dragonminez.common.init.MainEntities;
 import com.dragonminez.common.init.block.custom.DemonRealmBlocks;
@@ -15,7 +16,9 @@ import com.dragonminez.server.world.feature.DemonRealmFeatures;
 import com.dragonminez.server.world.gen.DemonRealmGeneration;
 import com.dragonminez.server.world.structure.BossStructures.GeteStarShape;
 import com.dragonminez.server.world.structure.BossStructures.GeteStarStructure;
+import com.dragonminez.server.world.structure.BossStructures.GomahCradleShape;
 import com.dragonminez.server.world.structure.helper.DMZStructureSets;
+import com.dragonminez.server.world.structure.helper.DMZStructures;
 import com.dragonminez.server.world.structure.placement.StructureSpawnPlanner;
 import com.dragonminez.server.world.structure.BossStructures.TreeOfMightShape;
 import com.dragonminez.server.world.structure.BossStructures.TreeOfMightShapes;
@@ -38,6 +41,7 @@ import net.minecraft.world.level.block.RotatedPillarBlock;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.properties.BlockStateProperties;
 import net.minecraft.world.level.chunk.ChunkGenerator;
+import net.minecraft.world.level.levelgen.structure.Structure;
 import net.minecraft.world.level.levelgen.RandomState;
 
 import java.util.Map;
@@ -69,6 +73,14 @@ public interface WorldBossLair {
 
 	default BlockPos teleportTarget(ServerLevel level, BlockPos lair) {
 		return lair;
+	}
+
+	default ResourceKey<Structure> structure() {
+		return null;
+	}
+
+	default String music() {
+		return Reference.MOD_ID + ":worldboss_music." + key();
 	}
 
 	final class Janemba implements WorldBossLair {
@@ -248,6 +260,11 @@ public interface WorldBossLair {
 		}
 
 		@Override
+		public ResourceKey<Structure> structure() {
+			return DMZStructures.TREE_OF_MIGHT;
+		}
+
+		@Override
 		public String displayName() {
 			return "Turles";
 		}
@@ -311,6 +328,11 @@ public interface WorldBossLair {
 		@Override
 		public String key() {
 			return WorldBossEntity.METAL_COOLER_CORE;
+		}
+
+		@Override
+		public ResourceKey<Structure> structure() {
+			return DMZStructures.GETE_STAR;
 		}
 
 		@Override
@@ -380,6 +402,73 @@ public interface WorldBossLair {
 		}
 	}
 
+	final class Gomah implements WorldBossLair {
+		private static final int AREA_CHECK_RADIUS = GomahCradleShape.ISLAND_RADIUS;
+
+		@Override
+		public String key() {
+			return WorldBossEntity.GOMAH;
+		}
+
+		@Override
+		public ResourceKey<Structure> structure() {
+			return DMZStructures.GOMAH_CRADLE;
+		}
+
+		@Override
+		public String displayName() {
+			return "Gomah";
+		}
+
+		@Override
+		public ResourceKey<Level> dimension() {
+			return DemonRealmDimension.DEMON_REALM_KEY;
+		}
+
+		@Override
+		public boolean isReady(ServerLevel level) {
+			return !level.players().isEmpty();
+		}
+
+		@Override
+		public BlockPos pickColumn(ServerLevel level) {
+			return GomahCradleShape.planned(level).anchor();
+		}
+
+		@Override
+		public boolean isAreaLoaded(ServerLevel level, BlockPos column) {
+			int minX = (column.getX() - AREA_CHECK_RADIUS) >> 4;
+			int maxX = (column.getX() + AREA_CHECK_RADIUS) >> 4;
+			int minZ = (column.getZ() - AREA_CHECK_RADIUS) >> 4;
+			int maxZ = (column.getZ() + AREA_CHECK_RADIUS) >> 4;
+			for (int cx = minX; cx <= maxX; cx++) {
+				for (int cz = minZ; cz <= maxZ; cz++) {
+					if (!level.hasChunk(cx, cz)) return false;
+				}
+			}
+			return true;
+		}
+
+		@Override
+		public BlockPos resolveGround(ServerLevel level, BlockPos column) {
+			return level.getBlockState(column).is(MainBlocks.DEMON_BRICKS.get()) ? column : null;
+		}
+
+		@Override
+		public BlockPos teleportTarget(ServerLevel level, BlockPos lair) {
+			return lair.offset(0, 1, GomahCradleShape.ISLAND_RADIUS - 14);
+		}
+
+		@Override
+		public void buildArena(ServerLevel level, BlockPos ground) {
+		}
+
+		@Override
+		public WorldBossEntity createBoss(ServerLevel level) {
+			return MainEntities.WORLDBOSS_GOMAH.get().create(level);
+		}
+	}
+
 	final class Tamagami implements WorldBossLair {
 		public static final int PLATFORM_RADIUS = 15;
 		public static final int RISE = 3;
@@ -397,6 +486,7 @@ public interface WorldBossLair {
 		private static final int MAX_SLOPE = 5;
 		private static final int TUNNEL_CLEARANCE = DemonRealmGeneration.TUNNEL_RADIUS + DemonRealmGeneration.TUNNEL_EDGE_NOISE + 48;
 		private static final long LAIR_SALT = 0x54414D4147414D49L;
+		private static final int CRADLE_CLEARANCE = GomahCradleShape.REACH + PLATFORM_RADIUS + 40;
 
 		private final int number;
 		private final Map<ServerLevel, CompletableFuture<BlockPos>> searches = new WeakHashMap<>();
@@ -525,6 +615,7 @@ public interface WorldBossLair {
 					int x = originX + Mth.floor(Math.cos(a) * radius);
 					int z = originZ + Mth.floor(Math.sin(a) * radius);
 					if (nearTunnel(x, z)) continue;
+					if (this.number == 1 && GomahCradleShape.distanceFromCradle(x, z) < CRADLE_CLEARANCE) continue;
 					int ground = bandGround(generator.getBaseColumn(x, z, heights, randomState), bottom, top, SEARCH_HEADROOM);
 					if (ground == Integer.MIN_VALUE) continue;
 					int spread = spread(generator, randomState, heights, x, z, ground, bottom, top);

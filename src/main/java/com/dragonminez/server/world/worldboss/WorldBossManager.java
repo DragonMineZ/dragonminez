@@ -29,7 +29,7 @@ import java.util.UUID;
 public final class WorldBossManager {
 
     private static final List<WorldBossLair> LAIRS = List.of(new WorldBossLair.Janemba(), new WorldBossLair.Turles(), new WorldBossLair.GeteStar(),
-            new WorldBossLair.Tamagami(3), new WorldBossLair.Tamagami(2), new WorldBossLair.Tamagami(1));
+            new WorldBossLair.Tamagami(3), new WorldBossLair.Tamagami(2), new WorldBossLair.Tamagami(1), new WorldBossLair.Gomah());
 
     private static final int ACTIVATION_RADIUS = 128;
     private static final int TICK_INTERVAL = 20;
@@ -139,7 +139,7 @@ public final class WorldBossManager {
     public static boolean isRegistered(WorldBossEntity boss) {
         if (boss.level().isClientSide || boss.getServer() == null) return true;
         Data.Entry entry = Data.get(boss.getServer()).peek(boss.getWorldBossKey());
-        return entry == null || entry.bossId == null || entry.bossId.equals(boss.getUUID());
+        return entry == null || boss.getUUID().equals(entry.bossId);
     }
 
     public static void onBossRemoved(WorldBossEntity boss) {

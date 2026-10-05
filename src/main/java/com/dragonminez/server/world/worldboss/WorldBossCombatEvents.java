@@ -93,6 +93,7 @@ public final class WorldBossCombatEvents {
 	public static String resolveBossKey(Entity entity) {
 		if (entity instanceof WorldBossEntity boss) return boss.getWorldBossKey();
 		if (entity instanceof AllWorldBossesEntity.MiniJanemba) return WorldBossEntity.JANEMBA;
+		if (AllWorldBossesEntity.Gomah.isEscort(entity)) return WorldBossEntity.GOMAH;
 		if (entity != null && GeteStarEntities.ownerOf(entity) != null) return WorldBossEntity.METAL_COOLER_CORE;
 		return null;
 	}

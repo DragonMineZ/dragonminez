@@ -892,12 +892,19 @@ public abstract class DBSagasEntity extends Monster implements GeoEntity, ITextu
         this.goalSelector.addGoal(3, new MeleeAttackGoal(this, 1.8D, false) {
             @Override
             public boolean canUse() {
-                return DBSagasEntity.this.isMeleeAllowed() && !DBSagasEntity.this.isStunned() && super.canUse();
+                return DBSagasEntity.this.isMeleeAllowed() && !DBSagasEntity.this.isStunned() && (this.targetInReach() || super.canUse());
             }
 
             @Override
             public boolean canContinueToUse() {
-                return DBSagasEntity.this.isMeleeAllowed() && !DBSagasEntity.this.isStunned() && super.canContinueToUse();
+                return DBSagasEntity.this.isMeleeAllowed() && !DBSagasEntity.this.isStunned() && (this.targetInReach() || super.canContinueToUse());
+            }
+
+            private boolean targetInReach() {
+                LivingEntity target = DBSagasEntity.this.getTarget();
+                if (target == null || !target.isAlive() || !DBSagasEntity.this.hasGiantBody()) return false;
+                if (target instanceof Player player && (player.isSpectator() || player.isCreative())) return false;
+                return DBSagasEntity.this.meleeDistanceSqr(target) <= this.getAttackReachSqr(target);
             }
 
             @Override
@@ -1208,6 +1215,35 @@ public abstract class DBSagasEntity extends Monster implements GeoEntity, ITextu
 
     public boolean hasGiantBody() {
         return this.getScale() > 2.0F || this.hasHitboxParts();
+    }
+
+    public boolean zanzokensOnAnyHit() {
+        return false;
+    }
+
+    public double meleeDistanceSqr(LivingEntity target) {
+        double dx = target.getX() - this.getX();
+        double dz = target.getZ() - this.getZ();
+        double dy = target.getY() - this.getY();
+        if (this.hasGiantBody()) {
+            double bottom = this.getBoundingBox().minY;
+            double top = this.getBoundingBox().maxY;
+            if (this.hitboxParts != null) {
+                for (PartEntity<?> part : this.hitboxParts) {
+                    bottom = Math.min(bottom, part.getBoundingBox().minY);
+                    top = Math.max(top, part.getBoundingBox().maxY);
+                }
+            }
+            if (target.getY() > top) dy = target.getY() - top;
+            else if (target.getBoundingBox().maxY < bottom) dy = bottom - target.getBoundingBox().maxY;
+            else dy = 0.0D;
+        }
+        return dx * dx + dy * dy + dz * dz;
+    }
+
+    @Override
+    public double getPerceivedTargetDistanceSquareForMeleeAttack(LivingEntity target) {
+        return this.meleeDistanceSqr(target);
     }
 
     public boolean isTournamentBound() {

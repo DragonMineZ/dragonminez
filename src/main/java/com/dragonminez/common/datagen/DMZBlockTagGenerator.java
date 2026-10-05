@@ -312,7 +312,8 @@ public class DMZBlockTagGenerator extends BlockTagsProvider {
 				.add(MainBlocks.ADOBE_BRICKS.get())
 				.add(MainBlocks.DEMON_MAGMA_ROCK.get())
 				.add(MainBlocks.CRIMSON_CRYSTAL.get())
-				.add(MainBlocks.DEMON_HORN.get());
+				.add(MainBlocks.DEMON_HORN.get())
+				.add(MainBlocks.DEMON_HORN_GLOW.get());
 
 		this.tag(BlockTags.MINEABLE_WITH_SHOVEL)
 				.add(MainBlocks.MAKAI_GRASS_BLOCK.get())

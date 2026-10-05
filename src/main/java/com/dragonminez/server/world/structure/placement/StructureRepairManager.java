@@ -144,6 +144,19 @@ public final class StructureRepairManager {
 		}
 	}
 
+	public static int restore(ServerLevel level, StructureStart start) {
+		BoundingBox box = start.getBoundingBox();
+		ChunkPos min = new ChunkPos(SectionPos.blockToSectionCoord(box.minX()), SectionPos.blockToSectionCoord(box.minZ()));
+		ChunkPos max = new ChunkPos(SectionPos.blockToSectionCoord(box.maxX()), SectionPos.blockToSectionCoord(box.maxZ()));
+		Materializer materializer = materializer(level);
+		int[] unloaded = {0};
+		ChunkPos.rangeClosed(min, max).forEach(p -> {
+			if (level.getChunkSource().getChunkNow(p.x, p.z) == null) unloaded[0]++;
+			else materializer.forceSchedule(p, start);
+		});
+		return unloaded[0];
+	}
+
 	private static Materializer materializer(ServerLevel level) {
 		return MATERIALIZERS.compute(level.dimension(),
 				(key, current) -> current != null && current.isFor(level) ? current : new Materializer(level));
@@ -321,6 +334,11 @@ public final class StructureRepairManager {
 			if (start == null || !start.isValid()) return null;
 			this.starts.put(salt, start);
 			return start;
+		}
+
+		void forceSchedule(ChunkPos pos, StructureStart start) {
+			this.active.remove(pos.toLong());
+			schedule(pos, start.getStructure(), start, start.getBoundingBox(), start.getChunkPos());
 		}
 
 		private void schedule(ChunkPos pos, Structure structure, StructureStart start, BoundingBox box, ChunkPos origin) {

@@ -110,6 +110,7 @@ public class DMZBlockLootTables extends BlockLootSubProvider {
 		this.dropSelf(MainBlocks.MAKAI_SHRUB.get());
 		this.dropSelf(MainBlocks.MAKAI_BUSH.get());
 		this.dropSelf(MainBlocks.DEMON_HORN.get());
+		this.dropSelf(MainBlocks.DEMON_HORN_GLOW.get());
 		this.dropSelf(MainBlocks.GAS_VENT.get());
 		this.dropSelf(MainBlocks.TURQUOISE_ROCK.get());
 		this.add(MainBlocks.MAJILITE_ORE.get(), block -> SingleOreDrop(MainBlocks.MAJILITE_ORE.get(), MainItems.MAJILITE.get()));

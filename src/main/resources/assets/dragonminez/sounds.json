@@ -1186,6 +1186,69 @@
       }
     ]
   },
+  "worldboss_music.janemba": {
+    "subtitle": "sounds.dragonminez.worldboss_music",
+    "sounds": [
+      {
+        "name": "dragonminez:raid_ost_1",
+        "stream": true
+      }
+    ]
+  },
+  "worldboss_music.turles": {
+    "subtitle": "sounds.dragonminez.worldboss_music",
+    "sounds": [
+      {
+        "name": "dragonminez:raid_ost_1",
+        "stream": true
+      }
+    ]
+  },
+  "worldboss_music.metal_cooler_core": {
+    "subtitle": "sounds.dragonminez.worldboss_music",
+    "sounds": [
+      {
+        "name": "dragonminez:raid_ost_1",
+        "stream": true
+      }
+    ]
+  },
+  "worldboss_music.tamagami_3": {
+    "subtitle": "sounds.dragonminez.worldboss_music",
+    "sounds": [
+      {
+        "name": "dragonminez:raid_ost_1",
+        "stream": true
+      }
+    ]
+  },
+  "worldboss_music.tamagami_2": {
+    "subtitle": "sounds.dragonminez.worldboss_music",
+    "sounds": [
+      {
+        "name": "dragonminez:raid_ost_1",
+        "stream": true
+      }
+    ]
+  },
+  "worldboss_music.tamagami_1": {
+    "subtitle": "sounds.dragonminez.worldboss_music",
+    "sounds": [
+      {
+        "name": "dragonminez:raid_ost_1",
+        "stream": true
+      }
+    ]
+  },
+  "worldboss_music.gomah": {
+    "subtitle": "sounds.dragonminez.worldboss_music",
+    "sounds": [
+      {
+        "name": "dragonminez:raid_ost_1",
+        "stream": true
+      }
+    ]
+  },
   "minigame.ill_forget_about_you_in_time": {
     "sounds": [
       {

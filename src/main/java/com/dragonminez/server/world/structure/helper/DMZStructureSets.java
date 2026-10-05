@@ -4,6 +4,7 @@ import com.dragonminez.Reference;
 import com.dragonminez.common.init.MainTags;
 import com.dragonminez.server.world.biome.NamekBiomes;
 import com.dragonminez.server.world.biome.SacredKaiBiomes;
+import com.dragonminez.server.world.structure.BossStructures.GomahCradleShape;
 import com.dragonminez.server.world.structure.placement.BiomeAwareUniquePlacement;
 import com.dragonminez.server.world.structure.placement.FixedStructurePlacement;
 import com.dragonminez.server.world.structure.placement.UniqueNearSpawnPlacement;
@@ -39,7 +40,8 @@ public class DMZStructureSets {
 			BABA_PALACE = createKey("baba_palace"), TREE_OF_MIGHT = createKey("tree_of_might"),
 			SAIYAN_CRATER = createKey("saiyan_crater"), GETE_STAR = createKey("gete_star"),
 			DEMON_VILLAGE = createKey("demon_village"),
-			GOMAH_CAMP = createKey("gomah_camp"), BUU_HOUSE = createKey("buu_house");
+			GOMAH_CAMP = createKey("gomah_camp"), BUU_HOUSE = createKey("buu_house"),
+			GOMAH_CRADLE = createKey("gomah_cradle");
 
 	public static void bootstrap(BootstapContext<StructureSet> context) {
 		HolderGetter<Structure> structures = context.lookup(Registries.STRUCTURE);
@@ -146,7 +148,21 @@ public class DMZStructureSets {
 						RandomSpreadType.LINEAR
 				)
 		));
+
+		context.register(GOMAH_CRADLE, new StructureSet(
+				structures.getOrThrow(DMZStructures.GOMAH_CRADLE),
+				new FixedStructurePlacement(
+						Vec3i.ZERO,
+						StructurePlacement.FrequencyReductionMethod.DEFAULT,
+						1.0f,
+						GOMAH_CRADLE_SALT,
+						Optional.empty(),
+						GomahCradleShape.ORIGIN.x, GomahCradleShape.ORIGIN.z
+				)
+		));
 	}
+
+	private static final int GOMAH_CRADLE_SALT = 59173046;
 
 	public static final int TREE_OF_MIGHT_SALT = 28475016;
 	public static final int GETE_STAR_SALT = 61937482;

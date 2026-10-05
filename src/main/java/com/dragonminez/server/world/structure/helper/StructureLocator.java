@@ -9,18 +9,28 @@ import net.minecraft.core.Holder;
 import net.minecraft.core.HolderSet;
 import net.minecraft.core.Registry;
 import net.minecraft.core.registries.Registries;
+import net.minecraft.network.chat.Component;
+import net.minecraft.network.chat.ComponentUtils;
+import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.resources.ResourceKey;
+import net.minecraft.resources.ResourceLocation;
+import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.level.ChunkPos;
+import net.minecraft.world.level.biome.Biome;
 import net.minecraft.world.level.levelgen.structure.Structure;
 import net.minecraft.world.level.levelgen.structure.StructureSet;
 import net.minecraft.world.level.levelgen.structure.placement.StructurePlacement;
 
 import javax.annotation.Nullable;
 import java.util.ArrayList;
+import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Set;
 
 public class StructureLocator {
+
+	private static final int MAX_HINT_BIOMES = 8;
 
 	@Nullable
 	public static BlockPos locateStructure(ServerLevel level, ResourceKey<Structure> structureKey, BlockPos searchFrom) {
@@ -96,6 +106,51 @@ public class StructureLocator {
 
 	public static int getDistanceTo(BlockPos from, BlockPos to) {
 		return (int) Math.sqrt(from.distSqr(to));
+	}
+
+	public record SpawnHint(Component dimensions, Component biomes) {
+	}
+
+	@Nullable
+	public static SpawnHint spawnHint(MinecraftServer server, ResourceKey<Structure> structureKey) {
+		var structureRegistry = server.registryAccess().registryOrThrow(Registries.STRUCTURE);
+		var structureSetRegistry = server.registryAccess().registryOrThrow(Registries.STRUCTURE_SET);
+		Holder<Structure> holder = structureRegistry.getHolder(structureKey).orElse(null);
+		if (holder == null) return null;
+
+		Set<Holder<Biome>> candidates = new LinkedHashSet<>();
+		for (StructureSet set : structureSetRegistry) {
+			if (set.structures().stream().noneMatch(entry -> entry.structure().is(structureKey))) continue;
+			if (set.placement() instanceof BiomeAwareUniquePlacement unique) {
+				unique.getValidBiomes().forEach(candidates::add);
+			} else {
+				holder.value().biomes().forEach(candidates::add);
+			}
+		}
+		if (candidates.isEmpty()) holder.value().biomes().forEach(candidates::add);
+
+		List<Component> dimensions = new ArrayList<>();
+		Set<Holder<Biome>> biomes = new LinkedHashSet<>();
+		for (ServerLevel level : server.getAllLevels()) {
+			if (level.getChunkSource().getGeneratorState().getPlacementsForStructure(holder).isEmpty()) continue;
+			Set<Holder<Biome>> possible = level.getChunkSource().getGenerator().getBiomeSource().possibleBiomes();
+			List<Holder<Biome>> matching = candidates.stream().filter(possible::contains).toList();
+			if (matching.isEmpty()) continue;
+			ResourceLocation dim = level.dimension().location();
+			dimensions.add(Component.translatableWithFallback("dimension." + dim.getNamespace() + "." + dim.getPath(), dim.toString()));
+			biomes.addAll(matching);
+		}
+		if (dimensions.isEmpty() || biomes.isEmpty()) return null;
+
+		List<Component> biomeNames = new ArrayList<>();
+		for (Holder<Biome> biome : biomes) {
+			biome.unwrapKey().ifPresent(key -> biomeNames.add(Component.translatableWithFallback(
+					"biome." + key.location().getNamespace() + "." + key.location().getPath(), key.location().toString())));
+			if (biomeNames.size() >= MAX_HINT_BIOMES) break;
+		}
+		MutableComponent biomeList = ComponentUtils.formatList(biomeNames, Component.literal(", ")).copy();
+		if (biomes.size() > biomeNames.size()) biomeList.append(Component.literal(", ..."));
+		return new SpawnHint(ComponentUtils.formatList(dimensions, Component.literal(", ")), biomeList);
 	}
 
 	public static boolean usesCustomPlacement(ServerLevel level, ResourceKey<Structure> structureKey) {

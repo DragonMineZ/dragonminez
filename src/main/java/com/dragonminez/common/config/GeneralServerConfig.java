@@ -120,6 +120,7 @@ public class GeneralServerConfig {
 			map.put("tamagami_3", List.of(WorldBossRewardEntry.tps(1_500_000, 1.0), WorldBossRewardEntry.item("dragonminez:tamagami_hammer", 1, 0.3)));
 			map.put("tamagami_2", List.of(WorldBossRewardEntry.tps(2_000_000, 1.0), WorldBossRewardEntry.item("dragonminez:tamagami_trident", 1, 0.3)));
 			map.put("tamagami_1", List.of(WorldBossRewardEntry.tps(2_700_000, 1.0), WorldBossRewardEntry.item("dragonminez:tamagami_sword", 1, 0.3)));
+			map.put("gomah", List.of(WorldBossRewardEntry.tps(3_500_000, 1.0), WorldBossRewardEntry.item("dragonminez:demon_eye", 1, 0.02)));
 			return map;
 		}
 

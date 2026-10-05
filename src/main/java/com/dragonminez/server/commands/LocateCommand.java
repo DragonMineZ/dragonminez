@@ -63,7 +63,10 @@ public class LocateCommand {
 		String structName = structureKey.location().getPath();
 
 		if (foundPos == null) {
-			source.sendFailure(Component.translatable("command.dragonminez.locate.not_found", structName));
+			StructureLocator.SpawnHint hint = StructureLocator.spawnHint(source.getServer(), structureKey);
+			source.sendFailure(hint == null
+					? Component.translatable("command.dragonminez.locate.not_found", structName)
+					: Component.translatable("command.dragonminez.locate.not_found_hint", structName, hint.dimensions(), hint.biomes()));
 			return 0;
 		}
 

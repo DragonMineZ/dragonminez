@@ -9,6 +9,7 @@ import com.dragonminez.common.stats.StatsCapability;
 import com.dragonminez.common.stats.StatsProvider;
 import net.minecraft.core.BlockPos;
 import net.minecraft.nbt.CompoundTag;
+import net.minecraft.network.chat.Component;
 import net.minecraft.network.syncher.EntityDataAccessor;
 import net.minecraft.network.syncher.EntityDataSerializers;
 import net.minecraft.network.syncher.SynchedEntityData;
@@ -38,6 +39,7 @@ public abstract class WorldBossEntity extends DBSagasEntity {
     public static final String TAMAGAMI_1 = "tamagami_1";
     public static final String TAMAGAMI_2 = "tamagami_2";
     public static final String TAMAGAMI_3 = "tamagami_3";
+    public static final String GOMAH = "gomah";
 
     public static String tamagamiKey(int number) {
         return switch (number) {
@@ -72,6 +74,11 @@ public abstract class WorldBossEntity extends DBSagasEntity {
         super(pEntityType, pLevel);
         this.setPersistenceRequired();
         this.setAiTier(AiTier.EXPERT);
+    }
+
+    @Override
+    public boolean zanzokensOnAnyHit() {
+        return true;
     }
 
     @Override
@@ -186,6 +193,10 @@ public abstract class WorldBossEntity extends DBSagasEntity {
 
     protected BossEvent.BossBarColor getBossBarColor() {
         return BossEvent.BossBarColor.PURPLE;
+    }
+
+    protected Component getBossBarName() {
+        return this.getDisplayName();
     }
 
     public boolean startBossAbility(int ability) {
@@ -308,11 +319,11 @@ public abstract class WorldBossEntity extends DBSagasEntity {
         if (!(this.level() instanceof ServerLevel serverLevel)) return;
 
         if (this.bossEvent == null) {
-            this.bossEvent = new ServerBossEvent(this.getDisplayName(),
+            this.bossEvent = new ServerBossEvent(this.getBossBarName(),
                     this.getBossBarColor(), BossEvent.BossBarOverlay.NOTCHED_10);
         }
 
-        this.bossEvent.setName(this.getDisplayName());
+        this.bossEvent.setName(this.getBossBarName());
         this.bossEvent.setProgress(Math.min(1.0F, this.getHealth() / this.getMaxHealth()));
 
         List<ServerPlayer> nearby = serverLevel.getPlayers(player ->

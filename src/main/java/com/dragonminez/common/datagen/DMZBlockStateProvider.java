@@ -154,6 +154,7 @@ public class DMZBlockStateProvider extends BlockStateProvider {
 		wallBlock(((WallBlock) MainBlocks.ADOBE_WALL.get()), blockTexture(MainBlocks.ADOBE.get()));
 		blockWithItem(MainBlocks.ADOBE_BRICKS);
 		blockWithItem(MainBlocks.DEMON_HORN);
+		blockWithItem(MainBlocks.DEMON_HORN_GLOW);
 		simpleBlockWithItem(MainBlocks.GAS_VENT.get(), models().cubeBottomTop("gas_vent",
 				modLoc("block/gas_vent_side"), blockTexture(MainBlocks.MAKAI_STONE.get()), modLoc("block/gas_vent_top")));
 		blockWithItem(MainBlocks.DARK_SEA_CLOUD);

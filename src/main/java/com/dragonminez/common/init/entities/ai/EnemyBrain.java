@@ -35,6 +35,7 @@ public final class EnemyBrain {
     private static final int[] HEAVY_COMBOS = {9, 11, 3, 1};
     private static final int[] DEFAULT_COMBOS = {0, 1, 8, 2, 5, 6};
     private static final int COMBO_RECOVERY = 7;
+    private static final float ANY_HIT_ZANZOKEN_CHANCE = 0.35F;
 
     private enum Kind { MELEE, COMBO, CAST, APPROACH, FLANK, STRAFE, KITE, TELEPORT, HOLD }
 
@@ -401,6 +402,12 @@ public final class EnemyBrain {
         float frac = this.self.getMaxHealth() > 0.0F ? recent / this.self.getMaxHealth() : 0.0F;
         boolean directHit = source.getDirectEntity() != null && source.getDirectEntity() == source.getEntity();
 
+        if (this.self.zanzokensOnAnyHit() && attacker instanceof ServerPlayer && this.canZanzokenNow(now, profile)
+                && rnd.nextFloat() < ANY_HIT_ZANZOKEN_CHANCE) {
+            this.zanzoken(now, profile);
+            return;
+        }
+
         if (frac >= 0.12F && this.canZanzokenNow(now, profile)) {
             float chance = profile.tier.atLeast(AiTier.ELITE) ? 0.6F : 0.35F;
             boolean save = profile.saveMobility && attackerId != null
@@ -504,7 +511,7 @@ public final class EnemyBrain {
     private Situation snapshot(LivingEntity target, long now) {
         Situation s = new Situation();
         s.target = target;
-        s.dist = this.self.distanceTo(target);
+        s.dist = Math.sqrt(this.self.meleeDistanceSqr(target));
         s.verticalDiff = target.getY() - this.self.getY();
         s.los = this.self.getSensing().hasLineOfSight(target);
         Vec3 toSelf = this.self.position().subtract(target.position());

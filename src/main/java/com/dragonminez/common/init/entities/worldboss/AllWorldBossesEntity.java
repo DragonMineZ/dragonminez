@@ -21,6 +21,7 @@ import com.dragonminez.common.init.entities.ki.KillDriverEntity;
 import com.dragonminez.common.init.entities.ki.SPBlueHurricaneEntity;
 import com.dragonminez.common.init.entities.sagas.DBSagasEntity;
 import com.dragonminez.common.init.entities.sagas.DBSagasPart;
+import com.dragonminez.common.init.entities.sagas.SagaDaimaEntity;
 import com.dragonminez.common.init.entities.sagas.helper.DBSagasAnimations;
 import com.dragonminez.common.network.NetworkHandler;
 import com.dragonminez.common.network.S2C.BeamClashStateS2C;
@@ -37,6 +38,7 @@ import com.dragonminez.server.events.players.combat.MomentumImpactHandler;
 import com.dragonminez.server.events.players.combat.StrikeAttackHandler;
 import com.dragonminez.server.commands.WorldBossCommand;
 import com.dragonminez.server.world.structure.BossStructures.GeteStarShape;
+import com.dragonminez.server.world.structure.BossStructures.GomahCradleShape;
 import com.dragonminez.server.world.worldboss.WorldBossContribution;
 import com.dragonminez.server.world.worldboss.WorldBossManager;
 import net.minecraft.ChatFormatting;
@@ -45,6 +47,9 @@ import net.minecraft.core.particles.DustParticleOptions;
 import net.minecraft.core.particles.ItemParticleOption;
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.nbt.CompoundTag;
+import net.minecraft.nbt.ListTag;
+import net.minecraft.nbt.NbtUtils;
+import net.minecraft.nbt.Tag;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.syncher.EntityDataAccessor;
 import net.minecraft.network.syncher.EntityDataSerializers;
@@ -67,6 +72,7 @@ import net.minecraft.world.entity.EntityDimensions;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.entity.Mob;
 import net.minecraft.world.entity.MobSpawnType;
 import net.minecraft.world.entity.ai.attributes.AttributeInstance;
 import net.minecraft.world.entity.ai.attributes.AttributeModifier;
@@ -120,8 +126,8 @@ public class AllWorldBossesEntity {
     public static class JanembaFat extends WorldBossEntity {
 
         public static final float BASE_HEALTH = 2688000.0F;
-        public static final float BASE_MELEE = 84240.0F;
-        public static final float BASE_KI = 76500.0F;
+        public static final float BASE_MELEE = 50700.0F;
+        public static final float BASE_KI = 46042.0F;
 
         public static final int ABILITY_STOMP = 2;
         public static final int ABILITY_SUMMON = 3;
@@ -499,8 +505,8 @@ public class AllWorldBossesEntity {
     public static class SuperJanemba extends WorldBossEntity {
 
         public static final float BASE_HEALTH = 2940000.0F;
-        public static final float BASE_MELEE = 92880.0F;
-        public static final float BASE_KI = 84456.0F;
+        public static final float BASE_MELEE = 55900.0F;
+        public static final float BASE_KI = 50830.0F;
 
         public static final int ABILITY_CUTS = 5;
 
@@ -802,8 +808,8 @@ public class AllWorldBossesEntity {
     public static class Turles extends WorldBossEntity {
 
         public static final float BASE_HEALTH = 15600.0F;
-        public static final float BASE_MELEE = 655.2F;
-        public static final float BASE_KI = 655.2F;
+        public static final float BASE_MELEE = 394.3F;
+        public static final float BASE_KI = 394.3F;
 
         public static final int ABILITY_MIGHT_FRUIT = 6;
         public static final int ABILITY_KILL_DRIVER = 7;
@@ -1160,7 +1166,7 @@ public class AllWorldBossesEntity {
             LivingEntity target = this.getTarget();
             if (target == null || !target.isAlive()) return;
             double reach = this.getMeleeReach() + target.getBbWidth() * 0.5D;
-            if (this.distanceToSqr(target) > reach * reach || !this.hasLineOfSight(target)) return;
+            if (this.meleeDistanceSqr(target) > reach * reach || !this.hasLineOfSight(target)) return;
 
             this.mightMeleeTimer = MIGHT_MELEE_INTERVAL;
             this.lookAt(target, 30.0F, 30.0F);
@@ -1396,8 +1402,8 @@ public class AllWorldBossesEntity {
     public static class MetalCoolerCore extends WorldBossEntity {
 
         public static final float BASE_HEALTH = 187200.0F;
-        public static final float BASE_MELEE = 6660.0F;
-        public static final float BASE_KI = 5580.0F;
+        public static final float BASE_MELEE = 4008.3F;
+        public static final float BASE_KI = 3358.3F;
 
         public static final int ABILITY_ORBITAL_LASERS = 10;
         public static final int ABILITY_CABLES = 11;
@@ -1463,7 +1469,7 @@ public class AllWorldBossesEntity {
         private static final int SUPERNOVA_COOLDOWN = 1200;
         private static final int SUPERNOVA_FIRST_DELAY = 200;
         private static final int SUPERNOVA_MARK_REFRESH = 100;
-        private static final float SUPERNOVA_DAMAGE_RATIO = 3.0F;
+        private static final float SUPERNOVA_DAMAGE_RATIO = 2.0F;
         private static final float SUPERNOVA_REFLECT_RATIO = 0.08F;
         private static final float SUPERNOVA_START_SIZE = 2.5F;
         private static final float SUPERNOVA_END_SIZE = 12.0F;
@@ -2267,13 +2273,16 @@ public class AllWorldBossesEntity {
             private static final int BREAKTHROUGH_TICKS = 60;
             private static final int EXHAUST_TICKS = 70;
 
-            private final MetalCoolerCore core;
+            private final WorldBossEntity core;
             private final KiBlastEntity ball;
             private final Vec3 start;
             private final Vec3 end;
+            private final int ownerColor;
+            private final int struggleTicks;
+            private final String barKey;
+            private final String joinedKey;
             private final Map<UUID, Fighter> fighters = new LinkedHashMap<>();
-            private final ServerBossEvent bar = new ServerBossEvent(Component.translatable("worldboss.dragonminez.metal_cooler_core.clash_bar", 0),
-                    BossEvent.BossBarColor.BLUE, BossEvent.BossBarOverlay.NOTCHED_10);
+            private final ServerBossEvent bar;
             private float bias = START_BIAS;
             private int age;
             private int shownFighters;
@@ -2281,10 +2290,21 @@ public class AllWorldBossesEntity {
             private record Fighter(ServerPlayer player, ClashParticipant participant, long joinGameTime, long joinNanos) {}
 
             SupernovaClash(MetalCoolerCore core, KiBlastEntity ball, Vec3 start, Vec3 end) {
+                this(core, ball, start, end, SUPERNOVA_BORDER, SUPERNOVA_STRUGGLE_TICKS,
+                        "worldboss.dragonminez.metal_cooler_core.clash_bar", "worldboss.dragonminez.metal_cooler_core.clash_joined");
+            }
+
+            SupernovaClash(WorldBossEntity core, KiBlastEntity ball, Vec3 start, Vec3 end, int ownerColor, int struggleTicks,
+                           String barKey, String joinedKey) {
                 this.core = core;
                 this.ball = ball;
                 this.start = start;
                 this.end = end;
+                this.ownerColor = ownerColor;
+                this.struggleTicks = struggleTicks;
+                this.barKey = barKey;
+                this.joinedKey = joinedKey;
+                this.bar = new ServerBossEvent(Component.translatable(barKey, 0), BossEvent.BossBarColor.BLUE, BossEvent.BossBarOverlay.NOTCHED_10);
             }
 
             private float visual() {
@@ -2321,7 +2341,7 @@ public class AllWorldBossesEntity {
 
                 if (this.bias >= WIN_BIAS) return Result.PLAYERS;
                 if (this.bias <= LOSE_BIAS) return Result.COOLER;
-                if (this.age >= SUPERNOVA_STRUGGLE_TICKS) return this.bias > 0.5F ? Result.PLAYERS : Result.COOLER;
+                if (this.age >= this.struggleTicks) return this.bias > 0.5F ? Result.PLAYERS : Result.COOLER;
                 return Result.ONGOING;
             }
 
@@ -2354,7 +2374,7 @@ public class AllWorldBossesEntity {
             private void join(ServerLevel level, ServerPlayer player, AbstractKiProjectile beam) {
                 Fighter fighter = new Fighter(player, new ClashParticipant(beam, player), level.getGameTime(), System.nanoTime());
                 this.fighters.put(player.getUUID(), fighter);
-                player.displayClientMessage(Component.translatable("worldboss.dragonminez.metal_cooler_core.clash_joined"), true);
+                player.displayClientMessage(Component.translatable(this.joinedKey), true);
                 level.playSound(null, player.getX(), player.getY(), player.getZ(), MainSounds.KI_EXPLOSION_IMPACT.get(), SoundSource.PLAYERS, 1.5F, 1.2F);
             }
 
@@ -2370,12 +2390,12 @@ public class AllWorldBossesEntity {
                 float advantage = this.visual();
                 for (Fighter fighter : this.fighters.values()) {
                     NetworkHandler.sendToPlayer(new BeamClashStateS2C(true, fighter.joinGameTime(), fighter.participant().meterSeed(), advantage,
-                            fighter.participant().beam().getColorBorder(), SUPERNOVA_BORDER, this.core.getId(), pos.x, pos.y, pos.z, 0),
+                            fighter.participant().beam().getColorBorder(), this.ownerColor, this.core.getId(), pos.x, pos.y, pos.z, 0),
                             fighter.player());
                 }
                 if (this.shownFighters != this.fighters.size()) {
                     this.shownFighters = this.fighters.size();
-                    this.bar.setName(Component.translatable("worldboss.dragonminez.metal_cooler_core.clash_bar", this.shownFighters));
+                    this.bar.setName(Component.translatable(this.barKey, this.shownFighters));
                 }
                 this.bar.setProgress(advantage);
                 syncBar(this.bar, audience);
@@ -3092,7 +3112,7 @@ public class AllWorldBossesEntity {
             LivingEntity target = this.getTarget();
             if (target == null || !target.isAlive()) return;
             double reach = this.getMeleeReach() + target.getBbWidth() * 0.5D;
-            if (this.distanceToSqr(target) > reach * reach || !this.hasLineOfSight(target)) return;
+            if (this.meleeDistanceSqr(target) > reach * reach || !this.hasLineOfSight(target)) return;
 
             this.fastHitTimer = interval;
             this.lookAt(target, 30.0F, 30.0F);
@@ -3132,7 +3152,7 @@ public class AllWorldBossesEntity {
         public static final int SLAM_APEX = 16;
         public static final double SLAM_ANIMATION_SPEED = 0.4D;
 
-        private static final Profile PROFILE = new Profile(3, 936000.0F, 88560.0F, 101844.0F, 80136.0F, 92160.0F,
+        private static final Profile PROFILE = new Profile(3, 936000.0F, 54350.0F, 62503.0F, 49170.0F, 56546.0F,
                 0, 9, 1.0F, 0.6F, 1.0D, 1.6D, 0.8D, new OutlineStyle(0xFF9A2E, 0xB84A00, 3.0F));
 
         private static final int THROW_DURATION = 26;
@@ -3419,7 +3439,7 @@ public class AllWorldBossesEntity {
         public static final int ABILITY_WHIRLWINDS = 16;
         public static final int WHIRLWIND_ERUPT_TICK = 31;
 
-        private static final Profile PROFILE = new Profile(2, 3786000.0F, 119340.0F, 137250.0F, 107982.0F, 124182.0F,
+        private static final Profile PROFILE = new Profile(2, 3786000.0F, 61144.0F, 70316.0F, 55317.0F, 63614.0F,
                 7, 4, 0.45F, 0.4F, 1.6D, 2.4D, 0.6D, new OutlineStyle(0x7FD4FF, 0x2F6BFF, 3.0F));
 
         private static final int WHIRLWIND_DURATION = 45;
@@ -3556,7 +3576,7 @@ public class AllWorldBossesEntity {
 
     public static class Tamagami1 extends Tamagami {
 
-        private static final Profile PROFILE = new Profile(1, 5100000.0F, 160758.0F, 184878.0F, 145458.0F, 167274.0F,
+        private static final Profile PROFILE = new Profile(1, 5100000.0F, 67938.0F, 78128.0F, 61463.0F, 70682.0F,
                 6, 4, 0.45F, 0.4F, 1.6D, 2.4D, 0.6D, new OutlineStyle(0xFF3030, 0x8A0000, 3.0F));
 
         public Tamagami1(EntityType<? extends Monster> pEntityType, Level pLevel, boolean powered) {
@@ -3723,6 +3743,1042 @@ public class AllWorldBossesEntity {
 
         @Override
         protected void addAdditionalSaveData(CompoundTag tag) {
+        }
+    }
+
+    public static class Gomah extends WorldBossEntity {
+
+        public static final float BASE_HEALTH = 6870000.0F;
+        public static final float BASE_MELEE = 67938.0F;
+        public static final float BASE_KI = 61463.0F;
+        public static final int MAX_STACKS = 5;
+
+        public static final int ABILITY_GREAT_SPHERE = 17;
+        public static final int ABILITY_QUAKE = 18;
+        public static final int ABILITY_EYE_BEAM = 19;
+        public static final int SPHERE_CHANNEL = 110;
+        public static final int BEAM_FIRE_TICK = 30;
+
+        private static final EntityDataAccessor<Integer> EYE_STACKS = SynchedEntityData.defineId(Gomah.class, EntityDataSerializers.INT);
+        private static final UUID STACK_DAMAGE_ID = UUID.fromString("5b0f6f44-9a71-4c34-8f0e-6a2d1c7e3b52");
+        private static final String ESCORT_TAG = "dmz_gomah_escort";
+
+        private static final float[] STACK_SCALES = {2.0F, 2.8F, 3.6F, 4.5F, 5.5F, 6.5F};
+        private static final float SAGA_SCALE = 5.5F;
+        private static final double HEAD_TOP = 12.0D;
+        private static final double CHEST_HEIGHT = 6.4D;
+        private static final float GROWTH_STEP = 0.05F;
+        private static final float DAMAGE_PER_STACK = 0.3F;
+        private static final double WALK_SPEED = 0.3D;
+        private static final int STACK_INTERVAL = 800;
+        private static final int BACK_HITS = 3;
+        private static final int BACK_HIT_WINDOW = 200;
+        private static final double BEHIND_DOT = -0.35D;
+        private static final int EYE_LOST_STUN = 70;
+        private static final float SLEEP_YAW = 0.0F;
+        private static final double TETHER_RADIUS = GomahCradleShape.ISLAND_RADIUS - 4.0D;
+        private static final double FALL_LIMIT = 14.0D;
+        private static final double ARENA_HEIGHT = 110.0D;
+        private static final int ABILITY_GAP = 50;
+
+        private static final int AURA_COLOR = 0xB0003A;
+        private static final int KI_MAIN = 0xE9A8FF;
+        private static final int KI_BORDER = 0x8A00E6;
+        private static final int KI_OUTLINE = 0xB0003A;
+        private static final int SPHERE_MAIN = 0xF0C2FF;
+        private static final int SPHERE_BORDER = 0x7A00CC;
+        private static final int SPHERE_OUTLINE = 0xC4002F;
+        private static final int MARK_COLOR = 0xFF1A3C;
+        private static final int BEAM_MAIN = 0xFFE3EC;
+        private static final int BEAM_BORDER = 0xFF1A3C;
+        private static final int BEAM_OUTLINE = 0x9A0020;
+        private static final int QUAKE_COLOR = 0xC23BFF;
+        private static final SupervillainPalette EYE_PALETTE_BASE = new SupervillainPalette(0x8B0000, 0.30F, 0xFF2A2A, 0x6B0000);
+
+        private static final int METEOR_COOLDOWN = 420;
+        private static final int METEOR_CHARGE_TICKS = 60;
+
+        private static final int SPHERE_STRUGGLE_TICKS = 320;
+        private static final int SPHERE_REFLECT_TICKS = 12;
+        private static final int SPHERE_DURATION = SPHERE_CHANNEL + SPHERE_STRUGGLE_TICKS + SPHERE_REFLECT_TICKS + 20;
+        private static final int SPHERE_COOLDOWN = 900;
+        private static final int SPHERE_FIRST_DELAY = 360;
+        private static final float SPHERE_START_SIZE = 5.0F;
+        private static final float SPHERE_END_SIZE = 32.0F;
+        private static final float SPHERE_BLAST_RADIUS = 52.0F;
+        private static final float SPHERE_MARK_RADIUS = 32.0F;
+        private static final float SPHERE_DAMAGE_RATIO = 2.0F;
+        private static final float SPHERE_MIN_FALLOFF = 0.2F;
+        private static final float SPHERE_REFLECT_RATIO = 0.05F;
+        private static final double SPHERE_HOVER = 8.0D;
+
+        private static final int QUAKE_LAUNCH = 15;
+        private static final int QUAKE_APEX = 21;
+        private static final int QUAKE_DROP = 40;
+        private static final int QUAKE_FORCE_IMPACT = 56;
+        private static final int QUAKE_DURATION = 70;
+        private static final float QUAKE_RISE = 3.0F;
+        private static final float QUAKE_FALL = -3.6F;
+        private static final float QUAKE_CORE_RADIUS = 7.0F;
+        private static final float QUAKE_RING_RADIUS = 38.0F;
+        private static final float QUAKE_RING_SPEED = 1.3F;
+        private static final double QUAKE_RING_WIDTH = 1.8D;
+        private static final double QUAKE_AIRBORNE = 1.4D;
+        private static final float QUAKE_CORE_RATIO = 1.8F;
+        private static final float QUAKE_RING_RATIO = 1.2F;
+        private static final int QUAKE_COOLDOWN = 420;
+        private static final int QUAKE_FIRST_DELAY = 100;
+        private static final double QUAKE_TRIGGER_RANGE = 30.0D;
+        private static final int QUAKE_MIN_STACKS = 4;
+
+        private static final int BEAM_DURATION = 52;
+        private static final int BEAM_FIRING = 18;
+        private static final int BEAM_COOLDOWN = 260;
+        private static final int BEAM_FIRST_DELAY = 120;
+        private static final double BEAM_RANGE = 70.0D;
+        private static final double BEAM_HIT_RADIUS = 1.3D;
+        private static final float BEAM_DAMAGE_RATIO = 1.5F;
+        private static final int BEAM_MIN_STACKS = 3;
+
+        private static final float ESCORT_HEALTH_RATIO = 0.04F;
+        private static final float ESCORT_MELEE_RATIO = 0.06F;
+        private static final float ESCORT_KI_RATIO = 0.06F;
+        private static final int ESCORT_WAVE = 3;
+        private static final int MAX_ESCORTS = 4;
+        private static final float ESCORT_SCALE = 1.3F;
+
+        private float appliedScale = -1.0F;
+        private int stackTimer;
+        private int backHits;
+        private long lastBackHit;
+        private int abilityGap;
+        private int sphereCooldown = SPHERE_FIRST_DELAY;
+        private int quakeCooldown = QUAKE_FIRST_DELAY;
+        private int beamCooldown = BEAM_FIRST_DELAY;
+
+        private KiBlastEntity sphere;
+        private MetalCoolerCore.SupernovaClash sphereClash;
+        private Vec3 sphereImpact;
+        private Vec3 sphereStance;
+        private int reflectTick = -1;
+        private Vec3 reflectFrom;
+
+        private double quakeX;
+        private double quakeZ;
+        private boolean quakeImpacted;
+        private Vec3 ringCenter;
+        private float ringRadius = -1.0F;
+        private final Set<UUID> ringHit = new HashSet<>();
+
+        private float lockedYaw;
+        private Vec3 beamOrigin;
+        private Vec3 beamDirection;
+        private final Set<UUID> beamHit = new HashSet<>();
+
+        private final List<UUID> escorts = new ArrayList<>();
+
+        public Gomah(EntityType<? extends Monster> pEntityType, Level pLevel) {
+            super(pEntityType, pLevel);
+            this.setCanFly(true);
+            this.setDBZStyle(2);
+            this.setAuraColor(AURA_COLOR);
+            this.setKiBlastSpeed(1.8F);
+            this.setEvade(true, 60);
+            this.setWildSense(true, 140);
+            this.setZanzoken(3, 200);
+            this.addKiSkill(KiSkillType.BLASTER_METEOR, METEOR_COOLDOWN, 1.0F, KI_MAIN, KI_BORDER, KI_OUTLINE);
+            this.setBlasterMeteorCastTicks(METEOR_CHARGE_TICKS);
+            this.applyStackScale(true);
+            this.applyFixedStats();
+            this.getPersistentData().putBoolean("dmz_stats_configured", true);
+            this.fallAsleep();
+        }
+
+        @Override
+        protected void defineSynchedData() {
+            super.defineSynchedData();
+            this.entityData.define(EYE_STACKS, 0);
+        }
+
+        public int getEyeStacks() {
+            return this.entityData.get(EYE_STACKS);
+        }
+
+        private void setEyeStacks(int stacks) {
+            this.entityData.set(EYE_STACKS, Mth.clamp(stacks, 0, MAX_STACKS));
+            this.applyStackPower();
+        }
+
+        @Override
+        public String getWorldBossKey() {
+            return WorldBossEntity.GOMAH;
+        }
+
+        @Override
+        public String getGeckolibModelName() {
+            return "saga_gomah_third_eye";
+        }
+
+        @Override
+        public String getGeckolibTextureName() {
+            return "saga_gomah_third_eye";
+        }
+
+        @Override
+        public RawAnimation getSleepAnimation() {
+            return DBSagasAnimations.ANIM_GOMAH_SIT;
+        }
+
+        @Override
+        protected BossEvent.BossBarColor getBossBarColor() {
+            return BossEvent.BossBarColor.RED;
+        }
+
+        @Override
+        protected Component getBossBarName() {
+            int stacks = this.getEyeStacks();
+            return this.getDisplayName().copy().append(Component.literal("  "))
+                    .append(Component.literal("◉".repeat(stacks)).withStyle(ChatFormatting.DARK_RED))
+                    .append(Component.literal("○".repeat(MAX_STACKS - stacks)).withStyle(ChatFormatting.DARK_GRAY));
+        }
+
+        @Override
+        public boolean showsSupervillainAura() {
+            return !this.isBossAsleep();
+        }
+
+        @Override
+        public SupervillainPalette getSupervillainPalette() {
+            float alpha = EYE_PALETTE_BASE.tintAlpha() + 0.03F * this.getEyeStacks();
+            return new SupervillainPalette(EYE_PALETTE_BASE.tint(), alpha, EYE_PALETTE_BASE.flameInner(), EYE_PALETTE_BASE.flameOuter());
+        }
+
+        @Override
+        public OutlineStyle getOutlineStyle() {
+            if (this.isBossAsleep()) return null;
+            return new OutlineStyle(0xFF2020, 0x9A0000, 2.5F + 0.25F * this.getEyeStacks());
+        }
+
+        @Override
+        public boolean hasHitboxParts() {
+            return true;
+        }
+
+        @Override
+        public float getHitboxScale() {
+            return this.getScale() / SAGA_SCALE;
+        }
+
+        @Override
+        public boolean hasGiantBody() {
+            return this.hasHitboxParts();
+        }
+
+        @Override
+        protected EntityDimensions getCoreDimensions() {
+            return EntityDimensions.scalable(2.3F, 4.6F).scale(this.getHitboxScale());
+        }
+
+        @Override
+        protected DBSagasPart[] createHitboxParts() {
+            return new DBSagasPart[] {
+                    new DBSagasPart(this, "legs", 3.7F, 4.6F, 0.0F, 0.0F, 2.3F),
+                    new DBSagasPart(this, "torso", 4.1F, 4.6F, 0.0F, 0.0F, 6.4F),
+                    new DBSagasPart(this, "head", 3.7F, 3.7F, 0.5F, 0.0F, 10.1F)
+            };
+        }
+
+        @Override
+        protected void applyFixedStats() {
+            this.getAttribute(Attributes.MAX_HEALTH).setBaseValue(BASE_HEALTH);
+            this.getAttribute(Attributes.ATTACK_DAMAGE).setBaseValue(BASE_MELEE);
+            this.getAttribute(Attributes.MOVEMENT_SPEED).setBaseValue(WALK_SPEED);
+            this.setDefaultMovementSpeed(WALK_SPEED);
+            this.getAttribute(Attributes.KNOCKBACK_RESISTANCE).setBaseValue(0.9D);
+            this.getAttribute(EntityAttributes.KI_BLAST_DAMAGE.get()).setBaseValue(BASE_KI);
+            this.setHealth(BASE_HEALTH);
+            this.applyStackPower();
+        }
+
+        private float stackMultiplier() {
+            return 1.0F + DAMAGE_PER_STACK * this.getEyeStacks();
+        }
+
+        private void applyStackPower() {
+            AttributeInstance melee = this.getAttribute(Attributes.ATTACK_DAMAGE);
+            if (melee != null) {
+                melee.removeModifier(STACK_DAMAGE_ID);
+                if (this.getEyeStacks() > 0) {
+                    melee.addPermanentModifier(new AttributeModifier(STACK_DAMAGE_ID, "Gomah demon eye", this.stackMultiplier() - 1.0F,
+                            AttributeModifier.Operation.MULTIPLY_TOTAL));
+                }
+            }
+            float ki = BASE_KI * this.stackMultiplier();
+            this.getAttribute(EntityAttributes.KI_BLAST_DAMAGE.get()).setBaseValue(ki);
+            this.setKiBlastDamage(ki);
+        }
+
+        private void applyStackScale(boolean snap) {
+            float target = STACK_SCALES[this.getEyeStacks()];
+            float current = this.appliedScale < 0.0F ? this.getScale() : this.appliedScale;
+            float next = snap ? target : (Math.abs(target - current) <= GROWTH_STEP ? target : current + Math.signum(target - current) * GROWTH_STEP);
+            if (Math.abs(next - this.appliedScale) < 1.0E-4F) return;
+            this.appliedScale = next;
+            this.setScaleVal(next);
+            this.refreshHitboxes();
+        }
+
+        @Override
+        public boolean isAlliedTo(Entity pEntity) {
+            return isEscort(pEntity) || super.isAlliedTo(pEntity);
+        }
+
+        public static boolean isEscort(Entity entity) {
+            return entity != null && entity.getPersistentData().getBoolean(ESCORT_TAG);
+        }
+
+        @Override
+        public boolean isMeleeAllowed() {
+            return this.getBossAbility() < 0 && super.isMeleeAllowed();
+        }
+
+        @Override
+        public boolean isZanzokenReady() {
+            return this.getBossAbility() < 0 && super.isZanzokenReady();
+        }
+
+        @Override
+        public boolean isWildSenseReady() {
+            return this.getBossAbility() < 0 && super.isWildSenseReady();
+        }
+
+        private static boolean isAbsolute(DamageSource source) {
+            return source.is(DamageTypes.FELL_OUT_OF_WORLD) || source.is(DamageTypes.GENERIC_KILL);
+        }
+
+        @Override
+        public boolean hurt(DamageSource pSource, float pAmount) {
+            if (!this.level().isClientSide && this.isBossAsleep() && !isAbsolute(pSource)) {
+                if (pSource.getEntity() instanceof Player player && this.isEligible(player)) this.wakeUp(player);
+                return false;
+            }
+            if (isEscort(pSource.getEntity())) return false;
+            boolean hurt = super.hurt(pSource, pAmount);
+            if (hurt && this.level() instanceof ServerLevel level && this.isAlive()) this.noteBackHit(level, pSource);
+            return hurt;
+        }
+
+        private void noteBackHit(ServerLevel level, DamageSource source) {
+            if (!(source.getEntity() instanceof ServerPlayer attacker) || MainDamageTypes.isKiblastDamage(source)) return;
+            if (source.getDirectEntity() != null && source.getDirectEntity() != attacker) return;
+            if (!this.isBehind(attacker)) return;
+
+            long now = level.getGameTime();
+            this.backHits = now - this.lastBackHit <= BACK_HIT_WINDOW ? this.backHits + 1 : 1;
+            this.lastBackHit = now;
+
+            Vec3 eye = this.eyePosition();
+            level.sendParticles(new DustParticleOptions(new Vector3f(1.0F, 0.08F, 0.12F), 2.2F), eye.x, eye.y, eye.z,
+                    18, 0.4D * this.getHitboxScale(), 0.4D * this.getHitboxScale(), 0.4D * this.getHitboxScale(), 0.0D);
+            level.sendParticles(ParticleTypes.CRIT, attacker.getX(), attacker.getEyeY(), attacker.getZ(), 10, 0.3D, 0.3D, 0.3D, 0.3D);
+            level.playSound(null, this.getX(), this.getY(), this.getZ(), SoundEvents.AMETHYST_BLOCK_BREAK, SoundSource.HOSTILE, 2.5F,
+                    0.6F + 0.2F * this.backHits);
+
+            if (this.backHits < BACK_HITS) {
+                String meter = "◉".repeat(this.backHits) + "○".repeat(BACK_HITS - this.backHits);
+                Component message = Component.translatable("worldboss.dragonminez.gomah.back_hit", meter, this.backHits, BACK_HITS)
+                        .withStyle(ChatFormatting.RED);
+                for (ServerPlayer player : this.participants(level)) player.displayClientMessage(message, true);
+                return;
+            }
+
+            this.backHits = 0;
+            this.knockEye(level, attacker.getDisplayName());
+        }
+
+        private boolean isBehind(Entity attacker) {
+            Vec3 facing = Vec3.directionFromRotation(0.0F, this.yBodyRot);
+            Vec3 toAttacker = new Vec3(attacker.getX() - this.getX(), 0.0D, attacker.getZ() - this.getZ());
+            if (toAttacker.lengthSqr() < 1.0E-6D) return false;
+            return facing.dot(toAttacker.normalize()) < BEHIND_DOT;
+        }
+
+        private Vec3 eyePosition() {
+            Vec3 forward = Vec3.directionFromRotation(0.0F, this.yBodyRot);
+            return new Vec3(this.getX(), this.getEyeY() + 0.4D * this.getHitboxScale(), this.getZ()).add(forward.scale(1.6D * this.getHitboxScale()));
+        }
+
+        private void holdSphere(KiBlastEntity ball) {
+            double top = this.getY() + HEAD_TOP * this.getHitboxScale() + 1.0D + ball.getSize() * 0.5D;
+            ball.setPos(this.getX(), top, this.getZ());
+        }
+
+        private void knockEye(ServerLevel level, Component culprit) {
+            if (this.getBossAbility() >= 0) this.stopBossAbility();
+            if (this.isCasting()) this.stopCasting();
+            if (this.isComboing()) this.interruptCombo();
+            this.removeEffect(MainEffects.STUN.get());
+            this.addEffect(new MobEffectInstance(MainEffects.STUN.get(), EYE_LOST_STUN, 0, false, false, true));
+            this.stackTimer = 0;
+
+            Vec3 eye = this.eyePosition();
+            level.sendParticles(new DustParticleOptions(new Vector3f(1.0F, 0.0F, 0.05F), 3.0F), eye.x, eye.y, eye.z, 60, 0.8D, 0.8D, 0.8D, 0.0D);
+            level.sendParticles(ParticleTypes.EXPLOSION, eye.x, eye.y, eye.z, 2, 0.4D, 0.4D, 0.4D, 0.0D);
+            level.playSound(null, eye.x, eye.y, eye.z, SoundEvents.ENDER_EYE_DEATH, SoundSource.HOSTILE, 3.0F, 0.5F);
+            level.playSound(null, eye.x, eye.y, eye.z, SoundEvents.GLASS_BREAK, SoundSource.HOSTILE, 3.0F, 0.6F);
+            NetworkHandler.sendToTrackingEntity(new KiBurstVfxS2C(this.getId(), true, 8.0F), this);
+
+            int stacks = this.getEyeStacks();
+            if (stacks <= 0) {
+                this.announce(level, Component.translatable("worldboss.dragonminez.gomah.eye_flicker", culprit).withStyle(ChatFormatting.GOLD));
+                return;
+            }
+            this.setEyeStacks(stacks - 1);
+            this.announce(level, Component.translatable("worldboss.dragonminez.gomah.eye_knocked", culprit, stacks - 1, MAX_STACKS)
+                    .withStyle(ChatFormatting.GOLD));
+            this.callEscorts(level);
+        }
+
+        private void gainStack(ServerLevel level) {
+            int stacks = this.getEyeStacks();
+            if (stacks >= MAX_STACKS) return;
+            this.setEyeStacks(stacks + 1);
+            this.backHits = 0;
+            Vec3 eye = this.eyePosition();
+            level.sendParticles(new DustParticleOptions(new Vector3f(0.75F, 0.0F, 0.1F), 3.0F), eye.x, eye.y, eye.z, 40, 1.0D, 1.0D, 1.0D, 0.0D);
+            level.playSound(null, this.getX(), this.getY(), this.getZ(), SoundEvents.RAVAGER_ROAR, SoundSource.HOSTILE, 4.0F, 0.5F);
+            level.playSound(null, this.getX(), this.getY(), this.getZ(), MainSounds.KI_EXPLOSION_CHARGE.get(), SoundSource.HOSTILE, 3.0F, 0.6F);
+            NetworkHandler.sendToTrackingEntity(new KiBurstVfxS2C(this.getId(), true, 12.0F + 4.0F * stacks), this);
+            this.announce(level, Component.translatable("worldboss.dragonminez.gomah.stack_gained", stacks + 1, MAX_STACKS)
+                    .withStyle(ChatFormatting.DARK_RED));
+        }
+
+        private List<ServerPlayer> participants(ServerLevel level) {
+            BlockPos anchor = this.getAnchor();
+            List<ServerPlayer> result = new ArrayList<>();
+            for (ServerPlayer player : level.players()) {
+                if (!this.isEligible(player)) continue;
+                double dx = player.getX() - (anchor.getX() + 0.5D);
+                double dz = player.getZ() - (anchor.getZ() + 0.5D);
+                double dy = player.getY() - anchor.getY();
+                if (dx * dx + dz * dz <= LEASH_RADIUS * LEASH_RADIUS && dy > -40.0D && dy < ARENA_HEIGHT) result.add(player);
+            }
+            return result;
+        }
+
+        private void announce(ServerLevel level, Component message) {
+            for (ServerPlayer player : this.participants(level)) player.displayClientMessage(message, true);
+        }
+
+        @Override
+        protected void onWakeUp(Player trigger) {
+            this.resetFight();
+            if (!(this.level() instanceof ServerLevel level)) return;
+            level.playSound(null, this.getX(), this.getY(), this.getZ(), SoundEvents.RAVAGER_ROAR, SoundSource.HOSTILE, 4.0F, 0.6F);
+            NetworkHandler.sendToTrackingEntity(new KiBurstVfxS2C(this.getId(), true, 10.0F), this);
+            this.announce(level, Component.translatable("worldboss.dragonminez.gomah.awake").withStyle(ChatFormatting.DARK_PURPLE));
+        }
+
+        private void resetFight() {
+            this.stackTimer = 0;
+            this.backHits = 0;
+            this.abilityGap = 0;
+            this.sphereCooldown = SPHERE_FIRST_DELAY;
+            this.quakeCooldown = QUAKE_FIRST_DELAY;
+            this.beamCooldown = BEAM_FIRST_DELAY;
+            this.ringRadius = -1.0F;
+            this.ringHit.clear();
+            if (this.getEyeStacks() != 0) this.setEyeStacks(0);
+        }
+
+        @Override
+        public void fallAsleep() {
+            super.fallAsleep();
+            this.setFlying(false);
+            this.setFlyingFast(false);
+            this.setNoGravity(false);
+            this.holdThronePose();
+        }
+
+        private void holdThronePose() {
+            faceYaw(this, SLEEP_YAW);
+            this.setXRot(0.0F);
+            this.getNavigation().stop();
+        }
+
+        @Override
+        protected boolean onReturnToSleep() {
+            if (this.level() instanceof ServerLevel level) {
+                this.clearAbilityState();
+                this.clearEscorts(level);
+            }
+            this.resetFight();
+            WorldBossContribution.clear(this.getWorldBossKey());
+            return false;
+        }
+
+        @Override
+        public void die(DamageSource pCause) {
+            this.clearAbilityState();
+            if (this.level() instanceof ServerLevel level) this.clearEscorts(level);
+            super.die(pCause);
+        }
+
+        @Override
+        public void remove(RemovalReason pReason) {
+            this.clearAbilityState();
+            if (pReason.shouldDestroy() && this.level() instanceof ServerLevel level) this.clearEscorts(level);
+            super.remove(pReason);
+        }
+
+        @Override
+        public void stopBossAbility() {
+            int ability = this.getBossAbility();
+            super.stopBossAbility();
+            if (ability < 0) return;
+            this.abilityGap = ABILITY_GAP;
+            this.endSphereClash(null);
+            this.discardSphere();
+            this.reflectTick = -1;
+            this.beamOrigin = null;
+            this.sphereStance = null;
+        }
+
+        private void clearAbilityState() {
+            this.endSphereClash(null);
+            this.discardSphere();
+            this.reflectTick = -1;
+            this.ringRadius = -1.0F;
+            this.ringHit.clear();
+            this.beamOrigin = null;
+            this.sphereStance = null;
+        }
+
+        @Override
+        public void tick() {
+            super.tick();
+            if (!(this.level() instanceof ServerLevel level) || !this.isAlive()) return;
+
+            this.applyStackScale(false);
+
+            if (this.isBossAsleep()) {
+                this.holdThronePose();
+                return;
+            }
+
+            this.stayOnIsland(level);
+            this.tickRing(level);
+            this.tickEscorts(level);
+            if (this.abilityGap > 0) this.abilityGap--;
+
+            LivingEntity target = this.getTarget();
+            if (target == null || !target.isAlive()) return;
+
+            if (!this.isStunned() && this.getEyeStacks() < MAX_STACKS && ++this.stackTimer >= STACK_INTERVAL) {
+                this.stackTimer = 0;
+                this.gainStack(level);
+            }
+            if (this.sphereCooldown > 0) this.sphereCooldown--;
+            if (this.quakeCooldown > 0) this.quakeCooldown--;
+            if (this.beamCooldown > 0) this.beamCooldown--;
+
+            if (this.getBossAbility() >= 0 || this.abilityGap > 0) return;
+            if (this.isStunned() || this.isCasting() || this.isComboing() || this.isZanzoken()) return;
+            this.chooseAbility(level, target);
+        }
+
+        private void chooseAbility(ServerLevel level, LivingEntity target) {
+            double distance = this.distanceTo(target);
+            if (this.sphereCooldown <= 0 && this.startBossAbility(ABILITY_GREAT_SPHERE)) {
+                this.sphereCooldown = SPHERE_COOLDOWN;
+                return;
+            }
+            int stacks = this.getEyeStacks();
+            if (stacks >= QUAKE_MIN_STACKS && this.quakeCooldown <= 0 && this.onGround() && distance <= QUAKE_TRIGGER_RANGE
+                    && this.startBossAbility(ABILITY_QUAKE)) {
+                this.quakeCooldown = QUAKE_COOLDOWN;
+                this.quakeImpacted = false;
+                return;
+            }
+            if (stacks >= BEAM_MIN_STACKS && this.beamCooldown <= 0 && distance <= BEAM_RANGE - 10.0D && this.hasLineOfSight(target)
+                    && this.startBossAbility(ABILITY_EYE_BEAM)) {
+                this.beamCooldown = BEAM_COOLDOWN;
+            }
+        }
+
+        private void stayOnIsland(ServerLevel level) {
+            if (this.getBossAbility() >= 0) return;
+            BlockPos anchor = this.getAnchor();
+            double dx = this.getX() - (anchor.getX() + 0.5D);
+            double dz = this.getZ() - (anchor.getZ() + 0.5D);
+            boolean strayed = dx * dx + dz * dz > TETHER_RADIUS * TETHER_RADIUS;
+            boolean fell = this.getY() < anchor.getY() - FALL_LIMIT;
+            boolean soared = this.getY() > anchor.getY() + ARENA_HEIGHT - 20.0D;
+            if (!strayed && !fell && !soared) return;
+
+            level.sendParticles(new DustParticleOptions(new Vector3f(0.6F, 0.0F, 0.15F), 2.5F), this.getX(), this.getY() + 2.0D, this.getZ(),
+                    40, 1.0D, 2.0D, 1.0D, 0.0D);
+            this.setDeltaMovement(Vec3.ZERO);
+            this.getNavigation().stop();
+            this.teleportTo(anchor.getX() + 0.5D, anchor.getY() + 1.0D, anchor.getZ() + 0.5D);
+            this.fallDistance = 0.0F;
+            level.playSound(null, this.getX(), this.getY(), this.getZ(), MainSounds.TP_SHORT.get(), SoundSource.HOSTILE, 2.0F, 0.6F);
+        }
+
+        @Override
+        protected int getBossAbilityDuration(int ability) {
+            return switch (ability) {
+                case ABILITY_GREAT_SPHERE -> SPHERE_DURATION;
+                case ABILITY_QUAKE -> QUAKE_DURATION;
+                case ABILITY_EYE_BEAM -> BEAM_DURATION;
+                default -> 0;
+            };
+        }
+
+        @Override
+        protected void tickBossAbility(int ability, int tick) {
+            if (!(this.level() instanceof ServerLevel level)) return;
+            switch (ability) {
+                case ABILITY_GREAT_SPHERE -> this.tickSphere(level, tick);
+                case ABILITY_QUAKE -> this.tickQuake(level, tick);
+                case ABILITY_EYE_BEAM -> this.tickBeam(level, tick);
+                default -> {
+                }
+            }
+        }
+
+        private void holdStance() {
+            this.setDeltaMovement(Vec3.ZERO);
+            this.setNoGravity(true);
+            this.getNavigation().stop();
+            if (this.sphereStance != null) this.setPos(this.sphereStance.x, this.sphereStance.y, this.sphereStance.z);
+        }
+
+        @Override
+        public void knockback(double strength, double x, double z) {
+            if (this.getBossAbility() == ABILITY_GREAT_SPHERE) return;
+            super.knockback(strength, x, z);
+        }
+
+        @Override
+        public boolean isPushable() {
+            return this.getBossAbility() != ABILITY_GREAT_SPHERE && super.isPushable();
+        }
+
+        private void tickSphere(ServerLevel level, int tick) {
+            this.fallDistance = 0.0F;
+            this.holdStance();
+            if (tick == 1) {
+                this.sphereStance = this.position();
+                LivingEntity target = this.getTarget();
+                Vec3 aim = target != null ? target.position() : this.position().add(Vec3.directionFromRotation(0.0F, this.getYRot()).scale(16.0D));
+                double ground = groundHeight(level, aim.x, aim.z, aim.y);
+                this.sphereImpact = new Vec3(aim.x, ground, aim.z);
+                this.lockedYaw = yawTowards(this, aim.x, aim.z);
+
+                KiBlastEntity ball = new KiBlastEntity(level, this);
+                ball.setupKiDeathBall(this, 0.0F, 0.5F, SPHERE_MAIN, SPHERE_BORDER, SPHERE_OUTLINE, SPHERE_DURATION + 100);
+                ball.setSize(SPHERE_START_SIZE);
+                ball.setDetached(true);
+                this.sphere = ball;
+                this.holdSphere(ball);
+                NetworkHandler.sendToTrackingEntity(new BossTelegraphS2C(this.sphereImpact.x, this.sphereImpact.y, this.sphereImpact.z,
+                        SPHERE_MARK_RADIUS, MARK_COLOR, SPHERE_CHANNEL + 4, -1), this);
+                level.playSound(null, this.getX(), this.getY(), this.getZ(), MainSounds.KI_EXPLOSION_CHARGE.get(), SoundSource.HOSTILE, 4.0F, 0.4F);
+                this.announce(level, Component.translatable("worldboss.dragonminez.gomah.sphere").withStyle(ChatFormatting.LIGHT_PURPLE));
+            }
+
+            faceYaw(this, this.lockedYaw);
+            KiBlastEntity ball = this.sphere;
+            if (ball == null || !ball.isAlive()) {
+                if (tick > 1) this.stopBossAbility();
+                return;
+            }
+
+            if (tick < SPHERE_CHANNEL) {
+                ball.setSize(Mth.lerp(tick / (float) SPHERE_CHANNEL, SPHERE_START_SIZE, SPHERE_END_SIZE));
+                this.holdSphere(ball);
+                if (tick % 40 == 0) {
+                    level.playSound(null, this.getX(), this.getY(), this.getZ(), MainSounds.KI_CHARGE_LOOP.get(), SoundSource.HOSTILE, 3.0F, 0.5F);
+                }
+                return;
+            }
+
+            if (tick == SPHERE_CHANNEL) {
+                this.holdSphere(ball);
+                Vec3 start = ball.position();
+                Vec3 end = this.sphereImpact.add(0.0D, SPHERE_END_SIZE * 0.35D, 0.0D);
+                this.sphereClash = new MetalCoolerCore.SupernovaClash(this, ball, start, end, SPHERE_BORDER, SPHERE_STRUGGLE_TICKS,
+                        "worldboss.dragonminez.gomah.clash_bar", "worldboss.dragonminez.gomah.clash_joined");
+                BeamClashManager.registerExternal(this.sphereClash);
+                level.playSound(null, ball.getX(), ball.getY(), ball.getZ(), MainSounds.KI_BEAM_FIRE.get(), SoundSource.HOSTILE, 4.0F, 0.5F);
+                this.announce(level, Component.translatable("worldboss.dragonminez.gomah.sphere_clash").withStyle(ChatFormatting.LIGHT_PURPLE));
+            }
+
+            if (this.reflectTick >= 0) {
+                this.tickReflect(level, ball);
+                return;
+            }
+
+            MetalCoolerCore.SupernovaClash clash = this.sphereClash;
+            if (clash == null) return;
+            if ((tick - SPHERE_CHANNEL) % 40 == 0) {
+                NetworkHandler.sendToTrackingEntity(new BossTelegraphS2C(this.sphereImpact.x, this.sphereImpact.y, this.sphereImpact.z,
+                        SPHERE_MARK_RADIUS, MARK_COLOR, 42, -1), this);
+            }
+
+            MetalCoolerCore.SupernovaClash.Result result = clash.tick(level, this.participants(level));
+            if (result == MetalCoolerCore.SupernovaClash.Result.PLAYERS) {
+                this.endSphereClash(true);
+                this.reflectTick = 0;
+                this.reflectFrom = ball.position();
+            } else if (result == MetalCoolerCore.SupernovaClash.Result.COOLER) {
+                Vec3 impact = this.sphereImpact;
+                this.endSphereClash(false);
+                this.discardSphere();
+                this.detonateSphere(level, impact);
+                this.stopBossAbility();
+            }
+        }
+
+        private void tickReflect(ServerLevel level, KiBlastEntity ball) {
+            this.reflectTick++;
+            Vec3 chest = this.position().add(0.0D, CHEST_HEIGHT * this.getHitboxScale(), 0.0D);
+            float progress = Math.min(1.0F, this.reflectTick / (float) SPHERE_REFLECT_TICKS);
+            Vec3 pos = this.reflectFrom.lerp(chest, progress * progress);
+            ball.setPos(pos.x, pos.y, pos.z);
+            if (this.reflectTick < SPHERE_REFLECT_TICKS) return;
+
+            this.discardSphere();
+            KiExplosionVisualEntity visual = new KiExplosionVisualEntity(MainEntities.KI_EXPLOSION_VISUAL.get(), level);
+            visual.setPos(chest.x, chest.y, chest.z);
+            visual.setupExplosion(SPHERE_MAIN, SPHERE_BORDER, SPHERE_OUTLINE, 26.0F);
+            level.addFreshEntity(visual);
+            level.playSound(null, chest.x, chest.y, chest.z, SoundEvents.GENERIC_EXPLODE, SoundSource.HOSTILE, 6.0F, 0.5F);
+
+            List<ServerPlayer> heroes = this.participants(level);
+            float total = this.getMaxHealth() * SPHERE_REFLECT_RATIO;
+            if (heroes.isEmpty()) {
+                this.invulnerableTime = 0;
+                this.hurt(this.damageSources().explosion(null, null), total);
+            } else {
+                float share = total / heroes.size();
+                for (ServerPlayer hero : heroes) {
+                    this.invulnerableTime = 0;
+                    this.hurt(MainDamageTypes.kiblast(level, hero, hero), share);
+                }
+            }
+            this.stopBossAbility();
+            if (!this.isAlive()) return;
+            this.announce(level, Component.translatable("worldboss.dragonminez.gomah.sphere_reflected").withStyle(ChatFormatting.GOLD));
+            this.knockEye(level, Component.translatable("worldboss.dragonminez.gomah.the_sphere"));
+        }
+
+        private void detonateSphere(ServerLevel level, Vec3 impact) {
+            KiExplosionVisualEntity visual = new KiExplosionVisualEntity(MainEntities.KI_EXPLOSION_VISUAL.get(), level);
+            visual.setPos(impact.x, impact.y + 2.0D, impact.z);
+            visual.setupExplosion(SPHERE_MAIN, SPHERE_BORDER, SPHERE_OUTLINE, 60.0F);
+            level.addFreshEntity(visual);
+
+            float damage = this.getKiBlastDamage() * SPHERE_DAMAGE_RATIO;
+            for (ServerPlayer player : this.participants(level)) {
+                double distance = player.position().distanceTo(impact);
+                if (distance > SPHERE_BLAST_RADIUS) continue;
+                double closeness = 1.0D - distance / SPHERE_BLAST_RADIUS;
+                float falloff = (float) (SPHERE_MIN_FALLOFF + (1.0D - SPHERE_MIN_FALLOFF) * closeness * closeness);
+                player.invulnerableTime = 0;
+                player.hurt(MainDamageTypes.kiblast(level, this, this), damage * falloff);
+                Vec3 push = new Vec3(player.getX() - impact.x, 0.0D, player.getZ() - impact.z);
+                push = push.lengthSqr() < 1.0E-4D ? Vec3.ZERO : push.normalize().scale(1.6D * closeness);
+                player.setDeltaMovement(player.getDeltaMovement().add(push.x, 0.5D + 0.6D * closeness, push.z));
+                player.hurtMarked = true;
+            }
+            level.playSound(null, impact.x, impact.y, impact.z, SoundEvents.GENERIC_EXPLODE, SoundSource.HOSTILE, 8.0F, 0.4F);
+            level.playSound(null, impact.x, impact.y, impact.z, MainSounds.KI_EXPLOSION_IMPACT.get(), SoundSource.HOSTILE, 8.0F, 0.5F);
+            level.sendParticles(MainParticles.ROCK.get(), impact.x, impact.y + 0.5D, impact.z, 160, 8.0D, 1.0D, 8.0D, 0.5D);
+            NetworkHandler.sendToTrackingEntity(new ShockwaveVfxS2C(impact.x, impact.y + 0.2D, impact.z, SPHERE_BLAST_RADIUS * 1.2F, SPHERE_BORDER, 24), this);
+        }
+
+        private void endSphereClash(Boolean playersWon) {
+            MetalCoolerCore.SupernovaClash clash = this.sphereClash;
+            if (clash == null) return;
+            this.sphereClash = null;
+            BeamClashManager.unregisterExternal(clash);
+            clash.end(playersWon);
+        }
+
+        private void discardSphere() {
+            if (this.sphere != null && this.sphere.isAlive()) this.sphere.discard();
+            this.sphere = null;
+        }
+
+        private void tickQuake(ServerLevel level, int tick) {
+            this.fallDistance = 0.0F;
+            LivingEntity target = this.getTarget();
+
+            if (tick == 1) {
+                level.playSound(null, this.getX(), this.getY(), this.getZ(), SoundEvents.RAVAGER_ROAR, SoundSource.HOSTILE, 3.0F, 0.7F);
+            }
+            if (tick < QUAKE_LAUNCH) {
+                this.setDeltaMovement(0.0D, this.getDeltaMovement().y, 0.0D);
+                return;
+            }
+            if (tick < QUAKE_APEX) {
+                this.setNoGravity(true);
+                this.setDeltaMovement(0.0D, QUAKE_RISE, 0.0D);
+                this.hasImpulse = true;
+                return;
+            }
+            if (tick == QUAKE_APEX) {
+                this.setNoGravity(true);
+                this.setDeltaMovement(Vec3.ZERO);
+                this.quakeX = target != null ? target.getX() : this.getX();
+                this.quakeZ = target != null ? target.getZ() : this.getZ();
+                BlockPos anchor = this.getAnchor();
+                double offX = this.quakeX - (anchor.getX() + 0.5D);
+                double offZ = this.quakeZ - (anchor.getZ() + 0.5D);
+                double offset = Math.sqrt(offX * offX + offZ * offZ);
+                if (offset > TETHER_RADIUS - 4.0D) {
+                    double clamp = (TETHER_RADIUS - 4.0D) / offset;
+                    this.quakeX = anchor.getX() + 0.5D + offX * clamp;
+                    this.quakeZ = anchor.getZ() + 0.5D + offZ * clamp;
+                }
+                double markY = groundHeight(level, this.quakeX, this.quakeZ, target != null ? target.getY() : this.getY());
+                NetworkHandler.sendToTrackingEntity(new BossTelegraphS2C(this.quakeX, markY, this.quakeZ, QUAKE_CORE_RADIUS, MARK_COLOR,
+                        QUAKE_DROP - QUAKE_APEX + 4, -1), this);
+                return;
+            }
+            if (tick < QUAKE_DROP) {
+                this.setDeltaMovement(Vec3.ZERO);
+                this.setPos(Mth.lerp(0.18D, this.getX(), this.quakeX), this.getY(), Mth.lerp(0.18D, this.getZ(), this.quakeZ));
+                faceYaw(this, yawTowards(this, this.quakeX, this.quakeZ));
+                return;
+            }
+            if (tick == QUAKE_DROP) {
+                this.setNoGravity(false);
+                this.teleportTo(this.quakeX, this.getY(), this.quakeZ);
+                this.setDeltaMovement(0.0D, QUAKE_FALL, 0.0D);
+                this.hasImpulse = true;
+                return;
+            }
+            if (this.quakeImpacted) return;
+            this.setDeltaMovement(0.0D, QUAKE_FALL, 0.0D);
+            if (this.onGround() || tick >= QUAKE_FORCE_IMPACT) {
+                this.quakeImpacted = true;
+                this.quakeImpact(level);
+            }
+        }
+
+        private void quakeImpact(ServerLevel level) {
+            double cx = this.getX();
+            double cy = this.getY();
+            double cz = this.getZ();
+            this.setDeltaMovement(Vec3.ZERO);
+
+            float damage = (float) this.getAttributeValue(Attributes.ATTACK_DAMAGE) * QUAKE_CORE_RATIO;
+            for (ServerPlayer player : this.participants(level)) {
+                double dx = player.getX() - cx;
+                double dz = player.getZ() - cz;
+                double distance = Math.sqrt(dx * dx + dz * dz);
+                if (distance > QUAKE_CORE_RADIUS || Math.abs(player.getY() - cy) > 5.0D) continue;
+                player.invulnerableTime = 0;
+                player.hurt(this.damageSources().mobAttack(this), damage);
+                player.setDeltaMovement(player.getDeltaMovement().add(0.0D, 0.9D, 0.0D));
+                player.hurtMarked = true;
+            }
+
+            this.ringCenter = new Vec3(cx, cy, cz);
+            this.ringRadius = 0.0F;
+            this.ringHit.clear();
+            level.sendParticles(MainParticles.ROCK.get(), cx, cy + 0.3D, cz, 160, QUAKE_CORE_RADIUS * 0.5D, 0.5D, QUAKE_CORE_RADIUS * 0.5D, 0.4D);
+            level.sendParticles(MainParticles.DUST.get(), cx, cy + 0.3D, cz, 200, QUAKE_CORE_RADIUS * 0.6D, 0.6D, QUAKE_CORE_RADIUS * 0.6D, 0.15D);
+            level.playSound(null, cx, cy, cz, MainSounds.ANCHOR_SLAM.get(), SoundSource.HOSTILE, 5.0F, 0.45F);
+            level.playSound(null, cx, cy, cz, MainSounds.KI_EXPLOSION_IMPACT.get(), SoundSource.HOSTILE, 4.0F, 0.6F);
+            NetworkHandler.sendToTrackingEntity(new ShockwaveVfxS2C(cx, cy + 0.2D, cz, QUAKE_RING_RADIUS, QUAKE_COLOR,
+                    Mth.ceil(QUAKE_RING_RADIUS / QUAKE_RING_SPEED)), this);
+            NetworkHandler.sendToTrackingEntity(new KiBurstVfxS2C(this.getId(), true, 20.0F), this);
+        }
+
+        private void tickRing(ServerLevel level) {
+            if (this.ringRadius < 0.0F || this.ringCenter == null) return;
+            this.ringRadius += QUAKE_RING_SPEED;
+            if (this.ringRadius > QUAKE_RING_RADIUS) {
+                this.ringRadius = -1.0F;
+                this.ringHit.clear();
+                return;
+            }
+
+            float damage = (float) this.getAttributeValue(Attributes.ATTACK_DAMAGE) * QUAKE_RING_RATIO;
+            for (ServerPlayer player : this.participants(level)) {
+                if (this.ringHit.contains(player.getUUID())) continue;
+                double dx = player.getX() - this.ringCenter.x;
+                double dz = player.getZ() - this.ringCenter.z;
+                double distance = Math.sqrt(dx * dx + dz * dz);
+                if (Math.abs(distance - this.ringRadius) > QUAKE_RING_WIDTH) continue;
+                double ground = groundHeight(level, player.getX(), player.getZ(), player.getY());
+                if (!player.onGround() && player.getY() - ground > QUAKE_AIRBORNE) continue;
+                if (Math.abs(ground - this.ringCenter.y) > 6.0D) continue;
+                this.ringHit.add(player.getUUID());
+                player.invulnerableTime = 0;
+                player.hurt(this.damageSources().mobAttack(this), damage);
+                player.setDeltaMovement(player.getDeltaMovement().add(dx / Math.max(1.0D, distance) * 0.6D, 0.7D, dz / Math.max(1.0D, distance) * 0.6D));
+                player.hurtMarked = true;
+            }
+            if (this.tickCount % 2 == 0) {
+                for (int i = 0; i < 24; i++) {
+                    double a = Math.PI * 2.0D * i / 24.0D;
+                    level.sendParticles(MainParticles.ROCK.get(), this.ringCenter.x + Math.cos(a) * this.ringRadius, this.ringCenter.y + 0.3D,
+                            this.ringCenter.z + Math.sin(a) * this.ringRadius, 1, 0.2D, 0.1D, 0.2D, 0.15D);
+                }
+            }
+        }
+
+        private void tickBeam(ServerLevel level, int tick) {
+            LivingEntity target = this.getTarget();
+            this.setDeltaMovement(0.0D, this.getDeltaMovement().y, 0.0D);
+
+            if (tick < BEAM_FIRE_TICK) {
+                if (target != null) {
+                    this.lockedYaw = yawTowards(this, target.getX(), target.getZ());
+                    Vec3 eye = this.eyePosition();
+                    this.beamOrigin = eye;
+                    this.beamDirection = target.getBoundingBox().getCenter().subtract(eye).normalize();
+                }
+                faceYaw(this, this.lockedYaw);
+                if (tick == 1) {
+                    level.playSound(null, this.getX(), this.getY(), this.getZ(), MainSounds.KI_EXPLOSION_CHARGE.get(), SoundSource.HOSTILE, 2.5F, 1.4F);
+                }
+                if (this.beamOrigin != null && tick % 2 == 0) this.drawBeamWarning(level, tick >= BEAM_FIRE_TICK - 8);
+                return;
+            }
+
+            faceYaw(this, this.lockedYaw);
+            if (this.beamOrigin == null || this.beamDirection == null) {
+                this.stopBossAbility();
+                return;
+            }
+
+            double length = this.beamLength(level);
+            if (tick == BEAM_FIRE_TICK) {
+                this.beamHit.clear();
+                KiLaserEntity laser = new KiLaserEntity(level, this);
+                laser.setupStrike(this, this.beamOrigin, this.beamOrigin.add(this.beamDirection.scale(length)), 0.0F, 14.0F, 1.4F, 0.1F,
+                        BEAM_MAIN, BEAM_BORDER, BEAM_OUTLINE, BEAM_FIRING + 4);
+                level.playSound(null, this.getX(), this.getY(), this.getZ(), MainSounds.KI_BEAM_FIRE.get(), SoundSource.HOSTILE, 3.0F, 1.3F);
+            }
+            if (tick > BEAM_FIRE_TICK + BEAM_FIRING) return;
+
+            float damage = this.getKiBlastDamage() * BEAM_DAMAGE_RATIO;
+            double reach = Math.min(length, (tick - BEAM_FIRE_TICK + 1) * 14.0D);
+            Vec3 end = this.beamOrigin.add(this.beamDirection.scale(reach));
+            for (ServerPlayer player : this.participants(level)) {
+                if (this.beamHit.contains(player.getUUID())) continue;
+                AABB box = player.getBoundingBox().inflate(BEAM_HIT_RADIUS);
+                if (box.clip(this.beamOrigin, end).isEmpty() && !box.contains(this.beamOrigin)) continue;
+                this.beamHit.add(player.getUUID());
+                player.invulnerableTime = 0;
+                player.hurt(MainDamageTypes.kiblast(level, this, this), damage);
+                level.sendParticles(new DustParticleOptions(new Vector3f(1.0F, 0.1F, 0.2F), 2.0F), player.getX(), player.getEyeY(), player.getZ(),
+                        16, 0.3D, 0.3D, 0.3D, 0.0D);
+            }
+        }
+
+        private double beamLength(ServerLevel level) {
+            Vec3 far = this.beamOrigin.add(this.beamDirection.scale(BEAM_RANGE));
+            BlockHitResult hit = level.clip(new ClipContext(this.beamOrigin, far, ClipContext.Block.COLLIDER, ClipContext.Fluid.NONE, this));
+            return hit.getType() == HitResult.Type.MISS ? BEAM_RANGE : hit.getLocation().distanceTo(this.beamOrigin);
+        }
+
+        private void drawBeamWarning(ServerLevel level, boolean urgent) {
+            double length = this.beamLength(level);
+            DustParticleOptions dust = new DustParticleOptions(urgent ? new Vector3f(1.0F, 0.15F, 0.15F) : new Vector3f(0.8F, 0.0F, 0.1F), urgent ? 1.6F : 1.1F);
+            for (double d = 2.0D; d < length; d += 1.5D) {
+                Vec3 point = this.beamOrigin.add(this.beamDirection.scale(d));
+                level.sendParticles(dust, point.x, point.y, point.z, 1, 0.0D, 0.0D, 0.0D, 0.0D);
+            }
+        }
+
+        private void callEscorts(ServerLevel level) {
+            this.escorts.removeIf(id -> !(level.getEntity(id) instanceof LivingEntity escort) || !escort.isAlive());
+            int count = Math.min(ESCORT_WAVE, MAX_ESCORTS - this.escorts.size());
+            if (count <= 0) return;
+
+            List<ServerPlayer> players = this.participants(level);
+            for (int i = 0; i < count; i++) {
+                EntityType<SagaDaimaEntity.GomahSoldierEntity> type = i % 2 == 0 ? MainEntities.SAGA_GOMAH_SOLDIER_1.get() : MainEntities.SAGA_GOMAH_SOLDIER_2.get();
+                SagaDaimaEntity.GomahSoldierEntity soldier = type.create(level);
+                if (soldier == null) continue;
+                double angle = this.yBodyRot * Mth.DEG_TO_RAD + Math.PI + (i - (count - 1) / 2.0D) * 0.7D;
+                double distance = this.getBbWidth() + 3.0D;
+                double x = this.getX() - Math.sin(angle) * distance;
+                double z = this.getZ() + Math.cos(angle) * distance;
+                double y = groundHeight(level, x, z, this.getY() + 2.0D);
+                soldier.moveTo(x, y, z, this.yBodyRot, 0.0F);
+                soldier.setSoldierScale(ESCORT_SCALE);
+                soldier.setPersistenceRequired();
+                CompoundTag data = soldier.getPersistentData();
+                data.putBoolean(ESCORT_TAG, true);
+                data.putDouble("dmz_quest_hp", BASE_HEALTH * ESCORT_HEALTH_RATIO);
+                data.putDouble("dmz_quest_melee", BASE_MELEE * ESCORT_MELEE_RATIO);
+                data.putDouble("dmz_quest_ki", BASE_KI * ESCORT_KI_RATIO);
+                data.putBoolean("dmz_quest_no_transform", true);
+                if (!players.isEmpty()) soldier.setTarget(players.get(this.random.nextInt(players.size())));
+                if (!level.addFreshEntity(soldier)) continue;
+                this.escorts.add(soldier.getUUID());
+                level.sendParticles(new DustParticleOptions(new Vector3f(0.55F, 0.0F, 0.6F), 2.0F), x, y + 1.0D, z, 30, 0.4D, 0.8D, 0.4D, 0.0D);
+            }
+            level.playSound(null, this.getX(), this.getY(), this.getZ(), SoundEvents.EVOKER_PREPARE_SUMMON, SoundSource.HOSTILE, 2.5F, 0.7F);
+            this.announce(level, Component.translatable("worldboss.dragonminez.gomah.escorts").withStyle(ChatFormatting.DARK_PURPLE));
+        }
+
+        private void tickEscorts(ServerLevel level) {
+            if (this.escorts.isEmpty() || this.tickCount % 20 != 0) return;
+            List<ServerPlayer> players = null;
+            Iterator<UUID> iterator = this.escorts.iterator();
+            while (iterator.hasNext()) {
+                Entity entity = level.getEntity(iterator.next());
+                if (!(entity instanceof Mob escort) || !escort.isAlive()) {
+                    iterator.remove();
+                    continue;
+                }
+                if (escort.getTarget() == null || !escort.getTarget().isAlive()) {
+                    if (players == null) players = this.participants(level);
+                    if (!players.isEmpty()) escort.setTarget(players.get(this.random.nextInt(players.size())));
+                }
+            }
+        }
+
+        private void clearEscorts(ServerLevel level) {
+            for (UUID id : this.escorts) {
+                Entity escort = level.getEntity(id);
+                if (escort == null) continue;
+                level.sendParticles(new DustParticleOptions(new Vector3f(0.55F, 0.0F, 0.6F), 2.0F), escort.getX(), escort.getY() + 1.0D, escort.getZ(),
+                        20, 0.4D, 0.8D, 0.4D, 0.0D);
+                escort.discard();
+            }
+            this.escorts.clear();
+        }
+
+        @Override
+        public void addAdditionalSaveData(CompoundTag pCompound) {
+            super.addAdditionalSaveData(pCompound);
+            pCompound.putInt("EyeStacks", this.getEyeStacks());
+            pCompound.putInt("EyeTimer", this.stackTimer);
+            ListTag list = new ListTag();
+            for (UUID id : this.escorts) list.add(NbtUtils.createUUID(id));
+            pCompound.put("Escorts", list);
+        }
+
+        @Override
+        public void readAdditionalSaveData(CompoundTag pCompound) {
+            super.readAdditionalSaveData(pCompound);
+            this.entityData.set(EYE_STACKS, Mth.clamp(pCompound.getInt("EyeStacks"), 0, MAX_STACKS));
+            this.stackTimer = pCompound.getInt("EyeTimer");
+            this.escorts.clear();
+            for (Tag tag : pCompound.getList("Escorts", Tag.TAG_INT_ARRAY)) this.escorts.add(NbtUtils.loadUUID(tag));
+            this.appliedScale = -1.0F;
+            this.applyStackScale(true);
+            this.applyStackPower();
         }
     }
 

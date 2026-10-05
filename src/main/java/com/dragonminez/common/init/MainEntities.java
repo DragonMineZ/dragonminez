@@ -150,7 +150,7 @@ public class MainEntities {
                 WORLDBOSS_JANEMBA_FAT, WORLDBOSS_SUPER_JANEMBA, WORLDBOSS_MINI_JANEMBA, WORLDBOSS_TURLES,
                 WORLDBOSS_METAL_COOLER_CORE, WORLDBOSS_METAL_COOLER, WORLDBOSS_METAL_COOLER_COPY,
                 WORLDBOSS_TAMAGAMI_3, WORLDBOSS_TAMAGAMI_3_POWERED, WORLDBOSS_TAMAGAMI_2, WORLDBOSS_TAMAGAMI_2_POWERED,
-                WORLDBOSS_TAMAGAMI_1, WORLDBOSS_TAMAGAMI_1_POWERED
+                WORLDBOSS_TAMAGAMI_1, WORLDBOSS_TAMAGAMI_1_POWERED, WORLDBOSS_GOMAH
         );
     }
 
@@ -1539,6 +1539,13 @@ public class MainEntities {
                             .clientTrackingRange(16)
                             .fireImmune()
                             .build(ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "worldboss_tamagami_1_powered").toString()));
+    public static final RegistryObject<EntityType<AllWorldBossesEntity.Gomah>> WORLDBOSS_GOMAH =
+            ENTITY_TYPES.register("worldboss_gomah",
+                    () -> EntityType.Builder.of(AllWorldBossesEntity.Gomah::new, MobCategory.MONSTER)
+                            .sized(1.7f, 4.0f)
+                            .clientTrackingRange(32)
+                            .fireImmune()
+                            .build(ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "worldboss_gomah").toString()));
     public static final RegistryObject<EntityType<AllWorldBossesEntity.TamagamiHammer>> THROWN_TAMAGAMI_HAMMER =
             ENTITY_TYPES.register("thrown_tamagami_hammer",
                     () -> EntityType.Builder.<AllWorldBossesEntity.TamagamiHammer>of(AllWorldBossesEntity.TamagamiHammer::new, MobCategory.MISC)
