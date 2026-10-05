@@ -9,6 +9,9 @@ public class MemoryLogic extends MinigameLogic {
 	public enum Phase { TYPING, SUCCESS, TIMEOUT }
 
 	private static final double PERFORMANCE_WEIGHT = 0.08;
+	private static final double DEV_NAME_CHANCE = 0.01;
+	private static final int DEV_NAME_MAX_EXTRA_KEYS = 3;
+	private static final String[] DEV_NAMES = {"YUSE", "SHOKKOH"};
 
 	private final TrainingConfig.MemoryConfig cfg;
 
@@ -51,13 +54,20 @@ public class MemoryLogic extends MinigameLogic {
 
 	private void buildSequence() {
 		int len = sequenceLength();
-		sequence = new int[len];
-		for (int i = 0; i < len; i++) {
-			int c;
-			do {
-				c = random.nextInt(MinigameEvent.CHAR_COUNT);
-			} while (i > 0 && c == sequence[i - 1]);
-			sequence[i] = c;
+		String devName = rollDevName(len);
+		if (devName != null) {
+			len = devName.length();
+			sequence = new int[len];
+			for (int i = 0; i < len; i++) sequence[i] = CHARACTERS.indexOf(devName.charAt(i));
+		} else {
+			sequence = new int[len];
+			for (int i = 0; i < len; i++) {
+				int c;
+				do {
+					c = random.nextInt(MinigameEvent.CHAR_COUNT);
+				} while (i > 0 && c == sequence[i - 1]);
+				sequence[i] = c;
+			}
 		}
 		int perKey = ticksPerKey();
 		totalTicks = perKey * len;
@@ -68,6 +78,18 @@ public class MemoryLogic extends MinigameLogic {
 		index = 0;
 		phase = Phase.TYPING;
 		remapCount++;
+	}
+
+	private String rollDevName(int len) {
+		if (random.nextDouble() >= DEV_NAME_CHANCE) return null;
+		int eligible = 0;
+		for (String name : DEV_NAMES) if (name.length() <= len + DEV_NAME_MAX_EXTRA_KEYS) eligible++;
+		if (eligible == 0) return null;
+		int pick = random.nextInt(eligible);
+		for (String name : DEV_NAMES) {
+			if (name.length() <= len + DEV_NAME_MAX_EXTRA_KEYS && pick-- == 0) return name;
+		}
+		return null;
 	}
 
 	@Override

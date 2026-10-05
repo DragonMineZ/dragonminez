@@ -37,6 +37,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 
 public abstract class BaseMinigameScreen extends Screen {
@@ -364,6 +365,12 @@ public abstract class BaseMinigameScreen extends Screen {
 
 	protected int remapLogicalKey(int logical) {
 		return logical;
+	}
+
+	protected static String layoutKeyName(int key) {
+		if (key < GLFW.GLFW_KEY_SPACE || key > GLFW.GLFW_KEY_LAST) return null;
+		String name = GLFW.glfwGetKeyName(key, 0);
+		return name == null || name.isEmpty() ? null : name.toUpperCase(Locale.ROOT);
 	}
 
 	protected boolean usesClicks() {

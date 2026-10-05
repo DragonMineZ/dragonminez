@@ -44,10 +44,20 @@ public class MemoryGameScreen extends BaseMinigameScreen {
 
 	@Override
 	protected int mapPhysicalKey(int physical) {
-		if (physical >= GLFW.GLFW_KEY_A && physical <= GLFW.GLFW_KEY_Z) return MinigameEvent.CHAR_BASE + (physical - GLFW.GLFW_KEY_A);
 		if (physical >= GLFW.GLFW_KEY_0 && physical <= GLFW.GLFW_KEY_9) return MinigameEvent.CHAR_BASE + 26 + (physical - GLFW.GLFW_KEY_0);
 		if (physical >= GLFW.GLFW_KEY_KP_0 && physical <= GLFW.GLFW_KEY_KP_9) return MinigameEvent.CHAR_BASE + 26 + (physical - GLFW.GLFW_KEY_KP_0);
-		return -1;
+		int letter = layoutLetter(physical);
+		return letter < 0 ? -1 : MinigameEvent.CHAR_BASE + letter;
+	}
+
+	private static int layoutLetter(int physical) {
+		String name = layoutKeyName(physical);
+		if (name != null && name.length() == 1) {
+			char c = name.charAt(0);
+			if (c >= 'A' && c <= 'Z') return c - 'A';
+			if (!Character.isLetter(c)) return -1;
+		}
+		return physical >= GLFW.GLFW_KEY_A && physical <= GLFW.GLFW_KEY_Z ? physical - GLFW.GLFW_KEY_A : -1;
 	}
 
 	@Override

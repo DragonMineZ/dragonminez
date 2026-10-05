@@ -9,7 +9,7 @@ import java.util.function.IntSupplier;
 
 @OnlyIn(Dist.CLIENT)
 final class DialogueOption {
-	enum Tone { NORMAL, PRIMARY, DANGER }
+	enum Tone { NORMAL, PRIMARY, DANGER, DONE }
 
 	final String id;
 	final Component label;

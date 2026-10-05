@@ -191,7 +191,7 @@ final class OptionColumn {
 		int chipWidth = time.isEmpty() ? 0 : Math.round(HudRender.dmzWidth(time, 1.0f)) + 20;
 		int rightReserve = !time.isEmpty() ? chipWidth + 8 : option.submenu ? 18 : 8;
 		int labelX = option.icon != DialogueSkin.Icon.NONE ? 22 : 11;
-		int labelColor = !available ? DialogueSkin.MUTED
+		int labelColor = !available || option.tone == DialogueOption.Tone.DONE && !lit ? DialogueSkin.MUTED
 				: option.tone == DialogueOption.Tone.DANGER && !lit ? DANGER_TEXT : DialogueSkin.TEXT;
 		HudRender.dmzText(graphics, fit(font, option.label, WIDTH - labelX - rightReserve), rowX + labelX, rowY + 6, 1.0f, 0.0f, labelColor, appear);
 

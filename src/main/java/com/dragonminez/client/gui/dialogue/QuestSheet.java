@@ -113,13 +113,14 @@ final class QuestSheet {
 		List<QuestObjective> objectives = entry.quest.getObjectives();
 		if (objectives.isEmpty()) return;
 		boolean tracked = status == DialogueQuest.Status.IN_PROGRESS || status == DialogueQuest.Status.TURN_IN;
+		boolean completed = status == DialogueQuest.Status.COMPLETED;
 		lines.add(gap(8));
 		lines.add(text(NpcDialogueContent.tr("gui.dragonminez.quests.objectives").getVisualOrderText(), DialogueSkin.ACCENT, 1.0f, 13));
 		for (int i = 0; i < objectives.size(); i++) {
 			QuestObjective objective = objectives.get(i);
 			MutableComponent description = Component.empty().append(QuestTextFormatter.describeObjective(objective))
 					.withStyle(Style.EMPTY.withFont(NpcDialogueScreen.FONT));
-			boolean done = false;
+			boolean done = completed;
 			if (tracked && questData != null && isCounted(objective)) {
 				int required = entry.quest.getObjectiveRequired(questData, entry.id, i);
 				int progress = Math.min(required, questData.getObjectiveProgress(entry.id, i));
@@ -189,6 +190,7 @@ final class QuestSheet {
 		return switch (status) {
 			case TURN_IN -> "gui.dragonminez.dialogue.quest.status.turn_in";
 			case IN_PROGRESS -> "gui.dragonminez.dialogue.quest.status.in_progress";
+			case COMPLETED -> "gui.dragonminez.dialogue.quest.status.completed";
 			default -> "gui.dragonminez.dialogue.quest.status.offer";
 		};
 	}
@@ -197,6 +199,7 @@ final class QuestSheet {
 		return switch (status) {
 			case TURN_IN -> DialogueSkin.TURN_IN;
 			case IN_PROGRESS -> DialogueSkin.PROGRESS;
+			case COMPLETED -> DialogueSkin.METAL;
 			default -> DialogueSkin.OFFER;
 		};
 	}
@@ -205,6 +208,7 @@ final class QuestSheet {
 		return switch (status) {
 			case TURN_IN -> DialogueSkin.Icon.TURN_IN;
 			case IN_PROGRESS -> DialogueSkin.Icon.PROGRESS;
+			case COMPLETED -> DialogueSkin.Icon.CHECK;
 			default -> DialogueSkin.Icon.OFFER;
 		};
 	}

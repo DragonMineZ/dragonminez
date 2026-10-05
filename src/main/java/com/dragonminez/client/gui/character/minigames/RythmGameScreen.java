@@ -770,15 +770,22 @@ public class RythmGameScreen extends BaseMinigameScreen {
 			case GLFW.GLFW_KEY_SPACE: return "SPC";
 			default: break;
 		}
-		if ((code >= GLFW.GLFW_KEY_A && code <= GLFW.GLFW_KEY_Z) || (code >= GLFW.GLFW_KEY_0 && code <= GLFW.GLFW_KEY_9)) return String.valueOf((char) code);
-		String name = InputConstants.Type.KEYSYM.getOrCreate(code).getDisplayName().getString();
+		if (code >= GLFW.GLFW_KEY_0 && code <= GLFW.GLFW_KEY_9) return String.valueOf((char) code);
+		String name = layoutKeyName(code);
+		if (name == null) name = InputConstants.Type.KEYSYM.getOrCreate(code).getDisplayName().getString();
 		return name.length() > 3 ? name.substring(0, 3) : name;
 	}
 
 	@Override
 	protected int mapPhysicalKey(int physical) {
 		for (int lane = 0; lane < RhythmLogic.LANES; lane++) if (physical == laneKeyCode(lane)) return lane;
-		return -1;
+		return switch (physical) {
+			case GLFW.GLFW_KEY_LEFT -> MinigameEvent.LEFT;
+			case GLFW.GLFW_KEY_DOWN -> MinigameEvent.DOWN;
+			case GLFW.GLFW_KEY_UP -> MinigameEvent.UP;
+			case GLFW.GLFW_KEY_RIGHT -> MinigameEvent.RIGHT;
+			default -> -1;
+		};
 	}
 
 	@Override

@@ -42,6 +42,7 @@ import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -158,7 +159,8 @@ final class NpcDialogueContent {
 		if (pending.containsKey(key)) return;
 		NetworkHandler.sendToServer(new QuestActionC2S(QuestActionC2S.ActionType.TURN_IN, quest.id, npcId));
 		pending.put(key, () -> {
-			quests.remove(quest);
+			if (npcId.equals(quest.quest.getQuestGiver())) quest.markTurnedIn(Util.getMillis());
+			else quests.remove(quest);
 			host.popToRoot();
 			host.say(DialogueReplies.reply(npcId, "quest_turn_in"));
 			playConfirm();
@@ -261,6 +263,8 @@ final class NpcDialogueContent {
 		} else if (hasQuest(DialogueQuest.Status.IN_PROGRESS)) {
 			icon = DialogueSkin.Icon.PROGRESS;
 			color = DialogueSkin.PROGRESS;
+		} else if (!hasQuest(DialogueQuest.Status.LOCKED) && !hasQuest(DialogueQuest.Status.OFFER)) {
+			icon = DialogueSkin.Icon.CHECK;
 		}
 		DialogueOption option = DialogueOption.of("quests", tr("gui.dragonminez.dialogue.quests"), () -> host.push(questList()))
 				.icon(icon, color).submenu();
@@ -286,7 +290,9 @@ final class NpcDialogueContent {
 		List<DialogueOption> options = new ArrayList<>();
 		long now = Util.getMillis();
 		Component alignmentLock = alignmentLock();
-		for (DialogueQuest quest : quests) {
+		List<DialogueQuest> ordered = new ArrayList<>(quests);
+		ordered.sort(Comparator.comparing(quest -> quest.done(now)));
+		for (DialogueQuest quest : ordered) {
 			DialogueQuest.Status status = quest.status(now);
 			DialogueOption option = DialogueOption.of(DialogueQuest.optionId(quest.id), ph(tr(quest.quest.getTitle())),
 					() -> host.showQuest(DialoguePage.quest(quest, this::questOptions)));
@@ -304,6 +310,7 @@ final class NpcDialogueContent {
 						.locked(tr("gui.dragonminez.dialogue.quest.locked"), quest.lockReason != null ? List.of(quest.lockReason) : List.of());
 				case LOCKED -> option.icon(DialogueSkin.Icon.LOCK, DialogueSkin.MUTED)
 						.locked(tr("gui.dragonminez.dialogue.quest.locked"), lockLines(quest));
+				case COMPLETED -> option.icon(DialogueSkin.Icon.CHECK, DialogueSkin.METAL).tone(DialogueOption.Tone.DONE);
 			}
 			if (status == DialogueQuest.Status.COOLDOWN) option.enabled(true);
 			options.add(option);
