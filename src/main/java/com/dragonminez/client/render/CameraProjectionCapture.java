@@ -21,7 +21,7 @@ public final class CameraProjectionCapture {
 
 	@SubscribeEvent
 	public static void onRenderLevelStage(RenderLevelStageEvent event) {
-		if (event.getStage() != RenderLevelStageEvent.Stage.AFTER_LEVEL) return;
+		if (event.getStage() != RenderLevelStageEvent.Stage.AFTER_SKY) return;
 		Minecraft mc = Minecraft.getInstance();
 		if (mc.level == null) return;
 		VIEW_PROJECTION.set(event.getProjectionMatrix()).mul(event.getPoseStack().last().pose());
