@@ -62,6 +62,8 @@ public class DMZPlayerModel<T extends AbstractClientPlayer & GeoAnimatable> exte
     private static final ResourceLocation HUMAN_SAIYAN_BUFFED_G3 = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "geo/entity/races/hbuffedg3.geo.json");
     private static final ResourceLocation HUMAN_SAIYAN_SLIM_BUFFED_G3 = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "geo/entity/races/hbuffed_slimg3.geo.json");
     private static final ResourceLocation HUMAN_SAIYAN_FEMALE_BUFFED_G3 = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "geo/entity/races/hbuffed_femg3.geo.json");
+    private static final ResourceLocation GLIND_TRUE_FORM = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "geo/entity/races/glindtrueform.geo.json");
+    private static final ResourceLocation GLIND_TRANSCENDED = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "geo/entity/races/trascended.geo.json");
 
     private static final ResourceLocation HUMAN_SAIYAN_4ARMS = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "geo/entity/races/h4arms.geo.json");
     private static final ResourceLocation HUMAN_SAIYAN_4ARMS_SLIM = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "geo/entity/races/h4armsslim.geo.json");
@@ -222,6 +224,8 @@ public class DMZPlayerModel<T extends AbstractClientPlayer & GeoAnimatable> exte
                 return humanoidVariant(slimBody, isMale, bodyType, HUMAN_SAIYAN_BUFFED_G3, HUMAN_SAIYAN_SLIM_BUFFED_G3, HUMAN_SAIYAN_FEMALE_BUFFED_G3);
             case "4arms":
                 return humanoidVariant(slimBody, isMale, bodyType, HUMAN_SAIYAN_4ARMS, HUMAN_SAIYAN_4ARMS_SLIM, HUMAN_SAIYAN_4ARMS_FEM);
+            case "glindtrueform": return GLIND_TRUE_FORM;
+            case "trascended": return GLIND_TRANSCENDED;
 
             // NAMEKIAN
             case "namekian": return BASE_DEFAULT;

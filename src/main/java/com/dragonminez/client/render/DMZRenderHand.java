@@ -153,7 +153,7 @@ public class DMZRenderHand extends LivingEntityRenderer<AbstractClientPlayer, Pl
 
 		float pt = Minecraft.getInstance().getFrameTime();
 		SkinGathererProvider.INSTANCE.gatherBodyLayers(pPlayer, stats, pt, layerConsumer);
-		addSsj4HandFur(stats, fadingLayers);
+		addSsj4HandFur(pPlayer, stats, fadingLayers);
 		SkinGathererProvider.INSTANCE.gatherAndroidLayers(pPlayer, stats, pt, layerConsumer);
 		SkinGathererProvider.INSTANCE.gatherTattooLayers(pPlayer, stats, pt, layerConsumer);
 		SkinGathererProvider.INSTANCE.gatherEffectLayers(pPlayer, stats, pt, layerConsumer);
@@ -221,11 +221,13 @@ public class DMZRenderHand extends LivingEntityRenderer<AbstractClientPlayer, Pl
         }
     }
 
-	private void addSsj4HandFur(StatsData stats, List<BodyLayerFadeTracker.FadingLayer> out) {
-		DMZSkinLayer.Ssj4Overlay ssj4 = DMZSkinLayer.resolveSsj4Overlay(stats);
+	private void addSsj4HandFur(AbstractClientPlayer player, StatsData stats, List<BodyLayerFadeTracker.FadingLayer> out) {
+		DMZSkinLayer.Ssj4Overlay ssj4 = DMZSkinLayer.resolveSsj4Overlay(player, stats);
 		if (ssj4 == null) return;
 		ResourceLocation tex = DMZSkinLayer.getSafeTexture(SkinGathererProvider.getCachedTexture("textures/entity/races/humansaiyan/" + ssj4.key() + "_layer1.png"));
 		out.add(new BodyLayerFadeTracker.FadingLayer("ssj4fur", tex, ssj4.color(), ssj4.target()));
+		BodyLayerFadeTracker.FadingLayer furShadow = DMZSkinLayer.ssj4FurShadowLayer(ssj4);
+		if (furShadow != null) out.add(furShadow);
 	}
 
 	private void renderFadingHandLayers(PoseStack ps, MultiBufferSource buffer, int light, AbstractClientPlayer player, ModelPart arm, float[] formTintColor, float formTintIntensity, List<BodyLayerFadeTracker.FadingLayer> active) {

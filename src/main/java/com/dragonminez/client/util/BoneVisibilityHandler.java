@@ -103,6 +103,8 @@ public class BoneVisibilityHandler {
 				showNormalTail = stats.getStatus().isTailVisible();
 			} else if (isSaiyan || configHasSaiyanTail) {
 				showNormalTail = stats.getStatus().isTailVisible() && stats.getCharacter().isHasSaiyanTail();
+			} else if (logicKey.equals("glindtrueform") || logicKey.equals("trascended")) {
+				showNormalTail = true;
 			} else if (isTaillessRace || isTaillessModel) {
 				showNormalTail = false;
 			} else {
