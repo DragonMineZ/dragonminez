@@ -54,6 +54,11 @@ public class DMZItemTagGenerator extends ItemTagsProvider {
 				.add(MainItems.SENZU_BEAN_RED.get())
 				.add(MainItems.SENZU_BEAN_YELLOW.get());
 
+		this.tag(Tags.Items.SEEDS)
+				.add(MainItems.SENZU_BEAN_SEEDS_BLUE.get())
+				.add(MainItems.SENZU_BEAN_SEEDS_RED.get())
+				.add(MainItems.SENZU_BEAN_SEEDS_YELLOW.get());
+
 		this.tag(Tags.Items.INGOTS)
 				.add(MainItems.GETE_SCRAP.get())
 				.add(MainItems.GETE_INGOT.get())

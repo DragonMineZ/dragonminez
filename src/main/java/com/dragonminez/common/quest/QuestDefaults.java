@@ -464,7 +464,7 @@ final class QuestDefaults {
 						rewTPS(1500)),
 				step("classic", 12, "12_jackie_chun_full_power.json",
 						earthReq(atTournament()),
-						new JsonObject[]{ objKill("dragonminez:saga_ozaru", 1, 800, 34, 0) },
+						new JsonObject[]{ objKill("dragonminez:saga_jackie_chun_fp", 1, 800, 34, 30) },
 						rewTPS(1700)),
 
 				// --- Red Ribbon Army Saga ---
@@ -495,7 +495,7 @@ final class QuestDefaults {
 				step("classic", 19, "19_sacred_water.json",
 						earthReq(),
 						new JsonObject[]{ objStructure("dragonminez:kamilookout"), objDeliver("minecraft:water_bucket", 1, "karin") },
-						rewTPS(1500), rewItem("dragonminez:red_capsule", 1), rewItem("dragonminez:green_capsule", 1),
+						rewTPS(1500), rewItem("dragonminez:sacred_water", 1), rewItem("dragonminez:red_capsule", 1), rewItem("dragonminez:green_capsule", 1),
 						rewItem("dragonminez:blue_capsule", 1)),
 				step("classic", 20, "20_tao_pai_pai_rematch.json",
 						earthReq(condBiome("#dragonminez:is_plains")),
@@ -655,7 +655,7 @@ final class QuestDefaults {
 						new JsonObject[]{
 								objKill("dragonminez:saga_raditz", 1, 1800, 90, 140)
 						},
-						rewTPS(7500), rewItem("dragonminez:broken_scouter", 1)),
+						rewTPS(7500)),
 				step("saiyan", 2, "02_piccolo_takes_gohan.json",
 						earthReq(),
 						new JsonObject[]{

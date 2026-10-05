@@ -11,6 +11,7 @@ import com.dragonminez.common.init.MainPotions;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.alchemy.PotionUtils;
 import net.minecraft.world.item.alchemy.Potions;
+import net.minecraftforge.common.Tags;
 import net.minecraftforge.common.crafting.StrictNBTIngredient;
 import com.dragonminez.common.init.MainTags;
 import net.minecraft.data.PackOutput;
@@ -169,6 +170,12 @@ public class DMZRecipeProvider extends RecipeProvider implements IConditionBuild
 				.unlockedBy(getHasName(MainItems.SENZU_BEAN_RED.get()), has(MainItems.SENZU_BEAN_RED.get()))
 				.group(Reference.MOD_ID)
 				.save(pWriter, ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "senzu_bean_from_colors"));
+
+		ShapedRecipeBuilder.shaped(RecipeCategory.MISC, MainItems.SENZU_BEAN_BAG.get())
+				.pattern("LSL").pattern(" L ")
+				.define('L', Items.LEATHER).define('S', Ingredient.of(Tags.Items.SEEDS))
+				.unlockedBy(getHasName(Items.LEATHER), has(Items.LEATHER)).group(Reference.MOD_ID)
+				.save(pWriter, ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "senzu_bean_bag"));
 
 		senzuSeeds(pWriter, MainItems.SENZU_BEAN_RED.get(), MainItems.GREEN_CAPSULE.get(), MainItems.SENZU_BEAN_SEEDS_RED.get(), "senzu_bean_seeds_red");
 		senzuSeeds(pWriter, MainItems.SENZU_BEAN_BLUE.get(), MainItems.BLUE_CAPSULE.get(), MainItems.SENZU_BEAN_SEEDS_BLUE.get(), "senzu_bean_seeds_blue");
