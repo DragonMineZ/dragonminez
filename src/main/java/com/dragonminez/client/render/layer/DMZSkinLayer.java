@@ -16,6 +16,7 @@ import com.dragonminez.client.util.SkinGathererProvider;
 import com.dragonminez.client.util.TextureCounter;
 import com.dragonminez.common.config.ConfigManager;
 import com.dragonminez.common.config.FormConfig;
+import com.dragonminez.common.config.RaceCharacterConfig;
 import com.dragonminez.common.hair.HairManager;
 import com.dragonminez.common.init.MainEffects;
 import com.dragonminez.common.stats.*;
@@ -25,6 +26,7 @@ import com.dragonminez.common.stats.extras.ActionMode;
 import com.dragonminez.common.util.TransformationsHelper;
 import com.dragonminez.common.util.lists.BioAndroidForms;
 import com.dragonminez.common.util.lists.FrostDemonForms;
+import com.dragonminez.common.util.lists.GlindForms;
 import com.dragonminez.common.util.lists.SaiyanForms;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
@@ -70,6 +72,7 @@ public class DMZSkinLayer<T extends AbstractClientPlayer & GeoAnimatable> extend
 	private float[] currentAuraColor = new float[]{1.0f, 1.0f, 1.0f};
 
 	private static final String SSJ4_FUR_LAYER = "ssj4fur";
+	private static final String SSJ4_FUR_SHADOW_LAYER = "ssj4fur_shadow";
 
 	private static final int WOUND_OPACITY_PASSES = 4;
 
@@ -121,7 +124,7 @@ public class DMZSkinLayer<T extends AbstractClientPlayer & GeoAnimatable> extend
 		this.currentFormTintIntensity = tintForm != null ? (float) tintForm.getTintIntensity() : 0.0f;
 		this.currentFormTintColor = tintForm != null ? tintForm.getRgbTintColor() : null;
 
-		Ssj4Overlay ssj4 = resolveSsj4Overlay(stats);
+		Ssj4Overlay ssj4 = resolveSsj4Overlay(player, stats);
 		float[] ssj4Color = ssj4 != null ? ssj4.color() : null;
 		float ssj4Target = ssj4 != null ? ssj4.target() : 0.0f;
 
@@ -146,6 +149,11 @@ public class DMZSkinLayer<T extends AbstractClientPlayer & GeoAnimatable> extend
 			@Override
 			public void translucent(ResourceLocation texture, float[] color) {
 				renderLayerWholeModel(model, poseStack, bufferSource, animatable, RenderType.entityTranslucent(texture), color[0], color[1], color[2], 1.0f, partialTick, packedLight, packedOverlay, alpha, true);
+			}
+
+			@Override
+			public void overlayTranslucent(ResourceLocation texture, float[] color) {
+				renderLayerWholeModel(model, poseStack, bufferSource, animatable, ModRenderTypes.skinOverlayTranslucent(texture), color[0], color[1], color[2], 1.0f, partialTick, packedLight, packedOverlay, alpha, true);
 			}
 
 			@Override
@@ -183,6 +191,8 @@ public class DMZSkinLayer<T extends AbstractClientPlayer & GeoAnimatable> extend
 		if (ssj4 != null) {
 			ResourceLocation furTex = getSafeTexture(SkinGathererProvider.getCachedTexture("textures/entity/races/humansaiyan/" + ssj4.key() + "_layer1.png"));
 			fadingLayers.add(new BodyLayerFadeTracker.FadingLayer(SSJ4_FUR_LAYER, furTex, ssj4.color(), ssj4.target()));
+			BodyLayerFadeTracker.FadingLayer furShadow = ssj4FurShadowLayer(ssj4);
+			if (furShadow != null) fadingLayers.add(furShadow);
 		}
 		SkinGathererProvider.INSTANCE.gatherAndroidLayers(player, stats, partialTick, geoConsumer);
 		if (maskBuffer != null) maskBuffer.setMaskCaptureBlocked(true);
@@ -416,6 +426,11 @@ public class DMZSkinLayer<T extends AbstractClientPlayer & GeoAnimatable> extend
 
 		String family = SkinGathererProvider.modelFamily(faceKey);
 
+		if (faceKey.equals("glindtrueform") || faceKey.equals("trascended")) {
+			renderHumanFace(model, poseStack, animatable, bufferSource, character, DARK_GRAY, eye1, eye2, skin, hair, pt, pl, po, alpha);
+			return;
+		}
+
 		if (family.equals("custom")) {
 			var rConfig = ConfigManager.getRaceCharacter(race);
 			if (rConfig != null && Boolean.TRUE.equals(rConfig.getIsLayered())) {
@@ -428,7 +443,7 @@ public class DMZSkinLayer<T extends AbstractClientPlayer & GeoAnimatable> extend
 
 		switch (family) {
 			case "human" ->
-					renderHumanFace(model, poseStack, animatable, bufferSource, character, eye1, eye2, skin, hair, pt, pl, po, alpha);
+					renderHumanFace(model, poseStack, animatable, bufferSource, character, WHITE, eye1, eye2, skin, hair, pt, pl, po, alpha);
 			case "namekian" ->
 					renderNamekianFace(model, poseStack, animatable, bufferSource, character, eye1, eye2, skin, hair, pt, pl, po, alpha);
 			case "frostdemon" ->
@@ -456,14 +471,14 @@ public class DMZSkinLayer<T extends AbstractClientPlayer & GeoAnimatable> extend
         renderFaceFeature(model, poseStack, animatable, bufferSource, character, "mouth", character.getMouthType(), getSafeTexture(ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, folder + prefix + "mouth_" + character.getMouthType() + ".png"), ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, folder + prefix + "mouth_0.png")).getPath(), skin, pt, pl, po, alpha);
 	}
 
-	private void renderHumanFace(BakedGeoModel model, PoseStack poseStack, T animatable, MultiBufferSource bufferSource, Character character, float[] eye1, float[] eye2, float[] skin, float[] hair, float pt, int pl, int po, float alpha) {
+	private void renderHumanFace(BakedGeoModel model, PoseStack poseStack, T animatable, MultiBufferSource bufferSource, Character character, float[] sclera, float[] eye1, float[] eye2, float[] skin, float[] hair, float pt, int pl, int po, float alpha) {
 		String folder = HUMAN_FACE_FOLDER;
         var legendaryGroup = character.getActiveFormGroup().equals("legendaryforms");
 		float[] skinBase = ColorUtils.skinBaseTone(skin);
 
 		boolean isMajin = animatable.hasEffect(MainEffects.MAJIN.get());
 
-		renderHumanEyes(model, poseStack, animatable, bufferSource, character, character.getEyesType(), WHITE, eye1, eye2, hair, skinBase, pt, pl, po, alpha);
+		renderHumanEyes(model, poseStack, animatable, bufferSource, character, character.getEyesType(), sclera, eye1, eye2, hair, skinBase, pt, pl, po, alpha);
 
 		String ssj4Eyes = folder + "ssj4_eyes_" + character.getEyesType() + ".png";
 		if (isMajin) {
@@ -799,14 +814,23 @@ public class DMZSkinLayer<T extends AbstractClientPlayer & GeoAnimatable> extend
 
 	public record Ssj4Overlay(String key, float[] color, float target) {}
 
-	public static Ssj4Overlay resolveSsj4Overlay(StatsData stats) {
+	public static BodyLayerFadeTracker.FadingLayer ssj4FurShadowLayer(Ssj4Overlay ssj4) {
+		ResourceLocation shadow = SkinGathererProvider.getCachedTexture("textures/entity/races/humansaiyan/" + ssj4.key() + "_layer1_shadow.png");
+		if (!getSafeTexture(shadow).equals(shadow)) return null;
+		return new BodyLayerFadeTracker.FadingLayer(SSJ4_FUR_SHADOW_LAYER, shadow, ColorUtils.skinShadowTone(ssj4.color()), ssj4.target());
+	}
+
+	public static Ssj4Overlay resolveSsj4Overlay(AbstractClientPlayer player, StatsData stats) {
 		var character = stats.getCharacter();
 
 		String activeModel = "";
+		FormConfig.FormData activeForm = null;
 		if (character.hasActiveStackForm() && character.getActiveStackFormData() != null && Boolean.TRUE.equals(character.getActiveStackFormData().hasCustomModel())) {
-			activeModel = character.getActiveStackFormData().getCustomModel().toLowerCase();
+			activeForm = character.getActiveStackFormData();
+			activeModel = activeForm.getCustomModel().toLowerCase();
 		} else if (character.hasActiveForm() && character.getActiveFormData() != null && Boolean.TRUE.equals(character.getActiveFormData().hasCustomModel())) {
-			activeModel = character.getActiveFormData().getCustomModel().toLowerCase();
+			activeForm = character.getActiveFormData();
+			activeModel = activeForm.getCustomModel().toLowerCase();
 		}
 		boolean activeSsj4 = isSsj4Model(activeModel);
 
@@ -828,9 +852,23 @@ public class DMZSkinLayer<T extends AbstractClientPlayer & GeoAnimatable> extend
 		if (!activeSsj4 && !chargingSsj4) return null;
 
 		String key = activeSsj4 ? activeModel.contains("ssj4gt") ? "ssj4gt" : "ssj4d" : targetModel.contains("ssj4gt") ? "ssj4gt" : "ssj4d";
+		if (isGlindAbsorption(character, activeSsj4 ? activeForm : nextForm)) key = "ssj4final";
+		if (usesSlimSsj4Model(player, character)) key = key + "slim";
 		float target = activeSsj4 ? 1.0f : chargeFraction;
 		float[] color = resolveSsj4OverlayColor(character, chargingSsj4 ? nextForm : null, chargeFraction);
 		return new Ssj4Overlay(key, color, target);
+	}
+
+	private static boolean isGlindAbsorption(Character character, FormConfig.FormData form) {
+		return form != null && "glind".equalsIgnoreCase(character.getRaceName()) && GlindForms.ABSORPTION.equalsIgnoreCase(form.getName());
+	}
+
+	private static boolean usesSlimSsj4Model(AbstractClientPlayer player, Character character) {
+		int bodyType = character.getBodyType();
+		if (bodyType == 0) return player != null && player.getModelName().contains("slim");
+		if (!Character.GENDER_MALE.equalsIgnoreCase(character.getGender())) return false;
+		RaceCharacterConfig raceConfig = ConfigManager.getRaceCharacter(character.getRaceName().toLowerCase());
+		return raceConfig != null && raceConfig.isSlimBodyType(bodyType);
 	}
 
 	private static boolean isSsj4Model(String model) {
@@ -882,7 +920,8 @@ public class DMZSkinLayer<T extends AbstractClientPlayer & GeoAnimatable> extend
 			float a = baseAlpha * entry.alpha();
 			if (a <= 0.001f) continue;
 			float[] color = entry.color();
-			RenderType renderType = a < 1.0f ? ModRenderTypes.skinOverlayTranslucent(entry.texture()) : ModRenderTypes.skinOverlayCutout(entry.texture());
+			boolean shadowMask = entry.texture().getPath().endsWith("_shadow.png");
+			RenderType renderType = a < 1.0f || shadowMask ? ModRenderTypes.skinOverlayTranslucent(entry.texture()) : ModRenderTypes.skinOverlayCutout(entry.texture());
 			renderLayerWholeModel(model, poseStack, bufferSource, animatable, renderType, color[0], color[1], color[2], 1.0f, partialTick, packedLight, packedOverlay, a, true);
 		}
 	}

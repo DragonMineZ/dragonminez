@@ -90,6 +90,10 @@ public class SkinGathererProvider {
 			base(texture, color);
 		}
 
+		default void overlayTranslucent(ResourceLocation texture, float[] color) {
+			translucent(texture, color);
+		}
+
 		void fading(String layerId, ResourceLocation texture, float[] color, float targetAlpha);
 
 		default void fading(String layerId, ResourceLocation texture, float[] color) {
@@ -219,6 +223,8 @@ public class SkinGathererProvider {
                 case "majin", "majin_super", "majin_ultra", "majin_evil", "majin_kid", "janemba_imperfect", "janemba_fat", "janemba_super" -> resolveBodyMajin(look, logicKey, b1, b2, b3, consumer);
                 case "frostdemon", "frostdemon_second", "frostdemon_final", "frostdemon_fifth", "frostdemon_third", "frostdemon_fp", "frostdemon_mecha", "frostdemon_metalcore" -> resolveBodyFrostDemon(look, logicKey, b1, b2, b3, hair, consumer);
                 case "bioandroid", "bioandroid_semi", "bioandroid_perfect", "bioandroid_base", "bioandroid_ultra", "bioandroid_xeno", "bioandroid_xenofp" -> resolveBodyBioAndroid(look, logicKey, b1, b2, b3, hair, consumer);
+                case "glindtrueform" -> resolveBodyGlindTrueForm(b1, b2, consumer);
+                case "trascended" -> resolveBodyGlindTranscended(b1, b2, consumer);
 				default -> {
 					boolean hasGender = Boolean.TRUE.equals(raceConfig.getHasGender());
 					String genSuffix = hasGender ? (character.getGender().equals(Character.GENDER_FEMALE) ? "_female" : "_male") : "";
@@ -367,6 +373,28 @@ public class SkinGathererProvider {
 
 		consumer.accept(DMZSkinLayer.getSafeTexture(getCachedTexture(basePath + "layer1.png"), getCachedTexture(fallbackPath + "layer1.png")), shaded ? ColorUtils.skinBaseTone(bodyColor) : bodyColor);
 		if (shaded) emitTranslucentLayer(consumer, shadowLayer, ColorUtils.skinShadowTone(bodyColor));
+	}
+
+	protected void resolveBodyGlindTrueForm(float[] bodyColor, float[] bodyColor2, BiConsumer<ResourceLocation, float[]> consumer) {
+		String basePath = "textures/entity/races/glind/trueform_";
+		ResourceLocation layer1 = DMZSkinLayer.getSafeTexture(getCachedTexture(basePath + "layer1.png"));
+		consumer.accept(layer1, ColorUtils.skinBaseTone(bodyColor));
+		emitShadowLayer(consumer, layer1, bodyColor);
+		acceptWithShadow(consumer, DMZSkinLayer.getSafeTexture(getCachedTexture(basePath + "layer2.png")), bodyColor2);
+	}
+
+	protected void resolveBodyGlindTranscended(float[] bodyColor, float[] bodyColor2, BiConsumer<ResourceLocation, float[]> consumer) {
+		String bodyPath = "textures/entity/races/humansaiyan/bodytype_male_1_";
+		consumer.accept(DMZSkinLayer.getSafeTexture(getCachedTexture(bodyPath + "layer1.png")), ColorUtils.skinBaseTone(bodyColor));
+		ResourceLocation bodyShadow = getCachedTexture(bodyPath + "layer2.png");
+		if (DMZSkinLayer.getSafeTexture(bodyShadow).equals(bodyShadow)) emitTranslucentLayer(consumer, bodyShadow, ColorUtils.skinShadowTone(bodyColor));
+		ResourceLocation overlay = DMZSkinLayer.getSafeTexture(getCachedTexture("textures/entity/races/glind/trascended_layer2.png"));
+		emitOverlayLayer(consumer, overlay, ColorUtils.skinBaseTone(bodyColor2));
+		ResourceLocation overlayShadow = getCachedTexture("textures/entity/races/glind/trascended_layer2_shadow.png");
+		if (!DMZSkinLayer.getSafeTexture(overlayShadow).equals(overlayShadow)) return;
+		float[] shadowTone = ColorUtils.skinShadowTone(bodyColor2);
+		if (consumer instanceof BodyLayerSink sink) sink.overlayTranslucent(overlayShadow, shadowTone);
+		else consumer.accept(overlayShadow, shadowTone);
 	}
 
 	protected void resolveBodyOozaru(float[] bodyColor, float[] bodyColor2, BiConsumer<ResourceLocation, float[]> consumer) {
