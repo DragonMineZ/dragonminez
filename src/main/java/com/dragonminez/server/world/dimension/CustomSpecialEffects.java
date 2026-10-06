@@ -2,7 +2,7 @@ package com.dragonminez.server.world.dimension;
 
 import com.dragonminez.Reference;
 import com.dragonminez.client.render.DMZCloudsRenderer;
-import com.dragonminez.common.init.entities.dragon.DragonWishEntity;
+import com.dragonminez.client.util.ClientStateHelper;
 import com.dragonminez.server.world.biome.DemonRealmBiomes;
 import com.dragonminez.server.world.gen.DemonRealmGeneration;
 import com.dragonminez.server.world.gen.OtherworldGeneration;
@@ -21,7 +21,6 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.Mth;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.effect.MobEffects;
-import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.level.material.FogType;
 import net.minecraft.world.phys.Vec3;
@@ -170,47 +169,66 @@ public class CustomSpecialEffects extends DimensionSpecialEffects {
 			super(192.0F, true, SkyType.NORMAL, false, false);
 		}
 
-		private static final float NIGHT_FADE_TICKS = 60.0F;
-		private static float porungaNight;
-		private static float porungaNightPrev;
-
-		public static void tickPorungaNight(Minecraft mc) {
-			porungaNightPrev = porungaNight;
-			if (mc.level == null || !NamekDimension.NAMEK_KEY.equals(mc.level.dimension())) {
-				porungaNight = 0.0F;
-				porungaNightPrev = 0.0F;
-				return;
-			}
-			float step = hasActiveDragon(mc.level) ? 1.0F : -1.0F;
-			porungaNight = Mth.clamp(porungaNight + step / NIGHT_FADE_TICKS, 0.0F, 1.0F);
-		}
-
-		private static boolean hasActiveDragon(ClientLevel level) {
-			for (Entity entity : level.entitiesForRendering()) {
-				if (entity instanceof DragonWishEntity dragon && !dragon.isRemoved() && !dragon.isFading()) return true;
-			}
-			return false;
-		}
-
-		public static boolean isPorungaNightActive() {
-			return porungaNight > 0.0F || porungaNightPrev > 0.0F;
-		}
-
-		public static float applyPorungaNight(float timeOfDay) {
-			float night = Mth.lerp(Minecraft.getInstance().getFrameTime(), porungaNightPrev, porungaNight);
-			if (night <= 0.0F) return timeOfDay;
-			float eased = night * night * (3.0F - 2.0F * night);
-			return Mth.lerp(eased, timeOfDay, 0.5F);
-		}
-
 		@Override
 		public Vec3 getBrightnessDependentFogColor(Vec3 biomeFogColor, float daylight) {
+			if (ClientStateHelper.isPorungaActive) {
+				return new Vec3(0.02, 0.02, 0.02);
+			}
 			return biomeFogColor.multiply((double)(daylight * 0.94F + 0.06F), (double)(daylight * 0.94F + 0.06F), (double)(daylight * 0.91F + 0.09F));
 		}
 
 		@Override
 		public boolean isFoggyAt(int x, int y) {
+			if (ClientStateHelper.isPorungaActive) {
+				return true;
+			}
 			return false;
+		}
+
+		@Override
+		public boolean renderSky(ClientLevel level, int ticks, float partialTick, PoseStack poseStack, Camera camera, Matrix4f projectionMatrix, boolean isFoggy, Runnable setupFog) {
+			if (!ClientStateHelper.isPorungaActive) {
+				return false;
+			}
+
+			RenderSystem.enableBlend();
+			RenderSystem.defaultBlendFunc();
+			RenderSystem.depthMask(false);
+
+			RenderSystem.setShader(GameRenderer::getPositionColorShader);
+
+			Tesselator tesselator = Tesselator.getInstance();
+			BufferBuilder bufferbuilder = tesselator.getBuilder();
+
+			float r = 0.05f;
+			float g = 0.05f;
+			float b = 0.05f;
+			float a = 1.0f;
+
+			for (int i = 0; i < 6; ++i) {
+				poseStack.pushPose();
+				if (i == 1) poseStack.mulPose(com.mojang.math.Axis.XP.rotationDegrees(90.0F));
+				if (i == 2) poseStack.mulPose(com.mojang.math.Axis.XP.rotationDegrees(-90.0F));
+				if (i == 3) poseStack.mulPose(com.mojang.math.Axis.XP.rotationDegrees(180.0F));
+				if (i == 4) poseStack.mulPose(com.mojang.math.Axis.ZP.rotationDegrees(90.0F));
+				if (i == 5) poseStack.mulPose(com.mojang.math.Axis.ZP.rotationDegrees(-90.0F));
+
+				Matrix4f matrix4f = poseStack.last().pose();
+
+				bufferbuilder.begin(VertexFormat.Mode.QUADS, DefaultVertexFormat.POSITION_COLOR);
+				bufferbuilder.vertex(matrix4f, -100.0F, -100.0F, -100.0F).color(r, g, b, a).endVertex();
+				bufferbuilder.vertex(matrix4f, -100.0F, -100.0F, 100.0F).color(r, g, b, a).endVertex();
+				bufferbuilder.vertex(matrix4f, 100.0F, -100.0F, 100.0F).color(r, g, b, a).endVertex();
+				bufferbuilder.vertex(matrix4f, 100.0F, -100.0F, -100.0F).color(r, g, b, a).endVertex();
+				tesselator.end();
+
+				poseStack.popPose();
+			}
+
+			RenderSystem.depthMask(true);
+			RenderSystem.disableBlend();
+
+			return true;
 		}
 
 		@Override

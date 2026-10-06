@@ -184,7 +184,6 @@ public class ForgeClientEvents {
 
 		Minecraft mc = Minecraft.getInstance();
 		TransformationPostShaderManager.tick();
-		CustomSpecialEffects.NamekEffects.tickPorungaNight(mc);
 		if (mc.player == null || mc.level == null) return;
 		if (characterCreationOpenCooldownTicks > 0) characterCreationOpenCooldownTicks--;
 		handleUtilityMenuHold(mc);
