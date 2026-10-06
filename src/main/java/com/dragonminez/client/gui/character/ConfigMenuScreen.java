@@ -13,6 +13,7 @@ import com.dragonminez.common.config.ConfigManager;
 import com.dragonminez.common.config.GeneralUserConfig;
 import com.dragonminez.common.init.MainSounds;
 import com.dragonminez.common.network.C2S.DynamicGrowthToggleC2S;
+import com.dragonminez.common.network.C2S.ReserveFirstHotbarSlotC2S;
 import com.dragonminez.common.network.NetworkHandler;
 import com.dragonminez.common.stats.StatsCapability;
 import com.dragonminez.common.stats.StatsProvider;
@@ -20,6 +21,7 @@ import com.dragonminez.common.stats.extras.DynamicGrowthStat;
 import com.mojang.blaze3d.systems.RenderSystem;
 import net.minecraft.ChatFormatting;
 import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.network.chat.Component;
@@ -101,6 +103,20 @@ public class ConfigMenuScreen extends BaseMenuScreen {
 		configOptions.add(new ConfigOption("config.techniqueHotbarRightSide",
 				ConfigType.BOOLEAN, userConfig.getTechniqueHotbarRightSide() ? 1 : 0, 0, 1,
 				v -> userConfig.setTechniqueHotbarRightSide(v > 0)));
+
+		configOptions.add(new ConfigOption("config.reserveFirstHotbarSlot",
+				ConfigType.BOOLEAN, userConfig.isReserveFirstHotbarSlot() ? 1 : 0, 0, 1,
+				v -> {
+					boolean enabled = v > 0;
+					userConfig.setReserveFirstHotbarSlot(enabled);
+					if (Minecraft.getInstance().getConnection() != null) {
+						NetworkHandler.sendToServer(new ReserveFirstHotbarSlotC2S(enabled));
+					}
+				}));
+
+		configOptions.add(new ConfigOption("config.kiSoundVolume",
+				ConfigType.INT, userConfig.getKiSoundVolume(), 0, 100,
+				v -> userConfig.setKiSoundVolume(v.intValue())));
 
 		configOptions.add(new ConfigOption("config.alwaysVisibleHudValues",
 				ConfigType.BOOLEAN, userConfig.getAlwaysVisibleHudValues() ? 1 : 0, 0, 1,
