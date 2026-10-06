@@ -9,6 +9,7 @@ import com.dragonminez.common.dragonball.DragonBallSetDefinition;
 import com.dragonminez.common.init.block.entity.DragonBallBlockEntity;
 import com.dragonminez.common.init.entities.dragon.DragonWishEntity;
 import com.dragonminez.common.network.NetworkHandler;
+import com.dragonminez.common.network.S2C.DragonSkyS2C;
 import com.dragonminez.common.network.S2C.RadarSyncS2C;
 import com.dragonminez.server.world.data.DragonBallSavedData;
 import net.minecraft.core.BlockPos;
@@ -50,6 +51,7 @@ public class DragonBallsHandler {
 	private static final int MAINTENANCE_INTERVAL = 20;
 	private static final int RADAR_SYNC_INTERVAL = 100;
 	private static final Random RANDOM = new Random();
+	private static final Map<ServerLevel, Boolean> DRAGON_SKY = new WeakHashMap<>();
 	private static boolean radarDirty = false;
 
 	public static void scatterDragonBalls(ServerLevel level, String setId) {
@@ -131,6 +133,27 @@ public class DragonBallsHandler {
 
 	public static void registerSummon(ServerLevel level, DragonWishEntity dragon, String setId) {
 		DragonBallSavedData.get(level).addSummon(dragon.getUUID(), setId == null ? "" : setId, dragon.getSummonExpiresAt());
+		refreshDragonSky(level);
+	}
+
+	public static void refreshDragonSky(ServerLevel level) {
+		boolean active = isDragonSkyActive(level);
+		Boolean previous = DRAGON_SKY.put(level, active);
+		if (previous == null ? !active : previous == active) return;
+		DragonSkyS2C packet = new DragonSkyS2C(level.dimension().location(), active);
+		for (ServerPlayer player : level.players()) NetworkHandler.sendToPlayer(packet, player);
+	}
+
+	private static boolean isDragonSkyActive(ServerLevel level) {
+		for (UUID dragonId : DragonBallSavedData.get(level).getSummons().keySet()) {
+			if (!(level.getEntity(dragonId) instanceof DragonWishEntity dragon) || !dragon.isFading()) return true;
+		}
+		return false;
+	}
+
+	private static void syncDragonSky(ServerPlayer player) {
+		ServerLevel level = player.serverLevel();
+		NetworkHandler.sendToPlayer(new DragonSkyS2C(level.dimension().location(), isDragonSkyActive(level)), player);
 	}
 
 	private static void addPendingBall(ServerLevel level, DragonBallSavedData data, DragonBallSetDefinition definition, int star) {
@@ -248,6 +271,7 @@ public class DragonBallsHandler {
 			}
 		}
 		expireAbandonedSummons(level, data);
+		refreshDragonSky(level);
 	}
 
 	private static void expireAbandonedSummons(ServerLevel level, DragonBallSavedData data) {
@@ -271,18 +295,25 @@ public class DragonBallsHandler {
 	public static void onPlayerLogin(PlayerEvent.PlayerLoggedInEvent event) {
 		if (event.getEntity() instanceof ServerPlayer player) {
 			syncRadarForPlayer(player);
+			syncDragonSky(player);
 			scheduleDelayedSync(player, 40);
 		}
 	}
 
 	@SubscribeEvent
 	public static void onPlayerRespawn(PlayerEvent.PlayerRespawnEvent event) {
-		if (event.getEntity() instanceof ServerPlayer player) syncRadarForPlayer(player);
+		if (event.getEntity() instanceof ServerPlayer player) {
+			syncRadarForPlayer(player);
+			syncDragonSky(player);
+		}
 	}
 
 	@SubscribeEvent
 	public static void onPlayerChangedDimension(PlayerEvent.PlayerChangedDimensionEvent event) {
-		if (event.getEntity() instanceof ServerPlayer player) syncRadarForPlayer(player);
+		if (event.getEntity() instanceof ServerPlayer player) {
+			syncRadarForPlayer(player);
+			syncDragonSky(player);
+		}
 	}
 
 	@SubscribeEvent(priority = EventPriority.LOWEST)

@@ -166,7 +166,6 @@ public class DragonBallBlock extends BaseEntityBlock implements EntityBlock {
 
 		dragon.setDragonDefinitionId(dragonDefinition.getId());
 		dragon.setOwnerName(player.getName().getString());
-		dragon.setInvokingTime(serverLevel.getDayTime());
 		dragon.setSummonExpiresAt(serverLevel.getGameTime() + DragonBallsHandler.DRAGON_WAIT_TICKS);
 		dragon.setGrantedWish(false);
 		dragon.moveTo(pos.getX() + 0.5, pos.getY(), pos.getZ() + 0.5, 0.0F, 0.0F);

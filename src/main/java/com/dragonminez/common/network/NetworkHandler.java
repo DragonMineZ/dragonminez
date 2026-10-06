@@ -792,6 +792,12 @@ public class NetworkHandler {
 				.encoder(DialogueResultS2C::encode)
 				.consumerMainThread(DialogueResultS2C::handle)
 				.add();
+
+		net.messageBuilder(DragonSkyS2C.class, id(), NetworkDirection.PLAY_TO_CLIENT)
+				.decoder(DragonSkyS2C::new)
+				.encoder(DragonSkyS2C::encode)
+				.consumerMainThread(DragonSkyS2C::handle)
+				.add();
 	}
 
 	public static <MSG> void sendToServer(MSG message) {

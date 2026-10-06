@@ -12,6 +12,7 @@ import com.dragonminez.client.gui.character.QuestTreeScreen;
 import com.dragonminez.client.gui.character.RaceSelectionScreen;
 import com.dragonminez.client.render.DMZRendererCache;
 import com.dragonminez.client.render.shader.TransformationPostShaderManager;
+import com.dragonminez.client.systems.DragonSkyState;
 import com.dragonminez.client.util.TextureCounter;
 import com.dragonminez.client.util.KeyBinds;
 import com.dragonminez.client.gui.character.CharacterStatsScreen;
@@ -61,6 +62,7 @@ public class ForgeClientEvents {
 	@SubscribeEvent
 	public static void onComputeFogColor(ViewportEvent.ComputeFogColor event) {
 		CustomSpecialEffects.OtherWorldEffects.adjustFogColor(event);
+		CustomSpecialEffects.applyDragonNightFog(event);
 	}
 
 	@SubscribeEvent
@@ -184,6 +186,7 @@ public class ForgeClientEvents {
 
 		Minecraft mc = Minecraft.getInstance();
 		TransformationPostShaderManager.tick();
+		DragonSkyState.tick();
 		if (mc.player == null || mc.level == null) return;
 		if (characterCreationOpenCooldownTicks > 0) characterCreationOpenCooldownTicks--;
 		handleUtilityMenuHold(mc);

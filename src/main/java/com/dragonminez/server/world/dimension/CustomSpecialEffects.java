@@ -2,7 +2,7 @@ package com.dragonminez.server.world.dimension;
 
 import com.dragonminez.Reference;
 import com.dragonminez.client.render.DMZCloudsRenderer;
-import com.dragonminez.client.util.ClientStateHelper;
+import com.dragonminez.client.systems.DragonSkyState;
 import com.dragonminez.server.world.biome.DemonRealmBiomes;
 import com.dragonminez.server.world.gen.DemonRealmGeneration;
 import com.dragonminez.server.world.gen.OtherworldGeneration;
@@ -22,11 +22,13 @@ import net.minecraft.util.Mth;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.effect.MobEffects;
 import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.level.dimension.BuiltinDimensionTypes;
 import net.minecraft.world.level.material.FogType;
 import net.minecraft.world.phys.Vec3;
 import net.minecraftforge.client.event.RegisterDimensionSpecialEffectsEvent;
 import net.minecraftforge.client.event.ViewportEvent;
 import org.joml.Matrix4f;
+import org.joml.Vector3f;
 
 import java.util.ArrayList;
 import java.util.Comparator;
@@ -164,77 +166,281 @@ public class CustomSpecialEffects extends DimensionSpecialEffects {
 		return clamped * clamped * (3.0D - 2.0D * clamped);
 	}
 
+	protected static final float DRAGON_NIGHT_SKY_DARKEN = 0.2F;
+	protected static final float DRAGON_NIGHT_CLOUD_SHADE = 0.28F;
+	private static final int DRAGON_NIGHT_STAR_ATTEMPTS = 1500;
+	private static final ResourceLocation VANILLA_SUN = ResourceLocation.withDefaultNamespace("textures/environment/sun.png");
+	private static final ResourceLocation VANILLA_MOON = ResourceLocation.withDefaultNamespace("textures/environment/moon_phases.png");
+	private static VertexBuffer dragonNightStars;
+
+	protected Vec3 dragonNightFogColor(double cameraY) {
+		return null;
+	}
+
+	protected static boolean skyBlockedByEffect(Camera camera) {
+		return camera.getEntity() instanceof LivingEntity living
+				&& (living.hasEffect(MobEffects.BLINDNESS) || living.hasEffect(MobEffects.DARKNESS));
+	}
+
+	public static void applyDragonNightFog(ViewportEvent.ComputeFogColor event) {
+		Minecraft mc = Minecraft.getInstance();
+		if (mc.level == null || !(mc.level.effects() instanceof CustomSpecialEffects effects)) return;
+		if (event.getCamera().getFluidInCamera() != FogType.NONE || skyBlockedByEffect(event.getCamera())) return;
+		float night = DragonSkyState.darkness((float) event.getPartialTick());
+		if (night <= 0.0F) return;
+		Vec3 fog = effects.dragonNightFogColor(event.getCamera().getPosition().y);
+		if (fog == null) return;
+		event.setRed(Mth.lerp(night, event.getRed(), (float) fog.x));
+		event.setGreen(Mth.lerp(night, event.getGreen(), (float) fog.y));
+		event.setBlue(Mth.lerp(night, event.getBlue(), (float) fog.z));
+	}
+
+	protected static void applyDragonNightLightmap(ClientLevel level, float partialTicks, float blockLightRedFlicker, int blockIndex, int skyIndex, Vector3f colors) {
+		float night = DragonSkyState.darkness(partialTicks);
+		float exposure = level.dimensionType().ambientLight() > 0.0F ? skyIndex / 15.0F : 1.0F;
+		float weight = night * exposure;
+		if (weight <= 0.0F) return;
+
+		float skyFactor = level.getSkyFlashTime() > 0 ? 1.0F : DRAGON_NIGHT_SKY_DARKEN * 0.95F + 0.05F;
+		float sky = lightCurve(skyIndex) * skyFactor;
+		float block = lightCurve(blockIndex) * blockLightRedFlicker;
+		Vector3f target = new Vector3f(block, block * ((block * 0.6F + 0.4F) * 0.6F + 0.4F), block * (block * block * 0.6F + 0.4F));
+		target.add(new Vector3f(DRAGON_NIGHT_SKY_DARKEN, DRAGON_NIGHT_SKY_DARKEN, 1.0F).lerp(new Vector3f(1.0F, 1.0F, 1.0F), 0.35F).mul(sky));
+		target.lerp(new Vector3f(0.75F, 0.75F, 0.75F), 0.04F);
+		float worldDarken = Minecraft.getInstance().gameRenderer.getDarkenWorldAmount(partialTicks);
+		if (worldDarken > 0.0F) target.lerp(new Vector3f(target).mul(0.7F, 0.6F, 0.6F), worldDarken);
+		colors.lerp(target, weight);
+	}
+
+	private static float lightCurve(int level) {
+		float f = level / 15.0F;
+		return f / (4.0F - 3.0F * f);
+	}
+
+	protected void renderCloudLayer(PoseStack poseStack, Matrix4f projectionMatrix, float partialTick, double camX, double camY, double camZ, Vec3 color, float cloudHeight, float cloudTicks) {
+		float shade = Mth.lerp(DragonSkyState.darkness(partialTick), 1.0F, DRAGON_NIGHT_CLOUD_SHADE);
+		RenderSystem.setShaderColor(shade, shade, shade, 1.0F);
+		this.cloudRenderer.render(poseStack, projectionMatrix, partialTick, camX, camY, camZ, color, cloudHeight, cloudTicks);
+		RenderSystem.setShaderColor(1.0F, 1.0F, 1.0F, 1.0F);
+	}
+
+	protected static void drawDragonNightStars(PoseStack poseStack, Matrix4f projectionMatrix, float brightness, Vec3 tint) {
+		if (brightness <= 0.01F) return;
+		if (dragonNightStars == null) {
+			dragonNightStars = new VertexBuffer(VertexBuffer.Usage.STATIC);
+			dragonNightStars.bind();
+			dragonNightStars.upload(buildDragonNightStars());
+			VertexBuffer.unbind();
+		}
+		RenderSystem.blendFuncSeparate(GlStateManager.SourceFactor.SRC_ALPHA, GlStateManager.DestFactor.ONE, GlStateManager.SourceFactor.ONE, GlStateManager.DestFactor.ZERO);
+		RenderSystem.setShaderColor((float) tint.x, (float) tint.y, (float) tint.z, brightness);
+		dragonNightStars.bind();
+		dragonNightStars.drawWithShader(poseStack.last().pose(), projectionMatrix, GameRenderer.getPositionColorShader());
+		VertexBuffer.unbind();
+		RenderSystem.setShaderColor(1.0F, 1.0F, 1.0F, 1.0F);
+	}
+
+	private static BufferBuilder.RenderedBuffer buildDragonNightStars() {
+		RandomSource random = RandomSource.create(0xD2A60L);
+		BufferBuilder builder = Tesselator.getInstance().getBuilder();
+		builder.begin(VertexFormat.Mode.QUADS, DefaultVertexFormat.POSITION_COLOR);
+		Vector3f up = new Vector3f(0.0F, 1.0F, 0.0F);
+		Vector3f side = new Vector3f(1.0F, 0.0F, 0.0F);
+		for (int i = 0; i < DRAGON_NIGHT_STAR_ATTEMPTS; i++) {
+			Vector3f direction = new Vector3f(random.nextFloat() * 2.0F - 1.0F, random.nextFloat() * 2.0F - 1.0F, random.nextFloat() * 2.0F - 1.0F);
+			float lengthSquared = direction.lengthSquared();
+			float size = 0.12F + random.nextFloat() * 0.14F;
+			float shade = 0.45F + random.nextFloat() * 0.55F;
+			float spin = random.nextFloat() * Mth.TWO_PI;
+			if (lengthSquared >= 1.0F || lengthSquared < 0.01F) continue;
+			direction.normalize();
+			if (direction.y < -0.2F) continue;
+
+			Vector3f right = new Vector3f(direction).cross(Math.abs(direction.y) > 0.99F ? side : up).normalize();
+			Vector3f forward = new Vector3f(direction).cross(right).normalize();
+			Vector3f a = new Vector3f(right).mul(Mth.cos(spin) * size).add(new Vector3f(forward).mul(Mth.sin(spin) * size));
+			Vector3f b = new Vector3f(forward).mul(Mth.cos(spin) * size).sub(new Vector3f(right).mul(Mth.sin(spin) * size));
+			Vector3f center = new Vector3f(direction).mul(SKY_RADIUS);
+			starVertex(builder, new Vector3f(center).sub(a).sub(b), shade);
+			starVertex(builder, new Vector3f(center).sub(a).add(b), shade);
+			starVertex(builder, new Vector3f(center).add(a).add(b), shade);
+			starVertex(builder, new Vector3f(center).add(a).sub(b), shade);
+		}
+		return builder.end();
+	}
+
+	private static void starVertex(BufferBuilder builder, Vector3f position, float shade) {
+		builder.vertex(position.x, position.y, position.z).color(shade, shade, shade, 1.0F).endVertex();
+	}
+
+	protected static boolean renderDragonNightVanillaSky(ClientLevel level, float partialTick, PoseStack poseStack, Camera camera, Matrix4f projectionMatrix,
+														 boolean isFoggy, Runnable setupFog, Vec3 nightSky, float nightStars, Vec3 starTint) {
+		float night = DragonSkyState.darkness(partialTick);
+		if (night <= 0.0F) return false;
+
+		setupFog.run();
+		FogType fluid = camera.getFluidInCamera();
+		if (isFoggy || fluid == FogType.POWDER_SNOW || fluid == FogType.LAVA || skyBlockedByEffect(camera)) return true;
+
+		Vec3 sky = level.getSkyColor(camera.getPosition(), partialTick).lerp(nightSky, night);
+		FogRenderer.levelFogColor();
+		RenderSystem.depthMask(false);
+		RenderSystem.setShader(GameRenderer::getPositionShader);
+		RenderSystem.setShaderColor((float) sky.x, (float) sky.y, (float) sky.z, 1.0F);
+		drawSkyDisc(poseStack.last().pose(), 16.0F);
+
+		RenderSystem.enableBlend();
+		float[] sunrise = level.effects().getSunriseColor(level.getTimeOfDay(partialTick), partialTick);
+		if (sunrise != null && night < 0.99F) drawSunrise(poseStack, level, partialTick, sunrise, 1.0F - night);
+
+		RenderSystem.blendFuncSeparate(GlStateManager.SourceFactor.SRC_ALPHA, GlStateManager.DestFactor.ONE, GlStateManager.SourceFactor.ONE, GlStateManager.DestFactor.ZERO);
+		float clearSky = 1.0F - level.getRainLevel(partialTick);
+		poseStack.pushPose();
+		poseStack.mulPose(Axis.YP.rotationDegrees(-90.0F));
+		poseStack.mulPose(Axis.XP.rotationDegrees(level.getTimeOfDay(partialTick) * 360.0F));
+		drawSunAndMoon(poseStack.last().pose(), level.getMoonPhase(), clearSky * (1.0F - night), clearSky);
+		drawDragonNightStars(poseStack, projectionMatrix, Math.max(level.getStarBrightness(partialTick), night * nightStars) * clearSky, starTint);
+		poseStack.popPose();
+
+		RenderSystem.setShaderColor(1.0F, 1.0F, 1.0F, 1.0F);
+		RenderSystem.disableBlend();
+		RenderSystem.defaultBlendFunc();
+		if (camera.getEntity().getEyePosition(partialTick).y - level.getLevelData().getHorizonHeight(level) < 0.0D) {
+			RenderSystem.setShader(GameRenderer::getPositionShader);
+			RenderSystem.setShaderColor(0.0F, 0.0F, 0.0F, 1.0F);
+			poseStack.pushPose();
+			poseStack.translate(0.0F, 12.0F, 0.0F);
+			drawSkyDisc(poseStack.last().pose(), -16.0F);
+			poseStack.popPose();
+		}
+		RenderSystem.setShaderColor(1.0F, 1.0F, 1.0F, 1.0F);
+		RenderSystem.depthMask(true);
+		return true;
+	}
+
+	private static void drawSkyDisc(Matrix4f pose, float y) {
+		float radius = Math.signum(y) * 512.0F;
+		BufferBuilder builder = Tesselator.getInstance().getBuilder();
+		builder.begin(VertexFormat.Mode.TRIANGLE_FAN, DefaultVertexFormat.POSITION);
+		builder.vertex(pose, 0.0F, y, 0.0F).endVertex();
+		for (int angle = -180; angle <= 180; angle += 45) {
+			builder.vertex(pose, radius * Mth.cos(angle * Mth.DEG_TO_RAD), y, 512.0F * Mth.sin(angle * Mth.DEG_TO_RAD)).endVertex();
+		}
+		BufferUploader.drawWithShader(builder.end());
+	}
+
+	private static void drawSunrise(PoseStack poseStack, ClientLevel level, float partialTick, float[] sunrise, float fade) {
+		RenderSystem.defaultBlendFunc();
+		RenderSystem.setShader(GameRenderer::getPositionColorShader);
+		RenderSystem.setShaderColor(1.0F, 1.0F, 1.0F, 1.0F);
+		poseStack.pushPose();
+		poseStack.mulPose(Axis.XP.rotationDegrees(90.0F));
+		poseStack.mulPose(Axis.ZP.rotationDegrees(Mth.sin(level.getSunAngle(partialTick)) < 0.0F ? 180.0F : 0.0F));
+		poseStack.mulPose(Axis.ZP.rotationDegrees(90.0F));
+		Matrix4f pose = poseStack.last().pose();
+		BufferBuilder builder = Tesselator.getInstance().getBuilder();
+		builder.begin(VertexFormat.Mode.TRIANGLE_FAN, DefaultVertexFormat.POSITION_COLOR);
+		builder.vertex(pose, 0.0F, 100.0F, 0.0F).color(sunrise[0], sunrise[1], sunrise[2], sunrise[3] * fade).endVertex();
+		for (int i = 0; i <= 16; i++) {
+			float angle = i * Mth.TWO_PI / 16.0F;
+			float sin = Mth.sin(angle);
+			float cos = Mth.cos(angle);
+			builder.vertex(pose, sin * 120.0F, cos * 120.0F, -cos * 40.0F * sunrise[3]).color(sunrise[0], sunrise[1], sunrise[2], 0.0F).endVertex();
+		}
+		BufferUploader.drawWithShader(builder.end());
+		poseStack.popPose();
+	}
+
+	private static void drawSunAndMoon(Matrix4f pose, int moonPhase, float sunAlpha, float moonAlpha) {
+		RenderSystem.setShader(GameRenderer::getPositionTexShader);
+		BufferBuilder builder = Tesselator.getInstance().getBuilder();
+		if (sunAlpha > 0.0F) {
+			RenderSystem.setShaderColor(1.0F, 1.0F, 1.0F, sunAlpha);
+			RenderSystem.setShaderTexture(0, VANILLA_SUN);
+			builder.begin(VertexFormat.Mode.QUADS, DefaultVertexFormat.POSITION_TEX);
+			builder.vertex(pose, -30.0F, 100.0F, -30.0F).uv(0.0F, 0.0F).endVertex();
+			builder.vertex(pose, 30.0F, 100.0F, -30.0F).uv(1.0F, 0.0F).endVertex();
+			builder.vertex(pose, 30.0F, 100.0F, 30.0F).uv(1.0F, 1.0F).endVertex();
+			builder.vertex(pose, -30.0F, 100.0F, 30.0F).uv(0.0F, 1.0F).endVertex();
+			BufferUploader.drawWithShader(builder.end());
+		}
+
+		RenderSystem.setShaderColor(1.0F, 1.0F, 1.0F, moonAlpha);
+		RenderSystem.setShaderTexture(0, VANILLA_MOON);
+		float u0 = (moonPhase % 4) / 4.0F;
+		float v0 = (moonPhase / 4 % 2) / 2.0F;
+		float u1 = u0 + 0.25F;
+		float v1 = v0 + 0.5F;
+		builder.begin(VertexFormat.Mode.QUADS, DefaultVertexFormat.POSITION_TEX);
+		builder.vertex(pose, -20.0F, -100.0F, 20.0F).uv(u1, v1).endVertex();
+		builder.vertex(pose, 20.0F, -100.0F, 20.0F).uv(u0, v1).endVertex();
+		builder.vertex(pose, 20.0F, -100.0F, -20.0F).uv(u0, v0).endVertex();
+		builder.vertex(pose, -20.0F, -100.0F, -20.0F).uv(u1, v0).endVertex();
+		BufferUploader.drawWithShader(builder.end());
+	}
+
+	public static class EarthEffects extends CustomSpecialEffects {
+		private static final Vec3 NIGHT_SKY = Vec3.fromRGB24(0x03050B);
+		private static final Vec3 NIGHT_FOG = Vec3.fromRGB24(0x0B1220);
+		private static final Vec3 STAR_TINT = new Vec3(0.92D, 0.95D, 1.0D);
+		private static final float NIGHT_STARS = 0.5F;
+
+		public EarthEffects() {
+			super(192.0F, true, SkyType.NORMAL, false, false);
+		}
+
+		@Override
+		protected Vec3 dragonNightFogColor(double cameraY) {
+			return NIGHT_FOG;
+		}
+
+		@Override
+		public void adjustLightmapColors(ClientLevel level, float partialTicks, float skyDarken, float blockLightRedFlicker, float skyLight, int pixelX, int pixelY, Vector3f colors) {
+			applyDragonNightLightmap(level, partialTicks, blockLightRedFlicker, pixelX, pixelY, colors);
+		}
+
+		@Override
+		public boolean renderSky(ClientLevel level, int ticks, float partialTick, PoseStack poseStack, Camera camera, Matrix4f projectionMatrix, boolean isFoggy, Runnable setupFog) {
+			return renderDragonNightVanillaSky(level, partialTick, poseStack, camera, projectionMatrix, isFoggy, setupFog, NIGHT_SKY, NIGHT_STARS, STAR_TINT);
+		}
+
+		@Override
+		public boolean renderClouds(ClientLevel level, int ticks, float partialTick, PoseStack poseStack, double camX, double camY, double camZ, Matrix4f projectionMatrix) {
+			if (DragonSkyState.darkness(partialTick) <= 0.0F) return false;
+			renderCloudLayer(poseStack, projectionMatrix, partialTick, camX, camY, camZ, level.getCloudColor(partialTick), this.getCloudHeight(), ticks + partialTick);
+			return true;
+		}
+	}
+
 	public static class NamekEffects extends CustomSpecialEffects {
+		private static final Vec3 CLOUD_COLOR = new Vec3(0.659D, 0.922D, 0.443D);
+		private static final Vec3 NIGHT_SKY = Vec3.fromRGB24(0x040A07);
+		private static final Vec3 NIGHT_FOG = Vec3.fromRGB24(0x0F1D17);
+		private static final Vec3 STAR_TINT = new Vec3(0.85D, 1.0D, 0.92D);
+		private static final float NIGHT_STARS = 0.55F;
+
 		public NamekEffects() {
 			super(192.0F, true, SkyType.NORMAL, false, false);
 		}
 
 		@Override
-		public Vec3 getBrightnessDependentFogColor(Vec3 biomeFogColor, float daylight) {
-			if (ClientStateHelper.isPorungaActive) {
-				return new Vec3(0.02, 0.02, 0.02);
-			}
-			return biomeFogColor.multiply((double)(daylight * 0.94F + 0.06F), (double)(daylight * 0.94F + 0.06F), (double)(daylight * 0.91F + 0.09F));
+		protected Vec3 dragonNightFogColor(double cameraY) {
+			return NIGHT_FOG;
 		}
 
 		@Override
-		public boolean isFoggyAt(int x, int y) {
-			if (ClientStateHelper.isPorungaActive) {
-				return true;
-			}
-			return false;
+		public void adjustLightmapColors(ClientLevel level, float partialTicks, float skyDarken, float blockLightRedFlicker, float skyLight, int pixelX, int pixelY, Vector3f colors) {
+			applyDragonNightLightmap(level, partialTicks, blockLightRedFlicker, pixelX, pixelY, colors);
 		}
 
 		@Override
 		public boolean renderSky(ClientLevel level, int ticks, float partialTick, PoseStack poseStack, Camera camera, Matrix4f projectionMatrix, boolean isFoggy, Runnable setupFog) {
-			if (!ClientStateHelper.isPorungaActive) {
-				return false;
-			}
-
-			RenderSystem.enableBlend();
-			RenderSystem.defaultBlendFunc();
-			RenderSystem.depthMask(false);
-
-			RenderSystem.setShader(GameRenderer::getPositionColorShader);
-
-			Tesselator tesselator = Tesselator.getInstance();
-			BufferBuilder bufferbuilder = tesselator.getBuilder();
-
-			float r = 0.05f;
-			float g = 0.05f;
-			float b = 0.05f;
-			float a = 1.0f;
-
-			for (int i = 0; i < 6; ++i) {
-				poseStack.pushPose();
-				if (i == 1) poseStack.mulPose(com.mojang.math.Axis.XP.rotationDegrees(90.0F));
-				if (i == 2) poseStack.mulPose(com.mojang.math.Axis.XP.rotationDegrees(-90.0F));
-				if (i == 3) poseStack.mulPose(com.mojang.math.Axis.XP.rotationDegrees(180.0F));
-				if (i == 4) poseStack.mulPose(com.mojang.math.Axis.ZP.rotationDegrees(90.0F));
-				if (i == 5) poseStack.mulPose(com.mojang.math.Axis.ZP.rotationDegrees(-90.0F));
-
-				Matrix4f matrix4f = poseStack.last().pose();
-
-				bufferbuilder.begin(VertexFormat.Mode.QUADS, DefaultVertexFormat.POSITION_COLOR);
-				bufferbuilder.vertex(matrix4f, -100.0F, -100.0F, -100.0F).color(r, g, b, a).endVertex();
-				bufferbuilder.vertex(matrix4f, -100.0F, -100.0F, 100.0F).color(r, g, b, a).endVertex();
-				bufferbuilder.vertex(matrix4f, 100.0F, -100.0F, 100.0F).color(r, g, b, a).endVertex();
-				bufferbuilder.vertex(matrix4f, 100.0F, -100.0F, -100.0F).color(r, g, b, a).endVertex();
-				tesselator.end();
-
-				poseStack.popPose();
-			}
-
-			RenderSystem.depthMask(true);
-			RenderSystem.disableBlend();
-
-			return true;
+			return renderDragonNightVanillaSky(level, partialTick, poseStack, camera, projectionMatrix, isFoggy, setupFog, NIGHT_SKY, NIGHT_STARS, STAR_TINT);
 		}
 
 		@Override
 		public boolean renderClouds(ClientLevel level, int ticks, float partialTick, PoseStack poseStack, double camX, double camY, double camZ, Matrix4f projectionMatrix) {
-			Vec3 namekGreen = new Vec3(0.659D, 0.922D, 0.443D);
-			this.cloudRenderer.render(poseStack, projectionMatrix, partialTick, camX, camY, camZ, namekGreen);
+			renderCloudLayer(poseStack, projectionMatrix, partialTick, camX, camY, camZ, CLOUD_COLOR, this.getCloudHeight(), level.getGameTime() + partialTick);
 			return true;
 		}
 
@@ -455,6 +661,10 @@ public class CustomSpecialEffects extends DimensionSpecialEffects {
 
 		private static final Vec3[] HORIZON = {Vec3.fromRGB24(DemonRealmBiomes.FIRST_SKY), Vec3.fromRGB24(DemonRealmBiomes.SECOND_SKY), Vec3.fromRGB24(DemonRealmBiomes.THIRD_SKY)};
 		private static final Vec3[] ZENITH = {Vec3.fromRGB24(0x6E0D0D), Vec3.fromRGB24(0x93C93A), Vec3.fromRGB24(0xC24FC6)};
+		private static final Vec3[] NIGHT_HORIZON = {Vec3.fromRGB24(0x2B0A06), Vec3.fromRGB24(0x18220E), Vec3.fromRGB24(0x2A1029)};
+		private static final Vec3[] NIGHT_ZENITH = {Vec3.fromRGB24(0x0C0202), Vec3.fromRGB24(0x050A03), Vec3.fromRGB24(0x0B030D)};
+		private static final Vec3 STAR_TINT = new Vec3(1.0D, 0.9D, 0.95D);
+		private static final float NIGHT_STARS = 0.5F;
 		private static final Vec3[] CLOUD_COLORS = {new Vec3(0.5D, 0.14D, 0.12D), new Vec3(0.97D, 1.0D, 0.88D), new Vec3(1.0D, 0.86D, 0.97D)};
 		private static final float[] CLOUD_HEIGHTS = {DemonRealmGeneration.FIRST_CLOUDS, DemonRealmGeneration.SECOND_CLOUDS, DemonRealmGeneration.THIRD_CLOUDS};
 		private static final float LIGHT_HAZE_START = 0.65F;
@@ -498,6 +708,16 @@ public class CustomSpecialEffects extends DimensionSpecialEffects {
 		}
 
 		@Override
+		protected Vec3 dragonNightFogColor(double cameraY) {
+			return mix(NIGHT_HORIZON, layerWeights(cameraY));
+		}
+
+		@Override
+		public void adjustLightmapColors(ClientLevel level, float partialTicks, float skyDarken, float blockLightRedFlicker, float skyLight, int pixelX, int pixelY, Vector3f colors) {
+			applyDragonNightLightmap(level, partialTicks, blockLightRedFlicker, pixelX, pixelY, colors);
+		}
+
+		@Override
 		public float[] getSunriseColor(float timeOfDay, float partialTicks) {
 			return null;
 		}
@@ -505,16 +725,18 @@ public class CustomSpecialEffects extends DimensionSpecialEffects {
 		@Override
 		public boolean renderSky(ClientLevel level, int ticks, float partialTick, PoseStack poseStack, Camera camera, Matrix4f projectionMatrix, boolean isFoggy, Runnable setupFog) {
 			double[] weights = layerWeights(camera.getPosition().y);
+			float night = DragonSkyState.darkness(partialTick);
 
 			RenderSystem.depthMask(false);
 			RenderSystem.disableCull();
-			Vec3 horizon = mix(HORIZON, weights);
-			Vec3 zenith = mix(ZENITH, weights);
+			Vec3 horizon = mix(HORIZON, weights).lerp(mix(NIGHT_HORIZON, weights), night);
+			Vec3 zenith = mix(ZENITH, weights).lerp(mix(NIGHT_ZENITH, weights), night);
 			drawDome(poseStack.last().pose(), DOME_RINGS, DOME_SEGMENTS, (elevation, angle) -> domeColor(elevation, horizon, zenith));
 
 			RenderSystem.enableBlend();
-			if (weights[0] > 0.01D) {
-				drawBody(poseStack, RED_SUN, 250.0F, 14.0F, 42.0F, (float) weights[0], true);
+			drawDragonNightStars(poseStack, projectionMatrix, night * NIGHT_STARS, STAR_TINT);
+			if (weights[0] > 0.01D && night < 0.99F) {
+				drawBody(poseStack, RED_SUN, 250.0F, 14.0F, 42.0F, (float) weights[0] * (1.0F - night), true);
 			}
 			if (weights[1] > 0.01D) {
 				float alpha = (float) weights[1];
@@ -537,7 +759,7 @@ public class CustomSpecialEffects extends DimensionSpecialEffects {
 		public boolean renderClouds(ClientLevel level, int ticks, float partialTick, PoseStack poseStack, double camX, double camY, double camZ, Matrix4f projectionMatrix) {
 			double[] weights = layerWeights(camY);
 			int layer = weights[0] >= weights[1] ? 0 : (weights[1] >= weights[2] ? 1 : 2);
-			this.cloudRenderer.render(poseStack, projectionMatrix, partialTick, camX, camY, camZ, CLOUD_COLORS[layer], CLOUD_HEIGHTS[layer]);
+			renderCloudLayer(poseStack, projectionMatrix, partialTick, camX, camY, camZ, CLOUD_COLORS[layer], CLOUD_HEIGHTS[layer], level.getGameTime() + partialTick);
 			return true;
 		}
 
@@ -585,6 +807,7 @@ public class CustomSpecialEffects extends DimensionSpecialEffects {
 	}
 
 	public static void registerSpecialEffects(RegisterDimensionSpecialEffectsEvent event) {
+		event.register(BuiltinDimensionTypes.OVERWORLD_EFFECTS, new EarthEffects());
 		event.register(NAMEK_EFFECTS, new NamekEffects());
 		event.register(OTHERWORLD_EFFECTS, new OtherWorldEffects());
 		event.register(HTC_EFFECT, new HTCEffects());

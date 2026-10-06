@@ -48,7 +48,6 @@ public class DragonWishEntity extends Mob implements GeoEntity {
 	private static final EntityDataAccessor<Integer> DESPAWN_FADE = SynchedEntityData.defineId(DragonWishEntity.class, EntityDataSerializers.INT);
 	public static final int FADE_TICKS = 50;
 
-	private long invokingTime;
 	private long summonExpiresAt;
 	private int despawnDelay = 20 * 5;
 	private final AnimatableInstanceCache cache = new SingletonAnimatableInstanceCache(this);
@@ -99,7 +98,9 @@ public class DragonWishEntity extends Mob implements GeoEntity {
 	}
 
 	public void beginDespawn() {
-		if (this.entityData.get(DESPAWN_FADE) < 0) this.entityData.set(DESPAWN_FADE, FADE_TICKS);
+		if (this.entityData.get(DESPAWN_FADE) >= 0) return;
+		this.entityData.set(DESPAWN_FADE, FADE_TICKS);
+		if (this.level() instanceof ServerLevel serverLevel) DragonBallsHandler.refreshDragonSky(serverLevel);
 	}
 
 	public boolean isFading() {
@@ -172,10 +173,10 @@ public class DragonWishEntity extends Mob implements GeoEntity {
 		DragonDefinition definition = getDragonDefinition();
 		if (!this.level().isClientSide && this.level() instanceof ServerLevel serverLevel) {
 			DragonBallSavedData.Summon summon = DragonBallSavedData.get(serverLevel).removeSummon(this.getUUID());
+			DragonBallsHandler.refreshDragonSky(serverLevel);
 			if (summon == null && this.summonExpiresAt > 0) return;
 
 			serverLevel.setWeatherParameters(6000, 0, false, false);
-			serverLevel.setDayTime(this.getInvokingTime());
 
 			String ballSetId = definition != null ? definition.getBallSetId() : summon != null ? summon.setId() : null;
 			if (ConfigManager.getServerConfig().getWorldGen().getGenerateDragonBalls()) {
@@ -227,10 +228,8 @@ public class DragonWishEntity extends Mob implements GeoEntity {
 	public String getOwnerName() { return this.entityData.get(OWNER_NAME); }
 	public void setGrantedWish(boolean granted) { this.entityData.set(GRANTED_WISH, granted); }
 	public boolean hasGrantedWish() { return this.entityData.get(GRANTED_WISH); }
-	public void setInvokingTime(long time) { this.invokingTime = time; }
 	public void setSummonExpiresAt(long time) { this.summonExpiresAt = time; }
 	public long getSummonExpiresAt() { return this.summonExpiresAt; }
-	public long getInvokingTime() { return this.invokingTime; }
 	public void setDragonDefinitionId(String id) { this.entityData.set(DRAGON_DEFINITION_ID, id); }
 	public String getDragonDefinitionId() { return this.entityData.get(DRAGON_DEFINITION_ID); }
 
@@ -260,7 +259,6 @@ public class DragonWishEntity extends Mob implements GeoEntity {
 	@Override
 	public void addAdditionalSaveData(CompoundTag compound) {
 		super.addAdditionalSaveData(compound);
-		compound.putLong("InvokingTime", this.invokingTime);
 		compound.putLong("SummonExpiresAt", this.summonExpiresAt);
 		compound.putInt("DespawnDelay", this.despawnDelay);
 		compound.putInt("DespawnFade", this.entityData.get(DESPAWN_FADE));
@@ -272,7 +270,6 @@ public class DragonWishEntity extends Mob implements GeoEntity {
 	@Override
 	public void readAdditionalSaveData(CompoundTag compound) {
 		super.readAdditionalSaveData(compound);
-		if (compound.contains("InvokingTime")) this.invokingTime = compound.getLong("InvokingTime");
 		if (compound.contains("SummonExpiresAt")) this.summonExpiresAt = compound.getLong("SummonExpiresAt");
 		if (compound.contains("DespawnDelay")) this.despawnDelay = compound.getInt("DespawnDelay");
 		if (compound.contains("DespawnFade")) this.entityData.set(DESPAWN_FADE, compound.getInt("DespawnFade"));
