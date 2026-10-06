@@ -54,7 +54,7 @@ public class DragonBallsHandler {
 
 	public static void scatterDragonBalls(ServerLevel level, String setId) {
 		DragonBallSetDefinition definition = DragonBallDefinitions.getBallSet(setId);
-		if (definition == null || !definition.supportsDimension(level.dimension())) return;
+		if (definition == null || !definition.isNaturalSpawn() || !definition.supportsDimension(level.dimension())) return;
 
 		DragonBallSavedData data = DragonBallSavedData.get(level);
 		validateLoadedActiveBalls(level, data, definition);
@@ -79,7 +79,7 @@ public class DragonBallsHandler {
 
 	public static void topUpCopies(ServerLevel level, String setId) {
 		DragonBallSetDefinition definition = DragonBallDefinitions.getBallSet(setId);
-		if (definition == null || !definition.supportsDimension(level.dimension())) return;
+		if (definition == null || !definition.isNaturalSpawn() || !definition.supportsDimension(level.dimension())) return;
 		DragonBallSavedData data = DragonBallSavedData.get(level);
 		if (!data.isFirstSpawnComplete(setId)) return;
 
@@ -103,7 +103,7 @@ public class DragonBallsHandler {
 
 	public static int regenerateSet(ServerLevel level, String setId) {
 		DragonBallSetDefinition definition = DragonBallDefinitions.getBallSet(setId);
-		if (definition == null || !definition.supportsDimension(level.dimension())) return 0;
+		if (definition == null || !definition.isNaturalSpawn() || !definition.supportsDimension(level.dimension())) return 0;
 		DragonBallSavedData data = DragonBallSavedData.get(level);
 		validateLoadedActiveBalls(level, data, definition);
 
@@ -149,7 +149,7 @@ public class DragonBallsHandler {
 	}
 
 	private static void respawnBall(MinecraftServer server, DragonBallSetDefinition definition, int star, ServerLevel preferred) {
-		if (!ConfigManager.getServerConfig().getWorldGen().getGenerateDragonBalls()) return;
+		if (!ConfigManager.getServerConfig().getWorldGen().getGenerateDragonBalls() || !definition.isNaturalSpawn()) return;
 		ServerLevel level = preferred != null && definition.supportsDimension(preferred.dimension()) ? preferred : getHomeLevel(server, definition);
 		if (level == null) return;
 		DragonBallSavedData data = DragonBallSavedData.get(level);

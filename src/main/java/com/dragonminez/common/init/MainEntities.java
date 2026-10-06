@@ -160,6 +160,7 @@ public class MainEntities {
             RegistryObject<EntityType<DragonWishEntity>> entity = ENTITY_TYPES.register(definition.getEntityRegistryName(),
                     () -> EntityType.Builder.<DragonWishEntity>of((type, level) -> new DragonWishEntity(type, level, definition.getId()), MobCategory.CREATURE)
                             .sized(definition.getEntityWidth(), definition.getEntityHeight())
+                            .clientTrackingRange(32)
                             .build(ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, definition.getEntityRegistryName()).toString()));
             registered.put(definition.getId(), entity);
         }

@@ -27,6 +27,7 @@ public class DragonBallSetDefinition {
 	private final Map<Integer, String> blockRegistryNamesByStar;
 	private final String assetDefinitionId;
 	private final String displayName;
+	private final boolean naturalSpawn;
 	private final Map<Integer, RegistryObject<Block>> registeredBlocksByStar = new LinkedHashMap<>();
 
 	public DragonBallSetDefinition(String id,
@@ -46,6 +47,18 @@ public class DragonBallSetDefinition {
 			Map<Integer, String> blockRegistryNamesByStar,
 			String assetDefinitionId,
 			String displayName) {
+		this(id, validDimensions, copiesSupplier, spawnRangeSupplier, summonRadius, blockRegistryNamesByStar, assetDefinitionId, displayName, true);
+	}
+
+	public DragonBallSetDefinition(String id,
+			Set<ResourceLocation> validDimensions,
+			IntSupplier copiesSupplier,
+			IntSupplier spawnRangeSupplier,
+			int summonRadius,
+			Map<Integer, String> blockRegistryNamesByStar,
+			String assetDefinitionId,
+			String displayName,
+			boolean naturalSpawn) {
 		this.id = id;
 		this.validDimensions = Collections.unmodifiableSet(new LinkedHashSet<>(validDimensions));
 		this.copiesSupplier = copiesSupplier;
@@ -54,6 +67,7 @@ public class DragonBallSetDefinition {
 		this.blockRegistryNamesByStar = Map.copyOf(blockRegistryNamesByStar);
 		this.assetDefinitionId = assetDefinitionId == null || assetDefinitionId.isBlank() ? null : assetDefinitionId;
 		this.displayName = displayName == null || displayName.isBlank() ? null : displayName;
+		this.naturalSpawn = naturalSpawn;
 	}
 
 	public String getId() { return id; }
@@ -67,6 +81,7 @@ public class DragonBallSetDefinition {
 	public String getBlockRegistryNameForStar(int star) { return blockRegistryNamesByStar.get(star); }
 	public Optional<String> getAssetDefinitionId() { return Optional.ofNullable(assetDefinitionId); }
 	public Optional<String> getDisplayName() { return Optional.ofNullable(displayName); }
+	public boolean isNaturalSpawn() { return naturalSpawn; }
 	public DragonBallSetAssetDefinition resolveAssetDefinition() { return assetDefinitionId == null ? null : DragonBallDefinitions.getBallSetAsset(assetDefinitionId); }
 	public void setRegisteredBlock(int star, RegistryObject<Block> block) { registeredBlocksByStar.put(star, block); }
 	public RegistryObject<Block> getRegisteredBlockObjectForStar(int star) { return registeredBlocksByStar.get(star); }
@@ -89,6 +104,7 @@ public class DragonBallSetDefinition {
 		root.addProperty("summon_radius", summonRadius);
 		if (assetDefinitionId != null) root.addProperty("asset_definition", assetDefinitionId);
 		if (displayName != null) root.addProperty("display_name", displayName);
+		if (!naturalSpawn) root.addProperty("natural_spawn", false);
 		JsonObject blocks = new JsonObject();
 		blockRegistryNamesByStar.entrySet().stream().sorted(Map.Entry.comparingByKey())
 			.forEach(entry -> blocks.addProperty(String.valueOf(entry.getKey()), entry.getValue()));
@@ -108,6 +124,7 @@ public class DragonBallSetDefinition {
 		for (String key : blocks.keySet()) blockRegistryNamesByStar.put(Integer.parseInt(key), blocks.get(key).getAsString());
 		String assetDefinitionId = root.has("asset_definition") ? root.get("asset_definition").getAsString() : null;
 		String displayName = root.has("display_name") ? root.get("display_name").getAsString() : null;
-		return new DragonBallSetDefinition(id, dimensions, () -> copies, () -> spawnRange, summonRadius, blockRegistryNamesByStar, assetDefinitionId, displayName);
+		boolean naturalSpawn = !root.has("natural_spawn") || root.get("natural_spawn").getAsBoolean();
+		return new DragonBallSetDefinition(id, dimensions, () -> copies, () -> spawnRange, summonRadius, blockRegistryNamesByStar, assetDefinitionId, displayName, naturalSpawn);
 	}
 }

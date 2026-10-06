@@ -502,6 +502,7 @@ public class ForgeCommonEvents {
 
 		if (ConfigManager.getServerConfig().getWorldGen().getGenerateDragonBalls()) {
 			for (var definition : DragonBallDefinitions.getBallSets()) {
+				if (!definition.isNaturalSpawn()) continue;
 				ServerLevel targetLevel = DragonBallsHandler.getHomeLevel(event.getServer(), definition);
 				if (targetLevel == null) continue;
 				DragonBallSavedData data = DragonBallSavedData.get(targetLevel);

@@ -6,6 +6,7 @@ import com.dragonminez.common.init.entities.dragon.DragonWishEntity;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
 import com.mojang.math.Axis;
+import net.minecraft.client.renderer.LightTexture;
 import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.RenderType;
 import net.minecraft.client.renderer.entity.EntityRendererProvider;
@@ -41,8 +42,9 @@ public class DragonDBRenderer extends GeoEntityRenderer<DragonWishEntity> {
 	@Override
 	public void render(DragonWishEntity entity, float entityYaw, float partialTick, PoseStack poseStack, MultiBufferSource bufferSource, int packedLight) {
 		poseStack.pushPose();
-		poseStack.scale(1.5f,1.5f,1.5f);
-		super.render(entity, entityYaw, partialTick, poseStack, bufferSource, packedLight);
+		float scale = entity.getRenderScale();
+		poseStack.scale(scale, scale, scale);
+		super.render(entity, entityYaw, partialTick, poseStack, bufferSource, LightTexture.FULL_BRIGHT);
 		poseStack.popPose();
 
         if (!entity.hasGrantedWish()) {

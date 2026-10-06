@@ -186,15 +186,15 @@ public class DragonBallBlock extends BaseEntityBlock implements EntityBlock {
 	}
 
 	private boolean areAllDragonBallsNearby(Level level, BlockPos pos, DragonBallSetDefinition setDefinition) {
-		Set<DragonBallType> foundBalls = new HashSet<>();
+		Set<Integer> foundStars = new HashSet<>();
 		int radius = setDefinition.getSummonRadius();
 		for (BlockPos checkPos : BlockPos.betweenClosed(pos.offset(-radius, -radius, -radius), pos.offset(radius, radius, radius))) {
 			Block block = level.getBlockState(checkPos).getBlock();
 			if (block instanceof DragonBallBlock dragonBall && ballSetId.equals(dragonBall.getBallSetId())) {
-				foundBalls.add(dragonBall.getBallType());
+				foundStars.add(dragonBall.getBallType().getStars());
 			}
 		}
-		return foundBalls.size() == 7;
+		return !setDefinition.getStars().isEmpty() && foundStars.containsAll(setDefinition.getStars());
 	}
 
 	private List<BlockPos> removeAllDragonBalls(Level level, BlockPos pos, DragonBallSetDefinition setDefinition) {

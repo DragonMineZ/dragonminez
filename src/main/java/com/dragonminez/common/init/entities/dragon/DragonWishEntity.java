@@ -57,6 +57,7 @@ public class DragonWishEntity extends Mob implements GeoEntity {
 	public DragonWishEntity(EntityType<? extends Mob> entityType, Level level, String dragonDefinitionId) {
 		super(entityType, level);
 		this.defaultDragonDefinitionId = dragonDefinitionId;
+		this.noCulling = true;
 	}
 
 	public static AttributeSupplier.Builder createAttributes() {
@@ -232,6 +233,20 @@ public class DragonWishEntity extends Mob implements GeoEntity {
 	public long getInvokingTime() { return this.invokingTime; }
 	public void setDragonDefinitionId(String id) { this.entityData.set(DRAGON_DEFINITION_ID, id); }
 	public String getDragonDefinitionId() { return this.entityData.get(DRAGON_DEFINITION_ID); }
+
+	public float getRenderScale() {
+		return switch (getDragonDefinitionId()) {
+			case "shenron", "porunga" -> 3.5F;
+			case "porunga_daima" -> 7.0F;
+			default -> 1.5F;
+		};
+	}
+
+	@Override
+	public boolean shouldRenderAtSqrDistance(double distance) {
+		double range = 128.0D * getRenderScale();
+		return distance < range * range;
+	}
 
 	public DragonDefinition getDragonDefinition() {
 		String definitionId = getDragonDefinitionId();

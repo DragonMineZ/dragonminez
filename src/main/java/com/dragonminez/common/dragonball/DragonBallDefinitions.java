@@ -1,6 +1,7 @@
 package com.dragonminez.common.dragonball;
 
 import com.dragonminez.common.config.ConfigManager;
+import com.dragonminez.server.world.dimension.DemonRealmDimension;
 import com.dragonminez.server.world.dimension.NamekDimension;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.resources.ResourceLocation;
@@ -29,16 +30,19 @@ public final class DragonBallDefinitions {
 	static {
 		registerBootstrapBallSetAsset(new DragonBallSetAssetDefinition("earth_ballset", "dragonminez:block/custom/dballblock", "dragonminez:item/dball%d", "dragonminez:geo/block/dball.geo.json", "dragonminez:animations/block/dball.animation.json", "dragonminez:textures/block/custom/dballblock", null, null));
 		registerBootstrapBallSetAsset(new DragonBallSetAssetDefinition("namek_ballset", "dragonminez:block/custom/dballnamekblock", "dragonminez:item/dball%d_namek", "dragonminez:geo/block/dballnamek.geo.json", "dragonminez:animations/block/dball.animation.json", "dragonminez:textures/block/custom/dballnamekblock", null, null));
+		registerBootstrapBallSetAsset(new DragonBallSetAssetDefinition("demon_ballset", "dragonminez:block/custom/dballdemonblock", "dragonminez:item/dball%d_demon", "dragonminez:geo/block/dballnamek.geo.json", "dragonminez:animations/block/dball.animation.json", "dragonminez:textures/block/custom/dballdemonblock", null, null));
 		registerBootstrapRadarAsset(new DragonRadarAssetDefinition("earth_radar", "dragonminez:item/dball_radar", "dragonminez:item/dball_radar", "dragonminez:textures/gui/radar.png", "dragonminez:textures/gui/radar_dot.png", null));
 		registerBootstrapRadarAsset(new DragonRadarAssetDefinition("namek_radar", "dragonminez:item/namekdball_radar", "dragonminez:item/namekdball_radar", "dragonminez:textures/gui/radar.png", "dragonminez:textures/gui/radar_dot.png", null));
 		registerBootstrapDragonAsset(new DragonAssetDefinition("shenron", "default", "dragonminez:geo/entity/dragon/shenron.geo.json", "dragonminez:textures/entity/dragon/shenron.png", "dragonminez:animations/entity/dragon/shenron.animation.json"));
 		registerBootstrapDragonAsset(new DragonAssetDefinition("porunga", "default", "dragonminez:geo/entity/dragon/porunga.geo.json", "dragonminez:textures/entity/dragon/porunga.png", "dragonminez:animations/entity/dragon/porunga.animation.json"));
+		registerBootstrapDragonAsset(new DragonAssetDefinition("porunga_daima", "default", "dragonminez:geo/entity/dragon/porunga_daima.geo.json", "dragonminez:textures/entity/dragon/porunga_daima.png", "dragonminez:animations/entity/dragon/porunga_daima.animation.json"));
 
 		registerBootstrapRadarRecipe(new ShapedDragonRadarRecipeDefinition("earth_radar_recipe", "dragonminez:t1_radar_chip", "dragonminez:t1_radar_cpu"));
 		registerBootstrapRadarRecipe(new ShapedDragonRadarRecipeDefinition("namek_radar_recipe", "dragonminez:t2_radar_chip", "dragonminez:t2_radar_cpu"));
 
 		registerBootstrapBallSet(new DragonBallSetDefinition("earth", Set.of(Level.OVERWORLD.location()), () -> Math.max(1, ConfigManager.getServerConfig().getWorldGen().getDragonBallSets()), () -> ConfigManager.getServerConfig().getWorldGen().getDBSpawnRange(), 5, Map.of(1, "dball1", 2, "dball2", 3, "dball3", 4, "dball4", 5, "dball5", 6, "dball6", 7, "dball7"), "earth_ballset", "Earth Dragon Ball"));
 		registerBootstrapBallSet(new DragonBallSetDefinition("namek", Set.of(NamekDimension.NAMEK_KEY.location()), () -> Math.max(1, ConfigManager.getServerConfig().getWorldGen().getDragonBallSets()), () -> ConfigManager.getServerConfig().getWorldGen().getDBSpawnRange(), 5, Map.of(1, "dball1_namek", 2, "dball2_namek", 3, "dball3_namek", 4, "dball4_namek", 5, "dball5_namek", 6, "dball6_namek", 7, "dball7_namek"), "namek_ballset", "Namek Dragon Ball"));
+		registerBootstrapBallSet(new DragonBallSetDefinition("demon", Set.of(DemonRealmDimension.DEMON_REALM_KEY.location()), () -> 1, () -> ConfigManager.getServerConfig().getWorldGen().getDBSpawnRange(), 5, Map.of(1, "dball1_demon", 2, "dball2_demon", 3, "dball3_demon"), "demon_ballset", "Demon Realm Dragon Ball", false));
 		registerBootstrapRadar(new DragonRadarDefinition("earth_radar", "dball_radar", Set.of(Level.OVERWORLD.location()), "earth", "item.dragonminez.dball_radar.tooltip", new int[]{150, 300}, "earth_radar_recipe", "earth_radar", "Dragon Radar"));
 		registerBootstrapRadar(new DragonRadarDefinition("namek_radar", "namekdball_radar", Set.of(NamekDimension.NAMEK_KEY.location()), "namek", "item.dragonminez.namekdball_radar.tooltip", new int[]{150, 300}, "namek_radar_recipe", "namek_radar", "Namek Dragon Radar"));
 		// Bulma's "Bi-Dimensional Radar" — fused from an Earth + Namek radar (quest reward, not craftable).
@@ -46,6 +50,7 @@ public final class DragonBallDefinitions {
 		registerBootstrapRadar(new DragonRadarDefinition("fused_radar", "fused_dball_radar", Set.of(Level.OVERWORLD.location(), NamekDimension.NAMEK_KEY.location()), "earth", "item.dragonminez.fused_dball_radar.tooltip", new int[]{150, 300, 600}, null, "earth_radar", "Bi-Dimensional Radar"));
 		registerBootstrapDragon(new DragonDefinition("shenron", "shenron", 3.0f, 17.0f, Set.of(Level.OVERWORLD.location()), "earth", "shenron", 1, "shenron"));
 		registerBootstrapDragon(new DragonDefinition("porunga", "porunga", 4.0f, 20.0f, Set.of(NamekDimension.NAMEK_KEY.location()), "namek", "porunga", 3, "porunga"));
+		registerBootstrapDragon(new DragonDefinition("porunga_daima", "porunga_daima", 4.0f, 20.0f, Set.of(DemonRealmDimension.DEMON_REALM_KEY.location()), "demon", "porunga", 3, "porunga_daima"));
 
 		loadExternalBootstrapDefinitions();
 		resetRuntimeDefinitions();
