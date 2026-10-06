@@ -7,6 +7,7 @@ import com.dragonminez.client.render.effects.Aura3DRenderer;
 import com.dragonminez.client.render.effects.AuraBorderRenderer;
 import com.dragonminez.client.render.effects.AuraModeState;
 import com.dragonminez.client.render.effects.AuraRenderer;
+import com.dragonminez.client.render.effects.AuraTrailRenderer;
 import com.dragonminez.client.render.effects.LightningBoltRenderer;
 import com.dragonminez.client.init.entities.renderer.sagas.layer.DMZSagaArmorLayer;
 import com.dragonminez.client.init.entities.renderer.sagas.layer.SagaDragonBallLayer;
@@ -41,6 +42,8 @@ public class DBSagasRenderer<T extends DBSagasEntity> extends GeoEntityRenderer<
 
     private static final ResourceLocation NAPPA_NORMAL = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "textures/entity/sagas/saga_nappa.png");
     private static final ResourceLocation NAPPA_DAMAGED = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "textures/entity/sagas/saga_nappa2.png");
+    private static final float MOTION_TRAIL_ALPHA = 0.55F;
+    private static final int MOTION_TRAIL_SAMPLES = 26;
 
     public DBSagasRenderer(EntityRendererProvider.Context renderManager) {
         super(renderManager, new DBSagaModel<>());
@@ -63,6 +66,11 @@ public class DBSagasRenderer<T extends DBSagasEntity> extends GeoEntityRenderer<
 
     @Override
     public void render(T entity, float entityYaw, float partialTick, PoseStack poseStack, MultiBufferSource bufferSource, int packedLight) {
+        int trailColor = entity.getMotionTrailColor();
+        if (trailColor >= 0) {
+            AuraTrailRenderer.submitEntityTrail(entity, poseStack.last().pose(), partialTick, ColorUtils.rgbIntToFloat(trailColor), MOTION_TRAIL_ALPHA,
+                    MOTION_TRAIL_SAMPLES, entity.getBbWidth() * 0.6F, 0.0F, entity.getBbHeight() * 0.5F, entity.isMotionTrailActive());
+        }
         poseStack.pushPose();
         float sc = entity.getScale();
 

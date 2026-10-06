@@ -293,6 +293,7 @@ public class ModClientEvents {
         event.registerEntityRenderer(MainEntities.GETE_CABLE.get(), GeteStarRenderers.BindRenderer::new);
         event.registerEntityRenderer(MainEntities.GETE_SCRAP.get(), GeteStarRenderers.ScrapRenderer::new);
         event.registerEntityRenderer(MainEntities.THROWN_TAMAGAMI_HAMMER.get(), TamagamiRenderers.HammerRenderer::new);
+        event.registerEntityRenderer(MainEntities.TAMAGAMI_PILLAR.get(), TamagamiRenderers.PillarRenderer::new);
         event.registerEntityRenderer(MainEntities.HELLZONE_GRENADE.get(), NoopRenderer::new);
         event.registerEntityRenderer(MainEntities.HELLZONE_GRENADE_ORB.get(), KiProjectileRenderer::new);
         event.registerEntityRenderer(MainEntities.KI_BARRIER.get(), KiBarrierRenderer::new);

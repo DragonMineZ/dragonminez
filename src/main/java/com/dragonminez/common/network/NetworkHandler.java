@@ -798,6 +798,18 @@ public class NetworkHandler {
 				.encoder(DragonSkyS2C::encode)
 				.consumerMainThread(DragonSkyS2C::handle)
 				.add();
+
+		net.messageBuilder(BossVfxPackets.LaneTelegraphS2C.class, id(), NetworkDirection.PLAY_TO_CLIENT)
+				.decoder(BossVfxPackets.LaneTelegraphS2C::new)
+				.encoder(BossVfxPackets.LaneTelegraphS2C::encode)
+				.consumerMainThread(BossVfxPackets.LaneTelegraphS2C::handle)
+				.add();
+
+		net.messageBuilder(BossVfxPackets.GaleS2C.class, id(), NetworkDirection.PLAY_TO_CLIENT)
+				.decoder(BossVfxPackets.GaleS2C::new)
+				.encoder(BossVfxPackets.GaleS2C::encode)
+				.consumerMainThread(BossVfxPackets.GaleS2C::handle)
+				.add();
 	}
 
 	public static <MSG> void sendToServer(MSG message) {

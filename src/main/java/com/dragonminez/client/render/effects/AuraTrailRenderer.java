@@ -85,12 +85,17 @@ public final class AuraTrailRenderer {
 
 	public static void submitEntityTrail(Entity entity, Matrix4f entityPose, float partialTick, float[] color, float alpha,
 										 int maxSamples, float halfWidth, float anchorBack, float anchorHeight) {
+		submitEntityTrail(entity, entityPose, partialTick, color, alpha, maxSamples, halfWidth, anchorBack, anchorHeight, true);
+	}
+
+	public static void submitEntityTrail(Entity entity, Matrix4f entityPose, float partialTick, float[] color, float alpha,
+										 int maxSamples, float halfWidth, float anchorBack, float anchorHeight, boolean active) {
 		if (IrisCompat.isRenderingShadowPass()) return;
 
 		double dx = entity.getX() - entity.xo;
 		double dy = entity.getY() - entity.yo;
 		double dz = entity.getZ() - entity.zo;
-		boolean moving = dx * dx + dy * dy + dz * dz > ENTITY_MOVING_SQR;
+		boolean moving = active && dx * dx + dy * dy + dz * dz > ENTITY_MOVING_SQR;
 		Vec3 back = Vec3.directionFromRotation(0.0f, entity.getYRot()).scale(-anchorBack);
 		Vec3 anchor = new Vec3(entity.getX() + back.x, entity.getY() + anchorHeight, entity.getZ() + back.z);
 		if (moving) ENTITY_TRAILS.add(entity.getId());

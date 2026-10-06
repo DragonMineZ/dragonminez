@@ -1556,6 +1556,15 @@ public class MainEntities {
                             .fireImmune()
                             .noSave()
                             .build(ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "thrown_tamagami_hammer").toString()));
+    public static final RegistryObject<EntityType<AllWorldBossesEntity.TamagamiPillar>> TAMAGAMI_PILLAR =
+            ENTITY_TYPES.register("tamagami_pillar",
+                    () -> EntityType.Builder.<AllWorldBossesEntity.TamagamiPillar>of(AllWorldBossesEntity.TamagamiPillar::new, MobCategory.MISC)
+                            .sized(1.0f, 1.0f)
+                            .clientTrackingRange(10)
+                            .updateInterval(20)
+                            .fireImmune()
+                            .noSave()
+                            .build(ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "tamagami_pillar").toString()));
 
     // Hirudegarn
     public static final RegistryObject<EntityType<SagaMoviesEntity.HirudegarnEntity>> SAGA_HIRUDEGARN =

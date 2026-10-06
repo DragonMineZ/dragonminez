@@ -277,6 +277,51 @@ public class DBSagasAnimationHandler {
             event.getController().setAnimationSpeed(AllWorldBossesEntity.Tamagami3.SLAM_ANIMATION_SPEED);
             return event.setAndContinue(DBSagasAnimations.ANIM_TAMAGAMI_SLAM);
         }
+        if (ability == AllWorldBossesEntity.Tamagami3.ABILITY_HAMMER_SLAM_FOLLOW) {
+            if (entity.getBossAbilityTicks() < AllWorldBossesEntity.Tamagami3.FOLLOW_APEX) return event.setAndContinue(DBSagasAnimations.ANIM_TAMAGAMI_RAISE);
+            event.getController().setAnimationSpeed(AllWorldBossesEntity.Tamagami3.SLAM_ANIMATION_SPEED);
+            return event.setAndContinue(DBSagasAnimations.ANIM_TAMAGAMI_SLAM);
+        }
+        if (ability == AllWorldBossesEntity.Tamagami3.ABILITY_METEOR) {
+            boolean struck = entity.getBossAbilityTicks() >= AllWorldBossesEntity.Tamagami3.METEOR_STRIKE;
+            return event.setAndContinue(struck ? DBSagasAnimations.ANIM_TAMAGAMI_SLAM : DBSagasAnimations.ANIM_TAMAGAMI_RAISE);
+        }
+        if (ability == AllWorldBossesEntity.Tamagami3.ABILITY_CYCLONE && entity instanceof AllWorldBossesEntity.Tamagami3 tamagami) {
+            if (tamagami.isDizzy()) return event.setAndContinue(DBSagasAnimations.ANIM_TAMAGAMI_SLEEP);
+            boolean spinning = entity.getBossAbilityTicks() >= AllWorldBossesEntity.Tamagami3.CYCLONE_WINDUP;
+            return event.setAndContinue(spinning ? DBSagasAnimations.ANIM_TAMAGAMI_RELEASE : DBSagasAnimations.ANIM_TAMAGAMI_RAISE);
+        }
+        if (ability == AllWorldBossesEntity.Tamagami3.ABILITY_PILLARS) {
+            boolean smashed = entity.getBossAbilityTicks() >= AllWorldBossesEntity.Tamagami3.PILLAR_SMASH;
+            return event.setAndContinue(smashed ? DBSagasAnimations.ANIM_TAMAGAMI_SLAM : DBSagasAnimations.ANIM_TAMAGAMI_RAISE);
+        }
+        if (ability == AllWorldBossesEntity.Tamagami1.ABILITY_STANCE) {
+            int ticks = entity.getBossAbilityTicks();
+            if (ticks < AllWorldBossesEntity.Tamagami1.STANCE_TICKS) return event.setAndContinue(DBSagasAnimations.ANIM_TAMAGAMI_RAISE);
+            if (ticks < AllWorldBossesEntity.Tamagami1.STANCE_TICKS + AllWorldBossesEntity.Tamagami1.STANCE_SLASH_TICKS) {
+                return event.setAndContinue(DBSagasAnimations.ANIM_TAMAGAMI_RELEASE);
+            }
+            return event.setAndContinue(DBSagasAnimations.ANIM_TAMAGAMI_SLEEP);
+        }
+        if (ability == AllWorldBossesEntity.Tamagami1.ABILITY_COUNTER) return event.setAndContinue(DBSagasAnimations.ANIM_TAMAGAMI_RELEASE);
+        if (ability == AllWorldBossesEntity.Tamagami1.ABILITY_FLASH) {
+            boolean cut = entity.getBossAbilityTicks() >= AllWorldBossesEntity.Tamagami1.FLASH_FIRST;
+            return event.setAndContinue(cut ? DBSagasAnimations.ANIM_TAMAGAMI_RELEASE : DBSagasAnimations.ANIM_TAMAGAMI_RAISE);
+        }
+        if (ability == AllWorldBossesEntity.Tamagami1.ABILITY_CHASE) {
+            boolean struck = entity.getBossAbilityTicks() >= AllWorldBossesEntity.Tamagami1.CHASE_STRIKE;
+            return event.setAndContinue(struck ? DBSagasAnimations.ANIM_TAMAGAMI_RELEASE : DBSagasAnimations.ANIM_TAMAGAMI_RAISE);
+        }
+        if (ability == AllWorldBossesEntity.Tamagami1.ABILITY_BREATHE) return event.setAndContinue(DBSagasAnimations.ANIM_TAMAGAMI_SLEEP);
+        if (ability == AllWorldBossesEntity.Tamagami2.ABILITY_LUNGE) {
+            boolean dashing = entity.getBossAbilityTicks() >= AllWorldBossesEntity.Tamagami2.LUNGE_DASH;
+            return event.setAndContinue(dashing ? DBSagasAnimations.ANIM_TAMAGAMI_RELEASE : DBSagasAnimations.ANIM_TAMAGAMI_RAISE);
+        }
+        if (ability == AllWorldBossesEntity.Tamagami2.ABILITY_LUNGE_FOLLOW) {
+            boolean dashing = entity.getBossAbilityTicks() >= AllWorldBossesEntity.Tamagami2.FOLLOW_DASH;
+            return event.setAndContinue(dashing ? DBSagasAnimations.ANIM_TAMAGAMI_RELEASE : DBSagasAnimations.ANIM_TAMAGAMI_RAISE);
+        }
+        if (ability == AllWorldBossesEntity.Tamagami2.ABILITY_GALE) return event.setAndContinue(DBSagasAnimations.ANIM_TAMAGAMI_RAISE);
         if (ability == AllWorldBossesEntity.Tamagami2.ABILITY_WHIRLWINDS) {
             boolean erupted = entity.getBossAbilityTicks() >= AllWorldBossesEntity.Tamagami2.WHIRLWIND_ERUPT_TICK;
             return event.setAndContinue(erupted ? DBSagasAnimations.ANIM_TAMAGAMI_RELEASE : DBSagasAnimations.ANIM_TAMAGAMI_RAISE);
@@ -285,6 +330,12 @@ public class DBSagasAnimationHandler {
             boolean released = entity.getBossAbilityTicks() >= AllWorldBossesEntity.Gomah.SPHERE_CHANNEL;
             return event.setAndContinue(released ? DBSagasAnimations.ANIM_GOMAH_SPHERE_FIRE : DBSagasAnimations.ANIM_GOMAH_SPHERE_CAST);
         }
+        if (ability == AllWorldBossesEntity.Gomah.ABILITY_EVIL_EYE) {
+            boolean flashed = entity.getBossAbilityTicks() >= AllWorldBossesEntity.Gomah.EVIL_EYE_CHARGE;
+            return event.setAndContinue(flashed ? DBSagasAnimations.ANIM_GOMAH_BEAM_FIRE : DBSagasAnimations.ANIM_GOMAH_BEAM_CAST);
+        }
+        if (ability == AllWorldBossesEntity.Gomah.ABILITY_DEMON_GRAB) return event.setAndContinue(DBSagasAnimations.ANIM_BOSS_GRAB);
+        if (ability == AllWorldBossesEntity.Gomah.ABILITY_ERUPTION) return event.setAndContinue(DBSagasAnimations.ANIM_GOMAH_SPHERE_CAST);
         if (ability == AllWorldBossesEntity.Gomah.ABILITY_QUAKE) return event.setAndContinue(DBSagasAnimations.ANIM_BOSS_SPECIAL2);
         if (ability == AllWorldBossesEntity.Gomah.ABILITY_EYE_BEAM) {
             boolean fired = entity.getBossAbilityTicks() >= AllWorldBossesEntity.Gomah.BEAM_FIRE_TICK;

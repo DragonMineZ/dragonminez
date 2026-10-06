@@ -69,6 +69,7 @@ public abstract class WorldBossEntity extends DBSagasEntity {
 
     private int abilityTick;
     private int clientAbilityTick;
+    private int clientAbilityId = -1;
 
     protected WorldBossEntity(EntityType<? extends Monster> pEntityType, Level pLevel) {
         super(pEntityType, pLevel);
@@ -242,7 +243,9 @@ public abstract class WorldBossEntity extends DBSagasEntity {
         super.tick();
 
         if (this.level().isClientSide) {
-            this.clientAbilityTick = this.getBossAbility() >= 0 ? this.clientAbilityTick + 1 : 0;
+            int ability = this.getBossAbility();
+            this.clientAbilityTick = ability < 0 ? 0 : ability == this.clientAbilityId ? this.clientAbilityTick + 1 : 1;
+            this.clientAbilityId = ability;
             return;
         }
 

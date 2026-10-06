@@ -722,6 +722,14 @@ public abstract class DBSagasEntity extends Monster implements GeoEntity, ITextu
     }
     public void setFlyingFast(boolean flyingFast) { this.entityData.set(IS_FLYING_FAST, flyingFast); }
     public boolean isFlyingFast() { return this.entityData.get(IS_FLYING_FAST); }
+
+    public int getMotionTrailColor() {
+        return -1;
+    }
+
+    public boolean isMotionTrailActive() {
+        return false;
+    }
     public String getAuraType() {return this.entityData.get(AURA_TYPE);}
     public void setAuraType(String type) {this.entityData.set(AURA_TYPE, type);}
     public String getAuraType3D() {return this.entityData.get(AURA_TYPE_3D);}
