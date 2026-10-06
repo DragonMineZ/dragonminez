@@ -56,6 +56,11 @@ public class MinigamesScreen extends BaseMenuScreen {
 	}
 
 	@Override
+	protected boolean hasCenterModel() {
+		return true;
+	}
+
+	@Override
 	protected void init() {
 		super.init();
 		initPlayButton();

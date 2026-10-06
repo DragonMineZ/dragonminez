@@ -143,6 +143,11 @@ public class SkillsMenuScreen extends BaseMenuScreen {
 	}
 
 	@Override
+	protected boolean hasCenterModel() {
+		return formsTransitionProgress <= 0.0f;
+	}
+
+	@Override
 	protected void init() {
 		super.init();
 		updateStatsData();
