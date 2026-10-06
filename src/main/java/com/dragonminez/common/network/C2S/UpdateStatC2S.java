@@ -66,6 +66,7 @@ public class UpdateStatC2S {
 						if (msg.value) {
 							if (data.getStatus().isBlocking()) break;
 							if (now - player.getPersistentData().getLong(BLOCK_END_TIME_TAG) < BLOCK_REACTIVATION_DELAY_MS) break;
+							MeleeAttackStartC2S.cancelPending(player);
 							data.getStatus().setBlocking(true);
 							data.getStatus().setLastBlockTime(now);
 						} else if (data.getStatus().isBlocking()) {

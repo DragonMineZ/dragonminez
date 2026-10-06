@@ -139,7 +139,7 @@ public class CombatEvent {
 
 			StatsProvider.get(StatsCapability.INSTANCE, attacker).ifPresent(attackerData -> {
 				if (!attackerData.getStatus().isHasCreatedCharacter()) return;
-				if (attackerData.getStatus().isBlocking()) {
+				if (attackerData.getStatus().isBlocking() && !(livingTarget instanceof Player)) {
 					event.setCanceled(true);
 					canceledByBlocking[0] = true;
 					return;

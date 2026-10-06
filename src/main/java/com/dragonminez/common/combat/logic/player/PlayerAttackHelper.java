@@ -80,6 +80,21 @@ public class PlayerAttackHelper {
         return Math.max(2.0f, Mth.clamp(capped, intervalCap, 200.0F));
     }
 
+    public static float getMeleeAnimationSpeed(float cooldownTicks) {
+        float speed = 12.0F / Math.max(cooldownTicks, 0.001F);
+        return Math.max(0.55F, Math.min(0.85F, speed));
+    }
+
+    public static int getMeleeAnimationTicks(float animationSpeed) {
+        return Math.max(8, Math.round(12.0F / Math.max(animationSpeed, 0.1F)));
+    }
+
+    public static int getMeleeAttackWindupTicks(float cooldownTicks, AttackHand hand) {
+        float animationSpeed = getMeleeAnimationSpeed(cooldownTicks);
+        int animationTicks = getMeleeAnimationTicks(animationSpeed);
+        return Math.max(1, Math.round(animationTicks * (float) hand.upswingRate() * 0.85F));
+    }
+
     public static AttackHand getCurrentAttack(Player player, int comboCount) {
         if (isDualWielding(player)) {
             boolean isOffHand = shouldAttackWithOffHand(player, comboCount);
