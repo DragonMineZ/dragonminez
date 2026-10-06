@@ -540,7 +540,8 @@ public final class MainBlocks {
 				.explosionResistance(3600000.0F)
 				.noOcclusion()
 				.noParticlesOnBreak()
-				.lightLevel(value -> 7);
+				.sound(DragonBallBlock.SOUND)
+				.lightLevel(state -> state.hasProperty(DragonBallBlock.GATHERED) && state.getValue(DragonBallBlock.GATHERED) ? 15 : 7);
 	}
 
 	private static DragonBallType dragonBallTypeFromStar(int star) {
