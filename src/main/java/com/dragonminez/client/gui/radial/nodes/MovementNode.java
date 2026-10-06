@@ -28,7 +28,7 @@ public class MovementNode extends CategoryNode {
 		));
 
 		out.add(new FlightModeNode());
-		out.add(new SearchFlightSpeedNode());
+		out.add(new FlightSpeedNode());
 
 		out.add(new FlightModeLockNode());
 

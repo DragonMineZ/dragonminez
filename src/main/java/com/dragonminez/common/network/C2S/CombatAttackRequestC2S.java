@@ -112,7 +112,7 @@ public class CombatAttackRequestC2S {
 				LogUtil.warn(Env.SERVER, "Player {} tried to attack with mismatched selected slot", player.getName().getString());
 				return;
 			}
-			if (!MeleeAttackStartC2S.consumeIfReady(player, comboCount, selectedSlot)) return;
+			if (!MeleeAttackStartC2S.consumeIfReady(player, request.getComboCount(), selectedSlot)) return;
 
 			long gameTime = player.level().getGameTime();
 			long lastAttackTime = player.getPersistentData().getLong(LAST_MELEE_ATTACK_TIME_TAG);

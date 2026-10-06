@@ -4,6 +4,7 @@ import com.dragonminez.common.config.ConfigManager;
 import net.minecraft.client.resources.sounds.AbstractSoundInstance;
 import net.minecraft.client.resources.sounds.SoundInstance;
 import net.minecraft.client.sounds.SoundManager;
+import com.dragonminez.mixin.client.AbstractSoundInstanceAccessor;
 import net.minecraft.resources.ResourceLocation;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Unique;
@@ -25,7 +26,7 @@ public class SoundManagerMixin {
 
 		String soundPath = pSound.getLocation().getPath();
 		if (isKiSound(soundPath) && pSound instanceof AbstractSoundInstance sound) {
-			sound.setVolume(sound.getVolume() * ConfigManager.getUserConfig().getKiSoundVolume() / 100.0F);
+			((AbstractSoundInstanceAccessor) sound).dmz$setVolume(sound.getVolume() * ConfigManager.getUserConfig().getKiSoundVolume() / 100.0F);
 		}
 	}
 

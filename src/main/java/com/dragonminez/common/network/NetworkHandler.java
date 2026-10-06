@@ -159,12 +159,6 @@ public class NetworkHandler {
 				.consumerMainThread(FlightModeLockC2S::handle)
 				.add();
 
-		net.messageBuilder(SetSearchFlightSpeedC2S.class, id(), NetworkDirection.PLAY_TO_SERVER)
-				.decoder(SetSearchFlightSpeedC2S::new)
-				.encoder(SetSearchFlightSpeedC2S::encode)
-				.consumerMainThread(SetSearchFlightSpeedC2S::handle)
-				.add();
-
 		net.messageBuilder(CombatFlyImpulseC2S.class, id(), NetworkDirection.PLAY_TO_SERVER)
 				.decoder(CombatFlyImpulseC2S::decode)
 				.encoder(CombatFlyImpulseC2S::encode)
