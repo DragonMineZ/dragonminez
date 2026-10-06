@@ -40,9 +40,7 @@ public class FlightSpeedNode extends AbstractRadialNode {
 
     @Override
     public boolean visible(StatsData stats) {
-        if (stats.getCharacter() == null) return false;
-        String race = stats.getCharacter().getRaceName();
-        return race != null && !race.isEmpty() && stats.getSkills().hasSkill("fly");
+        return FlyNode.canFly(stats);
     }
 
     @Override

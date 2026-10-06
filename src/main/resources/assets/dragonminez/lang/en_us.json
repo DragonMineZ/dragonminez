@@ -784,6 +784,7 @@
   "gui.dragonminez.config.category.interface": "Interface",
   "gui.dragonminez.config.category.gameplay": "Gameplay",
   "gui.dragonminez.config.category.visuals": "Visuals",
+  "gui.dragonminez.config.category.audio": "Audio",
   "gui.dragonminez.config.search": "Search...",
   "gui.dragonminez.config.no_results": "No options found",
   "gui.dragonminez.config.tutorialsEnabled": "Tutorials",

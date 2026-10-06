@@ -1,6 +1,5 @@
 package com.dragonminez.client.gui.radial.nodes;
 
-import com.dragonminez.client.events.FlySkillEvent;
 import com.dragonminez.client.gui.radial.RadialNode;
 import com.dragonminez.common.network.C2S.UpdateSkillC2S;
 import com.dragonminez.common.network.NetworkHandler;
@@ -20,17 +19,7 @@ public class MovementNode extends CategoryNode {
 	protected List<RadialNode> buildChildren(StatsData stats) {
 		List<RadialNode> out = new ArrayList<>();
 
-		out.add(new SkillToggleNode(
-				Component.translatable("skill.dragonminez.fly"), icon("fly"),
-				s -> s.getSkills().hasSkill("fly"),
-				s -> s.getSkills().isSkillActive("fly"),
-				(s, was) -> FlySkillEvent.toggleFlightFromMenu()
-		));
-
-		out.add(new FlightModeNode());
-		out.add(new FlightSpeedNode());
-
-		out.add(new FlightModeLockNode());
+		out.add(new FlyNode());
 
 		out.add(new SkillToggleNode(
 				Component.translatable("skill.dragonminez.jump"), icon("jump"),

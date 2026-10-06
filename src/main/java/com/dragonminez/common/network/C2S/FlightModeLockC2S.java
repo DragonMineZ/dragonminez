@@ -34,7 +34,9 @@ public class FlightModeLockC2S {
 				Skill kiControl = data.getSkills().getSkill("kicontrol");
 				if (fly == null || fly.getLevel() <= 0 || kiControl == null || kiControl.getLevel() <= 0) return;
 
-				data.getStatus().setFlightModeLocked(!data.getStatus().isFlightModeLocked());
+				boolean lock = !data.getStatus().isFlightModeLocked();
+				data.getStatus().setFlightModeLocked(lock);
+				if (lock) data.getStatus().setLockedFlightMode(data.getStatus().getFlightMode());
 				NetworkHandler.sendToTrackingEntityAndSelf(new StatsSyncS2C(player), player);
 			});
 		});

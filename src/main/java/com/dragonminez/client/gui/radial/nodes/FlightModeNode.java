@@ -23,7 +23,7 @@ public class FlightModeNode extends AbstractRadialNode {
 
 	@Override
 	public boolean visible(StatsData stats) {
-		return stats.getSkills().hasSkill("fly");
+		return FlyNode.canFly(stats);
 	}
 
 	@Override

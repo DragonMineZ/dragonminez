@@ -69,7 +69,7 @@ public class ConfigMenuScreen extends BaseMenuScreen {
 	private static final EnumSet<Category> EXPANDED = EnumSet.noneOf(Category.class);
 
 	private enum Category {
-		INTERFACE, GAMEPLAY, VISUALS;
+		INTERFACE, GAMEPLAY, VISUALS, AUDIO;
 
 		String translationKey() {
 			return "gui.dragonminez.config.category." + name().toLowerCase(Locale.ROOT);
@@ -135,14 +135,6 @@ public class ConfigMenuScreen extends BaseMenuScreen {
 		toggle(Category.INTERFACE, "config.hideHudNumbers", userConfig.getHideHudNumbers(), userConfig::setHideHudNumbers);
 		toggle(Category.INTERFACE, "config.partyMarkers", userConfig.getPartyMarkers(), userConfig::setPartyMarkers);
 		toggle(Category.INTERFACE, "config.showAccumulativeDamage", userConfig.getShowAccumulativeDamage(), userConfig::setShowAccumulativeDamage);
-		toggle(Category.INTERFACE, "config.reserveFirstHotbarSlot", userConfig.isReserveFirstHotbarSlot(), enabled -> {
-			userConfig.setReserveFirstHotbarSlot(enabled);
-			if (this.minecraft != null && this.minecraft.getConnection() != null) {
-				NetworkHandler.sendToServer(new ReserveFirstHotbarSlotC2S(enabled));
-			}
-		});
-		number(Category.INTERFACE, "config.kiSoundVolume", ConfigType.INT, userConfig.getKiSoundVolume(), 0, 100,
-				value -> userConfig.setKiSoundVolume(value.intValue()));
 		toggle(Category.INTERFACE, "config.advancedDescription", userConfig.getAdvancedDescription(), userConfig::setAdvancedDescription);
 		toggle(Category.INTERFACE, "config.advancedDescriptionPercentage", userConfig.getAdvancedDescriptionPercentage(), userConfig::setAdvancedDescriptionPercentage);
 		toggle(Category.INTERFACE, "config.hexagonStatsDisplay", userConfig.getHexagonStatsDisplay(), userConfig::setHexagonStatsDisplay);
@@ -157,6 +149,12 @@ public class ConfigMenuScreen extends BaseMenuScreen {
 		number(Category.GAMEPLAY, "config.flightTurnSensitivity", ConfigType.FLOAT, userConfig.getFlightTurnSensitivity(),
 				0.2f, 2.0f, userConfig::setFlightTurnSensitivity);
 		action(Category.GAMEPLAY, "config.overShoulderCamera", "gui.dragonminez.config.open", () -> this.minecraft.setScreen(new OverShoulderCameraScreen(this)));
+		toggle(Category.GAMEPLAY, "config.reserveFirstHotbarSlot", userConfig.isReserveFirstHotbarSlot(), enabled -> {
+			userConfig.setReserveFirstHotbarSlot(enabled);
+			if (this.minecraft != null && this.minecraft.getConnection() != null) {
+				NetworkHandler.sendToServer(new ReserveFirstHotbarSlotC2S(enabled));
+			}
+		});
 		initializeDynamicGrowthOptions();
 
 		toggle(Category.VISUALS, "config.aura3DPersonal", userConfig.getAura3DPersonal(), userConfig::setAura3DPersonal);
@@ -167,6 +165,9 @@ public class ConfigMenuScreen extends BaseMenuScreen {
 		toggle(Category.VISUALS, "config.impactFramesEnabled", userConfig.isImpactFramesEnabled(), userConfig::setImpactFramesEnabled);
 		toggle(Category.VISUALS, "config.firstPersonAnimated", userConfig.getFirstPersonAnimated(), userConfig::setFirstPersonAnimated);
 		toggle(Category.VISUALS, "config.taiyokenInvertPalette", userConfig.getTaiyokenInvertPalette(), userConfig::setTaiyokenInvertPalette);
+
+		number(Category.AUDIO, "config.kiSoundVolume", ConfigType.INT, userConfig.getKiSoundVolume(), 0, 100,
+				value -> userConfig.setKiSoundVolume(value.intValue()));
 	}
 
 	private void initializeDynamicGrowthOptions() {

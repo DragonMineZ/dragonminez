@@ -73,6 +73,7 @@ public class FlightModeC2S {
 				}
 
 				data.getStatus().setFlightMode(targetMode);
+				if (data.getStatus().isFlightModeLocked()) data.getStatus().setLockedFlightMode(targetMode);
 
 				NetworkHandler.sendToTrackingEntityAndSelf(new StatsSyncS2C(player), player);
 			});

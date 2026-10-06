@@ -7,10 +7,10 @@
   "mixins": [
     "common.EnchantmentMixin",
     "common.EntityMixin",
+    "common.InventoryMixin",
     "common.ItemStackMixin",
     "common.LivingEntityAccessor",
     "common.LivingEntityMixin",
-    "common.ItemEntityMixin",
     "common.PlayerListMixin",
     "common.PlayerMixin",
     "common.RangedAttributeMixin",

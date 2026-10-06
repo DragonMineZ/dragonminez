@@ -1,7 +1,9 @@
 package com.dragonminez.common.network.C2S;
 
+import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.entity.player.Player;
 import net.minecraftforge.network.NetworkEvent;
 
 import java.util.function.Supplier;
@@ -25,8 +27,15 @@ public class ReserveFirstHotbarSlotC2S {
 	public void handle(Supplier<NetworkEvent.Context> ctx) {
 		ctx.get().enqueueWork(() -> {
 			ServerPlayer player = ctx.get().getSender();
-			if (player != null) player.getPersistentData().putBoolean(PLAYER_DATA_KEY, this.enabled);
+			if (player == null) return;
+			CompoundTag persisted = player.getPersistentData().getCompound(Player.PERSISTED_NBT_TAG);
+			persisted.putBoolean(PLAYER_DATA_KEY, this.enabled);
+			player.getPersistentData().put(Player.PERSISTED_NBT_TAG, persisted);
 		});
 		ctx.get().setPacketHandled(true);
+	}
+
+	public static boolean isReserved(Player player) {
+		return player.getPersistentData().getCompound(Player.PERSISTED_NBT_TAG).getBoolean(PLAYER_DATA_KEY);
 	}
 }

@@ -4,7 +4,9 @@ import com.dragonminez.common.config.ConfigManager;
 import com.dragonminez.common.init.MainEffects;
 import com.dragonminez.common.network.NetworkHandler;
 import com.dragonminez.common.network.S2C.ProgressionSyncS2C;
+import com.dragonminez.common.network.S2C.StatsSyncS2C;
 import com.dragonminez.common.stats.StatsData;
+import com.dragonminez.common.stats.character.Cooldowns;
 import com.dragonminez.common.stats.character.Status;
 import com.dragonminez.server.events.players.IStatusEffectHandler;
 import net.minecraft.server.level.ServerPlayer;
@@ -27,6 +29,8 @@ public class FlyStatusHandler implements IStatusEffectHandler {
 
     @Override
     public void onPlayerTick(ServerPlayer serverPlayer, StatsData data) {
+        restoreLockedFlightMode(serverPlayer, data);
+
         if (data.getSkills().isSkillActive("fly") && !serverPlayer.isCreative() && !serverPlayer.isSpectator()) {
             serverPlayer.resetFallDistance();
 
@@ -53,6 +57,14 @@ public class FlyStatusHandler implements IStatusEffectHandler {
     @Override
     public void onPlayerSecond(ServerPlayer serverPlayer, StatsData data) {
         handleFlightKiDrain(serverPlayer, data);
+    }
+
+    private static void restoreLockedFlightMode(ServerPlayer player, StatsData data) {
+        Status status = data.getStatus();
+        if (!status.isFlightModeLocked() || status.getFlightMode() == status.getLockedFlightMode()) return;
+        if (data.getCooldowns().hasCooldown(Cooldowns.COMBAT_FLY_LOCK)) return;
+        status.setFlightMode(status.getLockedFlightMode());
+        NetworkHandler.sendToTrackingEntityAndSelf(new StatsSyncS2C(player), player);
     }
 
     private static void handleFlightKiDrain(ServerPlayer player, StatsData data) {

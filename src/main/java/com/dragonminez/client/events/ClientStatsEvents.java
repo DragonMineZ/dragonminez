@@ -250,7 +250,7 @@ public class ClientStatsEvents {
 			boolean isChargingTechnique = data.getTechniques().isTechniqueCharging() || data.getTechniques().isTechniqueChargeActive();
 			if (blockLockTicks > 0) blockLockTicks--;
 			if (isChargingTechnique || isDescendKeyPressed || blockLockTicks > 0) isBlockKeyDown = false;
-			if (isBlockKeyDown && !data.getStatus().isBlocking() && ((Minecraft_DMZ) mc).isAttackWindupActive()) {
+			if (isBlockKeyDown && ((Minecraft_DMZ) mc).hasPendingAttack()) {
 				((Minecraft_DMZ) mc).cancelUpswing();
 			}
 

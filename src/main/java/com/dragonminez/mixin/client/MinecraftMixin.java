@@ -314,8 +314,8 @@ public abstract class MinecraftMixin implements Minecraft_DMZ {
 	}
 
 	@Override
-	public boolean isAttackWindupActive() {
-		return isAwaitingUpswing;
+	public boolean hasPendingAttack() {
+		return isAwaitingUpswing || queuedAttack;
 	}
 
 	@Override

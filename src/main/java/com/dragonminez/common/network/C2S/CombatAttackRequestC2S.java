@@ -3,11 +3,10 @@ package com.dragonminez.common.network.C2S;
 import com.dragonminez.Env;
 import com.dragonminez.LogUtil;
 import com.dragonminez.common.combat.logic.knockback.ConfigurableKnockback;
+import com.dragonminez.common.combat.logic.player.MeleeWindupTracker;
 import com.dragonminez.common.combat.logic.player.PlayerAttackHelper;
 import com.dragonminez.common.combat.logic.player.PlayerAttackProperties;
 import com.dragonminez.common.combat.logic.player.TargetHelper;
-import com.dragonminez.common.stats.StatsCapability;
-import com.dragonminez.common.stats.StatsProvider;
 import lombok.Getter;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.server.level.ServerPlayer;
@@ -71,14 +70,10 @@ public class CombatAttackRequestC2S {
 	}
 
 	public void handle(Supplier<NetworkEvent.Context> ctx) {
+		long arrivalNanos = System.nanoTime();
 		ctx.get().enqueueWork(() -> {
 			ServerPlayer player = ctx.get().getSender();
-			if (player != null) {
-				StatsProvider.get(StatsCapability.INSTANCE, player).ifPresent(stats -> {
-					if (stats.getStatus().isStunned() || stats.getStatus().isBlocking() || player.isBlocking()) return;
-					processAttackRequest(player, this);
-				});
-			}
+			if (player != null && MeleeWindupTracker.canStrike(player)) MeleeWindupTracker.submitHit(player, this, arrivalNanos);
 		});
 
 		ctx.get().setPacketHandled(true);
@@ -86,8 +81,6 @@ public class CombatAttackRequestC2S {
 
     private static final UUID SWEEPING_MODIFIER_UUID = UUID.fromString("99435a26-9fa8-48b4-a8eb-8438bf228eb3");
 
-	private static final String LAST_MELEE_ATTACK_TIME_TAG = "dmz_last_melee_attack_time";
-	private static final int ATTACK_RATE_TOLERANCE_TICKS = 2;
 	private static final Map<UUID, int[]> LAST_COMBO = new ConcurrentHashMap<>();
 
 	public static void clearCombo(UUID uuid) {
@@ -112,14 +105,6 @@ public class CombatAttackRequestC2S {
 				LogUtil.warn(Env.SERVER, "Player {} tried to attack with mismatched selected slot", player.getName().getString());
 				return;
 			}
-			if (!MeleeAttackStartC2S.consumeIfReady(player, request.getComboCount(), selectedSlot)) return;
-
-			long gameTime = player.level().getGameTime();
-			long lastAttackTime = player.getPersistentData().getLong(LAST_MELEE_ATTACK_TIME_TAG);
-			int minInterval = Math.max(0, (int) Math.floor(player.getCurrentItemAttackStrengthDelay()) - ATTACK_RATE_TOLERANCE_TICKS);
-			if (lastAttackTime > 0 && gameTime - lastAttackTime < minInterval) return;
-			player.getPersistentData().putLong(LAST_MELEE_ATTACK_TIME_TAG, gameTime);
-
 			int comboCount = resolveComboCount(player, request.getComboCount());
 			((PlayerAttackProperties) player).setComboCount(comboCount);
 
