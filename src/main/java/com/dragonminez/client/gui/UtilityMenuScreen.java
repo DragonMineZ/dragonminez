@@ -774,6 +774,10 @@ public class UtilityMenuScreen extends ScaledScreen {
 			openPanel(release.buildOptions(statsData), release.label(statsData), hover, true);
 			return true;
 		}
+		if (node instanceof SearchFlightSpeedNode speedLimit) {
+			openPanel(speedLimit.buildOptions(statsData), speedLimit.label(statsData), hover, true);
+			return true;
+		}
 		if (node instanceof FormSelectNode form && form.interactive(statsData)) {
 			selectNode(form);
 			return true;
@@ -860,6 +864,18 @@ public class UtilityMenuScreen extends ScaledScreen {
 			int maxScroll = Math.max(0, panelOptions.size() - visiblePanelRows());
 			panelScroll = Mth.clamp(panelScroll - (int) Math.signum(delta), 0, maxScroll);
 			return true;
+		}
+		if (!closing && statsData != null && delta != 0) {
+			double ux = toUiX(mouseX), uy = toUiY(mouseY);
+			Hover hover = resolveHover(getUiWidth() / 2f, getUiHeight() / 2f, ux, uy, computeOpenScale());
+			if (hover.deepest instanceof SearchFlightSpeedNode speedLimit) {
+				speedLimit.adjustByWheel(delta);
+				return true;
+			}
+			if (hover.deepest instanceof ReleaseNode releaseLimit) {
+				releaseLimit.adjustByWheel(statsData, delta);
+				return true;
+			}
 		}
 		return super.mouseScrolled(mouseX, mouseY, delta);
 	}

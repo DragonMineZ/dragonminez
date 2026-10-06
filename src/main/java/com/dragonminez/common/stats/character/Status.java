@@ -59,6 +59,8 @@ public class Status {
 	private boolean isPermanentAura;
 	private boolean isStrikeLocked;
 	private int flightMode;
+	private boolean flightModeLocked;
+	private int searchFlightSpeedLimit = 100;
 	private final Set<String> visitedDimensions;
 
 	private UUID activeShadowDummyUUID;
@@ -221,6 +223,8 @@ public class Status {
 		tag.putBoolean("IsPermanentAura", isPermanentAura);
 		tag.putBoolean("IsStrikeLocked", isStrikeLocked);
 		tag.putInt("FlightMode", flightMode);
+		tag.putBoolean("FlightModeLocked", flightModeLocked);
+		tag.putInt("SearchFlightSpeedLimit", searchFlightSpeedLimit);
 
 		ListTag visitedDimensionsTag = new ListTag();
 		for (String dimensionId : visitedDimensions) visitedDimensionsTag.add(StringTag.valueOf(dimensionId));
@@ -275,6 +279,8 @@ public class Status {
 		this.isPermanentAura = tag.getBoolean("IsPermanentAura");
 		this.isStrikeLocked = tag.getBoolean("IsStrikeLocked");
 		this.flightMode = tag.getInt("FlightMode");
+		this.flightModeLocked = tag.getBoolean("FlightModeLocked");
+		this.searchFlightSpeedLimit = FlightSpeedLimit.clampPercent(tag.contains("SearchFlightSpeedLimit") ? tag.getInt("SearchFlightSpeedLimit") : 100);
 		this.visitedDimensions.clear();
 		if (tag.contains("VisitedDimensions", Tag.TAG_LIST)) {
 			ListTag visitedDimensionsTag = tag.getList("VisitedDimensions", Tag.TAG_STRING);
@@ -326,10 +332,16 @@ public class Status {
 		this.isPermanentAura = other.isPermanentAura;
 		this.isStrikeLocked = other.isStrikeLocked;
 		this.flightMode = other.flightMode;
+		this.flightModeLocked = other.flightModeLocked;
+		this.searchFlightSpeedLimit = other.searchFlightSpeedLimit;
 		this.visitedDimensions.clear();
 		this.visitedDimensions.addAll(other.visitedDimensions);
 		this.activeShadowDummyUUID = other.activeShadowDummyUUID;
 		this.shadowDummyPercent = other.shadowDummyPercent;
 		this.shadowDummyKillCount = other.shadowDummyKillCount;
+	}
+
+	public void setSearchFlightSpeedLimit(int percent) {
+		this.searchFlightSpeedLimit = FlightSpeedLimit.clampPercent(percent);
 	}
 }

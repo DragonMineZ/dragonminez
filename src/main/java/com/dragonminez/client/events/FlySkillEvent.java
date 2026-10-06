@@ -12,6 +12,7 @@ import com.dragonminez.common.network.C2S.FlightModeC2S;
 import com.dragonminez.common.network.C2S.FlyToggleC2S;
 import com.dragonminez.common.network.NetworkHandler;
 import com.dragonminez.common.stats.character.Status;
+import com.dragonminez.common.stats.character.FlightSpeedLimit;
 import com.dragonminez.common.stats.skills.Skill;
 import com.dragonminez.common.stats.techniques.TechniqueDispatcher;
 import com.dragonminez.common.stats.StatsCapability;
@@ -260,7 +261,7 @@ public class FlySkillEvent {
 						return;
 					}
 					CombatFlightHandler.handle(player, data, movementRestricted);
-				} else handleFlightMovement(player, data.getSkills().getSkillLevel("fly"), movementRestricted);
+				} else handleFlightMovement(player, data.getSkills().getSkillLevel("fly"), data.getStatus().getSearchFlightSpeedLimit(), movementRestricted);
 				handleKiConsumption(player, data, flySkill);
 			} else if (!pendingFlightDisable) {
 				resetFlightState();
@@ -272,11 +273,11 @@ public class FlySkillEvent {
 		});
 	}
 
-	private static void handleFlightMovement(LocalPlayer player, int flyLevel, boolean movementRestricted) {
+	private static void handleFlightMovement(LocalPlayer player, int flyLevel, int speedLimit, boolean movementRestricted) {
 		float flySpeedScale = getFlySpeedScale(player);
 		float levelMultiplier = 1.0F + (0.20F * flyLevel);
-		float maxNormalSpeed = NORMAL_MAX_SPEED * levelMultiplier * flySpeedScale;
-		float maxSprintSpeed = SPRINT_MAX_SPEED * levelMultiplier * flySpeedScale;
+		float maxNormalSpeed = FlightSpeedLimit.scaleSpeed(NORMAL_MAX_SPEED * levelMultiplier * flySpeedScale, speedLimit);
+		float maxSprintSpeed = FlightSpeedLimit.scaleSpeed(SPRINT_MAX_SPEED * levelMultiplier * flySpeedScale, speedLimit);
 
 		Minecraft mc = Minecraft.getInstance();
 		boolean isForward = !movementRestricted && mc.options.keyUp.isDown();
@@ -328,13 +329,16 @@ public class FlySkillEvent {
 				resetFlightState();
 				return;
 			}
+		} else if (currentSpeed > currentMaxSpeed) {
+			double newSpeed = FlightSpeedLimit.decelerateTowardLimit((float) currentSpeed, currentMaxSpeed, DECELERATION);
+			flightVector = flightVector.normalize().scale(newSpeed);
 		} else if (hasInput && targetDirection.length() > 0.001) {
 			targetDirection = targetDirection.normalize();
 			if (canSprint) {
 				Vec3 targetVelocity = targetDirection.scale(maxSprintSpeed);
 				flightVector = targetVelocity;
 			} else {
-				double minSpeed = ConfigManager.getCombatConfig().getCombatFlyBaseSpeed() * levelMultiplier * flySpeedScale;
+				double minSpeed = Math.min(ConfigManager.getCombatConfig().getCombatFlyBaseSpeed() * levelMultiplier * flySpeedScale, currentMaxSpeed);
 				double targetSpeed = Math.max(minSpeed, Math.min(currentSpeed + currentAccel, currentMaxSpeed));
 				Vec3 targetVelocity = targetDirection.scale(targetSpeed);
 				float turnSpeed = isFastFlight ? TURN_SPEED_FAST : TURN_SPEED_NORMAL;
@@ -363,7 +367,7 @@ public class FlySkillEvent {
 			player.setDeltaMovement(flightVector);
 			player.fallDistance = 0F;
 			verticalHover = 0;
-		} else handleHovering(player, isJump, isCrouch);
+		} else handleHovering(player, isJump, isCrouch, maxNormalSpeed);
 
 		if (player.onGround() && !pendingFlightActivation) {
 			pendingFlightDisable = false;
@@ -396,7 +400,7 @@ public class FlySkillEvent {
 		flightVector = currentMotion.normalize().scale(clamped);
 	}
 
-	private static void handleHovering(LocalPlayer player, boolean isJump, boolean isCrouch) {
+	private static void handleHovering(LocalPlayer player, boolean isJump, boolean isCrouch, float speedLimit) {
 		if (isJump) {
 			if (verticalHover < 20) verticalHover = Mth.clamp(verticalHover + 1, -20, 20);
 		} else if (isCrouch) {
@@ -414,6 +418,10 @@ public class FlySkillEvent {
 		if (!isJump && !isCrouch && getGroundDistance(player) <= MIN_GROUND_CLEARANCE) {
 			yMovement = Math.max(0.0D, yMovement);
 		}
+		double currentY = player.getDeltaMovement().y;
+		if (Math.abs(currentY) > speedLimit) {
+			yMovement = Math.copySign(FlightSpeedLimit.decelerateTowardLimit((float) Math.abs(currentY), speedLimit, DECELERATION), currentY);
+		} else yMovement = Mth.clamp(yMovement, -speedLimit, speedLimit);
 
 		player.setDeltaMovement(new Vec3(
 				player.getDeltaMovement().x * 0.9,

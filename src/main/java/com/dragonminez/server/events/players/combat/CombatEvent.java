@@ -71,6 +71,7 @@ public class CombatEvent {
 
 		StatsProvider.get(StatsCapability.INSTANCE, serverPlayer).ifPresent(data -> {
 			if (!data.getSkills().isSkillActive("fly")) return;
+			if (data.getStatus().isFlightModeLocked()) return;
 
 			int lockTicks = ConfigManager.getCombatConfig().getCombatFlyLockSeconds() * 20;
 			boolean switched = false;
