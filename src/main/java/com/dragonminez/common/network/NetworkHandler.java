@@ -363,6 +363,18 @@ public class NetworkHandler {
 				.consumerMainThread(EvasionCastC2S::handle)
 				.add();
 
+		net.messageBuilder(MeleeAttackStartC2S.class, id(), NetworkDirection.PLAY_TO_SERVER)
+				.decoder(MeleeAttackStartC2S::new)
+				.encoder(MeleeAttackStartC2S::encode)
+				.consumerMainThread(MeleeAttackStartC2S::handle)
+				.add();
+
+		net.messageBuilder(ReserveFirstHotbarSlotC2S.class, id(), NetworkDirection.PLAY_TO_SERVER)
+				.decoder(ReserveFirstHotbarSlotC2S::new)
+				.encoder(ReserveFirstHotbarSlotC2S::encode)
+				.consumerMainThread(ReserveFirstHotbarSlotC2S::handle)
+				.add();
+
 		/*
 		  SERVER -> CLIENT
 		 */

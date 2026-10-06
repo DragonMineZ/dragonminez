@@ -6,14 +6,10 @@ import com.dragonminez.common.combat.logic.knockback.ConfigurableKnockback;
 import com.dragonminez.common.combat.logic.player.PlayerAttackHelper;
 import com.dragonminez.common.combat.logic.player.PlayerAttackProperties;
 import com.dragonminez.common.combat.logic.player.TargetHelper;
-import com.dragonminez.common.combat.util.SoundHelper;
-import com.dragonminez.common.network.NetworkHandler;
-import com.dragonminez.common.network.S2C.MeleeAnimationS2C;
 import com.dragonminez.common.stats.StatsCapability;
 import com.dragonminez.common.stats.StatsProvider;
 import lombok.Getter;
 import net.minecraft.network.FriendlyByteBuf;
-import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.LivingEntity;
@@ -79,7 +75,7 @@ public class CombatAttackRequestC2S {
 			ServerPlayer player = ctx.get().getSender();
 			if (player != null) {
 				StatsProvider.get(StatsCapability.INSTANCE, player).ifPresent(stats -> {
-					if (stats.getStatus().isStunned()) return;
+					if (stats.getStatus().isStunned() || stats.getStatus().isBlocking() || player.isBlocking()) return;
 					processAttackRequest(player, this);
 				});
 			}
@@ -116,6 +112,7 @@ public class CombatAttackRequestC2S {
 				LogUtil.warn(Env.SERVER, "Player {} tried to attack with mismatched selected slot", player.getName().getString());
 				return;
 			}
+			if (!MeleeAttackStartC2S.consumeIfReady(player, comboCount, selectedSlot)) return;
 
 			long gameTime = player.level().getGameTime();
 			long lastAttackTime = player.getPersistentData().getLong(LAST_MELEE_ATTACK_TIME_TAG);
@@ -131,18 +128,6 @@ public class CombatAttackRequestC2S {
 				((PlayerAttackProperties) player).setComboCount(-1);
 				return;
 			}
-
-			if (player.level() instanceof ServerLevel serverLevel) {
-				SoundHelper.playSound(serverLevel, player, player, hand.attack().swingSound());
-			}
-
-			float cooldownTicks = PlayerAttackHelper.getAttackCooldownTicksCapped(player);
-			float animSpeedMultiplier = 12.0F / Math.max(cooldownTicks, 0.001F);
-			animSpeedMultiplier = Math.max(0.55F, Math.min(1.35F, animSpeedMultiplier));
-			String animName = hand.attack() != null ? hand.attack().animation() : "";
-			boolean isOffhand = hand.isOffHand();
-			var animPacket = new MeleeAnimationS2C(player.getId(), animName, isOffhand, animSpeedMultiplier);
-			NetworkHandler.sendToTrackingEntity(animPacket, player);
 
 			if (hand.isOffHand()) PlayerAttackHelper.setAttributesForOffHandAttack(player, true);
 
