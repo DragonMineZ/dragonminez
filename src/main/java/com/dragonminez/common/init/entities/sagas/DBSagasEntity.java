@@ -413,6 +413,16 @@ public abstract class DBSagasEntity extends Monster implements GeoEntity, ITextu
         return 1.0F;
     }
 
+    public float getVisualHeight() {
+        float height = this.getBbHeight();
+        if (this.hitboxParts == null) return height;
+        float scale = this.getHitboxScale();
+        for (PartEntity<?> generic : this.hitboxParts) {
+            if (generic instanceof DBSagasPart part) height = Math.max(height, part.yOffset * scale + part.getBbHeight() / 2.0F);
+        }
+        return height;
+    }
+
     protected void refreshHitboxes() {
         this.refreshDimensions();
         if (this.hitboxParts != null) {

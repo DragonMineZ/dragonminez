@@ -177,14 +177,18 @@ public class DBSagasRenderer<T extends DBSagasEntity> extends GeoEntityRenderer<
 
     private static final float STANDARD_PLAYER_HEIGHT = 1.8f;
 
+    private static float modelHeight(DBSagasEntity animatable) {
+        return animatable.getVisualHeight() / Math.max(animatable.getScale(), 0.01f);
+    }
+
     private void drawAura3D(T animatable, PoseStack poseStack, float partialTick) {
         Aura3DRenderer.drawEntity(poseStack, RenderSystem.getProjectionMatrix(), animatable.getAuraType3D(),
                 ColorUtils.rgbIntToFloat(animatable.getAuraColor()), animatable.tickCount + partialTick,
-                animatable.getBbHeight() / STANDARD_PLAYER_HEIGHT);
+                modelHeight(animatable) / STANDARD_PLAYER_HEIGHT);
     }
 
     private void drawPulseAura3D(T animatable, PoseStack poseStack, float partialTick) {
-        float height = animatable.getBbHeight() / STANDARD_PLAYER_HEIGHT;
+        float height = modelHeight(animatable) / STANDARD_PLAYER_HEIGHT;
         float age = animatable.tickCount + partialTick;
         float[] color = ColorUtils.rgbIntToFloat(animatable.getAuraColor());
         float spin = age * 2.5f;
@@ -301,7 +305,7 @@ public class DBSagasRenderer<T extends DBSagasEntity> extends GeoEntityRenderer<
         if (crossFactor < 1.0f) {
             poseStack.pushPose();
 
-            poseStack.translate(0.0, animatable.getBbHeight() / 2.0f + 0.8f, 0.0);
+            poseStack.translate(0.0, modelHeight(animatable) / 2.0f + 0.8f, 0.0);
 
             poseStack.mulPose(Axis.YP.rotationDegrees(-cameraYaw));
             poseStack.mulPose(Axis.XP.rotationDegrees(cameraPitch));
@@ -372,7 +376,7 @@ public class DBSagasRenderer<T extends DBSagasEntity> extends GeoEntityRenderer<
 
     private void executeLightningShaderDraw(T animatable, PoseStack poseStack, float partialTick) {
         float scale = Math.max(animatable.getScale(), 0.01f);
-        float height = animatable.getBbHeight() / scale;
+        float height = animatable.getVisualHeight() / scale;
         float radius = Math.max(LightningBoltRenderer.PLAYER_RADIUS * height / STANDARD_PLAYER_HEIGHT, animatable.getBbWidth() / scale);
         boolean charged = animatable.isCharge() || animatable.isTransforming();
 
