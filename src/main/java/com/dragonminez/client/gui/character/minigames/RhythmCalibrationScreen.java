@@ -3,6 +3,7 @@ package com.dragonminez.client.gui.character.minigames;
 import com.dragonminez.Reference;
 import com.dragonminez.client.gui.hud.HudRender;
 import com.dragonminez.client.gui.tutorial.TutorialManager;
+import com.dragonminez.client.util.PanelSkin;
 import com.dragonminez.client.util.TextUtil;
 import com.dragonminez.common.config.ConfigManager;
 import com.mojang.blaze3d.systems.RenderSystem;
@@ -24,9 +25,7 @@ import java.util.List;
 
 public class RhythmCalibrationScreen extends Screen {
 	private static final ResourceLocation DMZ_FONT = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "smooth");
-	private static final ResourceLocation PANEL = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "textures/gui/menu/menunpc.png");
 	private static final ResourceLocation BUTTONS = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "textures/gui/buttons/characterbuttons.png");
-	private static final int PANEL_TEX_W = 346, PANEL_TEX_H = 94;
 	private static final int BUTTON_W = 74, BUTTON_H = 20;
 	private static final int WARMUP_TICKS = 4;
 	private static final int SAMPLES_NEEDED = 12;
@@ -227,11 +226,7 @@ public class RhythmCalibrationScreen extends Screen {
 		int panelW = contentW + padding * 2;
 		int panelH = contentH + padding * 2;
 		RenderSystem.setShaderColor(1f, 1f, 1f, 1f);
-		graphics.pose().pushPose();
-		graphics.pose().translate(cx - panelW / 2f, cy - panelH / 2f, 0);
-		graphics.pose().scale((float) panelW / PANEL_TEX_W, (float) panelH / PANEL_TEX_H, 1f);
-		HudRender.blit(graphics, PANEL, 0, 0, 0, 0, PANEL_TEX_W, PANEL_TEX_H, 512, 512);
-		graphics.pose().popPose();
+		PanelSkin.NPC_PANEL.draw(graphics, cx - panelW / 2f, cy - panelH / 2f, panelW, panelH);
 	}
 
 	private void drawButton(GuiGraphics graphics, float[] rect, Component label, int mouseX, int mouseY) {

@@ -5,6 +5,7 @@ import com.dragonminez.client.gui.buttons.TexturedTextButton;
 import com.dragonminez.client.gui.character.util.ScaledScreen;
 import com.dragonminez.client.gui.hud.HudRender;
 import com.dragonminez.client.util.NumberFormattingUtil;
+import com.dragonminez.client.util.PanelSkin;
 import com.dragonminez.client.util.ScrollbarState;
 import com.dragonminez.client.util.TextUtil;
 import com.dragonminez.common.config.ConfigManager;
@@ -39,7 +40,6 @@ import java.util.UUID;
 
 @OnlyIn(Dist.CLIENT)
 public class WorldBossResultsScreen extends ScaledScreen {
-	private static final ResourceLocation PANEL = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "textures/gui/menu/menusmall.png");
 	private static final ResourceLocation BUTTONS = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "textures/gui/buttons/characterbuttons.png");
 	private static final ResourceLocation REWARD_GENERIC_ICON = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "textures/gui/quest/reward_generic.png");
 
@@ -175,7 +175,7 @@ public class WorldBossResultsScreen extends ScaledScreen {
 		rowHits.clear();
 		rewardHits.clear();
 
-		HudRender.nineSlice(graphics, PANEL, guiLeft, guiTop, PANEL_WIDTH, PANEL_HEIGHT, 0.0f, 0.0f, 141.0f, 94.0f, 8.0f, 256, 256);
+		PanelSkin.SMALL_PANEL.draw(graphics, guiLeft, guiTop, PANEL_WIDTH, PANEL_HEIGHT);
 		renderTitle(graphics);
 		renderContribution(graphics, uiMouseX, uiMouseY);
 		HudRender.rect(graphics, guiLeft + DIVIDER_X, guiTop + 30, 1.0f, PANEL_HEIGHT - 44, 0x99FFFFFF);

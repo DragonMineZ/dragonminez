@@ -8,6 +8,7 @@ import com.dragonminez.client.gui.hud.HudRender;
 import com.dragonminez.client.gui.hud.HudSmoother;
 import com.dragonminez.client.gui.tutorial.TutorialManager;
 import com.dragonminez.client.render.effects.AuraModeState;
+import com.dragonminez.client.util.PanelSkin;
 import com.dragonminez.client.util.ScrollbarState;
 import com.dragonminez.client.util.TextUtil;
 import com.dragonminez.common.config.ConfigManager;
@@ -303,7 +304,7 @@ public class ConfigMenuScreen extends BaseMenuScreen {
 				panelX + 70, panelY + 17, 0xFFFFD700);
 
 		boolean editing = searchBox != null && searchBox.isFocused();
-		HudRender.nineSlice(graphics, STAT_BUTTONS, panelX + 12, panelY + SEARCH_TOP, 117, SEARCH_HEIGHT, 0, editing ? 126 : 108, 107, 18, 3, 256, 256);
+		(editing ? PanelSkin.FIELD_EDITING : PanelSkin.FIELD).draw(graphics, panelX + 12, panelY + SEARCH_TOP, 117, SEARCH_HEIGHT);
 
 		int top = listTop();
 		scrollBar.beginClip(graphics, panelX + 5, LIST_CLIP_WIDTH, false);

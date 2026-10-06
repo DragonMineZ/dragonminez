@@ -10,6 +10,7 @@ import com.dragonminez.client.gui.tutorial.TutorialStep;
 import com.dragonminez.client.gui.quest.QuestTreeLayoutHelper;
 import com.dragonminez.client.gui.quest.preview.QuestEnemyPreview;
 import com.dragonminez.client.util.LocalizationUtil;
+import com.dragonminez.client.util.PanelSkin;
 import com.dragonminez.client.util.ScrollbarState;
 import com.dragonminez.client.util.TextUtil;
 import com.dragonminez.common.config.ConfigManager;
@@ -83,8 +84,6 @@ import java.util.UUID;
 @OnlyIn(Dist.CLIENT)
 public class QuestTreeScreen extends BaseMenuScreen {
 
-	private static final ResourceLocation QUEST_MENU = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID,
-			"textures/gui/menu/questmenu.png");
 	private static final ResourceLocation BUTTONS_TEXTURE = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID,
 			"textures/gui/buttons/characterbuttons.png");
 	private static final ResourceLocation EXCLAMATION_MARK = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID,
@@ -2623,23 +2622,7 @@ public class QuestTreeScreen extends BaseMenuScreen {
 
 		int drawX = panel.x - (flushLeft ? 3 : 0);
 		int drawW = panel.width + (flushLeft ? 3 : 0) + (flushRight ? 3 : 0);
-
-		float srcPixelsPerDstPixel = panel.width <= 0 ? 1.0f : (282 / (float) panel.width);
-		int srcBleed = Math.max(0, Math.round(3 * srcPixelsPerDstPixel));
-		int srcU = 1 - (flushLeft ? srcBleed : 0);
-		int srcW = 282 + (flushLeft ? srcBleed : 0) + (flushRight ? srcBleed : 0);
-		int srcV = 1;
-		int srcH = 426;
-
-		if (srcU < 0) {
-			srcW += srcU;
-			srcU = 0;
-		}
-		srcW = Math.max(1, Math.min(srcW, 512 - srcU));
-		srcV = Math.max(0, Math.min(srcV, 511));
-		srcH = Math.max(1, Math.min(srcH, 512 - srcV));
-
-		HudRender.blit(graphics, QUEST_MENU, drawX, panel.y, srcU, srcV, drawW, panel.height, srcW, srcH, 512, 512);
+		PanelSkin.QUEST_PANEL.draw(graphics, drawX, panel.y, drawW, panel.height);
 
 		if (drawFrame) {
 			graphics.fill(panel.x, panel.y, panel.right(), panel.y + 1, 0xAA5A5F7A);

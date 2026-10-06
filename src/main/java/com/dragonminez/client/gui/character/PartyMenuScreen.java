@@ -4,7 +4,7 @@ import com.dragonminez.Reference;
 import com.dragonminez.client.gui.buttons.CustomTextureButton;
 import com.dragonminez.client.gui.buttons.TexturedTextButton;
 import com.dragonminez.client.gui.character.util.BaseMenuScreen;
-import com.dragonminez.client.gui.hud.HudRender;
+import com.dragonminez.client.util.PanelSkin;
 import com.dragonminez.client.util.ScrollbarState;
 import com.dragonminez.client.util.TextUtil;
 import com.dragonminez.common.init.MainSounds;
@@ -41,10 +41,6 @@ public class PartyMenuScreen extends BaseMenuScreen {
 	private static final int ITEM_HEIGHT = 16;
 	private static final int MAX_VISIBLE_ITEMS = 10;
 
-	private static final ResourceLocation CARD_BG = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "textures/gui/menu/menunpc.png");
-	private static final int CARD_SOURCE_WIDTH = 345;
-	private static final int CARD_SOURCE_HEIGHT = 94;
-	private static final int CARD_SHEET = 512;
 	private static final int WELCOME_WIDTH = 300;
 	private static final int WELCOME_HEIGHT = 94;
 	private static final int WELCOME_TEXT_TOP = 26;
@@ -455,8 +451,7 @@ public class PartyMenuScreen extends BaseMenuScreen {
 
 		RenderSystem.enableBlend();
 		RenderSystem.setShaderColor(1.0f, 1.0f, 1.0f, 1.0f);
-		HudRender.blit(graphics, CARD_BG, x, y, 0.0F, 0.0F, WELCOME_WIDTH, WELCOME_HEIGHT,
-				CARD_SOURCE_WIDTH, CARD_SOURCE_HEIGHT, CARD_SHEET, CARD_SHEET);
+		PanelSkin.NPC_PANEL.draw(graphics, x, y, WELCOME_WIDTH, WELCOME_HEIGHT);
 		RenderSystem.disableBlend();
 
 		TextUtil.drawCenteredStringWithBorder(graphics, this.font,
