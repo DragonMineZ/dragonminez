@@ -16,6 +16,7 @@ import com.dragonminez.common.config.FormConfig;
 import com.dragonminez.common.config.GeneralUserConfig;
 import com.dragonminez.common.init.MainSounds;
 import com.dragonminez.common.network.C2S.DynamicGrowthToggleC2S;
+import com.dragonminez.common.network.C2S.ReserveFirstHotbarSlotC2S;
 import com.dragonminez.common.network.NetworkHandler;
 import com.dragonminez.common.stats.StatsCapability;
 import com.dragonminez.common.stats.StatsProvider;
@@ -134,6 +135,14 @@ public class ConfigMenuScreen extends BaseMenuScreen {
 		toggle(Category.INTERFACE, "config.hideHudNumbers", userConfig.getHideHudNumbers(), userConfig::setHideHudNumbers);
 		toggle(Category.INTERFACE, "config.partyMarkers", userConfig.getPartyMarkers(), userConfig::setPartyMarkers);
 		toggle(Category.INTERFACE, "config.showAccumulativeDamage", userConfig.getShowAccumulativeDamage(), userConfig::setShowAccumulativeDamage);
+		toggle(Category.INTERFACE, "config.reserveFirstHotbarSlot", userConfig.isReserveFirstHotbarSlot(), enabled -> {
+			userConfig.setReserveFirstHotbarSlot(enabled);
+			if (this.minecraft != null && this.minecraft.getConnection() != null) {
+				NetworkHandler.sendToServer(new ReserveFirstHotbarSlotC2S(enabled));
+			}
+		});
+		number(Category.INTERFACE, "config.kiSoundVolume", ConfigType.INT, userConfig.getKiSoundVolume(), 0, 100,
+				value -> userConfig.setKiSoundVolume(value.intValue()));
 		toggle(Category.INTERFACE, "config.advancedDescription", userConfig.getAdvancedDescription(), userConfig::setAdvancedDescription);
 		toggle(Category.INTERFACE, "config.advancedDescriptionPercentage", userConfig.getAdvancedDescriptionPercentage(), userConfig::setAdvancedDescriptionPercentage);
 		toggle(Category.INTERFACE, "config.hexagonStatsDisplay", userConfig.getHexagonStatsDisplay(), userConfig::setHexagonStatsDisplay);

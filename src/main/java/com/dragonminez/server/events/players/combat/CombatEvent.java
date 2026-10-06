@@ -96,6 +96,7 @@ public class CombatEvent {
 
 		StatsProvider.get(StatsCapability.INSTANCE, serverPlayer).ifPresent(data -> {
 			if (!data.getSkills().isSkillActive("fly")) return;
+			if (data.getStatus().isFlightModeLocked()) return;
 
 			int lockTicks = ConfigManager.getCombatConfig().getCombatFlyLockSeconds() * 20;
 			boolean switched = false;
@@ -168,7 +169,7 @@ public class CombatEvent {
 
 			StatsProvider.get(StatsCapability.INSTANCE, attacker).ifPresent(attackerData -> {
 				if (!attackerData.getStatus().isHasCreatedCharacter()) return;
-				if (attackerData.getStatus().isBlocking()) {
+				if (attackerData.getStatus().isBlocking() && !(livingTarget instanceof Player)) {
 					event.setCanceled(true);
 					canceledByBlocking[0] = true;
 					return;

@@ -71,6 +71,7 @@ public class Status {
 	private boolean isStrikeLocked;
 	private boolean matchFrozen;
 	private int flightMode;
+	private boolean flightModeLocked;
 	private final Set<String> visitedDimensions;
 
 	private UUID activeShadowDummyUUID;
@@ -269,6 +270,7 @@ public class Status {
 		tag.putBoolean("IsStrikeLocked", isStrikeLocked);
 		tag.putBoolean("MatchFrozen", matchFrozen);
 		tag.putInt("FlightMode", flightMode);
+		tag.putBoolean("FlightModeLocked", flightModeLocked);
 
 		ListTag visitedDimensionsTag = new ListTag();
 		for (String dimensionId : visitedDimensions) visitedDimensionsTag.add(StringTag.valueOf(dimensionId));
@@ -335,6 +337,7 @@ public class Status {
 		this.isStrikeLocked = tag.getBoolean("IsStrikeLocked");
 		this.matchFrozen = tag.getBoolean("MatchFrozen");
 		this.flightMode = tag.getInt("FlightMode");
+		this.flightModeLocked = tag.getBoolean("FlightModeLocked");
 		this.visitedDimensions.clear();
 		if (tag.contains("VisitedDimensions", Tag.TAG_LIST)) {
 			ListTag visitedDimensionsTag = tag.getList("VisitedDimensions", Tag.TAG_STRING);
@@ -398,6 +401,7 @@ public class Status {
 		this.isStrikeLocked = other.isStrikeLocked;
 		this.matchFrozen = other.matchFrozen;
 		this.flightMode = other.flightMode;
+		this.flightModeLocked = other.flightModeLocked;
 		this.visitedDimensions.clear();
 		this.visitedDimensions.addAll(other.visitedDimensions);
 		this.activeShadowDummyUUID = other.activeShadowDummyUUID;

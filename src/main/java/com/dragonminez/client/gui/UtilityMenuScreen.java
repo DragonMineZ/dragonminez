@@ -856,6 +856,17 @@ public class UtilityMenuScreen extends ScaledScreen {
 
 	@Override
 	public boolean mouseScrolled(double mouseX, double mouseY, double delta) {
+		if (statsData != null && panelOptions == null) {
+			Hover hover = resolveHover(getUiWidth() / 2f, getUiHeight() / 2f, toUiX(mouseX), toUiY(mouseY), computeOpenScale());
+			if (hover.deepest instanceof ReleaseNode release) {
+				release.adjustByWheel(statsData, delta);
+				return true;
+			}
+			if (hover.deepest instanceof FlightSpeedNode flightSpeed) {
+				flightSpeed.adjustByWheel(statsData, delta);
+				return true;
+			}
+		}
 		if (panelOptions != null && panelScrollable) {
 			panelBar.scrollWheel(delta);
 			return true;

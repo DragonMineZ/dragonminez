@@ -27,6 +27,11 @@ public class MovementNode extends CategoryNode {
 				(s, was) -> FlySkillEvent.toggleFlightFromMenu()
 		));
 
+		out.add(new FlightModeNode());
+		out.add(new FlightSpeedNode());
+
+		out.add(new FlightModeLockNode());
+
 		out.add(new SkillToggleNode(
 				Component.translatable("skill.dragonminez.jump"), icon("jump"),
 				s -> s.getSkills().hasSkill("jump"),
