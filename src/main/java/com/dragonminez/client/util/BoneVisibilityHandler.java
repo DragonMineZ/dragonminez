@@ -23,9 +23,10 @@ import java.util.Objects;
 import software.bernie.geckolib.renderer.layer.GeoRenderLayer;
 
 public class BoneVisibilityHandler {
-	private static final String[] FUSION_MODEL_BONES = {"cola", "orejas", "alas", "cabeza2"};
+	private static final String[] FUSION_MODEL_BONES = {"cola", "xenotail", "orejas", "alas", "cabeza2"};
 
 	public static void updateVisibility(BakedGeoModel model, AbstractClientPlayer player, GeoRenderLayer<?> renderLayer) {
+		FusionOriginBones.reveal(model);
 		var stats = StatsProvider.get(StatsCapability.INSTANCE, player).orElse(null);
 		if (stats == null) return;
 
@@ -49,12 +50,12 @@ public class BoneVisibilityHandler {
 		boolean isMajin = race.equals("majin");
 		boolean isSaiyan = race.equals("saiyan");
 		boolean isHuman = race.equals("human");
-		boolean isNamekian = race.equals("namekian");
 		boolean isSuperOrUltra = Objects.equals(currentForm, MajinForms.SUPER) || Objects.equals(currentForm, MajinForms.ULTRA);
 
 		final String logicKey = character.getRenderLogicKey();
 		FusedData fused = stats.getFusedData();
 		final FusionTraits.Plan fusionPlan = fused != null ? fused.traitPlan(character) : FusionTraits.Plan.EMPTY;
+		final String tailRace = FusionOriginBones.applies(fused, character) ? fused.getPartnerRace().toLowerCase() : race;
 
 
 		boolean isSpectator = player.isSpectator();
@@ -88,11 +89,14 @@ public class BoneVisibilityHandler {
 
 		model.getBone("tail1").ifPresent(bone -> {
 			boolean showNormalTail;
-            if (logicKey.equals("janemba_super") || logicKey.equals("janemba_fat")) return;
+			if (logicKey.equals("janemba_super") || logicKey.equals("janemba_fat")) {
+				if (fusionPlan.hides("tail1")) setHiddenRecursive(bone, true);
+				return;
+			}
 
-			RaceCharacterConfig raceConfig = ConfigManager.getRaceCharacter(race);
-			String raceBaseKey = raceConfig != null && Boolean.TRUE.equals(raceConfig.hasCustomModel()) ? raceConfig.getCustomModel().toLowerCase() : race;
-			boolean isTaillessRace = isHuman || isNamekian || isMajin || isTaillessModel(raceBaseKey);
+			RaceCharacterConfig raceConfig = ConfigManager.getRaceCharacter(tailRace);
+			String raceBaseKey = raceConfig != null && Boolean.TRUE.equals(raceConfig.hasCustomModel()) ? raceConfig.getCustomModel().toLowerCase() : tailRace;
+			boolean isTaillessRace = tailRace.equals("human") || tailRace.equals("namekian") || tailRace.equals("majin") || isTaillessModel(raceBaseKey);
 			boolean isTaillessModel = isTaillessModel(logicKey);
 
 			boolean configHasSaiyanTail = raceConfig != null && raceConfig.getHasSaiyanTail();
@@ -101,7 +105,7 @@ public class BoneVisibilityHandler {
 				showNormalTail = false;
 			} else if (logicKey.contains("ssj4") || SaiyanTailRules.ssj4ForcesTail(stats.getCharacter())) {
 				showNormalTail = stats.getStatus().isTailVisible();
-			} else if (isSaiyan || configHasSaiyanTail) {
+			} else if (tailRace.equals("saiyan") || configHasSaiyanTail) {
 				showNormalTail = stats.getStatus().isTailVisible() && stats.getCharacter().isHasSaiyanTail();
 			} else if (logicKey.equals("glindtrueform") || logicKey.equals("trascended")) {
 				showNormalTail = true;
@@ -120,6 +124,7 @@ public class BoneVisibilityHandler {
 		setBonesHidden(model, true, "armorHead", "armorBody", "armorBody2", "armorLeggingsBody", "armorRightArm", "armorLeftArm",
 				"armorLeftLeg", "armorLeftBoot", "armorRightLeg", "armorRightBoot");
 		hideAllArmorPrefixBones(model);
+		FusionOriginBones.conceal(model, fused, character);
 	}
 
 	private static boolean isTaillessModel(String key) {

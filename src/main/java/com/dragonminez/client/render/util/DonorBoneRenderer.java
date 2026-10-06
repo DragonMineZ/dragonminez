@@ -48,6 +48,23 @@ public final class DonorBoneRenderer {
 		});
 	}
 
+	public static <T extends AbstractClientPlayer & GeoAnimatable> void renderOwn(GeoRenderer<T> renderer, T animatable, GeoBone root, List<Layer> layers,
+			PoseStack poseStack, MultiBufferSource bufferSource, float partialTick, int packedLight, int packedOverlay) {
+		if (layers.isEmpty()) return;
+		boolean hidden = root.isHidden();
+		boolean hidingChildren = root.isHidingChildren();
+		root.setHidden(false);
+		try {
+			for (Layer layer : layers) {
+				renderer.renderRecursively(poseStack, animatable, root, layer.type(), bufferSource, bufferSource.getBuffer(layer.type()), true,
+						partialTick, packedLight, packedOverlay, layer.red(), layer.green(), layer.blue(), layer.alpha());
+			}
+		} finally {
+			root.setHidden(hidden);
+			root.setChildrenHidden(hidingChildren);
+		}
+	}
+
 	public static void visit(Entity animatable, BakedGeoModel playerModel, ResourceLocation donorModel, String boneName, boolean tail,
 			PoseStack poseStack, float partialTick, BoneVisitor visitor) {
 		withDonor(animatable, playerModel, donorModel, boneName, tail, partialTick, root -> walk(root, poseStack, visitor));
