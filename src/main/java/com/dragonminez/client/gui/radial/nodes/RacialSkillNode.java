@@ -55,7 +55,24 @@ public class RacialSkillNode extends AbstractRadialNode {
 
 	@Override
 	public ResourceLocation icon(StatsData stats) {
+		if (isActionRacial(stats)) {
+			return switch (racialSkill(stats)) {
+				case "namekian" -> icon("assimilation");
+				case "majin" -> icon("absorption");
+				case "human" -> icon("absorptionbarrier");
+				case "bioandroid" -> bioAndroidIcon(stats);
+				default -> icon("racial");
+			};
+		}
+		if (isTailRace(stats)) return icon("tail");
 		return icon("racial");
+	}
+
+	private ResourceLocation bioAndroidIcon(StatsData stats) {
+		String tier = BioAndroidEvolution.resolveTier(stats);
+		if (tier.equals("perfect")) return icon("celljr");
+		if (tier.equals("semi") && RacialData.BIO_SKILL_EXPLODE.equals(stats.getRacialData().getBioSelectedSkill())) return icon("selfdestruct");
+		return icon("vitaldrain");
 	}
 
 	@Override

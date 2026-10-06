@@ -43,7 +43,7 @@ public abstract class AbstractRadialNode implements RadialNode {
 	}
 
 	protected static ResourceLocation iconForFormType(String type) {
-		if (type == null) return PLACEHOLDER;
+		if (type == null) return icon("superforms");
 		String t = type.toLowerCase(Locale.ROOT);
 		if (t.contains("legendary")) return icon("legendaryforms");
 		if (t.contains("super")) return icon("superforms");
@@ -52,7 +52,7 @@ public abstract class AbstractRadialNode implements RadialNode {
 		if (t.contains("kaioken")) return icon("kaioken");
 		if (t.contains("ultimate")) return icon("ultimate");
 		if (Minecraft.getInstance().getResourceManager().getResource(icon(t)).isPresent()) return icon(t);
-		return PLACEHOLDER;
+		return icon("superforms");
 	}
 
 	protected static int tintOf(FormConfig.FormData formData) {

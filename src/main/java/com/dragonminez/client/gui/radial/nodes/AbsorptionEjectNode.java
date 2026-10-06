@@ -36,7 +36,7 @@ public class AbsorptionEjectNode extends AbstractRadialNode {
 
 	@Override
 	public ResourceLocation icon(StatsData stats) {
-		return icon("racial");
+		return icon("absorption");
 	}
 
 	@Override
