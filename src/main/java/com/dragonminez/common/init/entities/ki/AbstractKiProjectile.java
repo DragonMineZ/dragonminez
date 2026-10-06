@@ -2,6 +2,7 @@ package com.dragonminez.common.init.entities.ki;
 
 import com.dragonminez.client.util.ColorUtils;
 import com.dragonminez.common.combat.HealContext;
+import com.dragonminez.common.combat.util.KiTerrainDestruction;
 import com.dragonminez.common.combat.logic.player.TargetHelper;
 import com.dragonminez.common.config.ConfigManager;
 import com.dragonminez.common.init.MainDamageTypes;
@@ -34,11 +35,9 @@ import net.minecraft.world.entity.projectile.Projectile;
 import net.minecraft.world.entity.projectile.ProjectileUtil;
 import net.minecraft.world.level.ClipContext;
 import net.minecraft.world.level.Level;
-import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.util.Mth;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.state.BlockState;
-import net.minecraft.world.level.levelgen.structure.BoundingBox;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.HitResult;
@@ -496,83 +495,19 @@ public abstract class AbstractKiProjectile extends Projectile {
     }
 
     protected void carveKiSphere(BlockPos center, float innerRadius, float radius, int flags) {
-        if (this.level().isClientSide || !this.blockDestructionEnabled || radius <= 0.0F) return;
-
-        int r = Mth.ceil(radius);
-        MainGameRules.KiGriefGate gate = MainGameRules.griefGate(this.level(), new BoundingBox(
-                center.getX() - r, center.getY() - r, center.getZ() - r,
-                center.getX() + r, center.getY() + r, center.getZ() + r), this.getKiGriefingSource());
-        if (gate.deniesEverything()) return;
-
-        float radiusSq = radius * radius;
-        float innerSq = innerRadius * innerRadius;
-        BlockPos.MutableBlockPos cursor = new BlockPos.MutableBlockPos();
-
-        for (int dx = -r; dx <= r; dx++) {
-            for (int dz = -r; dz <= r; dz++) {
-                float flatSq = (float) (dx * dx + dz * dz);
-                if (flatSq > radiusSq) continue;
-
-                for (int dy = -r; dy <= r; dy++) {
-                    float distSq = flatSq + (float) (dy * dy);
-                    if (distSq > radiusSq || distSq <= innerSq) continue;
-
-                    cursor.set(center.getX() + dx, center.getY() + dy, center.getZ() + dz);
-                    BlockState state = this.level().getBlockState(cursor);
-                    if (state.isAir()) continue;
-                    if (state.getBlock() instanceof DragonBallBlock) continue;
-                    if (state.getExplosionResistance(this.level(), cursor, null) >= KI_INDESTRUCTIBLE_RESISTANCE) continue;
-                    if (!gate.canGrief(cursor)) continue;
-
-                    this.level().setBlock(cursor.immutable(), Blocks.AIR.defaultBlockState(), flags);
-                }
-            }
-        }
+        if (!this.blockDestructionEnabled || radius <= 0.0F || !(this.level() instanceof ServerLevel serverLevel)) return;
+        KiTerrainDestruction.carve(serverLevel, center, innerRadius, radius, flags, this.getKiGriefingSource());
     }
 
+    private transient BlockPos lastEatCenter;
+    private transient float lastEatRadius;
 
     protected boolean eatKiSphere(BlockPos center, float radius) {
-        if (this.level().isClientSide || !this.blockDestructionEnabled || radius <= 0.0F) return false;
-
-        int r = Mth.ceil(radius);
-        MainGameRules.KiGriefGate gate = MainGameRules.griefGate(this.level(), new BoundingBox(
-                center.getX() - r, center.getY() - r, center.getZ() - r,
-                center.getX() + r, center.getY() + r, center.getZ() + r), this.getKiGriefingSource());
-        if (gate.deniesEverything()) return false;
-
-        boolean ateSomething = false;
-        float radiusSq = radius * radius;
-        BlockPos.MutableBlockPos cursor = new BlockPos.MutableBlockPos();
-        ServerLevel serverLevel = this.level() instanceof ServerLevel level ? level : null;
-
-        for (int dx = -r; dx <= r; dx++) {
-            for (int dz = -r; dz <= r; dz++) {
-                float flatSq = (float) (dx * dx + dz * dz);
-                if (flatSq > radiusSq) continue;
-
-                for (int dy = -r; dy <= r; dy++) {
-                    if (flatSq + (float) (dy * dy) > radiusSq) continue;
-
-                    cursor.set(center.getX() + dx, center.getY() + dy, center.getZ() + dz);
-                    BlockState state = this.level().getBlockState(cursor);
-                    if (state.isAir()) continue;
-                    if (state.getBlock() instanceof DragonBallBlock) continue;
-                    if (state.getExplosionResistance(this.level(), cursor, null) >= KI_INDESTRUCTIBLE_RESISTANCE) continue;
-                    if (!gate.canGrief(cursor)) continue;
-
-                    BlockPos pos = cursor.immutable();
-                    if (!this.level().destroyBlock(pos, false)) continue;
-                    ateSomething = true;
-
-                    if (serverLevel != null && this.random.nextFloat() < 0.25F) {
-                        serverLevel.sendParticles(ParticleTypes.CAMPFIRE_COSY_SMOKE,
-                                pos.getX() + 0.5, pos.getY() + 0.5, pos.getZ() + 0.5,
-                                1, 0.5D, 0.5D, 0.5D, 0.05D);
-                    }
-                }
-            }
-        }
-        return ateSomething;
+        if (!this.blockDestructionEnabled || radius <= 0.0F || !(this.level() instanceof ServerLevel serverLevel)) return false;
+        boolean ate = KiTerrainDestruction.eat(serverLevel, center, radius, this.lastEatCenter, this.lastEatRadius, this.getKiGriefingSource());
+        this.lastEatCenter = center.immutable();
+        this.lastEatRadius = radius;
+        return ate;
     }
 
     protected boolean destroyKiBlock(BlockPos pos, boolean dropBlock) {

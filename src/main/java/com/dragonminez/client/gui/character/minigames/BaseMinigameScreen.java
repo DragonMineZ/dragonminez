@@ -4,6 +4,7 @@ import com.dragonminez.Reference;
 import com.dragonminez.client.gui.character.MinigamesScreen;
 import com.dragonminez.client.gui.hud.HudRender;
 import com.dragonminez.client.util.KeyBinds;
+import com.dragonminez.client.util.PanelSkin;
 import com.dragonminez.client.util.TextUtil;
 import com.dragonminez.common.config.ConfigManager;
 import com.dragonminez.common.network.C2S.MinigameInputC2S;
@@ -42,9 +43,6 @@ import java.util.Map;
 
 public abstract class BaseMinigameScreen extends Screen {
 	protected static final ResourceLocation DMZ_FONT = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "smooth");
-	private static final ResourceLocation MENU_NPC_TEXTURE = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "textures/gui/menu/menunpc.png");
-	private static final int PANEL_TEX_W = 346;
-	private static final int PANEL_TEX_H = 94;
 	private static final int FLUSH_INTERVAL_TICKS = 20;
 	private static final int CONNECT_TIMEOUT_TICKS = 100;
 	private static final int VERIFY_TIMEOUT_TICKS = 100;
@@ -663,14 +661,8 @@ public abstract class BaseMinigameScreen extends Screen {
 		int padding = 16;
 		int panelW = contentW + padding * 2;
 		int panelH = contentH + padding * 2;
-		float scaleX = (float) panelW / PANEL_TEX_W;
-		float scaleY = (float) panelH / PANEL_TEX_H;
 		RenderSystem.setShaderColor(1f, 1f, 1f, 1f);
-		graphics.pose().pushPose();
-		graphics.pose().translate(cx - panelW / 2f, cy - panelH / 2f, 0);
-		graphics.pose().scale(scaleX, scaleY, 1f);
-		HudRender.blit(graphics, MENU_NPC_TEXTURE, 0, 0, 0, 0, PANEL_TEX_W, PANEL_TEX_H, 512, 512);
-		graphics.pose().popPose();
+		PanelSkin.NPC_PANEL.draw(graphics, cx - panelW / 2f, cy - panelH / 2f, panelW, panelH);
 	}
 
 	private void renderReadyOverlay(GuiGraphics graphics) {

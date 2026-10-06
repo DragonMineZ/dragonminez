@@ -52,6 +52,8 @@ public abstract class BaseMenuScreen extends ScaledScreen {
 	private boolean fadingMenu = false;
 	private boolean closingMenu = false;
 	private boolean entered = false;
+	private boolean centerAnimated = true;
+	private boolean centerCarriedIn = false;
 
 	private enum PanelSwitchState { NONE, ENTERING, EXITING }
 
@@ -82,9 +84,11 @@ public abstract class BaseMenuScreen extends ScaledScreen {
 		if (GLOBAL_SWITCHING) {
 			GLOBAL_SWITCHING = false;
 			fadingMenu = false;
+			centerAnimated = !centerCarriedIn;
 			startPanelEnterTransition();
 		} else if (!entered && !suppressOpenAnimationOnce) {
 			fadingMenu = true;
+			centerAnimated = true;
 			startPanelEnterTransition();
 		}
 		entered = true;
@@ -107,6 +111,7 @@ public abstract class BaseMenuScreen extends ScaledScreen {
 				return;
 			}
 			panelSwitchState = PanelSwitchState.NONE;
+			if (pendingSwitchScreen instanceof BaseMenuScreen next) next.centerCarriedIn = !centerAnimated;
 			GLOBAL_SWITCHING = true;
 			this.minecraft.setScreen(pendingSwitchScreen);
 		}
@@ -257,8 +262,12 @@ public abstract class BaseMenuScreen extends ScaledScreen {
 		return panelSwitchState == PanelSwitchState.EXITING ? easeInBack(getPanelSwitchProgress(partialTick)) : 0.0f;
 	}
 
+	protected boolean hasCenterModel() {
+		return false;
+	}
+
 	protected float getCenterPanelSwitchOffset(float partialTick) {
-		if (panelSwitchState == PanelSwitchState.NONE) return 0.0f;
+		if (panelSwitchState == PanelSwitchState.NONE || !centerAnimated) return 0.0f;
 		float p = getPanelSwitchProgress(partialTick);
 
 		if (panelSwitchState == PanelSwitchState.ENTERING) return (1.0f - easeOutBack(p)) * CENTER_PANEL_SWITCH_DISTANCE;
@@ -347,6 +356,7 @@ public abstract class BaseMenuScreen extends ScaledScreen {
 	private void startPanelExitTransition(Screen nextScreen) {
 		if (panelSwitchState == PanelSwitchState.EXITING) return;
 		fadingMenu = false;
+		centerAnimated = !(hasCenterModel() && nextScreen instanceof BaseMenuScreen next && next.hasCenterModel());
 		pendingSwitchScreen = nextScreen;
 		panelSwitchState = PanelSwitchState.EXITING;
 		panelSwitchAnimationStartTime = System.currentTimeMillis();
@@ -357,6 +367,7 @@ public abstract class BaseMenuScreen extends ScaledScreen {
 		long now = System.currentTimeMillis();
 		closingMenu = true;
 		fadingMenu = true;
+		centerAnimated = true;
 		pendingSwitchScreen = null;
 		panelSwitchState = PanelSwitchState.EXITING;
 		panelSwitchAnimationStartTime = now;

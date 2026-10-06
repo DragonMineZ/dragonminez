@@ -13,6 +13,7 @@ import com.dragonminez.client.gui.quest.StoryNotificationManager;
 import com.dragonminez.client.gui.hud.NotificationHUD;
 import com.dragonminez.client.clash.ClientBeamClashState;
 import com.dragonminez.client.render.effects.AuraModeState;
+import com.dragonminez.client.systems.DragonSkyState;
 import com.dragonminez.common.network.S2C.BeamClashStateS2C;
 import com.dragonminez.common.network.S2C.DialogueResultS2C;
 import com.dragonminez.common.network.S2C.OpenDialogueNodeS2C;
@@ -27,6 +28,7 @@ import net.minecraft.client.player.AbstractClientPlayer;
 import net.minecraft.core.BlockPos;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.phys.Vec3;
@@ -194,6 +196,10 @@ public class ClientPacketHandler {
 
 	public static void handleRadarSyncPacket(List<BlockPos> earthPositions, List<BlockPos> namekPositions, Map<String, List<BlockPos>> positionsBySet) {
 		RadarRenderEvent.updateRadarData(earthPositions, namekPositions, positionsBySet);
+	}
+
+	public static void handleDragonSky(ResourceLocation dimension, boolean active) {
+		DragonSkyState.update(dimension, active);
 	}
 
 	public static void handleTriggerAnimationPacket(UUID playerUUID, TriggerAnimationS2C.AnimationType animationType,

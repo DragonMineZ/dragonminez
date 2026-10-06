@@ -1,83 +1,45 @@
 package com.dragonminez.client.gui.hair;
 
 import com.dragonminez.Reference;
-import com.mojang.blaze3d.systems.RenderSystem;
-import com.mojang.blaze3d.vertex.BufferBuilder;
-import com.mojang.blaze3d.vertex.DefaultVertexFormat;
-import com.mojang.blaze3d.vertex.Tesselator;
-import com.mojang.blaze3d.vertex.VertexFormat;
+import com.dragonminez.client.gui.hud.HudRender;
+import com.dragonminez.client.util.PanelSkin;
 import net.minecraft.client.gui.GuiGraphics;
-import net.minecraft.client.renderer.GameRenderer;
 import net.minecraft.resources.ResourceLocation;
-import org.joml.Matrix4f;
 
 public final class HairEditorTextures {
 	public static final ResourceLocation MENU_BIG = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "textures/gui/menu/menubig.png");
 	public static final ResourceLocation MENU_SMALL = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "textures/gui/menu/menusmall.png");
 	public static final ResourceLocation BUTTONS = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "textures/gui/buttons/characterbuttons.png");
 
-	public static final Sprite PANEL = new Sprite(MENU_BIG, 0, 0, 141, 213, 8);
-	public static final Sprite SMALL_PANEL = new Sprite(MENU_SMALL, 0, 0, 141, 94, 8);
-	public static final Sprite TITLE_PLATE = new Sprite(MENU_BIG, 142, 22, 107, 21, 5);
-	public static final Sprite BUTTON = new Sprite(BUTTONS, 0, 28, 74, 20, 4);
-	public static final Sprite BUTTON_HOVER = new Sprite(BUTTONS, 0, 48, 74, 20, 4);
-	public static final Sprite BUTTON_ACTIVE = new Sprite(BUTTONS, 0, 68, 150, 20, 3);
-	public static final Sprite BUTTON_ACCENT = new Sprite(BUTTONS, 0, 88, 150, 20, 3);
-	public static final Sprite FIELD = new Sprite(BUTTONS, 0, 108, 107, 18, 3);
-	public static final Sprite FIELD_EDITING = new Sprite(BUTTONS, 0, 126, 107, 18, 3);
-	public static final Sprite IMPORT = new Sprite(BUTTONS, 162, 0, 20, 20, 0);
-	public static final Sprite IMPORT_HOVER = new Sprite(BUTTONS, 162, 20, 20, 20, 0);
-	public static final Sprite EXPORT = new Sprite(BUTTONS, 182, 0, 20, 20, 0);
-	public static final Sprite EXPORT_HOVER = new Sprite(BUTTONS, 182, 20, 20, 20, 0);
+	public static final PanelSkin PANEL = PanelSkin.PANEL;
+	public static final PanelSkin SMALL_PANEL = PanelSkin.SMALL_PANEL;
+	public static final PanelSkin BUTTON = PanelSkin.BUTTON;
+	public static final PanelSkin BUTTON_HOVER = PanelSkin.BUTTON_HOVER;
+	public static final PanelSkin BUTTON_ACTIVE = PanelSkin.BUTTON_ACTIVE;
+	public static final PanelSkin BUTTON_ACCENT = PanelSkin.BUTTON_ACCENT;
+	public static final PanelSkin FIELD = PanelSkin.FIELD;
+	public static final PanelSkin FIELD_EDITING = PanelSkin.FIELD_EDITING;
 
-	private static final float ATLAS_SIZE = 256.0f;
+	public static final Sprite TITLE_PLATE = new Sprite(MENU_BIG, 142, 22, 107, 21);
+	public static final Sprite TITLE_PLATE_SHORT = new Sprite(MENU_BIG, 142, 0, 79, 21);
+	public static final Sprite IMPORT = new Sprite(BUTTONS, 162, 0, 20, 20);
+	public static final Sprite IMPORT_HOVER = new Sprite(BUTTONS, 162, 20, 20, 20);
+	public static final Sprite EXPORT = new Sprite(BUTTONS, 182, 0, 20, 20);
+	public static final Sprite EXPORT_HOVER = new Sprite(BUTTONS, 182, 20, 20, 20);
 
-	public record Sprite(ResourceLocation texture, int u, int v, int width, int height, int border) {}
+	public record Sprite(ResourceLocation texture, int u, int v, int width, int height) {}
 
 	private HairEditorTextures() {}
 
-	public static void draw(GuiGraphics graphics, Sprite sprite, int x, int y, int width, int height) {
-		draw(graphics, sprite, x, y, width, height, 1.0f, 1.0f, 1.0f, 1.0f);
+	public static void draw(GuiGraphics graphics, PanelSkin skin, int x, int y, int width, int height) {
+		skin.draw(graphics, x, y, width, height);
 	}
 
-	public static void draw(GuiGraphics graphics, Sprite sprite, int x, int y, int width, int height, float red, float green, float blue, float alpha) {
-		if (width <= 0 || height <= 0) return;
-		int borderX = Math.min(sprite.border(), width / 2);
-		int borderY = Math.min(sprite.border(), height / 2);
-		int sourceBorderX = Math.min(sprite.border(), sprite.width() / 2);
-		int sourceBorderY = Math.min(sprite.border(), sprite.height() / 2);
-
-		float[] xs = {x, x + borderX, x + width - borderX, x + width};
-		float[] ys = {y, y + borderY, y + height - borderY, y + height};
-		float[] us = {sprite.u(), sprite.u() + sourceBorderX, sprite.u() + sprite.width() - sourceBorderX, sprite.u() + sprite.width()};
-		float[] vs = {sprite.v(), sprite.v() + sourceBorderY, sprite.v() + sprite.height() - sourceBorderY, sprite.v() + sprite.height()};
-
-		RenderSystem.setShader(GameRenderer::getPositionTexColorShader);
-		RenderSystem.setShaderTexture(0, sprite.texture());
-		RenderSystem.enableBlend();
-		RenderSystem.defaultBlendFunc();
-
-		Matrix4f matrix = graphics.pose().last().pose();
-		BufferBuilder buffer = Tesselator.getInstance().getBuilder();
-		buffer.begin(VertexFormat.Mode.QUADS, DefaultVertexFormat.POSITION_TEX_COLOR);
-		for (int column = 0; column < 3; column++) {
-			if (xs[column + 1] <= xs[column]) continue;
-			for (int row = 0; row < 3; row++) {
-				if (ys[row + 1] <= ys[row]) continue;
-				quad(buffer, matrix, xs[column], ys[row], xs[column + 1], ys[row + 1],
-						us[column] / ATLAS_SIZE, vs[row] / ATLAS_SIZE, us[column + 1] / ATLAS_SIZE, vs[row + 1] / ATLAS_SIZE,
-						red, green, blue, alpha);
-			}
-		}
-		Tesselator.getInstance().end();
-		RenderSystem.disableBlend();
+	public static void draw(GuiGraphics graphics, PanelSkin skin, int x, int y, int width, int height, float red, float green, float blue, float alpha) {
+		skin.draw(graphics, x, y, width, height, red, green, blue, alpha);
 	}
 
-	private static void quad(BufferBuilder buffer, Matrix4f matrix, float x0, float y0, float x1, float y1,
-							 float u0, float v0, float u1, float v1, float red, float green, float blue, float alpha) {
-		buffer.vertex(matrix, x0, y0, 0.0f).uv(u0, v0).color(red, green, blue, alpha).endVertex();
-		buffer.vertex(matrix, x0, y1, 0.0f).uv(u0, v1).color(red, green, blue, alpha).endVertex();
-		buffer.vertex(matrix, x1, y1, 0.0f).uv(u1, v1).color(red, green, blue, alpha).endVertex();
-		buffer.vertex(matrix, x1, y0, 0.0f).uv(u1, v0).color(red, green, blue, alpha).endVertex();
+	public static void draw(GuiGraphics graphics, Sprite sprite, int x, int y) {
+		HudRender.blit(graphics, sprite.texture(), x, y, sprite.u(), sprite.v(), sprite.width(), sprite.height(), 256, 256);
 	}
 }

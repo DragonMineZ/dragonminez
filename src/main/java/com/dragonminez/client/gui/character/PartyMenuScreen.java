@@ -4,7 +4,7 @@ import com.dragonminez.Reference;
 import com.dragonminez.client.gui.buttons.CustomTextureButton;
 import com.dragonminez.client.gui.buttons.TexturedTextButton;
 import com.dragonminez.client.gui.character.util.BaseMenuScreen;
-import com.dragonminez.client.gui.hud.HudRender;
+import com.dragonminez.client.util.PanelSkin;
 import com.dragonminez.client.util.ScrollbarState;
 import com.dragonminez.client.util.TextUtil;
 import com.dragonminez.common.init.MainSounds;
@@ -22,6 +22,7 @@ import net.minecraft.client.multiplayer.PlayerInfo;
 import net.minecraft.client.player.AbstractClientPlayer;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.util.FormattedCharSequence;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.player.Player;
 import net.minecraftforge.api.distmarker.Dist;
@@ -40,12 +41,13 @@ public class PartyMenuScreen extends BaseMenuScreen {
 	private static final int ITEM_HEIGHT = 16;
 	private static final int MAX_VISIBLE_ITEMS = 10;
 
-	private static final ResourceLocation CARD_BG = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "textures/gui/menu/menunpc.png");
-	private static final int CARD_SOURCE_WIDTH = 345;
-	private static final int CARD_SOURCE_HEIGHT = 94;
-	private static final int CARD_SHEET = 512;
 	private static final int WELCOME_WIDTH = 300;
 	private static final int WELCOME_HEIGHT = 94;
+	private static final int WELCOME_TEXT_TOP = 26;
+	private static final int WELCOME_TEXT_PAD = 14;
+	private static final int WELCOME_TEXT_BOTTOM = 8;
+	private static final int PANEL_TEXT_WIDTH = 122;
+	private static final int STAT_VALUE_WIDTH = 66;
 
 	private enum View { WELCOME, CREATE, JOIN, PARTY }
 	private View currentView = View.WELCOME;
@@ -55,6 +57,7 @@ public class PartyMenuScreen extends BaseMenuScreen {
 	private int selectedIndex = -1;
 
 	private final ScrollbarState listScroll = new ScrollbarState().barWidth(2).minThumb(10).step(ITEM_HEIGHT * 2);
+	private final ScrollbarState welcomeScroll = new ScrollbarState().barWidth(2).minThumb(10).step(22);
 
 	private TexturedTextButton actionBtn;
 	private TexturedTextButton altBtn;
@@ -75,6 +78,11 @@ public class PartyMenuScreen extends BaseMenuScreen {
 		else if (currentView == View.PARTY && !isInParty()) currentView = View.WELCOME;
 		refreshPlayerList();
 		initActionButtons();
+	}
+
+	@Override
+	protected boolean hasCenterModel() {
+		return currentView != View.WELCOME || isInParty();
 	}
 
 	private boolean isInParty() {
@@ -103,6 +111,7 @@ public class PartyMenuScreen extends BaseMenuScreen {
 		currentView = view;
 		selectedIndex = -1;
 		listScroll.reset();
+		welcomeScroll.reset();
 		refreshPlayerList();
 		rebuildWidgets();
 		if (Minecraft.getInstance().player != null) {
@@ -397,11 +406,12 @@ public class PartyMenuScreen extends BaseMenuScreen {
 
 		if (currentView == View.WELCOME) {
 			listScroll.clear();
-			renderWelcome(graphics);
+			renderWelcome(graphics, uiMouseX, uiMouseY);
 			super.render(graphics, uiMouseX, uiMouseY, partialTick);
 			endUiScale(graphics);
 			return;
 		}
+		welcomeScroll.clear();
 
 		float leftOffset = getLeftPanelSwitchOffset(partialTick);
 		float rightOffset = getRightPanelSwitchOffset(partialTick);
@@ -425,45 +435,69 @@ public class PartyMenuScreen extends BaseMenuScreen {
 		renderRightPanelDetails(graphics, rightPanelX, panelY);
 		graphics.pose().popPose();
 
+		graphics.pose().pushPose();
+		graphics.pose().translate(0.0f, getCenterPanelSwitchOffset(partialTick), 0.0f);
 		renderCentralModel(graphics, getUiWidth() / 2 + 5, getUiHeight() / 2 + 70, 75, uiMouseX, uiMouseY);
+		graphics.pose().popPose();
 
 		super.render(graphics, uiMouseX, uiMouseY, partialTick);
 		endUiScale(graphics);
 	}
 
-	private void renderWelcome(GuiGraphics graphics) {
+	private void renderWelcome(GuiGraphics graphics, int mouseX, int mouseY) {
 		int centreX = getUiWidth() / 2;
 		int x = centreX - WELCOME_WIDTH / 2;
 		int y = welcomeTop();
 
 		RenderSystem.enableBlend();
 		RenderSystem.setShaderColor(1.0f, 1.0f, 1.0f, 1.0f);
-		HudRender.blit(graphics, CARD_BG, x, y, 0.0F, 0.0F, WELCOME_WIDTH, WELCOME_HEIGHT,
-				CARD_SOURCE_WIDTH, CARD_SOURCE_HEIGHT, CARD_SHEET, CARD_SHEET);
+		PanelSkin.NPC_PANEL.draw(graphics, x, y, WELCOME_WIDTH, WELCOME_HEIGHT);
 		RenderSystem.disableBlend();
 
 		TextUtil.drawCenteredStringWithBorder(graphics, this.font,
 				tr("gui.dragonminez.party.welcome.title").copy().withStyle(ChatFormatting.BOLD),
 				centreX, y + 10, 0xFFFFD700, 0x000000);
 
-		String[] lines = {
-				"gui.dragonminez.party.welcome.quests",
-				"gui.dragonminez.party.welcome.tournaments",
-				"gui.dragonminez.party.welcome.explore",
-				"gui.dragonminez.party.welcome.stats"
-		};
-
-		int lineY = y + 26;
-		for (String key : lines) {
-			TextUtil.drawCenteredStringWithBorder(graphics, this.font, tr(key), centreX, lineY, 0xFFE8F0FF, 0x000000);
-			lineY += this.font.lineHeight + 2;
+		List<Component> paragraphs = new ArrayList<>();
+		for (String key : new String[]{"gui.dragonminez.party.welcome.quests", "gui.dragonminez.party.welcome.tournaments",
+				"gui.dragonminez.party.welcome.explore", "gui.dragonminez.party.welcome.stats"}) {
+			paragraphs.add(tr(key));
 		}
-
 		int invites = pendingInvites().size();
 		if (invites > 0) {
-			TextUtil.drawCenteredStringWithBorder(graphics, this.font,
-					tr("gui.dragonminez.party.welcome.pending", invites), centreX, lineY + 2, 0xFF9FFF9F, 0x000000);
+			paragraphs.add(tr("gui.dragonminez.party.welcome.pending", invites).withStyle(style -> style.withColor(0x9FFF9F)));
 		}
+
+		int textX = x + WELCOME_TEXT_PAD;
+		int textY = y + WELCOME_TEXT_TOP;
+		int textWidth = WELCOME_WIDTH - WELCOME_TEXT_PAD * 2;
+		int textHeight = WELCOME_HEIGHT - WELCOME_TEXT_TOP - WELCOME_TEXT_BOTTOM;
+		int lineHeight = this.font.lineHeight + 2;
+		List<FormattedCharSequence> wrapped = TextUtil.wrapScrollable(this.font, paragraphs, textWidth, textHeight, lineHeight, welcomeScroll);
+		TextUtil.renderScrollableText(graphics, this.font, welcomeScroll, wrapped, textX, textY, textWidth, textHeight, lineHeight,
+				0xFFE8F0FF, true, mouseX, mouseY);
+	}
+
+	private int drawWrappedCentered(GuiGraphics graphics, Component text, int centreX, int y, int color) {
+		for (FormattedCharSequence line : this.font.split(text, PANEL_TEXT_WIDTH)) {
+			TextUtil.drawCenteredStringWithBorder(graphics, this.font, line, centreX, y, color, 0x000000);
+			y += this.font.lineHeight + 1;
+		}
+		return y;
+	}
+
+	private void drawFitted(GuiGraphics graphics, Component text, int x, int y, int maxWidth, int color) {
+		int width = this.font.width(text);
+		if (width <= maxWidth) {
+			TextUtil.drawStringWithBorder(graphics, this.font, text, x, y, color, 0x000000);
+			return;
+		}
+		float scale = maxWidth / (float) width;
+		graphics.pose().pushPose();
+		graphics.pose().translate(x, y + this.font.lineHeight * (1.0f - scale) / 2.0f, 0.0f);
+		graphics.pose().scale(scale, scale, 1.0f);
+		TextUtil.drawStringWithBorder(graphics, this.font, text, 0, 0, color, 0x000000);
+		graphics.pose().popPose();
 	}
 
 	private int welcomeTop() {
@@ -492,9 +526,8 @@ public class PartyMenuScreen extends BaseMenuScreen {
 		TextUtil.drawCenteredStringWithBorder(graphics, this.font, tabText.copy().withStyle(ChatFormatting.BOLD), panelX + 70, panelY + 16, 0xFFFFD700, 0x000000);
 
 		if (displayList.isEmpty() && currentView == View.JOIN) {
-			TextUtil.drawCenteredStringWithBorder(graphics, this.font,
-					tr("gui.dragonminez.party.invites.empty").withStyle(ChatFormatting.GRAY),
-					panelX + 70, panelY + 60, 0xFFAAAAAA, 0x000000);
+			drawWrappedCentered(graphics, tr("gui.dragonminez.party.invites.empty").withStyle(ChatFormatting.GRAY),
+					panelX + 70, panelY + 60, 0xFFAAAAAA);
 		}
 
 		int startY = panelY + 35;
@@ -574,8 +607,8 @@ public class PartyMenuScreen extends BaseMenuScreen {
 			return;
 		}
 
-		TextUtil.drawCenteredStringWithBorder(graphics, this.font, tr("gui.dragonminez.party.unavailable").withStyle(ChatFormatting.RED), panelX + 70, startY + 20, 0xFF5555, 0x000000);
-		TextUtil.drawCenteredStringWithBorder(graphics, this.font, tr("gui.dragonminez.party.out_of_range").withStyle(ChatFormatting.GRAY), panelX + 70, startY + 32, 0xAAAAAA, 0x000000);
+		int reasonY = drawWrappedCentered(graphics, tr("gui.dragonminez.party.unavailable").withStyle(ChatFormatting.RED), panelX + 70, startY + 20, 0xFF5555);
+		drawWrappedCentered(graphics, tr("gui.dragonminez.party.out_of_range").withStyle(ChatFormatting.GRAY), panelX + 70, reasonY + 1, 0xAAAAAA);
 	}
 
 	/** Who is asking, on what difficulty, and how long the offer stands — label over value. */
@@ -614,10 +647,10 @@ public class PartyMenuScreen extends BaseMenuScreen {
 		int valueX = panelX + 65;
 
 		TextUtil.drawStringWithBorder(graphics, this.font, tr("gui.dragonminez.character_stats.race").withStyle(style -> style.withBold(true)), labelX, startY, 0xD7FEF5, 0x000000);
-		TextUtil.drawStringWithBorder(graphics, this.font, tr("race.dragonminez." + race), valueX, startY, 0xFFFFFF, 0x000000);
+		drawFitted(graphics, tr("race.dragonminez." + race), valueX, startY, STAT_VALUE_WIDTH, 0xFFFFFF);
 
 		TextUtil.drawStringWithBorder(graphics, this.font, tr("gui.dragonminez.character_stats.class").withStyle(style -> style.withBold(true)), labelX, startY + 11, 0xD7FEF5, 0x000000);
-		TextUtil.drawStringWithBorder(graphics, this.font, tr("class.dragonminez." + characterClass), valueX, startY + 11, 0xFFFFFF, 0x000000);
+		drawFitted(graphics, tr("class.dragonminez." + characterClass), valueX, startY + 11, STAT_VALUE_WIDTH, 0xFFFFFF);
 
 		TextUtil.drawStringWithBorder(graphics, this.font, tr("gui.dragonminez.character_stats.level").withStyle(style -> style.withBold(true)), labelX, startY + 22, 0xD7FEF5, 0x000000);
 		TextUtil.drawStringWithBorder(graphics, this.font, txt(String.valueOf(level)), valueX, startY + 22, 0xFFFFFF, 0x000000);
@@ -687,14 +720,14 @@ public class PartyMenuScreen extends BaseMenuScreen {
 
 	@Override
 	public boolean mouseScrolled(double mouseX, double mouseY, double delta) {
-		if (listScroll.scrollWheel(delta)) return true;
+		if (listScroll.scrollWheel(delta) || welcomeScroll.scrollWheel(delta)) return true;
 		return super.mouseScrolled(mouseX, mouseY, delta);
 	}
 
 	@Override
 	public boolean mouseClicked(double mouseX, double mouseY, int button) {
 		if (super.mouseClicked(mouseX, mouseY, button)) return true;
-		if (currentView == View.WELCOME) return false;
+		if (currentView == View.WELCOME) return welcomeScroll.mouseClicked(toUiX(mouseX), toUiY(mouseY), button);
 
 		double uiMouseX = toUiX(mouseX);
 		double uiMouseY = toUiY(mouseY);
@@ -722,12 +755,13 @@ public class PartyMenuScreen extends BaseMenuScreen {
 	@Override
 	public boolean mouseDragged(double mouseX, double mouseY, int button, double dragX, double dragY) {
 		if (listScroll.mouseDragged(toUiX(mouseX) - Math.round(getLeftPanelSwitchOffset(1.0f)), toUiY(mouseY))) return true;
+		if (welcomeScroll.mouseDragged(toUiX(mouseX), toUiY(mouseY))) return true;
 		return super.mouseDragged(mouseX, mouseY, button, dragX, dragY);
 	}
 
 	@Override
 	public boolean mouseReleased(double mouseX, double mouseY, int button) {
-		if (listScroll.mouseReleased()) return true;
+		if (listScroll.mouseReleased() | welcomeScroll.mouseReleased()) return true;
 		return super.mouseReleased(mouseX, mouseY, button);
 	}
 }

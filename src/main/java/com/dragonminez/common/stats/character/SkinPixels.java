@@ -1,5 +1,7 @@
 package com.dragonminez.common.stats.character;
 
+import com.dragonminez.common.config.ConfigManager;
+import com.dragonminez.common.util.BetaWhitelist;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.Tag;
 
@@ -213,6 +215,14 @@ public final class SkinPixels {
 	public static boolean isTattooSize(int size) {
 		for (int allowed : TATTOO_SIZES) if (allowed == size) return true;
 		return false;
+	}
+
+	public static boolean customTattooEnabled() {
+		return ConfigManager.getServerConfig().getGameplay().getPixelTattooPaintingEnabled();
+	}
+
+	public static boolean canUseTattooSize(String username, int size) {
+		return size <= TATTOO_SIZES[0] || (username != null && BetaWhitelist.isAllowed(username));
 	}
 
 	public static byte[] resampleRgba(byte[] source, int from, int to) {

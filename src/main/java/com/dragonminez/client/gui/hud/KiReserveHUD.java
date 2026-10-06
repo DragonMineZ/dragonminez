@@ -11,7 +11,7 @@ import net.minecraft.util.Mth;
 import net.minecraftforge.client.gui.overlay.IGuiOverlay;
 
 public class KiReserveHUD {
-	private static final HudBar RESERVE_BAR = new HudBar(HudStatNumberAnimator.StatKind.KI);
+	private static final HudBar RESERVE_BAR = new HudBar(HudStatNumberAnimator.StatKind.KI).flowing();
 	private static final HudSmoother VISIBILITY = new HudSmoother(0.18f, 0.01f);
 	private static final HudSmoother ACTIVE = new HudSmoother(0.15f);
 
@@ -36,7 +36,7 @@ public class KiReserveHUD {
 			float visibility = HudSideMeters.update(HudElement.RESERVE, VISIBILITY, applicable, reserve > 0.0f || feeding, width, height);
 			float active = ACTIVE.update(feeding ? 1.0f : 0.0f);
 
-			float seconds = (System.nanoTime() / 1_000_000L % 3_600_000L) / 1000.0f;
+			float seconds = HudBar.time();
 			float pulse = active * (0.5f + 0.5f * Mth.sin(seconds * 8.0f));
 			int kiColor = HudPlayerState.of(mc.player, data).auraColor();
 			int color = HudRender.mix(kiColor, 0xFFFFFF, active * 0.35f);

@@ -1,6 +1,7 @@
 package com.dragonminez.client.gui.hair;
 
 import com.dragonminez.Reference;
+import com.dragonminez.client.util.PanelSkin;
 import com.dragonminez.client.util.TextUtil;
 import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.GuiGraphics;
@@ -49,13 +50,13 @@ public final class HairEditorUi {
 	}
 
 	public static void header(GuiGraphics graphics, Font font, Component title, int x, int y, int width) {
-		int plateWidth = Math.min(HairEditorTextures.TITLE_PLATE.width(), width - 16);
-		HairEditorTextures.draw(graphics, HairEditorTextures.TITLE_PLATE, x + (width - plateWidth) / 2, y + 5, plateWidth, 17);
-		TextUtil.drawCenteredStringWithBorder(graphics, font, title, x + width / 2, y + 10, TITLE);
+		HairEditorTextures.Sprite plate = width - 14 >= HairEditorTextures.TITLE_PLATE.width() ? HairEditorTextures.TITLE_PLATE : HairEditorTextures.TITLE_PLATE_SHORT;
+		HairEditorTextures.draw(graphics, plate, x + (width - plate.width()) / 2, y + 6);
+		TextUtil.drawCenteredStringWithBorder(graphics, font, title, x + width / 2, y + 13, TITLE);
 	}
 
 	public static void button(GuiGraphics graphics, Font font, Component label, int x, int y, int width, int height, boolean hovered, boolean active, boolean enabled) {
-		HairEditorTextures.Sprite sprite = active ? HairEditorTextures.BUTTON_ACTIVE : (hovered && enabled ? HairEditorTextures.BUTTON_HOVER : HairEditorTextures.BUTTON);
+		PanelSkin sprite = active ? HairEditorTextures.BUTTON_ACTIVE : (hovered && enabled ? HairEditorTextures.BUTTON_HOVER : HairEditorTextures.BUTTON);
 		float tint = enabled ? 1.0f : 0.6f;
 		HairEditorTextures.draw(graphics, sprite, x, y, width, height, tint, tint, tint, 1.0f);
 		int color = !enabled ? DISABLED : (hovered && !active ? HOVER_TEXT : TEXT);

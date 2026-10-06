@@ -162,7 +162,7 @@ public class DMZRecipeProvider extends RecipeProvider implements IConditionBuild
 		statPlant(pWriter, MainItems.KAIOSHIN_FRUIT.get(), Ingredient.of(Items.GOLDEN_APPLE), "kaioshin_fruit");
 		statPlant(pWriter, MainItems.ZENKAI_LOTUS.get(), Ingredient.of(Items.AMETHYST_SHARD), "zenkai_lotus");
 
-		ShapelessRecipeBuilder.shapeless(RecipeCategory.FOOD, MainItems.SENZU_BEAN.get(), 1)
+		ShapelessRecipeBuilder.shapeless(RecipeCategory.FOOD, MainItems.SENZU_BEAN.get(), 3)
 				.requires(MainItems.SENZU_BEAN_RED.get())
 				.requires(MainItems.SENZU_BEAN_BLUE.get())
 				.requires(MainItems.SENZU_BEAN_YELLOW.get())

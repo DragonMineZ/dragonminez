@@ -26,9 +26,9 @@ public class MinecraftHUD {
 	private static final int RELEASE_TEXT_COLOR = 0xFACAF7;
 
 	private static final HudBar HP_BAR = new HudBar(HudStatNumberAnimator.StatKind.HEALTH);
-	private static final HudBar KI_BAR = new HudBar(HudStatNumberAnimator.StatKind.KI);
+	private static final HudBar KI_BAR = new HudBar(HudStatNumberAnimator.StatKind.KI).flowing();
 	private static final HudBar STM_BAR = new HudBar(HudStatNumberAnimator.StatKind.STAMINA);
-	private static final HudBar RELEASE_BAR = new HudBar(HudStatNumberAnimator.StatKind.KI);
+	private static final HudBar RELEASE_BAR = new HudBar(HudStatNumberAnimator.StatKind.KI).shineOffset(0.48f);
 	private static final HudSmoother RELEASE = new HudSmoother(0.10f, 0.05f);
 	private static final HudSmoother FORM_CHARGE = new HudSmoother(0.08f);
 	private static final HudSmoother CHARGE_GLOW = new HudSmoother(0.15f);
@@ -56,10 +56,10 @@ public class MinecraftHUD {
 			STM_BAR.update(state.stamina(), state.maxStamina());
 			RELEASE_BAR.update(Math.min(state.powerRelease(), 100), 100.0f);
 
-			float seconds = (System.nanoTime() / 1_000_000L % 3_600_000L) / 1000.0f;
+			float seconds = HudBar.time();
 			Frame frame = new Frame(state, RELEASE.update(state.powerRelease()), FORM_CHARGE.update(state.formCharge()),
 					CHARGE_GLOW.update(state.chargingKi() ? 1.0f : 0.0f), SurgeBarState.fraction(data),
-					HP_BAR.targetFraction() < 0.25f ? 0.5f + 0.5f * Mth.sin(seconds * 7.0f) : 0.0f,
+					HudBar.heartbeat(HP_BAR.targetFraction()),
 					seconds, mc.player.tickCount + partialTicks);
 
 			boolean offhandShown = !mc.player.getOffhandItem().isEmpty();
@@ -129,6 +129,7 @@ public class MinecraftHUD {
 		float capsuleX = barX + barWidth;
 		int aura = frame.state().auraColor();
 
+		KI_BAR.setFlowBoost(frame.chargeGlow());
 		KI_BAR.draw(guiGraphics, HudSprites.MINECRAFT_KI, barX, topY, barWidth, BAR_HEIGHT, aura, 0.0f);
 		KI_BAR.drawSweep(guiGraphics, barX, topY, barWidth, BAR_HEIGHT, frame.seconds() * 1.1f, frame.chargeGlow());
 		if (frame.surge() > 0.0f) {

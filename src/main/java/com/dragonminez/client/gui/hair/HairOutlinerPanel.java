@@ -3,6 +3,7 @@ package com.dragonminez.client.gui.hair;
 import com.dragonminez.common.hair.CustomHair;
 import com.dragonminez.common.hair.HairStrand;
 import com.dragonminez.common.hair.HairStyleSlot;
+import com.dragonminez.client.util.PanelSkin;
 import com.dragonminez.client.util.ScrollbarState;
 import com.dragonminez.client.util.TextUtil;
 import net.minecraft.client.gui.Font;
@@ -227,7 +228,7 @@ final class HairOutlinerPanel {
 			boolean hovered = HairEditorUi.inside(mouseX, mouseY, cellX, cellY, CELL_SIZE, CELL_SIZE);
 			boolean hidden = state.isHidden(face, index);
 
-			HairEditorTextures.Sprite sprite = selected ? HairEditorTextures.BUTTON_ACTIVE
+			PanelSkin sprite = selected ? HairEditorTextures.BUTTON_ACTIVE
 					: (hovered ? HairEditorTextures.BUTTON_HOVER : (visible ? HairEditorTextures.BUTTON_ACCENT : HairEditorTextures.BUTTON));
 			float tint = hidden ? 0.55f : 1.0f;
 			HairEditorTextures.draw(graphics, sprite, cellX, cellY, CELL_SIZE, CELL_SIZE, tint, tint, tint, 1.0f);
@@ -305,7 +306,7 @@ final class HairOutlinerPanel {
 			HairEditorTextures.Sprite sprite = action.export
 					? (hovered ? HairEditorTextures.EXPORT_HOVER : HairEditorTextures.EXPORT)
 					: (hovered ? HairEditorTextures.IMPORT_HOVER : HairEditorTextures.IMPORT);
-			HairEditorTextures.draw(graphics, sprite, buttonX, buttonY, CODE_BUTTON, CODE_BUTTON);
+			HairEditorTextures.draw(graphics, sprite, buttonX, buttonY);
 		}
 	}
 

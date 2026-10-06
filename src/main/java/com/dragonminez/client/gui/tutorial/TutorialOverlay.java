@@ -2,6 +2,7 @@ package com.dragonminez.client.gui.tutorial;
 
 import com.dragonminez.Reference;
 import com.dragonminez.client.gui.hud.HudRender;
+import com.dragonminez.client.util.PanelSkin;
 import com.dragonminez.common.init.MainSounds;
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.BufferBuilder;
@@ -28,11 +29,9 @@ import java.util.Arrays;
 import java.util.List;
 
 final class TutorialOverlay {
-	private static final ResourceLocation PANEL = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "textures/gui/menu/menusmall.png");
 	private static final ResourceLocation BUTTONS = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "textures/gui/buttons/characterbuttons.png");
 	private static final Style DMZ_STYLE = Style.EMPTY.withFont(ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "smooth"));
 
-	private static final float PANEL_SOURCE_WIDTH = 141.0f, PANEL_SOURCE_HEIGHT = 94.0f, PANEL_BORDER = 8.0f;
 	private static final float POPUP_WIDTH = 184.0f, POPUP_PADDING = 10.0f, POPUP_GAP = 8.0f, SCREEN_MARGIN = 4.0f;
 	private static final float LINE_HEIGHT = 10.0f, TITLE_HEIGHT = 13.0f, BUTTON_HEIGHT = 20.0f, BUTTON_GAP = 4.0f;
 	private static final float DIM_ALPHA = 0.74f;
@@ -412,7 +411,7 @@ final class TutorialOverlay {
 	}
 
 	private static void nineSlice(GuiGraphics graphics, float x, float y, float width, float height) {
-		HudRender.nineSlice(graphics, PANEL, x, y, width, height, 0.0f, 0.0f, PANEL_SOURCE_WIDTH, PANEL_SOURCE_HEIGHT, PANEL_BORDER, 256, 256);
+		PanelSkin.SMALL_PANEL.draw(graphics, x, y, width, height);
 	}
 
 	private static final class Quads {

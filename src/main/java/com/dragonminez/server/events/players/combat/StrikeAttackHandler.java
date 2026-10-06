@@ -161,6 +161,8 @@ public class StrikeAttackHandler {
 	private static final float DIM_SLASH_SCALE = 8.4F;
 	private static final int DIM_SLASH_COLOR = 0x7A0000;
 	private static final int DIM_SLASH_CORE_COLOR = 0xFF5A4A;
+	private static final com.dragonminez.common.combat.util.SwordSlashManager.TerrainCut DIM_SLASH_TERRAIN_CUT =
+			new com.dragonminez.common.combat.util.SwordSlashManager.TerrainCut(0.6F, 5.0F);
 	private static final int SLAM_IMPACT_TICK = 2;
 	private static final int SLAM_DURATION_TICKS = 15;
 	private static final float SLAM_SHAKE_RADIUS = 6.0F;
@@ -1875,7 +1877,7 @@ public class StrikeAttackHandler {
 
 		com.dragonminez.common.combat.util.SwordSlashManager.launch(serverLevel, player, origin, aim,
 				com.dragonminez.common.combat.util.SwordSlashManager.rollFor(index), DIM_SLASH_SCALE, DIM_SLASH_COLOR, DIM_SLASH_CORE_COLOR,
-				DIM_SLASH_SPEED, DIM_SLASH_RANGE, DIM_SLASH_HIT_RADIUS, victim -> {
+				DIM_SLASH_SPEED, DIM_SLASH_RANGE, DIM_SLASH_HIT_RADIUS, DIM_SLASH_TERRAIN_CUT, victim -> {
 					if ((victim.isAlliedTo(player) && !TargetHelper.isTournamentRival(player, victim)) || !TargetHelper.canAttack(player, victim, DIM_SLASH_RANGE + 8.0)) return false;
 					applyStrikeDamage(player, victim, damage, techniqueId, false);
 					return true;

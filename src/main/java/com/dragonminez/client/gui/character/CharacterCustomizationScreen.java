@@ -34,6 +34,7 @@ import com.dragonminez.common.network.NetworkHandler;
 import com.dragonminez.common.stats.StatsCapability;
 import com.dragonminez.common.stats.StatsProvider;
 import com.dragonminez.common.stats.character.Character;
+import com.dragonminez.common.stats.character.SkinPixels;
 import com.dragonminez.common.util.TransformationsHelper;
 import com.mojang.blaze3d.systems.RenderSystem;
 import net.minecraft.ChatFormatting;
@@ -342,7 +343,7 @@ public class CharacterCustomizationScreen extends ScaledScreen {
 	}
 
 	private void initBodyTab(int top) {
-		if (character.getTattooType() == Character.TATTOO_CUSTOM) addRenderableWidget(createPixelEditButton(LEFT_PANEL_X + 33, getUiHeight() - 40, PixelEditorScreen.Mode.TATTOO));
+		if (character.getTattooType() == Character.TATTOO_CUSTOM && SkinPixels.customTattooEnabled()) addRenderableWidget(createPixelEditButton(LEFT_PANEL_X + 33, getUiHeight() - 40, PixelEditorScreen.Mode.TATTOO));
 	}
 
 	private TexturedTextButton createPixelEditButton(int x, int y, PixelEditorScreen.Mode mode) {
@@ -375,15 +376,17 @@ public class CharacterCustomizationScreen extends ScaledScreen {
 	}
 
 	private int tattooGridMax() {
-		return Math.max(1, TextureCounter.getMaxTattooTypes(getEffectiveModelBase())) + 1;
+		int shipped = Math.max(1, TextureCounter.getMaxTattooTypes(getEffectiveModelBase()));
+		return SkinPixels.customTattooEnabled() ? shipped + 1 : shipped;
 	}
 
 	private int tattooTypeForGridValue(int value) {
-		return value == tattooGridMax() ? Character.TATTOO_CUSTOM : value;
+		return SkinPixels.customTattooEnabled() && value == tattooGridMax() ? Character.TATTOO_CUSTOM : value;
 	}
 
 	private int tattooGridValueForType(int type) {
-		return type == Character.TATTOO_CUSTOM ? tattooGridMax() : type;
+		if (type != Character.TATTOO_CUSTOM) return type;
+		return SkinPixels.customTattooEnabled() ? tattooGridMax() : 0;
 	}
 
 	private void initAuraClassTab(int top) {
@@ -678,7 +681,7 @@ public class CharacterCustomizationScreen extends ScaledScreen {
 	private void renderBodyText(GuiGraphics graphics, int centerX, int top) {
 		TextUtil.drawCenteredStringWithBorder(graphics, this.font, tr("gui.dragonminez.customization.tattoo"), centerX, top + 2, 0xFF9B9B);
 		renderPreviewGrid(graphics, tattooBar, top + 30, 0, tattooGridMax(), tattooGridValueForType(character.getTattooType()), PreviewRenderMode.TATTOO_ONLY, false, PREVIEW_GRID_VISIBLE_ROWS);
-		int[] customCard = previewCardPosition(tattooBar, top + 30, 0, tattooGridMax(), tattooGridMax());
+		int[] customCard = SkinPixels.customTattooEnabled() ? previewCardPosition(tattooBar, top + 30, 0, tattooGridMax(), tattooGridMax()) : null;
 		if (customCard != null) {
 			tattooBar.beginClip(graphics, false);
 			graphics.pose().pushPose();

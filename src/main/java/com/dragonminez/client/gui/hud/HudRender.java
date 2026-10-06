@@ -1,5 +1,6 @@
 package com.dragonminez.client.gui.hud;
 
+import com.mojang.blaze3d.platform.GlStateManager;
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.BufferBuilder;
 import com.mojang.blaze3d.vertex.BufferUploader;
@@ -19,8 +20,13 @@ import org.joml.Vector3f;
 
 public final class HudRender {
 	private static float alphaScale = 1.0f;
+	private static boolean additive;
 
 	private HudRender() {}
+
+	public static void setAdditive(boolean value) {
+		additive = value;
+	}
 
 	public static void setAlphaScale(float alpha) {
 		alphaScale = Mth.clamp(alpha, 0.0f, 1.0f);
@@ -60,6 +66,74 @@ public final class HudRender {
 		RenderSystem.setShaderColor(1.0f, 1.0f, 1.0f, 1.0f);
 	}
 
+	public static void spriteGradient(GuiGraphics graphics, HudSprites.Sprite sprite, float x, float y, float width, float height,
+									  float from, float to, float alphaFrom, float alphaTo, int rgb, boolean flipX, boolean vertical) {
+		spriteGradient(graphics, sprite, x, y, width, height, from, to, alphaFrom, alphaTo, alphaFrom, alphaTo, rgb, flipX, vertical);
+	}
+
+	public static void spriteGradient(GuiGraphics graphics, HudSprites.Sprite sprite, float x, float y, float width, float height,
+									  float from, float to, float alphaFrom, float alphaTo, float alphaFromBottom, float alphaToBottom,
+									  int rgb, boolean flipX, boolean vertical) {
+		float startAlpha = Mth.clamp(alphaFrom, 0.0f, 1.0f) * alphaScale;
+		float endAlpha = Mth.clamp(alphaTo, 0.0f, 1.0f) * alphaScale;
+		float startBottomAlpha = vertical ? startAlpha : Mth.clamp(alphaFromBottom, 0.0f, 1.0f) * alphaScale;
+		float endBottomAlpha = vertical ? endAlpha : Mth.clamp(alphaToBottom, 0.0f, 1.0f) * alphaScale;
+		if (Math.max(Math.max(startAlpha, endAlpha), Math.max(startBottomAlpha, endBottomAlpha)) <= 0.004f || width <= 0.0f || height <= 0.0f || to <= from) return;
+
+		float fromX = vertical ? 0.0f : from, toX = vertical ? 1.0f : to;
+		float fromY = vertical ? 1.0f - to : 0.0f, toY = vertical ? 1.0f - from : 1.0f;
+		boolean flip = flipX && !vertical;
+		float x0 = flip ? x + width * (1.0f - toX) : x + width * fromX;
+		float x1 = x0 + width * (toX - fromX);
+		float y0 = y + height * fromY;
+		float y1 = y + height * toY;
+		float u0 = (sprite.u() + sprite.width() * (flip ? toX : fromX)) / sprite.sheetWidth();
+		float u1 = (sprite.u() + sprite.width() * (flip ? fromX : toX)) / sprite.sheetWidth();
+		float v0 = (sprite.v() + sprite.height() * fromY) / sprite.sheetHeight();
+		float v1 = (sprite.v() + sprite.height() * toY) / sprite.sheetHeight();
+
+		int topLeft, topRight, bottomLeft, bottomRight;
+		int start = Math.round(startAlpha * 255.0f);
+		int end = Math.round(endAlpha * 255.0f);
+		int startBottom = Math.round(startBottomAlpha * 255.0f);
+		int endBottom = Math.round(endBottomAlpha * 255.0f);
+		if (vertical) {
+			topLeft = topRight = end;
+			bottomLeft = bottomRight = start;
+		} else if (flip) {
+			topLeft = end;
+			bottomLeft = endBottom;
+			topRight = start;
+			bottomRight = startBottom;
+		} else {
+			topLeft = start;
+			bottomLeft = startBottom;
+			topRight = end;
+			bottomRight = endBottom;
+		}
+		int r = (rgb >> 16) & 0xFF, g = (rgb >> 8) & 0xFF, b = rgb & 0xFF;
+
+		graphics.flush();
+		RenderSystem.setShaderTexture(0, sprite.sheet());
+		RenderSystem.setShader(GameRenderer::getPositionColorTexShader);
+		RenderSystem.setShaderColor(1.0f, 1.0f, 1.0f, 1.0f);
+		RenderSystem.enableBlend();
+		if (additive) {
+			RenderSystem.blendFuncSeparate(GlStateManager.SourceFactor.SRC_ALPHA, GlStateManager.DestFactor.ONE, GlStateManager.SourceFactor.ZERO, GlStateManager.DestFactor.ONE);
+		} else {
+			RenderSystem.defaultBlendFunc();
+		}
+		Matrix4f matrix = graphics.pose().last().pose();
+		BufferBuilder builder = Tesselator.getInstance().getBuilder();
+		builder.begin(VertexFormat.Mode.QUADS, DefaultVertexFormat.POSITION_COLOR_TEX);
+		builder.vertex(matrix, x0, y0, 0.0f).color(r, g, b, topLeft).uv(u0, v0).endVertex();
+		builder.vertex(matrix, x0, y1, 0.0f).color(r, g, b, bottomLeft).uv(u0, v1).endVertex();
+		builder.vertex(matrix, x1, y1, 0.0f).color(r, g, b, bottomRight).uv(u1, v1).endVertex();
+		builder.vertex(matrix, x1, y0, 0.0f).color(r, g, b, topRight).uv(u1, v0).endVertex();
+		BufferUploader.drawWithShader(builder.end());
+		if (additive) RenderSystem.defaultBlendFunc();
+	}
+
 	public static void blit(GuiGraphics graphics, ResourceLocation texture, float x, float y, float u, float v, float width, float height, int textureWidth, int textureHeight) {
 		blit(graphics, texture, x, y, u, v, width, height, width, height, textureWidth, textureHeight);
 	}
@@ -71,7 +145,11 @@ public final class HudRender {
 		RenderSystem.setShaderTexture(0, texture);
 		RenderSystem.setShader(GameRenderer::getPositionTexShader);
 		RenderSystem.enableBlend();
-		RenderSystem.defaultBlendFunc();
+		if (additive) {
+			RenderSystem.blendFuncSeparate(GlStateManager.SourceFactor.SRC_ALPHA, GlStateManager.DestFactor.ONE, GlStateManager.SourceFactor.ZERO, GlStateManager.DestFactor.ONE);
+		} else {
+			RenderSystem.defaultBlendFunc();
+		}
 		Matrix4f matrix = graphics.pose().last().pose();
 		float u0 = u / textureWidth, u1 = (u + regionWidth) / textureWidth;
 		float v0 = v / textureHeight, v1 = (v + regionHeight) / textureHeight;
@@ -82,6 +160,7 @@ public final class HudRender {
 		builder.vertex(matrix, x + width, y + height, 0.0f).uv(u1, v1).endVertex();
 		builder.vertex(matrix, x + width, y, 0.0f).uv(u1, v0).endVertex();
 		BufferUploader.drawWithShader(builder.end());
+		if (additive) RenderSystem.defaultBlendFunc();
 	}
 
 	public static void nineSlice(GuiGraphics graphics, ResourceLocation texture, float x, float y, float width, float height,
@@ -226,24 +305,7 @@ public final class HudRender {
 	}
 
 	public static void text(GuiGraphics graphics, String text, float x, float y, float scale, float align, int rgb, float alpha) {
-		int alphaChannel = Math.round(Mth.clamp(alpha, 0.0f, 1.0f) * alphaScale * 255.0f);
-		if (alphaChannel <= 3 || text == null || text.isEmpty()) return;
-
-		Font font = Minecraft.getInstance().font;
-		int color = (alphaChannel << 24) | (rgb & 0xFFFFFF);
-		int border = alphaChannel << 24;
-		float offset = -font.width(text) * align;
-
-		graphics.pose().pushPose();
-		graphics.pose().translate(x, y, 0.0f);
-		graphics.pose().scale(scale, scale, 1.0f);
-		graphics.pose().translate(offset, 0.0f, 0.0f);
-		graphics.drawString(font, text, -1, 0, border, false);
-		graphics.drawString(font, text, 1, 0, border, false);
-		graphics.drawString(font, text, 0, -1, border, false);
-		graphics.drawString(font, text, 0, 1, border, false);
-		graphics.drawString(font, text, 0, 0, color, false);
-		graphics.pose().popPose();
+		dmzText(graphics, text, x, y, scale, align, rgb, alpha);
 	}
 
 	public static int argb(float alpha, int rgb) {

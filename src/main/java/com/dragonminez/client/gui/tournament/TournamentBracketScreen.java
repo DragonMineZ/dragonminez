@@ -4,6 +4,7 @@ import com.dragonminez.Reference;
 import com.dragonminez.client.gui.buttons.TexturedTextButton;
 import com.dragonminez.client.gui.character.util.ScaledScreen;
 import com.dragonminez.client.gui.hud.HudRender;
+import com.dragonminez.client.util.PanelSkin;
 import com.dragonminez.client.util.ScrollbarState;
 import com.dragonminez.client.util.TextUtil;
 import com.dragonminez.common.init.entities.sagas.DBSagasEntity;
@@ -47,7 +48,6 @@ import java.util.UUID;
 @OnlyIn(Dist.CLIENT)
 public class TournamentBracketScreen extends ScaledScreen {
 
-	private static final ResourceLocation PANEL = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "textures/gui/menu/menubig.png");
 	private static final ResourceLocation BUTTONS = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "textures/gui/buttons/characterbuttons.png");
 	private static final ResourceLocation SLOT_FRAMES = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "textures/gui/tournament/slots.png");
 
@@ -322,7 +322,7 @@ public class TournamentBracketScreen extends ScaledScreen {
 		hoveredSlot = null;
 		hoveredMember = null;
 
-		HudRender.nineSlice(graphics, PANEL, guiLeft, guiTop, guiWidth, guiHeight, 0.0f, 0.0f, 141.0f, 213.0f, 8.0f, 256, 256);
+		PanelSkin.PANEL.draw(graphics, guiLeft, guiTop, guiWidth, guiHeight);
 		renderHeader(graphics);
 		renderMembers(graphics, uiMouseX, uiMouseY);
 
