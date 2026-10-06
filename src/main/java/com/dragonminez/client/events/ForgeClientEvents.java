@@ -22,6 +22,7 @@ import com.dragonminez.common.config.ConfigManager;
 import com.dragonminez.common.init.MainSounds;
 import com.dragonminez.common.init.entities.SpacePodEntity;
 import com.dragonminez.common.network.C2S.SokidanControlC2S;
+import com.dragonminez.common.network.C2S.ReserveFirstHotbarSlotC2S;
 import com.dragonminez.common.network.NetworkHandler;
 import com.dragonminez.common.stats.StatsCapability;
 import com.dragonminez.common.stats.StatsProvider;
@@ -87,6 +88,7 @@ public class ForgeClientEvents {
 	public static void onPlayerLogin(ClientPlayerNetworkEvent.LoggingIn event) {
 		TextureCounter.clearCache();
 		if (Minecraft.getInstance().player == null) return;
+		NetworkHandler.sendToServer(new ReserveFirstHotbarSlotC2S(ConfigManager.getUserConfig().isReserveFirstHotbarSlot()));
 		StatsProvider.get(StatsCapability.INSTANCE, Minecraft.getInstance().player).ifPresent(data -> {
 			isHasCreatedCharacterCache = data.getStatus().isHasCreatedCharacter();
 		});

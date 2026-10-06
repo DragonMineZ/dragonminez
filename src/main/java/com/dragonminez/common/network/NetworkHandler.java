@@ -153,6 +153,12 @@ public class NetworkHandler {
 				.consumerMainThread(FlightModeC2S::handle)
 				.add();
 
+		net.messageBuilder(FlightModeLockC2S.class, id(), NetworkDirection.PLAY_TO_SERVER)
+				.decoder(FlightModeLockC2S::decode)
+				.encoder(FlightModeLockC2S::encode)
+				.consumerMainThread(FlightModeLockC2S::handle)
+				.add();
+
 		net.messageBuilder(CombatFlyImpulseC2S.class, id(), NetworkDirection.PLAY_TO_SERVER)
 				.decoder(CombatFlyImpulseC2S::decode)
 				.encoder(CombatFlyImpulseC2S::encode)
@@ -361,6 +367,18 @@ public class NetworkHandler {
 				.decoder(EvasionCastC2S::new)
 				.encoder(EvasionCastC2S::toBytes)
 				.consumerMainThread(EvasionCastC2S::handle)
+				.add();
+
+		net.messageBuilder(MeleeAttackStartC2S.class, id(), NetworkDirection.PLAY_TO_SERVER)
+				.decoder(MeleeAttackStartC2S::new)
+				.encoder(MeleeAttackStartC2S::encode)
+				.consumerMainThread(MeleeAttackStartC2S::handle)
+				.add();
+
+		net.messageBuilder(ReserveFirstHotbarSlotC2S.class, id(), NetworkDirection.PLAY_TO_SERVER)
+				.decoder(ReserveFirstHotbarSlotC2S::new)
+				.encoder(ReserveFirstHotbarSlotC2S::encode)
+				.consumerMainThread(ReserveFirstHotbarSlotC2S::handle)
 				.add();
 
 		/*

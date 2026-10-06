@@ -10,6 +10,7 @@
     "common.ItemStackMixin",
     "common.LivingEntityAccessor",
     "common.LivingEntityMixin",
+    "common.ItemEntityMixin",
     "common.PlayerListMixin",
     "common.PlayerMixin",
     "common.RangedAttributeMixin",
@@ -17,6 +18,7 @@
     "common.SweepingEdgeEnchantmentMixin"
   ],
   "client": [
+    "client.AbstractSoundInstanceAccessor",
     "client.BundleTooltipComponentAccessor",
     "client.BrandingControlMixin",
     "client.ClientTextTooltipAccessor",

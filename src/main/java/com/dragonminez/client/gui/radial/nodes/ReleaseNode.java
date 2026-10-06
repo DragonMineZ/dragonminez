@@ -66,6 +66,17 @@ public class ReleaseNode extends AbstractRadialNode {
 		playToggle(false);
 	}
 
+	public void adjustByWheel(StatsData stats, double delta) {
+		if (delta == 0) return;
+		int max = maxRelease(stats);
+		int current = currentLimit(stats) > 0 ? currentLimit(stats) : max;
+		int next = Math.max(5, Math.min(max, current + (delta > 0 ? 5 : -5)));
+		if (next != current) {
+			NetworkHandler.sendToServer(new SetReleaseLimitC2S(next));
+			playClick();
+		}
+	}
+
 	public List<RadialNode> buildOptions(StatsData stats) {
 		List<RadialNode> out = new ArrayList<>();
 		for (int value = maxRelease(stats); value >= 5; value -= 5) {

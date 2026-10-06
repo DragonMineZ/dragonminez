@@ -372,6 +372,11 @@ public class FlySkillEvent {
 			} else flightVector = Vec3.ZERO;
 		}
 
+		double speedAfterInput = flightVector.length();
+		if (speedAfterInput > currentMaxSpeed) {
+			flightVector = flightVector.normalize().scale(Math.max(currentMaxSpeed, speedAfterInput - DECELERATION * levelMultiplier));
+		}
+
 		if (GravityLogic.isFlightHardStopped(ClientGravityState.getNetGravity())) {
 			flightVector = Vec3.ZERO;
 			player.setDeltaMovement(0, -1.5, 0);
@@ -384,7 +389,7 @@ public class FlySkillEvent {
 			player.setDeltaMovement(flightVector);
 			player.fallDistance = 0F;
 			verticalHover = 0;
-		} else handleHovering(player, isJump, isCrouch, flyLevel);
+		} else handleHovering(player, isJump, isCrouch, flyLevel, maxNormalSpeed);
 
 		if (player.onGround() && !pendingFlightActivation) {
 			pendingFlightDisable = false;
@@ -445,7 +450,7 @@ public class FlySkillEvent {
 		return Mth.lerp(t, 1.0F, 0.15F);
 	}
 
-	private static void handleHovering(LocalPlayer player, boolean isJump, boolean isCrouch, int flyLevel) {
+	private static void handleHovering(LocalPlayer player, boolean isJump, boolean isCrouch, int flyLevel, float maxVerticalSpeed) {
 		if (isJump) {
 			if (verticalHover < 20) verticalHover = Mth.clamp(verticalHover + 1, -20, 20);
 		} else if (isCrouch) {
@@ -464,6 +469,7 @@ public class FlySkillEvent {
 			yMovement = Math.max(0.0D, yMovement);
 		}
 
+		yMovement = Mth.clamp(yMovement, -maxVerticalSpeed, maxVerticalSpeed);
 		player.setDeltaMovement(new Vec3(
 				player.getDeltaMovement().x * 0.9,
 				yMovement,

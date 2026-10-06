@@ -38,6 +38,7 @@ import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.network.chat.Component;
 import net.minecraft.util.Mth;
 import com.dragonminez.common.combat.logic.player.PlayerAttackHelper;
+import com.dragonminez.common.combat.util.Minecraft_DMZ;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.entity.ai.attributes.AttributeInstance;
 import net.minecraft.world.entity.ai.attributes.AttributeModifier;
@@ -249,6 +250,9 @@ public class ClientStatsEvents {
 			boolean isChargingTechnique = data.getTechniques().isTechniqueCharging() || data.getTechniques().isTechniqueChargeActive();
 			if (blockLockTicks > 0) blockLockTicks--;
 			if (isChargingTechnique || isDescendKeyPressed || blockLockTicks > 0) isBlockKeyDown = false;
+			if (isBlockKeyDown && !data.getStatus().isBlocking() && ((Minecraft_DMZ) mc).isAttackWindupActive()) {
+				((Minecraft_DMZ) mc).cancelUpswing();
+			}
 
 			boolean isStackMode = data.getStatus().getSelectedAction() == ActionMode.STACK;
 			var nextForm = TransformationsHelper.getNextAvailableForm(data);
