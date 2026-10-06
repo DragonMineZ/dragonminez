@@ -1474,6 +1474,9 @@ public class AllWorldBossesEntity {
         private static final float SUPERNOVA_START_SIZE = 2.5F;
         private static final float SUPERNOVA_END_SIZE = 12.0F;
         private static final double SUPERNOVA_MIN_TRAVEL = 18.0D;
+        private static final int SUPERNOVA_HEAL_INTERVAL = 20;
+        private static final float SUPERNOVA_GUARDIAN_HEAL = 0.003F;
+        private static final float SUPERNOVA_COPY_HEAL = 0.001F;
 
         private static final int PRODUCTION_INTERVAL = 600;
         private static final int MAX_GUARDIANS = 3;
@@ -1744,8 +1747,18 @@ public class AllWorldBossesEntity {
         public boolean hurt(DamageSource pSource, float pAmount) {
             if (GeteStarEntities.sameFaction(this, pSource.getEntity())) return false;
             boolean absolute = pSource.is(DamageTypes.FELL_OUT_OF_WORLD) || pSource.is(DamageTypes.GENERIC_KILL);
+            if (!this.level().isClientSide && !absolute && this.isChargingSupernova()) {
+                if (pSource.getEntity() instanceof Player && this.tickCount % 5 == 0) {
+                    this.level().playSound(null, this.getX(), this.getY() + 7.0D, this.getZ(), SoundEvents.SHIELD_BLOCK, SoundSource.HOSTILE, 2.0F, 0.6F);
+                }
+                return false;
+            }
             if (!this.level().isClientSide && !absolute && this.getBossAbility() == ABILITY_OVERLOAD) pAmount *= OVERLOAD_DAMAGE_BONUS;
             return super.hurt(pSource, pAmount);
+        }
+
+        public boolean isChargingSupernova() {
+            return this.getBossAbility() == ABILITY_SUPERNOVA && this.getBossAbilityTicks() < SUPERNOVA_CHANNEL;
         }
 
         public void addOverload(float amount) {
@@ -1975,6 +1988,7 @@ public class AllWorldBossesEntity {
                 if (tick % 40 == 0) {
                     level.playSound(null, this.getX(), this.getY(), this.getZ(), MainSounds.KI_CHARGE_LOOP.get(), SoundSource.HOSTILE, 3.0F, 0.5F);
                 }
+                if (tick % SUPERNOVA_HEAL_INTERVAL == 0) this.tickSupernovaHeal(level);
                 return;
             }
 
@@ -2007,6 +2021,37 @@ public class AllWorldBossesEntity {
                 this.discardSupernovaBall();
                 this.detonateSupernova(level, impact);
                 this.stopBossAbility();
+            }
+        }
+
+        private void tickSupernovaHeal(ServerLevel level) {
+            if (this.getHealth() >= this.getMaxHealth()) return;
+            AABB box = this.chamberBox().inflate(HELPER_MARGIN);
+            Vec3 torso = this.position().add(0.0D, 7.0D, 0.0D);
+            float amount = 0.0F;
+            for (MetalCooler guardian : GeteStarEntities.owned(level, MetalCooler.class, box, this.getUUID())) {
+                if (!guardian.isAlive()) continue;
+                amount += this.getMaxHealth() * SUPERNOVA_GUARDIAN_HEAL;
+                this.healLink(level, guardian, torso);
+            }
+            for (MetalCoolerCopy copy : GeteStarEntities.owned(level, MetalCoolerCopy.class, box, this.getUUID())) {
+                if (!copy.isAlive()) continue;
+                amount += this.getMaxHealth() * SUPERNOVA_COPY_HEAL;
+                this.healLink(level, copy, torso);
+            }
+            if (amount <= 0.0F) return;
+            this.heal(amount);
+            level.sendParticles(ParticleTypes.HAPPY_VILLAGER, torso.x, torso.y, torso.z, 12, 2.0D, 3.0D, 2.0D, 0.0D);
+            level.playSound(null, torso.x, torso.y, torso.z, SoundEvents.BEACON_AMBIENT, SoundSource.HOSTILE, 2.0F, 1.4F);
+        }
+
+        private void healLink(ServerLevel level, LivingEntity source, Vec3 torso) {
+            Vec3 from = source.position().add(0.0D, source.getBbHeight() * 0.6D, 0.0D);
+            Vec3 step = torso.subtract(from);
+            int points = Mth.clamp((int) (step.length() / 1.5D), 4, 24);
+            for (int i = 0; i <= points; i++) {
+                Vec3 point = from.add(step.scale(i / (double) points));
+                level.sendParticles(ParticleTypes.ELECTRIC_SPARK, point.x, point.y, point.z, 1, 0.05D, 0.05D, 0.05D, 0.0D);
             }
         }
 
