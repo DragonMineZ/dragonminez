@@ -7,5 +7,8 @@ import org.spongepowered.asm.mixin.gen.Accessor;
 @Mixin(AbstractSoundInstance.class)
 public interface AbstractSoundInstanceAccessor {
 	@Accessor("volume")
+	float dmz$getVolume();
+
+	@Accessor("volume")
 	void dmz$setVolume(float volume);
 }
