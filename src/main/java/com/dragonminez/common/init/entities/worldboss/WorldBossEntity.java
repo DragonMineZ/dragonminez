@@ -386,5 +386,6 @@ public abstract class WorldBossEntity extends DBSagasEntity {
         if (pCompound.contains("BossAsleep")) {
             applyAsleep(pCompound.getBoolean("BossAsleep"));
         }
+        if (this.isBossAsleep()) this.applyFixedStats();
     }
 }

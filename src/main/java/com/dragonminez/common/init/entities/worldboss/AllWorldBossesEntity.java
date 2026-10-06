@@ -137,9 +137,9 @@ public class AllWorldBossesEntity {
 
     public static class JanembaFat extends WorldBossEntity {
 
-        public static final float BASE_HEALTH = 2688000.0F;
-        public static final float BASE_MELEE = 50700.0F;
-        public static final float BASE_KI = 46042.0F;
+        public static final float BASE_HEALTH = 6720000.0F;
+        public static final float BASE_MELEE = 56160.0F;
+        public static final float BASE_KI = 51000.0F;
 
         public static final int ABILITY_STOMP = 2;
         public static final int ABILITY_SUMMON = 3;
@@ -516,9 +516,9 @@ public class AllWorldBossesEntity {
 
     public static class SuperJanemba extends WorldBossEntity {
 
-        public static final float BASE_HEALTH = 2940000.0F;
-        public static final float BASE_MELEE = 55900.0F;
-        public static final float BASE_KI = 50830.0F;
+        public static final float BASE_HEALTH = 7350000.0F;
+        public static final float BASE_MELEE = 61920.0F;
+        public static final float BASE_KI = 56304.0F;
 
         public static final int ABILITY_CUTS = 5;
 
@@ -819,9 +819,9 @@ public class AllWorldBossesEntity {
 
     public static class Turles extends WorldBossEntity {
 
-        public static final float BASE_HEALTH = 15600.0F;
-        public static final float BASE_MELEE = 394.3F;
-        public static final float BASE_KI = 394.3F;
+        public static final float BASE_HEALTH = 72000.0F;
+        public static final float BASE_MELEE = 600.0F;
+        public static final float BASE_KI = 600.0F;
 
         public static final int ABILITY_MIGHT_FRUIT = 6;
         public static final int ABILITY_KILL_DRIVER = 7;
@@ -1413,9 +1413,9 @@ public class AllWorldBossesEntity {
 
     public static class MetalCoolerCore extends WorldBossEntity {
 
-        public static final float BASE_HEALTH = 187200.0F;
-        public static final float BASE_MELEE = 4008.3F;
-        public static final float BASE_KI = 3358.3F;
+        public static final float BASE_HEALTH = 468000.0F;
+        public static final float BASE_MELEE = 4440.0F;
+        public static final float BASE_KI = 3720.0F;
 
         public static final int ABILITY_ORBITAL_LASERS = 10;
         public static final int ABILITY_CABLES = 11;
@@ -3257,7 +3257,7 @@ public class AllWorldBossesEntity {
         public static final int CYCLONE_WINDUP = 10;
         public static final double SLAM_ANIMATION_SPEED = 0.4D;
 
-        private static final Profile PROFILE = new Profile(3, 936000.0F, 54350.0F, 62503.0F, 49170.0F, 56546.0F,
+        private static final Profile PROFILE = new Profile(3, 2340000.0F, 59040.0F, 67896.0F, 53424.0F, 61440.0F,
                 0, 9, 1.0F, 0.6F, 1.0D, 1.6D, 0.8D, new OutlineStyle(0xFF9A2E, 0xB84A00, 3.0F));
 
         private static final int THROW_DURATION = 26;
@@ -4082,7 +4082,7 @@ public class AllWorldBossesEntity {
         public static final int LUNGE_DASH = 18;
         public static final int FOLLOW_DASH = 9;
 
-        private static final Profile PROFILE = new Profile(2, 3786000.0F, 61144.0F, 70316.0F, 55317.0F, 63614.0F,
+        private static final Profile PROFILE = new Profile(2, 9465000.0F, 79560.0F, 91500.0F, 71988.0F, 82788.0F,
                 7, 4, 0.45F, 0.4F, 1.6D, 2.4D, 0.6D, new OutlineStyle(0x7FD4FF, 0x2F6BFF, 3.0F));
 
         private static final int WHIRLWIND_DURATION = 45;
@@ -4568,7 +4568,7 @@ public class AllWorldBossesEntity {
         public static final int FLASH_FIRST = 16;
         public static final int CHASE_STRIKE = 16;
 
-        private static final Profile PROFILE = new Profile(1, 5100000.0F, 67938.0F, 78128.0F, 61463.0F, 70682.0F,
+        private static final Profile PROFILE = new Profile(1, 12750000.0F, 107172.0F, 123252.0F, 96972.0F, 111516.0F,
                 6, 4, 0.45F, 0.4F, 1.6D, 2.4D, 0.6D, new OutlineStyle(0xFF3030, 0x8A0000, 3.0F));
 
         private static final OutlineStyle STANCE_OUTLINE = new OutlineStyle(0xFF2020, 0xFF7070, 4.0F);
@@ -5368,9 +5368,9 @@ public class AllWorldBossesEntity {
 
     public static class Gomah extends WorldBossEntity {
 
-        public static final float BASE_HEALTH = 6870000.0F;
-        public static final float BASE_MELEE = 67938.0F;
-        public static final float BASE_KI = 61463.0F;
+        public static final float BASE_HEALTH = 18969000.0F;
+        public static final float BASE_MELEE = 159396.0F;
+        public static final float BASE_KI = 144252.0F;
         public static final int MAX_STACKS = 5;
 
         public static final int ABILITY_GREAT_SPHERE = 17;
