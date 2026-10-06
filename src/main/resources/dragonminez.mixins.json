@@ -24,6 +24,7 @@
     "client.CompositeStateAccessor",
     "client.DisconnectedScreenMixin",
     "client.ColliderDebugRenderer",
+    "client.DimensionTypeMixin",
     "client.EntityMouseHandlerMixin",
     "client.EntityRenderDispatcherMixin",
     "client.CameraMixin",
