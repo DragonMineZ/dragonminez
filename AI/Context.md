@@ -104,7 +104,7 @@ Race, class, form, stack-form, effect, mastery, TP, and stat calculations read `
 `NetworkHandler` creates a Forge `SimpleChannel` named `dragonminez:network` (protocol "1.0", all versions accepted). ~54 C2S and ~25 S2C packet classes live in `common/network/C2S` and `common/network/S2C`.
 
 - Packet ids come from a sequential `id()` counter, so **registration order defines the wire ids**. Append new packets; never reorder or insert mid-list, or client/server builds desync.
-- Each registration is a `messageBuilder(...).decoder(...).encoder(...).consumerMainThread(handle).add()` triplet with explicit `NetworkDirection`.
+- Each registration is a `messageBuilder(...).decoder(...).encoder(...).consumerMainThread(handle).add()` triplet with explicit `NetworkDirection`. Exception: the two melee packets use `consumerNetworkThread` to timestamp arrival (see "Melee Windup").
 - Helper send methods: `sendToServer`, `sendToPlayer`, `sendToAllPlayers`, `sendToTrackingEntityAndSelf`, `sendToTrackingEntity`.
 - C2S categories: character creation/update, stat/skill changes, quests (accept/claim/unlock), wishes (`GrantWishC2S`), space pod travel, actions/forms/release limit, flight/dash/ki blasts, party, techniques, combat. S2C: stat/resource/progression sync, config sync, quest/wish registry sync, radar sync, animations, UI opens, party toasts, weapon registry sync, space pod destinations.
 - Validate all C2S input server-side. Never trust the client for stats, unlocks, permissions, quests, wishes, or progression.
@@ -286,6 +286,15 @@ Over-shoulder (`client/render/camera/OverShoulderCamera`):
 - Rotation changes made by anything else are absorbed into the camera angles as deltas; leaving the mode writes the camera angles back to the player so the view does not jump.
 - `InGameHudMixin` redirects the first-person check in `Gui#renderCrosshair` so the crosshair (and the block shield) draw while decoupled.
 - In fast flight the shoulder offsets are rotated by the camera roll (`computeMove(..., roll)`), otherwise the character would swap sides when the view goes inverted.
+
+## Melee Windup, Blocking And Flight Mode Lock
+
+- Melee is two packets: `MeleeAttackStartC2S` when the client starts the swing (server broadcasts the swing sound and `MeleeAnimationS2C` to trackers) and `CombatAttackRequestC2S` after the windup. Both are registered with `consumerNetworkThread` only to stamp `System.nanoTime()` on arrival; all logic runs in `enqueueWork`.
+- `MeleeWindupTracker` (server) pairs them by combo count + slot and times them with those arrival stamps, never with game ticks, so a lagging server (TPS < 20) does not shorten the measured windup. A hit that arrives early (jitter, TCP bursts) is deferred to `start + windup - 1 tick` and fired from `TickHandler` instead of being dropped; the attack-rate check (`attack delay - 2` ticks) also defers rather than rejects. Hits more than 1 s ahead of schedule, or without a matching start, are dropped. Blocking cancels the pending start/deferred hit, and a deferred hit re-checks stun/blocking/slot before firing.
+- Windup = `animation ticks x upswing x 0.95`, clamped to 3..7 ticks (`PlayerAttackHelper`), animation speed 0.55..1.35. Tuned to cost ~20% melee DPS against the old 2-tick windup for normal/fast attack speeds (less for slow ones); `fist.json` punches 0.4, lowkick 0.7, gutkick 0.6, uppercuts 0.5, other weapons 0.5.
+- A player never deals melee damage while blocking: the client cancels a windup or queued attack when the block key is pressed, `CombatAttackRequestC2S` refuses while blocking, and `CombatEvent.onLivingHurt` cancels "player" damage from a DMZ-blocking attacker against any target.
+- Flight mode lock (`Status.flightModeLocked` + `lockedFlightMode`): damage still forces Combat Fly per `combatFlyAutoSwitchOnDamage`; the lock only remembers the chosen mode and `FlyStatusHandler` restores it once `COMBAT_FLY_LOCK` expires. Changing the mode while locked updates the remembered one.
+- Reserve first hotbar slot (`general-user` `reserveFirstHotbarSlot`, sent by `ReserveFirstHotbarSlotC2S` on login and toggle): stored under `PlayerPersisted` so it survives death; `InventoryMixin` makes `Inventory#getFreeSlot` skip slot 0, which covers pickups, `addItem`, rewards and `/give`.
 
 ## Beam Clash
 

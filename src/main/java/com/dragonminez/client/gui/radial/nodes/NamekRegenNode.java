@@ -17,7 +17,7 @@ public class NamekRegenNode extends AbstractRadialNode {
 
 	@Override
 	public ResourceLocation icon(StatsData stats) {
-		return icon("racial");
+		return icon("regen");
 	}
 
 	@Override

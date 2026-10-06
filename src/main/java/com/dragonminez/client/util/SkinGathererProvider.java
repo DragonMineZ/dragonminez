@@ -149,32 +149,16 @@ public class SkinGathererProvider {
 	public void gatherBodyLayers(AbstractClientPlayer player, StatsData stats, float partialTick, BiConsumer<ResourceLocation, float[]> consumer) {
 		var character = stats.getCharacter();
 		String raceName = character.getRaceName().toLowerCase();
-		int bodyType = character.getBodyType();
 		String currentForm = character.getActiveForm();
 
 		RaceCharacterConfig raceConfig = ConfigManager.getRaceCharacter(raceName);
 		if (raceConfig == null) return;
 
 		String raceCustomModel = raceConfig.getCustomModel() != null ? raceConfig.getCustomModel().toLowerCase() : "";
-		String formCustomModel = "";
-
 		boolean hasStackForm = character.hasActiveStackForm() && character.getActiveStackFormData() != null;
 		boolean hasForm = character.hasActiveForm() && character.getActiveFormData() != null;
 
-		if (hasStackForm && character.getActiveStackFormData().hasCustomModel()) {
-			formCustomModel = character.getActiveStackFormData().getCustomModel().toLowerCase();
-		} else if (hasForm && character.getActiveFormData().hasCustomModel()) {
-			formCustomModel = character.getActiveFormData().getCustomModel().toLowerCase();
-		}
-
-		String key = formCustomModel.isEmpty() ? raceCustomModel : formCustomModel;
-		if (key.isEmpty()) key = isBuiltInRace(raceName) ? raceName : "human";
-
-		String logicKey = key;
-		if (key.equals("human_slim") || key.equals("majin_slim") || key.equals("base_slim")) {
-			logicKey = raceName;
-		}
-
+		String logicKey = activeLogicKey(character, raceName, raceConfig);
 		String modelKey = logicKey;
 		FusedData fused = stats.getFusedData();
 		boolean partnerModel = fused != null && fused.usesPartnerModel(character);
@@ -188,8 +172,6 @@ public class SkinGathererProvider {
 		float[][] colors = resolveBodyColors(stats);
 		float[] b1 = colors[0];
 		float[] b2 = colors[1];
-		float[] b3 = colors[2];
-		float[] hair = colors[3];
 
 		if (hasForm && character.getActiveFormData().hasExtraFormLayer()) {
 			emitExtraFormLayer(consumer, "extraform_form", character.getActiveFormData());
@@ -209,43 +191,7 @@ public class SkinGathererProvider {
 		boolean hasSaiyanTail = raceConfig.getHasSaiyanTail() != null && raceConfig.getHasSaiyanTail();
 		boolean renderSaiyanTail = (isSaiyanLogic || hasSaiyanTail) && stats.getStatus().isTailVisible() && SaiyanTailRules.hasTail(character);
 
-		boolean isHumanoid = isHumanoidKey(logicKey);
-
-		if (isHumanoid && look.getBodyType() == 0) {
-			consumer.accept(player.getSkinTextureLocation(), WHITE_COLOR);
-		} else if (isHumanoid) {
-			resolveBodyHumanSaiyan(look, logicKey, b1, b2, b3, consumer);
-		} else {
-            switch (logicKey) {
-                case "namekian", "namekian_orange", "namekian_buffed" -> resolveBodyNamekian(look, b1, b2, b3, consumer);
-                case "majin", "majin_super", "majin_ultra", "majin_evil", "majin_kid", "janemba_imperfect", "janemba_fat", "janemba_super" -> resolveBodyMajin(look, logicKey, b1, b2, b3, consumer);
-                case "frostdemon", "frostdemon_second", "frostdemon_final", "frostdemon_fifth", "frostdemon_third", "frostdemon_fp", "frostdemon_mecha", "frostdemon_metalcore" -> resolveBodyFrostDemon(look, logicKey, b1, b2, b3, hair, consumer);
-                case "bioandroid", "bioandroid_semi", "bioandroid_perfect", "bioandroid_base", "bioandroid_ultra", "bioandroid_xeno", "bioandroid_xenofp" -> resolveBodyBioAndroid(look, logicKey, b1, b2, b3, hair, consumer);
-                case "glindtrueform" -> resolveBodyGlindTrueForm(b1, b2, consumer);
-                case "trascended" -> resolveBodyGlindTranscended(look, b1, b2, consumer);
-				default -> {
-					boolean hasGender = Boolean.TRUE.equals(raceConfig.getHasGender());
-					String genSuffix = hasGender ? (character.getGender().equals(Character.GENDER_FEMALE) ? "_female" : "_male") : "";
-
-					if (Boolean.TRUE.equals(raceConfig.getUseVanillaSkin()) && bodyType == 0) {
-						consumer.accept(player.getSkinTextureLocation(), WHITE_COLOR);
-						break;
-					}
-
-					if (Boolean.TRUE.equals(raceConfig.getIsLayered())) {
-						String prefix = "textures/entity/races/" + raceName + "/" + logicKey + genSuffix + "_" + bodyType + "_";
-						String fallbackPrefix = "textures/entity/races/" + raceName + "/" + logicKey + genSuffix + "_0_";
-
-						consumer.accept(DMZSkinLayer.getSafeTexture(getCachedTexture(prefix + "layer1.png"), getCachedTexture(fallbackPrefix + "layer1.png")), b1);
-						consumer.accept(DMZSkinLayer.getSafeTexture(getCachedTexture(prefix + "layer2.png")), b2);
-						consumer.accept(DMZSkinLayer.getSafeTexture(getCachedTexture(prefix + "layer3.png")), b3);
-					} else {
-						ResourceLocation customTex = getCachedTexture("textures/entity/races/" + raceName + "/" + logicKey + genSuffix + ".png");
-						consumer.accept(DMZSkinLayer.getSafeTexture(customTex), b1);
-					}
-				}
-            }
-        }
+		resolveRaceBody(player, look, raceName, raceConfig, logicKey, colors, consumer);
 
 		if (partnerModel) {
 			switch (modelFamily(modelKey)) {
@@ -283,15 +229,89 @@ public class SkinGathererProvider {
 		return fusionScratch;
 	}
 
-	public void gatherDonorLayers(String race, int bodyType, String gender, float[][] colors, BiConsumer<ResourceLocation, float[]> consumer) {
+	private Character scratchLook(String race, String gender, int bodyType, String formGroup, String form) {
 		if (donorScratch == null) donorScratch = new Character();
 		donorScratch.setRace(race);
 		donorScratch.setGender(gender);
 		donorScratch.setBodyType(bodyType);
-		switch (donorScratch.getRaceName()) {
-			case "frostdemon" -> resolveBodyFrostDemon(donorScratch, "frostdemon", colors[0], colors[1], colors[2], colors[3], consumer);
-			case "bioandroid" -> resolveBodyBioAndroid(donorScratch, "bioandroid", colors[0], colors[1], colors[2], colors[3], consumer);
+		donorScratch.clearActiveStackForm();
+		if (form != null && !form.isEmpty() && formGroup != null && !formGroup.isEmpty()) donorScratch.setActiveForm(FusionForms.baseGroup(formGroup), form);
+		else donorScratch.clearActiveForm();
+		return donorScratch;
+	}
+
+	private static String activeLogicKey(Character character, String raceName, RaceCharacterConfig raceConfig) {
+		String raceCustomModel = raceConfig.getCustomModel() != null ? raceConfig.getCustomModel().toLowerCase() : "";
+		String formCustomModel = "";
+		if (character.hasActiveStackForm() && character.getActiveStackFormData() != null && character.getActiveStackFormData().hasCustomModel()) {
+			formCustomModel = character.getActiveStackFormData().getCustomModel().toLowerCase();
+		} else if (character.hasActiveForm() && character.getActiveFormData() != null && character.getActiveFormData().hasCustomModel()) {
+			formCustomModel = character.getActiveFormData().getCustomModel().toLowerCase();
+		}
+		String key = formCustomModel.isEmpty() ? raceCustomModel : formCustomModel;
+		if (key.isEmpty()) key = isBuiltInRace(raceName) ? raceName : "human";
+		return key.equals("human_slim") || key.equals("majin_slim") || key.equals("base_slim") ? raceName : key;
+	}
+
+	public void gatherDonorLayers(String race, int bodyType, String gender, String formGroup, String form, float[][] colors, BiConsumer<ResourceLocation, float[]> consumer) {
+		Character look = scratchLook(race, gender, bodyType, formGroup, form);
+		switch (look.getRaceName()) {
+			case "frostdemon" -> resolveBodyFrostDemon(look, "frostdemon", colors[0], colors[1], colors[2], colors[3], consumer);
+			case "bioandroid" -> resolveBodyBioAndroid(look, "bioandroid", colors[0], colors[1], colors[2], colors[3], consumer);
 			default -> {}
+		}
+	}
+
+	public void gatherOriginLayers(AbstractClientPlayer player, StatsData stats, BiConsumer<ResourceLocation, float[]> consumer) {
+		FusedData fused = stats.getFusedData();
+		if (fused == null) return;
+		Character character = stats.getCharacter();
+		String race = fused.getPartnerRace();
+		RaceCharacterConfig raceConfig = ConfigManager.getRaceCharacter(race);
+		if (raceConfig == null) return;
+		String logicKey = activeLogicKey(character, race, raceConfig);
+		Character look = scratchLook(race, fused.getPartnerGender(), fused.getPartnerBodyType(), character.getActiveFormGroup(), character.getActiveForm());
+		resolveRaceBody(player, look, race, raceConfig, logicKey, resolveBodyColors(stats), consumer);
+	}
+
+	private void resolveRaceBody(AbstractClientPlayer player, Character look, String raceName, RaceCharacterConfig raceConfig, String logicKey, float[][] colors, BiConsumer<ResourceLocation, float[]> consumer) {
+		float[] b1 = colors[0];
+		float[] b2 = colors[1];
+		float[] b3 = colors[2];
+		float[] hair = colors[3];
+		int bodyType = look.getBodyType();
+
+		if (isHumanoidKey(logicKey)) {
+			if (bodyType == 0) consumer.accept(player.getSkinTextureLocation(), WHITE_COLOR);
+			else resolveBodyHumanSaiyan(look, logicKey, b1, b2, b3, consumer);
+			return;
+		}
+
+		switch (logicKey) {
+			case "namekian", "namekian_orange", "namekian_buffed" -> resolveBodyNamekian(look, b1, b2, b3, consumer);
+			case "majin", "majin_super", "majin_ultra", "majin_evil", "majin_kid", "janemba_imperfect", "janemba_fat", "janemba_super" -> resolveBodyMajin(look, logicKey, b1, b2, b3, consumer);
+			case "frostdemon", "frostdemon_second", "frostdemon_final", "frostdemon_fifth", "frostdemon_third", "frostdemon_fp", "frostdemon_mecha", "frostdemon_metalcore" -> resolveBodyFrostDemon(look, logicKey, b1, b2, b3, hair, consumer);
+			case "bioandroid", "bioandroid_semi", "bioandroid_perfect", "bioandroid_base", "bioandroid_ultra", "bioandroid_xeno", "bioandroid_xenofp" -> resolveBodyBioAndroid(look, logicKey, b1, b2, b3, hair, consumer);
+			case "glindtrueform" -> resolveBodyGlindTrueForm(b1, b2, consumer);
+			case "trascended" -> resolveBodyGlindTranscended(look, b1, b2, consumer);
+			default -> {
+				boolean hasGender = Boolean.TRUE.equals(raceConfig.getHasGender());
+				String genSuffix = hasGender ? (look.getGender().equals(Character.GENDER_FEMALE) ? "_female" : "_male") : "";
+
+				if (Boolean.TRUE.equals(raceConfig.getUseVanillaSkin()) && bodyType == 0) {
+					consumer.accept(player.getSkinTextureLocation(), WHITE_COLOR);
+				} else if (Boolean.TRUE.equals(raceConfig.getIsLayered())) {
+					String prefix = "textures/entity/races/" + raceName + "/" + logicKey + genSuffix + "_" + bodyType + "_";
+					String fallbackPrefix = "textures/entity/races/" + raceName + "/" + logicKey + genSuffix + "_0_";
+
+					consumer.accept(DMZSkinLayer.getSafeTexture(getCachedTexture(prefix + "layer1.png"), getCachedTexture(fallbackPrefix + "layer1.png")), b1);
+					consumer.accept(DMZSkinLayer.getSafeTexture(getCachedTexture(prefix + "layer2.png")), b2);
+					consumer.accept(DMZSkinLayer.getSafeTexture(getCachedTexture(prefix + "layer3.png")), b3);
+				} else {
+					ResourceLocation customTex = getCachedTexture("textures/entity/races/" + raceName + "/" + logicKey + genSuffix + ".png");
+					consumer.accept(DMZSkinLayer.getSafeTexture(customTex), b1);
+				}
+			}
 		}
 	}
 

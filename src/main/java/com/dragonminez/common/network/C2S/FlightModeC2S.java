@@ -15,14 +15,22 @@ import net.minecraftforge.network.NetworkEvent;
 import java.util.function.Supplier;
 
 public class FlightModeC2S {
+	private final int targetMode;
 
 	public FlightModeC2S() {
+		this.targetMode = -1;
+	}
+
+	public FlightModeC2S(int targetMode) {
+		this.targetMode = targetMode;
 	}
 
 	public FlightModeC2S(FriendlyByteBuf buf) {
+		this.targetMode = buf.readInt();
 	}
 
 	public static void encode(FlightModeC2S msg, FriendlyByteBuf buf) {
+		buf.writeInt(msg.targetMode);
 	}
 
 	public static FlightModeC2S decode(FriendlyByteBuf buf) {
@@ -43,13 +51,16 @@ public class FlightModeC2S {
 				if (flySkill == null || kiControlSkill == null || flySkill.getLevel() <= 0 || kiControlSkill.getLevel() <= 0) return;
 
 				int currentMode = data.getStatus().getFlightMode();
-				int targetMode = currentMode == Status.FLIGHT_COMBAT ? Status.FLIGHT_SEARCH : Status.FLIGHT_COMBAT;
+				int targetMode = msg.targetMode == -1
+						? (currentMode == Status.FLIGHT_COMBAT ? Status.FLIGHT_SEARCH : Status.FLIGHT_COMBAT)
+						: msg.targetMode;
+				if ((targetMode != Status.FLIGHT_SEARCH && targetMode != Status.FLIGHT_COMBAT) || targetMode == currentMode) return;
 
 				if (targetMode == Status.FLIGHT_SEARCH && data.getCooldowns().hasCooldown(Cooldowns.COMBAT_FLY_LOCK)) return;
 
 				boolean wasActive = flySkill.isActive();
 
-				if (!wasActive) {
+				if (!wasActive && msg.targetMode == -1) {
 					int flyLevel = flySkill.getLevel();
 					double energyCostPercent = Math.max(0.01, 0.04 - (flyLevel * 0.003));
 					int energyCost = (int) Math.ceil(ConfigManager.getCombatConfig().getBaselineFormDrain() * energyCostPercent);
@@ -62,6 +73,7 @@ public class FlightModeC2S {
 				}
 
 				data.getStatus().setFlightMode(targetMode);
+				if (data.getStatus().isFlightModeLocked()) data.getStatus().setLockedFlightMode(targetMode);
 
 				NetworkHandler.sendToTrackingEntityAndSelf(new StatsSyncS2C(player), player);
 			});

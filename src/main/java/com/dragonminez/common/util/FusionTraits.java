@@ -42,7 +42,7 @@ public final class FusionTraits {
 		}
 	}
 
-	private static final String[] TAIL_BONES = {"tail1", "cola"};
+	private static final String[] TAIL_BONES = {"tail1", "cola", "xenotail"};
 
 	private FusionTraits() {}
 

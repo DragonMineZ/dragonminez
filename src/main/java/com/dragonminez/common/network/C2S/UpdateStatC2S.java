@@ -1,5 +1,6 @@
 package com.dragonminez.common.network.C2S;
 
+import com.dragonminez.common.combat.logic.player.MeleeWindupTracker;
 import com.dragonminez.common.init.MainEffects;
 import com.dragonminez.common.stats.StatsCapability;
 import com.dragonminez.common.stats.StatsProvider;
@@ -66,6 +67,7 @@ public class UpdateStatC2S {
 					case BLOCK:
 						long now = System.currentTimeMillis();
 						if (msg.value) {
+							MeleeWindupTracker.cancel(player);
 							if (data.getStatus().isBlocking()) break;
 							if (now - player.getPersistentData().getLong(BLOCK_END_TIME_TAG) < BLOCK_REACTIVATION_DELAY_MS) break;
 							data.getStatus().setBlocking(true);

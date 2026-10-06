@@ -2,6 +2,7 @@ package com.dragonminez.server.events.players;
 
 import com.dragonminez.Env;
 import com.dragonminez.Reference;
+import com.dragonminez.common.combat.logic.player.MeleeWindupTracker;
 import com.dragonminez.common.config.ConfigManager;
 import com.dragonminez.common.config.FormConfig;
 import com.dragonminez.common.events.DMZEvent;
@@ -105,6 +106,8 @@ public class TickHandler {
 	public static void onPlayerTick(TickEvent.PlayerTickEvent event) {
 		if (event.phase != TickEvent.Phase.END || event.player.level().isClientSide) return;
 		if (!(event.player instanceof ServerPlayer serverPlayer)) return;
+
+		MeleeWindupTracker.tick(serverPlayer);
 
 		UUID playerId = serverPlayer.getUUID();
 		int graceTicks = forceKillGraceByPlayer.getOrDefault(playerId, 0);
@@ -541,6 +544,7 @@ public class TickHandler {
 	@SubscribeEvent
 	public static void onPlayerRespawn(PlayerEvent.PlayerRespawnEvent event) {
 		UUID playerId = event.getEntity().getUUID();
+		MeleeWindupTracker.clear(playerId);
 		forceKillGraceByPlayer.put(playerId, FORCED_KILL_GRACE_TICKS);
 		playerTickCounters.remove(playerId);
 	}

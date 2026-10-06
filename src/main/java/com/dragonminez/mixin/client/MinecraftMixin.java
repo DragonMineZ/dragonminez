@@ -11,6 +11,7 @@ import com.dragonminez.common.combat.util.Minecraft_DMZ;
 import com.dragonminez.common.combat.util.SoundHelper;
 import com.dragonminez.common.network.NetworkHandler;
 import com.dragonminez.common.network.C2S.CombatAttackRequestC2S;
+import com.dragonminez.common.network.C2S.MeleeAttackStartC2S;
 import com.dragonminez.common.stats.StatsCapability;
 import com.dragonminez.common.stats.StatsProvider;
 import net.minecraft.client.Minecraft;
@@ -55,7 +56,6 @@ public abstract class MinecraftMixin implements Minecraft_DMZ {
 	@Unique private static final float ATTACK_QUEUE_WINDOW_TICKS = 1.0F;
 	@Unique private static final int ATTACK_QUEUE_EXPIRY_TICKS = 4;
 
-	@Unique private static final float UPSWING_IMPACT_BIAS = 0.4F;
 	@Unique private static final int BLOCK_MINE_ATTACK_GRACE = 5;
 	@Unique private int lastBlockMineTick = -100;
 
@@ -101,8 +101,9 @@ public abstract class MinecraftMixin implements Minecraft_DMZ {
 		upswingStack = hand;
 
 		float cooldownTicks = PlayerAttackHelper.getAttackCooldownTicksCapped(player);
-		int swingAnimTicks = meleeAnimTicks(meleeAnimSpeed(cooldownTicks));
-		upswingTicks = Math.max(1, Math.round(swingAnimTicks * (float) hand.upswingRate() * UPSWING_IMPACT_BIAS));
+		float animSpeed = PlayerAttackHelper.getMeleeAnimationSpeed(cooldownTicks);
+		int swingAnimTicks = PlayerAttackHelper.getMeleeAnimationTicks(animSpeed);
+		upswingTicks = PlayerAttackHelper.getMeleeAttackWindupTicks(cooldownTicks, hand);
 		lastSwingDuration = swingAnimTicks;
 		lastAttacked = 0;
 
@@ -115,23 +116,13 @@ public abstract class MinecraftMixin implements Minecraft_DMZ {
 	}
 
 	@Unique
-	private float meleeAnimSpeed(float cooldownTicks) {
-		float speed = 12.0F / Math.max(cooldownTicks, 0.001F);
-		return Math.max(0.55F, Math.min(1.35F, speed));
-	}
-
-	@Unique
-	private int meleeAnimTicks(float animSpeed) {
-		return Math.max(8, Math.round(12.0F / Math.max(animSpeed, 0.1F)));
-	}
-
-	@Unique
 	private void playLocalAttackFeedback(AttackHand hand) {
 		if (hand.attack() == null) return;
 
-		float animSpeedMultiplier = meleeAnimSpeed(PlayerAttackHelper.getAttackCooldownTicksCapped(player));
+		float animSpeedMultiplier = PlayerAttackHelper.getMeleeAnimationSpeed(PlayerAttackHelper.getAttackCooldownTicksCapped(player));
 
 		((IPlayerAnimatable) player).dragonminez$playMeleeAnimation(hand.attack().animation(), hand.isOffHand(), animSpeedMultiplier);
+		NetworkHandler.sendToServer(new MeleeAttackStartC2S(getComboCount(), player.getInventory().selected));
 
 		var swingSound = hand.attack().swingSound();
 		SoundEvent soundEvent = SoundHelper.resolveSoundEvent(swingSound);
@@ -320,6 +311,11 @@ public abstract class MinecraftMixin implements Minecraft_DMZ {
 	@Override
 	public int getUpswingTicks() {
 		return upswingTicks;
+	}
+
+	@Override
+	public boolean hasPendingAttack() {
+		return isAwaitingUpswing || queuedAttack;
 	}
 
 	@Override

@@ -40,9 +40,7 @@ public class FlightSpeedNode extends AbstractRadialNode {
 
     @Override
     public boolean visible(StatsData stats) {
-        if (stats.getCharacter() == null) return false;
-        String race = stats.getCharacter().getRaceName();
-        return race != null && !race.isEmpty() && stats.getSkills().hasSkill("fly");
+        return FlyNode.canFly(stats);
     }
 
     @Override
@@ -68,9 +66,19 @@ public class FlightSpeedNode extends AbstractRadialNode {
 
     public List<RadialNode> buildOptions() {
         List<RadialNode> out = new ArrayList<>();
-        for (int value = maxFlightSpeed(); value >= 25; value -= 5) {
+        for (int value = maxFlightSpeed(); value >= 5; value -= 5) {
             out.add(new FlightSpeedLimitOptionNode(value));
         }
         return out;
+    }
+
+    public void adjustByWheel(StatsData stats, double delta) {
+        if (delta == 0) return;
+        int current = currentFlightSpeed(stats) > 0 ? currentFlightSpeed(stats) : maxFlightSpeed();
+        int next = Math.max(5, Math.min(maxFlightSpeed(), current + (delta > 0 ? 5 : -5)));
+        if (next != current) {
+            NetworkHandler.sendToServer(new SetFlightSpeedLimitC2S(next));
+            playClick();
+        }
     }
 }

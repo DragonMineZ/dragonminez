@@ -19,6 +19,7 @@ public interface Minecraft_DMZ {
     }
 
     int getUpswingTicks();
+    boolean hasPendingAttack();
     float getSwingProgress();
 
     default boolean isWeaponSwingInProgress() {

@@ -346,7 +346,7 @@ public class GeneralServerConfig {
 		private FoodConfig food = new FoodConfig();
 		private Double mightFruitPower = 1.2;
 		private Double majinPower = 1.3;
-		private Double sacredWaterMultiplier = 1.2;
+		private Double sacredWaterMultiplier = 1.1;
 		private Double demonEyeMultiplier = 1.5;
 		private Double demonEyeKiDrainPercent = 0.02;
 		private Double demonEyeHealthDrainPercent = 0.02;

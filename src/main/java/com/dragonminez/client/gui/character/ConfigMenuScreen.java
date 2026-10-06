@@ -16,6 +16,7 @@ import com.dragonminez.common.config.FormConfig;
 import com.dragonminez.common.config.GeneralUserConfig;
 import com.dragonminez.common.init.MainSounds;
 import com.dragonminez.common.network.C2S.DynamicGrowthToggleC2S;
+import com.dragonminez.common.network.C2S.ReserveFirstHotbarSlotC2S;
 import com.dragonminez.common.network.NetworkHandler;
 import com.dragonminez.common.stats.StatsCapability;
 import com.dragonminez.common.stats.StatsProvider;
@@ -68,7 +69,7 @@ public class ConfigMenuScreen extends BaseMenuScreen {
 	private static final EnumSet<Category> EXPANDED = EnumSet.noneOf(Category.class);
 
 	private enum Category {
-		INTERFACE, GAMEPLAY, VISUALS;
+		INTERFACE, GAMEPLAY, VISUALS, AUDIO;
 
 		String translationKey() {
 			return "gui.dragonminez.config.category." + name().toLowerCase(Locale.ROOT);
@@ -148,6 +149,12 @@ public class ConfigMenuScreen extends BaseMenuScreen {
 		number(Category.GAMEPLAY, "config.flightTurnSensitivity", ConfigType.FLOAT, userConfig.getFlightTurnSensitivity(),
 				0.2f, 2.0f, userConfig::setFlightTurnSensitivity);
 		action(Category.GAMEPLAY, "config.overShoulderCamera", "gui.dragonminez.config.open", () -> this.minecraft.setScreen(new OverShoulderCameraScreen(this)));
+		toggle(Category.GAMEPLAY, "config.reserveFirstHotbarSlot", userConfig.isReserveFirstHotbarSlot(), enabled -> {
+			userConfig.setReserveFirstHotbarSlot(enabled);
+			if (this.minecraft != null && this.minecraft.getConnection() != null) {
+				NetworkHandler.sendToServer(new ReserveFirstHotbarSlotC2S(enabled));
+			}
+		});
 		initializeDynamicGrowthOptions();
 
 		toggle(Category.VISUALS, "config.aura3DPersonal", userConfig.getAura3DPersonal(), userConfig::setAura3DPersonal);
@@ -158,6 +165,9 @@ public class ConfigMenuScreen extends BaseMenuScreen {
 		toggle(Category.VISUALS, "config.impactFramesEnabled", userConfig.isImpactFramesEnabled(), userConfig::setImpactFramesEnabled);
 		toggle(Category.VISUALS, "config.firstPersonAnimated", userConfig.getFirstPersonAnimated(), userConfig::setFirstPersonAnimated);
 		toggle(Category.VISUALS, "config.taiyokenInvertPalette", userConfig.getTaiyokenInvertPalette(), userConfig::setTaiyokenInvertPalette);
+
+		number(Category.AUDIO, "config.kiSoundVolume", ConfigType.INT, userConfig.getKiSoundVolume(), 0, 100,
+				value -> userConfig.setKiSoundVolume(value.intValue()));
 	}
 
 	private void initializeDynamicGrowthOptions() {

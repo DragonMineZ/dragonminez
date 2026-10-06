@@ -9,6 +9,7 @@ import com.dragonminez.client.render.util.DonorBoneRenderer;
 import com.dragonminez.client.render.util.ModRenderTypes;
 import com.dragonminez.client.systems.FormVisualTransition;
 import com.dragonminez.client.util.ColorUtils;
+import com.dragonminez.client.util.FusionOriginBones;
 import com.dragonminez.client.util.SaiyanTailRules;
 import com.dragonminez.client.util.SkinGathererProvider;
 import com.dragonminez.common.config.ConfigManager;
@@ -21,6 +22,8 @@ import com.dragonminez.common.stats.FusedData;
 import com.dragonminez.common.stats.StatsCapability;
 import com.dragonminez.common.stats.StatsData;
 import com.dragonminez.common.stats.StatsProvider;
+import com.dragonminez.common.stats.character.Character;
+import com.dragonminez.common.util.FusionForms;
 import com.dragonminez.common.util.FusionTraits;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
@@ -77,6 +80,7 @@ public class DMZRacePartsLayer<T extends AbstractClientPlayer & GeoAnimatable> e
 	private static final ResourceLocation SAIYAN_TAIL_MODEL = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "geo/entity/races/human.geo.json");
 	private static final ResourceLocation FROST_DEMON_MODEL = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "geo/entity/races/frostdemon.geo.json");
 	private static final ResourceLocation BIO_ANDROID_MODEL = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "geo/entity/races/bioandroid.geo.json");
+	private static final ResourceLocation BIO_ANDROID_PERFECT_MODEL = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "geo/entity/races/bioandroid_perfect.geo.json");
 	private static final float[] HORN_COLOR = ColorUtils.hexToRgb("#1A1A1A");
 	private static final float PARTS_AURA_TINT = 0.4f;
 	private static final float BODY_AURA_TINT = 0.2f;
@@ -104,9 +108,10 @@ public class DMZRacePartsLayer<T extends AbstractClientPlayer & GeoAnimatable> e
 		String anchor = playerBone.getName();
 		boolean isLimb = "right_arm".equals(anchor) || "left_arm".equals(anchor)
 				|| "right_leg".equals(anchor) || "left_leg".equals(anchor);
-		if (!"head".equals(anchor) && !"body".equals(anchor) && !isLimb) return;
-
 		if (animatable.hasEffect(MainEffects.CANDY.get())) return;
+
+		renderOriginBones(poseStack, animatable, playerBone, isLimb, renderType, bufferSource, partialTick, packedLight, packedOverlay);
+		if (!"head".equals(anchor) && !"body".equals(anchor) && !isLimb) return;
 
 		if (!HeadPortraitRenderer.isActive() && FirstPersonManager.shouldRenderFirstPerson(animatable)) {
 			var stats = StatsProvider.get(StatsCapability.INSTANCE, animatable).orElse(new StatsData(animatable));
@@ -365,11 +370,29 @@ public class DMZRacePartsLayer<T extends AbstractClientPlayer & GeoAnimatable> e
 		renderTargetedBone(enrolled, poseStack, bufferSource, animatable, RenderType.entityTranslucentCull(RACES_PARTS_TEXTURE), color[0], color[1], color[2], alpha, partialTick, packedLight);
 	}
 
-	private void renderBorrowedModelPart(PoseStack poseStack, T animatable, BakedGeoModel playerModel, MultiBufferSource bufferSource, StatsData stats, FusedData fused, FusionTraits.Part part,
-										 float[][] bodyColors, float partialTick, int packedLight, int packedOverlay, float alpha, float[] formTint, float formTintIntensity, float[] auraColor, float tintProgress) {
-		boolean frost = part.source() == FusionTraits.Source.FROST_DEMON;
+	private void renderOriginBones(PoseStack poseStack, T animatable, GeoBone anchor, boolean isLimb, RenderType renderType, MultiBufferSource bufferSource,
+								   float partialTick, int packedLight, int packedOverlay) {
+		List<GeoBone> bones = FusionOriginBones.childrenOf(anchor);
+		if (bones.isEmpty()) return;
+		if (!isLimb && !HeadPortraitRenderer.isActive() && FirstPersonManager.shouldRenderFirstPerson(animatable)) return;
+
+		var stats = StatsProvider.get(StatsCapability.INSTANCE, animatable).orElse(new StatsData(animatable));
+		float alpha = animatable.isSpectator() ? 0.15f : 1.0f;
+		FormConfig.FormData tintForm = DMZSkinLayer.resolveTintForm(stats);
+		float[] formTint = tintForm != null ? tintForm.getRgbTintColor() : null;
+		float formTintIntensity = tintForm != null ? (float) tintForm.getTintIntensity() : 0.0f;
 		List<DonorBoneRenderer.Layer> layers = new ArrayList<>();
-		SkinGathererProvider.BodyLayerSink sink = new SkinGathererProvider.BodyLayerSink() {
+		SkinGathererProvider.INSTANCE.gatherOriginLayers(animatable, stats,
+				layerSink(layers, alpha, formTint, formTintIntensity, getTopAuraColor(stats), AuraTintTracker.get(animatable.getId())));
+		if (layers.isEmpty()) return;
+		for (GeoBone bone : bones) {
+			DonorBoneRenderer.renderOwn(getRenderer(), animatable, bone, layers, poseStack, bufferSource, partialTick, packedLight, packedOverlay);
+		}
+		bufferSource.getBuffer(renderType);
+	}
+
+	private SkinGathererProvider.BodyLayerSink layerSink(List<DonorBoneRenderer.Layer> layers, float alpha, float[] formTint, float formTintIntensity, float[] auraColor, float tintProgress) {
+		return new SkinGathererProvider.BodyLayerSink() {
 			@Override
 			public void base(ResourceLocation texture, float[] color) {
 				add(alpha < 1.0f ? RenderType.entityTranslucent(texture) : RenderType.entityCutoutNoCull(texture), color, 1.0f);
@@ -396,10 +419,22 @@ public class DMZRacePartsLayer<T extends AbstractClientPlayer & GeoAnimatable> e
 				layers.add(new DonorBoneRenderer.Layer(type, tinted[0], tinted[1], tinted[2], alpha * opacity));
 			}
 		};
-		int bodyType = part.leader() ? stats.getCharacter().getBodyType() : fused.getPartnerBodyType();
-		String gender = part.leader() ? stats.getCharacter().getGender() : fused.getPartnerGender();
-		SkinGathererProvider.INSTANCE.gatherDonorLayers(frost ? "frostdemon" : "bioandroid", bodyType, gender, bodyColors, sink);
-		DonorBoneRenderer.render(getRenderer(), animatable, playerModel, frost ? FROST_DEMON_MODEL : BIO_ANDROID_MODEL, part.bone(),
+	}
+
+	private void renderBorrowedModelPart(PoseStack poseStack, T animatable, BakedGeoModel playerModel, MultiBufferSource bufferSource, StatsData stats, FusedData fused, FusionTraits.Part part,
+										 float[][] bodyColors, float partialTick, int packedLight, int packedOverlay, float alpha, float[] formTint, float formTintIntensity, float[] auraColor, float tintProgress) {
+		boolean frost = part.source() == FusionTraits.Source.FROST_DEMON;
+		String race = frost ? "frostdemon" : "bioandroid";
+		Character character = stats.getCharacter();
+		boolean originForm = character.hasActiveForm() && race.equalsIgnoreCase(FusionForms.raceOf(stats, character.getActiveFormGroup()));
+		ResourceLocation donorModel = frost ? FROST_DEMON_MODEL : originForm ? BIO_ANDROID_PERFECT_MODEL : BIO_ANDROID_MODEL;
+		String boneName = !frost && originForm && part.category() == FusionTraits.Category.TAIL ? "cola" : part.bone();
+		List<DonorBoneRenderer.Layer> layers = new ArrayList<>();
+		int bodyType = part.leader() ? character.getBodyType() : fused.getPartnerBodyType();
+		String gender = part.leader() ? character.getGender() : fused.getPartnerGender();
+		SkinGathererProvider.INSTANCE.gatherDonorLayers(race, bodyType, gender, originForm ? character.getActiveFormGroup() : null, originForm ? character.getActiveForm() : null,
+				bodyColors, layerSink(layers, alpha, formTint, formTintIntensity, auraColor, tintProgress));
+		DonorBoneRenderer.render(getRenderer(), animatable, playerModel, donorModel, boneName,
 				part.category() == FusionTraits.Category.TAIL, layers, poseStack, bufferSource, partialTick, packedLight, packedOverlay);
 	}
 

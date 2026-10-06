@@ -21,6 +21,8 @@ public class GeneralUserConfig {
 
 	private Boolean firstPersonAnimated = true;
 	private boolean impactFramesEnabled = false;
+	private boolean reserveFirstHotbarSlot = false;
+	private int kiSoundVolume = 100;
 	private Boolean alwaysVisibleHudValues = false;
 	private Boolean hideHudNumbers = false;
 	private Boolean partyMarkers = true;

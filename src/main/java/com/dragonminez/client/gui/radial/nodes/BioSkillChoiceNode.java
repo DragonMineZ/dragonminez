@@ -25,7 +25,7 @@ public class BioSkillChoiceNode extends AbstractRadialNode {
 
 	@Override
 	public ResourceLocation icon(StatsData stats) {
-		return icon("racial");
+		return icon(explode ? "selfdestruct" : "vitaldrain");
 	}
 
 	@Override
