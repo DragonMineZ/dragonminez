@@ -7,6 +7,7 @@ import com.dragonminez.common.init.MainEntities;
 import com.dragonminez.common.init.MainParticles;
 import com.dragonminez.common.init.MainSounds;
 import com.dragonminez.common.init.entities.IBattlePower;
+import com.dragonminez.common.init.entities.MastersEntity;
 import com.dragonminez.common.init.entities.MobBattlePowerHelper;
 import com.dragonminez.common.init.entities.ki.KiExplosionVisualEntity;
 import com.dragonminez.common.network.NetworkHandler;
@@ -204,6 +205,7 @@ public final class KiSurgeService {
 
 		for (LivingEntity victim : victims) {
 			if (victim == player) continue;
+			if (victim instanceof MastersEntity) continue;
 			if (victim instanceof Player victimPlayer && PartyManager.areInSameParty(player, victimPlayer) && !partyPvpEnabled
 					&& !TargetHelper.isTournamentRival(player, victimPlayer)) continue;
 

@@ -13,9 +13,12 @@ import com.dragonminez.client.render.util.PlayerEffectQueue;
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.PoseStack;
 import net.minecraft.client.Minecraft;
+import net.minecraft.client.renderer.culling.Frustum;
+import net.minecraft.client.renderer.entity.EntityRenderDispatcher;
 import net.minecraft.client.renderer.entity.EntityRenderer;
 import net.minecraft.util.Mth;
 import net.minecraft.world.entity.Entity;
+import com.dragonminez.common.init.entities.ki.AbstractKiProjectile;
 import com.dragonminez.common.init.entities.ki.KiExplosionVisualEntity;
 import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.world.phys.Vec3;
@@ -60,6 +63,10 @@ public class PlayerEffectsRenderHandler {
 			AuraBorderRenderer.beginCapture();
 		}
 
+		if (stage == RenderLevelStageEvent.Stage.AFTER_ENTITIES) {
+			renderExternallyCulledKiAttacks(mc, event);
+		}
+
 		if (shaderPack) {
 
 			if (stage == RenderLevelStageEvent.Stage.AFTER_SKY) {
@@ -98,6 +105,33 @@ public class PlayerEffectsRenderHandler {
 		PoseStack poseStack = event.getPoseStack();
 		KiWeaponRenderer.processWeapons(buffers, poseStack);
 		buffers.endBatch();
+	}
+
+	@SuppressWarnings("unchecked")
+	private static void renderExternallyCulledKiAttacks(Minecraft mc, RenderLevelStageEvent event) {
+		Frustum frustum = event.getFrustum();
+		if (frustum == null || mc.level == null) return;
+
+		EntityRenderDispatcher dispatcher = mc.getEntityRenderDispatcher();
+		Vec3 camera = event.getCamera().getPosition();
+		float partialTick = event.getPartialTick();
+		PoseStack poseStack = event.getPoseStack();
+		MultiBufferSource.BufferSource buffers = mc.renderBuffers().bufferSource();
+
+		for (Entity entity : mc.level.entitiesForRendering()) {
+			if (!(entity instanceof AbstractKiProjectile)) continue;
+			EntityRenderer<Entity> renderer = (EntityRenderer<Entity>) dispatcher.getRenderer(entity);
+			if (renderer == null) continue;
+			if (dispatcher.shouldRender(entity, frustum, camera.x, camera.y, camera.z)) continue;
+			if (!renderer.shouldRender(entity, frustum, camera.x, camera.y, camera.z)) continue;
+
+			dispatcher.render(entity,
+					Mth.lerp(partialTick, entity.xOld, entity.getX()) - camera.x,
+					Mth.lerp(partialTick, entity.yOld, entity.getY()) - camera.y,
+					Mth.lerp(partialTick, entity.zOld, entity.getZ()) - camera.z,
+					Mth.lerp(partialTick, entity.yRotO, entity.getYRot()), partialTick,
+					poseStack, buffers, dispatcher.getPackedLightCoords(entity, partialTick));
+		}
 	}
 
 	@SuppressWarnings("unchecked")

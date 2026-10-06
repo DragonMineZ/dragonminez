@@ -5,6 +5,7 @@ import com.dragonminez.common.network.NetworkHandler;
 import com.dragonminez.common.network.S2C.SwordSlashS2C;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.util.Mth;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.phys.AABB;
@@ -28,6 +29,8 @@ public final class SwordSlashManager {
 		boolean hit(LivingEntity victim);
 	}
 
+	public record TerrainCut(float reach, float depth) {}
+
 	private static final class Cut {
 		final ServerLevel level;
 		final Entity owner;
@@ -36,12 +39,13 @@ public final class SwordSlashManager {
 		final double maxDistance;
 		final double hitRadius;
 		final HitHandler handler;
+		final KiTerrainDestruction.Sweep sweep;
 		final Set<Integer> alreadyHit = new HashSet<>();
 		Vec3 pos;
 		double traveled;
 
 		private Cut(ServerLevel level, Entity owner, Vec3 pos, Vec3 dir, double speed, double maxDistance,
-					double hitRadius, HitHandler handler) {
+					double hitRadius, HitHandler handler, KiTerrainDestruction.Sweep sweep) {
 			this.level = level;
 			this.owner = owner;
 			this.pos = pos;
@@ -50,6 +54,7 @@ public final class SwordSlashManager {
 			this.maxDistance = maxDistance;
 			this.hitRadius = hitRadius;
 			this.handler = handler;
+			this.sweep = sweep;
 		}
 	}
 
@@ -70,6 +75,12 @@ public final class SwordSlashManager {
 
 	public static void launch(ServerLevel level, Entity owner, Vec3 origin, Vec3 direction, float roll, float radius,
 							  int color, int coreColor, double speed, double maxDistance, double hitRadius, HitHandler handler) {
+		launch(level, owner, origin, direction, roll, radius, color, coreColor, speed, maxDistance, hitRadius, null, handler);
+	}
+
+	public static void launch(ServerLevel level, Entity owner, Vec3 origin, Vec3 direction, float roll, float radius,
+							  int color, int coreColor, double speed, double maxDistance, double hitRadius,
+							  TerrainCut terrainCut, HitHandler handler) {
 		if (direction.lengthSqr() < 1.0E-6) return;
 		Vec3 dir = direction.normalize();
 		int lifetime = (int) Math.ceil(maxDistance / speed);
@@ -79,7 +90,19 @@ public final class SwordSlashManager {
 		if (owner instanceof ServerPlayer) NetworkHandler.sendToTrackingEntityAndSelf(packet, owner);
 		else NetworkHandler.sendToTrackingEntity(packet, owner);
 
-		CUTS.add(new Cut(level, owner, origin, dir, speed, maxDistance, hitRadius, handler));
+		KiTerrainDestruction.Sweep sweep = terrainCut == null ? null : KiTerrainDestruction.crescentSweep(origin, dir,
+				crescentLateral(dir, roll), radius, radius * terrainCut.reach(), terrainCut.depth());
+		CUTS.add(new Cut(level, owner, origin, dir, speed, maxDistance, hitRadius, handler, sweep));
+	}
+
+	private static Vec3 crescentLateral(Vec3 dir, float roll) {
+		double yaw = Math.atan2(-dir.x, dir.z);
+		double pitch = -Math.asin(Mth.clamp(dir.y, -1.0D, 1.0D));
+		double r = Math.toRadians(roll);
+		double cr = Math.cos(r), sr = Math.sin(r);
+		double cy = Math.cos(yaw), sy = Math.sin(yaw);
+		double cp = Math.cos(pitch), sp = Math.sin(pitch);
+		return new Vec3(cr * cy - sr * sp * sy, sr * cp, cr * sy + sr * sp * cy);
 	}
 
 	@SubscribeEvent
@@ -97,8 +120,10 @@ public final class SwordSlashManager {
 				continue;
 			}
 
+			double before = cut.traveled;
 			cut.pos = cut.pos.add(cut.dir.scale(cut.speed));
 			cut.traveled += cut.speed;
+			if (cut.sweep != null) KiTerrainDestruction.slice(level, cut.sweep, before, cut.traveled, cut.owner);
 
 			AABB box = new AABB(cut.pos, cut.pos).inflate(cut.hitRadius);
 			for (LivingEntity victim : level.getEntitiesOfClass(LivingEntity.class, box)) {
