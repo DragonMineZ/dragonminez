@@ -180,7 +180,12 @@ public class PixelEditorScreen extends ScaledScreen {
 		this.formPreview = new FormPreview(character.getRaceName());
 		this.layered = SkinGathererProvider.rendersPlayerSkin(character) || SkinGathererProvider.modelFamily(TextureCounter.faceRaceKey(character)).equals("human");
 		this.showHair = mode != Mode.HAIR;
-		if (mode == Mode.TATTOO) pixels.tattooForEdit(pixels.getTattooSize() > 0 ? pixels.getTattooSize() : SkinPixels.TATTOO_SIZES[0]);
+		if (mode == Mode.TATTOO) pixels.tattooForEdit(pixels.getTattooSize() > 0 && canUseTattooSize(pixels.getTattooSize()) ? pixels.getTattooSize() : SkinPixels.TATTOO_SIZES[0]);
+	}
+
+	private static boolean canUseTattooSize(int size) {
+		LocalPlayer player = Minecraft.getInstance().player;
+		return SkinPixels.canUseTattooSize(player != null ? player.getGameProfile().getName() : null, size);
 	}
 
 	private final class PaintHairPreview implements HairRenderContext.Preview {
@@ -654,6 +659,10 @@ public class PixelEditorScreen extends ScaledScreen {
 
 	private void setTattooSize(int size) {
 		if (mode != Mode.TATTOO || size == pixels.getTattooSize()) return;
+		if (!canUseTattooSize(size)) {
+			HairEditorSounds.limit();
+			return;
+		}
 		PixelEditHistory.Snapshot before = snapshot();
 		pixels.tattooForEdit(size);
 		history.record(before);
@@ -890,12 +899,16 @@ public class PixelEditorScreen extends ScaledScreen {
 		int buttonY = PANEL_TOP + 116;
 		int buttonWidth = 36;
 		int startX = MARGIN + 8;
+		boolean lockedHovered = false;
 		for (int i = 0; i < SkinPixels.TATTOO_SIZES.length; i++) {
 			int size = SkinPixels.TATTOO_SIZES[i];
 			int bx = startX + i * (buttonWidth + 3);
 			boolean hovered = HairEditorUi.inside(mouseX, mouseY, bx, buttonY, buttonWidth, TOP_BAR_HEIGHT);
-			HairEditorUi.button(graphics, this.font, txt(String.valueOf(size)), bx, buttonY, buttonWidth, TOP_BAR_HEIGHT, hovered, size == pixels.getTattooSize(), true);
+			boolean allowed = canUseTattooSize(size);
+			if (hovered && !allowed) lockedHovered = true;
+			HairEditorUi.button(graphics, this.font, txt(String.valueOf(size)), bx, buttonY, buttonWidth, TOP_BAR_HEIGHT, hovered, size == pixels.getTattooSize(), allowed);
 		}
+		if (lockedHovered && !confirmClose) graphics.renderTooltip(this.font, tr("gui.dragonminez.pixel_editor.resolution.locked"), mouseX, mouseY);
 	}
 
 	private boolean handleResolutionClick(double mouseX, double mouseY) {

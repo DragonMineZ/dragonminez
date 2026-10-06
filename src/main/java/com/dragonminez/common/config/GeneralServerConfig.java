@@ -335,6 +335,7 @@ public class GeneralServerConfig {
 		private Boolean autoUpdateQuests = true;
 		private Boolean levelFormRequisiteEnabled = true;
 		private Boolean sagaFormRequisiteEnabled = true;
+		private Boolean pixelTattooPaintingEnabled = true;
 		private Double defaultQuestPartyMultiplier = 1.45;
 		private Integer senzuCooldownTicks = 240;
 		private Integer senzuGiftCooldownTicks = 18000;
@@ -524,6 +525,10 @@ public class GeneralServerConfig {
 
 		public boolean getSagaFormRequisiteEnabled() {
 			return sagaFormRequisiteEnabled == null || sagaFormRequisiteEnabled;
+		}
+
+		public boolean getPixelTattooPaintingEnabled() {
+			return pixelTattooPaintingEnabled == null || pixelTattooPaintingEnabled;
 		}
 
 		public Double getDefaultQuestPartyMultiplier() {

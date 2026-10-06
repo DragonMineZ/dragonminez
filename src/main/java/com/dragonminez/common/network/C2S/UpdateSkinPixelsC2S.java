@@ -56,7 +56,15 @@ public class UpdateSkinPixelsC2S {
 			}
 
 			StatsProvider.get(StatsCapability.INSTANCE, player).ifPresent(data -> {
-				data.getCharacter().getSkinPixels().copyFrom(parsed);
+				SkinPixels current = data.getCharacter().getSkinPixels();
+				if (!SkinPixels.customTattooEnabled()) {
+					parsed.setTattoo(current.getTattooSize(), current.getTattoo());
+				} else if (parsed.getTattoo() != null && !SkinPixels.canUseTattooSize(playerName, parsed.getTattooSize())) {
+					LogUtil.warn(Env.SERVER, "Downscaled {}x{} tattoo from {}: resolution reserved for whitelisted users", parsed.getTattooSize(), parsed.getTattooSize(), playerName);
+					int size = SkinPixels.TATTOO_SIZES[0];
+					parsed.setTattoo(size, SkinPixels.resampleRgba(parsed.getTattoo(), parsed.getTattooSize(), size));
+				}
+				current.copyFrom(parsed);
 				NetworkHandler.sendToTrackingEntityAndSelf(new SkinPixelsSyncS2C(player), player);
 			});
 		});

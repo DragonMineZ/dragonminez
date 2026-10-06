@@ -309,7 +309,7 @@ public class SkinGathererProvider {
 		int tattooType = stats.getCharacter().getTattooType();
 		if (tattooType == Character.TATTOO_CUSTOM) {
 			SkinPixels pixels = stats.getCharacter().getSkinPixels();
-			if (!pixels.hasTattoo()) return;
+			if (!pixels.hasTattoo() || !SkinPixels.customTattooEnabled()) return;
 			ResourceLocation custom = SkinPixelTextures.tattoo(player, pixels);
 			if (custom != null) consumer.accept(custom, WHITE_COLOR);
 			return;

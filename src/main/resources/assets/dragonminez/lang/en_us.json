@@ -371,6 +371,7 @@
   "gui.dragonminez.pixel_editor.save": "Save",
   "gui.dragonminez.pixel_editor.cancel": "Cancel",
   "gui.dragonminez.pixel_editor.resolution": "Resolution",
+  "gui.dragonminez.pixel_editor.resolution.locked": "Reserved for Patreons and Staff",
   "gui.dragonminez.pixel_editor.color": "Color",
   "gui.dragonminez.pixel_editor.preview": "Preview",
   "gui.dragonminez.pixel_editor.hair": "Hair",
