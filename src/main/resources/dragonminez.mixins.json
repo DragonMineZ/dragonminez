@@ -10,6 +10,7 @@
     "common.ItemStackMixin",
     "common.LivingEntityAccessor",
     "common.LivingEntityMixin",
+    "common.ItemEntityMixin",
     "common.PlayerListMixin",
     "common.PlayerMixin",
     "common.RangedAttributeMixin",

@@ -710,6 +710,8 @@
   "gui.dragonminez.config.aura3DStyle": "My Aura - 3D Type",
   "gui.dragonminez.config.aura3DEntities": "Enemy Auras - 3D Style",
   "gui.dragonminez.config.showAccumulativeDamage": "Ki Sense - Accumulative Damage",
+  "gui.dragonminez.config.reserveFirstHotbarSlot": "Reserve First Hotbar Slot",
+  "gui.dragonminez.config.kiSoundVolume": "Ki Sound Volume (%)",
   "gui.dragonminez.config.alwaysVisibleHudValues": "Always Visible HUD Values",
   "gui.dragonminez.config.hideHudNumbers": "Hide HUD Numbers",
   "gui.dragonminez.config.partyMarkers": "Party Markers",
