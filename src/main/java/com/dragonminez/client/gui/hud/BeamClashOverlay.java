@@ -72,7 +72,7 @@ public class BeamClashOverlay {
 		HudRender.rectHorizontal(guiGraphics, panelX, panelY, PANEL_W, 1, HudRender.argb(1.0f, self), HudRender.argb(1.0f, foe));
 		HudRender.rectHorizontal(guiGraphics, panelX, panelY + PANEL_H - 1, PANEL_W, 1, HudRender.argb(1.0f, self), HudRender.argb(1.0f, foe));
 
-		Component title = Component.translatable("hud." + Reference.MOD_ID + ".beam_clash_title");
+		Component title = HudRender.dmz(Component.translatable("hud." + Reference.MOD_ID + ".beam_clash_title"));
 		guiGraphics.drawString(mc.font, title, (width - mc.font.width(title)) / 2, panelY + 7, 0xFFFFFFFF, true);
 
 		HudRender.text(guiGraphics, I18n.get("hud." + Reference.MOD_ID + ".beam_clash_you"), barX, tugY - 11, 1.0f, 0.0f, HudRender.mix(self, WHITE, 0.45f), 1.0f);

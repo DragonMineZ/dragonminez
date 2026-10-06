@@ -24,7 +24,7 @@ public class ModernHUD {
 	private static final int RELEASE_TEXT_COLOR = 0xFACAF7;
 
 	private static final HudBar HP_BAR = new HudBar(HudStatNumberAnimator.StatKind.HEALTH);
-	private static final HudBar KI_BAR = new HudBar(HudStatNumberAnimator.StatKind.KI);
+	private static final HudBar KI_BAR = new HudBar(HudStatNumberAnimator.StatKind.KI).flowing();
 	private static final HudBar STM_BAR = new HudBar(HudStatNumberAnimator.StatKind.STAMINA);
 	private static final HudSmoother RELEASE = new HudSmoother(0.10f, 0.05f);
 	private static final HudSmoother FORM_CHARGE = new HudSmoother(0.08f);
@@ -63,9 +63,10 @@ public class ModernHUD {
 			lastHealth = state.health();
 			float shake = HudLayout.isPreview() ? 0.0f : SHAKE.update(0.0f);
 
-			float seconds = (System.nanoTime() / 1_000_000L % 3_600_000L) / 1000.0f;
+			float seconds = HudBar.time();
 			float tickTime = mc.player.tickCount + partialTicks;
-			float lowHealth = HP_BAR.targetFraction() < 0.25f ? 0.5f + 0.5f * Mth.sin(seconds * 7.0f) : 0.0f;
+			float lowHealth = HudBar.heartbeat(HP_BAR.targetFraction());
+			KI_BAR.setFlowBoost(chargeGlow);
 
 			float scale = box.scale();
 			float anchorX = box.x() + BORDER * scale + Mth.sin(seconds * 61.0f) * 2.2f * shake;

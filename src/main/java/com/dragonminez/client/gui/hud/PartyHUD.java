@@ -175,8 +175,7 @@ public class PartyHUD {
 
 		float kiY = HEAD - KI_HEIGHT;
 		float hpY = kiY - BORDER - HP_HEIGHT;
-		float seconds = (System.nanoTime() / 1_000_000L % 3_600_000L) / 1000.0f;
-		float lowHealth = !down && view.health.targetFraction() < 0.25f ? 0.5f + 0.5f * (float) Math.sin(seconds * 7.0f) : 0.0f;
+		float lowHealth = down ? 0.0f : HudBar.heartbeat(view.health.targetFraction());
 
 		view.health.draw(guiGraphics, HudSprites.PARTY_HP, barX, hpY, HP_WIDTH, HP_HEIGHT, HudPlayerState.healthColor(view.health.fraction()), lowHealth);
 		view.energy.draw(guiGraphics, HudSprites.PARTY_KI, barX, kiY, KI_WIDTH, KI_HEIGHT, kiColor, 0.0f);
@@ -185,7 +184,7 @@ public class PartyHUD {
 
 	private static final class MemberView {
 		private final HudBar health = new HudBar(HudStatNumberAnimator.StatKind.KISENSE_HEALTH);
-		private final HudBar energy = new HudBar(HudStatNumberAnimator.StatKind.KI);
+		private final HudBar energy = new HudBar(HudStatNumberAnimator.StatKind.KI).flowing();
 		private final HudSmoother appear = new HudSmoother(0.14f, 0.01f);
 		private final HudSmoother slot = new HudSmoother(0.12f, 0.01f);
 		private PartyPackets.HudMember member;

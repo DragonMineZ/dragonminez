@@ -83,6 +83,7 @@ import java.util.List;
 public class ModClientEvents {
 	@SubscribeEvent
 	public static void registerGuiOverlays(RegisterGuiOverlaysEvent e) {
+		e.registerAbove(VanillaGuiOverlay.PLAYER_HEALTH.id(), "ki_sense_hud", com.dragonminez.client.gui.hud.KiSenseOverlay.HUD_KI_SENSE);
 		e.registerAbove(VanillaGuiOverlay.PLAYER_HEALTH.id(), "party_marker_hud", com.dragonminez.client.gui.hud.PartyMarkerOverlay.HUD_PARTY_MARKER);
 		e.registerAbove(VanillaGuiOverlay.PLAYER_HEALTH.id(), "xenoversehud", XenoverseHUD.HUD_XENOVERSE);
 		e.registerAbove(VanillaGuiOverlay.PLAYER_HEALTH.id(), "alternativehud", AlternativeHUD.HUD_ALTERNATIVE);

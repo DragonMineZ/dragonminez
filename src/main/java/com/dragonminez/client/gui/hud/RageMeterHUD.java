@@ -43,7 +43,7 @@ public class RageMeterHUD {
 			float visibility = HudSideMeters.update(HudElement.RAGE, VISIBILITY, applicable, rage > 0.0f || active, width, height);
 			float ready = READY.update(full || active ? 1.0f : 0.0f);
 
-			float seconds = (System.nanoTime() / 1_000_000L % 3_600_000L) / 1000.0f;
+			float seconds = HudBar.time();
 			float pulse = ready * (0.5f + 0.5f * Mth.sin(seconds * (active ? 11.0f : 6.0f)));
 			int baseColor = falseSaiyan ? FALSE_RAGE_COLOR : RAGE_COLOR;
 			int readyColor = falseSaiyan ? FALSE_RAGE_READY_COLOR : RAGE_READY_COLOR;

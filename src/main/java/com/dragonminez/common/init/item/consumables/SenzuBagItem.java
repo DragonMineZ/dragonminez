@@ -12,13 +12,16 @@ import net.minecraft.stats.Stats;
 import net.minecraft.util.Mth;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResultHolder;
+import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.food.FoodProperties;
 import net.minecraft.world.inventory.ClickAction;
 import net.minecraft.world.inventory.Slot;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.TooltipFlag;
 import net.minecraft.world.level.Level;
+import net.minecraftforge.event.ForgeEventFactory;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -64,69 +67,104 @@ public class SenzuBagItem extends Item {
 		if (!tag.contains(TAG_ITEMS)) tag.put(TAG_ITEMS, new ListTag());
 		ListTag list = tag.getList(TAG_ITEMS, Tag.TAG_COMPOUND);
 
-		Optional<CompoundTag> existing = findStackableEntry(list, inserted);
-		if (existing.isPresent()) {
-			CompoundTag entry = existing.get();
-			ItemStack stored = ItemStack.of(entry);
-			stored.grow(moved);
-			stored.save(entry);
+		ItemStack top = list.isEmpty() ? ItemStack.EMPTY : ItemStack.of(list.getCompound(0));
+		if (!inserted.isDamaged() && ItemStack.isSameItemSameTags(top, inserted)) {
+			top.grow(moved);
+			top.save(list.getCompound(0));
 		} else {
-			ItemStack copy = inserted.copyWithCount(moved);
 			CompoundTag entry = new CompoundTag();
-			copy.save(entry);
+			inserted.copyWithCount(moved).save(entry);
 			list.add(0, entry);
 		}
 		return moved;
 	}
 
-	private static Optional<CompoundTag> findStackableEntry(ListTag list, ItemStack inserted) {
-		if (inserted.isDamaged()) return Optional.empty();
-		for (Tag raw : list) {
-			CompoundTag entry = (CompoundTag) raw;
-			ItemStack stored = ItemStack.of(entry);
-			if (ItemStack.isSameItemSameTags(stored, inserted)) return Optional.of(entry);
-		}
-		return Optional.empty();
-	}
-
 	private static Optional<ItemStack> removeOne(ItemStack bag) {
-		CompoundTag tag = bag.getOrCreateTag();
-		if (!tag.contains(TAG_ITEMS)) return Optional.empty();
+		CompoundTag tag = bag.getTag();
+		if (tag == null || !tag.contains(TAG_ITEMS)) return Optional.empty();
 		ListTag list = tag.getList(TAG_ITEMS, Tag.TAG_COMPOUND);
 		if (list.isEmpty()) return Optional.empty();
 
-		CompoundTag entry = list.getCompound(0);
-		ItemStack stored = ItemStack.of(entry);
+		ItemStack stored = ItemStack.of(list.getCompound(0));
 		int taken = Math.min(stored.getCount(), stored.getMaxStackSize());
 		ItemStack out = stored.copyWithCount(taken);
-		stored.shrink(taken);
+		shrinkEntry(bag, 0, taken);
+		return Optional.of(out);
+	}
 
+	private static void shrinkEntry(ItemStack bag, int index, int amount) {
+		CompoundTag tag = bag.getTag();
+		if (tag == null) return;
+		ListTag list = tag.getList(TAG_ITEMS, Tag.TAG_COMPOUND);
+		if (index >= list.size()) return;
+
+		CompoundTag entry = list.getCompound(index);
+		ItemStack stored = ItemStack.of(entry);
+		stored.shrink(amount);
 		if (stored.isEmpty()) {
-			list.remove(0);
+			list.remove(index);
 			if (list.isEmpty()) tag.remove(TAG_ITEMS);
 		} else {
 			stored.save(entry);
 		}
-		return Optional.of(out);
 	}
 
-	private static boolean dropContents(ItemStack bag, Player player) {
-		CompoundTag tag = bag.getOrCreateTag();
-		if (!tag.contains(TAG_ITEMS)) return false;
+	private static boolean hasContents(ItemStack bag) {
+		CompoundTag tag = bag.getTag();
+		return tag != null && !tag.getList(TAG_ITEMS, Tag.TAG_COMPOUND).isEmpty();
+	}
 
-		if (player instanceof net.minecraft.server.level.ServerPlayer) {
-			ListTag list = tag.getList(TAG_ITEMS, Tag.TAG_COMPOUND);
-			for (int i = 0; i < list.size(); i++) {
-				ItemStack stored = ItemStack.of(list.getCompound(i));
-				while (!stored.isEmpty()) {
-					int chunk = Math.min(stored.getCount(), stored.getMaxStackSize());
-					player.drop(stored.copyWithCount(chunk), true);
-					stored.shrink(chunk);
-				}
-			}
-		}
-		bag.removeTagKey(TAG_ITEMS);
+	private static boolean unloadLatestStack(ItemStack bag, Player player) {
+		CompoundTag tag = bag.getTag();
+		if (tag == null) return false;
+		ListTag list = tag.getList(TAG_ITEMS, Tag.TAG_COMPOUND);
+		if (list.isEmpty()) return false;
+
+		ItemStack stored = ItemStack.of(list.getCompound(0));
+		ItemStack out = stored.copyWithCount(Math.min(stored.getCount(), stored.getMaxStackSize()));
+		int moved = moveToInventory(player.getInventory(), out);
+		if (moved <= 0) return false;
+		shrinkEntry(bag, 0, moved);
 		return true;
+	}
+
+	private static int moveToInventory(Inventory inventory, ItemStack stack) {
+		int start = stack.getCount();
+		while (!stack.isEmpty()) {
+			int slot = inventory.getSlotWithRemainingSpace(stack);
+			if (slot < 0) slot = inventory.getFreeSlot();
+			if (slot < 0) break;
+			int before = stack.getCount();
+			inventory.add(slot, stack);
+			if (stack.getCount() >= before) break;
+		}
+		return start - stack.getCount();
+	}
+
+	private static int findEdibleIndex(ItemStack bag, Player player, boolean fireUseStart) {
+		CompoundTag tag = bag.getTag();
+		if (tag == null) return -1;
+		ListTag list = tag.getList(TAG_ITEMS, Tag.TAG_COMPOUND);
+		for (int i = 0; i < list.size(); i++) {
+			ItemStack stored = ItemStack.of(list.getCompound(i));
+			FoodProperties food = stored.getFoodProperties(player);
+			if (food == null || !player.canEat(food.canAlwaysEat())) continue;
+			if (player.getCooldowns().isOnCooldown(stored.getItem())) continue;
+			if (fireUseStart) {
+				ItemStack probe = stored.copyWithCount(1);
+				if (ForgeEventFactory.onItemUseStart(player, probe, probe.getUseDuration()) < 0) continue;
+			}
+			return i;
+		}
+		return -1;
+	}
+
+	private static void eatEntry(ItemStack bag, int index, Level level, Player player) {
+		ListTag list = bag.getOrCreateTag().getList(TAG_ITEMS, Tag.TAG_COMPOUND);
+		ItemStack bean = ItemStack.of(list.getCompound(index)).copyWithCount(1);
+		shrinkEntry(bag, index, 1);
+		ItemStack eaten = bean.copy();
+		ForgeEventFactory.onItemUseFinish(player, eaten, 0, bean.finishUsingItem(level, player));
 	}
 
 	@Override
@@ -176,10 +214,24 @@ public class SenzuBagItem extends Item {
 	@Override
 	public @NotNull InteractionResultHolder<ItemStack> use(@NotNull Level level, Player player, @NotNull InteractionHand hand) {
 		ItemStack bag = player.getItemInHand(hand);
-		if (dropContents(bag, player)) {
-			playDropContentsSound(player);
+		if (player.isShiftKeyDown()) {
+			if (level.isClientSide()) {
+				return findEdibleIndex(bag, player, false) >= 0 ? InteractionResultHolder.success(bag) : InteractionResultHolder.fail(bag);
+			}
+			int index = findEdibleIndex(bag, player, true);
+			if (index < 0) return InteractionResultHolder.fail(bag);
+			eatEntry(bag, index, level, player);
 			player.awardStat(Stats.ITEM_USED.get(this));
-			return InteractionResultHolder.sidedSuccess(bag, level.isClientSide());
+			return InteractionResultHolder.consume(bag);
+		}
+
+		if (level.isClientSide()) {
+			return hasContents(bag) ? InteractionResultHolder.success(bag) : InteractionResultHolder.fail(bag);
+		}
+		if (unloadLatestStack(bag, player)) {
+			playUnloadSound(player);
+			player.awardStat(Stats.ITEM_USED.get(this));
+			return InteractionResultHolder.consume(bag);
 		}
 		return InteractionResultHolder.fail(bag);
 	}
@@ -232,8 +284,8 @@ public class SenzuBagItem extends Item {
 		player.playSound(SoundEvents.BUNDLE_INSERT, 0.8F, 0.8F + player.level().getRandom().nextFloat() * 0.4F);
 	}
 
-	private void playDropContentsSound(Player player) {
-		player.level().playSound(null, player.blockPosition(), SoundEvents.BUNDLE_DROP_CONTENTS,
+	private void playUnloadSound(Player player) {
+		player.level().playSound(null, player.blockPosition(), SoundEvents.BUNDLE_REMOVE_ONE,
 				SoundSource.PLAYERS, 0.8F, 0.8F + player.level().getRandom().nextFloat() * 0.4F);
 	}
 }
