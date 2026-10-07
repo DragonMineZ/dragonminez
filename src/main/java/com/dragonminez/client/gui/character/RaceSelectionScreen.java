@@ -127,7 +127,7 @@ public class RaceSelectionScreen extends ScaledScreen {
 
 		List<String> races = getAvailableRaces();
 		if (!races.isEmpty()) {
-			currentPanorama = getPanorama(races.get(selectedRaceIndex));
+			currentPanorama = getPanorama(races.get(clampRaceIndex(races.size())));
 			previousPanorama = currentPanorama;
 		}
 
@@ -248,7 +248,7 @@ public class RaceSelectionScreen extends ScaledScreen {
 		int centerY = getUiHeight() / 2 + 92;
 		int modelBaseY = getUiHeight() / 2 + 70;
 
-		String originalRace = races.get(selectedRaceIndex);
+		String originalRace = races.get(clampRaceIndex(races.size()));
 
 		List<Integer> carouselIndices = new ArrayList<>(List.of(-2, -1, 0, 1, 2));
 		carouselIndices.sort((a, b) -> {
@@ -331,7 +331,7 @@ public class RaceSelectionScreen extends ScaledScreen {
 		List<String> races = getAvailableRaces();
 		if (races.isEmpty()) return;
 		if (selectedRaceIndex >= races.size()) selectedRaceIndex = 0;
-		String currentRace = races.get(selectedRaceIndex);
+		String currentRace = races.get(clampRaceIndex(races.size()));
 
 		int uiHeight = getUiHeight();
 
@@ -367,7 +367,7 @@ public class RaceSelectionScreen extends ScaledScreen {
 		List<String> races = getAvailableRaces();
 		if (races.isEmpty()) return;
 		if (selectedRaceIndex >= races.size()) selectedRaceIndex = 0;
-		String currentRace = races.get(selectedRaceIndex);
+		String currentRace = races.get(clampRaceIndex(races.size()));
 
 		if (ConfigManager.getRaceCharacter(currentRace) == null) return;
 		String racialSkill = ConfigManager.getRaceCharacter(currentRace).getRacialSkill();
@@ -505,8 +505,13 @@ public class RaceSelectionScreen extends ScaledScreen {
 	private void updateCharacterRace() {
 		List<String> races = getAvailableRaces();
 		if (races.isEmpty()) return;
-		applyRaceDefaults(races.get(selectedRaceIndex));
+		applyRaceDefaults(races.get(clampRaceIndex(races.size())));
 		NetworkHandler.sendToServer(new StatsSyncC2S(character));
+	}
+
+	private int clampRaceIndex(int size) {
+		if (selectedRaceIndex < 0 || selectedRaceIndex >= size) selectedRaceIndex = 0;
+		return selectedRaceIndex;
 	}
 
 	private void previousRace() {
@@ -521,7 +526,7 @@ public class RaceSelectionScreen extends ScaledScreen {
 		resetRacialScroll();
 		updateCharacterRace();
 
-		currentPanorama = getPanorama(races.get(selectedRaceIndex));
+		currentPanorama = getPanorama(races.get(clampRaceIndex(races.size())));
 	}
 
 	private void nextRace() {
@@ -536,13 +541,13 @@ public class RaceSelectionScreen extends ScaledScreen {
 		resetRacialScroll();
 		updateCharacterRace();
 
-		currentPanorama = getPanorama(races.get(selectedRaceIndex));
+		currentPanorama = getPanorama(races.get(clampRaceIndex(races.size())));
 	}
 
 	private void selectRace() {
 		List<String> races = getAvailableRaces();
 		if (races.isEmpty()) return;
-		String selectedRace = races.get(selectedRaceIndex);
+		String selectedRace = races.get(clampRaceIndex(races.size()));
 		character.setRace(selectedRace);
 
 		if (this.minecraft != null) {

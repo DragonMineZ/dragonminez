@@ -69,22 +69,10 @@ public class ReloadCommand {
 				WishManager.loadWishes(server);
 			}
 
-			List<String> availableConfigs = null;
-			if (scope.includesConfig()) {
-				availableConfigs = ConfigManager.getAvailableConfigFiles();
-			}
-
 			int syncedPlayers = 0;
 			for (ServerPlayer player : server.getPlayerList().getPlayers()) {
 				if (scope.includesConfig()) {
-					boolean resetBatch = true;
-					for (String file : availableConfigs) {
-						if (ConfigManager.isClientOnlyConfig(file)) continue;
-						String jsonPayload = ConfigManager.getSpecificConfigJson(file);
-						if (jsonPayload == null || jsonPayload.isBlank()) continue;
-						NetworkHandler.sendToPlayer(new SyncServerConfigS2C(file, jsonPayload, resetBatch), player);
-						resetBatch = false;
-					}
+					ConfigManager.sendConfigSync(player);
 
 					StatsProvider.get(StatsCapability.INSTANCE, player).ifPresent(data -> {
 						String raceName = data.getCharacter().getRaceName();

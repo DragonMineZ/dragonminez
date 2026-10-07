@@ -47,7 +47,7 @@ final class MasterServices {
 
 	void add(List<DialogueOption> options, StatsData stats, LocalPlayer player) {
 		switch (npcId) {
-			case "karin" -> karin(options, player);
+			case "karin" -> karin(options, stats, player);
 			case "guru" -> guru(options, stats);
 			case "dende" -> dende(options, stats, player);
 			case "enma" -> {
@@ -79,9 +79,10 @@ final class MasterServices {
 		}
 	}
 
-	private void karin(List<DialogueOption> options, LocalPlayer player) {
+	private void karin(List<DialogueOption> options, StatsData stats, LocalPlayer player) {
 		DialogueOption nimbus = simple("nimbus", "gui.dragonminez.button.karin.nimbus", 1, "nimbus", true);
-		boolean owned = player.getInventory().contains(new ItemStack(MainItems.NUBE_ITEM.get()))
+		boolean owned = stats.getCooldowns().hasCooldown(Cooldowns.KARIN_NIMBUS)
+				|| player.getInventory().contains(new ItemStack(MainItems.NUBE_ITEM.get()))
 				|| player.getInventory().contains(new ItemStack(MainItems.NUBE_NEGRA_ITEM.get()));
 		if (owned || content.isUsed("nimbus")) lock(nimbus, reason("gui.dragonminez.dialogue.locked.nimbus_owned"));
 		options.add(nimbus);

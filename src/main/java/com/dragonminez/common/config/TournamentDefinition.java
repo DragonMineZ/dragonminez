@@ -1,5 +1,6 @@
 package com.dragonminez.common.config;
 
+import com.dragonminez.common.diagnostics.RemovedConfigKeys;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
@@ -143,9 +144,9 @@ public class TournamentDefinition {
 	@Getter
 	@Setter
 	@NoArgsConstructor
+	@RemovedConfigKeys({"displayName"})
 	public static class Fighter {
 		private String entityId;
-		private String displayName;
 
 		private Double health;
 		private Double meleeDamage;
@@ -234,21 +235,21 @@ public class TournamentDefinition {
 			ring.setRadius(6);
 			def.setRing(ring);
 
-			def.setChampion(fighter("dragonminez:saga_cell_superperfect", "entity.dragonminez.saga_cell_superperfect",
+			def.setChampion(fighter("dragonminez:saga_cell_superperfect",
 					287000.0D, 11700.0D, 10540.0D, 3, 1.0D));
-			def.setSemifinalist(fighter("dragonminez:saga_gohan_mid_ssj", "entity.dragonminez.saga_gohan_mid_ssj",
+			def.setSemifinalist(fighter("dragonminez:saga_gohan_mid_ssj",
 					245000.0D, 10200.0D, 9180.0D, 3, 1.0D));
 
 			def.setContenders(List.of(
-					fighter(CELL_POOL, CELL_POOL, 66500.0D, 2700.0D, 2420.0D, 1, 1.08D),
-					fighter(CELL_POOL, CELL_POOL, 70000.0D, 2850.0D, 2550.0D, 1, 1.08D),
-					fighter(CELL_POOL, CELL_POOL, 84000.0D, 3400.0D, 3060.0D, 2, 1.08D),
-					fighter(CELL_POOL, CELL_POOL, 150500.0D, 5940.0D, 6545.0D, 2, 1.08D),
-					fighter(CELL_POOL, CELL_POOL, 168000.0D, 6600.0D, 5950.0D, 2, 1.08D),
-					fighter(CELL_POOL, CELL_POOL, 189000.0D, 7500.0D, 6800.0D, 3, 1.08D),
-					fighter(CELL_POOL, CELL_POOL, 196000.0D, 8100.0D, 7310.0D, 3, 1.08D),
-					fighter(CELL_POOL, CELL_POOL, 203000.0D, 8400.0D, 7650.0D, 3, 1.08D),
-					fighter(CELL_POOL, CELL_POOL, 210000.0D, 8700.0D, 7820.0D, 3, 1.08D)
+					fighter(CELL_POOL, 66500.0D, 2700.0D, 2420.0D, 1, 1.08D),
+					fighter(CELL_POOL, 70000.0D, 2850.0D, 2550.0D, 1, 1.08D),
+					fighter(CELL_POOL, 84000.0D, 3400.0D, 3060.0D, 2, 1.08D),
+					fighter(CELL_POOL, 150500.0D, 5940.0D, 6545.0D, 2, 1.08D),
+					fighter(CELL_POOL, 168000.0D, 6600.0D, 5950.0D, 2, 1.08D),
+					fighter(CELL_POOL, 189000.0D, 7500.0D, 6800.0D, 3, 1.08D),
+					fighter(CELL_POOL, 196000.0D, 8100.0D, 7310.0D, 3, 1.08D),
+					fighter(CELL_POOL, 203000.0D, 8400.0D, 7650.0D, 3, 1.08D),
+					fighter(CELL_POOL, 210000.0D, 8700.0D, 7820.0D, 3, 1.08D)
 			));
 
 			TournamentDefinition.Rewards rewards = new TournamentDefinition.Rewards();
@@ -282,25 +283,25 @@ public class TournamentDefinition {
 			ring.setRadius(8);
 			def.setRing(ring);
 
-			def.setSemifinalist(fighter("dragonminez:saga_paikuhan", "entity.dragonminez.saga_paikuhan",
+			def.setSemifinalist(fighter("dragonminez:saga_paikuhan",
 					805000.0D, 33600.0D, 30600.0D, 3, 1.0D));
-			TournamentDefinition.Fighter goku = fighter("dragonminez:saga_goku_end_ssj", "entity.dragonminez.saga_goku_end_ssj",
+			TournamentDefinition.Fighter goku = fighter("dragonminez:saga_goku_end_ssj",
 					900000.0D, 37800.0D, 34200.0D, 3, 1.0D);
 			goku.setHalo(true);
 			def.setFinalist(goku);
-			def.setChampion(fighter("dragonminez:saga_gogeta_ssj", "entity.dragonminez.saga_gogeta_ssj",
+			def.setChampion(fighter("dragonminez:saga_gogeta_ssj",
 					1330000.0D, 55800.0D, 50700.0D, 4, 1.0D));
 
 			def.setContenders(List.of(
-					fighter(BUU_POOL, BUU_POOL, 238000.0D, 9900.0D, 8840.0D, 2, 1.08D),
-					fighter(BUU_POOL, BUU_POOL, 273000.0D, 11400.0D, 10370.0D, 2, 1.08D),
-					fighter(BUU_POOL, BUU_POOL, 308000.0D, 12900.0D, 11730.0D, 2, 1.08D),
-					fighter(BUU_POOL, BUU_POOL, 343000.0D, 14400.0D, 12920.0D, 2, 1.08D),
-					fighter(BUU_POOL, BUU_POOL, 402500.0D, 16800.0D, 15300.0D, 3, 1.08D),
-					fighter(BUU_POOL, BUU_POOL, 472500.0D, 19800.0D, 17850.0D, 3, 1.08D),
-					fighter(BUU_POOL, BUU_POOL, 507500.0D, 21300.0D, 19380.0D, 3, 1.08D),
-					fighter(BUU_POOL, BUU_POOL, 542500.0D, 22800.0D, 20740.0D, 3, 1.08D),
-					fighter(BUU_POOL, BUU_POOL, 612500.0D, 25800.0D, 23460.0D, 3, 1.08D)
+					fighter(BUU_POOL, 238000.0D, 9900.0D, 8840.0D, 2, 1.08D),
+					fighter(BUU_POOL, 273000.0D, 11400.0D, 10370.0D, 2, 1.08D),
+					fighter(BUU_POOL, 308000.0D, 12900.0D, 11730.0D, 2, 1.08D),
+					fighter(BUU_POOL, 343000.0D, 14400.0D, 12920.0D, 2, 1.08D),
+					fighter(BUU_POOL, 402500.0D, 16800.0D, 15300.0D, 3, 1.08D),
+					fighter(BUU_POOL, 472500.0D, 19800.0D, 17850.0D, 3, 1.08D),
+					fighter(BUU_POOL, 507500.0D, 21300.0D, 19380.0D, 3, 1.08D),
+					fighter(BUU_POOL, 542500.0D, 22800.0D, 20740.0D, 3, 1.08D),
+					fighter(BUU_POOL, 612500.0D, 25800.0D, 23460.0D, 3, 1.08D)
 			));
 
 			TournamentDefinition.Rewards rewards = new TournamentDefinition.Rewards();
@@ -332,19 +333,19 @@ public class TournamentDefinition {
 			ring.setRadius(4);
 			def.setRing(ring);
 
-			def.setChampion(fighter("dragonminez:saga_kid_goku", "entity.dragonminez.saga_kid_goku",
+			def.setChampion(fighter("dragonminez:saga_kid_goku",
 					400.0D, 34.0D, 30.0D, 3, 1.0D));
-			def.setSemifinalist(fighter("dragonminez:saga_masked_warrior", "entity.dragonminez.saga_masked_warrior",
+			def.setSemifinalist(fighter("dragonminez:saga_masked_warrior",
 					280.0D, 26.0D, 20.0D, 2, 1.0D));
 
 			def.setContenders(List.of(
-					fighter("dragonminez:saga_dracula", "entity.dragonminez.saga_dracula",
+					fighter("dragonminez:saga_dracula",
 							130.0D, 13.0D, 8.0D, 1, 1.1D),
-					fighter("dragonminez:saga_invisible_man", "entity.dragonminez.saga_invisible_man",
+					fighter("dragonminez:saga_invisible_man",
 							140.0D, 14.0D, 10.0D, 1, 1.1D),
-					fighter("dragonminez:saga_akkuman", "entity.dragonminez.saga_akkuman",
+					fighter("dragonminez:saga_akkuman",
 							155.0D, 15.0D, 14.0D, 1, 1.1D),
-					fighter("dragonminez:saga_mummy", "entity.dragonminez.saga_mummy",
+					fighter("dragonminez:saga_mummy",
 							175.0D, 17.0D, 6.0D, 1, 1.1D)
 			));
 
@@ -356,12 +357,11 @@ public class TournamentDefinition {
 			return def;
 		}
 
-		private static TournamentDefinition.Fighter fighter(String entityId, String displayName,
+		private static TournamentDefinition.Fighter fighter(String entityId,
 															double health, double melee, double ki,
 															int aiTier, double perRoundScaling) {
 			TournamentDefinition.Fighter f = new TournamentDefinition.Fighter();
 			f.setEntityId(entityId);
-			f.setDisplayName(displayName);
 			f.setHealth(health);
 			f.setMeleeDamage(melee);
 			f.setKiDamage(ki);

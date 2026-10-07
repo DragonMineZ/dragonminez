@@ -4,7 +4,10 @@ import lombok.Getter;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerPlayer;
 
+import com.dragonminez.common.stats.StatsData;
+
 import java.util.EnumSet;
+import java.util.List;
 import java.util.Set;
 
 @Getter
@@ -47,6 +50,10 @@ public abstract class QuestReward {
 		return getDescription();
 	}
 
+	public List<Component> getTooltipLines(double rewardMultiplier, StatsData data) {
+		return List.of(getDescription(rewardMultiplier));
+	}
+
 	public boolean isUnlockedFor(Difficulty difficulty) {
 		return difficulties.contains(difficulty != null ? difficulty : Difficulty.NORMAL);
 	}
@@ -60,6 +67,8 @@ public abstract class QuestReward {
 		ALIGNMENT,
 		TRANSFORMATION,
 		KI_TECHNIQUE,
-		CUSTOM
+		CUSTOM,
+		ATTRIBUTES,
+		ATTRIBUTE_POINTS
 	}
 }

@@ -31,6 +31,8 @@ import com.dragonminez.common.quest.rewards.GenericItemReward;
 import com.dragonminez.common.quest.rewards.ItemReward;
 import com.dragonminez.common.quest.rewards.KiTechniqueReward;
 import com.dragonminez.common.quest.rewards.SkillReward;
+import com.dragonminez.common.quest.rewards.AttributePointsReward;
+import com.dragonminez.common.quest.rewards.AttributesReward;
 import com.dragonminez.common.quest.rewards.TPSReward;
 import com.dragonminez.common.quest.rewards.TransformationReward;
 import com.dragonminez.common.util.gson.GsonUtils;
@@ -318,6 +320,10 @@ public class SyncQuestRegistryS2C {
 
 		if (reward instanceof TPSReward tps) {
 			obj.addProperty("amount", tps.getAmount());
+		} else if (reward instanceof AttributesReward attributes) {
+			obj.addProperty("amount", attributes.getAmount());
+		} else if (reward instanceof AttributePointsReward attributePoints) {
+			obj.addProperty("amount", attributePoints.getAmount());
 		} else if (reward instanceof ItemReward item) {
 			obj.addProperty("item", item.getItemId());
 			obj.addProperty("count", item.getCount());

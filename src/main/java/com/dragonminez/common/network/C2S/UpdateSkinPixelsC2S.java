@@ -1,5 +1,6 @@
 package com.dragonminez.common.network.C2S;
 
+import com.dragonminez.common.wish.wishes.ReCustomizeWish;
 import com.dragonminez.Env;
 import com.dragonminez.LogUtil;
 import com.dragonminez.common.network.NetworkHandler;
@@ -56,6 +57,10 @@ public class UpdateSkinPixelsC2S {
 			}
 
 			StatsProvider.get(StatsCapability.INSTANCE, player).ifPresent(data -> {
+				if (data.getStatus().isHasCreatedCharacter() && !ReCustomizeWish.isPending(player)) {
+					LogUtil.warn(Env.SERVER, "Rejected skin pixel update from {}: character already created and no recustomize wish pending", playerName);
+					return;
+				}
 				SkinPixels current = data.getCharacter().getSkinPixels();
 				if (!SkinPixels.customTattooEnabled()) {
 					parsed.setTattoo(current.getTattooSize(), current.getTattoo());

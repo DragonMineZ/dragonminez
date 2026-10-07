@@ -6,7 +6,10 @@ import com.dragonminez.LogUtil;
 import com.dragonminez.common.config.ConfigManager;
 import com.dragonminez.common.hair.CustomHair;
 import com.dragonminez.common.network.NetworkHandler;
+import com.dragonminez.common.network.PacketRateLimiter;
 import com.dragonminez.common.network.S2C.StatsSyncS2C;
+import com.dragonminez.common.stats.character.AppearanceValidator;
+import com.dragonminez.common.wish.wishes.ReCustomizeWish;
 import com.dragonminez.common.stats.character.Character;
 import com.dragonminez.common.stats.StatsCapability;
 import com.dragonminez.common.stats.StatsProvider;
@@ -156,43 +159,45 @@ public class StatsSyncC2S {
 		ctx.get().enqueueWork(() -> {
 			ServerPlayer player = ctx.get().getSender();
 			if (player == null) return;
+			if (!PacketRateLimiter.allow(player.getUUID(), "stats_sync", player.level().getGameTime(), 2)) return;
 
 			if (!ConfigManager.isRaceLoaded(msg.raceName)) {
 				LogUtil.warn(com.dragonminez.Env.COMMON, "Rejected StatsSyncC2S from '{}': unknown race '{}'", player.getGameProfile().getName(), msg.raceName);
 				StatsProvider.get(StatsCapability.INSTANCE, player).ifPresent(data ->
-						NetworkHandler.sendToTrackingEntityAndSelf(new StatsSyncS2C(player), player));
+						NetworkHandler.sendToPlayer(new StatsSyncS2C(player), player));
 				return;
 			}
 
 			StatsProvider.get(StatsCapability.INSTANCE, player).ifPresent(data -> {
 				var character = data.getCharacter();
+				boolean created = data.getStatus().isHasCreatedCharacter();
+				boolean fullAppearance = !created || ReCustomizeWish.isPending(player);
+				boolean hairOnly = !fullAppearance && NPCActionC2S.isNpcInRange(player, "popo");
 
-				if (!data.getStatus().isHasCreatedCharacter()) {
+				if (!fullAppearance && !hairOnly) {
+					NetworkHandler.sendToPlayer(new StatsSyncS2C(player), player);
+					return;
+				}
+
+				if (!created) {
 					character.setRace(msg.raceName);
-					character.setGender(msg.gender);
-					character.setCharacterClass(msg.characterClass);
+					character.setGender(AppearanceValidator.gender(msg.gender));
+					character.setCharacterClass(AppearanceValidator.characterClass(msg.raceName, msg.characterClass, character.getCharacterClass()));
 					if (ConfigManager.getRaceCharacter(msg.raceName) != null) character.setHasSaiyanTail(ConfigManager.getRaceCharacter(msg.raceName).getHasSaiyanTail());
 				}
-				character.setHairId(msg.hairId);
+				character.setHairId(AppearanceValidator.hairId(msg.hairId, character.getHairId()));
 				if (msg.customHair != null) HairSanitizer.sanitizeAndLog(msg.customHair, HairStyleSlot.BASE, player.getGameProfile().getName());
 				character.setHairStyle(HairStyleSlot.BASE, msg.customHair);
-				character.setBodyType(msg.bodyType);
-				character.setEyesType(msg.eyesType);
-				character.setNoseType(msg.noseType);
-				character.setMouthType(msg.mouthType);
-				character.setTattooType(msg.tattooType);
-				character.setBoobScale(msg.boobScale);
-				character.setActiveHeadBone(msg.activeHeadBone);
-				character.setHairColor(msg.hairColor);
-				character.setBodyColor(msg.bodyColor);
-				character.setBodyColor2(msg.bodyColor2);
-				character.setBodyColor3(msg.bodyColor3);
-				character.setEye1Color(msg.eye1Color);
-				character.setEye2Color(msg.eye2Color);
-				character.setAuraColor(msg.auraColor);
+				character.setHairColor(AppearanceValidator.color(msg.hairColor, character.getHairColor()));
 				character.setRenderHairBase(msg.renderHairBase);
 
-				NetworkHandler.sendToTrackingEntityAndSelf(new StatsSyncS2C(player), player);
+				if (fullAppearance) {
+					AppearanceValidator.applyBody(character, msg.bodyType, msg.eyesType, msg.noseType, msg.mouthType, msg.tattooType,
+							msg.boobScale, msg.activeHeadBone, msg.hairColor, msg.bodyColor, msg.bodyColor2, msg.bodyColor3,
+							msg.eye1Color, msg.eye2Color, msg.auraColor);
+				}
+
+				StatsSyncS2C.sendRequested(player);
 			});
 		});
 		ctx.get().setPacketHandled(true);

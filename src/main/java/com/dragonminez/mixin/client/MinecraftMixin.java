@@ -1,7 +1,7 @@
 package com.dragonminez.mixin.client;
 
 import com.dragonminez.client.animation.IPlayerAnimatable;
-import com.dragonminez.client.collision.CollisionHelper;
+import com.dragonminez.common.combat.collision.CollisionHelper;
 import com.dragonminez.client.collision.TargetFinder;
 import com.dragonminez.client.events.DMZClientEvent;
 import com.dragonminez.common.combat.logic.player.PlayerAttackHelper;

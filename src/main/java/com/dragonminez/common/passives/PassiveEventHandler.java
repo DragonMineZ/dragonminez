@@ -1,6 +1,7 @@
 package com.dragonminez.common.passives;
 
 import com.dragonminez.Reference;
+import com.dragonminez.common.combat.SilentDamage;
 import com.dragonminez.common.events.DMZEvent;
 import com.dragonminez.common.quest.PartyManager;
 import com.dragonminez.common.racial.impl.MajinAbsorption;
@@ -23,8 +24,6 @@ import java.util.List;
 
 @Mod.EventBusSubscriber(modid = Reference.MOD_ID, bus = Mod.EventBusSubscriber.Bus.FORGE)
 public class PassiveEventHandler {
-
-	private static boolean redirecting = false;
 
 	public static boolean suppressHealingBonus = false;
 
@@ -69,6 +68,9 @@ public class PassiveEventHandler {
 		IClassPassive p = ClassPassives.get(data);
 
 		double mult = event.getSourceType() == DMZEvent.DamageSourceType.STRIKE ? p.strikeDamageMultiplier(data, event.getVictim()) : 1.0;
+		if (event.getAttacker() instanceof ServerPlayer serverAttacker) {
+			mult *= p.outgoingDamageMultiplier(serverAttacker, data, event.getVictim(), event.getSourceType());
+		}
 		event.setAmount(event.getAmount() * mult);
 		event.setDefensePenetration(event.getDefensePenetration() + p.armorPenBonus(data));
 	}
@@ -88,9 +90,18 @@ public class PassiveEventHandler {
 	@SubscribeEvent
 	public static void onKiAttackFire(DMZEvent.KiAttackFireEvent event) {
 		StatsData data = event.getStatsData();
-		double mult = ClassPassives.get(data).kiCooldownMultiplier(data, event.getKiAttack());
+		IClassPassive passive = ClassPassives.get(data);
+		double mult = passive.kiCooldownMultiplier(data, event.getKiAttack());
 		mult *= MajinAbsorption.healTechniqueCooldownMultiplier(data, event.getKiAttack());
 		event.setCooldownTicks((int) Math.max(1, Math.round(event.getCooldownTicks() * mult)));
+		if (event.getPlayer() instanceof ServerPlayer player) passive.onKiAttackFired(player, data, event.getKiAttack());
+	}
+
+	@SubscribeEvent
+	public static void onStrikeCast(DMZEvent.StrikeAttackCastEvent event) {
+		StatsData data = event.getStatsData();
+		if (data == null) return;
+		ClassPassives.get(data).onStrikeCast(event.getPlayer(), data);
 	}
 
 	@SubscribeEvent(priority = EventPriority.LOWEST)
@@ -101,7 +112,7 @@ public class PassiveEventHandler {
 			applyPaladinLifesteal(attacker, event.getEntity(), event.getAmount());
 		}
 
-		if (!redirecting && event.getEntity() instanceof ServerPlayer victim) {
+		if (event.getEntity() instanceof ServerPlayer victim) {
 			applyPaladinRedirect(victim, event);
 		}
 	}
@@ -111,7 +122,7 @@ public class PassiveEventHandler {
 
 		if (damageDealt < victim.getMaxHealth() * 0.01f) return;
 
-		ServerPlayer paladin = findPartyPaladin(member, null);
+		ServerPlayer paladin = findPartyPaladin(member, member);
 		if (paladin == null) return;
 
 		double pct = ClassPassives.value(paladinData(paladin), "lifestealPct", 0.15);
@@ -134,15 +145,23 @@ public class PassiveEventHandler {
 		double redirect = raw * pct;
 		if (redirect <= 0.0) return;
 
+		StatsData paladinStats = paladinData(paladin);
+		double taken = paladinStats != null ? paladinStats.calculatePostMitigationDamage(redirect, false, 0.0) : redirect;
+		if (!Double.isFinite(taken) || taken < 0.0) return;
+
+		if (taken > 0.0) {
+			float available = SilentDamage.available(paladin, SilentDamage.DEFAULT_MIN_HEALTH);
+			if (available <= 0.0F) return;
+			if (taken > available) {
+				redirect *= available / taken;
+				taken = available;
+			}
+		}
+
 		if (hasRaw) victim.getPersistentData().putDouble("dmz_raw_damage", Math.max(0.0, raw - redirect));
 		else event.setAmount((float) Math.max(0.0, raw - redirect));
 
-		redirecting = true;
-		try {
-			paladin.hurt(paladin.damageSources().generic(), (float) redirect);
-		} finally {
-			redirecting = false;
-		}
+		SilentDamage.apply(paladin, taken);
 	}
 
 	private static StatsData paladinData(ServerPlayer paladin) {

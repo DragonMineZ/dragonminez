@@ -1,5 +1,6 @@
 package com.dragonminez.common.config;
 
+import com.dragonminez.common.diagnostics.RemovedConfigKeys;
 import com.dragonminez.common.combat.logic.player.TargetHelper;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -14,6 +15,7 @@ import java.util.Map;
 
 @Getter
 @NoArgsConstructor
+@RemovedConfigKeys({"flatMitigationFactor"})
 public class CombatConfig {
 	public static final String CURRENT_VERSION = ConfigManager.CONFIG_VERSION;
 
@@ -36,7 +38,6 @@ public class CombatConfig {
 	private Double baseDamageReductionCap = 0.88;
 	private Double enchantmentDamageReductionCap = 0.93;
 	private Double defenseDecayOnGuardBreak = 0.66;
-	private Double flatMitigationFactor = 0.10;
 	private Double flatMitigationMaxAbsorbFraction = 0.82;
 	private Double defenseReductionScale = 0.11;
 
@@ -275,10 +276,6 @@ public class CombatConfig {
 
 	public float getUpswingMultiplier() {
 		return Math.max(0.2F, Math.min(1.0F, upswingMultiplier));
-	}
-
-	public double getFlatMitigationFactor() {
-		return flatMitigationFactor != null ? Math.max(0.0, flatMitigationFactor) : 0.10;
 	}
 
 	public double getFlatMitigationMaxAbsorbFraction() {

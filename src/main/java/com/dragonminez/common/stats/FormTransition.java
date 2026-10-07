@@ -291,7 +291,7 @@ public final class FormTransition {
 		Character character = data.getCharacter();
 		String name = chargeTarget.getName();
 		double mastery = chargeStack
-				? character.getStackFormMasteries().getMastery(chargeGroup, name)
+				? data.getStackFormChargeMastery(chargeGroup, name)
 				: character.getFormMasteries().getMastery(chargeGroup, name);
 		return TransformationsHelper.formChargeStep((int) mastery);
 	}

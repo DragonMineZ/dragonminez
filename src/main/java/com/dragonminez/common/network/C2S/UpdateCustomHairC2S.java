@@ -1,5 +1,6 @@
 package com.dragonminez.common.network.C2S;
 
+import com.dragonminez.common.wish.wishes.ReCustomizeWish;
 import com.dragonminez.Env;
 import com.dragonminez.LogUtil;
 import com.dragonminez.common.hair.CustomHair;
@@ -62,6 +63,12 @@ public class UpdateCustomHairC2S {
 			}
 
 			StatsProvider.get(StatsCapability.INSTANCE, player).ifPresent(data -> {
+				boolean allowed = !data.getStatus().isHasCreatedCharacter() || ReCustomizeWish.isPending(player)
+						|| NPCActionC2S.isNpcInRange(player, "popo");
+				if (!allowed) {
+					LogUtil.warn(Env.SERVER, "Rejected hair update from {}: no character creation, recustomize wish or Popo nearby", playerName);
+					return;
+				}
 				HairSanitizer.sanitizeAndLog(msg.customHair, slot, playerName);
 				data.getCharacter().setHairStyle(slot, msg.customHair);
 				data.getCharacter().setHairId(0);

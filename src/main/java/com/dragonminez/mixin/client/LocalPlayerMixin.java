@@ -1,10 +1,8 @@
 package com.dragonminez.mixin.client;
 
+import com.dragonminez.client.systems.SilentDamageState;
 import com.dragonminez.common.combat.util.MathHelper;
 import com.dragonminez.common.combat.util.Minecraft_DMZ;
-import com.dragonminez.common.stats.StatsCapability;
-import com.dragonminez.common.stats.StatsData;
-import com.dragonminez.common.stats.StatsProvider;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.player.LocalPlayer;
 import org.spongepowered.asm.mixin.Mixin;
@@ -16,23 +14,14 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 public abstract class LocalPlayerMixin {
 
 	@Inject(method = "hurtTo", at = @At("HEAD"), cancellable = true)
-	private void dragonminez$preventKaiokenHurtAnimation(float pHealth, CallbackInfo ci) {
+	private void dragonminez$preventSilentDamageHurtAnimation(float pHealth, CallbackInfo ci) {
 		LocalPlayer self = (LocalPlayer) (Object) this;
+		float healthLoss = self.getHealth() - pHealth;
+		if (healthLoss <= 0) return;
 
-		StatsData data = StatsProvider.get(StatsCapability.INSTANCE, self).orElse(null);
-		if (data == null) return;
-
-		if (data.getCharacter().hasActiveForm() || data.getCharacter().hasActiveStackForm()) {
-			float currentHealth = self.getHealth();
-			float healthLoss = currentHealth - pHealth;
-			if (healthLoss <= 0) return;
-
-			double expectedDrain = Math.round(data.getEffectiveHealthDrain());
-
-			if (healthLoss <= (expectedDrain + 2.0f)) {
-				self.setHealth(pHealth);
-				ci.cancel();
-			}
+		if (SilentDamageState.consume(healthLoss)) {
+			self.setHealth(pHealth);
+			ci.cancel();
 		}
 	}
 

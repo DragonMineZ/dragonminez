@@ -2,6 +2,7 @@ package com.dragonminez.server.events.players;
 
 import com.dragonminez.Env;
 import com.dragonminez.Reference;
+import com.dragonminez.common.combat.SilentDamage;
 import com.dragonminez.common.combat.logic.player.MeleeWindupTracker;
 import com.dragonminez.common.config.ConfigManager;
 import com.dragonminez.common.config.FormConfig;
@@ -1172,7 +1173,7 @@ public class TickHandler {
 				else if (energyDrain < 0) data.getResources().addEnergy(-energyDrain);
 				if (staminaDrain > 0) data.getResources().removeStamina(staminaDrain);
 				else if (staminaDrain < 0) data.getResources().addStamina(-staminaDrain);
-				if (healthDrain > 0) player.setHealth((float) (player.getHealth() - healthDrain));
+				if (healthDrain > 0) SilentDamage.apply(player, healthDrain);
 				else if (healthDrain < 0 && !BioAndroidEvolution.isExplosionRecovering(data) && !BabaReviveService.isHealingBlocked(data))
 					player.setHealth((float) Math.min(player.getMaxHealth(), player.getHealth() - healthDrain));
 			} else {
@@ -1259,7 +1260,7 @@ public class TickHandler {
 		int hpWhole = (int) hpAccum;
 
 		if (hpWhole > 0 && player.getHealth() > hpWhole + 2.0f) {
-			player.setHealth(player.getHealth() - hpWhole);
+			SilentDamage.apply(player, hpWhole);
 			double bonusDmg = player.getPersistentData().getDouble("dmz_human_ki_bonus_dmg") + hpWhole;
 			player.getPersistentData().putDouble("dmz_human_ki_bonus_dmg", bonusDmg);
 			hpAccum -= hpWhole;

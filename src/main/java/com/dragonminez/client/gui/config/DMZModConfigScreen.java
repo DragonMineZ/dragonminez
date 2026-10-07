@@ -42,7 +42,7 @@ public class DMZModConfigScreen extends Screen {
 	protected void init() {
 		super.init();
 		allFiles.clear();
-		allFiles.addAll(ConfigManager.getAvailableConfigFiles());
+		allFiles.addAll(ConfigManager.getEditorConfigFiles());
 		allFiles.sort(String::compareToIgnoreCase);
 
 		searchBox = new EditBox(this.font, this.width / 2 - 100, 20, 200, 14,

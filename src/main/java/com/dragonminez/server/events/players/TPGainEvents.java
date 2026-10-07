@@ -63,7 +63,7 @@ public class TPGainEvents {
 		StatsData data = StatsProvider.get(StatsCapability.INSTANCE, player).orElse(null);
 		if (data == null) return;
 		
-		int finalTP = data.calculateTPGain(baseTP, TpSource.STORY);
+		int finalTP = event.isPreBoosted() ? baseTP : data.calculateTPGain(baseTP, TpSource.STORY);
 
 		if (event.getShareWithParty()) {
 			IS_SHARING_TP.set(true);
@@ -87,7 +87,7 @@ public class TPGainEvents {
 				int passiveTp = ConfigManager.getServerConfig().getGameplay().getPassiveTpGain();
 				if (passiveTp > 0 && player.tickCount % 100 == 0) {
 					int boosted = data.applyTpBoosts(TpSource.PASSIVE, passiveTp);
-					data.getResources().addTrainingPoints(boosted);
+					data.getResources().addBoostedTrainingPoints(boosted);
 				}
 
 				int tpTravel = ConfigManager.getServerConfig().getGameplay().getTpPer20BlocksTraveled();
@@ -101,7 +101,7 @@ public class TPGainEvents {
 						double accum = accumulatedDistance.getOrDefault(uuid, 0.0) + dist;
 						if (accum >= 20.0) {
 							int times = (int) (accum / 20.0);
-							data.getResources().addTrainingPoints(data.applyTpBoosts(TpSource.TRAVEL, tpTravel * times));
+							data.getResources().addBoostedTrainingPoints(data.applyTpBoosts(TpSource.TRAVEL, tpTravel * times));
 							accum %= 20.0;
 						}
 						accumulatedDistance.put(uuid, accum);
@@ -127,7 +127,7 @@ public class TPGainEvents {
 					if (baseTp > 0) {
 						int xp = event.getExpToDrop();
 						int bonus = (int) Math.round(baseTp * 0.25 * xp);
-						data.getResources().addTrainingPoints(data.applyTpBoosts(TpSource.MINED, baseTp + bonus));
+						data.getResources().addBoostedTrainingPoints(data.applyTpBoosts(TpSource.MINED, baseTp + bonus));
 					}
 				}
 			});
@@ -151,7 +151,7 @@ public class TPGainEvents {
 						else if (stack.getItem() instanceof ArmorItem armor) tierMult = Math.max(1, armor.getDefense() / 4);
 
 						int finalMult = Math.max(rarityMult, tierMult);
-						data.getResources().addTrainingPoints(data.applyTpBoosts(TpSource.CRAFTED, baseTp * amount * finalMult));
+						data.getResources().addBoostedTrainingPoints(data.applyTpBoosts(TpSource.CRAFTED, baseTp * amount * finalMult));
 					}
 				}
 			});
@@ -193,7 +193,7 @@ public class TPGainEvents {
 				int killTp = applyDynamicGrowthCombatTpMult(ConfigManager.getServerConfig().getGameplay().getTpPerHit() + tpsHealth);
 				int boostedTp = data.applyTpBoosts(TpSource.KILL, killTp);
 				int finalTp = applyPlayerShadowTpBonus(event.getEntity(), boostedTp);
-				data.getResources().addTrainingPoints(finalTp);
+				data.getResources().addBoostedTrainingPoints(finalTp);
 			}
 		});
 	}
@@ -209,7 +209,7 @@ public class TPGainEvents {
 						int baseTps = applyDynamicGrowthCombatTpMult(ConfigManager.getServerConfig().getGameplay().getTpPerHit());
 						int boostedTps = attackerData.applyTpBoosts(TpSource.HIT, baseTps);
 						int finalTps = applyPlayerShadowTpBonus(event.getEntity(), boostedTps);
-						attackerData.getResources().addTrainingPoints(finalTps);
+						attackerData.getResources().addBoostedTrainingPoints(finalTps);
 					}
 				}
 			});

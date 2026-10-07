@@ -170,6 +170,13 @@ final class QuestSheet {
 					lines.add(new Line(wrapped.get(w), color, 1.0f, first || icon == null ? 0 : ICON_GAP, height,
 							first ? icon : null, DialogueSkin.Icon.NONE, 0));
 				}
+				List<Component> details = reward.getTooltipLines(multiplier, statsData());
+				for (int d = 1; d < details.size(); d++) {
+					Component detail = details.get(d).copy().withStyle(Style.EMPTY.withFont(NpcDialogueScreen.FONT));
+					for (FormattedCharSequence sequence : font.split(detail, width - ICON_GAP)) {
+						lines.add(new Line(sequence, LOCKED_TIER_COLOR, 1.0f, ICON_GAP, LINE_H, null, DialogueSkin.Icon.NONE, 0));
+					}
+				}
 			}
 		}
 	}
@@ -178,6 +185,12 @@ final class QuestSheet {
 		return objective.getType() == QuestObjective.ObjectiveType.KILL
 				|| objective.getType() == QuestObjective.ObjectiveType.ITEM
 				|| objective.getType() == QuestObjective.ObjectiveType.SKILL;
+	}
+
+	private static StatsData statsData() {
+		Minecraft minecraft = Minecraft.getInstance();
+		if (minecraft.player == null) return null;
+		return StatsProvider.get(StatsCapability.INSTANCE, minecraft.player).orElse(null);
 	}
 
 	private static PlayerQuestData questData() {

@@ -1,6 +1,8 @@
 package com.dragonminez.common.quest;
 
 import com.dragonminez.common.config.ConfigManager;
+import com.dragonminez.common.quest.rewards.AttributePointsReward;
+import com.dragonminez.common.quest.rewards.AttributesReward;
 import com.dragonminez.common.quest.rewards.TPSReward;
 import lombok.Getter;
 import lombok.Setter;
@@ -165,7 +167,8 @@ public class PlayerQuestData {
 
     public double rewardMultiplierFor(QuestReward reward, Difficulty rewardDifficulty) {
         double multiplier = rewardDifficulty.questRewardMultiplier();
-        return reward instanceof TPSReward ? multiplier * tpRewardMultiplier() : multiplier;
+        boolean progressionReward = reward instanceof TPSReward || reward instanceof AttributesReward || reward instanceof AttributePointsReward;
+        return progressionReward ? multiplier * tpRewardMultiplier() : multiplier;
     }
 
     private void clearActiveQuestState() {

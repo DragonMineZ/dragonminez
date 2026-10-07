@@ -4,6 +4,7 @@ import com.dragonminez.common.config.FormConfig;
 import com.dragonminez.common.init.MainEffects;
 import com.dragonminez.common.init.MainSounds;
 import com.dragonminez.common.stats.StatsData;
+import com.dragonminez.common.util.FusionForms;
 import com.dragonminez.common.util.TransformationItemCostHelper;
 import com.dragonminez.common.util.TransformationsHelper;
 import com.dragonminez.server.events.players.IActionModeHandler;
@@ -48,8 +49,7 @@ public class FormModeHandler implements IActionModeHandler {
 		String targetGroup = TransformationsHelper.getTransformTargetGroup(data);
 
 		if (TransformationsHelper.needsFreeTransformMastery(data) && !TransformationsHelper.meetsFreeTransformMastery(data)) {
-			String jumpRace = data.getCharacter().getRaceName();
-			Component targetName = Component.translatable("race.dragonminez." + jumpRace + ".form." + targetGroup + "." + nextForm.getName());
+			Component targetName = Component.translatable(FusionForms.formTranslationKey(data.getCharacter().getRaceName(), targetGroup, nextForm.getName()));
 			player.displayClientMessage(Component.translatable("message.dragonminez.form.free_transform_mastery",
 					(int) Math.round(nextForm.getAllowFreeTransformOnMastery()), targetName), true);
 			return;
@@ -115,8 +115,7 @@ public class FormModeHandler implements IActionModeHandler {
 
 			player.level().playSound(null, player.getX(), player.getY(), player.getZ(), MainSounds.TRANSFORM_ON.get(), SoundSource.PLAYERS, 1.0F, 1.0F);
 
-			String race = data.getCharacter().getRaceName();
-			Component translatedFormName = Component.translatable("race.dragonminez." + race + ".form." + group + "." + nextForm.getName());
+			Component translatedFormName = Component.translatable(FusionForms.formTranslationKey(data.getCharacter().getRaceName(), group, nextForm.getName()));
 			if (data.getCharacter().getActiveStackForm() != null && !data.getCharacter().getActiveStackForm().isEmpty()) {
 				Component translatedStackFormGroup = Component.translatable("race.dragonminez.stack.group." + data.getCharacter().getSelectedStackFormGroup());
 				Component translatedStackFormName = Component.translatable("race.dragonminez.stack.form." + data.getCharacter().getActiveStackFormGroup() + "." + data.getCharacter().getActiveStackForm());

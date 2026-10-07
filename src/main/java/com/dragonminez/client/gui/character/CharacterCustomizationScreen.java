@@ -8,6 +8,7 @@ import com.dragonminez.client.util.SkinGathererProvider;
 import com.dragonminez.client.gui.buttons.ColorSlider;
 import com.dragonminez.client.gui.buttons.CustomTextureButton;
 import com.dragonminez.client.gui.buttons.TexturedTextButton;
+import com.dragonminez.client.gui.character.util.RegenScalingFormat;
 import com.dragonminez.client.gui.character.util.ScaledScreen;
 import com.dragonminez.client.gui.hud.HudRender;
 import com.dragonminez.client.gui.tutorial.HudTutorialScreen;
@@ -396,6 +397,7 @@ public class CharacterCustomizationScreen extends ScaledScreen {
 
 		String[] classes = getRaceClasses();
 		if (classes.length > 0) {
+			if (currentClassIndex < 0 || currentClassIndex >= classes.length) currentClassIndex = 0;
 			character.setCharacterClass(classes[currentClassIndex]);
 			if (currentClassIndex > 0) {
 				addRenderableWidget(createArrowButton(LEFT_PANEL_X + 18, y + 6, true, btn -> {
@@ -815,7 +817,7 @@ public class CharacterCustomizationScreen extends ScaledScreen {
 				extras.add(tr("gui.dragonminez.customization.stat.regen.stm").withStyle(ChatFormatting.GRAY)
 						.append(Component.literal(": ").withStyle(ChatFormatting.GRAY))
 						.append(Component.literal(String.format(Locale.US, "%.1f/s", classStats.getBaseSp5() * 0.2)).withStyle(ChatFormatting.YELLOW))
-						.append(Component.literal(" (+" + String.format(Locale.US, "%.2f", classStats.getSp5StmScaling() * 0.2) + "/STM)").withStyle(ChatFormatting.DARK_GRAY)));
+						.append(Component.literal(RegenScalingFormat.stamina(classStats)).withStyle(ChatFormatting.DARK_GRAY)));
 			}
 		}
 		else if (mouseY >= row2Y && mouseY <= row2Y + 22) {
@@ -832,6 +834,10 @@ public class CharacterCustomizationScreen extends ScaledScreen {
 						.append(Component.literal(": ").withStyle(ChatFormatting.GRAY))
 						.append(Component.literal(String.format(Locale.US, "%.1f/s", classStats.getBaseHp5() * 0.2)).withStyle(ChatFormatting.YELLOW))
 						.append(Component.literal(" (+" + String.format(Locale.US, "%.2f", classStats.getHp5VitScaling() * 0.2) + "/VIT)").withStyle(ChatFormatting.DARK_GRAY)));
+				extras.add(tr("gui.dragonminez.customization.stat.regen.stm").withStyle(ChatFormatting.GRAY)
+						.append(Component.literal(": ").withStyle(ChatFormatting.GRAY))
+						.append(Component.literal(String.format(Locale.US, "%.1f/s", classStats.getBaseSp5() * 0.2)).withStyle(ChatFormatting.YELLOW))
+						.append(Component.literal(RegenScalingFormat.stamina(classStats)).withStyle(ChatFormatting.DARK_GRAY)));
 			} else if (mouseX >= centerX - 15 && mouseX <= centerX + 15) {
 				title = tr("gui.dragonminez.character_stats.pwr").withStyle(ChatFormatting.BOLD);
 				desc.add(tr("gui.dragonminez.character_stats.pwr.desc"));

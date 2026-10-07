@@ -1,7 +1,9 @@
 package com.dragonminez.common.wish;
 
+import com.dragonminez.common.stats.StatsData;
 import lombok.Getter;
 import lombok.Setter;
+import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerPlayer;
 
 import java.util.List;
@@ -32,6 +34,10 @@ public abstract class Wish {
 
     public int getMaxTargets() {
         return 0;
+    }
+
+    public List<Component> getTooltipExtras(StatsData data) {
+        return List.of();
     }
 
 }

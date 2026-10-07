@@ -480,6 +480,7 @@ public class ForgeCommonEvents {
 
 	@SubscribeEvent
 	public static void onServerAboutToStart(net.minecraftforge.event.server.ServerAboutToStartEvent event) {
+		if (!event.getServer().isDedicatedServer()) ConfigManager.reload();
 		if (ConfigManager.getServerConfig().getWorldGen().getOtherworldActive()) {
 			OtherworldRegionLoader.loadPreGeneratedRegions(event.getServer());
 		}

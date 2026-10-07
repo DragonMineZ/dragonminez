@@ -1,5 +1,6 @@
 package com.dragonminez.common.config;
 
+import com.dragonminez.common.diagnostics.RemovedConfigKeys;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonDeserializationContext;
 import com.google.gson.JsonDeserializer;
@@ -18,12 +19,12 @@ import java.util.*;
 @Setter
 @Getter
 @NoArgsConstructor
+@RemovedConfigKeys({"raceName"})
 public class RaceCharacterConfig {
 	public static final String CURRENT_VERSION = ConfigManager.CONFIG_VERSION;
 
 	private String configVersion;
 
-	private String raceName;
 	private Boolean hasGender = true;
 	private Boolean useVanillaSkin = false;
 	private String customModel = "";

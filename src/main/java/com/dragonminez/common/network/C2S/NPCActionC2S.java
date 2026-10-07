@@ -145,6 +145,7 @@ public class NPCActionC2S {
 	private static final double NPC_INTERACTION_RANGE = 8.0;
 	private static final double POPO_DUMMY_CLEANUP_RANGE = 128.0;
 	private static final String TAG_POPO_SPAR = "dmz_popo_spar";
+	private static final long WEIGHT_REQUEST_COOLDOWN_TICKS = 200L;
 
 	public static boolean isNpcInRange(ServerPlayer player, String npcName) {
 		return player.serverLevel().getEntitiesOfClass(MastersEntity.class,
@@ -166,12 +167,14 @@ public class NPCActionC2S {
 
 	private static boolean handleKarin(ServerPlayer player, StatsData data, int action) {
 		if (action == 1) {
+			if (data.getCooldowns().hasCooldown(Cooldowns.KARIN_NIMBUS)) return false;
 			if (player.getInventory().hasAnyOf(Set.of(MainItems.NUBE_ITEM.get(), MainItems.NUBE_NEGRA_ITEM.get()))) return false;
 			if (data.getResources().getAlignment() > 50) {
 				player.addItem(new ItemStack(MainItems.NUBE_ITEM.get()));
 			} else {
 				player.addItem(new ItemStack(MainItems.NUBE_NEGRA_ITEM.get()));
 			}
+			data.getCooldowns().setCooldown(Cooldowns.KARIN_NIMBUS, Integer.MAX_VALUE);
 			return true;
 		}
 		if (action == 2) {
@@ -324,6 +327,7 @@ public class NPCActionC2S {
 	}
 
 	private static boolean giveWeight(ServerPlayer player, int value, Item itemStack) {
+		if (!PacketRateLimiter.allow(player.getUUID(), "npc_weight", player.level().getGameTime(), WEIGHT_REQUEST_COOLDOWN_TICKS)) return false;
 		Double maxWeight = ConfigManager.getServerConfig().getGravity().getMaxWeightRequestable();
 		int weight = Math.max(1, Math.min(maxWeight.intValue(), value));
 		ItemStack weightStack = new ItemStack(itemStack);

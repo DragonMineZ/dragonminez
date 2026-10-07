@@ -1,5 +1,6 @@
 package com.dragonminez.common.config;
 
+import com.dragonminez.common.diagnostics.RemovedConfigKeys;
 import com.dragonminez.common.init.item.consumables.CapsuleType;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
@@ -295,6 +296,7 @@ public class GeneralServerConfig {
 
 	@Getter
 	@NoArgsConstructor
+	@RemovedConfigKeys({"vitCurveKneeLevelMode", "vitCurveKneeStatMode", "defCurveKneeLevelMode", "defCurveKneeStatMode"})
 	public static class GameplayConfig {
 		private Boolean forceCharacterCreation = true;
 		private Boolean commandOutputOnConsole = true;
@@ -306,7 +308,9 @@ public class GeneralServerConfig {
 		private Boolean babaHardcoreEnabled = false;
 		private Double babaHardcoreCooldownGrowth = 0.5;
 		private Double tpGainMultiplier = 1.0;
-		private Double increaseTPGainRelativeToTPCost = 0.5;
+		private Double increaseTPGainRelativeToTPCost = 0.75;
+		private Integer progressionReferenceLevel = 10000;
+		private Double attributeRewardPointRatio = 0.5;
 		private Double globalTPCostMultiplier = 1.0;
 		private Integer minTPCost = 16;
 		private Integer maxTPDiscount = 140;
@@ -323,10 +327,6 @@ public class GeneralServerConfig {
 		private Integer maxValue = 1000000;
 		private Double vitCurveKnee = 16000.0;
 		private Double defCurveKnee = 20000.0;
-		@Getter(AccessLevel.NONE) private Double vitCurveKneeLevelMode = null;
-		@Getter(AccessLevel.NONE) private Double vitCurveKneeStatMode = null;
-		@Getter(AccessLevel.NONE) private Double defCurveKneeLevelMode = null;
-		@Getter(AccessLevel.NONE) private Double defCurveKneeStatMode = null;
 		private CapsulesConfig capsules = new CapsulesConfig();
 		private Boolean storyModeEnabled = true;
 		private Boolean createDefaultSagas = true;
@@ -460,7 +460,16 @@ public class GeneralServerConfig {
 		}
 
 		public Double getIncreaseTPGainRelativeToTPCost() {
-			return Math.max(0.0, increaseTPGainRelativeToTPCost != null ? increaseTPGainRelativeToTPCost : 0.5);
+			return Math.max(0.0, increaseTPGainRelativeToTPCost != null ? increaseTPGainRelativeToTPCost : 0.75);
+		}
+
+		public Integer getProgressionReferenceLevel() {
+			return Math.max(2, progressionReferenceLevel != null ? progressionReferenceLevel : 10000);
+		}
+
+		public Double getAttributeRewardPointRatio() {
+			double ratio = attributeRewardPointRatio != null ? attributeRewardPointRatio : 0.5;
+			return Double.isFinite(ratio) ? Math.max(0.0, Math.min(1.0, ratio)) : 0.5;
 		}
 
 		public Double getGlobalTpCostMultiplier() {
@@ -773,6 +782,7 @@ public class GeneralServerConfig {
 
 	@Getter
 	@NoArgsConstructor
+	@RemovedConfigKeys({"foodExhaustionReduction"})
 	public static class NamekianRacialConfig {
 		private Boolean enabled = true;
 		private Integer assimilationAmount = 4;
@@ -789,7 +799,6 @@ public class GeneralServerConfig {
 		private Integer regenCooldownSeconds = 45;
 		private Double waterRegenBonus = 0.25;
 		private Integer waterRegenSeconds = 5;
-		private Double foodExhaustionReduction = 0.25;
 
 		public Integer getAssimilationAmount() {
 			return Math.max(0, Math.min(assimilationAmount, Integer.MAX_VALUE));
@@ -1009,10 +1018,10 @@ public class GeneralServerConfig {
 
 	@Getter
 	@NoArgsConstructor
+	@RemovedConfigKeys({"debugChat"})
 	public static class DynamicGrowthConfig {
 		private Boolean enabled = true;
 		private Boolean growthStatsCountForTpCost = false;
-		private Boolean debugChat = false;
 		private Boolean practiceCurveEnabled = true;
 		private Double practiceXpMultiplier = 2.0;
 
@@ -1174,6 +1183,7 @@ public class GeneralServerConfig {
 
 	@Getter
 	@NoArgsConstructor
+	@RemovedConfigKeys({"tpCurveWidth"})
 	public static class GravityConfig {
 		private Boolean enabled = true;
 		private Map<String, Double> gravityPerWorld = defaultGravityPerWorld();
@@ -1204,7 +1214,6 @@ public class GeneralServerConfig {
 
 		private Boolean tpEnabled = true;
 		private Double tpPeakMultiplier = 2.0;
-		private Double tpCurveWidth = 7.0;
 		private Double tpGravityBonusPerGravity = 0.025;
 		private Double masteryBonusPerGravity = 0.0025;
 
@@ -1356,10 +1365,6 @@ public class GeneralServerConfig {
 			return clampNonNeg(tpPeakMultiplier, 2.0);
 		}
 
-		public Double getTpCurveWidth() {
-			return Math.max(0.0001, tpCurveWidth != null ? tpCurveWidth : 7.0);
-		}
-
 		public Double getTpIdealBaseDivisor() {
 			return Math.max(0.0001, tpIdealBaseDivisor != null ? tpIdealBaseDivisor : 2.0);
 		}
@@ -1492,6 +1497,7 @@ public class GeneralServerConfig {
 
 	@Getter
 	@NoArgsConstructor
+	@RemovedConfigKeys({"powerBonusReductionNoSkill"})
 	public static class MutantConfig {
 		private Boolean enabled = true;
 		private Integer rollIntervalMinutes = 30;
@@ -1501,8 +1507,8 @@ public class GeneralServerConfig {
 		private String legendaryGroupName = "legendaryforms";
 		private Double tpGainMultiplier = 1.25;
 		private Double masteryGainMultiplier = 1.50;
-		private Double powerBonusReductionNoSkill = 0.34;
 		private Double powerBonusBoostWithSkill = 0.33;
+		private Double rageBorrowedFormBonus = 0.5;
 		private Boolean keepMutantOnDeath = false;
 		private RageConfig rage = new RageConfig();
 
@@ -1539,13 +1545,13 @@ public class GeneralServerConfig {
 			return Math.max(0.0, masteryGainMultiplier != null ? masteryGainMultiplier : 1.50);
 		}
 
-		public Double getPowerBonusReductionNoSkill() {
-			Double value = powerBonusReductionNoSkill != null ? powerBonusReductionNoSkill : 0.34;
-			return Math.max(0.0, Math.min(value, 1.0));
-		}
-
 		public Double getPowerBonusBoostWithSkill() {
 			return Math.max(0.0, powerBonusBoostWithSkill != null ? powerBonusBoostWithSkill : 0.33);
+		}
+
+		public Double getRageBorrowedFormBonus() {
+			double value = rageBorrowedFormBonus != null ? rageBorrowedFormBonus : 0.5;
+			return Double.isFinite(value) ? Math.max(0.0, value) : 0.5;
 		}
 
 		public Boolean getKeepMutantOnDeath() {

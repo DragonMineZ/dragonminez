@@ -56,7 +56,7 @@ public class DMZConfigEditScreen extends Screen {
 		fields.clear();
 
 		if (root == null) {
-			String json = ConfigManager.getSpecificConfigJson(configPath);
+			String json = ConfigManager.getEditorConfigJson(configPath);
 			try {
 				root = json != null ? JsonParser.parseString(json).getAsJsonObject() : new JsonObject();
 			} catch (Exception e) {
@@ -79,7 +79,13 @@ public class DMZConfigEditScreen extends Screen {
 
 		int bottomY = this.height - 28;
 		boolean inGame = this.minecraft != null && this.minecraft.player != null;
-		if (inGame) {
+		if (isReadOnly()) {
+			for (Field field : fields) field.box.setEditable(false);
+			setFeedback(Component.translatable("gui.dragonminez.modconfig.read_only"), 0xFFFFAA00);
+			feedbackUntil = Long.MAX_VALUE;
+			addRenderableWidget(Button.builder(Component.translatable("gui.dragonminez.modconfig.back"), b -> onClose())
+					.bounds(this.width / 2 - 75, bottomY, 150, 20).build());
+		} else if (inGame) {
 			addRenderableWidget(Button.builder(Component.translatable("gui.dragonminez.modconfig.save"), b -> save(false))
 					.bounds(this.width / 2 - 154, bottomY, 100, 20).build());
 			addRenderableWidget(Button.builder(Component.translatable("gui.dragonminez.modconfig.save_reload"), b -> save(true))
@@ -125,11 +131,13 @@ public class DMZConfigEditScreen extends Screen {
 	}
 
 	private void save(boolean reload) {
+		if (isReadOnly()) return;
 		for (Field field : fields) {
 			field.apply();
 		}
 		boolean ok = ConfigManager.saveRawConfig(configPath, root.toString());
 		if (ok) {
+			ConfigManager.reloadClientOnlyConfig(configPath);
 			if (reload && this.minecraft != null && this.minecraft.player != null) {
 				this.minecraft.player.connection.sendCommand("dmzreload");
 				onClose();
@@ -139,6 +147,10 @@ public class DMZConfigEditScreen extends Screen {
 		} else {
 			setFeedback(Component.translatable("gui.dragonminez.modconfig.save_failed"), 0xFFFF5555);
 		}
+	}
+
+	private boolean isReadOnly() {
+		return ConfigManager.isViewingRemoteServerConfig() && !ConfigManager.isClientOnlyConfig(configPath);
 	}
 
 	private void setFeedback(Component text, int color) {

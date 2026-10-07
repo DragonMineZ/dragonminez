@@ -9,7 +9,7 @@ import com.dragonminez.common.wish.wishes.PassiveResetWish;
 import com.dragonminez.common.wish.wishes.ReCustomizeWish;
 import com.dragonminez.common.wish.wishes.RelocateStatsWish;
 import com.dragonminez.common.wish.wishes.ResetStoryWish;
-import com.dragonminez.common.wish.wishes.TPSWish;
+import com.dragonminez.common.wish.wishes.AttributesWish;
 import net.minecraft.world.item.Items;
 
 import java.util.ArrayList;
@@ -32,7 +32,7 @@ public final class DefaultWishes {
 
 		wishes.add(new ItemListWish("wish.shenron.senzu.name", "wish.shenron.senzu.desc",
 				MainItems.SENZU_BEAN, 16));
-		wishes.add(new TPSWish("wish.shenron.tps.name", "wish.shenron.tps.desc", 5000));
+		wishes.add(new AttributesWish("wish.shenron.attributes.name", "wish.shenron.attributes.desc", 100));
 		wishes.add(new ItemListWish("wish.shenron.powerpole.name", "wish.shenron.powerpole.desc",
 				MainItems.POWER_POLE));
 		wishes.add(new ItemListWish("wish.shenron.mightfruit.name", "wish.shenron.mightfruit.desc",
@@ -64,7 +64,7 @@ public final class DefaultWishes {
 
 		wishes.add(new ItemListWish("wish.porunga.senzu.name", "wish.porunga.senzu.desc",
 				MainItems.SENZU_BEAN, 32));
-		wishes.add(new TPSWish("wish.porunga.tps.name", "wish.porunga.tps.desc", 15000));
+		wishes.add(new AttributesWish("wish.porunga.attributes.name", "wish.porunga.attributes.desc", 75));
 		wishes.add(new ItemListWish("wish.porunga.bravesword.name", "wish.porunga.bravesword.desc",
 				MainItems.BRAVE_SWORD));
 

@@ -4,11 +4,14 @@ import com.dragonminez.common.config.FormConfig;
 import com.dragonminez.common.init.MainEffects;
 import com.dragonminez.common.init.MainSounds;
 import com.dragonminez.common.network.NetworkHandler;
+import com.dragonminez.common.network.PacketRateLimiter;
 import com.dragonminez.common.network.S2C.StatsSyncS2C;
 import com.dragonminez.common.stats.StatsCapability;
 import com.dragonminez.common.stats.StatsData;
 import com.dragonminez.common.stats.StatsProvider;
 import com.dragonminez.common.stats.extras.ActionMode;
+import com.dragonminez.common.util.FusionForms;
+import com.dragonminez.common.util.TransformationItemCostHelper;
 import com.dragonminez.common.util.TransformationsHelper;
 import com.dragonminez.common.util.lists.StackForms;
 import net.minecraft.network.FriendlyByteBuf;
@@ -59,6 +62,7 @@ public class ExecuteActionC2S {
 			ServerPlayer player = context.getSender();
 			if (player != null) {
 				if (player.hasEffect(MainEffects.STUN.get())) return;
+				if (!PacketRateLimiter.allow(player.getUUID(), "execute_action_" + action.name(), player.level().getGameTime(), 2)) return;
 				StatsProvider.get(StatsCapability.INSTANCE, player).ifPresent(data -> {
 					if (data.getStatus().isKnockedDown() || data.getStatus().isMatchFrozen()) return;
 					boolean needsSync = false;
@@ -140,8 +144,7 @@ public class ExecuteActionC2S {
 		String group = TransformationsHelper.getTransformTargetGroup(data);
 
 		if (TransformationsHelper.needsFreeTransformMastery(data) && !TransformationsHelper.meetsFreeTransformMastery(data)) {
-			String jumpRace = data.getCharacter().getRaceName();
-			Component targetName = Component.translatable("race.dragonminez." + jumpRace + ".form." + group + "." + nextForm.getName());
+			Component targetName = Component.translatable(FusionForms.formTranslationKey(data.getCharacter().getRaceName(), group, nextForm.getName()));
 			player.displayClientMessage(Component.translatable("message.dragonminez.form.free_transform_mastery",
 					(int) Math.round(nextForm.getAllowFreeTransformOnMastery()), targetName), true);
 			return false;
@@ -180,10 +183,16 @@ public class ExecuteActionC2S {
 			return false;
 		}
 
+		if (!player.isCreative() && !TransformationItemCostHelper.canAffordAndHandleTriggerCost(player, nextForm)) {
+			player.displayClientMessage(Component.translatable("message.dragonminez.form.no_trigger_item"), true);
+			return false;
+		}
+
 		data.getResources().removeEnergy(cost);
 		float[] resourceSnapshot = data.snapshotMultiplierResources();
 		data.getCharacter().recordPreviousForm();
 		data.getCharacter().setActiveForm(group, nextForm.getName());
+		TransformationItemCostHelper.clearFormDurationSecondsRemaining(player);
 		if (!data.getCharacter().getFormsUsedBefore().getFormGroup(group).contains(nextForm.getName())) {
 			data.getCharacter().getFormsUsedBefore().putForm(group, nextForm.getName());
 		}
@@ -222,7 +231,7 @@ public class ExecuteActionC2S {
 			}
 		}
 
-		double mastery = data.getCharacter().getStackFormMasteries().getMastery(group, nextForm.getName());
+		double mastery = data.getStackFormChargeMastery(group, nextForm.getName());
 
 		if (!player.isCreative() && mastery < nextForm.getInstantTransformOnMastery()) return false;
 
@@ -234,10 +243,16 @@ public class ExecuteActionC2S {
 			return false;
 		}
 
+		if (!player.isCreative() && !TransformationItemCostHelper.canAffordAndHandleTriggerCost(player, nextForm)) {
+			player.displayClientMessage(Component.translatable("message.dragonminez.form.no_trigger_item"), true);
+			return false;
+		}
+
 		data.getResources().removeEnergy(cost);
 		float[] resourceSnapshot = data.snapshotMultiplierResources();
 		data.getCharacter().recordPreviousStackForm();
 		data.getCharacter().setActiveStackForm(group, nextForm.getName());
+		TransformationItemCostHelper.clearStackFormDurationSecondsRemaining(player);
 		if (!data.getCharacter().getStackFormsUsedBefore().getFormGroup(group).contains(nextForm.getName())) {
 			data.getCharacter().getStackFormsUsedBefore().putForm(group, nextForm.getName());
 		}

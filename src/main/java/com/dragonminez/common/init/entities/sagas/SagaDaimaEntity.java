@@ -912,6 +912,10 @@ public class SagaDaimaEntity {
             }
         }
 
+        // TODO(Yuse): Daima 7 asks for 3 Tamagami kills, but questSpawnsOneAtATime() is not overridden here,
+        //  so QuestService.spawnKillObjectives spawns all 3 at once (147.6k summed melee) and each one also
+        //  reforms on death while kills are pending. The design was a single Tamagami that reforms; verify in game
+        //  and probably override questSpawnsOneAtATime() to return true.
         @Override
         public void remove(RemovalReason reason) {
             if (reason == RemovalReason.KILLED && this.level() instanceof ServerLevel serverLevel

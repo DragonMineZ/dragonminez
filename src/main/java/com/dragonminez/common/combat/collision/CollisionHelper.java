@@ -1,4 +1,4 @@
-package com.dragonminez.client.collision;
+package com.dragonminez.common.combat.collision;
 
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
