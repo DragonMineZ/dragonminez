@@ -121,13 +121,14 @@ public class StrikeAttackHandler {
 	public static final String GRABBED_ANIM = "skp.grabbed";
 	public static final int GRAB_HOLD_TICK = 5;
 	private static final int GRAB_LIFT_TICKS = 7;
-	public static final int GRAB_RELEASE_TICK = 29;
+	public static final int GRAB_RELEASE_TICK = 50;
+	private static final int GRAB_END_TICK = 59;
 	private static final double GRAB_HOLD_GAP = 0.35;
 	private static final double GRAB_LIFT_HEIGHT = 0.6;
 	public static final double GRAB_THROW_FORCE = 1.4;
 	public static final double GRAB_THROW_LIFT = 0.5;
 	private static final float GRAB_SPIN_SIGN = -1.0F;
-	private static final float[][] GRAB_SPIN_KEYS = {{0.4167F, 0.0F}, {0.625F, -75.0F}, {1.3333F, -690.0F}, {1.5F, -745.0F}, {1.625F, -720.0F}};
+	private static final float[][] GRAB_SPIN_KEYS = {{0.4167F, 0.0F}, {0.625F, -75.0F}, {2.0833F, -1410.0F}, {2.25F, -1465.0F}, {2.375F, -1440.0F}};
 	private static final int SPIRIT_CANNON_KNEE_TICK = 6;
 	private static final int SPIRIT_CANNON_UPPERCUT_TICK = 13;
 	private static final int SPIRIT_CANNON_LAUNCH_TICK = 24;
@@ -1283,11 +1284,11 @@ public class StrikeAttackHandler {
 		if (nextTick < GRAB_HOLD_TICK) {
 			target.invulnerableTime = 20;
 			freezeEntity(target);
+			if (nextTick == 1) playVictimHurtPose(player, target, GRABBED_ANIM, DBSagasEntity.HURT_ANIM_GRABBED);
 		} else if (nextTick < GRAB_RELEASE_TICK) {
 			target.invulnerableTime = 20;
 			target.fallDistance = 0.0F;
 			if (nextTick == GRAB_HOLD_TICK) {
-				playVictimHurtPose(player, target, GRABBED_ANIM, DBSagasEntity.HURT_ANIM_GRABBED);
 				if (!(target instanceof ServerPlayer)) {
 					target.addEffect(new MobEffectInstance(MainEffects.STUN.get(), GRAB_RELEASE_TICK - GRAB_HOLD_TICK, 0, false, false, true));
 				}
@@ -1299,7 +1300,7 @@ public class StrikeAttackHandler {
 			throwGrabVictim(player, target, active);
 		}
 
-		if (nextTick >= active.durationTicks()) {
+		if (nextTick >= Math.max(active.durationTicks(), GRAB_END_TICK)) {
 			endStrike(player, target, active);
 			return;
 		}
@@ -1602,7 +1603,6 @@ public class StrikeAttackHandler {
 
 		if (!target.isAlive()) return;
 		KnockbackHelper.apply(target, new Vec3(dir.x * GRAB_THROW_FORCE, GRAB_THROW_LIFT, dir.z * GRAB_THROW_FORCE));
-		playStrikeKnockbackAnimation(target);
 		MomentumImpactHandler.registerCollisionImpact(target, MomentumImpactHandler.CollisionImpactType.WALL,
 				(float) (active.totalDamage() * IMPACT_DAMAGE_RATIO), dir);
 	}

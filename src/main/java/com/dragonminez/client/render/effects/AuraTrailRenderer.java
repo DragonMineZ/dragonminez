@@ -90,6 +90,19 @@ public final class AuraTrailRenderer {
 
 	public static void submitEntityTrail(Entity entity, Matrix4f entityPose, float partialTick, float[] color, float alpha,
 										 int maxSamples, float halfWidth, float anchorBack, float anchorHeight, boolean active) {
+		submitEntityTrail(entity, entityPose, partialTick, color, alpha, maxSamples, halfWidth, anchorBack, anchorHeight, active,
+				ENTITY_CORE_WHITE, ENTITY_BLOOM);
+	}
+
+	public static void submitFlightTrail(Entity entity, Matrix4f entityPose, float partialTick, float[] color, float alpha,
+										 float anchorBack, float anchorHeight) {
+		submitEntityTrail(entity, entityPose, partialTick, color, alpha, MAX_SAMPLES, MAX_HALF_WIDTH, anchorBack, anchorHeight, true,
+				CORE_WHITE, 1.0f);
+	}
+
+	private static void submitEntityTrail(Entity entity, Matrix4f entityPose, float partialTick, float[] color, float alpha,
+										  int maxSamples, float halfWidth, float anchorBack, float anchorHeight, boolean active,
+										  float coreWhite, float bloomAlpha) {
 		if (IrisCompat.isRenderingShadowPass()) return;
 
 		double dx = entity.getX() - entity.xo;
@@ -111,8 +124,8 @@ public final class AuraTrailRenderer {
 		float[] c = color.clone();
 
 		PlayerEffectQueue.addEntityEffect(() -> {
-			if (!renderRibbon(entity, c, alpha, view, projection, partialTick, halfWidth, ENTITY_CORE_WHITE, 1.0f, false)) return;
-			AuraRenderer.captureBloom(() -> renderRibbon(entity, c, alpha, view, projection, partialTick, halfWidth, ENTITY_CORE_WHITE, ENTITY_BLOOM, true));
+			if (!renderRibbon(entity, c, alpha, view, projection, partialTick, halfWidth, coreWhite, 1.0f, false)) return;
+			AuraRenderer.captureBloom(() -> renderRibbon(entity, c, alpha, view, projection, partialTick, halfWidth, coreWhite, bloomAlpha, true));
 		});
 	}
 

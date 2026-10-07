@@ -225,7 +225,7 @@ public class SPDragonFistEntity extends AbstractKiProjectile implements GeoEntit
     }
 
     private PlayState predicate(AnimationState<SPDragonFistEntity> event) {
-        return event.setAndContinue(RawAnimation.begin().thenLoop("idle"));
+        return event.setAndContinue(RawAnimation.begin().thenLoop("rush"));
     }
 
     @Override
