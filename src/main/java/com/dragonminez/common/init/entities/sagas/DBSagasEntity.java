@@ -2407,6 +2407,8 @@ public abstract class DBSagasEntity extends Monster implements GeoEntity, ITextu
 
     public int getNamekDragonBallStars() {return 0;}
 
+    public String getDragonBallTexturePrefix() {return "dballnamekblock";}
+
     public record OutlineStyle(int primaryColor, int secondaryColor, float thickness) {}
 
     public record SupervillainPalette(int tint, float tintAlpha, int flameInner, int flameOuter) {}
