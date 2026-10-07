@@ -52,7 +52,7 @@ public class ForgeClientEvents {
 	@SubscribeEvent
 	public static void RenderHealthBar(RenderGuiOverlayEvent.Pre event) {
 		if (Minecraft.getInstance().player != null) {
-			if (isHasCreatedCharacterCache) {
+			if (isHasCreatedCharacterCache || Minecraft.getInstance().player.getMaxHealth() > 100.0F) {
 				if (VanillaGuiOverlay.PLAYER_HEALTH.type() == event.getOverlay()) {
 					event.setCanceled(true);
 				}
