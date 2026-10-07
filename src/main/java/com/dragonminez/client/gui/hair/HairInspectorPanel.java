@@ -50,6 +50,7 @@ final class HairInspectorPanel implements HairInspectorRows.Context {
 	private HairInspectorRows.NumberRow editing;
 	private final StringBuilder editText = new StringBuilder();
 	private HairStyleSlot copySource = HairStyleSlot.BASE;
+	private HairStyleSlot generateTarget;
 
 	HairInspectorPanel(HairEditorState state, Font font, ColorPickerOpener colorPickerOpener) {
 		this.state = state;
@@ -258,6 +259,12 @@ final class HairInspectorPanel implements HairInspectorRows.Context {
 		rows.add(actions(
 				action("gui.dragonminez.hair_editor.action.copy_style", () -> state.copyStyleFrom(copySource)),
 				action("gui.dragonminez.hair_editor.action.clear_style", state::clearStyle)));
+		rows.add(section(HairEditorUi.tr("gui.dragonminez.hair_editor.section.generate")));
+		rows.add(new HairInspectorRows.InfoRow(() -> HairEditorUi.tr("gui.dragonminez.hair_editor.info.generate"), HairEditorUi.MUTED));
+		rows.add(new HairInspectorRows.ChoiceRow(HairEditorUi.tr("gui.dragonminez.hair_editor.generate_target"), this::generateTargetLabel,
+				() -> generateTarget = nextGenerateTarget(generateTarget), () -> generateTarget = null));
+		rows.add(actions(new HairInspectorRows.Action(HairEditorUi.tr("gui.dragonminez.hair_editor.action.generate"),
+				() -> state.generateFromBase(generateTarget), state::canGenerateFromBase)));
 		rows.add(section(HairEditorUi.tr("gui.dragonminez.hair_editor.help")));
 		rows.add(new HairInspectorRows.InfoRow(() -> HairEditorUi.tr("gui.dragonminez.hair_editor.help.select"), HairEditorUi.MUTED));
 		rows.add(new HairInspectorRows.InfoRow(() -> HairEditorUi.tr("gui.dragonminez.hair_editor.help.grow"), HairEditorUi.MUTED));
@@ -268,6 +275,15 @@ final class HairInspectorPanel implements HairInspectorRows.Context {
 		rows.add(new HairInspectorRows.InfoRow(() -> HairEditorUi.tr("gui.dragonminez.hair_editor.help.orbit"), HairEditorUi.MUTED));
 		rows.add(new HairInspectorRows.InfoRow(() -> HairEditorUi.tr("gui.dragonminez.hair_editor.help.body"), HairEditorUi.MUTED));
 		rows.add(new HairInspectorRows.InfoRow(() -> HairEditorUi.tr("gui.dragonminez.hair_editor.help.reset"), HairEditorUi.MUTED));
+	}
+
+	private Component generateTargetLabel() {
+		if (generateTarget == null) return HairEditorUi.tr("gui.dragonminez.hair_editor.generate_target.all");
+		return HairEditorUi.tr("gui.dragonminez.hair_editor.style." + generateTarget.index());
+	}
+
+	private static HairStyleSlot nextGenerateTarget(HairStyleSlot current) {
+		return current == null ? HairStyleSlot.SSJ : HairStyleSlot.byIndex(current.index() + 1);
 	}
 
 	private Component presetLabel() {

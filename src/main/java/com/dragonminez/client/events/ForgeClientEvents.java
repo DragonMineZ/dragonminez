@@ -69,7 +69,7 @@ public class ForgeClientEvents {
 	@SubscribeEvent
 	public static void RenderHealthBar(RenderGuiOverlayEvent.Pre event) {
 		if (Minecraft.getInstance().player != null) {
-			if (isHasCreatedCharacterCache) {
+			if (isHasCreatedCharacterCache || Minecraft.getInstance().player.getMaxHealth() > 100.0F) {
 				if (VanillaGuiOverlay.PLAYER_HEALTH.type() == event.getOverlay()) {
 					event.setCanceled(true);
 				}
@@ -79,8 +79,6 @@ public class ForgeClientEvents {
 
 	@SubscribeEvent
 	public static void onPlayerClone(ClientPlayerNetworkEvent.Clone event) {
-		// Fired when the local player entity is rebuilt: respawn after death and dimension change.
-		// Lets the quest tree's "Start" button be clickable again without waiting out the cooldown.
 		QuestTreeScreen.clearResummonCooldowns();
 	}
 

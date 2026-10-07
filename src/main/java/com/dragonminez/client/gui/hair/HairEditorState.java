@@ -6,15 +6,18 @@ import com.dragonminez.client.render.hair.HairPickRecorder;
 import com.dragonminez.client.render.hair.HairRenderContext;
 import com.dragonminez.common.hair.CustomHair;
 import com.dragonminez.common.hair.HairColors;
+import com.dragonminez.common.hair.HairJointStyle;
 import com.dragonminez.common.hair.HairLimits;
 import com.dragonminez.common.hair.HairPresets;
 import com.dragonminez.common.hair.HairStrand;
 import com.dragonminez.common.hair.HairStyleSlot;
+import com.dragonminez.common.hair.HairTransformGenerator;
 import net.minecraft.Util;
 import net.minecraft.nbt.CompoundTag;
 
 import java.util.EnumMap;
 import java.util.HashSet;
+import java.util.Map;
 import java.util.Set;
 import java.util.function.Consumer;
 
@@ -237,11 +240,37 @@ final class HairEditorState implements HairRenderContext.Preview {
 		for (HairStyleSlot styleSlot : HairStyleSlot.values()) {
 			CustomHair source = HairPresets.get(newPresetId, styleSlot);
 			CustomHair target = styles.get(styleSlot);
+			CustomHair previous = target.copy();
 			if (source != null) target.copyFrom(source);
 			else target.clear();
+			keepJointStyles(target, previous);
 			target.setGlobalColor(color);
 		}
 		presetId = newPresetId;
+		clampSegmentSelection();
+		return true;
+	}
+
+	boolean canGenerateFromBase() {
+		return !styles.get(HairStyleSlot.BASE).isEmpty();
+	}
+
+	boolean generateFromBase(HairStyleSlot target) {
+		CustomHair base = styles.get(HairStyleSlot.BASE);
+		if (base.isEmpty() || target == HairStyleSlot.BASE) return false;
+		recordStep();
+		String color = globalColor();
+		EnumMap<HairStyleSlot, CustomHair> generated = new EnumMap<>(HairStyleSlot.class);
+		if (target == null) generated.putAll(HairTransformGenerator.generateAll(base, limits));
+		else generated.put(target, HairTransformGenerator.generate(base, target, limits));
+		for (Map.Entry<HairStyleSlot, CustomHair> entry : generated.entrySet()) {
+			CustomHair style = styles.get(entry.getKey());
+			CustomHair previous = style.copy();
+			style.copyFrom(entry.getValue());
+			keepJointStyles(style, previous);
+			style.setGlobalColor(color);
+		}
+		setSlot(target != null ? target : HairStyleSlot.SSJ);
 		clampSegmentSelection();
 		return true;
 	}
@@ -356,14 +385,20 @@ final class HairEditorState implements HairRenderContext.Preview {
 		recordStep();
 		for (HairStyleSlot styleSlot : HairStyleSlot.values()) {
 			CustomHair source = imported.get(styleSlot);
-			if (source != null) styles.get(styleSlot).copyFrom(source);
+			if (source == null) continue;
+			CustomHair target = styles.get(styleSlot);
+			CustomHair previous = target.copy();
+			target.copyFrom(source);
+			keepJointStyles(target, previous);
 		}
 		clampSegmentSelection();
 	}
 
 	void replaceCurrentStyle(CustomHair imported) {
 		recordStep();
+		CustomHair previous = style().copy();
 		style().copyFrom(imported);
+		keepJointStyles(style(), previous);
 		clampSegmentSelection();
 	}
 
@@ -386,6 +421,18 @@ final class HairEditorState implements HairRenderContext.Preview {
 
 	boolean isSlotDirty(HairStyleSlot styleSlot) {
 		return forceDirty || !colorlessTag(styles.get(styleSlot)).equals(initialTags.get(styleSlot));
+	}
+
+	private static void keepJointStyles(CustomHair target, CustomHair previous) {
+		for (CustomHair.HairFace strandFace : CustomHair.HairFace.values()) {
+			for (int index = 0; index < strandFace.maxStrands; index++) {
+				HairStrand before = previous.getStrand(strandFace, index);
+				HairStrand after = target.getStrand(strandFace, index);
+				if (before == null || after == null || !before.isVisible() || !after.isVisible()) continue;
+				if (before.getJointStyle() != HairJointStyle.BLOCKS) after.setJointStyle(before.getJointStyle());
+			}
+		}
+		target.markChanged();
 	}
 
 	private static CompoundTag colorlessTag(CustomHair style) {
