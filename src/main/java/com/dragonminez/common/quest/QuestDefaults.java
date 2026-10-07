@@ -439,11 +439,11 @@ final class QuestDefaults {
 				step("classic", 6, "06_master_roshi.json",
 						earthReq(),
 						new JsonObject[]{ objStructure("dragonminez:roshi_house"), objTalkTo("roshi") },
-						rewAttributes(5)),
+						rewAttributes(2)),
 				step("classic", 7, "07_milk_delivery.json",
 						earthReq(),
 						new JsonObject[]{ objDeliver("minecraft:milk_bucket", 3, "roshi") },
-						rewAttributes(8)),
+						rewAttributes(2)),
 				step("classic", 8, "08_kame_house_sparring.json",
 						earthReq(onIsland()),
 						new JsonObject[]{
@@ -495,7 +495,7 @@ final class QuestDefaults {
 				step("classic", 19, "19_sacred_water.json",
 						earthReq(),
 						new JsonObject[]{ objStructure("dragonminez:kamilookout"), objDeliver("minecraft:water_bucket", 1, "karin") },
-						rewAttributes(10), rewItem("dragonminez:sacred_water", 1), rewItem("dragonminez:red_capsule", 1), rewItem("dragonminez:green_capsule", 1),
+						rewAttributes(2), rewItem("dragonminez:sacred_water", 1), rewItem("dragonminez:red_capsule", 1), rewItem("dragonminez:green_capsule", 1),
 						rewItem("dragonminez:blue_capsule", 1)),
 				step("classic", 20, "20_tao_pai_pai_rematch.json",
 						earthReq(condBiome("#dragonminez:is_plains")),
@@ -514,7 +514,7 @@ final class QuestDefaults {
 				step("classic", 23, "23_fortuneteller_baba.json",
 						earthReq(),
 						new JsonObject[]{ objStructure("dragonminez:baba_palace"), objTalkTo("baba_earth") },
-						rewAttributes(7)),
+						rewAttributes(2)),
 				step("classic", 24, "24_baba_dracula.json",
 						earthReq(atBabaPalace()),
 						new JsonObject[]{ objKill("dragonminez:saga_dracula", 1, 720, 35, 0) },
@@ -544,11 +544,11 @@ final class QuestDefaults {
 				step("classic", 30, "30_heavy_shell_training.json",
 						earthReq(),
 						new JsonObject[]{ objDeliver("minecraft:scute", 1, "roshi") },
-						rewAttributes(12)),
+						rewAttributes(2)),
 				step("classic", 31, "31_22nd_tournament.json",
 						earthReq(),
 						new JsonObject[]{ objBiome("#dragonminez:is_plains") },
-						rewAttributes(6)),
+						rewAttributes(2)),
 				step("classic", 32, "32_tournament_yamcha.json",
 						earthReq(atTournament()),
 						new JsonObject[]{ objKill("dragonminez:saga_young_yamcha", 1, 1100, 58, 50) },
@@ -615,7 +615,7 @@ final class QuestDefaults {
 				step("classic", 46, "46_lookout_training.json",
 						earthReq(),
 						new JsonObject[]{ objStructure("dragonminez:kamilookout"), objDeliver("minecraft:emerald", 5, "popo") },
-						rewAttributes(13)),
+						rewAttributes(4)),
 				step("classic", 47, "47_cyborg_tao_pai_pai.json",
 						earthReq(atTournament()),
 						new JsonObject[]{ objKill("dragonminez:saga_tao_pai_pai_cyborg", 1, 1450, 78, 80) },
@@ -639,7 +639,7 @@ final class QuestDefaults {
 				step("classic", 52, "52_tournament_finale.json",
 						earthReq(),
 						new JsonObject[]{ objStructure("dragonminez:goku_house"), objTalkTo("goku") },
-						rewAttributes(14), rewItem("dragonminez:senzu_bean", 3))
+						rewAttributes(2), rewItem("dragonminez:senzu_bean", 3))
 		);
 	}
 
@@ -662,7 +662,7 @@ final class QuestDefaults {
 								objStructure("dragonminez:piccolo_house"),
 								objTalkTo("piccolo")
 						},
-						rewAttributes(18)),
+						rewAttributes(2)),
 				step("saiyan", 3, "03_survive_wilderness_training.json",
 						earthReq(condBiome("#dragonminez:is_plains")),
 						new JsonObject[]{
@@ -687,7 +687,7 @@ final class QuestDefaults {
 								objStructure("dragonminez:kamilookout"),
 								objDeliver("dragonminez:cooked_dino_meat", 6, "popo")
 						},
-						rewAttributes(17)),
+						rewAttributes(3)),
 				step("saiyan", 7, "07_lookout_sparring.json",
 						earthReq(condStructure("dragonminez:kamilookout")),
 						new JsonObject[]{
@@ -713,7 +713,7 @@ final class QuestDefaults {
 								objStructure("dragonminez:kamilookout"),
 								objTalkTo("karin")
 						},
-						rewAttributes(18), rewItem("dragonminez:senzu_bean", 3)),
+						rewAttributes(2), rewItem("dragonminez:senzu_bean", 3)),
 				step("saiyan", 11, "11_face_vegeta.json",
 						earthReq(condBiome("dragonminez:rocky")),
 						new JsonObject[]{
@@ -732,7 +732,7 @@ final class QuestDefaults {
 								objStructure("dragonminez:roshi_house"),
 								objDeliver("minecraft:golden_carrot", 12, "krillin")
 						},
-						rewAttributes(20)),
+						rewAttributes(3)),
 				step("saiyan", 14, "14_repair_the_saiyan_pod.json",
 						earthReq(),
 						new JsonObject[]{
@@ -741,19 +741,19 @@ final class QuestDefaults {
 								objDeliver("minecraft:redstone_block", 4, "bulma"),
 								objDeliver("minecraft:diamond", 4, "bulma")
 						},
-						rewAttributes(25)),
+						rewAttributes(13)),
 				step("saiyan", 15, "15_prepare_for_namek.json",
 						earthReq(condRealTimeMinutes(5)),
 						new JsonObject[]{
 								objTalkTo("bulma")
 						},
-						rewAttributes(19), rewItem("dragonminez:saiyan_ship", 1)),
+						rewAttributes(2), rewItem("dragonminez:saiyan_ship", 1)),
 				step("saiyan", 16, "16_head_to_namek.json",
 						earthReq(),
 						new JsonObject[]{
 								objDimension("dragonminez:namek")
 						},
-						rewAttributes(19))
+						rewAttributes(2))
 		);
 	}
 
@@ -775,7 +775,7 @@ final class QuestDefaults {
 						new JsonObject[]{
 								objStructure("dragonminez:namek_ruins")
 						},
-						rewAttributes(25)),
+						rewAttributes(2)),
 				step("frieza", 2, "02_defeat_cui.json",
 						namekReq(condBiome("dragonminez:ajissa_plains")),
 						new JsonObject[]{
@@ -806,7 +806,7 @@ final class QuestDefaults {
 								objStructure("dragonminez:elder_guru"),
 								objTalkTo("guru")
 						},
-						rewAttributes(30)),
+						rewAttributes(3)),
 				step("frieza", 6, "06_the_saiyan_prince.json",
 						namekReq(condBiome("dragonminez:ajissa_plains")),
 						new JsonObject[]{
@@ -868,7 +868,7 @@ final class QuestDefaults {
 						new JsonObject[]{
 								objDragonSummon("porunga", "namek")
 						},
-						rewAttributes(50)),
+						rewAttributes(25)),
 				step("frieza", 12, "12_defeat_frieza_first.json",
 						namekReq(condBiome("dragonminez:ajissa_plains")),
 						new JsonObject[]{
@@ -898,7 +898,7 @@ final class QuestDefaults {
 						new JsonObject[]{
 								objDimension("minecraft:overworld")
 						},
-						rewAttributes(40))
+						rewAttributes(5))
 		);
 	}
 
@@ -927,13 +927,13 @@ final class QuestDefaults {
 						new JsonObject[]{
 								objStructure("dragonminez:trunks_ship")
 						},
-						rewAttributes(25)),
+						rewAttributes(5)),
 				step("android", 3, "03_warning_from_the_future.json",
 						earthReq(),
 						new JsonObject[]{
 								objTalkTo("trunks")
 						},
-						rewAttributes(30)),
+						rewAttributes(4)),
 				step("android", 4, "04_three_year_training.json",
 						earthReq(condRealTimeMinutes(15)),
 						new JsonObject[]{
@@ -946,7 +946,7 @@ final class QuestDefaults {
 								objStructure("dragonminez:goku_house"),
 								objDeliver("minecraft:glistering_melon_slice", 8, "goku")
 						},
-						rewAttributes(30)),
+						rewAttributes(6)),
 				step("android", 5, "05_defeat_a19.json",
 						earthReq(condBiome("dragonminez:rocky")),
 						new JsonObject[]{
@@ -966,13 +966,13 @@ final class QuestDefaults {
 								objItem("minecraft:paper", 16),
 								objTalkTo("bulma")
 						},
-						rewAttributes(35)),
+						rewAttributes(7)),
 				step("android", 7, "07_track_android_signal.json",
 						earthReq(),
 						new JsonObject[]{
 								objBiome("#minecraft:is_mountain")
 						},
-						rewAttributes(25)),
+						rewAttributes(5)),
 				step("android", 8, "08_defeat_a18.json",
 						earthReq(condBiome("#minecraft:is_mountain")),
 						new JsonObject[]{
@@ -1008,7 +1008,7 @@ final class QuestDefaults {
 						new JsonObject[]{
 								objStructure("dragonminez:cell_arena")
 						},
-						rewAttributes(30)),
+						rewAttributes(6)),
 				step("android", 12, "12_beyond_super_saiyan.json",
 						earthReq(condRealTimeMinutes(10)),
 						new JsonObject[]{
@@ -1021,7 +1021,7 @@ final class QuestDefaults {
 								objStructure("dragonminez:kamilookout"),
 								objTalkTo("dende")
 						},
-						rewAttributes(30)),
+						rewAttributes(6)),
 				step("android", 22, "12c_father_and_son_spar.json",
 						earthReq(condBiome("#dragonminez:is_plains")),
 						new JsonObject[]{
@@ -1062,7 +1062,7 @@ final class QuestDefaults {
 						new JsonObject[]{
 								objTalkTo("trunks")
 						},
-						rewAttributes(40)),
+						rewAttributes(4)),
 				step("future", 2, "02_train_with_trunks_and_gohan.json",
 						earthReq(condBiome("#dragonminez:is_plains")),
 						new JsonObject[]{
@@ -1101,7 +1101,7 @@ final class QuestDefaults {
 						new JsonObject[]{
 								objTalkTo("trunks")
 						},
-						rewAttributes(60))
+						rewAttributes(5))
 		);
 	}
 
@@ -1126,7 +1126,7 @@ final class QuestDefaults {
 								objSkill("fly", 1),
 								objTalkTo("gohan")
 						},
-						rewAttributes(30)),
+						rewAttributes(14)),
 				step("buu", 2, "02_assemble_gravity_device_parts.json",
 						earthReq(),
 						new JsonObject[]{
@@ -1134,7 +1134,7 @@ final class QuestDefaults {
 								objItem("dragonminez:fuel_generator", 1),
 								objItem("dragonminez:energy_cable", 8)
 						},
-						rewAttributes(70)),
+						rewAttributes(11)),
 				step("buu", 3, "03_train_with_trunks_and_vegeta.json",
 						earthReq(condRealTimeMinutes(10)),
 						new JsonObject[]{
@@ -1147,7 +1147,7 @@ final class QuestDefaults {
 						new JsonObject[]{
 								objTalkTo("piccolo")
 						},
-						rewAttributes(50)),
+						rewAttributes(6)),
 				step("buu", 37, "04b_tournament_preliminaries.json",
 						earthReq(atTournament()),
 						new JsonObject[]{
@@ -1189,7 +1189,7 @@ final class QuestDefaults {
 						new JsonObject[]{
 								objStructure("dragonminez:babidi")
 						},
-						rewAttributes(55)),
+						rewAttributes(8)),
 				step("buu", 11, "11_babidi_level_pui_pui.json",
 						earthReq(condStructure("dragonminez:babidi")),
 						new JsonObject[]{
@@ -1233,7 +1233,7 @@ final class QuestDefaults {
 								objDeliver("minecraft:bread", 32, "bulma"),
 								objDeliver("minecraft:cooked_beef", 24, "bulma")
 						},
-						rewAttributes(40)),
+						rewAttributes(15)),
 				step("buu", 17, "17_stop_babidi.json",
 						earthReq(condBiome("dragonminez:rocky")),
 						new JsonObject[]{
@@ -1289,7 +1289,7 @@ final class QuestDefaults {
 								objItem("dragonminez:z_sword", 1),
 								objSkill("ultimate", 1)
 						},
-						rewAttributes(110)),
+						rewAttributes(25)),
 				step("buu", 40, "24b_ultimate_gohan.json",
 						sacredKaiReq(),
 						new JsonObject[]{
@@ -1332,7 +1332,7 @@ final class QuestDefaults {
 						new JsonObject[]{
 								objDimension("dragonminez:sacredkaiplanet")
 						},
-						rewAttributes(70)),
+						rewAttributes(10)),
 				step("buu", 30, "30_kid_buu.json",
 						sacredKaiReq(),
 						new JsonObject[]{
@@ -1345,7 +1345,7 @@ final class QuestDefaults {
 								objStructure("dragonminez:oldkai_pillar"),
 								objTalkTo("oldkai")
 						},
-						rewAttributes(60)),
+						rewAttributes(10)),
 				step("buu", 31, "31_goku_ssj3_final_stand.json",
 						sacredKaiReq(),
 						new JsonObject[]{
@@ -1375,7 +1375,7 @@ final class QuestDefaults {
 						new JsonObject[]{
 								objDimension("minecraft:overworld")
 						},
-						rewAttributes(80))
+						rewAttributes(11))
 		);
 	}
 
@@ -1393,7 +1393,7 @@ final class QuestDefaults {
 								objStructure("dragonminez:kamilookout"),
 								objTalkTo("dende")
 						},
-						rewAttributes(10)),
+						rewAttributes(2)),
 				step("movies", 2, "02_garlic_jr_in_the_wasteland.json",
 						earthReq(condBiome("dragonminez:rocky"), condSaga("saiyan_saga", 11)),
 						new JsonObject[]{
@@ -1411,7 +1411,7 @@ final class QuestDefaults {
 						new JsonObject[]{
 								objBiome("minecraft:snowy_plains")
 						},
-						rewAttributes(25)),
+						rewAttributes(2)),
 				step("movies", 5, "05_wheelo_controlled_allies.json",
 						earthReq(condBiome("minecraft:snowy_plains"), condSaga("saiyan_saga", 12)),
 						new JsonObject[]{
@@ -1430,7 +1430,7 @@ final class QuestDefaults {
 						new JsonObject[]{
 								objBiome("dragonminez:rocky")
 						},
-						rewAttributes(30)),
+						rewAttributes(2)),
 				step("movies", 8, "08_turles_goku.json",
 						earthReq(condBiome("dragonminez:rocky"), condSaga("saiyan_saga", 12)),
 						new JsonObject[]{
@@ -1666,7 +1666,7 @@ final class QuestDefaults {
 								objDeliver("minecraft:iron_block", 8, "bulma"),
 								objDeliver("dragonminez:saiyan_ship", 1, "bulma")
 						},
-						rewAttributes(80), rewItem("dragonminez:dball_radar", 1)),
+						rewAttributes(55), rewItem("dragonminez:dball_radar", 1)),
 				step("gt", 3, "03_ledgic.json",
 						namekReq(),
 						new JsonObject[]{ objKill("dragonminez:saga_ledgic", 1, 833500, 35020, 31690) },
@@ -1698,7 +1698,7 @@ final class QuestDefaults {
 				step("gt", 9, "09_return_to_earth.json",
 						namekReq(),
 						new JsonObject[]{ objDimension("minecraft:overworld") },
-						rewAttributes(85)),
+						rewAttributes(14)),
 
 				// --- Baby ---
 				step("gt", 10, "10_possessed_goten.json",
@@ -1745,7 +1745,7 @@ final class QuestDefaults {
 								objStructure("dragonminez:oldkai_pillar"),
 								objTalkTo("oldkai")
 						},
-						rewAttributes(95)),
+						rewAttributes(15)),
 				step("gt", 19, "19_goku_regains_his_tail.json",
 						sacredKaiReq(),
 						new JsonObject[]{ transformStats(objKill("dragonminez:saga_goku_gt", 1, 304000, 35110, 31770), 456000, 40380, 36540) },
@@ -1820,7 +1820,7 @@ final class QuestDefaults {
 				step("gt", 31, "31_the_cracked_dragon_balls.json",
 						earthReq(),
 						new JsonObject[]{ objDragonSummon("shenron", "earth") },
-						rewAttributes(110)),
+						rewAttributes(120)),
 				step("gt", 32, "32_liang_xing_long.json",
 						earthReq(condBiome("minecraft:swamp")),
 						new JsonObject[]{ objKill("dragonminez:saga_liang_xing_long", 1, 1571000, 66010, 59740) },
@@ -1922,7 +1922,7 @@ final class QuestDefaults {
 								objStructure("dragonminez:goku_house"),
 								objTalkTo("goku")
 						},
-						rewAttributes(75)),
+						rewAttributes(10)),
 				step("daima", 3, "03_to_the_demon_realm.json",
 						earthReq(),
 						new JsonObject[]{
@@ -1931,11 +1931,11 @@ final class QuestDefaults {
 								objDeliver("minecraft:redstone_block", 8, "bulma"),
 								objDeliver("minecraft:amethyst_shard", 16, "bulma")
 						},
-						rewAttributes(80)),
+						rewAttributes(55)),
 				step("daima", 4, "04_the_third_demon_world.json",
 						null,
 						new JsonObject[]{ objBiome(THIRD_DEMON_WORLD) },
-						rewAttributes(80)),
+						rewAttributes(10)),
 				step("daima", 5, "05_demon_bandits.json",
 						demonRealmReq(condBiome(THIRD_DEMON_WORLD)),
 						new JsonObject[]{ objKill("dragonminez:bandit", 10, 120000, 4460, 4035) },
@@ -1955,7 +1955,7 @@ final class QuestDefaults {
 				step("daima", 9, "09_the_second_demon_world.json",
 						demonRealmReq(),
 						new JsonObject[]{ objBiome(SECOND_DEMON_WORLD) },
-						rewAttributes(100)),
+						rewAttributes(14)),
 				step("daima", 10, "10_tamagami_number_2.json",
 						demonRealmReq(condBiome(SECOND_DEMON_WORLD)),
 						new JsonObject[]{ transformStats(objKill("dragonminez:saga_tamagami_2", 1, 1577500, 66300, 59990), 1577500, 76250, 68990) },
@@ -1967,7 +1967,7 @@ final class QuestDefaults {
 				step("daima", 12, "12_the_first_demon_world.json",
 						demonRealmReq(),
 						new JsonObject[]{ objBiome(FIRST_DEMON_WORLD) },
-						rewAttributes(120)),
+						rewAttributes(17)),
 				step("daima", 13, "13_tamagami_number_1.json",
 						demonRealmReq(condBiome(FIRST_DEMON_WORLD)),
 						new JsonObject[]{ transformStats(objKill("dragonminez:saga_tamagami_1", 1, 2125000, 89310, 80810), 2125000, 102710, 92930) },

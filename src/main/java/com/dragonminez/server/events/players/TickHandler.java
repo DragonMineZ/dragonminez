@@ -45,6 +45,7 @@ import com.dragonminez.server.events.players.combat.KiTechniqueHandler;
 import com.dragonminez.server.events.players.statuseffect.*;
 import com.dragonminez.server.util.BabaReviveService;
 import com.dragonminez.server.util.BeetleFusionTracker;
+import com.dragonminez.server.util.FusionDanceAligner;
 import com.dragonminez.server.util.FusionLogic;
 import com.dragonminez.server.util.GravityLogic;
 import com.dragonminez.server.util.GravityStateSync;
@@ -261,6 +262,7 @@ public class TickHandler {
 				serverPlayer.yHeadRot = serverPlayer.yHeadRotO;
 				serverPlayer.yBodyRot = serverPlayer.yBodyRotO;
 			}
+			FusionDanceAligner.tick(serverPlayer, data);
 
 			if (serverPlayer.tickCount % 10 == 0
 					&& data.getStatus().getPotaraPoseTimer() == 0

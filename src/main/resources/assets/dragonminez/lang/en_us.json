@@ -1718,6 +1718,7 @@
   "message.dragonminez.racial.bioandroid.explode_reverting": "§eYour body is still settling down...",
   "message.dragonminez.racial.majin.eject_confirm": "§eClick again within 5 seconds to eject this slot.",
   "message.dragonminez.fusion.different_race": "§cYou can only fuse (Metamoru) with players of the same race.",
+  "message.dragonminez.fusion.different_form": "§cYou can only fuse (Metamoru) while both of you are in the same form.",
   "message.dragonminez.fusion.level_gap": "§cYou can only fuse (Metamoru) with a player similar in level to you.",
   "message.dragonminez.fusion.android_cannot_fuse": "§cAndroids cannot perform fusion.",
   "message.dragonminez.fusion.success": "§aYou have successfully fused with %s §a!",
