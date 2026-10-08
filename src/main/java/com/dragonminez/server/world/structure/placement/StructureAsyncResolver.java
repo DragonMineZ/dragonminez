@@ -37,6 +37,7 @@ public final class StructureAsyncResolver {
 			} catch (Throwable t) {
 				System.err.println("[DMZ] StructureAsyncResolver build failed: " + t.getMessage());
 				holder.publish(java.util.Collections.emptyMap());
+				holder.primaryDone = true;
 			}
 		});
 	}
@@ -46,6 +47,7 @@ public final class StructureAsyncResolver {
 		} catch (Throwable t) {
 			System.err.println("[DMZ] StructureAsyncResolver sync build failed: " + t.getMessage());
 			holder.publish(java.util.Collections.emptyMap());
+			holder.primaryDone = true;
 		}
 	}
 

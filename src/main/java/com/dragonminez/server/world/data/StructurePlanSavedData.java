@@ -20,6 +20,7 @@ public class StructurePlanSavedData extends SavedData {
 	private boolean resolved = false;
 	private final Map<Integer, ChunkPos> positions = new HashMap<>();
 	private final Set<Integer> built = new HashSet<>();
+	private final Set<Integer> exhausted = new HashSet<>();
 
 	public static StructurePlanSavedData get(ServerLevel level) {
 		return level.getDataStorage().computeIfAbsent(StructurePlanSavedData::load, StructurePlanSavedData::new, NAME);
@@ -32,9 +33,16 @@ public class StructurePlanSavedData extends SavedData {
 	public Map<Integer, ChunkPos> getPositions() {
 		return Collections.unmodifiableMap(positions);
 	}
-	public void setPositions(Map<Integer, ChunkPos> newPositions, boolean complete) {
+	public Set<Integer> getExhausted() {
+		return Collections.unmodifiableSet(exhausted);
+	}
+
+	public void setPositions(Map<Integer, ChunkPos> newPositions, Set<Integer> newExhausted, boolean complete) {
 		this.positions.clear();
 		if (newPositions != null) this.positions.putAll(newPositions);
+		this.exhausted.clear();
+		if (newExhausted != null) this.exhausted.addAll(newExhausted);
+		this.exhausted.removeAll(this.positions.keySet());
 		this.resolved = complete;
 		setDirty();
 	}
@@ -67,6 +75,7 @@ public class StructurePlanSavedData extends SavedData {
 		} else {
 			data.built.addAll(data.positions.keySet());
 		}
+		for (int salt : tag.getIntArray("exhausted")) data.exhausted.add(salt);
 		return data;
 	}
 
@@ -87,6 +96,7 @@ public class StructurePlanSavedData extends SavedData {
 		int i = 0;
 		for (int salt : built) builtArray[i++] = salt;
 		tag.putIntArray("built", builtArray);
+		tag.putIntArray("exhausted", exhausted.stream().mapToInt(Integer::intValue).toArray());
 		return tag;
 	}
 }
