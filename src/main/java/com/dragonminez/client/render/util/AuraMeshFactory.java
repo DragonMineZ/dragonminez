@@ -17,12 +17,15 @@ public class AuraMeshFactory {
 	private static final int SPARKING_SEGMENTS = 128;
 	private static final int TORNADO_RINGS = 48;
 	private static final int TORNADO_SEGMENTS = 64;
+	private static final int GOD_RINGS = 96;
+	private static final int GOD_SEGMENTS = 96;
 
 	private static VertexBuffer billboardQuad;
 	private static VertexBuffer groundQuad;
 	private static VertexBuffer sparkingFlame;
 	private static VertexBuffer fullscreenQuad;
 	private static VertexBuffer tornado;
+	private static VertexBuffer godFlame;
 	private static final Map<Integer, VertexBuffer> DROPLETS = new HashMap<>();
 
 	public static VertexBuffer getFullscreenQuad() {
@@ -202,6 +205,39 @@ public class AuraMeshFactory {
 			VertexBuffer.unbind();
 		}
 		return tornado;
+	}
+
+	public static VertexBuffer getGodFlameMesh() {
+		if (godFlame == null) {
+			godFlame = new VertexBuffer(VertexBuffer.Usage.STATIC);
+			BufferBuilder builder = Tesselator.getInstance().getBuilder();
+			builder.begin(VertexFormat.Mode.QUADS, DefaultVertexFormat.POSITION_TEX);
+
+			for (int i = 0; i < GOD_RINGS; i++) {
+				float t1 = (float) i / GOD_RINGS;
+				float t2 = (float) (i + 1) / GOD_RINGS;
+				for (int j = 0; j < GOD_SEGMENTS; j++) {
+					float u1 = (float) j / GOD_SEGMENTS;
+					float u2 = (float) (j + 1) / GOD_SEGMENTS;
+					godVertex(builder, u1, t1);
+					godVertex(builder, u2, t1);
+					godVertex(builder, u2, t2);
+					godVertex(builder, u1, t2);
+				}
+			}
+
+			godFlame.bind();
+			godFlame.upload(builder.end());
+			VertexBuffer.unbind();
+		}
+		return godFlame;
+	}
+
+	private static void godVertex(BufferBuilder builder, float u, float t) {
+		double y = t * 2.0 - 1.0;
+		double radius = Math.pow(Math.sqrt(Math.max(0.0, 1.0 - y * y)), 0.9) * (0.86 + 0.30 * Math.pow(1.0 - t, 1.3));
+		double angle = u * Math.PI * 2.0;
+		builder.vertex((float) (Math.cos(angle) * radius), t, (float) (Math.sin(angle) * radius)).uv(u, t).endVertex();
 	}
 
 	public static VertexBuffer getSparkingFlameMesh() {

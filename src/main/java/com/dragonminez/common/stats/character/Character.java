@@ -270,7 +270,7 @@ public class Character {
 
 	public String getAura3DType() {
 		aura3DType = FormConfig.sanitizeAura3DPreference(aura3DType);
-		return aura3DType;
+		return FormConfig.sanitizeAura3DPreference(aura3DType, getRaceName());
 	}
 
 	public void setAura3DType(String type) {

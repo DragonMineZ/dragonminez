@@ -3,6 +3,7 @@ package com.dragonminez.client.events;
 import com.dragonminez.Reference;
 import com.dragonminez.client.render.effects.AuraBorderRenderer;
 import com.dragonminez.client.render.effects.AuraRenderer;
+import com.dragonminez.client.render.effects.AuraTrailRenderer;
 import com.dragonminez.client.render.effects.KiWeaponRenderer;
 import com.dragonminez.client.render.shader.BloomPipeline;
 import com.dragonminez.client.render.shader.DMZShaders;
@@ -177,7 +178,16 @@ public class PlayerEffectsRenderHandler {
 		}
 
 		AuraRenderer.processFusionFlashes(mc, gameTime, partialTick, poseStack, buffers);
-		buffers.endBatch();
+		PoseStack modelView = RenderSystem.getModelViewStack();
+		modelView.pushPose();
+		modelView.setIdentity();
+		RenderSystem.applyModelViewMatrix();
+		try {
+			buffers.endBatch();
+		} finally {
+			modelView.popPose();
+			RenderSystem.applyModelViewMatrix();
+		}
 
 		enqueueExplosionBursts(mc, poseStack, buffers, partialTick);
 
@@ -204,6 +214,7 @@ public class PlayerEffectsRenderHandler {
 			AuraRenderer.processThirdPersonAuras(mc, poseStack, projectionMatrix, CURRENT_FRAME_PLAYERS, isFirstPerson, isCameraColliding);
 			AuraRenderer.processFirstPersonAuras(mc, poseStack, projectionMatrix, partialTick, CURRENT_FRAME_PLAYERS, isFirstPerson);
 			AuraRenderer.processGhostAuras(mc, poseStack, projectionMatrix, partialTick, CURRENT_FRAME_PLAYERS);
+			AuraTrailRenderer.renderDetached(poseStack, projectionMatrix, partialTick);
 			AuraRenderer.processSparks(poseStack, projectionMatrix, isFirstPerson);
 
 			var entityEffects = PlayerEffectQueue.getAndClearEntityEffects();

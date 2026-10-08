@@ -49,6 +49,13 @@ public final class HairEntityState {
 	private float windPhase;
 	private long lastSeenMs;
 	private final Vector3d particleAnchor = new Vector3d();
+	private final Vector3d frameAnchor = new Vector3d();
+	private final Vector3d sampleAnchor = new Vector3d();
+	private final Vector3d rawAnchor = new Vector3d();
+	private final Vector3d smoothAnchor = new Vector3d();
+	private final Vector3d simAnchor = new Vector3d();
+	private final Vector3f stepAnchorDelta = new Vector3f();
+	private double anchorSpeed;
 	private final Vector3f stepHeadPosition = new Vector3f();
 	private final Quaternionf stepHeadRotation = new Quaternionf();
 	private float stepHeadScale = 1.0f;
@@ -63,6 +70,7 @@ public final class HairEntityState {
 	private final Quaternionf localRotation = new Quaternionf();
 	private final Vector3f startHeadPosition = new Vector3f();
 	private final Quaternionf startHeadRotation = new Quaternionf();
+	private float startHeadScale = 1.0f;
 	private final Vector3f cursor = new Vector3f();
 	private final Vector3f start = new Vector3f();
 	private final Vector3f restDirection = new Vector3f();
@@ -73,6 +81,7 @@ public final class HairEntityState {
 	private final Vector3f predicted = new Vector3f();
 	private final Vector3f lastTarget = new Vector3f();
 	private final Vector3f acceleration = new Vector3f();
+	private final Vector3f wind = new Vector3f();
 	private final Vector3f direction = new Vector3f();
 	private final Vector3f scratch = new Vector3f();
 	private final Vector3f scales = new Vector3f();
@@ -233,56 +242,102 @@ public final class HairEntityState {
 
 		double elapsed = (nowNanos - lastNanos) / 1.0e9;
 		lastNanos = nowNanos;
-		double jump = particleAnchor.distance(anchorX, anchorY, anchorZ);
-		if (elapsed > HairSimulation.RESET_AFTER_SECONDS || jump > HairSimulation.TELEPORT_DISTANCE) {
+		double jump = frameAnchor.distance(anchorX, anchorY, anchorZ);
+		double expected = anchorSpeed * Math.max(elapsed, 0.0) * HairSimulation.TELEPORT_SPEED_ALLOWANCE;
+		if (elapsed > HairSimulation.RESET_AFTER_SECONDS || jump > HairSimulation.TELEPORT_DISTANCE + expected) {
 			restart(anchorX, anchorY, anchorZ, frameHeadScale, nowNanos);
 			return;
 		}
+		if (elapsed > 1.0e-6) {
+			float follow = (float) (1.0 - Math.exp(-elapsed / HairSimulation.ANCHOR_SPEED_SMOOTHING));
+			anchorSpeed += (jump / elapsed - anchorSpeed) * follow;
+		}
 		if (elapsed > HairSimulation.MAX_FRAME_SECONDS) {
 			zeroVelocities();
+			sampleAnchor.set(anchorX, anchorY, anchorZ);
+			carryAnchor();
+			stepHeadPosition.set(frameHeadPosition);
+			stepHeadRotation.set(frameHeadRotation);
+			stepHeadScale = frameHeadScale;
+			storeFrame(anchorX, anchorY, anchorZ, frameHeadScale);
+			accumulator = 0.0;
 			elapsed = HairSimulation.STEP_SECONDS;
 		}
 
+		double previousAccumulator = accumulator;
 		accumulator += elapsed;
 		int steps = (int) (accumulator / HairSimulation.STEP_SECONDS);
+		double skipped = 0.0;
 		if (steps > maxSubsteps) {
+			skipped = (steps - maxSubsteps) * HairSimulation.STEP_SECONDS;
 			steps = maxSubsteps;
-			accumulator = steps * HairSimulation.STEP_SECONDS;
+			accumulator -= skipped;
 		}
 
-		double startX = particleAnchor.x;
-		double startY = particleAnchor.y;
-		double startZ = particleAnchor.z;
-		startHeadPosition.set(stepHeadPosition);
-		startHeadRotation.set(stepHeadRotation);
-		float startHeadScale = stepHeadScale;
+		double span = Math.max(elapsed, 1.0e-9);
+		if (skipped > 0.0) {
+			sampleFrame(HairMath.clamp((float) ((skipped - previousAccumulator) / span), 0.0f, 1.0f), anchorX, anchorY, anchorZ, frameHeadScale);
+			carryAnchor();
+		}
 
+		double follow = 1.0 - Math.exp(-HairSimulation.STEP_SECONDS / HairSimulation.ANCHOR_SMOOTHING);
 		for (int i = 1; i <= steps; i++) {
-			float fraction = (float) i / steps;
-			double stepAnchorX = startX + (anchorX - startX) * fraction;
-			double stepAnchorY = startY + (anchorY - startY) * fraction;
-			double stepAnchorZ = startZ + (anchorZ - startZ) * fraction;
-			shiftParticles((float) (stepAnchorX - particleAnchor.x), (float) (stepAnchorY - particleAnchor.y), (float) (stepAnchorZ - particleAnchor.z));
-			particleAnchor.set(stepAnchorX, stepAnchorY, stepAnchorZ);
-
-			startHeadPosition.lerp(frameHeadPosition, fraction, stepHeadPosition);
-			startHeadRotation.slerp(frameHeadRotation, fraction, stepHeadRotation);
-			stepHeadScale = HairMath.lerp(fraction, startHeadScale, frameHeadScale);
+			float fraction = HairMath.clamp((float) ((skipped + i * HairSimulation.STEP_SECONDS - previousAccumulator) / span), 0.0f, 1.0f);
+			sampleFrame(fraction, anchorX, anchorY, anchorZ, frameHeadScale);
+			rawAnchor.set(sampleAnchor);
+			smoothAnchor.lerp(sampleAnchor, follow);
+			simAnchor.lerp(smoothAnchor, follow);
+			stepAnchorDelta.set((float) (simAnchor.x - particleAnchor.x), (float) (simAnchor.y - particleAnchor.y), (float) (simAnchor.z - particleAnchor.z));
+			shiftParticles(stepAnchorDelta.x, stepAnchorDelta.y, stepAnchorDelta.z);
+			particleAnchor.set(simAnchor);
 
 			windPhase += (float) HairSimulation.STEP_SECONDS * HairMath.lerp(chargeProgress, HairSimulation.IDLE_WIND_SPEED, HairSimulation.CHARGE_WIND_SPEED);
 			substep(chargeProgress, auraIntensity);
 			accumulator -= HairSimulation.STEP_SECONDS;
 		}
 
+		storeFrame(anchorX, anchorY, anchorZ, frameHeadScale);
 		if (accumulator < 0.0) accumulator = 0.0;
 		renderAlpha = (float) Math.min(1.0, accumulator / HairSimulation.STEP_SECONDS);
 	}
 
+	private void carryAnchor() {
+		double dx = sampleAnchor.x - rawAnchor.x;
+		double dy = sampleAnchor.y - rawAnchor.y;
+		double dz = sampleAnchor.z - rawAnchor.z;
+		rawAnchor.set(sampleAnchor);
+		smoothAnchor.add(dx, dy, dz);
+		simAnchor.add(dx, dy, dz);
+		particleAnchor.set(simAnchor);
+	}
+
+	private void sampleFrame(float fraction, double anchorX, double anchorY, double anchorZ, float frameHeadScale) {
+		sampleAnchor.set(frameAnchor.x + (anchorX - frameAnchor.x) * fraction,
+				frameAnchor.y + (anchorY - frameAnchor.y) * fraction,
+				frameAnchor.z + (anchorZ - frameAnchor.z) * fraction);
+		startHeadPosition.lerp(frameHeadPosition, fraction, stepHeadPosition);
+		startHeadRotation.slerp(frameHeadRotation, fraction, stepHeadRotation);
+		stepHeadScale = HairMath.lerp(fraction, startHeadScale, frameHeadScale);
+	}
+
+	private void storeFrame(double anchorX, double anchorY, double anchorZ, float frameHeadScale) {
+		frameAnchor.set(anchorX, anchorY, anchorZ);
+		startHeadPosition.set(frameHeadPosition);
+		startHeadRotation.set(frameHeadRotation);
+		startHeadScale = frameHeadScale;
+	}
+
 	private void restart(double anchorX, double anchorY, double anchorZ, float headScale, long nowNanos) {
 		particleAnchor.set(anchorX, anchorY, anchorZ);
+		rawAnchor.set(anchorX, anchorY, anchorZ);
+		smoothAnchor.set(anchorX, anchorY, anchorZ);
+		simAnchor.set(anchorX, anchorY, anchorZ);
+		stepAnchorDelta.zero();
 		stepHeadPosition.set(frameHeadPosition);
 		stepHeadRotation.set(frameHeadRotation);
 		stepHeadScale = headScale;
+		storeFrame(anchorX, anchorY, anchorZ, headScale);
+		anchorSpeed = 0.0;
 		accumulator = 0.0;
 		renderAlpha = 1.0f;
 		lastNanos = nowNanos;
@@ -378,6 +433,7 @@ public final class HairEntityState {
 		float dt = (float) HairSimulation.STEP_SECONDS;
 		float dtSquared = dt * dt;
 		float dragFactor = HairSimulation.AIR_DRAG * dt;
+		float calm = 1.0f - windScale(stepAnchorDelta.length() / dt);
 		stepHeadRotation.conjugate(substepInverse);
 
 		for (int flat = 0; flat < STRAND_COUNT; flat++) {
@@ -421,10 +477,11 @@ public final class HairEntityState {
 				if (speed > maxStep) velocity.mul(maxStep / speed);
 
 				buildAcceleration(flat, k, physics, chargeProgress, auraIntensity);
+				wind.set(stepAnchorDelta).mul(-calm).add(targetVelocity).mul(dragFactor);
 				next.set(current).sub(lastTarget).mul(1.0f - stiffness)
 						.add(target).add(velocity)
 						.add(acceleration.x * dtSquared, acceleration.y * dtSquared, acceleration.z * dtSquared)
-						.sub(targetVelocity.x * dragFactor, targetVelocity.y * dragFactor, targetVelocity.z * dragFactor);
+						.sub(wind);
 
 				projectLength(start, length);
 				predicted.set(next);
@@ -456,6 +513,13 @@ public final class HairEntityState {
 			chain.targetsValid = true;
 			chain.valid = true;
 		}
+	}
+
+	private static float windScale(float speed) {
+		if (speed <= HairSimulation.WIND_KNEE_SPEED) return 1.0f;
+		float range = HairSimulation.WIND_MAX_SPEED - HairSimulation.WIND_KNEE_SPEED;
+		float saturated = HairSimulation.WIND_KNEE_SPEED + range * (float) Math.tanh((speed - HairSimulation.WIND_KNEE_SPEED) / range);
+		return saturated / speed;
 	}
 
 	private static float retention(float stiffness, float damping) {

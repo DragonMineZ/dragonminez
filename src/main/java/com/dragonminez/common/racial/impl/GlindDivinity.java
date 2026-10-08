@@ -37,6 +37,11 @@ public class GlindDivinity implements RacialAbility {
 		return race != null && ID.equals(race.getRacialSkill());
 	}
 
+	public static boolean grantsGodAura(String raceName) {
+		RaceCharacterConfig race = ConfigManager.getRaceCharacter(raceName);
+		return race != null && ID.equals(race.getRacialSkill());
+	}
+
 	public static boolean hasDivineKi(StatsData data) {
 		return isActive(data) && Boolean.TRUE.equals(config().getDivineKi());
 	}

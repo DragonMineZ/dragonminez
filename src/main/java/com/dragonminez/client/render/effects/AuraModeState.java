@@ -19,8 +19,15 @@ public final class AuraModeState {
 	}
 
 	public static String localStyle() {
+		Player player = Minecraft.getInstance().player;
+		StatsData stats = player != null ? StatsProvider.get(StatsCapability.INSTANCE, player).orElse(null) : null;
+		return localStyleFor(stats != null ? stats.getCharacter().getRaceName() : null);
+	}
+
+	public static String localStyleFor(String race) {
 		var config = ConfigManager.getUserConfig();
-		return FormConfig.sanitizeAura3DPreference(config != null ? config.getAura3DStyle() : null);
+		String preference = config != null ? config.getAura3DStyle() : null;
+		return FormConfig.sanitizeAura3DPreference(preference, race);
 	}
 
 	public static boolean entityPreference() {

@@ -18,12 +18,14 @@ import com.dragonminez.common.init.MainSounds;
 import com.dragonminez.common.network.C2S.DynamicGrowthToggleC2S;
 import com.dragonminez.common.network.C2S.ReserveFirstHotbarSlotC2S;
 import com.dragonminez.common.network.NetworkHandler;
+import com.dragonminez.common.racial.impl.GlindDivinity;
 import com.dragonminez.common.stats.StatsCapability;
 import com.dragonminez.common.stats.StatsProvider;
 import com.dragonminez.common.stats.extras.DynamicGrowthStat;
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.math.Axis;
 import net.minecraft.ChatFormatting;
+import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.EditBox;
 import net.minecraft.client.gui.screens.Screen;
@@ -158,8 +160,8 @@ public class ConfigMenuScreen extends BaseMenuScreen {
 		initializeDynamicGrowthOptions();
 
 		toggle(Category.VISUALS, "config.aura3DPersonal", userConfig.getAura3DPersonal(), userConfig::setAura3DPersonal);
-		number(Category.VISUALS, AURA_STYLE_KEY, ConfigType.INT, FormConfig.AURA_3D_SPARKING.equals(userConfig.getAura3DStyle()) ? 1 : 0, 0, 1,
-				v -> userConfig.setAura3DStyle(v > 0 ? FormConfig.AURA_3D_SPARKING : FormConfig.AURA_3D_SMOOTH));
+		number(Category.VISUALS, AURA_STYLE_KEY, ConfigType.INT, auraStyleIndex(AuraModeState.localStyle()), 0, godAuraAllowed() ? 2 : 1,
+				v -> userConfig.setAura3DStyle(auraStyleAt(v.intValue())));
 		toggle(Category.VISUALS, "config.aura3DEntities", userConfig.getAura3DEntities(), userConfig::setAura3DEntities);
 		toggle(Category.VISUALS, "config.transformationOutlines", userConfig.getTransformationOutlines(), userConfig::setTransformationOutlines);
 		toggle(Category.VISUALS, "config.impactFramesEnabled", userConfig.isImpactFramesEnabled(), userConfig::setImpactFramesEnabled);
@@ -417,9 +419,33 @@ public class ConfigMenuScreen extends BaseMenuScreen {
 		}
 	}
 
+	private static boolean godAuraAllowed() {
+		Minecraft mc = Minecraft.getInstance();
+		if (mc.player == null) return false;
+		return StatsProvider.get(StatsCapability.INSTANCE, mc.player)
+				.map(data -> GlindDivinity.grantsGodAura(data.getCharacter().getRaceName())).orElse(false);
+	}
+
+	private static int auraStyleIndex(String style) {
+		if (FormConfig.AURA_3D_GOD.equals(style)) return 2;
+		return FormConfig.AURA_3D_SPARKING.equals(style) ? 1 : 0;
+	}
+
+	private static String auraStyleAt(int index) {
+		return switch (index) {
+			case 1 -> FormConfig.AURA_3D_SPARKING;
+			case 2 -> FormConfig.AURA_3D_GOD;
+			default -> FormConfig.AURA_3D_SMOOTH;
+		};
+	}
+
 	private String valueText(ConfigOption option) {
 		if (AURA_STYLE_KEY.equals(option.key)) {
-			return tr(option.value > 0 ? "gui.dragonminez.customization.aura.sparking" : "gui.dragonminez.customization.aura.smooth").getString();
+			return tr(switch ((int) option.value) {
+				case 1 -> "gui.dragonminez.customization.aura.sparking";
+				case 2 -> "gui.dragonminez.customization.aura.god";
+				default -> "gui.dragonminez.customization.aura.smooth";
+			}).getString();
 		}
 		if (option.type == ConfigType.FLOAT) return String.format(Locale.US, "%.2f", option.value);
 		return String.valueOf((int) option.value);

@@ -64,6 +64,15 @@ const float FRINGE_RATE = 0.63;
 const float FRINGE_PHASE = 5.3;
 const float FRINGE_REACH = 1.25;
 
+const float CROWN_START = 0.58;
+const float CROWN_CONVERGE = 0.35;
+const float CROWN_PROBE = 0.90;
+const float CROWN_RISE = 0.55;
+const float CROWN_FLOOR = 0.40;
+const float CROWN_NARROW = 0.30;
+const float CROWN_AMP = 1.15;
+const float CROWN_TILT = 0.60;
+
 const float SPIKE_LIFT = 0.65;
 const float SURGE_FREQ = 2.4;
 const float SURGE_DEPTH = 0.55;
@@ -176,6 +185,16 @@ float spikeLayer(float angle, float h, float columns, float rows, float sharp, f
     return pow(across, sharp) * pow(along, sharp * 0.6) * len;
 }
 
+float crownPulse(float columns, float seed, float t) {
+    float pulse = 0.0;
+    for (int k = 0; k < 8; k++) {
+        float col = floor(float(k) * columns / 8.0);
+        float angle = (col + 0.5) / columns * TAU;
+        pulse = max(pulse, spikeLayer(angle, CROWN_PROBE, columns, BIG_ROWS, 1.0, SpikeRarity, seed, t));
+    }
+    return pulse;
+}
+
 void main() {
     vec3 base = Position;
     float h = clamp(base.y * 0.5 + 0.5, 0.0, 1.0);
@@ -199,9 +218,8 @@ void main() {
     float sil = pow(1.0 - abs(dot(normalize(-restView.xyz), nView)), SIL_POWER);
     float silWeight = mix(FRONT_SPIKE, 1.0, sil);
 
-    // Rooted at the base, and kept alive over the crown: that is what breaks up the round top of the egg,
-    // the way the smooth tongues do. It only gives out at the very tip.
-    float envelope = smoothstep(0.02, 0.16, h) * (1.0 - smoothstep(0.86, 1.06, h));
+    float crown = smoothstep(CROWN_START, 1.0, h);
+    float envelope = smoothstep(0.02, 0.16, h) * (1.0 - 0.6 * smoothstep(0.95, 1.0, h));
 
     float fringeSeed = LayerPass * FRINGE_SEED;
     float spikeTime = Time * mix(1.0, FRINGE_RATE, LayerPass) + LayerPass * FRINGE_PHASE;
@@ -216,27 +234,33 @@ void main() {
 
     float reach = WaveAmplitude * mix(1.0, FRINGE_REACH, LayerPass);
     float spike = max(thin * THIN_REACH, big * BIG_REACH) * reach * cluster * envelope;
-    // Longest through the upper body and only lightly trimmed over the crown: enough that the egg still
-    // tapers, not so much that the top goes bare and reads as a smooth dome again.
-    float amp = mix(0.80, 1.05, smoothstep(0.10, 0.55, h)) * mix(1.0, 0.85, smoothstep(0.75, 1.0, h));
+    float amp = mix(0.80, 1.05, smoothstep(0.10, 0.55, h)) * mix(1.0, CROWN_AMP, crown);
+
+    vec3 radial = normalize(vec3(base.x, 0.0, base.z) + vec3(1e-4, 0.0, 0.0));
+    float apex = mix(CROWN_FLOOR, 1.0, crownPulse(bigColumns, 11.0 + fringeSeed, spikeTime));
+    pos.xz *= 1.0 - CROWN_NARROW * crown * crown * mix(0.6, 1.0, apex);
+    pos.y += CROWN_RISE * WaveAmplitude * apex * crown * crown * Size.y * grow;
 
     // While the aura dies the spikes are pulled straight up, so they evaporate instead of shrinking in place.
     float lift = mix(1.0, SPIKE_LIFT, smoothstep(0.0, 0.55, Growth));
     vec3 dir = normalize(n + vec3(0.0, lift * smoothstep(0.10, 0.45, h), 0.0));
-    pos += dir * spike * amp * silWeight * grow;
+    float inward = CROWN_CONVERGE * smoothstep(0.0, 0.15, length(base.xz));
+    dir = normalize(mix(dir, normalize(vec3(0.0, 1.0, 0.0) - radial * inward), crown));
+    float spikeWeight = mix(silWeight, 1.0, crown * 0.5);
+    pos += dir * spike * amp * spikeWeight * grow;
 
     float flicker = snoise(vec3(base.x * 1.6, base.y * 1.2 - Time * 7.0, base.z * 1.6));
-    vec3 radial = normalize(vec3(base.x, 0.0, base.z) + vec3(1e-4, 0.0, 0.0));
-    pos += radial * flicker * NoiseDetail * 0.3 * envelope * grow;
+    pos += radial * flicker * NoiseDetail * 0.3 * envelope * grow * (1.0 - crown);
 
     float spikeNorm = clamp(spike / max(BIG_REACH * WaveAmplitude, 1.0e-3), 0.0, 1.0);
-    vec3 nrm = normalize(mix(n, dir, 0.25 * spikeNorm));
+    vec3 shadeN = normalize(vec3(n.x, n.y * (1.0 - CROWN_TILT * crown * apex), n.z));
+    vec3 nrm = normalize(mix(shadeN, dir, 0.25 * spikeNorm));
 
     vec4 viewPos = ModelViewMat * vec4(pos, 1.0);
     vNormal = NormalMat * nrm;
     vView = -viewPos.xyz;
     vHeight = h;
-    vWave = clamp(spikeNorm * silWeight * 1.6, 0.0, 1.0);
+    vWave = clamp(spikeNorm * spikeWeight * 1.6, 0.0, 1.0);
     // Object-space verticality, so the fragment stage can tell the shell caps from its sides.
     vUp = nrm.y;
     vDir = base.xz;

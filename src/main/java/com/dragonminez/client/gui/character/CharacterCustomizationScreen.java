@@ -25,6 +25,7 @@ import com.dragonminez.client.util.TextUtil;
 import com.dragonminez.client.util.TextureCounter;
 import com.dragonminez.common.config.ConfigManager;
 import com.dragonminez.common.config.FormConfig;
+import com.dragonminez.common.racial.impl.GlindDivinity;
 import com.dragonminez.common.config.RaceCharacterConfig;
 import com.dragonminez.common.config.RaceStatsConfig;
 import com.dragonminez.common.hair.HairManager;
@@ -428,17 +429,27 @@ public class CharacterCustomizationScreen extends ScaledScreen {
 
 	private int auraTypeIndex() {
 		if (!AuraModeState.localPreference()) return 0;
-		return FormConfig.AURA_3D_SPARKING.equals(AuraModeState.localStyle()) ? 2 : 1;
+		String style = AuraModeState.localStyleFor(character.getRaceName());
+		if (FormConfig.AURA_3D_GOD.equals(style)) return 3;
+		return FormConfig.AURA_3D_SPARKING.equals(style) ? 2 : 1;
+	}
+
+	private int auraTypeStates() {
+		return GlindDivinity.grantsGodAura(character.getRaceName()) ? AURA_TYPE_STATES + 1 : AURA_TYPE_STATES;
 	}
 
 	private void cycleAuraType(int delta) {
 		var userConfig = ConfigManager.getUserConfig();
 		if (userConfig == null) return;
 
-		int next = Math.floorMod(auraTypeIndex() + delta, AURA_TYPE_STATES);
+		int next = Math.floorMod(auraTypeIndex() + delta, auraTypeStates());
 		userConfig.setAura3DPersonal(next != 0);
 		if (next != 0) {
-			userConfig.setAura3DStyle(next == 2 ? FormConfig.AURA_3D_SPARKING : FormConfig.AURA_3D_SMOOTH);
+			userConfig.setAura3DStyle(switch (next) {
+				case 2 -> FormConfig.AURA_3D_SPARKING;
+				case 3 -> FormConfig.AURA_3D_GOD;
+				default -> FormConfig.AURA_3D_SMOOTH;
+			});
 		}
 
 		ConfigManager.saveGeneralUserConfig();
@@ -450,6 +461,7 @@ public class CharacterCustomizationScreen extends ScaledScreen {
 		return switch (auraTypeIndex()) {
 			case 1 -> "gui.dragonminez.customization.aura.3d.smooth";
 			case 2 -> "gui.dragonminez.customization.aura.3d.sparking";
+			case 3 -> "gui.dragonminez.customization.aura.3d.god";
 			default -> "gui.dragonminez.customization.aura.2d";
 		};
 	}
