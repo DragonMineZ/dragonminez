@@ -27,14 +27,17 @@ import java.util.ArrayList;
 import java.util.Deque;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
-import java.util.function.Predicate;
 import java.util.concurrent.ConcurrentHashMap;
 
 public final class AuraTrailRenderer {
-	private static final int MAX_SAMPLES = 26;
+	private static final int MAX_SAMPLES = 40;
+	private static final float AURA_WIDTH_FALLOFF = 0.5f;
+	private static final float AURA_ALPHA_FALLOFF = 1.1f;
+	private static final float AURA_LINGER_RATE = 0.75f;
+	private static final float ENTITY_WIDTH_FALLOFF = 0.65f;
+	private static final float ENTITY_ALPHA_FALLOFF = 1.6f;
 	private static final float FADE_IN_SAMPLES = 4.0f;
-	private static final float MAX_HALF_WIDTH = 0.85f;
+	private static final float MAX_HALF_WIDTH = 1.7f;
 	private static final float MIN_SEGMENT_SQR = 1.0e-6f;
 	private static final float ANCHOR_BACK = 0.75f;
 	private static final double ENTITY_MOVING_SQR = 0.0025;
@@ -44,43 +47,67 @@ public final class AuraTrailRenderer {
 
 	private static final ResourceLocation DUMMY_TEXTURE = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "textures/entity/races/null.png");
 
-	private static final Map<Integer, Deque<Vec3>> TRAILS = new ConcurrentHashMap<>();
-	private static final Map<Integer, Long> LAST_SAMPLE_TICK = new ConcurrentHashMap<>();
-	private static final Set<Integer> ENTITY_TRAILS = ConcurrentHashMap.newKeySet();
+	private static final Map<Integer, Trail> TRAILS = new ConcurrentHashMap<>();
 	private static VertexBuffer buffer;
+
+	private static final class Trail {
+		final Deque<Vec3> points = new ArrayDeque<>();
+		final boolean entityTrail;
+		final float widthFalloff;
+		final float alphaFalloff;
+		final float lingerRate;
+		long lastTick = Long.MIN_VALUE;
+		int idleTicks;
+		int span = 1;
+		float[] color;
+		float alpha;
+		boolean drawn;
+
+		Trail(boolean entityTrail) {
+			this.entityTrail = entityTrail;
+			this.widthFalloff = entityTrail ? ENTITY_WIDTH_FALLOFF : AURA_WIDTH_FALLOFF;
+			this.alphaFalloff = entityTrail ? ENTITY_ALPHA_FALLOFF : AURA_ALPHA_FALLOFF;
+			this.lingerRate = entityTrail ? 0.0f : AURA_LINGER_RATE;
+		}
+	}
 
 	private AuraTrailRenderer() {}
 
 	public static void update(Player player, boolean recording) {
 		Vec3 back = player.getViewVector(1.0f).scale(-ANCHOR_BACK);
 		Vec3 anchor = new Vec3(player.getX() + back.x, player.getY() + player.getBbHeight() * 0.5 + back.y, player.getZ() + back.z);
-		update(player, anchor, recording, MAX_SAMPLES);
+		update(player, anchor, recording, MAX_SAMPLES, false);
 	}
 
-	private static void update(Entity entity, Vec3 anchor, boolean recording, int maxSamples) {
+	private static void update(Entity entity, Vec3 anchor, boolean recording, int maxSamples, boolean entityTrail) {
 		int id = entity.getId();
-		Deque<Vec3> points = TRAILS.get(id);
-		if (points == null) {
+		Trail trail = TRAILS.get(id);
+		if (trail == null) {
 			if (!recording) return;
-			points = new ArrayDeque<>();
-			TRAILS.put(id, points);
+			trail = new Trail(entityTrail);
+			TRAILS.put(id, trail);
 		}
 
 		long tick = entity.tickCount;
-		if (LAST_SAMPLE_TICK.getOrDefault(id, Long.MIN_VALUE) == tick) return;
-		LAST_SAMPLE_TICK.put(id, tick);
+		if (trail.lastTick == tick) return;
+		trail.lastTick = tick;
 
+		Deque<Vec3> points = trail.points;
 		if (recording) {
+			trail.idleTicks = 0;
 			points.addFirst(anchor);
 			while (points.size() > maxSamples) points.removeLast();
-		} else {
-			if (!points.isEmpty()) points.removeLast();
-			if (points.isEmpty()) {
-				TRAILS.remove(id);
-				LAST_SAMPLE_TICK.remove(id);
-				ENTITY_TRAILS.remove(id);
-			}
+			trail.span = Math.max(1, points.size() - 1);
+			return;
 		}
+
+		if (trail.lingerRate <= 0.0f) {
+			if (!points.isEmpty()) points.removeLast();
+		} else {
+			trail.idleTicks++;
+			while (!points.isEmpty() && points.size() - 1 + trail.idleTicks * trail.lingerRate >= trail.span) points.removeLast();
+		}
+		if (points.size() < 2) TRAILS.remove(id);
 	}
 
 	public static void submitEntityTrail(Entity entity, Matrix4f entityPose, float partialTick, float[] color, float alpha,
@@ -98,8 +125,7 @@ public final class AuraTrailRenderer {
 		boolean moving = active && dx * dx + dy * dy + dz * dz > ENTITY_MOVING_SQR;
 		Vec3 back = Vec3.directionFromRotation(0.0f, entity.getYRot()).scale(-anchorBack);
 		Vec3 anchor = new Vec3(entity.getX() + back.x, entity.getY() + anchorHeight, entity.getZ() + back.z);
-		if (moving) ENTITY_TRAILS.add(entity.getId());
-		update(entity, anchor, moving, maxSamples);
+		update(entity, anchor, moving, maxSamples, true);
 		if (!TRAILS.containsKey(entity.getId())) return;
 
 		Vec3 camera = Minecraft.getInstance().gameRenderer.getMainCamera().getPosition();
@@ -116,18 +142,54 @@ public final class AuraTrailRenderer {
 		});
 	}
 
-	public static void forget(Predicate<Integer> keep) {
+	public static void forget() {
 		ClientLevel level = Minecraft.getInstance().level;
-		ENTITY_TRAILS.removeIf(id -> {
+		TRAILS.keySet().removeIf(id -> {
 			Entity entity = level != null ? level.getEntity(id) : null;
 			return entity == null || entity.isRemoved();
 		});
-		TRAILS.keySet().removeIf(id -> !ENTITY_TRAILS.contains(id) && !keep.test(id));
-		LAST_SAMPLE_TICK.keySet().removeIf(id -> !TRAILS.containsKey(id));
 	}
 
 	public static void render(Player player, float[] color, float alpha, PoseStack poseStack,
 							  Matrix4f projectionMatrix, float partialTick) {
+		Trail trail = TRAILS.get(player.getId());
+		if (trail != null) {
+			trail.color = color.clone();
+			trail.alpha = alpha;
+			trail.drawn = true;
+		}
+		drawPlayerTrail(player, color, alpha, poseStack, projectionMatrix, partialTick);
+	}
+
+	public static void renderDetached(PoseStack poseStack, Matrix4f projectionMatrix, float partialTick) {
+		Minecraft mc = Minecraft.getInstance();
+		ClientLevel level = mc.level;
+		if (level == null) return;
+
+		for (Map.Entry<Integer, Trail> entry : TRAILS.entrySet()) {
+			Trail trail = entry.getValue();
+			if (trail.entityTrail) continue;
+			if (trail.drawn) {
+				trail.drawn = false;
+				continue;
+			}
+			if (!(level.getEntity(entry.getKey()) instanceof Player player) || player.isRemoved()) {
+				TRAILS.remove(entry.getKey());
+				continue;
+			}
+
+			update(player, false);
+			if (trail.color == null || !TRAILS.containsKey(player.getId())) continue;
+			if (player == mc.player && mc.options.getCameraType().isFirstPerson()) continue;
+
+			poseStack.pushPose();
+			drawPlayerTrail(player, trail.color, trail.alpha, poseStack, projectionMatrix, partialTick);
+			poseStack.popPose();
+		}
+	}
+
+	private static void drawPlayerTrail(Player player, float[] color, float alpha, PoseStack poseStack,
+										Matrix4f projectionMatrix, float partialTick) {
 		if (!renderRibbon(player, color, alpha, poseStack.last().pose(), projectionMatrix, partialTick, MAX_HALF_WIDTH, CORE_WHITE, 1.0f, false)) return;
 
 		Matrix4f pose = new Matrix4f(poseStack.last().pose());
@@ -138,20 +200,24 @@ public final class AuraTrailRenderer {
 
 	private static boolean renderRibbon(Entity owner, float[] color, float alpha, Matrix4f pose,
 										Matrix4f projectionMatrix, float partialTick, float maxHalfWidth, float coreWhite, float bloomAlpha, boolean bloom) {
-		Deque<Vec3> recorded = TRAILS.get(owner.getId());
-		if (recorded == null || recorded.size() < 2 || alpha <= 0.01f) return false;
+		Trail trail = TRAILS.get(owner.getId());
+		if (trail == null || trail.points.size() < 2 || alpha <= 0.01f) return false;
 
 		ShaderInstance shader = DMZShaders.auraTrailShader;
 		if (shader == null) return false;
 
 		Vec3 camera = Minecraft.getInstance().gameRenderer.getMainCamera().getPosition();
 
-		List<Vec3> points = new ArrayList<>(recorded);
+		List<Vec3> points = new ArrayList<>(trail.points);
 
 		int count = points.size();
 		Vec3[] left = new Vec3[count];
 		Vec3[] right = new Vec3[count];
 		float[] alphas = new float[count];
+
+		boolean lingering = trail.idleTicks > 0 && trail.lingerRate > 0.0f;
+		float span = lingering ? trail.span : count - 1;
+		float idleAge = lingering ? (trail.idleTicks + partialTick) * trail.lingerRate : 0.0f;
 
 		for (int i = 0; i < count; i++) {
 			Vec3 here = points.get(i).subtract(camera);
@@ -166,11 +232,11 @@ public final class AuraTrailRenderer {
 			if (side.lengthSqr() < MIN_SEGMENT_SQR) side = new Vec3(1.0, 0.0, 0.0);
 			side = side.normalize();
 
-			float slid = Math.max(0.0f, i - partialTick);
-			float age = Mth.clamp(slid / (count - 1), 0.0f, 1.0f);
-			float halfWidth = maxHalfWidth * (float) Math.pow(1.0f - age, 0.65);
+			float slid = lingering ? i : Math.max(0.0f, i - partialTick);
+			float age = Mth.clamp((slid + idleAge) / span, 0.0f, 1.0f);
+			float halfWidth = maxHalfWidth * (float) Math.pow(1.0f - age, trail.widthFalloff);
 			float fadeIn = Math.min(1.0f, slid / FADE_IN_SAMPLES);
-			alphas[i] = alpha * (bloom ? bloomAlpha : 1.0f) * fadeIn * (float) Math.pow(1.0f - age, 1.6);
+			alphas[i] = alpha * (bloom ? bloomAlpha : 1.0f) * fadeIn * (float) Math.pow(1.0f - age, trail.alphaFalloff);
 
 			left[i] = here.subtract(side.scale(halfWidth));
 			right[i] = here.add(side.scale(halfWidth));

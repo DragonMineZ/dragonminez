@@ -505,7 +505,7 @@ public class AuraRenderer {
 		RELEASE_SCALE_PROGRESS.keySet().removeIf(id -> !currentFramePlayers.contains(id) && !AURA_CACHE.containsKey(id));
 		RELEASE_SCALE_TICK.keySet().removeIf(id -> !currentFramePlayers.contains(id) && !AURA_CACHE.containsKey(id));
 		AURA_PHASE.keySet().removeIf(id -> !currentFramePlayers.contains(id) && !AURA_CACHE.containsKey(id));
-		AuraTrailRenderer.forget(id -> currentFramePlayers.contains(id) || AURA_CACHE.containsKey(id));
+		AuraTrailRenderer.forget();
 	}
 
 	private static boolean useAura3D(Player player) {
@@ -1381,7 +1381,7 @@ public class AuraRenderer {
 		if (ownTrailInFirstPerson) return;
 
 		AuraLayer top = layers.get(layers.size() - 1);
-		AuraTrailRenderer.render(player, top.color, data.alphaProgress * AURA_TRAIL_ALPHA * top.alpha, poseStack, projectionMatrix, partialTick);
+		AuraTrailRenderer.render(player, top.color, AURA_TRAIL_ALPHA * top.alpha, poseStack, projectionMatrix, partialTick);
 	}
 
 	private static void drawSinglePulse3D(Player player, CachedAuraData data, AuraLayer topLayer, PoseStack poseStack,
