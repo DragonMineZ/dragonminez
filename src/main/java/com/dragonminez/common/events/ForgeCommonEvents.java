@@ -563,6 +563,14 @@ public class ForgeCommonEvents {
 	}
 
 	@SubscribeEvent
+	public static void onStructureEntityJoin(net.minecraftforge.event.entity.EntityJoinLevelEvent event) {
+		if (event.getLevel() instanceof ServerLevel level
+				&& com.dragonminez.server.world.structure.fitted.FittedTemplatePiece.hasTwin(level, event.getEntity())) {
+			event.setCanceled(true);
+		}
+	}
+
+	@SubscribeEvent
 	public static void onChunkLoad(ChunkEvent.Load event) {
 		if (!(event.getLevel() instanceof ServerLevel serverLevel)) return;
 		if (!(event.getChunk() instanceof LevelChunk chunk)) return;
