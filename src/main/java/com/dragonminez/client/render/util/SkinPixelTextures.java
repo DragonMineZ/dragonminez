@@ -27,7 +27,7 @@ public final class SkinPixelTextures {
 	private static final int LAYER_HAIR = 3;
 	private static final int LAYER_TATTOO = 4;
 	private static final String[] LAYER_NAMES = {"brow", "sclera", "iris", "hair", "tattoo"};
-	private static final int MIN_SHADE = 24;
+	private static final float MAX_SHADE_DEPTH = 0.55f;
 	private static final long EVICT_AFTER_TICKS = 1200L;
 	private static final long SWEEP_INTERVAL_TICKS = 200L;
 
@@ -115,14 +115,20 @@ public final class SkinPixelTextures {
 		DynamicTexture texture = entry.textures[layer];
 		NativeImage image = reusable(texture, size) ? texture.getPixels() : new NativeImage(NativeImage.Format.RGBA, size, size, false);
 
-		float maxLuma = 0.0f;
+		float minLight = Float.MAX_VALUE;
+		float maxLight = 0.0f;
 		if (skinImage != null) {
 			for (int i = 0; i < marks.length; i++) {
 				if (marks[i] != marker) continue;
 				int color = skinImage.getPixelRGBA(i % size, i / size);
-				if (alpha(color) > 0) maxLuma = Math.max(maxLuma, luma(color));
+				if (alpha(color) == 0) continue;
+				float light = lightness(color);
+				minLight = Math.min(minLight, light);
+				maxLight = Math.max(maxLight, light);
 			}
 		}
+		float span = maxLight - minLight;
+		float depth = Math.min(span, MAX_SHADE_DEPTH);
 
 		for (int y = 0; y < size; y++) {
 			for (int x = 0; x < size; x++) {
@@ -132,10 +138,7 @@ public final class SkinPixelTextures {
 						value = 255;
 					} else {
 						int color = skinImage.getPixelRGBA(x, y);
-						if (alpha(color) > 0) {
-							float shade = maxLuma > 0.0f ? luma(color) / maxLuma : 1.0f;
-							value = Mth.clamp(Math.round(255.0f * shade), MIN_SHADE, 255);
-						}
+						if (alpha(color) > 0) value = shade(lightness(color), maxLight, span, depth);
 					}
 				}
 				image.setPixelRGBA(x, y, value == 0 ? 0 : 0xFF000000 | (value << 16) | (value << 8) | value);
@@ -229,10 +232,23 @@ public final class SkinPixelTextures {
 		return abgr >>> 24;
 	}
 
-	private static float luma(int abgr) {
-		float r = (abgr & 0xFF) / 255.0f;
-		float g = ((abgr >> 8) & 0xFF) / 255.0f;
-		float b = ((abgr >> 16) & 0xFF) / 255.0f;
-		return 0.299f * r + 0.587f * g + 0.114f * b;
+	private static int shade(float light, float maxLight, float span, float depth) {
+		if (span <= 1.0e-4f) return 255;
+		float relative = 1.0f - depth * (maxLight - light) / span;
+		return Mth.clamp(Math.round(255.0f * encode(relative * relative * relative)), 1, 255);
+	}
+
+	private static float lightness(int abgr) {
+		float y = 0.2126f * linear(abgr & 0xFF) + 0.7152f * linear((abgr >> 8) & 0xFF) + 0.0722f * linear((abgr >> 16) & 0xFF);
+		return (float) Math.cbrt(y);
+	}
+
+	private static float linear(int channel) {
+		float c = channel / 255.0f;
+		return c <= 0.04045f ? c / 12.92f : (float) Math.pow((c + 0.055f) / 1.055f, 2.4f);
+	}
+
+	private static float encode(float linear) {
+		return linear <= 0.0031308f ? linear * 12.92f : 1.055f * (float) Math.pow(linear, 1.0f / 2.4f) - 0.055f;
 	}
 }
