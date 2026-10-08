@@ -27,6 +27,7 @@ public final class Aura3DRenderer {
 
 	public static final String DEFAULT_TYPE = "smooth";
 	private static final String SPARKING_TYPE = "sparking";
+	private static final String GOD_TYPE = "god";
 	public static final float DEFAULT_BACKFACE = 0.02f;
 
 	public static final float SMOOTH_SCALE_REFERENCE = 1.05f * 0.9375f;
@@ -42,6 +43,14 @@ public final class Aura3DRenderer {
 	private static final float SPARKING_HEIGHT = 1.325f;
 	private static final float SPARKING_PIVOT = 0.889f;
 
+	public static final float GOD_BACKFACE = 0.45f;
+	private static final float GOD_PULSE_WIDTH = 1.2f;
+	private static final float GOD_PULSE_HEIGHT = 0.9f;
+	private static final float GOD_PULSE_ALPHA = 0.7f;
+	private static final float GOD_ALL_FACES = 0.0f;
+	private static final float GOD_BACK_FACES = 1.0f;
+	private static final float GOD_FRONT_FACES = 2.0f;
+
 	private static final ResourceLocation DUMMY_TEXTURE = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "textures/entity/races/null.png");
 	private static final Map<Integer, AuraStyle> ENTITY_STYLES = new HashMap<>();
 
@@ -54,27 +63,37 @@ public final class Aura3DRenderer {
 	public static String resolveType(String type) {
 		if (type == null) return DEFAULT_TYPE;
 		String normalized = type.trim().toLowerCase(Locale.ROOT);
-		return SPARKING_TYPE.equals(normalized) ? SPARKING_TYPE : DEFAULT_TYPE;
+		if (SPARKING_TYPE.equals(normalized)) return SPARKING_TYPE;
+		if (GOD_TYPE.equals(normalized)) return GOD_TYPE;
+		return DEFAULT_TYPE;
 	}
 
 	public static boolean isSmooth(String type) {
 		return DEFAULT_TYPE.equals(resolveType(type));
 	}
 
+	public static boolean isGod(String type) {
+		return GOD_TYPE.equals(resolveType(type));
+	}
+
+	public static boolean isSparking(String type) {
+		return SPARKING_TYPE.equals(resolveType(type));
+	}
+
 	public static float widthFactor(String type) {
-		return isSmooth(type) ? 0.90f : SPARKING_WIDTH;
+		return isSparking(type) ? SPARKING_WIDTH : 0.90f;
 	}
 
 	public static float heightFactor(String type) {
-		return isSmooth(type) ? 1.80f : SPARKING_HEIGHT;
+		return isSparking(type) ? SPARKING_HEIGHT : 1.80f;
 	}
 
 	public static boolean followsBodyYaw(String type) {
-		return isSmooth(type);
+		return !isSparking(type);
 	}
 
 	public static float pivotFactor(String type) {
-		return isSmooth(type) ? 0.80f : SPARKING_PIVOT;
+		return isSparking(type) ? SPARKING_PIVOT : 0.80f;
 	}
 
 	public static float coreFactor(String type) {
@@ -177,6 +196,10 @@ public final class Aura3DRenderer {
 	public static void drawEntity(PoseStack poseStack, Matrix4f projection, String type, float[] color, float ageInTicks, float bodyScale) {
 		float time = ageInTicks / 20.0f;
 		AuraStyle style = entityStyle(color);
+		if (isGod(type)) {
+			drawGod(poseStack, projection, style, 1.0f, 1.0f, time, bodyScale, bodyScale, bodyScale, GOD_BACKFACE);
+			return;
+		}
 		if (isSmooth(type)) {
 			drawSmooth(poseStack, projection, style, 1.0f, 1.0f, time, time * style.waveSpeed,
 					bodyScale, bodyScale, bodyScale, SMOOTH_BACKFACE);
@@ -191,11 +214,84 @@ public final class Aura3DRenderer {
 											 float ageInTicks, float radius, float height, float spinDegrees) {
 		float time = ageInTicks / 20.0f;
 		AuraStyle style = entityStyle(color);
+		if (isGod(type)) {
+			drawGodGroundPulse(poseStack, projection, style, alpha, time, radius, height, spinDegrees);
+			return;
+		}
 		if (isSmooth(type)) {
 			drawSmoothGroundPulse(poseStack, projection, style, alpha, time, time * style.waveSpeed, radius, height, spinDegrees);
 			return;
 		}
 		drawSparkingGroundPulse(poseStack, projection, style, alpha, time, radius, height, spinDegrees);
+	}
+
+	public static void drawGod(PoseStack poseStack, Matrix4f projection, AuraStyle style, float alpha, float growth,
+							   float time, float scaleX, float scaleY, float scaleZ, float backFace) {
+		ShaderInstance shader = DMZShaders.auraGod3DShader;
+		if (shader == null || style == null || alpha <= 0.001f || growth <= 0.001f) return;
+
+		poseStack.pushPose();
+		poseStack.scale(scaleX, scaleY, scaleZ);
+		drawGodShell(shader, poseStack, projection, style, alpha, growth, time, 0.0f, backFace, 1.0f, GOD_BACK_FACES);
+		drawGodShell(shader, poseStack, projection, style, alpha, growth, time, 0.0f, backFace, 0.0f, GOD_ALL_FACES);
+		drawGodShell(shader, poseStack, projection, style, alpha, growth, time, 0.0f, backFace, 1.0f, GOD_FRONT_FACES);
+		poseStack.popPose();
+	}
+
+	public static void drawGodGroundPulse(PoseStack poseStack, Matrix4f projection, AuraStyle style, float alpha,
+										  float time, float radius, float height, float spinDegrees) {
+		ShaderInstance shader = DMZShaders.auraGod3DShader;
+		if (shader == null || style == null || alpha <= 0.001f) return;
+
+		poseStack.pushPose();
+		poseStack.mulPose(Axis.YP.rotationDegrees(spinDegrees));
+		poseStack.scale(radius * GOD_PULSE_WIDTH, height * GOD_PULSE_HEIGHT, radius * GOD_PULSE_WIDTH);
+		drawGodShell(shader, poseStack, projection, style, alpha * GOD_PULSE_ALPHA, 1.0f, time, 1.0f, GOD_BACKFACE, 1.0f, GOD_ALL_FACES);
+		poseStack.popPose();
+	}
+
+	private static void drawGodShell(ShaderInstance shader, PoseStack poseStack, Matrix4f projection, AuraStyle style,
+									 float alpha, float growth, float time, float hollow, float backFace,
+									 float layer, float faces) {
+		VertexBuffer mesh = AuraMeshFactory.getGodFlameMesh();
+		Matrix4f pose = poseStack.last().pose();
+		Matrix3f normal = poseStack.last().normal();
+		applyGodUniforms(shader, normal, style, alpha, growth, time, hollow, backFace, layer, faces);
+
+		drawShellMesh(mesh, shader, pose, projection, 0.0f);
+
+		Matrix4f poseCopy = new Matrix4f(pose);
+		Matrix3f normalCopy = new Matrix3f(normal);
+		Matrix4f projectionCopy = new Matrix4f(projection);
+		AuraStyle styleCopy = new AuraStyle().copyFrom(style);
+		AuraRenderer.captureBloom(() -> {
+			ShaderInstance bloomShader = DMZShaders.auraGod3DShader;
+			if (bloomShader == null) return;
+			applyGodUniforms(bloomShader, normalCopy, styleCopy, alpha, growth, time, hollow, backFace, layer, faces);
+			drawShellMesh(mesh, bloomShader, poseCopy, projectionCopy, 1.0f);
+		});
+	}
+
+	private static void applyGodUniforms(ShaderInstance shader, Matrix3f normal, AuraStyle style, float alpha,
+										 float growth, float time, float hollow, float backFace, float layer, float faces) {
+		shader.setSampler("NoiseTex", AuraNoiseTexture.getId());
+		shader.safeGetUniform("NormalMat").set(normal);
+		shader.safeGetUniform("Size").set(style.sizeX, style.sizeY, style.sizeZ);
+		shader.safeGetUniform("Time").set(time);
+		shader.safeGetUniform("Growth").set(Mth.clamp(growth, 0.0f, 1.0f));
+		shader.safeGetUniform("Hollow").set(hollow);
+		shader.safeGetUniform("Layer").set(layer);
+		shader.safeGetUniform("Faces").set(faces);
+		shader.safeGetUniform("Peaks").set((float) Math.max(1, Math.round(style.peaks)));
+		shader.safeGetUniform("WaveFrequency").set(style.waveFrequency);
+		shader.safeGetUniform("WaveAmplitude").set(style.waveAmplitude);
+		shader.safeGetUniform("NoiseDetail").set(style.noiseDetail);
+		shader.safeGetUniform("UpwardBias").set(style.upwardBias);
+		shader.safeGetUniform("RimColor").set(style.rimColor[0], style.rimColor[1], style.rimColor[2]);
+		shader.safeGetUniform("RimAlpha").set(style.rimAlpha);
+		shader.safeGetUniform("Alpha").set(Mth.clamp(alpha, 0.0f, 1.0f));
+		shader.safeGetUniform("BackFace").set(backFace);
+		shader.safeGetUniform("BloomIntensity").set(style.bloomIntensity);
 	}
 
 	private static AuraStyle entityStyle(float[] color) {

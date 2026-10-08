@@ -80,6 +80,10 @@ public class AuraRenderer {
 	private static final float SMOOTH_STYLE_BLEND_RATE = 6.0f;
 	private static final float SMOOTH_FIRST_PERSON_ALPHA = 0.45f;
 	private static final float SMOOTH_FLIGHT_LEAD = 0.25f;
+	private static final float GOD_CENTER = 1.28f;
+	private static final float GOD_FIRST_PERSON_ALPHA = 0.35f;
+	private static final float GOD_WORLD_DROP = 0.15f;
+	private static final float GOD_GUI_DROP = 0.55f;
 	private static final float MAX_MOTION_STEP = 0.1f;
 
 	private static final float AURA_MERGE_SIZE_DIVISOR = 1.25f;
@@ -287,6 +291,8 @@ public class AuraRenderer {
 		for (AuraLayer layer : activeLayers) {
 			if (!use3D) {
 				drawGuiAura2D(player, data, layer, poseStack, auraProjection, partialTick);
+			} else if (Aura3DRenderer.isGod(layer.type)) {
+				executeGodDraw(player, data, layer, poseStack, auraProjection, partialTick, false, true);
 			} else if (Aura3DRenderer.isSmooth(layer.type)) {
 				executeSmoothDraw(player, data, layer, poseStack, auraProjection, partialTick, false, true);
 			} else {
@@ -373,7 +379,7 @@ public class AuraRenderer {
 							int r = (int) (color[0] * 255);
 							int g = (int) (color[1] * 255);
 							int b = (int) (color[2] * 255);
-							renderFusionFlash(player, timeSinceStart + partialTick, poseStack, buffers, r, g, b);
+							renderFusionFlash(player, timeSinceStart + partialTick, partialTick, poseStack, buffers, r, g, b);
 						}
 					} else if (timeSinceStart > 80) {
 						FUSION_START_TIME.remove(playerId);
@@ -1047,7 +1053,9 @@ public class AuraRenderer {
 	private static void executeAuraShaderDraw(Player player, CachedAuraData data, AuraLayer layer, PoseStack poseStack, Minecraft mc, Matrix4f projectionMatrix, Vec3 cameraOffset, float partialTick, float alphaMultiplier, boolean isFirstPerson) {
 		boolean isLocalPlayer = player == mc.player;
 		if (data.use3D) {
-			if (Aura3DRenderer.isSmooth(layer.type)) {
+			if (Aura3DRenderer.isGod(layer.type)) {
+				executeGodDraw(player, data, layer, poseStack, projectionMatrix, partialTick, isLocalPlayer && isFirstPerson, false);
+			} else if (Aura3DRenderer.isSmooth(layer.type)) {
 				executeSmoothDraw(player, data, layer, poseStack, projectionMatrix, partialTick, isLocalPlayer && isFirstPerson, false);
 			} else {
 				executeAura3DDraw(player, data, layer, poseStack, projectionMatrix, partialTick, isLocalPlayer && isFirstPerson, false);
@@ -1330,6 +1338,39 @@ public class AuraRenderer {
 		poseStack.popPose();
 	}
 
+	private static void executeGodDraw(Player player, CachedAuraData data, AuraLayer layer, PoseStack poseStack,
+									   Matrix4f projectionMatrix, float partialTick, boolean firstPerson, boolean upright) {
+		LayerMotion motion = data.motions.get(layer.layerId);
+		if (motion == null || !motion.ready) return;
+
+		float bodyRot = Mth.lerp(partialTick, player.yBodyRotO, player.yBodyRot);
+		float boost = (1.0f + layer.layerId * 0.15f) / Aura3DRenderer.SMOOTH_SCALE_REFERENCE;
+		float scaleX = data.auraScaleX * boost;
+		float scaleY = data.auraScaleY * boost;
+		float scaleZ = data.auraScaleZ * boost;
+
+		boolean fastFlying = !upright && isFastFlying(player);
+		boolean laidDown = !upright && (fastFlying || player.getSwimAmount(partialTick) > 0.0f);
+
+		poseStack.pushPose();
+		poseStack.mulPose(Axis.YP.rotationDegrees(180.0f - bodyRot));
+		if (laidDown) {
+			poseStack.translate(0.0f, player.getBbHeight() * 0.5f, 0.0f);
+			poseStack.mulPose(Axis.XP.rotationDegrees(auraLeanDegrees(player, partialTick)));
+			poseStack.translate(0.0f, -GOD_CENTER * scaleY, 0.0f);
+			if (fastFlying) poseStack.translate(0.0f, -SMOOTH_FLIGHT_LEAD, 0.0f);
+		} else {
+			poseStack.translate(0.0f, -(upright ? GOD_GUI_DROP : GOD_WORLD_DROP) * scaleY, 0.0f);
+		}
+
+		float alpha = (firstPerson ? GOD_FIRST_PERSON_ALPHA : 1.0f) * layer.alpha * smoothFade(data);
+		float time = (player.tickCount + partialTick) / 20.0f;
+		Aura3DRenderer.drawGod(poseStack, projectionMatrix, motion.style, alpha, data.growth, time,
+				scaleX, scaleY, scaleZ, firstPerson ? Aura3DRenderer.SMOOTH_BACKFACE_INSIDE : Aura3DRenderer.GOD_BACKFACE);
+
+		poseStack.popPose();
+	}
+
 	private static void executeAura3DDraw(Player player, CachedAuraData data, AuraLayer layer, PoseStack poseStack,
 										  Matrix4f projectionMatrix, float partialTick, boolean firstPerson, boolean upright) {
 		LayerMotion motion = data.motions.get(layer.layerId);
@@ -1396,6 +1437,11 @@ public class AuraRenderer {
 		float spin = (player.level().getGameTime() + partialTick) * 2.5f;
 
 		float radius = data.auraScaleX * expansion * boost * Aura3DRenderer.widthFactor(topLayer.type) * 0.75f;
+		if (Aura3DRenderer.isGod(topLayer.type)) {
+			Aura3DRenderer.drawGodGroundPulse(poseStack, projectionMatrix, motion.style, alpha,
+					(player.tickCount + partialTick) / 20.0f, radius, data.auraScaleY * 0.22f, spin);
+			return;
+		}
 		if (Aura3DRenderer.isSmooth(topLayer.type)) {
 			Aura3DRenderer.drawSmoothGroundPulse(poseStack, projectionMatrix, motion.style, alpha,
 					(player.tickCount + partialTick) / 20.0f, motion.phase, radius, data.auraScaleY * 0.22f, spin);
@@ -1535,7 +1581,7 @@ public class AuraRenderer {
 				AuraFxState.lightningSpeedMultiplier(stats), alpha);
 	}
 
-	private static void renderFusionFlash(Player player, float time, PoseStack poseStack, MultiBufferSource buffer, int r, int g, int b) {
+	private static void renderFusionFlash(Player player, float time, float partialTick, PoseStack poseStack, MultiBufferSource buffer, int r, int g, int b) {
 		float rotationTime = time * 0.01F;
 		float rawSin = Mth.sin(time * 0.1F);
 		float normalizedFade = (rawSin + 1.0F) / 2.0F;
@@ -1548,7 +1594,9 @@ public class AuraRenderer {
 		poseStack.pushPose();
 
 		Vec3 cameraPos = Minecraft.getInstance().gameRenderer.getMainCamera().getPosition();
-		poseStack.translate(player.getX() - cameraPos.x, (player.getY() + 1.0) - cameraPos.y, player.getZ() - cameraPos.z);
+		poseStack.translate(Mth.lerp(partialTick, player.xo, player.getX()) - cameraPos.x,
+				Mth.lerp(partialTick, player.yo, player.getY()) + 1.0 - cameraPos.y,
+				Mth.lerp(partialTick, player.zo, player.getZ()) - cameraPos.z);
 		poseStack.scale(1.0F, 1.0F, 1.0F);
 
 		for (int i = 0; (float) i < (intensity + intensity * intensity) / 2.0F * 60.0F; ++i) {

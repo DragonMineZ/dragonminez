@@ -178,7 +178,16 @@ public class PlayerEffectsRenderHandler {
 		}
 
 		AuraRenderer.processFusionFlashes(mc, gameTime, partialTick, poseStack, buffers);
-		buffers.endBatch();
+		PoseStack modelView = RenderSystem.getModelViewStack();
+		modelView.pushPose();
+		modelView.setIdentity();
+		RenderSystem.applyModelViewMatrix();
+		try {
+			buffers.endBatch();
+		} finally {
+			modelView.popPose();
+			RenderSystem.applyModelViewMatrix();
+		}
 
 		enqueueExplosionBursts(mc, poseStack, buffers, partialTick);
 

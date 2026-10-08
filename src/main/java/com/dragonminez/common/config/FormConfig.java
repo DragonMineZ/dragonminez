@@ -1,5 +1,6 @@
 package com.dragonminez.common.config;
 
+import com.dragonminez.common.racial.impl.GlindDivinity;
 import com.dragonminez.common.util.FusionForms;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -15,6 +16,7 @@ public class FormConfig {
 
 	public static final String AURA_3D_SMOOTH = "smooth";
 	public static final String AURA_3D_SPARKING = "sparking";
+	public static final String AURA_3D_GOD = "god";
 	public static final String AURA_3D_USER_PREFERENCE = "userPreference";
 
 	private String configVersion;
@@ -48,7 +50,14 @@ public class FormConfig {
 	}
 
 	public static String sanitizeAura3DPreference(String preference) {
-		return AURA_3D_SPARKING.equalsIgnoreCase(preference) ? AURA_3D_SPARKING : AURA_3D_SMOOTH;
+		if (AURA_3D_SPARKING.equalsIgnoreCase(preference)) return AURA_3D_SPARKING;
+		if (AURA_3D_GOD.equalsIgnoreCase(preference)) return AURA_3D_GOD;
+		return AURA_3D_SMOOTH;
+	}
+
+	public static String sanitizeAura3DPreference(String preference, String race) {
+		String sanitized = sanitizeAura3DPreference(preference);
+		return AURA_3D_GOD.equals(sanitized) && !GlindDivinity.grantsGodAura(race) ? AURA_3D_SMOOTH : sanitized;
 	}
 
 	public static String resolveAura3DType(String type, String preference) {

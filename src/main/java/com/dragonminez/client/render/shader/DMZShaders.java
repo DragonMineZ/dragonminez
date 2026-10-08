@@ -16,6 +16,7 @@ public class DMZShaders {
 	public static ShaderInstance auraShader;
 	public static ShaderInstance auraSmooth3DShader;
 	public static ShaderInstance auraSparking3DShader;
+	public static ShaderInstance auraGod3DShader;
 	public static ShaderInstance auraTrailShader;
 	public static ShaderInstance auraBorderShader;
 	public static ShaderInstance auraBorderFieldShader;
@@ -51,6 +52,11 @@ public class DMZShaders {
 						ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "aura_sparking"),
 						DefaultVertexFormat.POSITION_COLOR_NORMAL),
 				shaderInstance -> auraSparking3DShader = shaderInstance);
+
+		event.registerShader(new ShaderInstance(event.getResourceProvider(),
+						ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "aura_god"),
+						DefaultVertexFormat.POSITION_TEX),
+				shaderInstance -> auraGod3DShader = shaderInstance);
 
 		event.registerShader(new ShaderInstance(event.getResourceProvider(),
 						ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "aura_trail"),
