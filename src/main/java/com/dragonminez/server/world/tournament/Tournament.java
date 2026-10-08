@@ -45,6 +45,8 @@ import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Rotation;
 import net.minecraft.world.level.levelgen.structure.BoundingBox;
 import net.minecraft.world.level.levelgen.structure.PoolElementStructurePiece;
+import com.dragonminez.server.world.structure.helper.StructureFrame;
+import net.minecraft.world.level.levelgen.structure.TemplateStructurePiece;
 import net.minecraft.world.level.levelgen.structure.Structure;
 import net.minecraft.world.level.levelgen.structure.StructurePiece;
 import net.minecraft.world.level.levelgen.structure.StructureStart;
@@ -778,7 +780,7 @@ public final class Tournament {
 		@Nullable
 		public static Area areaAt(ServerLevel level, BlockPos pos) {
 			StructureStart start = arenaAt(level, pos);
-			if (start != null) return new Area(start.getBoundingBox(), rotationOf(start));
+			if (start != null) return new Area(StructureFrame.coreBox(start), rotationOf(start));
 			BoundingBox grounds = OtherworldTournamentGrounds.protectedBounds(level);
 			if (grounds != null && OtherworldTournamentGrounds.isBuilt(level) && grounds.isInside(pos)) {
 				return new Area(grounds, Rotation.NONE);
@@ -801,6 +803,7 @@ public final class Tournament {
 		public static Rotation rotationOf(StructureStart start) {
 			for (StructurePiece piece : start.getPieces()) {
 				if (piece instanceof PoolElementStructurePiece pool) return pool.getRotation();
+				if (piece instanceof TemplateStructurePiece template) return template.getRotation();
 			}
 			return Rotation.NONE;
 		}

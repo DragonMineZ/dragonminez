@@ -539,6 +539,11 @@ public class ForgeCommonEvents {
 		if (event.phase != TickEvent.Phase.END) return;
 		if (!(event.level instanceof ServerLevel serverLevel)) return;
 		try {
+			com.dragonminez.server.world.npc.StructureNpcs.tick(serverLevel);
+		} catch (RuntimeException e) {
+			LogUtil.error(Env.SERVER, "StructureNpcs tick failed in {}", serverLevel.dimension().location(), e);
+		}
+		try {
 			com.dragonminez.server.world.structure.placement.StructureRepairManager.tick(serverLevel);
 			com.dragonminez.server.world.tournament.Tournament.Manager.tick(serverLevel);
 			com.dragonminez.server.world.worldboss.WorldBossManager.tick(serverLevel);
@@ -550,6 +555,7 @@ public class ForgeCommonEvents {
 	@SubscribeEvent
 	public static void onLevelUnload(LevelEvent.Unload event) {
 		if (!(event.getLevel() instanceof ServerLevel serverLevel)) return;
+		com.dragonminez.server.world.npc.StructureNpcs.onLevelUnload(serverLevel);
 		try {
 			com.dragonminez.server.world.structure.placement.StructureRepairManager.onLevelUnload(serverLevel);
 		} catch (Throwable ignored) {
@@ -563,6 +569,11 @@ public class ForgeCommonEvents {
 		try {
 			com.dragonminez.server.world.structure.placement.StructureRepairManager.onChunkLoad(serverLevel, chunk);
 		} catch (Throwable ignored) {
+		}
+		try {
+			com.dragonminez.server.world.npc.StructureNpcs.onChunkLoad(serverLevel, chunk);
+		} catch (RuntimeException e) {
+			LogUtil.error(Env.SERVER, "StructureNpcs chunk hook failed at {}", chunk.getPos(), e);
 		}
 	}
 
@@ -733,6 +744,7 @@ public class ForgeCommonEvents {
 		event.addListener(DragonDefinitionReloadListener.INSTANCE);
 		event.addListener(DragonWishRegistry.INSTANCE);
 		event.addListener(com.dragonminez.common.training.RhythmChartRegistry.INSTANCE);
+		event.addListener(com.dragonminez.server.world.npc.StructureNpcs.INSTANCE);
 		event.addListener(new SimplePreparableReloadListener<Void>() {
 			@Override
 			protected Void prepare(ResourceManager resourceManager, ProfilerFiller profiler) {

@@ -78,7 +78,7 @@ public class BiomeAwareUniquePlacement extends StructurePlacement {
 		return null;
 	}
 
-	private record CachedChunk(ChunkGeneratorStructureState state, int epoch, ChunkPos pos) {}
+	private record CachedChunk(ChunkGeneratorStructureState state, int epoch, int version, ChunkPos pos) {}
 
 	private volatile CachedChunk cached;
 
@@ -88,15 +88,17 @@ public class BiomeAwareUniquePlacement extends StructurePlacement {
 
 		CachedChunk snapshot = this.cached;
 		if (snapshot != null && snapshot.state() == structureState
-				&& snapshot.epoch() == StructureSpawnPlanner.currentEpoch()) {
+				&& snapshot.epoch() == StructureSpawnPlanner.currentEpoch()
+				&& snapshot.version() == StructureSpawnPlanner.positionsVersion()) {
 			ChunkPos pos = snapshot.pos();
 			return pos != null && pos.x == x && pos.z == z;
 		}
 
 		int epoch = StructureSpawnPlanner.currentEpoch();
+		int version = StructureSpawnPlanner.positionsVersion();
 		ChunkPos pos = getStructureChunk(structureState.getLevelSeed(), getBiomeSourceReflection(structureState),
 				structureState.randomState(), structureState);
-		if (pos != null) this.cached = new CachedChunk(structureState, epoch, pos);
+		if (pos != null) this.cached = new CachedChunk(structureState, epoch, version, pos);
 		return pos != null && pos.x == x && pos.z == z;
 	}
 

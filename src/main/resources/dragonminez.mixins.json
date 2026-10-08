@@ -14,6 +14,8 @@
     "common.PlayerListMixin",
     "common.PlayerMixin",
     "common.RangedAttributeMixin",
+    "common.SinglePoolElementAccessor",
+    "common.StructureTemplateAccessor",
     "common.StructureTemplatePoolAccessor",
     "common.SweepingEdgeEnchantmentMixin"
   ],

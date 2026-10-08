@@ -10,6 +10,9 @@ import com.dragonminez.server.world.structure.BossStructures.GomahCradleStructur
 import com.dragonminez.server.world.structure.BossStructures.NamekRuinsStructure;
 import com.dragonminez.server.world.structure.BossStructures.TreeOfMightPiece;
 import com.dragonminez.server.world.structure.BossStructures.TreeOfMightStructure;
+import com.dragonminez.server.world.structure.fitted.FittedTemplatePiece;
+import com.dragonminez.server.world.structure.fitted.FittedTemplateStructure;
+import com.dragonminez.server.world.structure.fitted.TerrainFitPiece;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.world.level.levelgen.structure.StructureType;
 import net.minecraft.world.level.levelgen.structure.pieces.StructurePieceType;
@@ -25,6 +28,8 @@ public class MainStructureTypes {
 
 	public static final RegistryObject<StructureType<TallJigsawStructure>> TALL_JIGSAW =
 			STRUCTURE_TYPES.register("tall_jigsaw", () -> () -> TallJigsawStructure.CODEC);
+	public static final RegistryObject<StructureType<FittedTemplateStructure>> FITTED_TEMPLATE =
+			STRUCTURE_TYPES.register("fitted_template", () -> () -> FittedTemplateStructure.CODEC);
 	public static final RegistryObject<StructureType<TreeOfMightStructure>> TREE_OF_MIGHT =
 			STRUCTURE_TYPES.register("tree_of_might", () -> () -> TreeOfMightStructure.CODEC);
 
@@ -41,6 +46,10 @@ public class MainStructureTypes {
 	public static final RegistryObject<StructureType<GomahCradleStructure>> GOMAH_CRADLE =
 			STRUCTURE_TYPES.register("gomah_cradle", () -> () -> GomahCradleStructure.CODEC);
 
+	public static final RegistryObject<StructurePieceType> FITTED_TEMPLATE_PIECE =
+			STRUCTURE_PIECES.register("fitted_template", () -> (StructurePieceType.StructureTemplateType) FittedTemplatePiece::new);
+	public static final RegistryObject<StructurePieceType> TERRAIN_FIT_PIECE =
+			STRUCTURE_PIECES.register("terrain_fit", () -> (StructurePieceType.ContextlessType) TerrainFitPiece::new);
 	public static final RegistryObject<StructurePieceType> TREE_OF_MIGHT_PIECE =
 			STRUCTURE_PIECES.register("tree_of_might", () -> (StructurePieceType.ContextlessType) TreeOfMightPiece::new);
 	public static final RegistryObject<StructurePieceType> SAIYAN_CRATER_PIECE =
