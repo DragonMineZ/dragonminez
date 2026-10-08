@@ -3,6 +3,7 @@ package com.dragonminez.common.stats.techniques;
 import com.dragonminez.common.combat.logic.player.TargetHelper;
 import com.dragonminez.common.init.MainSounds;
 import com.dragonminez.common.init.entities.ki.*;
+import com.dragonminez.common.passives.ClassPassives;
 import com.dragonminez.common.stats.StatsData;
 import com.dragonminez.server.events.players.combat.KiTechniqueHandler;
 import net.minecraft.server.level.ServerLevel;
@@ -28,7 +29,8 @@ public class TechniqueDispatcher {
 		float clampedCharge = Mth.clamp(chargeMultiplier, 0.1f, 2.0f);
 		float damageCharge = (isInitialSpawn && data.isInstantCast()) ? 1.0f : clampedCharge;
 
-		float realDamage = (float) (statsData.getKiDamage() * data.getDamageMultiplier() * data.getConfiguredDamageMultiplier() * damageCharge * data.getOutputMultiplier());
+		float realDamage = (float) (statsData.getKiDamage() * data.getDamageMultiplier() * data.getConfiguredDamageMultiplier() * damageCharge * data.getOutputMultiplier()
+				* ClassPassives.get(statsData).kiDamageMultiplier(statsData, data));
 		final float kiSpeed = (float) (data.getSpeed() * statsData.getKiAttackSpeedModifier());
 		int maxLife = resolvePlayerMaxLifeTicks(data, clampedCharge);
 		final float castSize = data.resolveCastSize(statsData);

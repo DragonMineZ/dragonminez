@@ -24,6 +24,11 @@ public class ReCustomizeWish extends Wish {
 		NetworkHandler.sendToPlayer(new OpenRecustomizeS2C(), player);
 	}
 
+	public static boolean isPending(ServerPlayer player) {
+		Integer grantedAt = PENDING.get(player.getUUID());
+		return grantedAt != null && player.server.getTickCount() - grantedAt <= PENDING_EXPIRY_TICKS;
+	}
+
 	public static boolean consume(ServerPlayer player) {
 		Integer grantedAt = PENDING.remove(player.getUUID());
 		return grantedAt != null && player.server.getTickCount() - grantedAt <= PENDING_EXPIRY_TICKS;

@@ -35,16 +35,16 @@ public class DeleteTechniqueC2S {
 				StatsProvider.get(StatsCapability.INSTANCE, player).ifPresent(data -> {
 					if (data.getStatus().isFused() || data.getStatus().getFusionPartnerUUID() != null) {
 						player.displayClientMessage(Component.translatable("message.dragonminez.fusion.action_blocked"), true);
-						NetworkHandler.sendToTrackingEntityAndSelf(new ProgressionSyncS2C(player), player);
+						NetworkHandler.sendToPlayer(new ProgressionSyncS2C(player), player);
 						return;
 					}
 					if (techniqueId == null || ReviveTechniqueData.isRevive(techniqueId) || !data.getTechniques().getUnlockedTechniques().containsKey(techniqueId)) {
-						NetworkHandler.sendToTrackingEntityAndSelf(new ProgressionSyncS2C(player), player);
+						NetworkHandler.sendToPlayer(new ProgressionSyncS2C(player), player);
 						return;
 					}
 					data.getTechniques().removeTechnique(techniqueId);
 					data.getSkills().removeSkill(techniqueId);
-					NetworkHandler.sendToTrackingEntityAndSelf(new ProgressionSyncS2C(player), player);
+					NetworkHandler.sendToPlayer(new ProgressionSyncS2C(player), player);
 				});
 			}
 		});

@@ -1,6 +1,8 @@
 package com.dragonminez.common.util.gson;
 
 import com.dragonminez.common.wish.Wish;
+import com.dragonminez.common.wish.wishes.AttributePointsWish;
+import com.dragonminez.common.wish.wishes.AttributesWish;
 import com.dragonminez.common.wish.wishes.ChangeDifficultyWish;
 import com.dragonminez.common.wish.wishes.CommandWish;
 import com.dragonminez.common.wish.wishes.ItemListWish;
@@ -98,6 +100,8 @@ public final class WishTypeAdapterFactory implements TypeAdapterFactory {
 			case "changedifficulty" -> ChangeDifficultyWish.class;
 			case "resetstory" -> ResetStoryWish.class;
 			case ReviveWish.WISH_TYPE -> ReviveWish.class;
+			case AttributesWish.WISH_TYPE -> AttributesWish.class;
+			case AttributePointsWish.WISH_TYPE -> AttributePointsWish.class;
 			default -> null;
 		};
 	}

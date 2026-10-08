@@ -3,10 +3,12 @@ package com.dragonminez.common.network.C2S;
 import com.dragonminez.Env;
 import com.dragonminez.LogUtil;
 import com.dragonminez.common.combat.logic.knockback.ConfigurableKnockback;
+import com.dragonminez.common.combat.logic.player.MeleeTargetValidator;
 import com.dragonminez.common.combat.logic.player.MeleeWindupTracker;
 import com.dragonminez.common.combat.logic.player.PlayerAttackHelper;
 import com.dragonminez.common.combat.logic.player.PlayerAttackProperties;
 import com.dragonminez.common.combat.logic.player.TargetHelper;
+import com.dragonminez.common.combat.weapon.WeaponAttributes;
 import lombok.Getter;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.server.level.ServerPlayer;
@@ -22,7 +24,9 @@ import com.google.common.collect.Multimap;
 import net.minecraft.world.entity.ai.attributes.Attribute;
 import io.netty.handler.codec.DecoderException;
 
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
@@ -37,6 +41,8 @@ public class CombatAttackRequestC2S {
 	private final boolean isSneaking;
 	private final int selectedSlot;
 	private final int[] entityIds;
+	private float arrivalPitch = Float.NaN;
+	private float arrivalYaw = Float.NaN;
 
 	public CombatAttackRequestC2S(int comboCount, boolean isSneaking, int selectedSlot, int[] entityIds) {
 		this.comboCount = comboCount;
@@ -73,7 +79,10 @@ public class CombatAttackRequestC2S {
 		long arrivalNanos = System.nanoTime();
 		ctx.get().enqueueWork(() -> {
 			ServerPlayer player = ctx.get().getSender();
-			if (player != null && MeleeWindupTracker.canStrike(player)) MeleeWindupTracker.submitHit(player, this, arrivalNanos);
+			if (player == null) return;
+			this.arrivalPitch = player.getXRot();
+			this.arrivalYaw = player.getYRot();
+			if (MeleeWindupTracker.canStrike(player)) MeleeWindupTracker.submitHit(player, this, arrivalNanos);
 		});
 
 		ctx.get().setPacketHandled(true);
@@ -113,6 +122,12 @@ public class CombatAttackRequestC2S {
 				((PlayerAttackProperties) player).setComboCount(-1);
 				return;
 			}
+
+			List<WeaponAttributes.Attack> reachAttacks = new ArrayList<>(2);
+			reachAttacks.add(hand.attack());
+			var requestedHand = PlayerAttackHelper.getCurrentAttack(player, request.getComboCount());
+			if (requestedHand != null && requestedHand.attack() != hand.attack()) reachAttacks.add(requestedHand.attack());
+			List<MeleeTargetValidator.Aim> aims = MeleeTargetValidator.candidateAims(player, request.getArrivalPitch(), request.getArrivalYaw());
 
 			if (hand.isOffHand()) PlayerAttackHelper.setAttributesForOffHandAttack(player, true);
 
@@ -155,7 +170,8 @@ public class CombatAttackRequestC2S {
 				TargetHelper.Relation relation = TargetHelper.getRelation(player, entity);
 				if (!TargetHelper.canAttack(player, entity, maxRange + 4.0D)) continue;
 
-				if (player.distanceToSqr(entity) <= (maxRange * maxRange) + 16.0) {
+				if (player.distanceToSqr(entity) <= (maxRange * maxRange) + 16.0
+						&& MeleeTargetValidator.canHit(player, entity, reachAttacks, maxRange, aims)) {
 
 					if (firstHit) {
 						player.getPersistentData().putBoolean("dmz_first_hit", true);

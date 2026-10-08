@@ -39,7 +39,7 @@ public class EquipTechniqueC2S {
 					boolean lockedSlot = data.getTechniques().isFormLoadoutActive()
 							&& slotIndex < Techniques.FORM_LOADOUT_SIZE;
 					if (!lockedSlot) data.getTechniques().equipOrSwapTechnique(slotIndex, techniqueId);
-					NetworkHandler.sendToTrackingEntityAndSelf(new ProgressionSyncS2C(player), player);
+					NetworkHandler.sendToPlayer(new ProgressionSyncS2C(player), player);
 				});
 			}
 		});

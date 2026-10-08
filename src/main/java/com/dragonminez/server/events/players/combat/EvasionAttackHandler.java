@@ -125,6 +125,8 @@ public class EvasionAttackHandler {
 
 			TechniqueData unlocked = stats.getTechniques().getUnlockedTechniques().get(techniqueId);
 			if (!(unlocked instanceof EvasionAttackData technique)) return;
+			if (!java.util.Arrays.asList(stats.getTechniques().getEquippedSlots()).contains(techniqueId)) return;
+			if (stats.getSkills().getSkillLevel("kicontrol") <= 0 || stats.getResources().getPowerRelease() < 5) return;
 
 			String cooldownKey = "TechniqueCooldown_" + techniqueId;
 			if (stats.getCooldowns().hasCooldown(cooldownKey)) return;

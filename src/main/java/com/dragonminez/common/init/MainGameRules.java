@@ -18,6 +18,7 @@ import net.minecraft.world.level.Level;
 import net.minecraft.world.level.levelgen.structure.BoundingBox;
 import net.minecraft.world.level.levelgen.structure.Structure;
 import net.minecraft.world.level.levelgen.structure.StructureStart;
+import com.dragonminez.server.world.structure.helper.StructureFrame;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -64,7 +65,7 @@ public class MainGameRules {
 			Holder<Structure> holder = registry.wrapAsHolder(structure);
 			if (!holder.is(tag)) continue;
 			StructureStart start = serverLevel.structureManager().getStructureAt(pos, structure);
-			if (start.isValid() && start.getBoundingBox().inflatedBy(MASTER_STRUCTURE_MARGIN).isInside(pos)) {
+			if (start.isValid() && StructureFrame.coreBox(start).inflatedBy(MASTER_STRUCTURE_MARGIN).isInside(pos)) {
 				return true;
 			}
 		}
@@ -98,7 +99,9 @@ public class MainGameRules {
 				for (StructureStart start : serverLevel.structureManager().startsForStructure(
 						new ChunkPos(cx, cz),
 						structure -> registry.wrapAsHolder(structure).is(MainTags.Structures.KI_GRIEFING_PROTECTED))) {
-					if (start.isValid() && !boxes.contains(start.getBoundingBox())) boxes.add(start.getBoundingBox());
+					if (!start.isValid()) continue;
+					BoundingBox core = StructureFrame.coreBox(start);
+					if (!boxes.contains(core)) boxes.add(core);
 				}
 			}
 		}

@@ -4,6 +4,7 @@ import com.dragonminez.Reference;
 import com.dragonminez.client.gui.buttons.CustomTextureButton;
 import com.dragonminez.client.gui.buttons.SwitchButton;
 import com.dragonminez.client.gui.character.util.BaseMenuScreen;
+import com.dragonminez.client.gui.character.util.RegenScalingFormat;
 import com.dragonminez.client.gui.tutorial.TutorialButton;
 import com.dragonminez.client.gui.tutorial.TutorialManager;
 import com.dragonminez.client.gui.tutorial.TutorialRect;
@@ -894,6 +895,7 @@ public class CharacterStatsScreen extends BaseMenuScreen {
 							double currentRegenSec = statsData.getStaminaRegenPerSecond();
 							extras.add(Component.translatable("gui.dragonminez.customization.stat.regen.stm").append(": ")
 									.append(txt(String.format(Locale.US, "%.1f/s", currentRegenSec)))
+									.append(txt(RegenScalingFormat.stamina(classStats)).withStyle(ChatFormatting.DARK_GRAY))
 									.withStyle(ChatFormatting.AQUA));
 						}
 						extras.add(tr("gui.dragonminez.character_stats.stamina_per_hit").append(": ")
@@ -917,7 +919,7 @@ public class CharacterStatsScreen extends BaseMenuScreen {
 						appendDefenseCurveInfo(desc);
 						desc.add(tr("gui.dragonminez.character_stats.max_value", NumberFormattingUtil.formatUpToOneDecimal(maxDefense)).withStyle(ChatFormatting.GREEN));
 
-						double flatMitigation = defense * ConfigManager.getCombatConfig().getFlatMitigationFactor() * Math.max(1.0, statsData.getTotalMultiplier("DEF"));
+						double flatMitigation = statsData.getFlatMitigation();
 						extras.add(tr("gui.dragonminez.character_stats.flat_mitigation").append(": ")
 								.append(txt(NumberFormattingUtil.formatUpToOneDecimal(flatMitigation)))
 								.withStyle(ChatFormatting.AQUA));
@@ -1253,7 +1255,7 @@ public class CharacterStatsScreen extends BaseMenuScreen {
 
 			List<Component> extras = new ArrayList<>();
 
-			double flatMitigation = defense * ConfigManager.getCombatConfig().getFlatMitigationFactor() * Math.max(1.0, statsData.getTotalMultiplier("DEF"));
+			double flatMitigation = statsData.getFlatMitigation();
 			extras.add(tr("gui.dragonminez.character_stats.flat_mitigation").append(": ")
 					.append(txt(NumberFormattingUtil.formatUpToOneDecimal(flatMitigation)))
 					.withStyle(ChatFormatting.AQUA));

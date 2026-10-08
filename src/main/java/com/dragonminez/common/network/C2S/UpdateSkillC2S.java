@@ -22,12 +22,15 @@ import net.minecraft.world.phys.AABB;
 import net.minecraftforge.network.NetworkEvent;
 
 import java.util.List;
+import java.util.Locale;
+import java.util.Set;
 import java.util.Map;
 import java.util.function.Supplier;
 
 public class UpdateSkillC2S {
 
 	private static final double MASTER_SHOP_RANGE = 10.0;
+	private static final Set<String> TOGGLEABLE_SKILLS = Set.of("kiprotection", "ki_infusion", "jump", "sprint", "kisense");
 
 	public enum SkillAction {
 		TOGGLE, UPGRADE, PURCHASE
@@ -60,6 +63,8 @@ public class UpdateSkillC2S {
 			ServerPlayer player = ctx.get().getSender();
 			if (player != null && !StorageManager.isLoadPending(player)) {
 				StatsProvider.get(StatsCapability.INSTANCE, player).ifPresent(data -> {
+					if (skillName == null || skillName.isBlank()) return;
+					String skillName = this.skillName.toLowerCase(Locale.ROOT);
 					if (action != SkillAction.TOGGLE && (data.getStatus().isFused() || data.getStatus().getFusionPartnerUUID() != null)) {
 						player.displayClientMessage(Component.translatable("message.dragonminez.fusion.action_blocked"), true);
 						return;
@@ -68,6 +73,7 @@ public class UpdateSkillC2S {
 					boolean raceAllowed = isSkillAllowedForPlayerRace(data, skillName);
 					switch (action) {
 						case TOGGLE:
+							if (!TOGGLEABLE_SKILLS.contains(skillName) || data.getStatus().isStunned()) break;
 							if (skill != null && skill.getLevel() > 0) skill.setActive(!skill.isActive());
 							break;
 						case UPGRADE:
@@ -136,13 +142,13 @@ public class UpdateSkillC2S {
 			if (charConfig == null) return -1;
 			Integer[] prices = charConfig.getFormSkillTpCosts(skillName);
 			if (prices == null || currentLevel >= prices.length || prices[currentLevel] == null) return -1;
-			return Math.max(0, prices[currentLevel]);
+			return prices[currentLevel] < 0 ? -1 : prices[currentLevel];
 		}
 		var skillCosts = skillsConfig.getSkillCosts(skillName);
 		if (skillCosts == null || skillCosts.getCosts() == null) return -1;
 		java.util.List<Integer> costs = skillCosts.getCosts();
 		if (currentLevel >= costs.size() || costs.get(currentLevel) == null) return -1;
-		return Math.max(0, costs.get(currentLevel));
+		return costs.get(currentLevel) < 0 ? -1 : costs.get(currentLevel);
 	}
 
 	private static boolean isOfferedByNearbyMaster(ServerPlayer player, String skillName) {

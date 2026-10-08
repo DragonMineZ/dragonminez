@@ -1,5 +1,6 @@
 package com.dragonminez.server.events.players.statuseffect;
 
+import com.dragonminez.common.combat.SilentDamage;
 import com.dragonminez.common.config.ConfigManager;
 import com.dragonminez.common.init.MainDamageTypes;
 import com.dragonminez.common.init.MainItems;
@@ -74,7 +75,7 @@ public class RelicItemsStatusHandler implements IStatusEffectHandler {
 		} else {
 			data.getResources().setCurrentEnergy(0);
 			float healthCost = (float) (player.getMaxHealth() * gameplay.getDemonEyeHealthDrainPercent());
-			if (healthCost > 0) player.setHealth(Math.max(1.0F, player.getHealth() - healthCost));
+			if (healthCost > 0) SilentDamage.apply(player, healthCost);
 		}
 
 		int interval = gameplay.getDemonEyeAlignmentLossIntervalSeconds();

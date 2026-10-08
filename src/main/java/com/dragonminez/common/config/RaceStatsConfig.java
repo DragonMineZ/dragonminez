@@ -17,17 +17,22 @@ public class RaceStatsConfig {
 	@Setter
 	private String configVersion;
 	private final Map<String, ClassStats> classes = new HashMap<>();
-	private static final int MAX_TRACKED_CLASSES = 64;
+	private static final String FALLBACK_CLASS = "warrior";
+	private static final ClassStats SHARED_FALLBACK = new ClassStats();
 
 	public ClassStats getClassStats(String characterClass) {
-		ClassStats existing = this.classes.get(characterClass);
+		ClassStats existing = characterClass != null ? this.classes.get(characterClass) : null;
 		if (existing != null) return existing;
-		if (characterClass != null && this.classes.size() < MAX_TRACKED_CLASSES) {
-			ClassStats created = new ClassStats();
-			this.classes.put(characterClass, created);
-			return created;
-		}
-		return new ClassStats();
+		ClassStats fallback = this.classes.get(FALLBACK_CLASS);
+		return fallback != null ? fallback : SHARED_FALLBACK;
+	}
+
+	public ClassStats getOrCreateClassStats(String characterClass) {
+		return this.classes.computeIfAbsent(characterClass, key -> new ClassStats());
+	}
+
+	public boolean hasClass(String characterClass) {
+		return characterClass != null && this.classes.containsKey(characterClass);
 	}
 
 	public Collection<String> getAllClasses() {
@@ -48,9 +53,18 @@ public class RaceStatsConfig {
 
 		private Double baseSp5 = 10.0;
 		private Double sp5StmScaling = 0.1;
+		private Double sp5ResScaling;
 		private Double tpCostMultiplier = 1.0;
 		private Double tpGainMultiplier = 1.0;
 		private Passive passive = new Passive();
+
+		public double resolveSp5VitScaling() {
+			return sp5StmScaling != null ? sp5StmScaling : 0.0;
+		}
+
+		public double resolveSp5ResScaling() {
+			return sp5ResScaling != null ? sp5ResScaling : 0.0;
+		}
 	}
 
 	@Setter

@@ -363,6 +363,13 @@ public class StatsData {
 		return Math.min((float) Math.max(0.0, maxStamina), Float.MAX_VALUE - 1);
 	}
 
+	public double getEffectiveStaminaRegenResistance() {
+		int baseRes = stats.getResistance();
+		double flatBonusStm = bonusStats.calculateBonus("STM", baseRes, false);
+		double multBonusStm = bonusStats.calculateBonus("STM", baseRes, true);
+		return ((baseRes + multBonusStm) * getTotalMultiplier("STM")) + flatBonusStm;
+	}
+
 	public double getStaminaRegenPerSecond() {
 		RaceStatsConfig raceConfig = ConfigManager.getRaceStats(character.getRaceName());
 		RaceStatsConfig.ClassStats classStats = getClassStats(raceConfig, character.getCharacterClass());
@@ -372,7 +379,7 @@ public class StatsData {
 		double multBonusVit = bonusStats.calculateBonus("VIT", baseVit, true);
 		double vitMult = getTotalMultiplier("VIT");
 		double effectiveVit = ((baseVit + multBonusVit) * vitMult) + flatBonusVit;
-		double sp5 = classStats.getBaseSp5() + (effectiveVit * classStats.getSp5StmScaling());
+		double sp5 = classStats.getBaseSp5() + (effectiveVit * classStats.resolveSp5VitScaling()) + (getEffectiveStaminaRegenResistance() * classStats.resolveSp5ResScaling());
 
 		int totalEnchLvl = TickHandler.getTotalArmorEnchantmentLevel(MainEnchants.RESISTANCE_RECOVERY.get(), player);
 		double enchMult = TickHandler.getRecoveryMultiplier(totalEnchLvl);
@@ -792,10 +799,9 @@ public class StatsData {
 	private double getMeleeDamageNoBonus() {
 		double strength = stats.getStrength();
 		double strScaling = getStatScaling("STR");
-		double strMult = getTotalMultiplier("STR");
 		double releaseMultiplier = resources.getPowerRelease() / 100.0;
 		double secondaryMeleeDamage = getSecondaryAttributeValue(MainAttributes.MELEE_DAMAGE.get(), 1.0);
-		return secondaryMeleeDamage + (strength * strScaling * strMult) * releaseMultiplier;
+		return secondaryMeleeDamage + (strength * strScaling) * releaseMultiplier;
 	}
 
 	private double getStrikeDamageNoBonus() {
@@ -803,21 +809,18 @@ public class StatsData {
 		double strength = stats.getStrength();
 		double skpScaling = getStatScaling("SKP");
 		double strScaling = getStatScaling("STR");
-		double skpMult = getTotalMultiplier("SKP");
-		double strMult = getTotalMultiplier("STR");
 		double releaseMultiplier = resources.getPowerRelease() / 100.0;
 		double secondaryStrikeDamage = getSecondaryAttributeValue(MainAttributes.STRIKE_DAMAGE.get(), 1.0);
-		double baseDamage = (strikePower * skpScaling * skpMult) + (strength * strScaling * strMult) * 0.25;
+		double baseDamage = (strikePower * skpScaling) + (strength * strScaling) * 0.25;
 		return secondaryStrikeDamage + baseDamage * releaseMultiplier;
 	}
 
 	private double getKiDamageNoBonus() {
 		double kiPower = stats.getKiPower();
 		double pwrScaling = getStatScaling("PWR");
-		double pwrMult = getTotalMultiplier("PWR");
 		double releaseMultiplier = resources.getPowerRelease() / 100.0;
 		double secondaryKiDamage = getSecondaryAttributeValue(MainAttributes.KI_DAMAGE.get(), 0.0);
-		return secondaryKiDamage + (kiPower * pwrScaling * pwrMult) * releaseMultiplier;
+		return secondaryKiDamage + (kiPower * pwrScaling) * releaseMultiplier;
 	}
 
 	public double getEffectiveEnergyDrain() {
@@ -889,10 +892,39 @@ public class StatsData {
 			default -> 1.0;
 		};
 
+		if (isRageBorrowedForm(currentFormGroup, formData)) {
+			return applyRacialFormPowerModifier(currentFormGroup, getRageBorrowedMultiplier(formData, statName));
+		}
+
 		double mastery = character.getFormMasteries().getMastery(currentFormGroup, currentForm);
 		double result = applyMasteryStatBonus(formData, baseMult, mastery);
 		result = applyMutantFormPowerModifier(currentFormGroup, formData, result);
 		return applyRacialFormPowerModifier(currentFormGroup, result);
+	}
+
+	private boolean isRageBorrowedForm(String groupName, FormConfig.FormData formData) {
+		return FusionForms.hasMutantFor(this, groupName) && TransformationsHelper.isRageBorrowedForm(this, groupName, formData);
+	}
+
+	private double getRageBorrowedMultiplier(FormConfig.FormData legendary, String statName) {
+		double legendaryBase = getBaseFormMultiplier(legendary, statName);
+		if (legendaryBase <= 1.0) return legendaryBase;
+		double splendor = applyMasteryStatBonus(legendary, legendaryBase, legendary.getMaxMastery());
+
+		Object[] bestResult = getBestBaseFormWithGroup(false);
+		String bestGroup = (String) bestResult[0];
+		FormConfig.FormData bestForm = (FormConfig.FormData) bestResult[1];
+		double bestMult = 1.0;
+		if (bestForm != null) {
+			double bestMastery = character.getFormMasteries().getMastery(bestGroup, bestForm.getName());
+			bestMult = Math.max(1.0, getMasteryAdjustedMultiplier(bestForm, statName, bestMastery));
+		}
+
+		var mutantConfig = ConfigManager.getServerConfig() != null ? ConfigManager.getServerConfig().getMutant() : null;
+		double bonus = mutantConfig != null ? mutantConfig.getRageBorrowedFormBonus() : 0.5;
+		double reference = legendary.getStrMultiplier() - 1.0;
+		double share = reference > 0.0 ? (legendaryBase - 1.0) / reference : 1.0;
+		return Math.min(bestMult + bonus * share, splendor);
 	}
 
 	private double applyRacialFormPowerModifier(String groupName, double multiplier) {
@@ -910,12 +942,8 @@ public class StatsData {
 		if (mutantConfig == null) return multiplier;
 		if (!TransformationsHelper.isMutantLegendaryGroup(groupName)) return multiplier;
 
-		double factor;
-		if (TransformationsHelper.isRageBorrowedForm(this, groupName, formData)) factor = 1.0 - mutantConfig.getPowerBonusReductionNoSkill();
-		else if (status.isRageActive()) factor = 1.0 + mutantConfig.getPowerBonusBoostWithSkill();
-		else return multiplier;
-
-		return 1.0 + (multiplier - 1.0) * factor;
+		if (!status.isRageActive()) return multiplier;
+		return 1.0 + (multiplier - 1.0) * (1.0 + mutantConfig.getPowerBonusBoostWithSkill());
 	}
 
 	private double getBaseFormMultiplier(FormConfig.FormData formData, String statName) {
@@ -992,6 +1020,10 @@ public class StatsData {
 	}
 
 	private Object[] getBestUltimateBaseFormWithGroup() {
+		return getBestBaseFormWithGroup(true);
+	}
+
+	private Object[] getBestBaseFormWithGroup(boolean forUltimate) {
 		String raceName = character.getRaceName();
 		Map<String, FormConfig> groups = FusionForms.allFormGroups(this);
 		if (groups == null || groups.isEmpty()) return new Object[]{null, null};
@@ -1003,11 +1035,12 @@ public class StatsData {
 			String groupName = entry.getKey();
 			FormConfig group = entry.getValue();
 			if (group == null) continue;
+			if (!forUltimate && TransformationsHelper.isMutantLegendaryGroup(groupName)) continue;
 
 			List<FormConfig.FormData> unlocked = TransformationsHelper.getUnlockedForms(this, raceName, groupName);
 			for (FormConfig.FormData formData : unlocked) {
 				if (formData == null) continue;
-				if (formData.isIncompatibleWith(StackForms.GROUP_ULTIMATE, StackForms.ULTIMATE)) continue;
+				if (forUltimate && formData.isIncompatibleWith(StackForms.GROUP_ULTIMATE, StackForms.ULTIMATE)) continue;
 
 				double mastery = character.getFormMasteries().getMastery(groupName, formData.getName());
 
@@ -1028,6 +1061,17 @@ public class StatsData {
 			}
 		}
 		return new Object[]{bestGroup, best};
+	}
+
+	public double getStackFormChargeMastery(String group, String formName) {
+		if (StackForms.GROUP_ULTIMATE.equalsIgnoreCase(group)) {
+			Object[] best = getBestUltimateBaseFormWithGroup();
+			if (best[0] instanceof String bestGroup && best[1] instanceof FormConfig.FormData bestForm) {
+				return character.getFormMasteries().getMastery(bestGroup, bestForm.getName());
+			}
+			return 0.0;
+		}
+		return character.getStackFormMasteries().getMastery(group, formName);
 	}
 
 	private boolean isUltimateStackFormActive() {
@@ -1626,7 +1670,7 @@ public class StatsData {
 				case DIFFICULTY -> total += (getDifficultyTpMultiplier() - 1.0);
 			}
 		}
-		total += (getProgressionTpGainMultiplier() - 1.0);
+		if (source != TpSource.TRAINING) total += (getProgressionTpGainMultiplier() - 1.0);
 		return Math.max(0.0, total);
 	}
 
@@ -1658,12 +1702,22 @@ public class StatsData {
 		if (strength <= 0.0) return 1.0;
 		if (!ConfigManager.getServerConfig().getDynamicGrowth().isManualTpPurchasesEnabled()) return 1.0;
 
-		int maxCost = getSingleStatCost(getConfiguredMaxTotalStats());
-		if (maxCost <= 0) return 1.0;
+		int referenceCost = getSingleStatCost(getProgressionReferenceTotalStats());
+		if (referenceCost <= 0 || referenceCost == Integer.MAX_VALUE) return 1.0;
 		int currentCost = getSingleStatCost(getTpCostTotalStats());
 
-		double factor = Math.max(0.0, Math.min(1.0, (double) currentCost / maxCost));
-		return 1.0 + strength * factor;
+		double ratio = Math.max(0.0, Math.min(1.0, (double) currentCost / referenceCost));
+		return 1.0 + strength * Math.sqrt(ratio);
+	}
+
+	private int getProgressionReferenceTotalStats() {
+		int maxLevel = getConfiguredMaxValue();
+		int referenceLevel = Math.min(maxLevel, ConfigManager.getServerConfig().getGameplay().getProgressionReferenceLevel());
+		int initialStats = getInitialTotalStats();
+		long maxTotal = Math.max(initialStats, getConfiguredMaxTotalStatsRaw());
+		if (maxLevel <= 1) return (int) Math.min(Integer.MAX_VALUE, maxTotal);
+		double progress = (double) (referenceLevel - 1) / (maxLevel - 1);
+		return (int) Math.min(Integer.MAX_VALUE, initialStats + Math.round(progress * (maxTotal - initialStats)));
 	}
 
 	public int getTpCostTotalStats() {
@@ -1724,6 +1778,40 @@ public class StatsData {
 			if (totalCost >= Integer.MAX_VALUE) return Integer.MAX_VALUE;
 		}
 		return (int) totalCost;
+	}
+
+	public double calculateTpForPoints(int costTotalStatsStart, int totalStatsStart, int points) {
+		if (points <= 0 || !ConfigManager.getServerConfig().getDynamicGrowth().isManualTpPurchasesEnabled()) return 0.0;
+		int totalCap = getConfiguredMaxTotalStats();
+		double total = 0.0;
+		for (int i = 0; i < points; i++) {
+			if ((long) totalStatsStart + i >= totalCap) break;
+			int cost = getSingleStatCost(costTotalStatsStart + i);
+			if (cost == Integer.MAX_VALUE) break;
+			total += Math.max(0, cost);
+		}
+		return total;
+	}
+
+	public int attributeRewardPointShare(int attributes) {
+		if (attributes <= 0) return 0;
+		double ratio = ConfigManager.getServerConfig().getGameplay().getAttributeRewardPointRatio();
+		return Math.max(0, Math.min(attributes, (int) Math.floor(attributes * ratio)));
+	}
+
+	public double estimateAttributeRewardTp(int attributes) {
+		if (attributes <= 0) return 0.0;
+		int points = attributeRewardPointShare(attributes);
+		int pending = Math.max(0, resources.getPendingAttributePoints()) + points;
+		return calculateTpForPoints(getTpCostTotalStats() + pending, stats.getTotalStats() + pending, attributes - points);
+	}
+
+	public void grantAttributeReward(int attributes) {
+		if (attributes <= 0) return;
+		int points = attributeRewardPointShare(attributes);
+		double tp = estimateAttributeRewardTp(attributes);
+		if (points > 0) resources.addPendingAttributePoints(points);
+		if (tp > 0.0) resources.addTrainingPoints(tp, false, true);
 	}
 
 	public int calculateStatIncrease(int maxStatsToAdd, float availableTPs, int maxStats) {

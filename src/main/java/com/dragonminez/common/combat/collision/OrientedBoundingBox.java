@@ -1,4 +1,4 @@
-package com.dragonminez.client.collision;
+package com.dragonminez.common.combat.collision;
 
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
@@ -81,6 +81,11 @@ public class OrientedBoundingBox {
 
     public OrientedBoundingBox scale(double scale) {
         this.extent = this.extent.scale(scale);
+        return this;
+    }
+
+    public OrientedBoundingBox inflate(double amount) {
+        this.extent = this.extent.add(amount, amount, amount);
         return this;
     }
 

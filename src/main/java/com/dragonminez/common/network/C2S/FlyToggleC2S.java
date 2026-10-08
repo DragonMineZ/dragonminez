@@ -1,5 +1,6 @@
 package com.dragonminez.common.network.C2S;
 
+import com.dragonminez.common.network.PacketRateLimiter;
 import com.dragonminez.common.config.ConfigManager;
 import com.dragonminez.common.network.NetworkHandler;
 import com.dragonminez.common.network.S2C.ProgressionSyncS2C;
@@ -36,6 +37,7 @@ public class FlyToggleC2S {
         ctx.get().enqueueWork(() -> {
             ServerPlayer player = ctx.get().getSender();
             if (player == null) return;
+            if (!PacketRateLimiter.allow(player.getUUID(), "flytogglec2s", player.level().getGameTime(), 2)) return;
 
             StatsProvider.get(StatsCapability.INSTANCE, player).ifPresent(data -> {
                 if (data.getStatus().isStunned()) return;

@@ -1,6 +1,7 @@
 package com.dragonminez.server.events.players.combat;
 
 import com.dragonminez.Reference;
+import com.dragonminez.common.combat.SilentDamage;
 import com.dragonminez.common.combat.util.MultipartTargeting;
 import com.dragonminez.common.init.entities.ki.AbstractKiProjectile;
 import com.dragonminez.common.init.entities.ki.HellzoneGrenadeEntity;
@@ -323,7 +324,7 @@ public class KiTechniqueHandler {
 
 			if (!player.isCreative()) {
 				float cost = player.getMaxHealth() * HEALTH_COST_RATIO;
-				player.setHealth(Math.max(MIN_HEALTH, player.getHealth() - cost));
+				SilentDamage.apply(player, cost, MIN_HEALTH);
 			}
 
 			KiBlastEntity shot = new KiBlastEntity(player.level(), player);

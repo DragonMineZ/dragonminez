@@ -5,6 +5,8 @@ import com.dragonminez.common.network.S2C.ProgressionSyncS2C;
 import com.dragonminez.common.stats.StatsCapability;
 import com.dragonminez.common.stats.StatsProvider;
 import com.dragonminez.common.stats.techniques.KiAttackData;
+import com.dragonminez.common.stats.techniques.PredefinedTechniques;
+import com.dragonminez.common.stats.techniques.Techniques;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.server.level.ServerPlayer;
@@ -101,7 +103,7 @@ public class CreateTechniqueC2S {
 			StatsProvider.get(StatsCapability.INSTANCE, player).ifPresent(data -> {
 				if (data.getStatus().isFused() || data.getStatus().getFusionPartnerUUID() != null) {
 					player.displayClientMessage(Component.translatable("message.dragonminez.fusion.action_blocked"), true);
-					NetworkHandler.sendToTrackingEntityAndSelf(new ProgressionSyncS2C(player), player);
+					NetworkHandler.sendToPlayer(new ProgressionSyncS2C(player), player);
 					return;
 				}
 				KiAttackData technique = new KiAttackData();
@@ -111,8 +113,12 @@ public class CreateTechniqueC2S {
 				technique.setAuthor(player.getName().getString());
 				technique.setId(com.dragonminez.common.stats.techniques.TechniqueData.generateId(technique.getAuthor(), technique.getName()));
 
-				if (data.getTechniques().getUnlockedTechniques().containsKey(technique.getId())) {
-					NetworkHandler.sendToTrackingEntityAndSelf(new ProgressionSyncS2C(player), player);
+				String id = technique.getId();
+				boolean reservedId = PredefinedTechniques.REGISTRY.containsKey(id) || PredefinedTechniques.STRIKE_REGISTRY.containsKey(id)
+						|| PredefinedTechniques.EVASION_REGISTRY.containsKey(id);
+				boolean atCap = data.getTechniques().getUnlockedTechniques().size() >= Techniques.MAX_UNLOCKED_TECHNIQUES;
+				if (reservedId || atCap || data.getTechniques().getUnlockedTechniques().containsKey(id)) {
+					NetworkHandler.sendToPlayer(new ProgressionSyncS2C(player), player);
 					return;
 				}
 
@@ -159,13 +165,13 @@ public class CreateTechniqueC2S {
 
 				int tpCost = Math.max(0, Math.round(technique.getTpCost()));
 				if (data.getResources().getTrainingPointsExact() < tpCost) {
-					NetworkHandler.sendToTrackingEntityAndSelf(new ProgressionSyncS2C(player), player);
+					NetworkHandler.sendToPlayer(new ProgressionSyncS2C(player), player);
 					return;
 				}
 				if (tpCost > 0) data.getResources().removeTrainingPoints(tpCost);
 
 				data.getTechniques().unlockTechnique(technique);
-				NetworkHandler.sendToTrackingEntityAndSelf(new ProgressionSyncS2C(player), player);
+				NetworkHandler.sendToPlayer(new ProgressionSyncS2C(player), player);
 			});
 		});
 		context.setPacketHandled(true);

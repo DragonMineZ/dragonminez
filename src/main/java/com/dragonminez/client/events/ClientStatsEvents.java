@@ -137,8 +137,12 @@ public class ClientStatsEvents {
 
 		if (mc.level != null && !mc.isPaused()) {
 			for (var player : mc.level.players()) {
-				StatsProvider.get(StatsCapability.INSTANCE, player)
-						.ifPresent(data -> BioSwellRenderState.tick(player, data));
+				StatsProvider.get(StatsCapability.INSTANCE, player).ifPresent(data -> {
+					BioSwellRenderState.tick(player, data);
+					if (player != localPlayer && data.getStatus().isActionCharging() && data.getStatus().getSelectedAction() == ActionMode.FUSION) {
+						faceBodyToYaw(player);
+					}
+				});
 			}
 			FormVisualTransition.tick(mc.level.players());
 		}
@@ -243,8 +247,7 @@ public class ClientStatsEvents {
 			if (data.getStatus().isActionCharging() && data.getStatus().getSelectedAction() == ActionMode.FUSION) {
 				localPlayer.setYRot(localPlayer.yRotO);
 				localPlayer.setXRot(localPlayer.xRotO);
-				localPlayer.yHeadRot = localPlayer.yHeadRotO;
-				localPlayer.yBodyRot = localPlayer.yBodyRotO;
+				faceBodyToYaw(localPlayer);
 			}
 
 			boolean isChargingTechnique = data.getTechniques().isTechniqueCharging() || data.getTechniques().isTechniqueChargeActive();
@@ -554,6 +557,14 @@ public class ClientStatsEvents {
 		for (int i = 0; i < TECHNIQUE_VISIBLE_SLOTS; i++) wasSlotKeyDown[i] = false;
 	}
 
+
+	private static void faceBodyToYaw(Player player) {
+		float yaw = player.getYRot();
+		player.yHeadRot = yaw;
+		player.yHeadRotO = yaw;
+		player.yBodyRot = yaw;
+		player.yBodyRotO = yaw;
+	}
 
 	@SubscribeEvent
 	public static void onKeyPressed(InputEvent.Key event) {

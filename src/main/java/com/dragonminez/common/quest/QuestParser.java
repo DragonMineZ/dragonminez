@@ -22,6 +22,8 @@ import com.dragonminez.common.quest.rewards.GenericItemReward;
 import com.dragonminez.common.quest.rewards.ItemReward;
 import com.dragonminez.common.quest.rewards.KiTechniqueReward;
 import com.dragonminez.common.quest.rewards.SkillReward;
+import com.dragonminez.common.quest.rewards.AttributePointsReward;
+import com.dragonminez.common.quest.rewards.AttributesReward;
 import com.dragonminez.common.quest.rewards.TPSReward;
 import com.dragonminez.common.quest.rewards.TransformationReward;
 import com.dragonminez.common.stats.techniques.KiAttackData;
@@ -319,6 +321,8 @@ public class QuestParser {
 				yield (genericItem != null) ? new GenericItemReward(genericItem) : null;
 			}
 			case "TPS" -> new TPSReward(json.get("amount").getAsInt());
+			case "ATTRIBUTES" -> new AttributesReward(json.get("amount").getAsInt());
+			case "ATTRIBUTE_POINTS" -> new AttributePointsReward(json.get("amount").getAsInt());
 			case "ALIGNMENT" -> new AlignmentReward(json.get("amount").getAsInt());
 			case "COMMAND" -> {
 				String command = json.get("command").getAsString();
@@ -649,7 +653,7 @@ public class QuestParser {
 		switch (type == null ? "" : type) {
 			case "ITEM" -> allowed = JsonKeys.union(common, "item", "count");
 			case "GENERIC_ITEM"  -> allowed = JsonKeys.union(common, "itemReward", "itemType", "itemId", "count", "enchantments", "potion", "mobEffects", "material", "pattern");
-			case "TPS" -> allowed = JsonKeys.union(common, "amount");
+			case "TPS", "ATTRIBUTES", "ATTRIBUTE_POINTS" -> allowed = JsonKeys.union(common, "amount");
 			case "ALIGNMENT" -> allowed = JsonKeys.union(common, "amount");
 			case "COMMAND" -> allowed = JsonKeys.union(common, "command", "translationKey");
 			case "SKILL" -> allowed = JsonKeys.union(common, "skill", "level");

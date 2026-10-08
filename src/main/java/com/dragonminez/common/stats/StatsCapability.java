@@ -13,7 +13,6 @@ import com.dragonminez.common.network.S2C.ResourceSyncS2C;
 import com.dragonminez.common.network.S2C.SkinPixelsSyncS2C;
 import com.dragonminez.common.network.S2C.StatsSyncS2C;
 import com.dragonminez.common.network.S2C.SyncQuestRegistryS2C;
-import com.dragonminez.common.network.S2C.SyncServerConfigS2C;
 import com.dragonminez.common.quest.PlayerQuestData;
 import com.dragonminez.common.quest.QuestRegistry;
 import com.dragonminez.common.util.TransformationsHelper;
@@ -82,15 +81,7 @@ public class StatsCapability {
 	@SubscribeEvent
 	public static void onPlayerLogin(PlayerEvent.PlayerLoggedInEvent event) {
 		if (event.getEntity() instanceof ServerPlayer serverPlayer) {
-			List<String> availableConfigs = ConfigManager.getAvailableConfigFiles();
-			boolean resetBatch = true;
-			for (String file : availableConfigs) {
-				if (ConfigManager.isClientOnlyConfig(file)) continue;
-				String jsonPayload = ConfigManager.getSpecificConfigJson(file);
-				if (jsonPayload == null || jsonPayload.isBlank()) continue;
-				NetworkHandler.sendToPlayer(new SyncServerConfigS2C(file, jsonPayload, resetBatch), serverPlayer);
-				resetBatch = false;
-			}
+			ConfigManager.sendConfigSync(serverPlayer);
 			NetworkHandler.sendToPlayer(new SyncQuestRegistryS2C(QuestRegistry.getAllSagas(), QuestRegistry.getAllQuests()), serverPlayer);
 
 			MinecraftServer server = serverPlayer.getServer();

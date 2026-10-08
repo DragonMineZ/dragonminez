@@ -29,28 +29,37 @@ import java.awt.*;
 import java.util.UUID;
 
 public class FusionLogic {
-	public static boolean executeMetamoru(ServerPlayer leader, ServerPlayer partner, StatsData lData, StatsData pData) {
-		if (lData.getStatus().isAndroidUpgraded() || pData.getStatus().isAndroidUpgraded()) {
-			leader.displayClientMessage(Component.translatable("message.dragonminez.fusion.android_cannot_fuse"), true);
-			return false;
-		}
+	public static String metamoruBlocker(StatsData lData, StatsData pData) {
+		if (lData.getStatus().isAndroidUpgraded() || pData.getStatus().isAndroidUpgraded()) return "message.dragonminez.fusion.android_cannot_fuse";
+		if (!lData.getCharacter().getRaceName().equals(pData.getCharacter().getRaceName())) return "message.dragonminez.fusion.different_race";
+		if (!sameForm(lData.getCharacter(), pData.getCharacter())) return "message.dragonminez.fusion.different_form";
 
-		if (!lData.getCharacter().getRaceName().equals(pData.getCharacter().getRaceName())) {
-			leader.displayClientMessage(Component.translatable("message.dragonminez.fusion.different_race"), true);
+		int lvl1 = lData.getStats().getTotalStats();
+		int lvl2 = pData.getStats().getTotalStats();
+		double threshold = ConfigManager.getServerConfig().getGameplay().getMetamoruFusionThreshold();
+		if (threshold > 0 && (double) Math.abs(lvl1 - lvl2) / Math.max(lvl1, lvl2) > threshold) return "message.dragonminez.fusion.level_gap";
+		return null;
+	}
+
+	private static boolean sameForm(com.dragonminez.common.stats.character.Character a, com.dragonminez.common.stats.character.Character b) {
+		return sameSlot(a.hasActiveForm(), a.getActiveFormGroup(), a.getActiveForm(), b.hasActiveForm(), b.getActiveFormGroup(), b.getActiveForm())
+				&& sameSlot(a.hasActiveStackForm(), a.getActiveStackFormGroup(), a.getActiveStackForm(), b.hasActiveStackForm(), b.getActiveStackFormGroup(), b.getActiveStackForm());
+	}
+
+	private static boolean sameSlot(boolean activeA, String groupA, String formA, boolean activeB, String groupB, String formB) {
+		if (!activeA || !activeB) return activeA == activeB;
+		return groupA.equalsIgnoreCase(groupB) && formA.equalsIgnoreCase(formB);
+	}
+
+	public static boolean executeMetamoru(ServerPlayer leader, ServerPlayer partner, StatsData lData, StatsData pData) {
+		String blocker = metamoruBlocker(lData, pData);
+		if (blocker != null) {
+			leader.displayClientMessage(Component.translatable(blocker), true);
 			return false;
 		}
 
 		int lvl1 = lData.getStats().getTotalStats();
 		int lvl2 = pData.getStats().getTotalStats();
-
-		double threshold = ConfigManager.getServerConfig().getGameplay().getMetamoruFusionThreshold();
-		if (threshold > 0) {
-			double diff = (double) Math.abs(lvl1 - lvl2) / Math.max(lvl1, lvl2);
-			if (diff > threshold) {
-				leader.displayClientMessage(Component.translatable("message.dragonminez.fusion.level_gap"), true);
-				return false;
-			}
-		}
 
 		if (lData.getStatus().isFused() || pData.getStatus().isFused() ||
 				lData.getStatus().getFusionPartnerUUID() != null || pData.getStatus().getFusionPartnerUUID() != null) return false;

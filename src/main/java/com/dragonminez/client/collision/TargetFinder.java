@@ -2,6 +2,9 @@ package com.dragonminez.client.collision;
 
 import com.dragonminez.common.combat.weapon.WeaponAttributes.Attack;
 import com.dragonminez.client.util.AttackRangeExtensions;
+import com.dragonminez.common.combat.collision.CollisionHelper;
+import com.dragonminez.common.combat.collision.MeleeHitbox;
+import com.dragonminez.common.combat.collision.OrientedBoundingBox;
 import com.dragonminez.common.combat.logic.player.TargetHelper;
 import net.minecraft.client.Minecraft;
 import net.minecraft.world.entity.Entity;
@@ -24,7 +27,7 @@ public class TargetFinder {
     }
 
     public static TargetResult findAttackTargetResult(Player player, Entity cursorTarget, Attack attack, double attackRange) {
-        Vec3 origin = getInitialTracingPoint(player);
+        Vec3 origin = MeleeHitbox.origin(player, player.getXRot(), player.getYRot());
         List<Entity> entities = getInitialTargets(player, cursorTarget, attackRange);
 
         if (!AttackRangeExtensions.sources().isEmpty()) {
@@ -38,15 +41,7 @@ public class TargetFinder {
             }
         }
 
-        Vec3 size = WeaponHitBoxes.createHitbox(attack.hitbox(), attackRange, attack.angle() > 180);
-
-        OrientedBoundingBox obb = new OrientedBoundingBox(origin, size, player.getXRot(), player.getYRot());
-        boolean isSpinAttack = attack.angle() > 180;
-        if (!isSpinAttack) {
-            double forwardOffset = player.getBbWidth() * 0.3;
-            obb.offsetAlongAxisZ(obb.extent.z - forwardOffset);
-        }
-        obb.updateVertex();
+        OrientedBoundingBox obb = MeleeHitbox.build(player, origin, attack, attackRange, player.getXRot(), player.getYRot());
 
         List<Entity> validTargets = filterTargetsByOBB(entities, origin, obb);
 
@@ -57,19 +52,6 @@ public class TargetFinder {
         });
 
         return new TargetResult(validTargets, obb);
-    }
-
-    private static Vec3 getInitialTracingPoint(Player player) {
-        Vec3 horizontalLook = new Vec3(player.getLookAngle().x, 0.0, player.getLookAngle().z);
-        if (horizontalLook.lengthSqr() < 1.0E-6) {
-            horizontalLook = player.getLookAngle();
-        }
-        horizontalLook = horizontalLook.normalize();
-
-        double forwardOffset = player.getBbWidth() * 0.5;
-        return player.position()
-                .add(0, player.getBbHeight() * 0.8, 0)
-                .add(horizontalLook.scale(forwardOffset));
     }
 
     private static List<Entity> getInitialTargets(Player player, Entity cursorTarget, double attackRange) {

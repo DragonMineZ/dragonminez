@@ -120,6 +120,7 @@ public class DMZPermissions {
 
 	// Locate
 	public static final PermissionNode<Boolean> LOCATE = register("dmzlocate", "Allows locating special structures.", (player, uuid, context) -> false);
+	public static final PermissionNode<Boolean> STRUCTURE = register("dmzstructure", "Allows reading structure-local coordinates and structure NPCs.", (player, uuid, context) -> false);
 
 	// Dragon Balls
 	public static final PermissionNode<Boolean> DRAGONBALLS_STATUS = register("dmzdragonballs.status", "Allows viewing where every Dragon Ball set is tracked.", (player, uuid, context) -> false);

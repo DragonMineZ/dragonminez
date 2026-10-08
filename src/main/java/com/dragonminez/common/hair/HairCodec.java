@@ -3,8 +3,10 @@ package com.dragonminez.common.hair;
 import com.dragonminez.Env;
 import com.dragonminez.LogUtil;
 import net.minecraft.nbt.CompoundTag;
+import net.minecraft.nbt.ListTag;
 import net.minecraft.nbt.NbtAccounter;
 import net.minecraft.nbt.NbtIo;
+import net.minecraft.nbt.Tag;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
@@ -42,7 +44,7 @@ public final class HairCodec {
 	public static String toCode(CustomHair hair) {
 		if (hair == null) return "";
 		try {
-			return CODE_PREFIX + encode(hair.save());
+			return CODE_PREFIX + encode(withoutJointStyles(hair.save()));
 		} catch (IOException exception) {
 			LogUtil.error(Env.COMMON, "Failed to encode hair style '{}': {}", hair.getName(), exception.getMessage());
 			return "";
@@ -53,7 +55,7 @@ public final class HairCodec {
 		CompoundTag tag = new CompoundTag();
 		for (HairStyleSlot slot : HairStyleSlot.values()) {
 			CustomHair hair = styles.get(slot);
-			if (hair != null) tag.put(slot.getCodeKey(), hair.save());
+			if (hair != null) tag.put(slot.getCodeKey(), withoutJointStyles(hair.save()));
 		}
 		try {
 			return FULL_CODE_PREFIX + encode(tag);
@@ -74,9 +76,9 @@ public final class HairCodec {
 		CompoundTag tag = decodeTag(trimmed);
 		if (tag == null) return null;
 		if (tag.contains("Base") && (tag.contains("SSJ") || tag.contains("SSJ2") || tag.contains("SSJ3"))) {
-			return CustomHair.fromTag(tag.getCompound("Base"));
+			return CustomHair.fromTag(withoutJointStyles(tag.getCompound("Base")));
 		}
-		return CustomHair.fromTag(tag);
+		return CustomHair.fromTag(withoutJointStyles(tag));
 	}
 
 	public static EnumMap<HairStyleSlot, CustomHair> fromFullSetCode(String code) {
@@ -88,7 +90,7 @@ public final class HairCodec {
 		EnumMap<HairStyleSlot, CustomHair> styles = new EnumMap<>(HairStyleSlot.class);
 		for (HairStyleSlot slot : HairStyleSlot.values()) {
 			String key = tag.contains(slot.getCodeKey()) ? slot.getCodeKey() : (tag.contains(slot.getLegacyCodeKey()) ? slot.getLegacyCodeKey() : null);
-			if (key != null) styles.put(slot, CustomHair.fromTag(tag.getCompound(key)));
+			if (key != null) styles.put(slot, CustomHair.fromTag(withoutJointStyles(tag.getCompound(key))));
 		}
 
 		CustomHair base = styles.computeIfAbsent(HairStyleSlot.BASE, slot -> new CustomHair());
@@ -100,6 +102,17 @@ public final class HairCodec {
 		styles.computeIfAbsent(HairStyleSlot.SSJ3, slot -> base.copy());
 		styles.computeIfAbsent(HairStyleSlot.SSJ4, slot -> new CustomHair());
 		return styles;
+	}
+
+	private static CompoundTag withoutJointStyles(CompoundTag style) {
+		for (CustomHair.HairFace face : CustomHair.HairFace.values()) {
+			for (String key : new String[]{face.key, face.name()}) {
+				if (!style.contains(key, Tag.TAG_LIST)) continue;
+				ListTag strands = style.getList(key, Tag.TAG_COMPOUND);
+				for (int i = 0; i < strands.size(); i++) strands.getCompound(i).remove("js");
+			}
+		}
+		return style;
 	}
 
 	private static CompoundTag decodeTag(String code) {

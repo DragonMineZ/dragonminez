@@ -1,5 +1,6 @@
 package com.dragonminez.common.config;
 
+import com.dragonminez.common.diagnostics.RemovedConfigKeys;
 import com.dragonminez.common.stats.techniques.KiAttackData;
 import com.dragonminez.common.stats.techniques.PredefinedTechniques;
 import com.google.gson.annotations.SerializedName;
@@ -182,13 +183,13 @@ public class TechniqueConfig {
 
 	@Getter
 	@Setter
+	@RemovedConfigKeys({"xpGainPerKill"})
 	public static class EvasionAttackConfig {
 		private int minXPCost = 100;
 		private int maxXPCost = -1;
 		private double xpCostMultiplier = 1.0;
 		private double xpGainMultiplier = 1.0;
 		private int xpGainPerHit = 2;
-		private int xpGainPerKill = 0;
 		private double kiCostMultiplier = 1.0;
 		private double damageMultiplier = 1.0;
 		private int cooldownTicks = 80;

@@ -24,6 +24,7 @@ import java.util.ArrayList;
 import java.util.Base64;
 import java.util.List;
 import java.util.UUID;
+import java.util.regex.Pattern;
 import java.util.zip.Deflater;
 import java.util.zip.DeflaterOutputStream;
 import java.util.zip.GZIPInputStream;
@@ -43,6 +44,7 @@ public class KiAttackData extends TechniqueData {
 	public static final int MAX_IMPORT_CODE_LENGTH = 16 * 1024;
 	private static final int MAX_IMPORT_TEXT_LENGTH = 64;
 	private static final int MAX_IMPORT_ALLOWED_RACES = 32;
+	private static final Pattern IMPORT_ANIMATION_PATTERN = Pattern.compile("ki\\.[a-z0-9_]{1,48}");
 
 	public static final int MIN_SECONDARY_INTENSITY = 5;
 	public static final int MAX_SECONDARY_INTENSITY = 50;
@@ -509,6 +511,11 @@ public class KiAttackData extends TechniqueData {
 			if (race != null && !race.isEmpty() && race.length() <= MAX_IMPORT_TEXT_LENGTH) races.add(race);
 		}
 		this.allowedRaces = races;
+
+		if (this.animation == null || !IMPORT_ANIMATION_PATTERN.matcher(this.animation).matches()) this.animation = "";
+		this.colorInterior &= 0xFFFFFF;
+		this.colorExterior &= 0xFFFFFF;
+		this.colorOutline &= 0xFFFFFF;
 
 		KiType resolvedType = this.kiType != null ? this.kiType : KiType.SMALL_BALL;
 		float[] normalized = normalizeStatsForType(resolvedType, this.damageMultiplier, this.size, this.speed, this.armorPenetration);

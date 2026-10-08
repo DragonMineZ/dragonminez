@@ -1,4 +1,4 @@
-package com.dragonminez.client.collision;
+package com.dragonminez.common.combat.collision;
 
 import com.dragonminez.common.combat.weapon.WeaponAttributes;
 import net.minecraft.world.phys.Vec3;

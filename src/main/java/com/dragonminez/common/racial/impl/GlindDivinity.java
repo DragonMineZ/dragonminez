@@ -43,6 +43,7 @@ public class GlindDivinity implements RacialAbility {
 
 	public static boolean canPerceiveDivineKi(Player viewer, StatsData viewerData) {
 		if (viewer != null && viewer.hasEffect(MainEffects.KAMI_BLESS.get())) return true;
+		if (hasDivineKi(viewerData)) return true;
 		return viewerData != null && viewerData.getSkills().getSkillLevel(GOD_FORM_SKILL) >= 1;
 	}
 

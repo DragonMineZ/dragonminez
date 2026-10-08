@@ -154,13 +154,25 @@ public class Resources {
         addTrainingPoints(amount, true);
     }
     public void addTrainingPoints(float amount, boolean shareWithParty) {
+        addTrainingPoints(amount, shareWithParty, false);
+    }
+
+    public void addBoostedTrainingPoints(double amount) {
+        addTrainingPoints(amount, true, true);
+    }
+
+    public void addTrainingPoints(double amount, boolean shareWithParty, boolean preBoosted) {
         if (amount <= 0 || player == null) {
             setTrainingPointsExact(trainingPoints + amount);
             return;
         }
 
         double oldValue = this.trainingPoints;
-        DMZEvent.TPGainEvent event = new DMZEvent.TPGainEvent(player, (int) oldValue, (int) amount, shareWithParty);
+        if (amount >= Integer.MAX_VALUE) {
+            setTrainingPointsExact(oldValue + amount);
+            return;
+        }
+        DMZEvent.TPGainEvent event = new DMZEvent.TPGainEvent(player, (int) Math.min(oldValue, Integer.MAX_VALUE), (int) amount, shareWithParty, preBoosted);
 
         if (!MinecraftForge.EVENT_BUS.post(event)) {
             setTrainingPointsExact(oldValue + event.getTpGain());

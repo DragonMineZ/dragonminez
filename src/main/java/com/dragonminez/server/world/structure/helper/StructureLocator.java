@@ -18,19 +18,26 @@ import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.level.ChunkPos;
 import net.minecraft.world.level.biome.Biome;
+import net.minecraft.world.level.chunk.ChunkGenerator;
+import net.minecraft.world.level.chunk.LevelChunk;
+import net.minecraft.world.level.levelgen.structure.BoundingBox;
 import net.minecraft.world.level.levelgen.structure.Structure;
 import net.minecraft.world.level.levelgen.structure.StructureSet;
+import net.minecraft.world.level.levelgen.structure.StructureStart;
 import net.minecraft.world.level.levelgen.structure.placement.StructurePlacement;
 
 import javax.annotation.Nullable;
 import java.util.ArrayList;
 import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 
 public class StructureLocator {
 
 	private static final int MAX_HINT_BIOMES = 8;
+	private static final Map<String, BlockPos> PREDICTED_CENTERS = new ConcurrentHashMap<>();
 
 	@Nullable
 	public static BlockPos locateStructure(ServerLevel level, ResourceKey<Structure> structureKey, BlockPos searchFrom) {
@@ -82,26 +89,53 @@ public class StructureLocator {
 	private static BlockPos getPositionFromPlacement(ServerLevel level, ResourceKey<Structure> structureKey,
 													 Registry<Structure> structureRegistry,
 													 StructurePlacement placement) {
+		ChunkPos chunkPos = null;
+		int fallbackY = 90;
 		if (placement instanceof BiomeAwareUniquePlacement uniquePlacement) {
-			ChunkPos chunkPos = uniquePlacement.getStructureChunk(
+			chunkPos = uniquePlacement.getStructureChunk(
 					level.getSeed(),
 					level.getChunkSource().getGenerator().getBiomeSource(),
 					level.getChunkSource().randomState(),
 					level.getChunkSource().getGeneratorState()
 			);
-			if (chunkPos != null) {
-				return new BlockPos(chunkPos.getMiddleBlockX(), 90, chunkPos.getMiddleBlockZ());
-			}
 		} else if (placement instanceof FixedStructurePlacement fixedPlacement) {
-			int x = (fixedPlacement.getFixedX() << 4) + 8;
-			int z = (fixedPlacement.getFixedZ() << 4) + 8;
-			return new BlockPos(x, 30, z);
+			chunkPos = new ChunkPos(fixedPlacement.getFixedX(), fixedPlacement.getFixedZ());
+			fallbackY = 30;
 		} else if (placement instanceof UniqueNearSpawnPlacement spawnPlacement) {
-			ChunkPos chunkPos = spawnPlacement.getStructureChunk(level.getSeed());
-			return new BlockPos(chunkPos.getMiddleBlockX(), 90, chunkPos.getMiddleBlockZ());
+			chunkPos = spawnPlacement.getStructureChunk(level.getSeed());
+		}
+		if (chunkPos == null) return null;
+
+		BlockPos center = structureCenter(level, structureRegistry.get(structureKey), chunkPos);
+		return center != null ? center : new BlockPos(chunkPos.getMiddleBlockX(), fallbackY, chunkPos.getMiddleBlockZ());
+	}
+
+	@Nullable
+	public static BlockPos structureCenter(ServerLevel level, @Nullable Structure structure, ChunkPos chunkPos) {
+		if (structure == null) return null;
+		LevelChunk loaded = level.getChunkSource().getChunkNow(chunkPos.x, chunkPos.z);
+		if (loaded != null) {
+			StructureStart start = loaded.getStartForStructure(structure);
+			if (start != null && start.isValid()) {
+				BoundingBox box = StructureFrame.core(start).map(StructureFrame::box).orElseGet(start::getBoundingBox);
+				return new BlockPos(box.getCenter().getX(), box.minY(), box.getCenter().getZ());
+			}
 		}
 
-		return null;
+		String key = level.dimension().location() + "|" + level.getSeed() + "|" + chunkPos.toLong() + "|" + System.identityHashCode(structure);
+		BlockPos cached = PREDICTED_CENTERS.get(key);
+		if (cached != null) return cached;
+		try {
+			ChunkGenerator generator = level.getChunkSource().getGenerator();
+			Structure.GenerationContext context = new Structure.GenerationContext(level.registryAccess(), generator,
+					generator.getBiomeSource(), level.getChunkSource().randomState(), level.getStructureManager(),
+					level.getSeed(), chunkPos, level, biome -> true);
+			BlockPos predicted = structure.findValidGenerationPoint(context).map(Structure.GenerationStub::position).orElse(null);
+			if (predicted != null) PREDICTED_CENTERS.put(key, predicted);
+			return predicted;
+		} catch (RuntimeException e) {
+			return null;
+		}
 	}
 
 	public static int getDistanceTo(BlockPos from, BlockPos to) {

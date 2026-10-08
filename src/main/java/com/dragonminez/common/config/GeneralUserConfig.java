@@ -1,5 +1,6 @@
 package com.dragonminez.common.config;
 
+import com.dragonminez.common.diagnostics.RemovedConfigKeys;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -13,6 +14,7 @@ import java.util.Map;
 
 @Getter
 @Setter
+@RemovedConfigKeys({"techniqueHotbarRightSide", "xenoverseHudPosX", "xenoverseHudPosY", "xenoverseHudScale", "healthBarPosX", "healthBarPosY", "energyBarPosX", "energyBarPosY", "staminaBarPosX", "staminaBarPosY", "liveCrowdinTranslations"})
 public class GeneralUserConfig {
 	public static final String CURRENT_VERSION = ConfigManager.CONFIG_VERSION;
 
@@ -32,23 +34,12 @@ public class GeneralUserConfig {
 	@Getter(AccessLevel.NONE) @Setter(AccessLevel.NONE) private Map<String, Map<String, HudPlacement>> hudLayout = null;
 
 	@Getter(AccessLevel.NONE) @Setter(AccessLevel.NONE) private Boolean alternativeHud = null;
-	@Getter(AccessLevel.NONE) @Setter(AccessLevel.NONE) private Boolean techniqueHotbarRightSide = null;
-	@Getter(AccessLevel.NONE) @Setter(AccessLevel.NONE) private Integer xenoverseHudPosX = null;
-	@Getter(AccessLevel.NONE) @Setter(AccessLevel.NONE) private Integer xenoverseHudPosY = null;
-	@Getter(AccessLevel.NONE) @Setter(AccessLevel.NONE) private Float xenoverseHudScale = null;
-	@Getter(AccessLevel.NONE) @Setter(AccessLevel.NONE) private Integer healthBarPosX = null;
-	@Getter(AccessLevel.NONE) @Setter(AccessLevel.NONE) private Integer healthBarPosY = null;
-	@Getter(AccessLevel.NONE) @Setter(AccessLevel.NONE) private Integer energyBarPosX = null;
-	@Getter(AccessLevel.NONE) @Setter(AccessLevel.NONE) private Integer energyBarPosY = null;
-	@Getter(AccessLevel.NONE) @Setter(AccessLevel.NONE) private Integer staminaBarPosX = null;
-	@Getter(AccessLevel.NONE) @Setter(AccessLevel.NONE) private Integer staminaBarPosY = null;
 	private Boolean hexagonStatsDisplay = false;
 	public static final float DEFAULT_MENU_SCALE = 0.75f;
 	private Float menuScaleMultiplier = DEFAULT_MENU_SCALE;
 	private Float utilityMenuScaleMultiplier = 1.0f;
 	private Boolean cameraMovementDuringFlight = true;
 	private Float flightTurnSensitivity = 0.75f;
-	@Getter(AccessLevel.NONE) @Setter(AccessLevel.NONE) private Boolean liveCrowdinTranslations = null;
 	private Boolean tutorialsEnabled = true;
 	private List<String> tutorialsSeen = new ArrayList<>();
 	private Boolean showAccumulativeDamage = true;
@@ -94,11 +85,6 @@ public class GeneralUserConfig {
 		hudStyle = null;
 		hudLayout = null;
 		alternativeHud = null;
-		xenoverseHudPosX = xenoverseHudPosY = null;
-		xenoverseHudScale = null;
-		techniqueHotbarRightSide = null;
-		liveCrowdinTranslations = null;
-		healthBarPosX = healthBarPosY = energyBarPosX = energyBarPosY = staminaBarPosX = staminaBarPosY = null;
 		return changed;
 	}
 

@@ -9,9 +9,12 @@ import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
+import java.util.Set;
 
 public final class JsonSchema {
 
@@ -22,12 +25,13 @@ public final class JsonSchema {
 	public static void check(String source, String file, String path, JsonObject json, Class<?> type) {
 		if (json == null || type == null || !type.getName().startsWith("com.dragonminez")) return;
 		Map<String, Field> fields = fieldsOf(type);
+		Set<String> removed = removedKeysOf(type);
 		for (Map.Entry<String, JsonElement> entry : json.entrySet()) {
 			String key = entry.getKey();
 			if (isComment(key)) continue;
 			Field field = fields.get(key);
 			if (field == null) {
-				JsonLoadReport.error(source, file, "unknown field '" + key + "'" + at(path) + " (ignored)");
+				if (!removed.contains(key)) JsonLoadReport.error(source, file, "unknown field '" + key + "'" + at(path) + " (ignored)");
 				continue;
 			}
 			recurse(source, file, path.isEmpty() ? key : path + "." + key, entry.getValue(), field.getGenericType());
@@ -95,6 +99,15 @@ public final class JsonSchema {
 			}
 		}
 		return fields;
+	}
+
+	private static Set<String> removedKeysOf(Class<?> type) {
+		Set<String> removed = new HashSet<>();
+		for (Class<?> current = type; current != null && current != Object.class; current = current.getSuperclass()) {
+			RemovedConfigKeys annotation = current.getAnnotation(RemovedConfigKeys.class);
+			if (annotation != null) removed.addAll(Arrays.asList(annotation.value()));
+		}
+		return removed;
 	}
 
 	private static Class<?> rawClass(Type type) {

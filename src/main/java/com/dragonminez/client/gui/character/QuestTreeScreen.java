@@ -283,9 +283,9 @@ public class QuestTreeScreen extends BaseMenuScreen {
 	private record PartyInviteEntry(UUID playerId, String playerName) {
 	}
 
-	private record RewardHitbox(int x, int y, int size, ItemStack stack, Component tooltip) {
+	private record RewardHitbox(int x, int y, int width, int height, ItemStack stack, List<Component> tooltip) {
 		boolean contains(int mx, int my) {
-			return mx >= x && mx <= x + size && my >= y && my <= y + size;
+			return mx >= x && mx <= x + width && my >= y && my <= y + height;
 		}
 	}
 
@@ -2235,8 +2235,8 @@ public class QuestTreeScreen extends BaseMenuScreen {
 					HudRender.blit(graphics, REWARD_GENERIC_ICON, iconX, blockTop, 0, 0, iconSize, iconSize, iconSize, iconSize);
 				}
 
-				rewardHitboxes.add(new RewardHitbox(iconX, (int) (blockTop - rewardsScroll), iconSize,
-						tooltipStack, rewardDescription(reward)));
+				rewardHitboxes.add(new RewardHitbox(iconX, (int) (blockTop - rewardsScroll), Math.max(iconSize, width - 16),
+						Math.max(iconSize, block.height() - 4), tooltipStack, rewardTooltip(reward)));
 
 				int charsLeft = rowVisible;
 				int textY = blockTop;
@@ -2322,6 +2322,14 @@ public class QuestTreeScreen extends BaseMenuScreen {
 		return reward.getDescription(rewardMultiplier);
 	}
 
+	private List<Component> rewardTooltip(QuestReward reward) {
+		if (reward instanceof TransformationReward) return List.of(rewardDescription(reward));
+		double rewardMultiplier = statsData != null
+				? statsData.getPlayerQuestData().rewardMultiplierFor(reward)
+				: 1.0;
+		return reward.getTooltipLines(rewardMultiplier, statsData);
+	}
+
 	private boolean isStackFormGroup(String formGroup) {
 		if (formGroup == null || formGroup.isEmpty()) return false;
 		FormConfig stackGroup = ConfigManager.getStackFormGroup(formGroup);
@@ -2347,6 +2355,12 @@ public class QuestTreeScreen extends BaseMenuScreen {
 			}
 			case TPS -> {
 				return new ItemStack(MainItems.RED_CAPSULE.get());
+			}
+			case ATTRIBUTES -> {
+				return new ItemStack(MainItems.GETE_YELLOW_CAPSULE.get());
+			}
+			case ATTRIBUTE_POINTS -> {
+				return new ItemStack(MainItems.GETE_PURPLE_CAPSULE.get());
 			}
 			case SKILL -> {
 				return new ItemStack(MainItems.GETE_BLUE_CAPSULE.get());
@@ -2558,7 +2572,7 @@ public class QuestTreeScreen extends BaseMenuScreen {
 			if (hitbox.stack != null && !hitbox.stack.isEmpty()) {
 				graphics.renderTooltip(this.font, hitbox.stack, mouseX, mouseY);
 			} else {
-				renderSimpleTooltip(graphics, List.of(hitbox.tooltip), mouseX, mouseY);
+				renderSimpleTooltip(graphics, hitbox.tooltip, mouseX, mouseY);
 			}
 			return;
 		}

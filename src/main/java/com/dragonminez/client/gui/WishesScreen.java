@@ -10,6 +10,8 @@ import com.dragonminez.common.network.C2S.GrantWishC2S;
 import com.dragonminez.common.network.C2S.RequestReviveTargetsC2S;
 import com.dragonminez.common.network.NetworkHandler;
 import com.dragonminez.common.network.S2C.ReviveTargetsS2C;
+import com.dragonminez.common.stats.StatsCapability;
+import com.dragonminez.common.stats.StatsProvider;
 import com.dragonminez.common.wish.Wish;
 import com.dragonminez.common.wish.WishManager;
 import com.mojang.blaze3d.systems.RenderSystem;
@@ -296,9 +298,15 @@ public class WishesScreen extends ScaledScreen {
 		if (index < 0) return;
 		Wish wish = availableWishes.get(index);
 		List<Component> description = List.of(tr(wish.getDescription()));
-		List<Component> extras = needsTargets(wish) && reviveTargets.isEmpty()
-				? List.of(tr("gui.dragonminez.wishes.revive_nobody").withStyle(net.minecraft.ChatFormatting.RED))
-				: null;
+		List<Component> extraLines = new ArrayList<>();
+		if (needsTargets(wish) && reviveTargets.isEmpty()) {
+			extraLines.add(tr("gui.dragonminez.wishes.revive_nobody").withStyle(net.minecraft.ChatFormatting.RED));
+		}
+		if (Minecraft.getInstance().player != null) {
+			StatsProvider.get(StatsCapability.INSTANCE, Minecraft.getInstance().player)
+					.ifPresent(data -> extraLines.addAll(wish.getTooltipExtras(data)));
+		}
+		List<Component> extras = extraLines.isEmpty() ? null : extraLines;
 		TextUtil.renderAdvancedTooltip(graphics, this.font, uiMouseX, uiMouseY, getUiWidth(), getUiHeight(),
 				tr(wish.getName()), description, extras, 0xFFD700);
 	}

@@ -7,6 +7,7 @@ import com.dragonminez.common.config.RaceStatsConfig;
 import com.dragonminez.common.hair.CustomHair;
 import com.dragonminez.common.network.NetworkHandler;
 import com.dragonminez.common.network.S2C.AppearanceSyncS2C;
+import com.dragonminez.common.stats.character.AppearanceValidator;
 import com.dragonminez.common.stats.character.Character;
 import com.dragonminez.common.stats.StatsCapability;
 import com.dragonminez.common.stats.StatsProvider;
@@ -142,28 +143,17 @@ public class UpdateCharacterC2S {
 			StatsProvider.get(StatsCapability.INSTANCE, player).ifPresent(data -> {
 				Character c = data.getCharacter();
 				RaceStatsConfig raceConfig = ConfigManager.getRaceStats(c.getRaceName());
-				if (raceConfig.getAllClasses().contains(msg.className)) {
+				if (raceConfig != null && raceConfig.hasClass(msg.className)) {
 					c.setCharacterClass(msg.className);
 				}
-				c.setHairId(msg.hairId);
+				c.setHairId(AppearanceValidator.hairId(msg.hairId, c.getHairId()));
 				if (msg.customHair != null) {
 					HairSanitizer.sanitizeAndLog(msg.customHair, HairStyleSlot.BASE, player.getGameProfile().getName());
 					c.setHairStyle(HairStyleSlot.BASE, msg.customHair);
 				}
-				c.setBodyType(msg.bodyType);
-				c.setEyesType(msg.eyesType);
-				c.setNoseType(msg.noseType);
-				c.setMouthType(msg.mouthType);
-				c.setTattooType(msg.tattooType);
-				c.setBoobScale(msg.boobScale);
-				c.setActiveHeadBone(msg.activeHeadBone);
-				c.setHairColor(msg.hairColor);
-				c.setBodyColor(msg.bodyColor);
-				c.setBodyColor2(msg.bodyColor2);
-				c.setBodyColor3(msg.bodyColor3);
-				c.setEye1Color(msg.eye1Color);
-				c.setEye2Color(msg.eye2Color);
-				c.setAuraColor(msg.auraColor);
+				AppearanceValidator.applyBody(c, msg.bodyType, msg.eyesType, msg.noseType, msg.mouthType, msg.tattooType,
+						msg.boobScale, msg.activeHeadBone, msg.hairColor, msg.bodyColor, msg.bodyColor2, msg.bodyColor3,
+						msg.eye1Color, msg.eye2Color, msg.auraColor);
 				player.refreshDimensions();
 				player.setHealth(player.getMaxHealth());
 				NetworkHandler.sendToTrackingEntityAndSelf(new AppearanceSyncS2C(player), player);

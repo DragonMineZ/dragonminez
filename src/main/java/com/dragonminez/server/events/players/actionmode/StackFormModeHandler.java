@@ -4,6 +4,7 @@ import com.dragonminez.common.config.FormConfig;
 import com.dragonminez.common.init.MainEffects;
 import com.dragonminez.common.init.MainSounds;
 import com.dragonminez.common.stats.StatsData;
+import com.dragonminez.common.util.FusionForms;
 import com.dragonminez.common.util.TransformationItemCostHelper;
 import com.dragonminez.common.util.TransformationsHelper;
 import com.dragonminez.common.util.lists.StackForms;
@@ -37,7 +38,7 @@ public class StackFormModeHandler implements IActionModeHandler {
 		FormConfig.FormData nextForm = TransformationsHelper.getNextAvailableStackForm(data);
 		String group = data.getCharacter().hasActiveStackForm() ? data.getCharacter().getActiveStackFormGroup() : data.getCharacter().getSelectedStackFormGroup();
 
-		int mastery = (int) data.getCharacter().getStackFormMasteries().getMastery(group, nextForm.getName());
+		int mastery = (int) data.getStackFormChargeMastery(group, nextForm.getName());
 		return TransformationsHelper.formChargeStep(mastery);
 	}
 
@@ -125,7 +126,7 @@ public class StackFormModeHandler implements IActionModeHandler {
 			Component fullFormName;
 
 			if (data.getCharacter().getActiveForm() != null && !data.getCharacter().getActiveForm().isEmpty()) {
-				Component translatedFormName = Component.translatable("race.dragonminez." + data.getCharacter().getRace() + ".form." + data.getCharacter().getActiveFormGroup() + "." + data.getCharacter().getActiveForm());
+				Component translatedFormName = Component.translatable(FusionForms.formTranslationKey(data.getCharacter().getRaceName(), data.getCharacter().getActiveFormGroup(), data.getCharacter().getActiveForm()));
 				fullFormName = Component.empty()
 						.append(translatedFormName)
 						.append(Component.literal(" x "))

@@ -332,7 +332,7 @@ public final class MinigameSessionManager {
 			double reward = computeReward(data, session);
 			tp = (int) Math.floor(reward);
 			if (reward > 0) {
-				data.getResources().addTrainingPoints((float) reward);
+				data.getResources().addBoostedTrainingPoints(reward);
 				player.playSound(SoundEvents.PLAYER_LEVELUP, 0.6F, 1.0F);
 				NetworkHandler.sendToTrackingEntityAndSelf(new ProgressionSyncS2C(player), player);
 			}
