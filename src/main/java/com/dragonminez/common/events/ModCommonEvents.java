@@ -169,6 +169,14 @@ public class ModCommonEvents {
 					Ingredient.of(MainItems.NAMEK_MOSS.get()),
 					curativePotion));
 
+			ItemStack heartMedicine = new ItemStack(MainItems.HEART_MEDICINE.get());
+			for (var regeneration : List.of(Potions.REGENERATION, Potions.LONG_REGENERATION, Potions.STRONG_REGENERATION)) {
+				BrewingRecipeRegistry.addRecipe(new BrewingRecipe(
+						StrictNBTIngredient.of(PotionUtils.setPotion(new ItemStack(Items.POTION), regeneration)),
+						Ingredient.of(MainItems.SENZU_BEAN.get()),
+						heartMedicine));
+			}
+
 			Regions.register(new OverworldRegion(40));
 			SurfaceRuleManager.addSurfaceRules(SurfaceRuleManager.RuleCategory.OVERWORLD, Reference.MOD_ID, OverworldSurfaceRules.makeRules());
 		});
