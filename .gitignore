@@ -20,7 +20,9 @@ docs/.bundle/
 docs/superpowers/
 
 # some ai data & stuff
-graphify-out/cost.json
+graphify-out/
+.graphifyignore
+CLAUDE.local.md
 
 # Ignore everything in .idea (codestyles are now included because that's personal preference)
 .idea
