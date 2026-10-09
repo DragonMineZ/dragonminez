@@ -16,12 +16,20 @@ import com.dragonminez.common.util.FusionTraits;
 import com.dragonminez.common.util.lists.FrostDemonForms;
 import com.dragonminez.common.util.lists.MajinForms;
 import com.dragonminez.common.util.lists.SaiyanForms;
+import com.mojang.blaze3d.platform.NativeImage;
+import com.mojang.blaze3d.systems.RenderSystem;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.player.AbstractClientPlayer;
+import net.minecraft.client.renderer.texture.DynamicTexture;
+import net.minecraft.client.renderer.texture.TextureManager;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.server.packs.resources.Resource;
 
+import java.io.InputStream;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.BiConsumer;
@@ -112,6 +120,10 @@ public class SkinGathererProvider {
 	private static final float[] DEFAULT_TAIL_COLOR = ColorUtils.hexToRgb("#572117");
 	private static final float[] DEFAULT_ORANGE_COLOR = ColorUtils.hexToRgb("#e67d40");
 	private static final float[] DEFAULT_STINGER_COLOR = ColorUtils.hexToRgb("#EDD747");
+
+	private static final ResourceLocation[] UNSHADED = new ResourceLocation[0];
+	private static final float WHITE_SHADOW = ColorUtils.skinShadowTone(WHITE_COLOR)[0];
+	private static final Map<ResourceLocation, ResourceLocation[]> SHADED_LAYERS = new HashMap<>();
 
 	private Character donorScratch;
 	private Character fusionScratch;
@@ -421,15 +433,102 @@ public class SkinGathererProvider {
     }
 
     private void acceptWithShadow(BiConsumer<ResourceLocation, float[]> consumer, ResourceLocation layer, float[] color) {
+        if (shadowMask(layer) == null) {
+            ResourceLocation[] shaded = shadedLayer(layer);
+            if (shaded != null) {
+                consumer.accept(shaded[0], color);
+                emitTranslucentLayer(consumer, shaded[1], ColorUtils.skinShadowTone(color));
+                return;
+            }
+        }
         consumer.accept(layer, color);
         emitShadowLayer(consumer, layer, color);
     }
 
     private void emitShadowLayer(BiConsumer<ResourceLocation, float[]> consumer, ResourceLocation layer, float[] color) {
-        if (layer == null) return;
+        ResourceLocation shadow = shadowMask(layer);
+        if (shadow != null) emitTranslucentLayer(consumer, shadow, ColorUtils.skinShadowTone(color));
+    }
+
+    private static ResourceLocation shadowMask(ResourceLocation layer) {
+        if (layer == null) return null;
         String path = layer.getPath();
         ResourceLocation shadow = getCachedTexture(path.substring(0, path.length() - ".png".length()) + "_shadow.png");
-        if (DMZSkinLayer.getSafeTexture(shadow).equals(shadow)) emitTranslucentLayer(consumer, shadow, ColorUtils.skinShadowTone(color));
+        return DMZSkinLayer.getSafeTexture(shadow).equals(shadow) ? shadow : null;
+    }
+
+    public static void clearShadedLayers() {
+        TextureManager manager = Minecraft.getInstance().getTextureManager();
+        for (ResourceLocation[] shaded : SHADED_LAYERS.values()) {
+            for (ResourceLocation location : shaded) manager.release(location);
+        }
+        SHADED_LAYERS.clear();
+    }
+
+    private static ResourceLocation[] shadedLayer(ResourceLocation layer) {
+        if (layer == null || !RenderSystem.isOnRenderThread()) return null;
+        ResourceLocation[] shaded = SHADED_LAYERS.computeIfAbsent(layer, SkinGathererProvider::buildShadedLayer);
+        return shaded == UNSHADED ? null : shaded;
+    }
+
+    private static ResourceLocation[] buildShadedLayer(ResourceLocation layer) {
+        Optional<Resource> resource = Minecraft.getInstance().getResourceManager().getResource(layer);
+        if (resource.isEmpty()) return UNSHADED;
+        NativeImage base = null;
+        NativeImage shadow = null;
+        boolean shaded = false;
+        try (InputStream in = resource.get().open(); NativeImage source = NativeImage.read(NativeImage.Format.RGBA, in)) {
+            int width = source.getWidth();
+            int height = source.getHeight();
+            base = new NativeImage(NativeImage.Format.RGBA, width, height, false);
+            shadow = new NativeImage(NativeImage.Format.RGBA, width, height, false);
+            for (int y = 0; y < height; y++) {
+                for (int x = 0; x < width; x++) {
+                    int abgr = source.getPixelRGBA(x, y);
+                    int a = abgr >>> 24;
+                    int r = abgr & 0xFF;
+                    int g = (abgr >> 8) & 0xFF;
+                    int b = (abgr >> 16) & 0xFF;
+                    int max = Math.max(r, Math.max(g, b));
+                    if (a == 0 || max == 0 || max == 255) {
+                        base.setPixelRGBA(x, y, abgr);
+                        shadow.setPixelRGBA(x, y, 0);
+                        continue;
+                    }
+                    float value = max / 255.0f;
+                    float strength = Math.min(1.0f, (1.0f - value) / (1.0f - WHITE_SHADOW));
+                    float lift = 255.0f / max;
+                    float mask = 1.0f / Math.max(value, WHITE_SHADOW);
+                    base.setPixelRGBA(x, y, packPixel(a, r * lift, g * lift, b * lift));
+                    shadow.setPixelRGBA(x, y, packPixel(a * strength, r * mask, g * mask, b * mask));
+                    shaded = true;
+                }
+            }
+        } catch (Exception e) {
+            shaded = false;
+        }
+        if (!shaded) {
+            if (base != null) base.close();
+            if (shadow != null) shadow.close();
+            return UNSHADED;
+        }
+        return new ResourceLocation[]{registerShaded(layer, ".png", base), registerShaded(layer, "_shadow.png", shadow)};
+    }
+
+    private static ResourceLocation registerShaded(ResourceLocation layer, String suffix, NativeImage image) {
+        String path = layer.getPath();
+        if (path.endsWith(".png")) path = path.substring(0, path.length() - ".png".length());
+        ResourceLocation location = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "shaded/" + layer.getNamespace() + "/" + path + suffix);
+        Minecraft.getInstance().getTextureManager().register(location, new DynamicTexture(image));
+        return location;
+    }
+
+    private static int packPixel(float a, float r, float g, float b) {
+        return (pixelChannel(a) << 24) | (pixelChannel(b) << 16) | (pixelChannel(g) << 8) | pixelChannel(r);
+    }
+
+    private static int pixelChannel(float value) {
+        return Math.max(0, Math.min(255, Math.round(value)));
     }
 
 	protected void resolveBodyFrostDemon(Character character, String key, float[] b1, float[] b2, float[] b3, float[] hair, BiConsumer<ResourceLocation, float[]> consumer) {
@@ -501,13 +600,13 @@ public class SkinGathererProvider {
         String prefix = "textures/entity/races/bioandroid/" + phase + "_" + bodyType + "_";
         String fallbackPrefix = "textures/entity/races/bioandroid/" + phase + "_0_";
 
-        consumer.accept(DMZSkinLayer.getSafeTexture(getCachedTexture(prefix + "layer1.png"), getCachedTexture(fallbackPrefix + "layer1.png")), b1);
-        consumer.accept(DMZSkinLayer.getSafeTexture(getCachedTexture(prefix + "layer2.png"), getCachedTexture(fallbackPrefix + "layer2.png")), b2);
-        consumer.accept(DMZSkinLayer.getSafeTexture(getCachedTexture(prefix + "layer3.png"), getCachedTexture(fallbackPrefix + "layer3.png")), b3);
-        consumer.accept(DMZSkinLayer.getSafeTexture(getCachedTexture(prefix + "layer4.png"), getCachedTexture(fallbackPrefix + "layer4.png")), hair);
+        acceptWithShadow(consumer, DMZSkinLayer.getSafeTexture(getCachedTexture(prefix + "layer1.png"), getCachedTexture(fallbackPrefix + "layer1.png")), b1);
+        acceptWithShadow(consumer, DMZSkinLayer.getSafeTexture(getCachedTexture(prefix + "layer2.png"), getCachedTexture(fallbackPrefix + "layer2.png")), b2);
+        acceptWithShadow(consumer, DMZSkinLayer.getSafeTexture(getCachedTexture(prefix + "layer3.png"), getCachedTexture(fallbackPrefix + "layer3.png")), b3);
+        acceptWithShadow(consumer, DMZSkinLayer.getSafeTexture(getCachedTexture(prefix + "layer4.png"), getCachedTexture(fallbackPrefix + "layer4.png")), hair);
 
         if (!currentForm.equals("xenomax") && !currentForm.equals("xenofp")) {
-            consumer.accept(DMZSkinLayer.getSafeTexture(getCachedTexture(prefix + "layer5.png"), getCachedTexture(fallbackPrefix + "layer5.png")), DEFAULT_STINGER_COLOR);
+            acceptWithShadow(consumer, DMZSkinLayer.getSafeTexture(getCachedTexture(prefix + "layer5.png"), getCachedTexture(fallbackPrefix + "layer5.png")), DEFAULT_STINGER_COLOR);
         }
 
         emitBioAndroidFormLayers(key, formGroup, consumer);
