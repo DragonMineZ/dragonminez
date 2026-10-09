@@ -1745,6 +1745,7 @@ public class DefaultFormsFactory {
 		transcended.setAllowFreeTransformOnMastery(0.0);
 
 		FormConfig.FormData darkKing = new FormConfig.FormData();
+		darkKing.setOutlineShader(outline("#FF1A1A", "#8A0000", 3.5));
 		darkKing.setName(GlindForms.DARK_KING);
 		darkKing.setUnlockOnSkillLevel(2);
 		darkKing.setCustomModel("buffedg3");
@@ -1767,6 +1768,7 @@ public class DefaultFormsFactory {
 		darkKing.setStackDrainMultiplier(2.0);
 
 		FormConfig.FormData timePowerDarkKing = new FormConfig.FormData();
+		timePowerDarkKing.setOutlineShader(outline("#000000", "#000000", 4.5));
 		timePowerDarkKing.setName(GlindForms.TIME_POWER_DARK_KING);
 		timePowerDarkKing.setUnlockOnSkillLevel(3);
 		timePowerDarkKing.setCustomModel("glinddark");
@@ -1791,6 +1793,7 @@ public class DefaultFormsFactory {
 		timePowerDarkKing.setShareMasteryMultiplier(0.5);
 
 		FormConfig.FormData timePowerRealmOfLight = new FormConfig.FormData();
+		timePowerRealmOfLight.setOutlineShader(outline("#FFFFFF", "#FFF3C4", 3.5));
 		timePowerRealmOfLight.setName(GlindForms.TIME_POWER_REALM_OF_LIGHT);
 		timePowerRealmOfLight.setUnlockOnSkillLevel(3);
 		timePowerRealmOfLight.setCustomModel("");
