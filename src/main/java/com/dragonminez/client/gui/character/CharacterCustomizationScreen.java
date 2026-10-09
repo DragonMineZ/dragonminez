@@ -681,7 +681,7 @@ public class CharacterCustomizationScreen extends ScaledScreen {
 
 	private void renderEyesText(GuiGraphics graphics, int centerX, int top) {
 		TextUtil.drawCenteredStringWithBorder(graphics, this.font, tr("gui.dragonminez.customization.eyes"), centerX, top + 2, 0xFF9B9B);
-		renderPreviewGrid(graphics, eyesBar, top + 30, 0, Math.max(1, TextureCounter.getMaxEyesTypes(getEffectiveModelBase())), character.getEyesType(), PreviewRenderMode.EYES_ONLY, true, PREVIEW_GRID_VISIBLE_ROWS);
+		renderPreviewGrid(graphics, eyesBar, top + 30, 0, maxEyesTypes(), character.getEyesType(), PreviewRenderMode.EYES_ONLY, true, PREVIEW_GRID_VISIBLE_ROWS);
 	}
 
 	private void renderFaceText(GuiGraphics graphics, int centerX, int top) {
@@ -1378,6 +1378,10 @@ public class CharacterCustomizationScreen extends ScaledScreen {
 		return race;
 	}
 
+	private int maxEyesTypes() {
+		return Math.max(1, TextureCounter.getMaxEyesTypes(getEffectiveModelBase()) + TextureCounter.getRaceEyeCount(character.getRace()));
+	}
+
 	private CustomTextureButton createArrowButton(int x, int y, boolean isLeft, CustomTextureButton.OnPress onPress) {
 		return new CustomTextureButton.Builder()
 				.position(x, y)
@@ -1702,7 +1706,7 @@ public class CharacterCustomizationScreen extends ScaledScreen {
 		return switch (tab) {
 			case PRESET -> handlePreviewGridSelection(uiMouseX, uiMouseY, top + 40, character.getMinBodyType(), getCombinedBodyTypeCount(), presetGridRows(), bodyTypeBar, this::setBodyTypeFromPreview);
 			case HAIR -> handlePreviewGridSelection(uiMouseX, uiMouseY, top + 30, 0, Math.max(0, getMaxHairForCurrentState() - 1), PREVIEW_GRID_VISIBLE_ROWS, hairBar, this::setHairFromPreview);
-			case EYES -> handlePreviewGridSelection(uiMouseX, uiMouseY, top + 30, 0, Math.max(1, TextureCounter.getMaxEyesTypes(getEffectiveModelBase())), PREVIEW_GRID_VISIBLE_ROWS, eyesBar, this::setEyesFromPreview);
+			case EYES -> handlePreviewGridSelection(uiMouseX, uiMouseY, top + 30, 0, maxEyesTypes(), PREVIEW_GRID_VISIBLE_ROWS, eyesBar, this::setEyesFromPreview);
 			case FACE -> handlePreviewGridSelection(uiMouseX, uiMouseY, top + 20, 0, Math.max(1, TextureCounter.getMaxNoseTypes(getEffectiveModelBase())), 1, noseBar, this::setNoseFromPreview)
 					|| handlePreviewGridSelection(uiMouseX, uiMouseY, top + 94, 0, Math.max(1, TextureCounter.getMaxMouthTypes(getEffectiveModelBase())), 2, mouthBar, this::setMouthFromPreview);
 			case BODY -> handlePreviewGridSelection(uiMouseX, uiMouseY, top + 30, 0, tattooGridMax(), PREVIEW_GRID_VISIBLE_ROWS, tattooBar, this::setTattooFromPreview);

@@ -16,9 +16,11 @@ public final class AuraStyle {
 	public float noiseFactor;
 	public float bloomIntensity;
 	public float spikeDensity, spikeBurstRate, spikeRarity, bandStart;
+	public float secondBorderFactor;
 	public final float[] coreColor = new float[3];
 	public final float[] rimColor = new float[3];
 	public final float[] noiseColor = new float[3];
+	public final float[] secondBorderColor = new float[3];
 
 	private static final float BRIGHTNESS = 0.85f;
 
@@ -69,6 +71,14 @@ public final class AuraStyle {
 			style.noiseFactor = 1.0f;
 		}
 
+		if (c.getSecondBorderColor().isEmpty()) {
+			copy(style.rimColor, style.secondBorderColor);
+			style.secondBorderFactor = 0.0f;
+		} else {
+			copy(ColorUtils.hexToRgb(c.getSecondBorderColor()), style.secondBorderColor);
+			style.secondBorderFactor = 1.0f;
+		}
+
 		dim(style.coreColor);
 		dim(style.rimColor);
 		dim(style.noiseColor);
@@ -99,9 +109,11 @@ public final class AuraStyle {
 		spikeBurstRate = other.spikeBurstRate;
 		spikeRarity = other.spikeRarity;
 		bandStart = other.bandStart;
+		secondBorderFactor = other.secondBorderFactor;
 		copy(other.coreColor, coreColor);
 		copy(other.rimColor, rimColor);
 		copy(other.noiseColor, noiseColor);
+		copy(other.secondBorderColor, secondBorderColor);
 		return this;
 	}
 
@@ -127,10 +139,12 @@ public final class AuraStyle {
 		spikeBurstRate = Mth.lerp(t, spikeBurstRate, target.spikeBurstRate);
 		spikeRarity = Mth.lerp(t, spikeRarity, target.spikeRarity);
 		bandStart = Mth.lerp(t, bandStart, target.bandStart);
+		secondBorderFactor = Mth.lerp(t, secondBorderFactor, target.secondBorderFactor);
 		for (int i = 0; i < 3; i++) {
 			coreColor[i] = Mth.lerp(t, coreColor[i], target.coreColor[i]);
 			rimColor[i] = Mth.lerp(t, rimColor[i], target.rimColor[i]);
 			noiseColor[i] = Mth.lerp(t, noiseColor[i], target.noiseColor[i]);
+			secondBorderColor[i] = Mth.lerp(t, secondBorderColor[i], target.secondBorderColor[i]);
 		}
 		return this;
 	}

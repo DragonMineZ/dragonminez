@@ -39,7 +39,7 @@ public class SagaDragonBallLayer<T extends DBSagasEntity> extends GeoRenderLayer
 		GeoBone ballBone = ballModel.getBone(BALL_BONE).orElse(null);
 		if (ballBone == null) return;
 
-		ResourceLocation texture = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "textures/block/custom/dballnamekblock" + stars + ".png");
+		ResourceLocation texture = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "textures/block/custom/" + animatable.getDragonBallTexturePrefix() + stars + ".png");
 		RenderType ballType = RenderType.entityCutoutNoCull(texture);
 
 		poseStack.pushPose();

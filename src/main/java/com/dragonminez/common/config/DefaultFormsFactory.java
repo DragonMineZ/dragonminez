@@ -60,7 +60,7 @@ public class DefaultFormsFactory {
 	}
 
 	private static FormConfig.Aura3DStyle darkAura(String noise) {
-		return aura3D().waves(2.1f, 5.0f, 0.76f).turbulence(0.5f, 0.54f).rim(0.04f, 1.0f, 4.5f, 0.06f).colors("", "", noise);
+		return aura3D().waves(2.1f, 5.0f, 0.76f).turbulence(0.5f, 0.54f).rim(0.04f, 1.0f, 4.5f, 0.06f).colors("", "", noise).secondBorder("#000000");
 	}
 
 	public void createDefaultFormsForRace(String raceName, Path formsPath, Map<String, FormConfig> forms) throws IOException {
@@ -1672,7 +1672,8 @@ public class DefaultFormsFactory {
 		absorption.setAuraColor("#2F6BFF");
 		absorption.setHairType("ssj4");
 		setDefaultMasteryValues(absorption);
-		absorption.setAura3DStyle(aura3D().waves(2.0f, 5.0f, 0.78f).turbulence(0.13f, 0.54f).colors("", "", "#9CC8FF"));
+        absorption.setOutlineShader(outline("#FFFFFF", "#FAE0FF", 5.5));
+        absorption.setAura3DStyle(aura3D().waves(2.1f, 7.4f, 1.8f).turbulence(0.65f, 0.55f).colors("", "", "#FFF7FF").secondBorder("#FFF7FF"));
 		absorption.setStackDrainMultiplier(2.0);
 		absorption.setIncompatibleWith(List.of(""));
 
@@ -1691,8 +1692,8 @@ public class DefaultFormsFactory {
 		trueForm.setBodyColor1("#247FA2");
 		trueForm.setBodyColor2("#D2D2C6");
 		trueForm.setAuraColor("#7B2FBE");
-        trueForm.setEye1Color("#AB0F0F");
-        trueForm.setEye2Color("#AB0F0F");
+        trueForm.setEye1Color("#A61717");
+        trueForm.setEye2Color("#A61717");
         trueForm.setHairType("ssj3");
 		setDefaultMasteryValues(trueForm);
 		trueForm.setAura3DStyle(darkAura("#B05CFF").size(1.12f, 1.2f, 1.04f).waves(2.1f, 5.2f, 0.8f).turbulence(0.45f, 0.54f));
@@ -1745,38 +1746,46 @@ public class DefaultFormsFactory {
 		transcended.setAllowFreeTransformOnMastery(0.0);
 
 		FormConfig.FormData darkKing = new FormConfig.FormData();
+		darkKing.setOutlineShader(outline("#FF1A1A", "#8A0000", 3.5));
 		darkKing.setName(GlindForms.DARK_KING);
 		darkKing.setUnlockOnSkillLevel(2);
-		darkKing.setCustomModel("");
+		darkKing.setCustomModel("buffedg3");
+		darkKing.setKeepBaseFormHeadBones(true);
 		darkKing.setModelScaling(new Float[]{1.1f, 1.1f, 1.1f});
 		darkKing.setStrMultiplier(4.8);
 		darkKing.setSkpMultiplier(4.8);
 		darkKing.setDefMultiplier(3.5875);
 		darkKing.setPwrMultiplier(4.8);
 		darkKing.setEnergyDrain(0.613);
-		darkKing.setHairColor("#C41E1E");
-		darkKing.setBodyColor1("#F8FDDC");
+		darkKing.setHairColor("#F2234B");
+		darkKing.setBodyColor1("#D2D2C6");
 		darkKing.setBodyColor2("#3C3A3F");
-		darkKing.setAuraColor("#7B2FBE");
-		darkKing.setHairType("base");
+		darkKing.setEye1Color("#E01414");
+		darkKing.setEye2Color("#E01414");
+		darkKing.setAuraColor("#B00000");
+		darkKing.setHairType("ssj2");
 		setDefaultMasteryValues(darkKing);
-		darkKing.setAura3DStyle(darkAura("#B05CFF").size(1.14f, 1.2f, 1.05f).waves(2.1f, 5.4f, 0.82f).turbulence(0.5f, 0.55f));
+		darkKing.setAura3DStyle(aura3D().size(1.14f, 1.2f, 1.05f).waves(2.1f, 5.4f, 0.82f).turbulence(0.5f, 0.55f).rim(0.3f, 1.0f, 4.5f, 0.06f).colors("#050000", "#E01414", "#FF1A1A"));
 		darkKing.setStackDrainMultiplier(2.0);
 
 		FormConfig.FormData timePowerDarkKing = new FormConfig.FormData();
+		timePowerDarkKing.setOutlineShader(outline("#000000", "#000000", 4.5));
 		timePowerDarkKing.setName(GlindForms.TIME_POWER_DARK_KING);
 		timePowerDarkKing.setUnlockOnSkillLevel(3);
-		timePowerDarkKing.setCustomModel("");
+		timePowerDarkKing.setCustomModel("glinddark");
 		timePowerDarkKing.setModelScaling(new Float[]{1.1f, 1.1f, 1.1f});
 		timePowerDarkKing.setStrMultiplier(5.6);
 		timePowerDarkKing.setSkpMultiplier(5.6);
 		timePowerDarkKing.setDefMultiplier(4.0125);
 		timePowerDarkKing.setPwrMultiplier(5.6);
 		timePowerDarkKing.setEnergyDrain(0.805);
-		timePowerDarkKing.setHairColor("#F5F5F5");
-		timePowerDarkKing.setBodyColor1("#6E8C95");
-		timePowerDarkKing.setBodyColor2("#3C3A3F");
-		timePowerDarkKing.setAuraColor("#8E4A4A");
+		timePowerDarkKing.setHairColor("#F2234B");
+		timePowerDarkKing.setBodyColor1("#D2D2C6");
+		timePowerDarkKing.setEye1Color("#E01414");
+		timePowerDarkKing.setEye2Color("#E01414");
+		timePowerDarkKing.setBodyColor2("#463E4A");
+		timePowerDarkKing.setBodyColor3("#E82C3E");
+		timePowerDarkKing.setAuraColor("#AD0C0C");
 		timePowerDarkKing.setHairType("base");
 		setDefaultMasteryValues(timePowerDarkKing);
 		timePowerDarkKing.setAura3DStyle(darkAura("#C9A3A3").size(1.18f, 1.24f, 1.08f).waves(2.1f, 5.4f, 0.82f).turbulence(0.5f, 0.55f));
@@ -1785,6 +1794,7 @@ public class DefaultFormsFactory {
 		timePowerDarkKing.setShareMasteryMultiplier(0.5);
 
 		FormConfig.FormData timePowerRealmOfLight = new FormConfig.FormData();
+		timePowerRealmOfLight.setOutlineShader(outline("#FFFFFF", "#FFF3C4", 3.5));
 		timePowerRealmOfLight.setName(GlindForms.TIME_POWER_REALM_OF_LIGHT);
 		timePowerRealmOfLight.setUnlockOnSkillLevel(3);
 		timePowerRealmOfLight.setCustomModel("");

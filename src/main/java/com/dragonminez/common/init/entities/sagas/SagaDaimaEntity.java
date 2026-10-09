@@ -881,6 +881,11 @@ public class SagaDaimaEntity {
         }
 
         @Override
+        public String getDragonBallTexturePrefix() {
+            return "dballdemonblock";
+        }
+
+        @Override
         public void readAdditionalSaveData(CompoundTag pCompound) {
             super.readAdditionalSaveData(pCompound);
             this.applyTamagamiScale();

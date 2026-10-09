@@ -57,6 +57,7 @@ public class DMZSkinLayer<T extends AbstractClientPlayer & GeoAnimatable> extend
 
 	private static final float[] DARK_GRAY = ColorUtils.hexToRgb("#383838");
 	private static final float[] WHITE = ColorUtils.hexToRgb("#FFFFFF");
+	private static final float[] BLACK = ColorUtils.hexToRgb("#000000");
 	private static final String HUMAN_FACE_FOLDER = "textures/entity/races/humansaiyan/faces/";
 	private static final float BORROWED_BROW_DARKNESS = 0.18f;
 
@@ -311,7 +312,7 @@ public class DMZSkinLayer<T extends AbstractClientPlayer & GeoAnimatable> extend
 		boolean isOozaruForm = raceName.equals("saiyan") && (Objects.equals(currentForm, SaiyanForms.OOZARU) || Objects.equals(currentForm, SaiyanForms.GOLDEN_OOZARU));
 		if (isOozaruForm || finalFaceKey.equals("oozaru")) return;
 
-		boolean isHumanoidModel = finalFaceKey.equals("human") || finalFaceKey.equals("saiyan") || finalFaceKey.contains("ssj4d") || finalFaceKey.contains("ssj4gt") || finalFaceKey.equals("buffed") || finalFaceKey.equals("buffedg3") || finalFaceKey.equals("4arms");
+		boolean isHumanoidModel = SkinGathererProvider.isHumanoidKey(finalFaceKey);
 		var raceConfig = ConfigManager.getRaceCharacter(raceName);
 		if (bodyType == 0 && (isHumanoidModel || (raceConfig != null && Boolean.TRUE.equals(raceConfig.getUseVanillaSkin())))) {
 			if (SkinGathererProvider.rendersPlayerSkin(character)) renderSkinPixelEyes(model, poseStack, animatable, bufferSource, player, stats, partialTick, packedLight, packedOverlay, alpha);
@@ -368,7 +369,7 @@ public class DMZSkinLayer<T extends AbstractClientPlayer & GeoAnimatable> extend
 
 		switch (family) {
 			case "human" ->
-					renderHumanFace(model, poseStack, animatable, bufferSource, character, WHITE, eye1, eye2, skin, hair, pt, pl, po, alpha);
+					renderHumanFace(model, poseStack, animatable, bufferSource, character, scleraColor(character), eye1, eye2, skin, hair, pt, pl, po, alpha);
 			case "namekian" ->
 					renderNamekianFace(model, poseStack, animatable, bufferSource, character, eye1, eye2, skin, hair, pt, pl, po, alpha);
 			case "frostdemon" ->
@@ -403,13 +404,19 @@ public class DMZSkinLayer<T extends AbstractClientPlayer & GeoAnimatable> extend
 
 		boolean isMajin = animatable.hasEffect(MainEffects.MAJIN.get());
 
-		renderHumanEyes(model, poseStack, animatable, bufferSource, character, character.getEyesType(), sclera, eye1, eye2, hair, skinBase, pt, pl, po, alpha);
+		String race = character.getRaceName().toLowerCase();
+		int humanEye = character.getEyesType() - TextureCounter.getRaceEyeCount(race);
+		if (humanEye < 0) {
+			renderRaceEyes(model, poseStack, animatable, bufferSource, race, character.getEyesType(), sclera, eye1, eye2, hair, pt, pl, po, alpha);
+		} else {
+			renderHumanEyes(model, poseStack, animatable, bufferSource, character, humanEye, sclera, eye1, eye2, hair, skinBase, pt, pl, po, alpha);
 
-		String ssj4Eyes = folder + "ssj4_eyes_" + character.getEyesType() + ".png";
-		if (isMajin) {
-			renderColoredLayer(model, poseStack, animatable, bufferSource, ssj4Eyes, ColorUtils.hexToRgb("#292929"), pt, pl, po, alpha);
-		} else if (this.currentSsj4Alpha > 0.001f && this.currentSsj4Color != null) {
-			renderFadingColoredLayer(model, poseStack, animatable, bufferSource, ssj4Eyes, this.currentSsj4Color, pt, pl, po, alpha * this.currentSsj4Alpha);
+			String ssj4Eyes = folder + "ssj4_eyes_" + humanEye + ".png";
+			if (isMajin) {
+				renderColoredLayer(model, poseStack, animatable, bufferSource, ssj4Eyes, ColorUtils.hexToRgb("#292929"), pt, pl, po, alpha);
+			} else if (this.currentSsj4Alpha > 0.001f && this.currentSsj4Color != null) {
+				renderFadingColoredLayer(model, poseStack, animatable, bufferSource, ssj4Eyes, this.currentSsj4Color, pt, pl, po, alpha * this.currentSsj4Alpha);
+			}
 		}
 
         if(legendaryGroup && (character.getActiveForm().equals("shiyoken") || character.getActiveForm().equals("shin_shiyoken") || character.getActiveForm().equals("chou_shiyoken"))){
@@ -437,6 +444,14 @@ public class DMZSkinLayer<T extends AbstractClientPlayer & GeoAnimatable> extend
 		boolean isSsj3 = (character.hasActiveStackForm() && character.getActiveStackFormData() != null && character.getActiveStackFormData().getHairType().equalsIgnoreCase("ssj3")) ||
 				(character.hasActiveForm() && character.getActiveFormData() != null && character.getActiveFormData().getHairType().equalsIgnoreCase("ssj3"));
 		if (isSsj3) renderColoredLayer(model, poseStack, animatable, bufferSource, HUMAN_FACE_FOLDER + "ssj3eyebrows_eye_" + eyeType + ".png", ssj3Brow, pt, pl, po, alpha);
+	}
+
+	private void renderRaceEyes(BakedGeoModel model, PoseStack poseStack, T animatable, MultiBufferSource bufferSource, String race, int eyeType, float[] sclera, float[] eye1, float[] eye2, float[] brow, float pt, int pl, int po, float alpha) {
+		String eyeBase = "textures/entity/races/" + race + "/faces/" + race + "_eye_" + eyeType;
+		renderColoredLayer(model, poseStack, animatable, bufferSource, eyeBase + "_0.png", sclera, pt, pl, po, alpha);
+		renderColoredLayer(model, poseStack, animatable, bufferSource, eyeBase + "_1.png", eye1, pt, pl, po, alpha);
+		renderColoredLayer(model, poseStack, animatable, bufferSource, eyeBase + "_2.png", eye2, pt, pl, po, alpha);
+		renderColoredLayer(model, poseStack, animatable, bufferSource, eyeBase + "_3.png", brow, pt, pl, po, alpha);
 	}
 
 	private boolean renderBorrowedHumanEyes(BakedGeoModel model, PoseStack poseStack, T animatable, MultiBufferSource bufferSource, Character character, float[] eye1, float[] eye2, float[] hair, float[] faceColor, float pt, int pl, int po, float alpha) {
@@ -666,7 +681,7 @@ public class DMZSkinLayer<T extends AbstractClientPlayer & GeoAnimatable> extend
 
 			List<GeoBone> hiddenBones = hideAllTopLevelAndKeepHead(model, headBone);
 			try {
-				if (scleraMask != null) renderMaskLayer(model, poseStack, animatable, bufferSource, scleraMask, applyColorTint(WHITE, stats), pt, pl, po, alpha * iris.alpha());
+				if (scleraMask != null) renderMaskLayer(model, poseStack, animatable, bufferSource, scleraMask, applyColorTint(scleraColor(character), stats), pt, pl, po, alpha * iris.alpha());
 				if (irisMask != null) renderMaskLayer(model, poseStack, animatable, bufferSource, irisMask, applyColorTint(iris.rgb(), stats), pt, pl, po, alpha * iris.alpha());
 				if (browMask != null) renderMaskLayer(model, poseStack, animatable, bufferSource, browMask, applyColorTint(brow.rgb(), stats), pt, pl, po, alpha * brow.alpha());
 			} finally {
@@ -763,6 +778,17 @@ public class DMZSkinLayer<T extends AbstractClientPlayer & GeoAnimatable> extend
 		if (look.stackData() != null && Boolean.TRUE.equals(look.stackData().hasCustomModel())) return look.stackData();
 		if (look.formData() != null && Boolean.TRUE.equals(look.formData().hasCustomModel())) return look.formData();
 		return null;
+	}
+
+	private static float[] scleraColor(Character character) {
+		return isGlindDarkKing(character) ? BLACK : WHITE;
+	}
+
+	private static boolean isGlindDarkKing(Character character) {
+		if (!"glind".equalsIgnoreCase(character.getRaceName()) || !character.hasActiveForm()) return false;
+		if (!GlindForms.GROUP_LEGENDARYFORMS.equalsIgnoreCase(character.getActiveFormGroup())) return false;
+		String form = character.getActiveForm();
+		return GlindForms.DARK_KING.equalsIgnoreCase(form) || GlindForms.TIME_POWER_DARK_KING.equalsIgnoreCase(form);
 	}
 
 	private static boolean isGlindAbsorption(Character character, FormConfig.FormData form) {

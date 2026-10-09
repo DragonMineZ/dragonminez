@@ -92,6 +92,7 @@ public class FormConfig {
 		private Float spikeBurstRate = 3.0f;
 		private Float spikeRarity = 3.0f;
 		private Float bandStart = 0.50f;
+		private String secondBorderColor = "";
 
 		public float getSizeX() { return size != null && size.length > 0 && size[0] != null ? Math.max(0.05f, size[0]) : 1.10f; }
 		public float getSizeY() { return size != null && size.length > 1 && size[1] != null ? Math.max(0.05f, size[1]) : 1.17f; }
@@ -114,6 +115,7 @@ public class FormConfig {
 		public float getSpikeBurstRate() { return spikeBurstRate != null ? Math.max(0.0f, spikeBurstRate) : 3.0f; }
 		public float getSpikeRarity() { return spikeRarity != null ? Math.max(0.1f, spikeRarity) : 3.0f; }
 		public float getBandStart() { return bandStart != null ? Math.max(0.05f, Math.min(0.95f, bandStart)) : 0.50f; }
+		public String getSecondBorderColor() { return secondBorderColor != null ? secondBorderColor.trim() : ""; }
 
 		public Aura3DStyle size(float x, float y, float z) {
 			this.size = new Float[]{x, y, z};
@@ -163,6 +165,11 @@ public class FormConfig {
 			this.spikeBurstRate = burstRate;
 			this.spikeRarity = rarity;
 			this.bandStart = bandStart;
+			return this;
+		}
+
+		public Aura3DStyle secondBorder(String color) {
+			this.secondBorderColor = color;
 			return this;
 		}
 	}

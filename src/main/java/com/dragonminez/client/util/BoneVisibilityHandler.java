@@ -84,7 +84,7 @@ public class BoneVisibilityHandler {
 		model.getBone("tail1m").ifPresent(bone -> {
 			boolean isTargetMajinModel = logicKey.equals("majin_kid") || logicKey.equals("majin_ultra") || logicKey.equals("majin");
 			boolean showAntenna = (isMajin && isFemale && isSuperOrUltra) || (isTargetMajinModel && isFemale);
-			setHiddenRecursive(bone, !showAntenna);
+			setHiddenRecursive(bone, !showAntenna && !logicKey.equals("glinddark"));
 		});
 
 		model.getBone("tail1").ifPresent(bone -> {

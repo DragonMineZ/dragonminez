@@ -29,7 +29,7 @@ public final class FusionDanceAligner {
 			Map.entry("bioandroid", 22.79f), Map.entry("bioandroid_base", 22.79f), Map.entry("bioandroid_perfect", 22.79f),
 			Map.entry("bioandroid_xeno", 24.59f), Map.entry("bioandroid_xenofp", 25.45f),
 			Map.entry("janemba_imperfect", 24.42f), Map.entry("janemba_fat", 24.97f), Map.entry("janemba_super", 22.99f),
-			Map.entry("glindtrueform", 23.91f), Map.entry("trascended", 22.92f), Map.entry("oozaru", 24.59f));
+			Map.entry("glindtrueform", 23.91f), Map.entry("trascended", 22.92f), Map.entry("glinddark", 24.19f), Map.entry("oozaru", 24.59f));
 
 	private static final Map<UUID, Slot> SLOTS = new HashMap<>();
 

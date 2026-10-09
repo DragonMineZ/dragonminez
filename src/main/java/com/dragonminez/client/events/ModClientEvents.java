@@ -27,6 +27,7 @@ import com.dragonminez.client.init.entities.renderer.sagas.*;
 import com.dragonminez.client.util.ArmorTextureResolver;
 import com.dragonminez.client.util.KeyBinds;
 import com.dragonminez.client.util.SkinCacheManager;
+import com.dragonminez.client.util.SkinGathererProvider;
 import com.dragonminez.client.util.TextureCounter;
 import com.dragonminez.common.init.entities.sagas.DBSagasEntity;
 import com.dragonminez.common.util.BetaWhitelist;
@@ -115,6 +116,7 @@ public class ModClientEvents {
 			@Override
 			protected void apply(Void unused, ResourceManager resourceManager, ProfilerFiller profilerFiller) {
 				TextureCounter.clearCache();
+				SkinGathererProvider.clearShadedLayers();
 				DBSagaModel.clearCache();
 				ArmorTextureResolver.clearCache();
 				CombatAnimationResolver.reload(resourceManager);

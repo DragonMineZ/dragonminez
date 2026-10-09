@@ -852,7 +852,7 @@ public class AllWorldBossesEntity {
         private static final int ZANZOKEN_COOLDOWN = 100;
         private static final int ABILITY_GAP = 50;
 
-        private static final int GRAB_DURATION = 35;
+        private static final int GRAB_DURATION = 56;
         private static final int GRAB_COOLDOWN = 260;
         private static final int GRAB_FIRST_DELAY = 60;
         private static final double GRAB_RANGE = 3.0D;
@@ -2919,6 +2919,11 @@ public class AllWorldBossesEntity {
         }
 
         @Override
+        public String getDragonBallTexturePrefix() {
+            return "dballdemonblock";
+        }
+
+        @Override
         public OutlineStyle getOutlineStyle() {
             return this.powered ? this.profile.outline() : null;
         }
@@ -3058,11 +3063,7 @@ public class AllWorldBossesEntity {
         }
 
         private void dropDragonBall(ServerLevel level) {
-            Item ball = switch (this.profile.number()) {
-                case 1 -> MainItems.DBALL1_NAMEK_BLOCK_ITEM.get();
-                case 2 -> MainItems.DBALL2_NAMEK_BLOCK_ITEM.get();
-                default -> MainItems.DBALL3_NAMEK_BLOCK_ITEM.get();
-            };
+            Item ball = MainItems.getDragonBallBlockItemOrThrow("demon", Math.max(1, Math.min(3, this.profile.number()))).get();
             BlockPos anchor = this.getAnchor();
             Vec3 front = Vec3.directionFromRotation(0.0F, SLEEP_YAW);
             double x = anchor.getX() + 0.5D + front.x * BALL_DROP_DISTANCE;

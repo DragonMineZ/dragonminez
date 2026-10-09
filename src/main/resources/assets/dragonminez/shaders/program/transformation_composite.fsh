@@ -11,6 +11,8 @@ uniform float OutlineBloomStrength;
 in vec2 texCoord;
 out vec4 fragColor;
 
+const vec3 LUMA = vec3(0.2126, 0.7152, 0.0722);
+
 void main() {
 	vec3 scene = texture(DiffuseSampler, texCoord).rgb;
 	vec4 coloredMask = texture(ColoredMaskSampler, texCoord);
@@ -30,6 +32,9 @@ void main() {
 	vec3 bloom = texture(BloomSampler, texCoord).rgb * max(0.0, OutlineBloomStrength);
 	bloom = bloom / (1.0 + bloom);
 
-	vec3 result = scene + outline + glow + bloom;
+	float lit = smoothstep(0.01, 0.05, dot(blurredColor, LUMA));
+	float shade = (1.0 - lit) * clamp(ring + exterior * max(0.0, BloomStrength), 0.0, 1.0);
+
+	vec3 result = mix(scene + (outline + glow) * lit, blurredColor, shade) + bloom;
 	fragColor = vec4(clamp(result, 0.0, 1.0), 1.0);
 }

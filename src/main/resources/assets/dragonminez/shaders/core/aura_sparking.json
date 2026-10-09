@@ -23,6 +23,8 @@
     { "name": "NoiseDetail", "type": "float", "count": 1, "values": [0.1] },
     { "name": "CoreColor", "type": "float", "count": 3, "values": [1.0, 1.0, 1.0] },
     { "name": "RimColor", "type": "float", "count": 3, "values": [1.0, 1.0, 1.0] },
+    { "name": "SecondBorderColor", "type": "float", "count": 3, "values": [1.0, 1.0, 1.0] },
+    { "name": "SecondBorderFactor", "type": "float", "count": 1, "values": [0.0] },
     { "name": "CoreAlpha", "type": "float", "count": 1, "values": [0.18] },
     { "name": "RimAlpha", "type": "float", "count": 1, "values": [0.85] },
     { "name": "RimPower", "type": "float", "count": 1, "values": [6.0] },
