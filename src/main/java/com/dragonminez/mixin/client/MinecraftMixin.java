@@ -6,6 +6,7 @@ import com.dragonminez.client.collision.TargetFinder;
 import com.dragonminez.client.events.DMZClientEvent;
 import com.dragonminez.common.combat.logic.player.PlayerAttackHelper;
 import com.dragonminez.common.combat.logic.player.PlayerAttackProperties;
+import com.dragonminez.common.combat.logic.player.TargetHelper;
 import com.dragonminez.common.combat.player.AttackHand;
 import com.dragonminez.common.combat.util.Minecraft_DMZ;
 import com.dragonminez.common.combat.util.SoundHelper;
@@ -299,7 +300,12 @@ public abstract class MinecraftMixin implements Minecraft_DMZ {
 
 	@Override
 	public boolean isTargetInReach(Entity entity) {
-		return targetsInReach != null && targetsInReach.contains(entity);
+		if (targetsInReach == null || entity == null) return false;
+		Entity owner = TargetHelper.resolveHittable(entity);
+		for (Entity target : targetsInReach) {
+			if (TargetHelper.resolveHittable(target) == owner) return true;
+		}
+		return false;
 	}
 
 	@Override

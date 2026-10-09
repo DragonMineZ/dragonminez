@@ -26,8 +26,10 @@ import io.netty.handler.codec.DecoderException;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Supplier;
@@ -160,9 +162,12 @@ public class CombatAttackRequestC2S {
 			}
 
 			boolean firstHit = true;
+			Set<Entity> struckOwners = new HashSet<>();
 			for (int id : entityIds) {
 				Entity entity = TargetHelper.getEntityOrPart(player.level(), id);
 				if (entity == null) continue;
+				Entity owner = TargetHelper.resolveHittable(entity);
+				if (struckOwners.contains(owner)) continue;
 
 				if (!TargetHelper.isAttackableMount(entity) && player.getVehicle() == entity) continue;
 
@@ -172,6 +177,7 @@ public class CombatAttackRequestC2S {
 
 				if (player.distanceToSqr(entity) <= (maxRange * maxRange) + 16.0
 						&& MeleeTargetValidator.canHit(player, entity, reachAttacks, maxRange, aims)) {
+					struckOwners.add(owner);
 
 					if (firstHit) {
 						player.getPersistentData().putBoolean("dmz_first_hit", true);
