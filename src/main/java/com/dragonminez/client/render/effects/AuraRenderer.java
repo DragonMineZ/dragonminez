@@ -15,6 +15,7 @@ import com.dragonminez.common.stats.extras.ActionMode;
 import com.dragonminez.common.stats.StatsCapability;
 import com.dragonminez.common.stats.StatsData;
 import com.dragonminez.common.stats.StatsProvider;
+import com.dragonminez.common.util.GodRitualHelper;
 import com.dragonminez.common.util.TransformationsHelper;
 import com.mojang.blaze3d.pipeline.RenderTarget;
 import com.mojang.blaze3d.systems.RenderSystem;
@@ -94,6 +95,8 @@ public class AuraRenderer {
 
 	private static final Map<Integer, Long> FUSION_START_TIME = new ConcurrentHashMap<>();
 	private static final Map<Integer, Boolean> WAS_FUSED_CACHE = new ConcurrentHashMap<>();
+	private static final Map<Integer, Boolean> WAS_GOD_RITUAL_CACHE = new ConcurrentHashMap<>();
+	private static final Set<Integer> GOD_RITUAL_FLASH = ConcurrentHashMap.newKeySet();
 	private static final Map<Integer, Float> PULSE_PROGRESS = new ConcurrentHashMap<>();
 	private static final Map<Integer, Long> PULSE_LAST_RENDER_TIME = new ConcurrentHashMap<>();
 	private static final Map<Integer, Float> RELEASE_SCALE_PROGRESS = new ConcurrentHashMap<>();
@@ -366,8 +369,17 @@ public class AuraRenderer {
 			if (stats != null) {
 				boolean isFused = stats.getStatus().isFused();
 				boolean wasFused = WAS_FUSED_CACHE.getOrDefault(playerId, false);
+				boolean isGodRitual = GodRitualHelper.isActiveForm(stats);
+				Boolean wasGodRitual = WAS_GOD_RITUAL_CACHE.put(playerId, isGodRitual);
 
-				if (isFused && !wasFused) FUSION_START_TIME.put(playerId, gameTime);
+				if (isFused && !wasFused) {
+					FUSION_START_TIME.put(playerId, gameTime);
+					GOD_RITUAL_FLASH.remove(playerId);
+				}
+				if (isGodRitual && Boolean.FALSE.equals(wasGodRitual)) {
+					FUSION_START_TIME.put(playerId, gameTime);
+					GOD_RITUAL_FLASH.add(playerId);
+				}
 				WAS_FUSED_CACHE.put(playerId, isFused);
 
 				if (FUSION_START_TIME.containsKey(playerId)) {
@@ -375,7 +387,7 @@ public class AuraRenderer {
 					if (timeSinceStart < 60) {
 						List<AuraLayer> layers = getAuraLayers(player, stats, partialTick, false);
 						if (!layers.isEmpty()) {
-							float[] color = layers.get(layers.size() - 1).color;
+							float[] color = GOD_RITUAL_FLASH.contains(playerId) ? GodRitualHelper.shellColor() : layers.get(layers.size() - 1).color;
 							int r = (int) (color[0] * 255);
 							int g = (int) (color[1] * 255);
 							int b = (int) (color[2] * 255);
@@ -383,6 +395,7 @@ public class AuraRenderer {
 						}
 					} else if (timeSinceStart > 80) {
 						FUSION_START_TIME.remove(playerId);
+						GOD_RITUAL_FLASH.remove(playerId);
 					}
 				}
 			}

@@ -23,6 +23,7 @@ import com.dragonminez.common.stats.skills.Skills;
 import com.dragonminez.common.stats.techniques.TechniqueData;
 import com.dragonminez.common.stats.techniques.Techniques;
 import com.dragonminez.common.util.FusionForms;
+import com.dragonminez.common.util.GodRitualHelper;
 import com.dragonminez.common.util.TransformationsHelper;
 import com.dragonminez.common.util.lists.StackForms;
 import com.dragonminez.server.util.GravityLogic;
@@ -497,15 +498,17 @@ public class StatsData {
 	}
 
 	public double getFlightStateSpeedMultiplier() {
+		double share = GodRitualHelper.donorSpeedMultiplier(this);
 		CombatConfig combatConfig = ConfigManager.getCombatConfig();
-		if (combatConfig == null) return 1.0;
-		return status.isSurgeActive() ? combatConfig.getSurgeFlySpeedMultiplier() : 1.0;
+		if (combatConfig == null) return share;
+		return (status.isSurgeActive() ? combatConfig.getSurgeFlySpeedMultiplier() : 1.0) * share;
 	}
 
 	public double getMovementSpeedMultiplier() {
+		double share = GodRitualHelper.donorSpeedMultiplier(this);
 		CombatConfig combatConfig = ConfigManager.getCombatConfig();
-		if (combatConfig == null || !combatConfig.getEnableSpeedSystem()) return 1.0;
-		return Math.min(combatConfig.getSpeedMovementCap(), getSpeed());
+		if (combatConfig == null || !combatConfig.getEnableSpeedSystem()) return share;
+		return Math.min(combatConfig.getSpeedMovementCap(), getSpeed()) * share;
 	}
 
 	public double getMeleeDamage() {
@@ -872,9 +875,10 @@ public class StatsData {
 		double stack = getStackFormMultiplier(statName);
 		double effect = getEffectsMultiplier(statName);
 		double secondary = statName.equalsIgnoreCase("DEF") ? 1.0 : secondaryStatEffects.getMultiplier(statName);
+		double kiShare = GodRitualHelper.kiShareMultiplier(this, statName);
 
-		if (ConfigManager.getServerConfig().getGameplay().getMultiplicationInsteadOfAdditionForMultipliers()) return form * stack * effect * secondary;
-		else return 1.0 + (form - 1.0) + (stack - 1.0) + (effect - 1.0) + (secondary - 1.0);
+		if (ConfigManager.getServerConfig().getGameplay().getMultiplicationInsteadOfAdditionForMultipliers()) return form * stack * effect * secondary * kiShare;
+		else return (1.0 + (form - 1.0) + (stack - 1.0) + (effect - 1.0) + (secondary - 1.0)) * kiShare;
 	}
 
 	public double getFormMultiplier(String statName) {
@@ -902,6 +906,10 @@ public class StatsData {
 			case "SPEED" -> formData.getSpeedMultiplier();
 			default -> 1.0;
 		};
+
+		if (TransformationsHelper.isGodRitualFormType(formConfig.getFormType())) {
+			return applyRacialFormPowerModifier(currentFormGroup, getGodRitualMultiplier(formData, statName));
+		}
 
 		if (isRageBorrowedForm(currentFormGroup, formData)) {
 			return applyRacialFormPowerModifier(currentFormGroup, getRageBorrowedMultiplier(formData, statName));
@@ -936,6 +944,22 @@ public class StatsData {
 		double reference = legendary.getStrMultiplier() - 1.0;
 		double share = reference > 0.0 ? (legendaryBase - 1.0) / reference : 1.0;
 		return Math.min(bestMult + bonus * share, splendor);
+	}
+
+	private double getGodRitualMultiplier(FormConfig.FormData ritualForm, String statName) {
+		double floor = getBaseFormMultiplier(ritualForm, statName);
+		Object[] bestResult = findBestForm(false, false, true);
+		if (!(bestResult[1] instanceof FormConfig.FormData bestForm)) return floor;
+		double bestMastery = character.getFormMasteries().getMastery((String) bestResult[0], bestForm.getName());
+		double bestMult = getMasteryAdjustedMultiplier(bestForm, statName, bestMastery);
+		if (bestMult <= 1.0) return floor;
+		double boosted = 1.0 + (bestMult - 1.0) * (1.0 + GodRitualHelper.powerBonus(this));
+		return Math.max(boosted, floor);
+	}
+
+	public FormConfig.FormData getGodRitualReferenceForm() {
+		Object[] bestResult = findBestForm(false, false, true);
+		return bestResult[1] instanceof FormConfig.FormData bestForm ? bestForm : null;
 	}
 
 	private double applyRacialFormPowerModifier(String groupName, double multiplier) {
@@ -1035,6 +1059,10 @@ public class StatsData {
 	}
 
 	private Object[] getBestBaseFormWithGroup(boolean forUltimate) {
+		return findBestForm(forUltimate, !forUltimate, false);
+	}
+
+	private Object[] findBestForm(boolean forUltimate, boolean skipLegendary, boolean skipRageBorrowed) {
 		String raceName = character.getRaceName();
 		Map<String, FormConfig> groups = FusionForms.allFormGroups(this);
 		if (groups == null || groups.isEmpty()) return new Object[]{null, null};
@@ -1046,12 +1074,13 @@ public class StatsData {
 			String groupName = entry.getKey();
 			FormConfig group = entry.getValue();
 			if (group == null) continue;
-			if (!forUltimate && TransformationsHelper.isMutantLegendaryGroup(groupName)) continue;
+			if (skipLegendary && TransformationsHelper.isMutantLegendaryGroup(groupName)) continue;
 
 			List<FormConfig.FormData> unlocked = TransformationsHelper.getUnlockedForms(this, raceName, groupName);
 			for (FormConfig.FormData formData : unlocked) {
 				if (formData == null) continue;
 				if (forUltimate && formData.isIncompatibleWith(StackForms.GROUP_ULTIMATE, StackForms.ULTIMATE)) continue;
+				if (skipRageBorrowed && isRageBorrowedForm(groupName, formData)) continue;
 
 				double mastery = character.getFormMasteries().getMastery(groupName, formData.getName());
 

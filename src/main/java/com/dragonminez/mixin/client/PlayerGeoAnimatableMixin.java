@@ -8,6 +8,7 @@ import com.dragonminez.common.combat.logic.player.PlayerAttackHelper;
 import com.dragonminez.common.combat.logic.player.PlayerAttackProperties;
 import com.dragonminez.common.combat.player.AttackHand;
 import com.dragonminez.common.stats.character.Cooldowns;
+import com.dragonminez.common.stats.character.Status;
 import com.dragonminez.common.stats.StatsCapability;
 import com.dragonminez.common.stats.StatsData;
 import com.dragonminez.common.stats.StatsProvider;
@@ -331,6 +332,11 @@ public abstract class PlayerGeoAnimatableMixin implements GeoAnimatable, IPlayer
 			return state.setAndContinue(FUSION_POTHALA_RIGHT);
 		}
 
+		if (data.getStatus().isInGodRitual()) {
+			if (data.getStatus().getGodRitualRole() != Status.GOD_RITUAL_RECIPIENT) return state.setAndContinue(IDLE);
+			return state.setAndContinue(data.getResources().getActionCharge() >= 100 ? FLY_IDLE : KI_CHARGE);
+		}
+
 		boolean isDraining = data.getCooldowns().hasCooldown(Cooldowns.DRAIN_ACTIVE);
 		boolean flySkillActive = data.getSkills().isSkillActive("fly");
 		boolean isChargingKi = data.getStatus().isChargingKi();
@@ -481,7 +487,8 @@ public abstract class PlayerGeoAnimatableMixin implements GeoAnimatable, IPlayer
 		if (player.isSwimming() || player.isVisuallyCrawling() || player.isPassenger()) return PlayState.STOP;
 
 		StatsData data = StatsProvider.get(StatsCapability.INSTANCE, player).orElse(null);
-		if (data != null && (data.getStatus().isBlocking() || data.getStatus().isChargingKi() || dragonminez$isStunned(data))) return PlayState.STOP;
+		if (data != null && (data.getStatus().isBlocking() || data.getStatus().isChargingKi() || dragonminez$isStunned(data)
+				|| data.getStatus().isKiShareLocked())) return PlayState.STOP;
 
 		if (dragonminez$currentPoseAnim == null || dragonminez$currentPoseAnim.isEmpty()) return PlayState.STOP;
 

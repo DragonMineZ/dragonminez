@@ -67,7 +67,7 @@ public final class KiSenseScan {
 		if (isCloaked(targetPlayer)) return false;
 		if (isKiSuppressed(targetData)) return false;
 		if (targetData.getStatus().isAndroidUpgraded()) return false;
-		if (TransformationsHelper.hasGodFormActive(targetData) && myData.getSkills().getSkillLevel("godforms") <= 0) return false;
+		if (TransformationsHelper.hasGodFormActive(targetData) && !TransformationsHelper.hasGodKi(myData)) return false;
 		return true;
 	}
 

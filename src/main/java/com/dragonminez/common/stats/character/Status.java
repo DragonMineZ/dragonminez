@@ -19,6 +19,9 @@ import java.util.UUID;
 public class Status {
 	public static final int FLIGHT_SEARCH = 0;
 	public static final int FLIGHT_COMBAT = 1;
+	public static final int GOD_RITUAL_NONE = 0;
+	public static final int GOD_RITUAL_DONOR = 1;
+	public static final int GOD_RITUAL_RECIPIENT = 2;
 
 	private boolean isAlive;
 	private boolean forceHalo;
@@ -78,6 +81,12 @@ public class Status {
 	private UUID activeShadowDummyUUID;
 	private int shadowDummyPercent;
 	private int shadowDummyKillCount;
+	private int kiTransferTarget;
+	private int kiTransferDonors;
+	private int godRitualRole;
+	private UUID godRitualAnchor;
+	private int godRitualTicks;
+	private long godRitualGlowStart;
 
 	public Status() {
 		this.isAlive = true;
@@ -137,6 +146,12 @@ public class Status {
 		this.activeShadowDummyUUID = null;
 		this.shadowDummyPercent = 0;
 		this.shadowDummyKillCount = 0;
+		this.kiTransferTarget = -1;
+		this.kiTransferDonors = 0;
+		this.godRitualRole = GOD_RITUAL_NONE;
+		this.godRitualAnchor = null;
+		this.godRitualTicks = 0;
+		this.godRitualGlowStart = 0L;
 	}
 
 	public void reset() {
@@ -197,10 +212,28 @@ public class Status {
 		this.activeShadowDummyUUID = null;
 		this.shadowDummyPercent = 0;
 		this.shadowDummyKillCount = 0;
+		this.kiTransferTarget = -1;
+		this.kiTransferDonors = 0;
+		this.godRitualRole = GOD_RITUAL_NONE;
+		this.godRitualAnchor = null;
+		this.godRitualTicks = 0;
+		this.godRitualGlowStart = 0L;
 	}
 
 	public boolean isStunned() {
-		return stunEffect || isKnockedDown || isStrikeLocked || matchFrozen;
+		return stunEffect || isKnockedDown || isStrikeLocked || matchFrozen || isInGodRitual();
+	}
+
+	public boolean isSharingKi() {
+		return kiTransferTarget >= 0;
+	}
+
+	public boolean isInGodRitual() {
+		return godRitualRole != GOD_RITUAL_NONE;
+	}
+
+	public boolean isKiShareLocked() {
+		return isSharingKi() || isInGodRitual();
 	}
 
 	public void validateKiWeaponType() {
@@ -285,6 +318,12 @@ public class Status {
 		if (activeShadowDummyUUID != null) tag.putUUID("ActiveShadowDummyUUID", activeShadowDummyUUID);
 		tag.putInt("ShadowDummyPercent", shadowDummyPercent);
 		tag.putInt("ShadowDummyKillCount", shadowDummyKillCount);
+		tag.putInt("KiTransferTarget", kiTransferTarget);
+		tag.putInt("KiTransferDonors", kiTransferDonors);
+		tag.putInt("GodRitualRole", godRitualRole);
+		if (godRitualAnchor != null) tag.putUUID("GodRitualAnchor", godRitualAnchor);
+		tag.putInt("GodRitualTicks", godRitualTicks);
+		tag.putLong("GodRitualGlowStart", godRitualGlowStart);
 		return tag;
 	}
 
@@ -354,6 +393,12 @@ public class Status {
 		this.activeShadowDummyUUID = tag.hasUUID("ActiveShadowDummyUUID") ? tag.getUUID("ActiveShadowDummyUUID") : null;
 		this.shadowDummyPercent = tag.getInt("ShadowDummyPercent");
 		this.shadowDummyKillCount = tag.contains("ShadowDummyKillCount") ? tag.getInt("ShadowDummyKillCount") : 0;
+		this.kiTransferTarget = tag.contains("KiTransferTarget") ? tag.getInt("KiTransferTarget") : -1;
+		this.kiTransferDonors = tag.getInt("KiTransferDonors");
+		this.godRitualRole = tag.getInt("GodRitualRole");
+		this.godRitualAnchor = tag.hasUUID("GodRitualAnchor") ? tag.getUUID("GodRitualAnchor") : null;
+		this.godRitualTicks = tag.getInt("GodRitualTicks");
+		this.godRitualGlowStart = tag.getLong("GodRitualGlowStart");
 	}
 
 	public void copyFrom(Status other) {
@@ -415,5 +460,11 @@ public class Status {
 		this.activeShadowDummyUUID = other.activeShadowDummyUUID;
 		this.shadowDummyPercent = other.shadowDummyPercent;
 		this.shadowDummyKillCount = other.shadowDummyKillCount;
+		this.kiTransferTarget = other.kiTransferTarget;
+		this.kiTransferDonors = other.kiTransferDonors;
+		this.godRitualRole = other.godRitualRole;
+		this.godRitualAnchor = other.godRitualAnchor;
+		this.godRitualTicks = other.godRitualTicks;
+		this.godRitualGlowStart = other.godRitualGlowStart;
 	}
 }

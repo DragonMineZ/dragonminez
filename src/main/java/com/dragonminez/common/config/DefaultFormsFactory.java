@@ -78,6 +78,7 @@ public class DefaultFormsFactory {
 
 	private static final String LEGENDARY_FORM_TYPE = "legendaryforms";
 	private static final String FALSE_FORM_TYPE = "falseform";
+	private static final String GOD_RITUAL_FORM_TYPE = "godritual";
 
 	private static void forceGroupAura3D(Map<String, FormConfig> forms, String formType, String auraType) {
 		for (FormConfig config : forms.values()) {
@@ -953,6 +954,41 @@ public class DefaultFormsFactory {
 		falseForms.setForms(falseFormData);
 
 		forms.put(SaiyanForms.GROUP_FALSEFORM, falseForms);
+
+		FormConfig godRitualForms = new FormConfig();
+		godRitualForms.setConfigVersion(FormConfig.CURRENT_VERSION);
+		godRitualForms.setGroupName(SaiyanForms.GROUP_GODRITUAL);
+		godRitualForms.setFormType(GOD_RITUAL_FORM_TYPE);
+
+		FormConfig.FormData ssgRitual = new FormConfig.FormData();
+		ssgRitual.setName(SaiyanForms.SUPER_SAIYAN_GOD_RITUAL);
+		ssgRitual.setUnlockOnSkillLevel(99);
+		ssgRitual.setHairType("base");
+		ssgRitual.setHairColor("#D61F45");
+		ssgRitual.setBodyColor2("#D61F45");
+		ssgRitual.setEye1Color("#E8174F");
+		ssgRitual.setEye2Color("#E8174F");
+		ssgRitual.setAuraColor("#FF5A36");
+		ssgRitual.setModelScaling(new Float[]{0.9375f, 0.9375f, 0.9375f});
+		ssgRitual.setEnergyDrain(0.16);
+		setDefaultMasteryValues(ssgRitual);
+		ssgRitual.setMaxMastery(0.0);
+		ssgRitual.setMasteryPerHitDealt(0.0);
+		ssgRitual.setMasteryPerHitReceived(0.0);
+		ssgRitual.setPassiveMasteryEveryFiveSeconds(0.0);
+		ssgRitual.setAuraType3D(FormConfig.AURA_3D_GOD);
+		ssgRitual.setAura3DStyle(aura3D().waves(2.0f, 5.2f, 0.8f).turbulence(0.18f, 0.55f).colors("", "", "#FFC04D"));
+		ssgRitual.setFormStackable(false);
+		ssgRitual.setStackDrainMultiplier(2.0);
+		ssgRitual.setAllowFreeTransformOnMastery(0.0);
+		ssgRitual.setIncompatibleWith(List.of(""));
+
+		Map<String, FormConfig.FormData> godRitualData = new LinkedHashMap<>();
+		otherworldDrain(ssgRitual, TIER_2);
+		godRitualData.put(SaiyanForms.SUPER_SAIYAN_GOD_RITUAL, ssgRitual);
+		godRitualForms.setForms(godRitualData);
+
+		forms.put(SaiyanForms.GROUP_GODRITUAL, godRitualForms);
 
 		FormConfig saiyanLegendaryForms = new FormConfig();
 		saiyanLegendaryForms.setConfigVersion(FormConfig.CURRENT_VERSION);

@@ -12,6 +12,7 @@ import com.dragonminez.client.systems.FormVisualTransition;
 import com.dragonminez.client.render.shader.TransformationPostShaderManager;
 import com.dragonminez.client.render.effects.AuraBorderRenderer;
 import com.dragonminez.client.render.effects.DimensionalFistEffect;
+import com.dragonminez.client.render.effects.GodRitualShellEffect;
 import com.dragonminez.client.render.effects.TechniquePreview;
 import com.dragonminez.client.render.shader.TransformationMaskBufferSource;
 import com.dragonminez.client.render.util.IrisCompat;
@@ -164,6 +165,7 @@ public class DMZPlayerRenderer<T extends AbstractClientPlayer & GeoAnimatable> e
 
 		boolean demonEye = RelicItemsStatusHandler.isDemonEyeActive(stats) && !entity.isSpectator() && !entity.isInvisible();
 		MultiBufferSource baseSource = demonEye ? new SaiyanInvaderRenderer.TintedBufferSource(bufferSource, DEMON_EYE_TINT) : bufferSource;
+		baseSource = GodRitualShellEffect.wrap(entity, stats, baseSource, partialTick);
 		MultiBufferSource renderSource = baseSource;
 		if (maskBufferSource != null) {
 			maskBufferSource.wrap(baseSource);

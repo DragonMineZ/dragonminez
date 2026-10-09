@@ -48,6 +48,7 @@ public class Cooldowns {
 	public static final String OLDKAI_ZSWORD = "OldKaiZSword";
 	public static final String KARIN_NIMBUS = "KarinNimbus";
 	public static final String PERFECT_EVASION_CD = "PerfectEvasionCooldown";
+	public static final String GOD_RITUAL = "GodRitualCooldown";
 
     public Cooldowns() {
         this.cooldowns = new HashMap<>();

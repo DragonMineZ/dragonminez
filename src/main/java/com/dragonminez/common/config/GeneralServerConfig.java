@@ -25,6 +25,8 @@ public class GeneralServerConfig {
 	private GravityConfig gravity = new GravityConfig();
 	private MutantConfig mutant = new MutantConfig();
 	private FalseSuperSaiyanConfig falseSuperSaiyan = new FalseSuperSaiyanConfig();
+	private KiTransferConfig kiTransfer = new KiTransferConfig();
+	private GodRitualConfig superSaiyanGodRitual = new GodRitualConfig();
 	private WorldBossConfig worldBoss = new WorldBossConfig();
 	private CraftingConfig crafting = new CraftingConfig();
 	private StorageConfig storage = new StorageConfig();
@@ -39,6 +41,16 @@ public class GeneralServerConfig {
 	public FalseSuperSaiyanConfig getFalseSuperSaiyan() {
 		if (falseSuperSaiyan == null) falseSuperSaiyan = new FalseSuperSaiyanConfig();
 		return falseSuperSaiyan;
+	}
+
+	public KiTransferConfig getKiTransfer() {
+		if (kiTransfer == null) kiTransfer = new KiTransferConfig();
+		return kiTransfer;
+	}
+
+	public GodRitualConfig getSuperSaiyanGodRitual() {
+		if (superSaiyanGodRitual == null) superSaiyanGodRitual = new GodRitualConfig();
+		return superSaiyanGodRitual;
 	}
 
 	public WorldBossConfig getWorldBoss() {
@@ -1609,6 +1621,90 @@ public class GeneralServerConfig {
 		private static double clamp01(Double value, double fallback) {
 			double resolved = positive(value, fallback);
 			return Math.max(0.0, Math.min(1.0, resolved));
+		}
+	}
+
+	@NoArgsConstructor
+	public static class KiTransferConfig {
+		private Boolean enabled = true;
+		private Double kiPercentPerSecond = 0.025;
+		private Double boostDelaySeconds = 1.0;
+		private Double boostPerDonor = 0.05;
+		private Integer maxBoostDonors = 5;
+		private Double donorSpeedMultiplier = 0.4;
+		private Double interruptDamageRatio = 0.10;
+		private Double startRange = 8.0;
+		private Double maxLinkDistance = 32.0;
+		private Double attackChargeCreditRatio = 1.0;
+
+		public boolean getEnabled() { return enabled == null || enabled; }
+		public double getKiPercentPerSecond() { return Math.min(1.0, positive(kiPercentPerSecond, 0.025)); }
+		public double getBoostDelaySeconds() { return positive(boostDelaySeconds, 1.0); }
+		public double getBoostPerDonor() { return positive(boostPerDonor, 0.05); }
+		public int getMaxBoostDonors() { return Math.max(0, maxBoostDonors != null ? maxBoostDonors : 5); }
+		public double getDonorSpeedMultiplier() { return Math.max(0.0, Math.min(1.0, positive(donorSpeedMultiplier, 0.4))); }
+		public double getInterruptDamageRatio() { return Math.max(0.01, positive(interruptDamageRatio, 0.10)); }
+		public double getStartRange() { return Math.max(1.0, positive(startRange, 8.0)); }
+		public double getMaxLinkDistance() { return Math.max(getStartRange(), positive(maxLinkDistance, 32.0)); }
+		public double getAttackChargeCreditRatio() { return positive(attackChargeCreditRatio, 1.0); }
+
+		private static double positive(Double value, double fallback) {
+			return value != null && Double.isFinite(value) && value >= 0.0 ? value : fallback;
+		}
+	}
+
+	@NoArgsConstructor
+	public static class GodRitualConfig {
+		private Boolean enabled = true;
+		private String groupName = "godritual";
+		private String formName = "supersaiyangodritual";
+		private List<String> donorForms = new ArrayList<>(List.of("ssgrades.supersaiyan", "supersaiyan.supersaiyanmastered"));
+		private List<String> recipientForms = new ArrayList<>(List.of("supersaiyan.supersaiyanmastered"));
+		private Integer requiredDonors = 5;
+		private Integer pureGoodMinAlignment = 90;
+		private Integer pureEvilMaxAlignment = 10;
+		private Double ritualRadius = 5.0;
+		private Double ritualVerticalRange = 3.0;
+		private Double ringRadius = 2.5;
+		private Double channelSeconds = 10.0;
+		private Double liftHeight = 6.0;
+		private Double liftSeconds = 2.0;
+		private Double glowInSeconds = 1.0;
+		private Double glowOutSeconds = 1.5;
+		private String shellColor = "#6FD8FF";
+		private Double interruptDamageRatio = 0.25;
+		private Double interruptCooldownSeconds = 30.0;
+		private Double cooldownMinutes = 30.0;
+		private Double durationMinutes = 5.0;
+		private Double powerBonus = 0.30;
+		private Double mutantPowerBonus = 0.45;
+
+		public boolean getEnabled() { return enabled == null || enabled; }
+		public String getGroupName() { return groupName != null && !groupName.isEmpty() ? groupName : "godritual"; }
+		public String getFormName() { return formName != null && !formName.isEmpty() ? formName : "supersaiyangodritual"; }
+		public List<String> getDonorForms() { return donorForms != null ? donorForms : List.of("ssgrades.supersaiyan", "supersaiyan.supersaiyanmastered"); }
+		public List<String> getRecipientForms() { return recipientForms != null ? recipientForms : List.of("supersaiyan.supersaiyanmastered"); }
+		public int getRequiredDonors() { return Math.max(1, requiredDonors != null ? requiredDonors : 5); }
+		public int getPureGoodMinAlignment() { return Math.max(0, Math.min(100, pureGoodMinAlignment != null ? pureGoodMinAlignment : 90)); }
+		public int getPureEvilMaxAlignment() { return Math.max(0, Math.min(100, pureEvilMaxAlignment != null ? pureEvilMaxAlignment : 10)); }
+		public double getRitualRadius() { return Math.max(1.0, positive(ritualRadius, 5.0)); }
+		public double getRitualVerticalRange() { return positive(ritualVerticalRange, 3.0); }
+		public double getRingRadius() { return Math.max(1.0, Math.min(getRitualRadius(), positive(ringRadius, 2.5))); }
+		public int getChannelTicks() { return Math.max(20, (int) Math.round(positive(channelSeconds, 10.0) * 20.0)); }
+		public double getLiftHeight() { return positive(liftHeight, 6.0); }
+		public int getLiftTicks() { return Math.max(1, (int) Math.round(positive(liftSeconds, 2.0) * 20.0)); }
+		public int getGlowInTicks() { return Math.max(1, (int) Math.round(positive(glowInSeconds, 1.0) * 20.0)); }
+		public int getGlowOutTicks() { return Math.max(1, (int) Math.round(positive(glowOutSeconds, 1.5) * 20.0)); }
+		public String getShellColor() { return shellColor != null && shellColor.matches("#[0-9A-Fa-f]{6}") ? shellColor : "#6FD8FF"; }
+		public double getInterruptDamageRatio() { return Math.max(0.01, positive(interruptDamageRatio, 0.25)); }
+		public int getInterruptCooldownTicks() { return (int) Math.round(positive(interruptCooldownSeconds, 30.0) * 20.0); }
+		public int getCooldownTicks() { return (int) Math.min(Integer.MAX_VALUE, Math.round(positive(cooldownMinutes, 30.0) * 1200.0)); }
+		public int getDurationTicks() { return (int) Math.max(20, Math.min(Integer.MAX_VALUE, Math.round(positive(durationMinutes, 5.0) * 1200.0))); }
+		public double getPowerBonus() { return positive(powerBonus, 0.30); }
+		public double getMutantPowerBonus() { return positive(mutantPowerBonus, 0.45); }
+
+		private static double positive(Double value, double fallback) {
+			return value != null && Double.isFinite(value) && value >= 0.0 ? value : fallback;
 		}
 	}
 

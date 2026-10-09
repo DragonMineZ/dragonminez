@@ -135,7 +135,8 @@ public final class FormTransition {
 		Character character = data.getCharacter();
 		if (!look.matches(character)) {
 			Look now = Look.current(character);
-			onLookChanged(now, time);
+			if (now.hasForm() && TransformationsHelper.isGodRitualGroup(character.getRaceName(), now.formGroup())) snap();
+			else onLookChanged(now, time);
 			look = now;
 		}
 		if (time != observedAt) {
@@ -177,6 +178,13 @@ public final class FormTransition {
 	}
 
 	private void reset() {
+		if (chargeTarget != null || revertLook != null) dimensionsDirty = true;
+		clearCharge();
+		revertLook = null;
+		observedAt = Double.NaN;
+	}
+
+	private void snap() {
 		if (chargeTarget != null || revertLook != null) dimensionsDirty = true;
 		clearCharge();
 		revertLook = null;
