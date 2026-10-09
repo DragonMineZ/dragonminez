@@ -774,26 +774,38 @@ public class StatsData {
 		return baseStaminaRequired * getAdjustedStaminaDrainMultiplier();
 	}
 
-	private double getFormOffenseCostFactor() {
-		boolean hasFormMult = character.hasActiveForm() && character.getActiveFormData() != null;
-		boolean hasStackMult = character.hasActiveStackForm() && character.getActiveStackFormData() != null;
-		double formCostMultiplier;
-		if (hasFormMult && hasStackMult) {
-			formCostMultiplier = (character.getActiveFormData().getMaxCostMultiplier()
-					+ character.getActiveStackFormData().getMaxCostMultiplier()) / 2.0;
-		} else if (hasFormMult) {
-			formCostMultiplier = character.getActiveFormData().getMaxCostMultiplier();
-		} else if (hasStackMult) {
-			formCostMultiplier = character.getActiveStackFormData().getMaxCostMultiplier();
-		} else {
-			formCostMultiplier = 1.0;
+	private double activeFormCostFactor() {
+		FormConfig.FormData form = character.getActiveFormData();
+		if (!character.hasActiveForm() || form == null) return 1.0;
+		return getMasteryCostFactor(form, character.getFormMasteries().getMastery(character.getActiveFormGroup(), character.getActiveForm()));
+	}
+
+	private double activeStackCostFactor() {
+		FormConfig.FormData stack = character.getActiveStackFormData();
+		if (!character.hasActiveStackForm() || stack == null || isUltimateStackFormActive()) return 1.0;
+		return getMasteryCostFactor(stack, character.getStackFormMasteries().getMastery(character.getActiveStackFormGroup(), character.getActiveStackForm()));
+	}
+
+	private double masteryWeightedCostFactor(java.util.function.ToDoubleFunction<FormConfig.FormData> drain) {
+		double weight = 0.0;
+		double total = 0.0;
+		FormConfig.FormData form = character.getActiveFormData();
+		if (character.hasActiveForm() && form != null) {
+			double d = Math.max(0.0, drain.applyAsDouble(form));
+			weight += d;
+			total += d * activeFormCostFactor();
 		}
-		return Math.min(1.0, formCostMultiplier);
+		FormConfig.FormData stack = character.getActiveStackFormData();
+		if (character.hasActiveStackForm() && stack != null) {
+			double d = Math.max(0.0, drain.applyAsDouble(stack));
+			weight += d;
+			total += d * activeStackCostFactor();
+		}
+		return weight > 0.0 ? total / weight : 1.0;
 	}
 
 	private double getReducedOffense() {
-		double totalOffense = getMeleeDamageNoBonus() + getStrikeDamageNoBonus() + getKiDamageNoBonus();
-		return totalOffense * getFormOffenseCostFactor();
+		return getMeleeDamageNoBonus() + getStrikeDamageNoBonus() + getKiDamageNoBonus();
 	}
 
 	private double getMeleeDamageNoBonus() {
@@ -827,14 +839,13 @@ public class StatsData {
 		double base = getAdjustedEnergyDrain();
 		if (base <= 0.0) return base;
 		double maxEnergy = getMaxEnergy();
-		double rawEnergyRatio = getReducedOffense() / Math.max(1.0, maxEnergy * 1.5);
-		double energyRatio = Math.max(1.0, Math.sqrt(rawEnergyRatio));
+		double energyRatio = Math.max(1.0, getReducedOffense() / Math.max(1.0, maxEnergy * 5.0));
 		double formRawEneDrain = 0.0;
 		if (character.hasActiveForm() && character.getActiveFormData() != null)
 			formRawEneDrain += Math.max(0.0, character.getActiveFormData().getEnergyDrain());
 		if (character.hasActiveStackForm() && character.getActiveStackFormData() != null)
 			formRawEneDrain += Math.max(0.0, character.getActiveStackFormData().getEnergyDrain());
-		double percentageEnergy = maxEnergy * (formRawEneDrain * 0.01) * 0.75;
+		double percentageEnergy = maxEnergy * (formRawEneDrain * 0.01) * 0.75 * masteryWeightedCostFactor(FormConfig.FormData::getEnergyDrain);
 		return (base * energyRatio) + percentageEnergy;
 	}
 
@@ -843,7 +854,7 @@ public class StatsData {
 		if (base <= 0.0) return base;
 		double maxStamina = getMaxStamina();
 		double staminaRatio = Math.max(1.0, getReducedOffense() / Math.max(1.0, maxStamina * 1.5));
-		double percentageStamina = maxStamina * 0.005;
+		double percentageStamina = maxStamina * 0.005 * masteryWeightedCostFactor(FormConfig.FormData::getStaminaDrain);
 		return (base * staminaRatio) + percentageStamina;
 	}
 
@@ -852,7 +863,7 @@ public class StatsData {
 		if (base <= 0.0) return base;
 		double maxHealth = getMaxHealth();
 		double healthRatio = Math.max(1.0, getReducedOffense() / Math.max(1.0, maxHealth * 1.5));
-		double percentageHealth = maxHealth * 0.005;
+		double percentageHealth = maxHealth * 0.005 * masteryWeightedCostFactor(FormConfig.FormData::getHealthDrain);
 		return (base * healthRatio) + percentageHealth;
 	}
 
