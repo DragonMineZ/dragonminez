@@ -63,7 +63,7 @@ public final class FusionTraits {
 		if (k.startsWith("bioandroid")) return "bioandroid";
 		if (k.startsWith("majin") || k.startsWith("janemba")) return "majin";
 		if (k.startsWith("human") || k.startsWith("saiyan") || k.contains("ssj4d") || k.contains("ssj4gt")
-				|| k.startsWith("buffed") || k.equals("4arms")) return "human";
+				|| k.startsWith("buffed") || k.equals("4arms") || k.equals("glinddark")) return "human";
 		return "custom";
 	}
 

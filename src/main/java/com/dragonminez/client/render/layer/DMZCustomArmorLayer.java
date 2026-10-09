@@ -196,7 +196,8 @@ public class DMZCustomArmorLayer<T extends AbstractClientPlayer & GeoAnimatable>
         else if (logicKey.contains("buffed") || logicKey.contains("frostdemon_fp") || logicKey.contains("majin_ultra")
                 || logicKey.contains("namekian_orange") || logicKey.startsWith("bioandroid") || logicKey.contains("ssj4gt") || logicKey.contains("ssj4d")
                 || logicKey.contains("frostdemon_fifth") || logicKey.contains("frostdemon_metalcore") || logicKey.contains("namekian_buffed")
-                || logicKey.contains("4arms") || logicKey.equals("janemba_super") || logicKey.equals("frostdemon_second") || logicKey.equals("glindtrueform") || logicKey.equals("trascended")) {
+                || logicKey.contains("4arms") || logicKey.equals("janemba_super") || logicKey.equals("frostdemon_second") || logicKey.equals("glindtrueform") || logicKey.equals("trascended")
+                || logicKey.equals("glinddark")) {
             if (isDbzArmor) shouldRender = true;
         }
         else if (logicKey.equals("majin") && gender.equals(Character.GENDER_MALE) && bodyType != 2) {

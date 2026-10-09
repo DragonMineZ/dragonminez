@@ -44,7 +44,8 @@ public class SkinGathererProvider {
 
 	public static boolean isHumanoidKey(String logicKey) {
 		return logicKey.equals("human") || logicKey.equals("saiyan") || logicKey.contains("ssj4d")
-				|| logicKey.contains("ssj4gt") || logicKey.equals("buffed") || logicKey.equals("buffedg3") || logicKey.equals("4arms");
+				|| logicKey.contains("ssj4gt") || logicKey.equals("buffed") || logicKey.equals("buffedg3") || logicKey.equals("4arms")
+				|| logicKey.equals("glinddark");
 	}
 
 	public static boolean rendersPlayerSkin(Character character) {
@@ -284,6 +285,7 @@ public class SkinGathererProvider {
 		if (isHumanoidKey(logicKey)) {
 			if (bodyType == 0) consumer.accept(player.getSkinTextureLocation(), WHITE_COLOR);
 			else resolveBodyHumanSaiyan(look, logicKey, b1, b2, b3, consumer);
+			if (logicKey.equals("glinddark")) resolveBodyGlindDark(b2, b3, consumer);
 			return;
 		}
 
@@ -352,7 +354,7 @@ public class SkinGathererProvider {
 		String basePath = "textures/entity/races/humansaiyan/bodytype" + genderPart + "_" + bodyType + "_";
 		String fallbackPath = "textures/entity/races/humansaiyan/bodytype" + genderPart + "_0_";
 		RaceCharacterConfig raceConfig = ConfigManager.getRaceCharacter(character.getRaceName());
-		if (bodyType != 0 && raceConfig != null && raceConfig.isSlimBodyType(bodyType)) {
+		if (bodyType != 0 && raceConfig != null && raceConfig.isSlimBodyType(bodyType) && !key.equals("glinddark")) {
 			ResourceLocation slimLayer = getCachedTexture(basePath + "slim_layer1.png");
 			if (DMZSkinLayer.getSafeTexture(slimLayer).equals(slimLayer)) basePath = basePath + "slim_";
 		}
@@ -370,6 +372,12 @@ public class SkinGathererProvider {
 		consumer.accept(layer1, ColorUtils.skinBaseTone(bodyColor));
 		emitShadowLayer(consumer, layer1, bodyColor);
 		acceptWithShadow(consumer, DMZSkinLayer.getSafeTexture(getCachedTexture(basePath + "layer2.png")), bodyColor2);
+	}
+
+	protected void resolveBodyGlindDark(float[] bodyColor2, float[] bodyColor3, BiConsumer<ResourceLocation, float[]> consumer) {
+		String basePath = "textures/entity/races/glind/darkking_";
+		emitOverlayLayer(consumer, DMZSkinLayer.getSafeTexture(getCachedTexture(basePath + "layer2.png")), bodyColor2);
+		emitOverlayLayer(consumer, DMZSkinLayer.getSafeTexture(getCachedTexture(basePath + "layer3.png")), bodyColor3);
 	}
 
 	protected void resolveBodyGlindTranscended(Character character, float[] bodyColor, float[] bodyColor2, BiConsumer<ResourceLocation, float[]> consumer) {

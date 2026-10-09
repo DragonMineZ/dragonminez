@@ -92,7 +92,8 @@ public class DMZPlayerArmorLayer<T extends AbstractClientPlayer & GeoAnimatable>
                         || logicKey.contains("namekian_orange") || logicKey.startsWith("bioandroid") || logicKey.contains("ssj4d") || logicKey.contains("ssj4gt")
                         || logicKey.contains("frostdemon_fifth") || logicKey.contains("frostdemon_metalcore") || logicKey.contains("namekian_buffed")
                         || logicKey.contains("4arms") || logicKey.contains("janemba_super")
-                        || logicKey.equals("janemba_fat") || logicKey.equals("frostdemon_second") || logicKey.equals("glindtrueform") || logicKey.equals("trascended");
+                        || logicKey.equals("janemba_fat") || logicKey.equals("frostdemon_second") || logicKey.equals("glindtrueform") || logicKey.equals("trascended")
+                        || logicKey.equals("glinddark");
                 boolean isDbzArmor = stack.getItem() instanceof DbzArmorTextured;
 
 				boolean isRestrictedMajin = (isMajin && bodyType != 2) || logicKey.equals("janemba_imperfect");
