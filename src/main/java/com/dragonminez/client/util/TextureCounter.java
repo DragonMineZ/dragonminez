@@ -109,6 +109,26 @@ public class TextureCounter {
         return OWN_FACE_CACHE.computeIfAbsent(race + ":" + type, key -> countFaceTextures(race, type));
     }
 
+    public static int getRaceEyeCount(String race) {
+        String normalizedRace = race.toLowerCase(Locale.ROOT);
+        if (SkinGathererProvider.isBuiltInRace(normalizedRace)) return 0;
+        RaceCharacterConfig config = ConfigManager.getRaceCharacter(normalizedRace);
+        String model = config != null && config.hasCustomModel() ? config.getCustomModel() : "human";
+        if (!SkinGathererProvider.modelFamily(model).equals("human")) return 0;
+        return OWN_FACE_CACHE.computeIfAbsent(normalizedRace + ":race_eye", key -> countRaceEyes(normalizedRace));
+    }
+
+    private static int countRaceEyes(String race) {
+        ResourceManager resourceManager = Minecraft.getInstance().getResourceManager();
+        int count = 0;
+        for (int i = 0; i <= 100; i++) {
+            ResourceLocation location = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "textures/entity/races/" + race + "/faces/" + race + "_eye_" + i + "_0.png");
+            if (resourceManager.getResource(location).isPresent()) count++;
+            else break;
+        }
+        return count;
+    }
+
     public static int getMaxTattooTypes(String race) {
         String normalizedRace = normalizeRace(race);
         if (TATTOO_TYPE_CACHE.containsKey(normalizedRace)) return TATTOO_TYPE_CACHE.get(normalizedRace);

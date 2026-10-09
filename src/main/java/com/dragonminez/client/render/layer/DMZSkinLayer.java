@@ -404,13 +404,19 @@ public class DMZSkinLayer<T extends AbstractClientPlayer & GeoAnimatable> extend
 
 		boolean isMajin = animatable.hasEffect(MainEffects.MAJIN.get());
 
-		renderHumanEyes(model, poseStack, animatable, bufferSource, character, character.getEyesType(), sclera, eye1, eye2, hair, skinBase, pt, pl, po, alpha);
+		String race = character.getRaceName().toLowerCase();
+		int humanEye = character.getEyesType() - TextureCounter.getRaceEyeCount(race);
+		if (humanEye < 0) {
+			renderRaceEyes(model, poseStack, animatable, bufferSource, race, character.getEyesType(), sclera, eye1, eye2, hair, pt, pl, po, alpha);
+		} else {
+			renderHumanEyes(model, poseStack, animatable, bufferSource, character, humanEye, sclera, eye1, eye2, hair, skinBase, pt, pl, po, alpha);
 
-		String ssj4Eyes = folder + "ssj4_eyes_" + character.getEyesType() + ".png";
-		if (isMajin) {
-			renderColoredLayer(model, poseStack, animatable, bufferSource, ssj4Eyes, ColorUtils.hexToRgb("#292929"), pt, pl, po, alpha);
-		} else if (this.currentSsj4Alpha > 0.001f && this.currentSsj4Color != null) {
-			renderFadingColoredLayer(model, poseStack, animatable, bufferSource, ssj4Eyes, this.currentSsj4Color, pt, pl, po, alpha * this.currentSsj4Alpha);
+			String ssj4Eyes = folder + "ssj4_eyes_" + humanEye + ".png";
+			if (isMajin) {
+				renderColoredLayer(model, poseStack, animatable, bufferSource, ssj4Eyes, ColorUtils.hexToRgb("#292929"), pt, pl, po, alpha);
+			} else if (this.currentSsj4Alpha > 0.001f && this.currentSsj4Color != null) {
+				renderFadingColoredLayer(model, poseStack, animatable, bufferSource, ssj4Eyes, this.currentSsj4Color, pt, pl, po, alpha * this.currentSsj4Alpha);
+			}
 		}
 
         if(legendaryGroup && (character.getActiveForm().equals("shiyoken") || character.getActiveForm().equals("shin_shiyoken") || character.getActiveForm().equals("chou_shiyoken"))){
@@ -438,6 +444,14 @@ public class DMZSkinLayer<T extends AbstractClientPlayer & GeoAnimatable> extend
 		boolean isSsj3 = (character.hasActiveStackForm() && character.getActiveStackFormData() != null && character.getActiveStackFormData().getHairType().equalsIgnoreCase("ssj3")) ||
 				(character.hasActiveForm() && character.getActiveFormData() != null && character.getActiveFormData().getHairType().equalsIgnoreCase("ssj3"));
 		if (isSsj3) renderColoredLayer(model, poseStack, animatable, bufferSource, HUMAN_FACE_FOLDER + "ssj3eyebrows_eye_" + eyeType + ".png", ssj3Brow, pt, pl, po, alpha);
+	}
+
+	private void renderRaceEyes(BakedGeoModel model, PoseStack poseStack, T animatable, MultiBufferSource bufferSource, String race, int eyeType, float[] sclera, float[] eye1, float[] eye2, float[] brow, float pt, int pl, int po, float alpha) {
+		String eyeBase = "textures/entity/races/" + race + "/faces/" + race + "_eye_" + eyeType;
+		renderColoredLayer(model, poseStack, animatable, bufferSource, eyeBase + "_0.png", sclera, pt, pl, po, alpha);
+		renderColoredLayer(model, poseStack, animatable, bufferSource, eyeBase + "_1.png", eye1, pt, pl, po, alpha);
+		renderColoredLayer(model, poseStack, animatable, bufferSource, eyeBase + "_2.png", eye2, pt, pl, po, alpha);
+		renderColoredLayer(model, poseStack, animatable, bufferSource, eyeBase + "_3.png", brow, pt, pl, po, alpha);
 	}
 
 	private boolean renderBorrowedHumanEyes(BakedGeoModel model, PoseStack poseStack, T animatable, MultiBufferSource bufferSource, Character character, float[] eye1, float[] eye2, float[] hair, float[] faceColor, float pt, int pl, int po, float alpha) {
