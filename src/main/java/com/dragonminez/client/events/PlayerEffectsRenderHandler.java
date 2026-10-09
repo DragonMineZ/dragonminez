@@ -1,6 +1,7 @@
 package com.dragonminez.client.events;
 
 import com.dragonminez.Reference;
+import com.dragonminez.client.render.CameraProjectionCapture;
 import com.dragonminez.client.render.effects.AuraBorderRenderer;
 import com.dragonminez.client.render.effects.AuraRenderer;
 import com.dragonminez.client.render.effects.AuraTrailRenderer;
@@ -177,7 +178,7 @@ public class PlayerEffectsRenderHandler {
 			if (cameraPos.distanceToSqr(entityPos) < 0.25) isCameraColliding = true;
 		}
 
-		AuraRenderer.processFusionFlashes(mc, gameTime, partialTick, poseStack, buffers);
+		AuraRenderer.processFusionFlashes(mc, gameTime, partialTick, CameraProjectionCapture.viewPoseStack(poseStack), buffers);
 		PoseStack modelView = RenderSystem.getModelViewStack();
 		modelView.pushPose();
 		modelView.setIdentity();

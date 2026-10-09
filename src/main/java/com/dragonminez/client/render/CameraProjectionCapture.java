@@ -7,12 +7,16 @@ import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.client.event.RenderLevelStageEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
+import com.mojang.blaze3d.vertex.PoseStack;
+import org.joml.Matrix3f;
 import org.joml.Matrix4f;
 import org.joml.Vector4f;
 
 @Mod.EventBusSubscriber(modid = Reference.MOD_ID, value = Dist.CLIENT)
 public final class CameraProjectionCapture {
 	private static final Matrix4f VIEW_PROJECTION = new Matrix4f();
+	private static final Matrix4f VIEW = new Matrix4f();
+	private static final Matrix3f VIEW_NORMAL = new Matrix3f();
 	private static Vec3 cameraPosition = Vec3.ZERO;
 	private static long capturedFrame = -1L;
 	private static long frameCounter;
@@ -25,8 +29,18 @@ public final class CameraProjectionCapture {
 		Minecraft mc = Minecraft.getInstance();
 		if (mc.level == null) return;
 		VIEW_PROJECTION.set(event.getProjectionMatrix()).mul(event.getPoseStack().last().pose());
+		VIEW.set(event.getPoseStack().last().pose());
+		VIEW_NORMAL.set(event.getPoseStack().last().normal());
 		cameraPosition = event.getCamera().getPosition();
 		capturedFrame = ++frameCounter;
+	}
+
+	public static PoseStack viewPoseStack(PoseStack fallback) {
+		if (capturedFrame < 0L) return fallback;
+		PoseStack view = new PoseStack();
+		view.last().pose().set(VIEW);
+		view.last().normal().set(VIEW_NORMAL);
+		return view;
 	}
 
 	public static boolean isAvailable() {
