@@ -359,6 +359,8 @@ public final class Aura3DRenderer {
 		shader.safeGetUniform("NoiseDetail").set(style.noiseDetail);
 		shader.safeGetUniform("CoreColor").set(style.coreColor[0], style.coreColor[1], style.coreColor[2]);
 		shader.safeGetUniform("RimColor").set(style.rimColor[0], style.rimColor[1], style.rimColor[2]);
+		shader.safeGetUniform("SecondBorderColor").set(style.secondBorderColor[0], style.secondBorderColor[1], style.secondBorderColor[2]);
+		shader.safeGetUniform("SecondBorderFactor").set(style.secondBorderFactor);
 		shader.safeGetUniform("CoreAlpha").set(style.coreAlpha);
 		shader.safeGetUniform("RimAlpha").set(style.rimAlpha);
 		shader.safeGetUniform("RimPower").set(style.rimPower);

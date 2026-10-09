@@ -19,6 +19,8 @@ in vec2 vDir;
 
 uniform vec3 CoreColor;
 uniform vec3 RimColor;
+uniform vec3 SecondBorderColor;
+uniform float SecondBorderFactor;
 uniform float CoreAlpha;
 uniform float RimAlpha;
 uniform float RimPower;
@@ -66,6 +68,12 @@ const float CAP_END = 0.92;
 const float CAP_FLOOR = 0.25;
 
 const float INTERIOR_TINT = 0.25;
+
+const float BORDER_RIM_START = 0.56;
+const float BORDER_RIM_END = 0.78;
+const float BORDER_SPIKE_START = 0.10;
+const float BORDER_SPIKE_END = 0.45;
+const float BORDER_BODY_BLOOM = 0.30;
 
 float hash11(float n) {
     return fract(sin(n * 91.3 + 17.1) * 43758.5453);
@@ -116,12 +124,13 @@ void main(void) {
     vec3 tint = clamp(mix(vec3(luma), RimColor, SATURATION), 0.0, 1.5);
 
     if (LayerPass > 0.5) {
-        vec3 fringeTint = clamp(tint, 0.0, 1.0);
+        vec3 fringeTint = mix(clamp(tint, 0.0, 1.0), SecondBorderColor, SecondBorderFactor);
         float fringe = smoothstep(FRINGE_MIN, FRINGE_FULL, vWave) * smoothstep(0.30, 0.65, rim);
         float fringeAlpha = RimAlpha * FRINGE_ALPHA * fringe * Alpha;
         if (facingRaw < 0.0) fringeAlpha *= max(BackFace, 0.45);
         if (fringeAlpha < 0.004) discard;
-        vec4 glow = vec4(fringeTint, clamp(fringeAlpha * FRINGE_BLOOM * BloomIntensity, 0.0, 1.0));
+        float fringeGlow = 1.0 - SecondBorderFactor;
+        vec4 glow = vec4(fringeTint, clamp(fringeAlpha * FRINGE_BLOOM * fringeGlow * BloomIntensity, 0.0, 1.0));
         fragColor = BloomPass > 0.5 ? glow : vec4(fringeTint, fringeAlpha);
         return;
     }
@@ -164,6 +173,10 @@ void main(void) {
     color = mix(color, spikeCol, clamp(vWave * 2.0, 0.0, 1.0));
     color = auraKeepSaturation(color, RimColor);
 
+    float border = SecondBorderFactor * max(smoothstep(BORDER_RIM_START, BORDER_RIM_END, rim) * sideways,
+            smoothstep(BORDER_SPIKE_START, BORDER_SPIKE_END, vWave));
+    color = mix(color, SecondBorderColor, border);
+
     float alpha = mix(CoreAlpha, RimAlpha, band);
     alpha = max(alpha, RimAlpha * clamp(vWave * 1.1 + streak * 0.85, 0.0, 1.0));
     alpha *= 1.0 - 0.45 * smoothstep(0.95, 1.0, vHeight) * (1.0 - vWave);
@@ -175,6 +188,7 @@ void main(void) {
     alpha *= Alpha;
 
     float glowWeight = clamp(hot + vWave + tongueBody * TONGUE_HEAT, 0.0, 1.0);
-    vec4 glow = vec4(color, clamp(alpha * (0.35 + 0.65 * glowWeight) * BloomIntensity, 0.0, 1.0));
+    float borderBloom = (1.0 - border) * mix(1.0, BORDER_BODY_BLOOM, SecondBorderFactor);
+    vec4 glow = vec4(color, clamp(alpha * (0.35 + 0.65 * glowWeight) * borderBloom * BloomIntensity, 0.0, 1.0));
     fragColor = BloomPass > 0.5 ? glow : vec4(color, alpha);
 }

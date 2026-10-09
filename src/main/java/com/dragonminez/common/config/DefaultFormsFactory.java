@@ -60,7 +60,7 @@ public class DefaultFormsFactory {
 	}
 
 	private static FormConfig.Aura3DStyle darkAura(String noise) {
-		return aura3D().waves(2.1f, 5.0f, 0.76f).turbulence(0.5f, 0.54f).rim(0.04f, 1.0f, 4.5f, 0.06f).colors("", "", noise);
+		return aura3D().waves(2.1f, 5.0f, 0.76f).turbulence(0.5f, 0.54f).rim(0.04f, 1.0f, 4.5f, 0.06f).colors("", "", noise).secondBorder("#000000");
 	}
 
 	public void createDefaultFormsForRace(String raceName, Path formsPath, Map<String, FormConfig> forms) throws IOException {
@@ -1672,7 +1672,8 @@ public class DefaultFormsFactory {
 		absorption.setAuraColor("#2F6BFF");
 		absorption.setHairType("ssj4");
 		setDefaultMasteryValues(absorption);
-		absorption.setAura3DStyle(aura3D().waves(2.0f, 5.0f, 0.78f).turbulence(0.13f, 0.54f).colors("", "", "#9CC8FF"));
+        absorption.setOutlineShader(outline("#FFFFFF", "#FAE0FF", 5.5));
+        absorption.setAura3DStyle(aura3D().waves(2.1f, 7.4f, 1.8f).turbulence(0.65f, 0.55f).colors("", "", "#FFF7FF").secondBorder("#FFF7FF"));
 		absorption.setStackDrainMultiplier(2.0);
 		absorption.setIncompatibleWith(List.of(""));
 
@@ -1691,8 +1692,8 @@ public class DefaultFormsFactory {
 		trueForm.setBodyColor1("#247FA2");
 		trueForm.setBodyColor2("#D2D2C6");
 		trueForm.setAuraColor("#7B2FBE");
-        trueForm.setEye1Color("#AB0F0F");
-        trueForm.setEye2Color("#AB0F0F");
+        trueForm.setEye1Color("#A61717");
+        trueForm.setEye2Color("#A61717");
         trueForm.setHairType("ssj3");
 		setDefaultMasteryValues(trueForm);
 		trueForm.setAura3DStyle(darkAura("#B05CFF").size(1.12f, 1.2f, 1.04f).waves(2.1f, 5.2f, 0.8f).turbulence(0.45f, 0.54f));
@@ -1784,7 +1785,7 @@ public class DefaultFormsFactory {
 		timePowerDarkKing.setEye2Color("#E01414");
 		timePowerDarkKing.setBodyColor2("#463E4A");
 		timePowerDarkKing.setBodyColor3("#E82C3E");
-		timePowerDarkKing.setAuraColor("#8E4A4A");
+		timePowerDarkKing.setAuraColor("#AD0C0C");
 		timePowerDarkKing.setHairType("base");
 		setDefaultMasteryValues(timePowerDarkKing);
 		timePowerDarkKing.setAura3DStyle(darkAura("#C9A3A3").size(1.18f, 1.24f, 1.08f).waves(2.1f, 5.4f, 0.82f).turbulence(0.5f, 0.55f));
