@@ -135,6 +135,7 @@ public class SkillsConfig {
 		strikeSkills.add("shining_sword_attack");
 		strikeSkills.add("combo_meteor");
 		strikeSkills.add("meteor_burst");
+		strikeSkills.add("mystic_ball");
 
 		skills.put("meteor",             new SkillCosts(List.of(3000)));
 		skills.put("wolf_fang",          new SkillCosts(List.of(3500)));
@@ -154,6 +155,7 @@ public class SkillsConfig {
 		skills.put("shining_sword_attack", new SkillCosts(List.of(9000)));
 		skills.put("combo_meteor", new SkillCosts(List.of(7000)));
 		skills.put("meteor_burst", new SkillCosts(List.of(24000)));
+		skills.put("mystic_ball", new SkillCosts(new ArrayList<>(List.of(11000)), new ArrayList<>(List.of("majin"))));
 
 		List<Integer> jumpCosts = new ArrayList<>();
 		jumpCosts.add(300);
@@ -499,6 +501,7 @@ public class SkillsConfig {
 		List<String> buuSkills = new ArrayList<>();
 		buuSkills.add("assault_rain");
 		buuSkills.add("gum_punch");
+		buuSkills.add("mystic_ball");
 		buuSkills.add("sleep_recovery");
 		skillOfferings.put("buu", buuSkills);
 

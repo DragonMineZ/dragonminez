@@ -11,6 +11,7 @@ import com.dragonminez.client.systems.BioSwellRenderState;
 import com.dragonminez.client.systems.FormVisualTransition;
 import com.dragonminez.client.render.shader.TransformationPostShaderManager;
 import com.dragonminez.client.render.effects.AuraBorderRenderer;
+import com.dragonminez.client.render.effects.AuraTrailRenderer;
 import com.dragonminez.client.render.effects.DimensionalFistEffect;
 import com.dragonminez.client.render.effects.GodRitualShellEffect;
 import com.dragonminez.client.render.effects.TechniquePreview;
@@ -19,6 +20,7 @@ import com.dragonminez.client.render.util.IrisCompat;
 import com.dragonminez.client.init.entities.renderer.sagas.SaiyanInvaderRenderer;
 import com.dragonminez.client.util.BoneVisibilityHandler;
 import com.dragonminez.client.util.ColorUtils;
+import com.dragonminez.server.events.players.combat.MysticBallCombo;
 import com.dragonminez.server.events.players.statuseffect.RelicItemsStatusHandler;
 import com.dragonminez.mixin.client.GeoModelAccessor;
 import com.dragonminez.common.config.ConfigManager;
@@ -37,7 +39,9 @@ import net.minecraft.client.renderer.RenderType;
 import net.minecraft.client.renderer.entity.EntityRendererProvider;
 import net.minecraft.client.renderer.texture.OverlayTexture;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.world.phys.Vec3;
 import org.jetbrains.annotations.Nullable;
+import org.joml.Quaternionf;
 import org.lwjgl.opengl.GL11;
 import software.bernie.geckolib.cache.object.BakedGeoModel;
 import software.bernie.geckolib.cache.object.GeoBone;
@@ -47,6 +51,9 @@ import software.bernie.geckolib.renderer.GeoEntityRenderer;
 import software.bernie.geckolib.renderer.layer.GeoRenderLayer;
 import software.bernie.geckolib.util.RenderUtils;
 
+import java.util.HashMap;
+import java.util.Map;
+
 
 public class DMZPlayerRenderer<T extends AbstractClientPlayer & GeoAnimatable> extends GeoEntityRenderer<T> {
 
@@ -54,6 +61,19 @@ public class DMZPlayerRenderer<T extends AbstractClientPlayer & GeoAnimatable> e
 	private static final float[] DEMON_EYE_TINT = {0.545f, 0.0f, 0.0f, 0.35f};
 	private static final float[] DEMON_EYE_FLAME_INNER = ColorUtils.hexToRgb("#FF2A2A");
 	private static final float[] DEMON_EYE_FLAME_OUTER = ColorUtils.hexToRgb("#6B0000");
+
+	private static final float[] MYSTIC_BALL_TRAIL_COLOR = ColorUtils.rgbIntToFloat(MysticBallCombo.COLOR_MAIN);
+	private static final float MYSTIC_BALL_TRAIL_ALPHA = 0.6f;
+	private static final int MYSTIC_BALL_TRAIL_SAMPLES = 24;
+	private static final float MYSTIC_BALL_TRAIL_HALF_WIDTH = 0.6f;
+	private static final float MYSTIC_BALL_TRAIL_HEIGHT = 0.75f;
+	private static final int MYSTIC_BALL_TRAIL_FADE_TICKS = 30;
+	private static final Map<Integer, int[]> MYSTIC_BALL_TICKS = new HashMap<>();
+	private static final Map<Integer, Vec3> MYSTIC_BALL_AXIS = new HashMap<>();
+	private static final double MYSTIC_BALL_SMEAR_MIN_SPEED = 0.3;
+	private static final float MYSTIC_BALL_STRETCH_PER_SPEED = 0.45f;
+	private static final float MYSTIC_BALL_MAX_STRETCH = 0.9f;
+	private static final float MYSTIC_BALL_SQUASH = 0.45f;
 
 	protected GeoRenderLayer<T> caller = null;
 
@@ -89,6 +109,51 @@ public class DMZPlayerRenderer<T extends AbstractClientPlayer & GeoAnimatable> e
 		BoneVisibilityHandler.updateVisibility(model, animatable, this.caller);
 	}
 
+	private static void submitMysticBallTrail(AbstractClientPlayer entity, PoseStack poseStack, float partialTick) {
+		boolean playing = entity instanceof IPlayerAnimatable anim && MysticBallCombo.ANIMATION.equals(anim.dragonminez$getCurrentPlayingAnimation());
+		int[] ticks = MYSTIC_BALL_TICKS.get(entity.getId());
+		if (playing && (ticks == null || entity.tickCount - ticks[1] > 5)) {
+			ticks = new int[]{entity.tickCount, entity.tickCount};
+			MYSTIC_BALL_TICKS.put(entity.getId(), ticks);
+		}
+		if (ticks == null) return;
+		if (playing) ticks[1] = entity.tickCount;
+		else if (entity.tickCount - ticks[1] > MYSTIC_BALL_TRAIL_FADE_TICKS) {
+			MYSTIC_BALL_TICKS.remove(entity.getId());
+			return;
+		}
+
+		boolean active = playing && MysticBallCombo.isBallTick(entity.tickCount - ticks[0]);
+		AuraTrailRenderer.submitEntityTrail(entity, poseStack.last().pose(), partialTick, MYSTIC_BALL_TRAIL_COLOR, MYSTIC_BALL_TRAIL_ALPHA,
+				MYSTIC_BALL_TRAIL_SAMPLES, MYSTIC_BALL_TRAIL_HALF_WIDTH, 0.0f, MYSTIC_BALL_TRAIL_HEIGHT, active);
+	}
+
+	private static void applyMysticBallSmear(AbstractClientPlayer entity, PoseStack poseStack, float partialTick) {
+		int[] ticks = MYSTIC_BALL_TICKS.get(entity.getId());
+		float elapsed = ticks != null ? entity.tickCount - ticks[0] + partialTick : -1.0f;
+		if (ticks == null || ticks[1] != entity.tickCount || !MysticBallCombo.isBallTick((int) elapsed)) {
+			MYSTIC_BALL_AXIS.remove(entity.getId());
+			return;
+		}
+
+		Vec3 velocity = new Vec3(entity.getX() - entity.xo, entity.getY() - entity.yo, entity.getZ() - entity.zo);
+		double speed = velocity.length();
+		Vec3 axis = speed > 0.05 ? velocity.scale(1.0 / speed) : MYSTIC_BALL_AXIS.get(entity.getId());
+		if (axis == null) return;
+		MYSTIC_BALL_AXIS.put(entity.getId(), axis);
+
+		float stretch = 1.0f + Mth.clamp((float) (speed - MYSTIC_BALL_SMEAR_MIN_SPEED) * MYSTIC_BALL_STRETCH_PER_SPEED, 0.0f, MYSTIC_BALL_MAX_STRETCH);
+		float along = stretch * (1.0f - MYSTIC_BALL_SQUASH * MysticBallCombo.squash(elapsed));
+		float across = 1.0f / Mth.sqrt(along);
+		Quaternionf toAxis = new Quaternionf().rotationTo(0.0f, 1.0f, 0.0f, (float) axis.x, (float) axis.y, (float) axis.z);
+
+		poseStack.translate(0.0f, MYSTIC_BALL_TRAIL_HEIGHT, 0.0f);
+		poseStack.mulPose(toAxis);
+		poseStack.scale(across, along, across);
+		poseStack.mulPose(new Quaternionf(toAxis).conjugate());
+		poseStack.translate(0.0f, -MYSTIC_BALL_TRAIL_HEIGHT, 0.0f);
+	}
+
 	@Override
 	public void render(T entity, float entityYaw, float partialTick, PoseStack poseStack, MultiBufferSource bufferSource, int packedLight) {
 		if (entity == null) {
@@ -96,6 +161,7 @@ public class DMZPlayerRenderer<T extends AbstractClientPlayer & GeoAnimatable> e
 			return;
 		}
 
+		submitMysticBallTrail(entity, poseStack, partialTick);
 		HairRenderCapture.beginEntity(entity, poseStack);
 		((GeoModelAccessor) (Object) getGeoModel()).dmz$setLastRenderedInstance(-1L);
 
@@ -114,6 +180,7 @@ public class DMZPlayerRenderer<T extends AbstractClientPlayer & GeoAnimatable> e
 		float scalingZ = resolved[2];
 
 		poseStack.pushPose();
+		applyMysticBallSmear(entity, poseStack, partialTick);
 		float previewLift = TechniquePreview.modelLift(entity, partialTick);
 		if (previewLift != 0.0F) poseStack.translate(0.0F, previewLift, 0.0F);
 

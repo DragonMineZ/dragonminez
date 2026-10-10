@@ -23,7 +23,7 @@ public final class HeldVictim {
 	private static final String PLAYER_HURT_LEFT = "base.hurt_left";
 	private static final String PLAYER_HURT_RIGHT = "base.hurt_right";
 	private static final String PLAYER_HURT_DOWN = "base.hurt_down";
-
+	private static final String PLAYER_HURT_TOP = "base.hurt_top";
 	private final LivingEntity entity;
 	private final boolean pinned;
 	private String sagaPose;
@@ -102,6 +102,10 @@ public final class HeldVictim {
 		this.fromLeft = !this.fromLeft;
 		this.pose(this.fromLeft ? PLAYER_HURT_LEFT : PLAYER_HURT_RIGHT,
 				this.fromLeft ? DBSagasEntity.HURT_ANIM_LEFT : DBSagasEntity.HURT_ANIM_RIGHT);
+	}
+
+	public void launched() {
+		this.pose(PLAYER_HURT_TOP, DBSagasEntity.HURT_ANIM_TOP);
 	}
 
 	public void knockDown() {

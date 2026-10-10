@@ -1804,6 +1804,7 @@
   "technique.dragonminez.shining_sword_attack": "Shining Sword Attack",
   "technique.dragonminez.combo_meteor": "Meteor Combo",
   "technique.dragonminez.meteor_burst": "Meteor Burst",
+  "technique.dragonminez.mystic_ball": "Mystic Ball Attack",
   "technique.dragonminez.dimensional_sword_attack": "Dimensional Slash",
   "technique.dragonminez.sleep_recovery": "Sleep Recovery",
   "technique.dragonminez.sokidan": "Spirit Ball",
@@ -5125,5 +5126,6 @@
   "death.attack.strike_attack.grab": "%1$s was slammed into the ground by %2$s's Grab Throw",
   "death.attack.strike_attack.shining_sword_attack": "%1$s was cut down by %2$s's Shining Sword Attack",
   "death.attack.strike_attack.combo_meteor": "%1$s was pummeled by %2$s's Meteor Combo",
-  "death.attack.strike_attack.meteor_burst": "%1$s was crushed by %2$s's Meteor Burst"
+  "death.attack.strike_attack.meteor_burst": "%1$s was crushed by %2$s's Meteor Burst",
+  "death.attack.strike_attack.mystic_ball": "%1$s was bounced into the ground by %2$s's Mystic Ball Attack"
 }
