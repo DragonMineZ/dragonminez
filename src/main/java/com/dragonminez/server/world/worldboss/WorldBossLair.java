@@ -79,6 +79,10 @@ public interface WorldBossLair {
 		return null;
 	}
 
+	default boolean isLairIntact(ServerLevel level, BlockPos ground) {
+		return !level.getBlockState(ground).isAir();
+	}
+
 	default String music() {
 		return Reference.MOD_ID + ":worldboss_music." + key();
 	}
@@ -388,6 +392,11 @@ public interface WorldBossLair {
 		}
 
 		@Override
+		public boolean isLairIntact(ServerLevel level, BlockPos ground) {
+			return GeteStarStructure.isStarBlock(level.getBlockState(ground));
+		}
+
+		@Override
 		public void buildArena(ServerLevel level, BlockPos ground) {
 		}
 
@@ -452,6 +461,11 @@ public interface WorldBossLair {
 		@Override
 		public BlockPos resolveGround(ServerLevel level, BlockPos column) {
 			return level.getBlockState(column).is(MainBlocks.DEMON_BRICKS.get()) ? column : null;
+		}
+
+		@Override
+		public boolean isLairIntact(ServerLevel level, BlockPos ground) {
+			return level.getBlockState(ground).is(MainBlocks.DEMON_BRICKS.get());
 		}
 
 		@Override

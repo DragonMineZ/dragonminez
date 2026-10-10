@@ -870,7 +870,9 @@ public class AuraRenderer {
 		float partialTick = entry.partialTick();
 		Vec3 position = new Vec3(Mth.lerp(partialTick, player.xo, player.getX()), Mth.lerp(partialTick, player.yo, player.getY()), Mth.lerp(partialTick, player.zo, player.getZ()));
 
-		boolean mergeable = !isFastFlying(player) && player.getSwimAmount(partialTick) <= 0.0f;
+		boolean inRitual = stats.getStatus().isInGodRitual()
+				|| (stats.getStatus().getGodRitualGlowStart() > 0L && !GodRitualHelper.isShellExpired(stats, gameTime));
+		boolean mergeable = !inRitual && !isFastFlying(player) && player.getSwimAmount(partialTick) <= 0.0f;
 
 		return new PreparedAura(player, data, activeLayers, position, partialTick, stats.getBattlePower(), mergeable);
 	}

@@ -95,17 +95,24 @@ public final class GodRitualHelper {
 
 	public static double kiShareMultiplier(StatsData data, String statName) {
 		int donors = data.getStatus().getKiTransferDonors();
-		if (donors <= 0) return 1.0;
+		int drainStacks = data.getStatus().getKiDrainStacks();
+		if (donors <= 0 && drainStacks <= 0) return 1.0;
 		switch (statName.toUpperCase(Locale.ROOT)) {
 			case "STR", "SKP", "DEF", "PWR" -> {
 				GeneralServerConfig.KiTransferConfig cfg = transferConfig();
 				if (cfg == null) return 1.0;
-				return 1.0 + Math.min(donors, cfg.getMaxBoostDonors()) * cfg.getBoostPerDonor();
+				double boost = 1.0 + Math.min(Math.max(0, donors), cfg.getMaxBoostDonors()) * cfg.getBoostPerDonor();
+				return boost * (1.0 - donorPenalty(drainStacks, cfg));
 			}
 			default -> {
 				return 1.0;
 			}
 		}
+	}
+
+	public static double donorPenalty(int stacks, GeneralServerConfig.KiTransferConfig cfg) {
+		if (stacks <= 0 || cfg == null) return 0.0;
+		return Math.min(cfg.getDonorPenaltyMax(), stacks * cfg.getDonorPenaltyPerInterval());
 	}
 
 	public static double donorSpeedMultiplier(StatsData data) {

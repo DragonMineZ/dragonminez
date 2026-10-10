@@ -462,7 +462,7 @@ final class SideQuestDefaults {
 						objItem("minecraft:obsidian", 20),
 						objTalkTo("bulma")
 				},
-				new JsonObject[]{ rewAttributes(8), rewItem("minecraft:enderpearl", 16)}
+				new JsonObject[]{ rewAttributes(8), rewItem("minecraft:ender_pearl", 16)}
 		));
 
 		// --- Saiyan Saga: Training ---

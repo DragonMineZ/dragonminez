@@ -117,6 +117,8 @@ public class DMZPermissions {
 	public static final PermissionNode<Boolean> QUEST_FINISHSAGA_OTHERS = register("dmzquest.finishsaga.others", "Allows finishing all quests in a saga for other players.", (player, uuid, context) -> false);
 	public static final PermissionNode<Boolean> QUEST_RESETSAGA_SELF = register("dmzquest.resetsaga.self", "Allows resetting saga progress for yourself.", (player, uuid, context) -> false);
 	public static final PermissionNode<Boolean> QUEST_RESETSAGA_OTHERS = register("dmzquest.resetsaga.others", "Allows resetting saga progress for other players.", (player, uuid, context) -> false);
+	public static final PermissionNode<Boolean> QUEST_DIFFICULTY_SELF = register("dmzquest.difficulty.self", "Allows changing your own story difficulty.", (player, uuid, context) -> false);
+	public static final PermissionNode<Boolean> QUEST_DIFFICULTY_OTHERS = register("dmzquest.difficulty.others", "Allows changing other players' story difficulty.", (player, uuid, context) -> false);
 
 	// Locate
 	public static final PermissionNode<Boolean> LOCATE = register("dmzlocate", "Allows locating special structures.", (player, uuid, context) -> false);

@@ -1,5 +1,6 @@
 package com.dragonminez.server.commands;
 
+import com.dragonminez.common.quest.PartyFeedback;
 import com.dragonminez.common.quest.PartyManager;
 import com.dragonminez.server.world.data.PartySavedData;
 import com.mojang.brigadier.CommandDispatcher;
@@ -8,9 +9,8 @@ import net.minecraft.ChatFormatting;
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.commands.Commands;
 import net.minecraft.commands.arguments.EntityArgument;
-import net.minecraft.network.chat.ClickEvent;
+import net.minecraft.commands.arguments.UuidArgument;
 import net.minecraft.network.chat.Component;
-import net.minecraft.network.chat.HoverEvent;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerPlayer;
 
@@ -27,11 +27,17 @@ public class PartyCommand {
                         .then(Commands.argument("player", EntityArgument.player())
                                 .executes(PartyCommand::invitePlayer)))
                 .then(Commands.literal("accept")
-                        .executes(context -> acceptInvite(context, false))
+                        .executes(context -> acceptInvite(context, false, null))
                         .then(Commands.literal("confirm")
-                                .executes(context -> acceptInvite(context, true))))
+                                .executes(context -> acceptInvite(context, true, null))
+                                .then(Commands.argument("party", UuidArgument.uuid())
+                                        .executes(context -> acceptInvite(context, true, UuidArgument.getUuid(context, "party")))))
+                        .then(Commands.argument("party", UuidArgument.uuid())
+                                .executes(context -> acceptInvite(context, false, UuidArgument.getUuid(context, "party")))))
                 .then(Commands.literal("reject")
-                        .executes(PartyCommand::rejectInvite))
+                        .executes(context -> rejectInvite(context, null))
+                        .then(Commands.argument("party", UuidArgument.uuid())
+                                .executes(context -> rejectInvite(context, UuidArgument.getUuid(context, "party")))))
                 .then(Commands.literal("leave")
                         .executes(PartyCommand::leaveParty))
                 .then(Commands.literal("list")
@@ -51,119 +57,38 @@ public class PartyCommand {
         try {
             ServerPlayer invitee = EntityArgument.getPlayer(context, "player");
             PartyManager.InviteRequestResult result = PartyManager.requestInvite(inviter, invitee);
-            if (result == PartyManager.InviteRequestResult.CANNOT_INVITE_SELF) {
-                inviter.sendSystemMessage(Component.translatable("quest.dmz.party.invite.self").withStyle(ChatFormatting.RED));
-                return 0;
-            }
-            if (result == PartyManager.InviteRequestResult.TOURNAMENT_ACTIVE) {
-                inviter.sendSystemMessage(Component.translatable("tournament.dragonminez.party_locked")
-                        .withStyle(ChatFormatting.RED));
-                return 0;
-            }
-            if (result != PartyManager.InviteRequestResult.INVITED) return result == PartyManager.InviteRequestResult.SUGGESTED ? 1 : 0;
-
-            invitee.sendSystemMessage(Component.translatable("quest.dmz.party.invite.received", inviter.getName()));
-            Component acceptButton = Component.translatable("quest.dmz.party.invite.accept")
-                    .withStyle(style -> style
-                            .withColor(ChatFormatting.GREEN)
-                            .withBold(true)
-                            .withClickEvent(new ClickEvent(ClickEvent.Action.RUN_COMMAND, "/dmzparty accept"))
-                            .withHoverEvent(new HoverEvent(HoverEvent.Action.SHOW_TEXT,
-                                    Component.translatable("quest.dmz.party.invite.accept.hover"))));
-
-            Component rejectButton = Component.translatable("quest.dmz.party.invite.reject")
-                    .withStyle(style -> style
-                            .withColor(ChatFormatting.RED)
-                            .withBold(true)
-                            .withClickEvent(new ClickEvent(ClickEvent.Action.RUN_COMMAND, "/dmzparty reject"))
-                            .withHoverEvent(new HoverEvent(HoverEvent.Action.SHOW_TEXT,
-                                    Component.translatable("quest.dmz.party.invite.reject.hover"))));
-
-            invitee.sendSystemMessage(Component.literal("[")
-                    .append(acceptButton)
-                    .append(Component.literal("] ["))
-                    .append(rejectButton)
-                    .append(Component.literal("]")));
-
-            return 1;
+            PartyFeedback.inviteRequest(inviter, invitee, result);
+            return result == PartyManager.InviteRequestResult.INVITED || result == PartyManager.InviteRequestResult.SUGGESTED ? 1 : 0;
         } catch (Exception e) {
             inviter.sendSystemMessage(Component.translatable("command.dragonminez.party.error", e.getMessage()).withStyle(ChatFormatting.RED));
             return 0;
         }
     }
 
-    private static int acceptInvite(CommandContext<CommandSourceStack> context, boolean confirmedDifficultyChange) {
+    private static int acceptInvite(CommandContext<CommandSourceStack> context, boolean confirmedDifficultyChange, UUID partyId) {
         if (!(context.getSource().getEntity() instanceof ServerPlayer player)) return 0;
 
-        PartyManager.PendingInvite invite = PartyManager.getPendingInvite(player);
+        PartyManager.PendingInvite invite = PartyManager.getPendingInvite(player, partyId);
         if (invite == null) {
             player.sendSystemMessage(Component.translatable("quest.dmz.party.invite.none").withStyle(ChatFormatting.RED));
             return 0;
         }
 
-        PartyManager.InviteAcceptResult result = PartyManager.acceptInvite(player, confirmedDifficultyChange);
-        if (result == PartyManager.InviteAcceptResult.EXPIRED) {
-            player.sendSystemMessage(Component.translatable("quest.dmz.party.invite.expired").withStyle(ChatFormatting.RED));
-            return 0;
-        }
-
-        if (result == PartyManager.InviteAcceptResult.PARTY_FULL) {
-            player.sendSystemMessage(Component.translatable("quest.dmz.party.invite.party_full").withStyle(ChatFormatting.RED));
-            return 0;
-        }
-
-        if (result == PartyManager.InviteAcceptResult.TOURNAMENT_ACTIVE) {
-            player.sendSystemMessage(Component.translatable("tournament.dragonminez.party_locked").withStyle(ChatFormatting.RED));
-            return 0;
-        }
-
-        if (result == PartyManager.InviteAcceptResult.LEVEL_GAP) {
-            player.sendSystemMessage(Component.translatable("quest.dmz.party.invite.level_gap").withStyle(ChatFormatting.RED));
-            return 0;
-        }
-
-        if (result == PartyManager.InviteAcceptResult.DIFFICULTY_TOO_LOW) {
-            player.sendSystemMessage(Component.translatable("quest.dmz.party.invite.difficulty_too_low").withStyle(ChatFormatting.RED));
-            return 0;
-        }
-
-        if (result == PartyManager.InviteAcceptResult.DIFFICULTY_CONFIRM_REQUIRED) {
-            Component confirmButton = Component.translatable("quest.dmz.party.invite.difficulty_confirm.button")
-                    .withStyle(style -> style
-                            .withColor(ChatFormatting.GREEN)
-                            .withBold(true)
-                            .withClickEvent(new ClickEvent(ClickEvent.Action.RUN_COMMAND, "/dmzparty accept confirm"))
-                            .withHoverEvent(new HoverEvent(HoverEvent.Action.SHOW_TEXT,
-                                    Component.translatable("quest.dmz.party.invite.difficulty_confirm.hover"))));
-            player.sendSystemMessage(Component.translatable("quest.dmz.party.invite.difficulty_confirm").withStyle(ChatFormatting.YELLOW));
-            player.sendSystemMessage(Component.literal("[").append(confirmButton).append(Component.literal("]")));
-            return 0;
-        }
-
-        if (result != PartyManager.InviteAcceptResult.SUCCESS) {
-            player.sendSystemMessage(Component.translatable("quest.dmz.party.invite.invalid").withStyle(ChatFormatting.RED));
-            return 0;
-        }
-
-        player.sendSystemMessage(Component.translatable("quest.dmz.party.joined").withStyle(ChatFormatting.GREEN));
-
-        ServerPlayer inviter = player.getServer().getPlayerList().getPlayer(invite.getInviterUUID());
-        if (inviter != null) {
-            inviter.sendSystemMessage(Component.translatable("quest.dmz.party.player.joined", player.getName()).withStyle(ChatFormatting.GREEN));
-        }
-        return 1;
+        PartyManager.InviteAcceptResult result = PartyManager.acceptInvite(player, confirmedDifficultyChange, partyId);
+        PartyFeedback.inviteAccept(player, invite, result);
+        return result == PartyManager.InviteAcceptResult.SUCCESS ? 1 : 0;
     }
 
-    private static int rejectInvite(CommandContext<CommandSourceStack> context) {
+    private static int rejectInvite(CommandContext<CommandSourceStack> context, UUID partyId) {
         if (!(context.getSource().getEntity() instanceof ServerPlayer player)) return 0;
 
-        PartyManager.PendingInvite invite = PartyManager.getPendingInvite(player);
+        PartyManager.PendingInvite invite = PartyManager.getPendingInvite(player, partyId);
         if (invite == null) {
             player.sendSystemMessage(Component.translatable("quest.dmz.party.invite.none").withStyle(ChatFormatting.RED));
             return 0;
         }
 
-        PartyManager.rejectInvite(player);
+        PartyManager.rejectInvite(player, partyId);
         player.sendSystemMessage(Component.translatable("quest.dmz.party.invite.rejected").withStyle(ChatFormatting.YELLOW));
 
         ServerPlayer inviter = player.getServer().getPlayerList().getPlayer(invite.getInviterUUID());

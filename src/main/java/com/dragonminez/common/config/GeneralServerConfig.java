@@ -71,6 +71,9 @@ public class GeneralServerConfig {
 		private Integer reviveCastSeconds = 15;
 		private Integer reviveCooldownSeconds = 90;
 		private Integer reviveInterruptCooldownSeconds = 15;
+		private Double reviveInterruptDamageRatio = 0.10;
+		private Double reviveDecayMultiplier = 3.0;
+		private Integer truceGraceSeconds = 15;
 		private Double reviveRange = 6.0;
 		private Double reviveRestoreRatio = 0.25;
 		private Integer knockoutTitleSeconds = 5;
@@ -91,6 +94,9 @@ public class GeneralServerConfig {
 		public int getReviveCastSeconds() { return Math.max(1, positiveInt(reviveCastSeconds, 15)); }
 		public int getReviveCooldownSeconds() { return positiveInt(reviveCooldownSeconds, 90); }
 		public int getReviveInterruptCooldownSeconds() { return positiveInt(reviveInterruptCooldownSeconds, 15); }
+		public double getReviveInterruptDamageRatio() { return Math.max(0.01, positive(reviveInterruptDamageRatio, 0.10)); }
+		public double getReviveDecayMultiplier() { return Math.max(1.0, positive(reviveDecayMultiplier, 3.0)); }
+		public int getTruceGraceSeconds() { return positiveInt(truceGraceSeconds, 15); }
 		public double getReviveRange() { return Math.max(1.0, positive(reviveRange, 6.0)); }
 		public double getReviveRestoreRatio() { return clamp01(reviveRestoreRatio, 0.25); }
 		public int getKnockoutTitleSeconds() { return Math.max(1, positiveInt(knockoutTitleSeconds, 5)); }
@@ -1636,8 +1642,22 @@ public class GeneralServerConfig {
 		private Double startRange = 8.0;
 		private Double maxLinkDistance = 32.0;
 		private Double attackChargeCreditRatio = 1.0;
+		private Double intervalSeconds = 3.0;
+		private Double retainSecondsPerInterval = 5.0;
+		private Double donorPenaltyPerInterval = 0.05;
+		private Double donorPenaltyMax = 0.25;
+		private Double restartCooldownSeconds = 2.0;
 
 		public boolean getEnabled() { return enabled == null || enabled; }
+		public int getIntervalTicks() { return Math.max(1, (int) Math.round(positive(intervalSeconds, 3.0) * 20.0)); }
+		public int getRetainTicksPerInterval() { return (int) Math.round(positive(retainSecondsPerInterval, 5.0) * 20.0); }
+		public double getDonorPenaltyPerInterval() { return Math.min(1.0, positive(donorPenaltyPerInterval, 0.05)); }
+		public double getDonorPenaltyMax() { return Math.min(0.95, positive(donorPenaltyMax, 0.25)); }
+		public int getRestartCooldownTicks() { return (int) Math.round(positive(restartCooldownSeconds, 2.0) * 20.0); }
+		public int getMaxDonorPenaltyStacks() {
+			double per = getDonorPenaltyPerInterval();
+			return per <= 0.0 ? 0 : (int) Math.ceil(getDonorPenaltyMax() / per - 1.0E-6);
+		}
 		public double getKiPercentPerSecond() { return Math.min(1.0, positive(kiPercentPerSecond, 0.025)); }
 		public double getBoostDelaySeconds() { return positive(boostDelaySeconds, 1.0); }
 		public double getBoostPerDonor() { return positive(boostPerDonor, 0.05); }

@@ -6,6 +6,7 @@ import com.dragonminez.client.util.NumberFormattingUtil;
 import com.dragonminez.common.combat.HealContext;
 import com.dragonminez.common.config.ConfigManager;
 import com.dragonminez.common.config.GeneralServerConfig;
+import com.dragonminez.common.init.MainEffects;
 import com.dragonminez.common.init.MainSounds;
 import com.dragonminez.common.init.entities.worldboss.WorldBossEntity;
 import com.dragonminez.common.network.NetworkHandler;
@@ -77,6 +78,7 @@ public final class WorldBossSession {
 		private final UUID target;
 		private final Vec3 origin;
 		private int ticks;
+		private float damageTaken;
 
 		private ReviveCast(UUID caster, UUID target, Vec3 origin) {
 			this.caster = caster;
@@ -130,6 +132,21 @@ public final class WorldBossSession {
 
 	public boolean isCasting(UUID id) {
 		return casts.containsKey(id);
+	}
+
+	public boolean isEngaged(UUID id) {
+		Participant participant = participants.get(id);
+		if (participant == null) return false;
+		return participant.knockedOut || WorldBossContribution.peek(bossKey, id) != null;
+	}
+
+	void noteCasterDamage(ServerPlayer caster, float amount) {
+		ReviveCast cast = casts.get(caster.getUUID());
+		if (cast == null || amount <= 0.0f) return;
+		cast.damageTaken += Math.min(amount, caster.getHealth());
+		if (cast.damageTaken >= caster.getMaxHealth() * config().getReviveInterruptDamageRatio()) {
+			interruptCast(caster, true);
+		}
 	}
 
 	void attachBoss(WorldBossEntity boss) {
@@ -467,7 +484,7 @@ public final class WorldBossSession {
 	}
 
 	private void tickCasts(ServerLevel level, GeneralServerConfig.WorldBossConfig config) {
-		if (casts.isEmpty()) return;
+		if (casts.isEmpty() && reviveProgress.isEmpty()) return;
 		int castTicks = castTicks();
 		double maxRangeSqr = config.getReviveRange() * CAST_TARGET_RANGE_SLACK * config.getReviveRange() * CAST_TARGET_RANGE_SLACK;
 
@@ -483,7 +500,7 @@ public final class WorldBossSession {
 				continue;
 			}
 			StatsData casterStats = StatsProvider.get(StatsCapability.INSTANCE, caster).orElse(null);
-			if (casterStats == null || casterStats.getStatus().isStunned() || !caster.isAlive()) {
+			if (casterStats == null || casterStats.getStatus().isStunned() || caster.hasEffect(MainEffects.STUN.get()) || !caster.isAlive()) {
 				cancelCast(cast, caster, target, true);
 				continue;
 			}
@@ -494,6 +511,8 @@ public final class WorldBossSession {
 			cast.ticks++;
 			reviveProgress.merge(cast.target, 1, Integer::sum);
 		}
+
+		decayIdleProgress(config);
 
 		for (UUID targetId : new ArrayList<>(reviveProgress.keySet())) {
 			if (reviveProgress.getOrDefault(targetId, 0) < castTicks) continue;
@@ -509,6 +528,22 @@ public final class WorldBossSession {
 			ServerPlayer target = level.getServer().getPlayerList().getPlayer(targetId);
 			Participant targetEntry = participants.get(targetId);
 			if (target != null && targetEntry != null) sendPlayerState(target, targetEntry);
+		}
+	}
+
+	private void decayIdleProgress(GeneralServerConfig.WorldBossConfig config) {
+		if (reviveProgress.isEmpty()) return;
+		int decay = Math.max(1, (int) Math.round(config.getReviveDecayMultiplier()));
+		for (UUID targetId : new ArrayList<>(reviveProgress.keySet())) {
+			Participant targetEntry = participants.get(targetId);
+			if (targetEntry == null || !targetEntry.knockedOut) {
+				reviveProgress.remove(targetId);
+				continue;
+			}
+			if (!reviverNames(targetId).isEmpty()) continue;
+			int left = reviveProgress.getOrDefault(targetId, 0) - decay;
+			if (left <= 0) reviveProgress.remove(targetId);
+			else reviveProgress.put(targetId, left);
 		}
 	}
 
@@ -549,7 +584,6 @@ public final class WorldBossSession {
 
 	private void cancelCast(ReviveCast cast, ServerPlayer caster, ServerPlayer target, boolean penalize) {
 		casts.remove(cast.caster);
-		if (reviverNames(cast.target).isEmpty()) reviveProgress.remove(cast.target);
 		if (caster != null) {
 			Participant casterEntry = participants.get(cast.caster);
 			if (penalize) {
@@ -692,6 +726,11 @@ public final class WorldBossSession {
 	}
 
 	private void endSession(ServerLevel level) {
+		Set<UUID> engaged = new HashSet<>();
+		for (UUID id : participants.keySet()) {
+			if (isEngaged(id)) engaged.add(id);
+		}
+		WorldBossManager.recordTruce(bossKey, engaged, level.getGameTime() + config().getTruceGraceSeconds() * 20L);
 		ended = true;
 		endMusic(level, false);
 		casts.clear();

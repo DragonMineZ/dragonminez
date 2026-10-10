@@ -2,6 +2,7 @@ package com.dragonminez.common.init;
 
 import com.dragonminez.common.compat.WorldGuardCompat;
 import com.dragonminez.common.init.MainTags;
+import com.dragonminez.server.world.dimension.OtherworldLandmarks;
 import com.dragonminez.server.world.dimension.OtherworldTournamentGrounds;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.SectionPos;
@@ -50,7 +51,8 @@ public class MainGameRules {
 
 	private static boolean isInMasterStructure(Level level, BlockPos pos) {
 		return isInsideTaggedStructure(level, pos, MainTags.Structures.KI_GRIEFING_PROTECTED)
-				|| OtherworldTournamentGrounds.isProtected(level, pos);
+				|| OtherworldTournamentGrounds.isProtected(level, pos)
+				|| OtherworldLandmarks.isProtected(level, pos);
 	}
 
 	public static boolean isInBuildProtectedArea(Level level, BlockPos pos) {
@@ -107,6 +109,7 @@ public class MainGameRules {
 		}
 		BoundingBox grounds = OtherworldTournamentGrounds.protectedBounds(level);
 		if (grounds != null && grounds.intersects(area)) boxes.add(grounds);
+		boxes.addAll(OtherworldLandmarks.intersecting(level, area));
 		return boxes;
 	}
 

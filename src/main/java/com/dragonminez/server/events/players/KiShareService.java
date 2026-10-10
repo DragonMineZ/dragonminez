@@ -17,6 +17,8 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundSource;
+import net.minecraft.world.effect.MobEffect;
+import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.entity.player.Player;
 import net.minecraftforge.event.TickEvent;
 import net.minecraftforge.event.entity.living.LivingAttackEvent;
@@ -47,15 +49,21 @@ public final class KiShareService {
 	private static final double START_RANGE_TOLERANCE = 2.0;
 	private static final float START_SOUND_VOLUME = 0.6f;
 
+	private static final int INDICATOR_TOLERANCE_TICKS = 20;
+
 	private static final Map<UUID, Link> LINKS = new LinkedHashMap<>();
 	private static final Map<UUID, Integer> BOOSTED = new HashMap<>();
 	private static final Map<UUID, Float> ATTACK_CREDIT = new HashMap<>();
+	private static final Map<UUID, Map<UUID, Integer>> RETAINED = new HashMap<>();
+	private static final Set<UUID> DRAINED = new HashSet<>();
+	private static final Map<UUID, Long> RESTART_AT = new HashMap<>();
 
 	private static final class Link {
 		private final UUID receiver;
 		private final long startTick;
 		private float pendingKi;
 		private float damageTaken;
+		private int transferTicks;
 
 		private Link(UUID receiver, long startTick) {
 			this.receiver = receiver;
@@ -81,6 +89,8 @@ public final class KiShareService {
 	public static void requestStart(ServerPlayer donor, int targetId) {
 		GeneralServerConfig.KiTransferConfig cfg = GodRitualHelper.transferConfig();
 		if (cfg == null || !cfg.getEnabled() || LINKS.containsKey(donor.getUUID())) return;
+		Long restartAt = RESTART_AT.get(donor.getUUID());
+		if (restartAt != null && donor.level().getGameTime() < restartAt) return;
 		if (!(donor.level().getEntity(targetId) instanceof ServerPlayer receiver) || receiver == donor) return;
 		StatsData donorData = stats(donor);
 		StatsData receiverData = stats(receiver);
@@ -149,17 +159,19 @@ public final class KiShareService {
 		if (event.phase != TickEvent.Phase.END) return;
 		MinecraftServer server = ServerLifecycleHooks.getCurrentServer();
 		if (server == null) return;
-		if (LINKS.isEmpty() && BOOSTED.isEmpty() && ATTACK_CREDIT.isEmpty()) return;
+		if (LINKS.isEmpty() && BOOSTED.isEmpty() && ATTACK_CREDIT.isEmpty() && RETAINED.isEmpty() && DRAINED.isEmpty()) return;
 
 		GeneralServerConfig.KiTransferConfig cfg = GodRitualHelper.transferConfig();
 		if (cfg == null || !cfg.getEnabled()) {
 			for (UUID donorId : new ArrayList<>(LINKS.keySet())) stop(server, donorId, null);
+			RETAINED.clear();
 			refreshBoosts(server, Map.of());
 			ATTACK_CREDIT.clear();
+			tickDrains(server, cfg);
 			return;
 		}
 
-		Map<UUID, Integer> settledPerReceiver = new HashMap<>();
+		Map<UUID, Set<UUID>> boostingDonors = new HashMap<>();
 		Set<UUID> receivers = new HashSet<>();
 		long delay = Math.round(cfg.getBoostDelaySeconds() * 20.0);
 		for (UUID donorId : new ArrayList<>(LINKS.keySet())) {
@@ -179,10 +191,17 @@ public final class KiShareService {
 				continue;
 			}
 			receivers.add(link.receiver);
-			if (donor.level().getGameTime() - link.startTick >= delay) settledPerReceiver.merge(link.receiver, 1, Integer::sum);
+			if (++link.transferTicks % cfg.getIntervalTicks() == 0) completeInterval(donor, donorData, link, cfg);
+			if (donor.level().getGameTime() - link.startTick >= delay) {
+				boostingDonors.computeIfAbsent(link.receiver, k -> new HashSet<>()).add(donorId);
+			}
 		}
 
-		refreshBoosts(server, settledPerReceiver);
+		tickRetained(boostingDonors);
+		Map<UUID, Integer> boostsPerReceiver = new HashMap<>();
+		boostingDonors.forEach((receiver, donors) -> boostsPerReceiver.put(receiver, donors.size()));
+		refreshBoosts(server, boostsPerReceiver);
+		tickDrains(server, cfg);
 		ATTACK_CREDIT.keySet().removeIf(id -> {
 			ServerPlayer receiver = server.getPlayerList().getPlayer(id);
 			StatsData data = receiver != null ? stats(receiver) : null;
@@ -259,6 +278,113 @@ public final class KiShareService {
 		return data.getTechniques().isTechniqueCharging() || data.getTechniques().isTechniqueChargeActive();
 	}
 
+	private static void completeInterval(ServerPlayer donor, StatsData donorData, Link link, GeneralServerConfig.KiTransferConfig cfg) {
+		int retain = cfg.getRetainTicksPerInterval();
+		if (retain > 0) RETAINED.computeIfAbsent(link.receiver, k -> new HashMap<>()).merge(donor.getUUID(), retain, Integer::sum);
+		if (donor.isCreative()) return;
+
+		var status = donorData.getStatus();
+		int stacks = Math.min(cfg.getMaxDonorPenaltyStacks(), status.getKiDrainStacks() + 1);
+		boolean changed = stacks != status.getKiDrainStacks();
+		status.setKiDrainStacks(stacks);
+		status.setKiDrainTicks(status.getKiDrainTicks() + retain);
+		DRAINED.add(donor.getUUID());
+		if (changed) sync(donor);
+	}
+
+	private static void tickRetained(Map<UUID, Set<UUID>> boostingDonors) {
+		if (RETAINED.isEmpty()) return;
+		for (var receiverIt = RETAINED.entrySet().iterator(); receiverIt.hasNext(); ) {
+			var receiverEntry = receiverIt.next();
+			UUID receiverId = receiverEntry.getKey();
+			for (var donorIt = receiverEntry.getValue().entrySet().iterator(); donorIt.hasNext(); ) {
+				var donorEntry = donorIt.next();
+				Link active = LINKS.get(donorEntry.getKey());
+				boolean stillGiving = active != null && active.receiver.equals(receiverId);
+				int left = stillGiving ? donorEntry.getValue() : donorEntry.getValue() - 1;
+				if (left <= 0) {
+					donorIt.remove();
+					continue;
+				}
+				donorEntry.setValue(left);
+				boostingDonors.computeIfAbsent(receiverId, k -> new HashSet<>()).add(donorEntry.getKey());
+			}
+			if (receiverEntry.getValue().isEmpty()) receiverIt.remove();
+		}
+	}
+
+	private static void tickDrains(MinecraftServer server, @Nullable GeneralServerConfig.KiTransferConfig cfg) {
+		if (DRAINED.isEmpty()) return;
+		for (var it = DRAINED.iterator(); it.hasNext(); ) {
+			UUID id = it.next();
+			ServerPlayer player = server.getPlayerList().getPlayer(id);
+			StatsData data = player != null ? stats(player) : null;
+			if (data == null) {
+				it.remove();
+				continue;
+			}
+			var status = data.getStatus();
+			boolean donating = LINKS.containsKey(id);
+			if (!donating && status.getKiDrainTicks() > 0) status.setKiDrainTicks(status.getKiDrainTicks() - 1);
+			if (status.getKiDrainTicks() <= 0 || cfg == null || !cfg.getEnabled()) {
+				clearDrain(player, data);
+				it.remove();
+				continue;
+			}
+			showIndicator(player, MainEffects.KI_TRANSFER_DRAIN.get(), donating ? -1 : status.getKiDrainTicks(), status.getKiDrainStacks() - 1);
+		}
+	}
+
+	private static void clearDrain(ServerPlayer player, StatsData data) {
+		var status = data.getStatus();
+		boolean had = status.getKiDrainStacks() != 0 || status.getKiDrainTicks() != 0;
+		status.setKiDrainStacks(0);
+		status.setKiDrainTicks(0);
+		if (player.hasEffect(MainEffects.KI_TRANSFER_DRAIN.get())) player.removeEffect(MainEffects.KI_TRANSFER_DRAIN.get());
+		if (had) sync(player);
+	}
+
+	private static void showIndicator(ServerPlayer player, MobEffect effect, int duration, int amplifier) {
+		int amp = Math.max(0, amplifier);
+		MobEffectInstance current = player.getEffect(effect);
+		if (current != null && current.getAmplifier() == amp) {
+			boolean currentInfinite = current.isInfiniteDuration();
+			if (duration < 0 && currentInfinite) return;
+			if (duration >= 0 && !currentInfinite && Math.abs(current.getDuration() - duration) <= INDICATOR_TOLERANCE_TICKS) return;
+		}
+		player.forceAddEffect(new MobEffectInstance(effect, duration < 0 ? MobEffectInstance.INFINITE_DURATION : duration, amp, false, false, true), null);
+	}
+
+	private static void refreshBoostIndicator(ServerPlayer receiver, int donors) {
+		if (donors <= 0) {
+			if (receiver.hasEffect(MainEffects.KI_TRANSFER_BOOST.get())) receiver.removeEffect(MainEffects.KI_TRANSFER_BOOST.get());
+			return;
+		}
+		UUID receiverId = receiver.getUUID();
+		boolean live = isReceiving(receiverId);
+		int longest = 0;
+		Map<UUID, Integer> retained = RETAINED.get(receiverId);
+		if (retained != null) {
+			for (int ticks : retained.values()) longest = Math.max(longest, ticks);
+		}
+		showIndicator(receiver, MainEffects.KI_TRANSFER_BOOST.get(), live ? -1 : longest, donors - 1);
+	}
+
+	public static void clearTransferEffects(ServerPlayer player) {
+		RETAINED.remove(player.getUUID());
+		BOOSTED.remove(player.getUUID());
+		DRAINED.remove(player.getUUID());
+		StatsData data = stats(player);
+		if (data != null) {
+			clearDrain(player, data);
+			if (data.getStatus().getKiTransferDonors() != 0 && !isReceiving(player.getUUID())) {
+				data.getStatus().setKiTransferDonors(0);
+				sync(player);
+			}
+		}
+		if (player.hasEffect(MainEffects.KI_TRANSFER_BOOST.get())) player.removeEffect(MainEffects.KI_TRANSFER_BOOST.get());
+	}
+
 	private static void refreshBoosts(MinecraftServer server, Map<UUID, Integer> settledPerReceiver) {
 		Set<UUID> touched = new HashSet<>(BOOSTED.keySet());
 		touched.addAll(settledPerReceiver.keySet());
@@ -268,7 +394,9 @@ public final class KiShareService {
 			else BOOSTED.remove(receiverId);
 			ServerPlayer receiver = server.getPlayerList().getPlayer(receiverId);
 			StatsData data = receiver != null ? stats(receiver) : null;
-			if (data == null || data.getStatus().getKiTransferDonors() == donors) continue;
+			if (data == null) continue;
+			refreshBoostIndicator(receiver, donors);
+			if (data.getStatus().getKiTransferDonors() == donors) continue;
 			data.getStatus().setKiTransferDonors(donors);
 			sync(receiver);
 		}
@@ -277,6 +405,9 @@ public final class KiShareService {
 	private static void stop(@Nullable MinecraftServer server, UUID donorId, @Nullable String messageKey) {
 		Link link = LINKS.remove(donorId);
 		if (link == null || server == null) return;
+		GeneralServerConfig.KiTransferConfig cfg = GodRitualHelper.transferConfig();
+		int restartTicks = cfg != null ? cfg.getRestartCooldownTicks() : 40;
+		if (restartTicks > 0) RESTART_AT.put(donorId, server.overworld().getGameTime() + restartTicks);
 		ServerPlayer donor = server.getPlayerList().getPlayer(donorId);
 		StatsData data = donor != null ? stats(donor) : null;
 		if (data == null) return;
@@ -367,6 +498,8 @@ public final class KiShareService {
 		StatsData data = stats(player);
 		if (data == null) return;
 		var status = data.getStatus();
+		if (status.getKiDrainTicks() > 0) DRAINED.add(player.getUUID());
+		if (player.hasEffect(MainEffects.KI_TRANSFER_BOOST.get())) player.removeEffect(MainEffects.KI_TRANSFER_BOOST.get());
 		if (status.getKiTransferTarget() == -1 && status.getKiTransferDonors() == 0) return;
 		status.setKiTransferTarget(-1);
 		status.setKiTransferDonors(0);
@@ -379,6 +512,9 @@ public final class KiShareService {
 		stop(player.getServer(), player.getUUID(), null);
 		BOOSTED.remove(player.getUUID());
 		ATTACK_CREDIT.remove(player.getUUID());
+		RETAINED.remove(player.getUUID());
+		DRAINED.remove(player.getUUID());
+		RESTART_AT.remove(player.getUUID());
 		StatsData data = stats(player);
 		if (data != null) data.getStatus().setKiTransferDonors(0);
 	}
@@ -388,6 +524,9 @@ public final class KiShareService {
 		LINKS.clear();
 		BOOSTED.clear();
 		ATTACK_CREDIT.clear();
+		RETAINED.clear();
+		DRAINED.clear();
+		RESTART_AT.clear();
 	}
 
 	private static StatsData stats(Player player) {

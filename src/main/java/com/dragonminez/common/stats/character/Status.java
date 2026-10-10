@@ -83,6 +83,8 @@ public class Status {
 	private int shadowDummyKillCount;
 	private int kiTransferTarget;
 	private int kiTransferDonors;
+	private int kiDrainStacks;
+	private int kiDrainTicks;
 	private int godRitualRole;
 	private UUID godRitualAnchor;
 	private int godRitualTicks;
@@ -148,6 +150,8 @@ public class Status {
 		this.shadowDummyKillCount = 0;
 		this.kiTransferTarget = -1;
 		this.kiTransferDonors = 0;
+		this.kiDrainStacks = 0;
+		this.kiDrainTicks = 0;
 		this.godRitualRole = GOD_RITUAL_NONE;
 		this.godRitualAnchor = null;
 		this.godRitualTicks = 0;
@@ -214,6 +218,8 @@ public class Status {
 		this.shadowDummyKillCount = 0;
 		this.kiTransferTarget = -1;
 		this.kiTransferDonors = 0;
+		this.kiDrainStacks = 0;
+		this.kiDrainTicks = 0;
 		this.godRitualRole = GOD_RITUAL_NONE;
 		this.godRitualAnchor = null;
 		this.godRitualTicks = 0;
@@ -320,6 +326,8 @@ public class Status {
 		tag.putInt("ShadowDummyKillCount", shadowDummyKillCount);
 		tag.putInt("KiTransferTarget", kiTransferTarget);
 		tag.putInt("KiTransferDonors", kiTransferDonors);
+		tag.putInt("KiDrainStacks", kiDrainStacks);
+		tag.putInt("KiDrainTicks", kiDrainTicks);
 		tag.putInt("GodRitualRole", godRitualRole);
 		if (godRitualAnchor != null) tag.putUUID("GodRitualAnchor", godRitualAnchor);
 		tag.putInt("GodRitualTicks", godRitualTicks);
@@ -395,6 +403,8 @@ public class Status {
 		this.shadowDummyKillCount = tag.contains("ShadowDummyKillCount") ? tag.getInt("ShadowDummyKillCount") : 0;
 		this.kiTransferTarget = tag.contains("KiTransferTarget") ? tag.getInt("KiTransferTarget") : -1;
 		this.kiTransferDonors = tag.getInt("KiTransferDonors");
+		this.kiDrainStacks = tag.getInt("KiDrainStacks");
+		this.kiDrainTicks = tag.getInt("KiDrainTicks");
 		this.godRitualRole = tag.getInt("GodRitualRole");
 		this.godRitualAnchor = tag.hasUUID("GodRitualAnchor") ? tag.getUUID("GodRitualAnchor") : null;
 		this.godRitualTicks = tag.getInt("GodRitualTicks");
@@ -462,6 +472,8 @@ public class Status {
 		this.shadowDummyKillCount = other.shadowDummyKillCount;
 		this.kiTransferTarget = other.kiTransferTarget;
 		this.kiTransferDonors = other.kiTransferDonors;
+		this.kiDrainStacks = other.kiDrainStacks;
+		this.kiDrainTicks = other.kiDrainTicks;
 		this.godRitualRole = other.godRitualRole;
 		this.godRitualAnchor = other.godRitualAnchor;
 		this.godRitualTicks = other.godRitualTicks;

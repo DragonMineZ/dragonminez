@@ -55,6 +55,9 @@ public class TargetHelper {
             if (isTournamentRival(attacker, targetPlayer)) {
                 return Relation.HOSTILE;
             }
+            if (areWorldBossAllies(attacker, targetPlayer)) {
+                return Relation.FRIENDLY;
+            }
             if (PartyManager.areInSameParty(attacker, targetPlayer)) {
                 return PartyManager.isPartyPvpEnabled(attacker) ? Relation.HOSTILE : Relation.FRIENDLY;
             }
@@ -82,6 +85,16 @@ public class TargetHelper {
             if (target instanceof Monster) return Relation.coalesce(config.getPlayerRelationToHostiles(), Relation.HOSTILE);
             return Relation.coalesce(config.getPlayerRelationToOther(), Relation.HOSTILE);
         } else return attacker.isAlliedTo(target) ? Relation.FRIENDLY : Relation.HOSTILE;
+    }
+
+    public static boolean areWorldBossAllies(Player a, Player b) {
+        if (a == null || b == null || a == b || a.level().isClientSide()) return false;
+        return com.dragonminez.server.world.worldboss.WorldBossManager.areTruceAllies(a.getUUID(), b.getUUID(), a.level().getGameTime());
+    }
+
+    public static boolean areFriendlyPlayers(Player a, Player b) {
+        if (a == null || b == null) return false;
+        return a == b || getRelation(a, b) == Relation.FRIENDLY;
     }
 
     public static boolean isTournamentRival(Player attacker, Entity target) {
