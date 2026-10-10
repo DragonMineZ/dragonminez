@@ -1117,7 +1117,7 @@ final class QuestDefaults {
 						earthReq(condBiome("#dragonminez:is_plains")),
 						new JsonObject[]{
 								transformStats(objKill("dragonminez:saga_goten", 1, 78750, 4680, 4310), 117900, 5380, 4950),
-								transformStats(objKill("dragonminez:saga_gohan_end_base", 1, 71100, 5850, 5300), 106650, 6730, 6090)
+								noTransform(objKill("dragonminez:saga_gohan_end_ssj", 1, 195525, 6730, 6090))
 						},
 						rewAttributes(90)),
 				step("buu", 36, "01b_flying_lessons.json",
@@ -1139,7 +1139,7 @@ final class QuestDefaults {
 						earthReq(condRealTimeMinutes(10)),
 						new JsonObject[]{
 								transformStats(objKill("dragonminez:saga_kid_trunks", 1, 85050, 4560, 4180), 127800, 5250, 4800),
-								transformStats(objKill("dragonminez:saga_vegeta_end_base", 1, 80100, 5970, 5470), 120150, 6860, 6290)
+								noTransform(objKill("dragonminez:saga_vegeta_end_ssj", 1, 220275, 6860, 6290))
 						},
 						rewAttributes(95)),
 				step("buu", 4, "04_enter_the_world_tournament.json",
@@ -1255,7 +1255,7 @@ final class QuestDefaults {
 				step("buu", 39, "19b_fusion_dance_practice.json",
 						earthReq(condBiome("#minecraft:is_beach")),
 						new JsonObject[]{
-								objSpar("dragonminez:saga_gotenks_ssj", 320000, 13300, 12000)
+								noTransform(objSpar("dragonminez:saga_gotenks_ssj", 320000, 13300, 12000))
 						},
 						rewAttributes(85)),
 				step("buu", 20, "20_evil_buu_at_buus_house.json",
@@ -1434,7 +1434,7 @@ final class QuestDefaults {
 				step("movies", 8, "08_turles_goku.json",
 						earthReq(condBiome("dragonminez:rocky"), condSaga("saiyan_saga", 12)),
 						new JsonObject[]{
-								transformStats(objKill("dragonminez:saga_goku_mid_base", 1, 3600, 250, 300), 5400, 290, 340)
+								noTransform(objKill("dragonminez:saga_goku_mid_base", 1, 5400, 290, 340))
 						},
 						rewAttributes(30)),
 				step("movies", 9, "09_turles_oozaru_gohan.json",
@@ -1716,7 +1716,7 @@ final class QuestDefaults {
 				step("gt", 13, "13_vegeta_gt.json",
 						earthReq(condBiome("dragonminez:rocky")),
 						// Base -> SSJ -> SSJ2. Split so the three stages still add up to the step's original budget.
-						new JsonObject[]{ transformStats(objKill("dragonminez:saga_vegeta_gt", 1, 325000, 37540, 33970, VEGETA_GT_EARLY), 487500, 43170, 39070) },
+						new JsonObject[]{ noTransform(objKill("dragonminez:saga_vegeta_gt_ssj", 1, 893750, 43170, 39070, VEGETA_GT_EARLY)) },
 						rewAttributes(150)),
 				step("gt", 14, "14_super_baby_and_his_army.json",
 						earthReq(condBiome("dragonminez:rocky")),
