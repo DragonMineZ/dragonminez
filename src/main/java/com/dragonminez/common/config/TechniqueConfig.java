@@ -52,6 +52,7 @@ public class TechniqueConfig {
 	private static int defaultEvasionCooldownTicks(String evasionId) {
 		return switch (evasionId) {
 			case "taiyoken" -> 900;
+			case "sleep_recovery" -> 1200;
 			case "rage_scream" -> 80;
 			case "afterimage" -> 200;
 			default -> 80;

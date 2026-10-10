@@ -95,7 +95,7 @@ public class UpdateSkillC2S {
 							break;
 
 						case PURCHASE:
-							if (!raceAllowed) break;
+							if (!raceAllowed && !ConfigManager.getSkillsConfig().isTechniqueSkill(skillName)) break;
 							if (!isOfferedByNearbyMaster(player, skillName)) break;
 							boolean isFormSkillPurchase = ConfigManager.getSkillsConfig().getFormSkills().contains(skillName.toLowerCase());
 							int effectiveCost;

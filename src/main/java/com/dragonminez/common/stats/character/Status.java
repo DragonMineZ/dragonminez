@@ -73,6 +73,7 @@ public class Status {
 	private boolean forcedCharge;
 	private boolean isStrikeLocked;
 	private boolean matchFrozen;
+	private boolean sleepRecovering;
 	private int flightMode;
 	private boolean flightModeLocked;
 	private int lockedFlightMode;
@@ -141,6 +142,7 @@ public class Status {
 		this.forcedCharge = false;
 		this.isStrikeLocked = false;
 		this.matchFrozen = false;
+		this.sleepRecovering = false;
 		this.flightMode = FLIGHT_SEARCH;
 		this.flightModeLocked = false;
 		this.lockedFlightMode = FLIGHT_SEARCH;
@@ -209,6 +211,7 @@ public class Status {
 		this.forcedCharge = false;
 		this.isStrikeLocked = false;
 		this.matchFrozen = false;
+		this.sleepRecovering = false;
 		this.flightMode = FLIGHT_SEARCH;
 		this.flightModeLocked = false;
 		this.lockedFlightMode = FLIGHT_SEARCH;
@@ -227,7 +230,7 @@ public class Status {
 	}
 
 	public boolean isStunned() {
-		return stunEffect || isKnockedDown || isStrikeLocked || matchFrozen || isInGodRitual();
+		return stunEffect || isKnockedDown || isStrikeLocked || matchFrozen || sleepRecovering || isInGodRitual();
 	}
 
 	public boolean isSharingKi() {
@@ -313,6 +316,7 @@ public class Status {
 		tag.putBoolean("ForcedCharge", forcedCharge);
 		tag.putBoolean("IsStrikeLocked", isStrikeLocked);
 		tag.putBoolean("MatchFrozen", matchFrozen);
+		tag.putBoolean("SleepRecovering", sleepRecovering);
 		tag.putInt("FlightMode", flightMode);
 		tag.putBoolean("FlightModeLocked", flightModeLocked);
 		tag.putInt("LockedFlightMode", lockedFlightMode);
@@ -389,6 +393,7 @@ public class Status {
 		this.forcedCharge = tag.getBoolean("ForcedCharge");
 		this.isStrikeLocked = tag.getBoolean("IsStrikeLocked");
 		this.matchFrozen = tag.getBoolean("MatchFrozen");
+		this.sleepRecovering = tag.getBoolean("SleepRecovering");
 		this.flightMode = tag.getInt("FlightMode");
 		this.flightModeLocked = tag.getBoolean("FlightModeLocked");
 		this.lockedFlightMode = tag.getInt("LockedFlightMode");
@@ -462,6 +467,7 @@ public class Status {
 		this.forcedCharge = other.forcedCharge;
 		this.isStrikeLocked = other.isStrikeLocked;
 		this.matchFrozen = other.matchFrozen;
+		this.sleepRecovering = other.sleepRecovering;
 		this.flightMode = other.flightMode;
 		this.flightModeLocked = other.flightModeLocked;
 		this.lockedFlightMode = other.lockedFlightMode;

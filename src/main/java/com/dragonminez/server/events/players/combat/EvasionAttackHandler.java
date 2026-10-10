@@ -39,7 +39,9 @@ import net.minecraftforge.event.TickEvent;
 import net.minecraftforge.event.entity.living.LivingAttackEvent;
 import net.minecraftforge.event.entity.living.LivingChangeTargetEvent;
 import net.minecraftforge.event.entity.living.LivingHurtEvent;
+import net.minecraftforge.event.entity.player.AttackEntityEvent;
 import net.minecraftforge.event.entity.player.PlayerEvent;
+import net.minecraftforge.event.entity.player.PlayerInteractEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.server.ServerLifecycleHooks;
@@ -68,8 +70,8 @@ public class EvasionAttackHandler {
 	private static final double RAGE_SCREAM_VERTICAL_LIFT = 0.12;
 	private static final int SHARED_EVASION_COOLDOWN_TICKS = 60;
 
-	private static final int SLEEP_RECOVERY_PULSE_INTERVAL_TICKS = 10;
-	private static final float SLEEP_RECOVERY_TOTAL_HEAL = 0.20F;
+	private static final int SLEEP_RECOVERY_PULSE_INTERVAL_TICKS = 20;
+	private static final float SLEEP_RECOVERY_HEAL_PER_PULSE = 0.10F;
 
 	private static final double AFTERIMAGE_RANGE = 24.0;
 	private static final double DIMENSIONAL_WARP_RANGE = 64.0;
@@ -160,6 +162,7 @@ public class EvasionAttackHandler {
 				lockTicks = Math.min(durationTicks, hopTicks + AFTERIMAGE_LOCK_TICKS);
 			}
 			stats.getStatus().setEvasionLockTicks(lockTicks);
+			if ("sleep_recovery".equals(techniqueId)) stats.getStatus().setSleepRecovering(true);
 			applySharedEvasionCooldown(stats, lockTicks + SHARED_EVASION_COOLDOWN_TICKS);
 
 			NetworkHandler.sendToTrackingEntityAndSelf(new StatsSyncS2C(player), player);
@@ -397,13 +400,8 @@ public class EvasionAttackHandler {
 				SoundEvents.FOX_SLEEP, SoundSource.PLAYERS, 1.0F, 0.8F);
 	}
 
-	private static void sleepRecoveryPulse(ServerPlayer caster, int totalTicks) {
-		int pulses = Math.max(1, totalTicks / SLEEP_RECOVERY_PULSE_INTERVAL_TICKS);
-		caster.heal(caster.getMaxHealth() * SLEEP_RECOVERY_TOTAL_HEAL / pulses);
-		if (caster.level() instanceof ServerLevel serverLevel) {
-			serverLevel.sendParticles(ParticleTypes.HAPPY_VILLAGER, caster.getX(), caster.getY() + caster.getBbHeight(), caster.getZ(),
-					5, 0.5, 0.5, 0.5, 0.1);
-		}
+	private static void sleepRecoveryPulse(ServerPlayer caster) {
+		caster.heal(caster.getMaxHealth() * SLEEP_RECOVERY_HEAL_PER_PULSE);
 	}
 
 	private static void castTaiyoken(ServerPlayer caster) {
@@ -541,7 +539,7 @@ public class EvasionAttackHandler {
 				active.ticksSincePulse++;
 				if (active.ticksSincePulse >= SLEEP_RECOVERY_PULSE_INTERVAL_TICKS) {
 					active.ticksSincePulse = 0;
-					sleepRecoveryPulse(caster, active.totalTicks);
+					sleepRecoveryPulse(caster);
 				}
 			}
 
@@ -566,6 +564,7 @@ public class EvasionAttackHandler {
 			if (active.ticksRemaining <= 0) {
 				StatsProvider.get(StatsCapability.INSTANCE, caster).ifPresent(stats -> {
 					stats.getStatus().setEvasionLockTicks(0);
+					stats.getStatus().setSleepRecovering(false);
 					NetworkHandler.sendToTrackingEntityAndSelf(new StatsSyncS2C(caster), caster);
 				});
 				NetworkHandler.sendToTrackingEntityAndSelf(
@@ -597,6 +596,7 @@ public class EvasionAttackHandler {
 		ACTIVE.remove(player.getUUID());
 		StatsProvider.get(StatsCapability.INSTANCE, player).ifPresent(stats -> {
 			stats.getStatus().setEvasionLockTicks(0);
+			stats.getStatus().setSleepRecovering(false);
 			NetworkHandler.sendToTrackingEntityAndSelf(new StatsSyncS2C(player), player);
 		});
 		NetworkHandler.sendToTrackingEntityAndSelf(
@@ -604,11 +604,63 @@ public class EvasionAttackHandler {
 	}
 
 	@SubscribeEvent
+	public static void onPlayerTick(TickEvent.PlayerTickEvent event) {
+		if (event.phase != TickEvent.Phase.END || !(event.player instanceof ServerPlayer player)) return;
+		if (ACTIVE.containsKey(player.getUUID())) return;
+		StatsProvider.get(StatsCapability.INSTANCE, player).ifPresent(stats -> {
+			if (!stats.getStatus().isSleepRecovering()) return;
+			stats.getStatus().setSleepRecovering(false);
+			stats.getStatus().setEvasionLockTicks(0);
+			NetworkHandler.sendToTrackingEntityAndSelf(new StatsSyncS2C(player), player);
+		});
+	}
+
+	public static boolean isSleepRecovering(Player player) {
+		if (player == null) return false;
+		return StatsProvider.get(StatsCapability.INSTANCE, player)
+				.map(stats -> stats.getStatus().isSleepRecovering())
+				.orElse(false);
+	}
+
+	@SubscribeEvent
+	public static void onAttackEntity(AttackEntityEvent event) {
+		if (isSleepRecovering(event.getEntity())) event.setCanceled(true);
+	}
+
+	@SubscribeEvent
+	public static void onRightClickBlock(PlayerInteractEvent.RightClickBlock event) {
+		if (isSleepRecovering(event.getEntity())) event.setCanceled(true);
+	}
+
+	@SubscribeEvent
+	public static void onRightClickItem(PlayerInteractEvent.RightClickItem event) {
+		if (isSleepRecovering(event.getEntity())) event.setCanceled(true);
+	}
+
+	@SubscribeEvent
+	public static void onLeftClickBlock(PlayerInteractEvent.LeftClickBlock event) {
+		if (isSleepRecovering(event.getEntity())) event.setCanceled(true);
+	}
+
+	@SubscribeEvent
+	public static void onEntityInteract(PlayerInteractEvent.EntityInteract event) {
+		if (isSleepRecovering(event.getEntity())) event.setCanceled(true);
+	}
+
+	@SubscribeEvent
+	public static void onEntityInteractSpecific(PlayerInteractEvent.EntityInteractSpecific event) {
+		if (isSleepRecovering(event.getEntity())) event.setCanceled(true);
+	}
+
+	@SubscribeEvent
 	public static void onPlayerLoggedOut(PlayerEvent.PlayerLoggedOutEvent event) {
 		Player player = event.getEntity();
 		BLINDED_MOBS.remove(player);
 		if (ACTIVE.remove(player.getUUID()) != null) {
-			StatsProvider.get(StatsCapability.INSTANCE, player).ifPresent(stats -> stats.getStatus().setEvasionLockTicks(0));
+			StatsProvider.get(StatsCapability.INSTANCE, player).ifPresent(stats -> {
+				stats.getStatus().setEvasionLockTicks(0);
+				stats.getStatus().setSleepRecovering(false);
+			});
 		}
 	}
 }

@@ -69,7 +69,7 @@ public class PredefinedTechniques {
 		registerEvasion("taiyoken", 0.00F, 30, 900, false);
 		registerEvasion("rage_scream", 1.2F, 60, 80, true);
 		registerEvasion("afterimage", 0.00F, 60, 200, false);
-		registerEvasion("sleep_recovery", 0.00F, 100, 2400, false);
+		registerEvasion("sleep_recovery", 0.00F, EvasionAttackData.SLEEP_RECOVERY_MAX_TICKS, 1200, false);
 		registerEvasion("dimensional_teleport", 0.00F, 30, 320, false);
 		registerStrike("skp.meteor", 1.25f, 40);
 		registerStrike("skp.dragon_fist", 2.5f, 50);

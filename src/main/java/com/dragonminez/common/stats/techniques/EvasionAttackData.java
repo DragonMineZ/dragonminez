@@ -12,6 +12,7 @@ import net.minecraft.nbt.CompoundTag;
 public class EvasionAttackData extends TechniqueData {
 	public static final float LEVEL_MODIFIER_STEP = 0.025f;
 	public static final float MAX_MODIFIER_LIMIT = 0.5f;
+	public static final int SLEEP_RECOVERY_MAX_TICKS = 140;
 
 	private float damageMultiplier;
 	private int durationTicks;
@@ -28,6 +29,7 @@ public class EvasionAttackData extends TechniqueData {
 	public float getActualDamageMultiplier() { return damageMultiplier; }
 
 	public int getActualDurationTicks() {
+		if ("sleep_recovery".equals(this.id)) return SLEEP_RECOVERY_MAX_TICKS;
 		float bonus = Math.min(MAX_MODIFIER_LIMIT, Math.max(0, durationLevel) * LEVEL_MODIFIER_STEP);
 		return Math.max(1, Math.round(durationTicks * (1.0f + bonus)));
 	}
@@ -40,7 +42,7 @@ public class EvasionAttackData extends TechniqueData {
 	}
 
 	public boolean canUpgradeStat(String statName) {
-		return "duration".equals(statName) || "cooldown".equals(statName);
+		return ("duration".equals(statName) && !"sleep_recovery".equals(this.id)) || "cooldown".equals(statName);
 	}
 
 	public int getUpgradeXpCost(String statName) {

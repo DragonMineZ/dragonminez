@@ -70,6 +70,7 @@ public class ClientStatsEvents {
 	private static int kiBlastTimer = 0;
 	private static int blockLockTicks = 0;
 	private static final int BLOCK_REACTIVATION_LOCK_TICKS = 5;
+	private static final int SLEEP_Z_INTERVAL_TICKS = 10;
 	private static boolean wasTransformKeyDown = false;
 	private static boolean wasKiChargeKeyDown = false;
 	private static long lastDashTime = 0;
@@ -141,6 +142,7 @@ public class ClientStatsEvents {
 			for (var player : mc.level.players()) {
 				StatsProvider.get(StatsCapability.INSTANCE, player).ifPresent(data -> {
 					BioSwellRenderState.tick(player, data);
+					if (data.getStatus().isSleepRecovering()) spawnSleepZ(mc, player);
 					if (player != localPlayer && data.getStatus().isActionCharging() && data.getStatus().getSelectedAction() == ActionMode.FUSION) {
 						faceBodyToYaw(player);
 					}
@@ -670,6 +672,28 @@ public class ClientStatsEvents {
 				event.getInput().right = false;
 			}
 		});
+	}
+
+	@SubscribeEvent
+	public static void onInteractionKey(InputEvent.InteractionKeyMappingTriggered event) {
+		Minecraft mc = Minecraft.getInstance();
+		if (mc.player == null) return;
+		StatsProvider.get(StatsCapability.INSTANCE, mc.player).ifPresent(data -> {
+			if (!data.getStatus().isSleepRecovering()) return;
+			event.setSwingHand(false);
+			event.setCanceled(true);
+		});
+	}
+
+	private static void spawnSleepZ(Minecraft mc, Player player) {
+		if (player.isInvisible() || (player.tickCount + player.getId()) % SLEEP_Z_INTERVAL_TICKS != 0) return;
+		if (player == mc.player && mc.options.getCameraType().isFirstPerson()) return;
+		float yaw = player.yBodyRot * Mth.DEG_TO_RAD;
+		double rightX = -Mth.cos(yaw);
+		double rightZ = -Mth.sin(yaw);
+		mc.level.addParticle(MainParticles.SLEEP_Z.get(),
+				player.getX() + rightX * 0.25, player.getY() + player.getBbHeight() + 0.15, player.getZ() + rightZ * 0.25,
+				rightX * 0.015, 0.0, rightZ * 0.015);
 	}
 
 	@SubscribeEvent

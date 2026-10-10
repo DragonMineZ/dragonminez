@@ -333,6 +333,7 @@ public class ModClientEvents {
         event.registerSpriteSet(MainParticles.ROCK.get(), RockParticle.Provider::new);
         event.registerSpriteSet(MainParticles.DIVINE.get(), DivineParticle.Provider::new);
         event.registerSpriteSet(MainParticles.STARDUST.get(), StardustParticle.Provider::new);
+        event.registerSpriteSet(MainParticles.SLEEP_Z.get(), com.dragonminez.common.init.particles.SleepZParticle.Provider::new);
         event.registerSpecial(MainParticles.FLYING_BLOCK.get(), new com.dragonminez.common.init.particles.FlyingBlockParticle.Provider());
 
     }

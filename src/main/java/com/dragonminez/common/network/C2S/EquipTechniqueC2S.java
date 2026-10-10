@@ -1,5 +1,6 @@
 package com.dragonminez.common.network.C2S;
 
+import com.dragonminez.common.config.ConfigManager;
 import com.dragonminez.common.network.NetworkHandler;
 import com.dragonminez.common.network.S2C.ProgressionSyncS2C;
 import com.dragonminez.common.stats.StatsCapability;
@@ -38,7 +39,9 @@ public class EquipTechniqueC2S {
 				StatsProvider.get(StatsCapability.INSTANCE, player).ifPresent(data -> {
 					boolean lockedSlot = data.getTechniques().isFormLoadoutActive()
 							&& slotIndex < Techniques.FORM_LOADOUT_SIZE;
-					if (!lockedSlot) data.getTechniques().equipOrSwapTechnique(slotIndex, techniqueId);
+					boolean raceLocked = techniqueId != null && !techniqueId.isEmpty()
+							&& !ConfigManager.getSkillsConfig().isSkillAllowedForRace(techniqueId, data.getCharacter().getRaceName());
+					if (!lockedSlot && !raceLocked) data.getTechniques().equipOrSwapTechnique(slotIndex, techniqueId);
 					NetworkHandler.sendToPlayer(new ProgressionSyncS2C(player), player);
 				});
 			}

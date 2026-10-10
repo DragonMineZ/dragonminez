@@ -4,10 +4,14 @@ import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+import net.minecraft.ChatFormatting;
+import net.minecraft.network.chat.Component;
+import net.minecraft.network.chat.MutableComponent;
 
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 
 @Getter
@@ -141,7 +145,7 @@ public class SkillsConfig {
 		skills.put("deadly_dance_vegetto", new SkillCosts(List.of(12000)));
 		skills.put("oozaru_fist",        new SkillCosts(List.of(15000)));
 		skills.put("oozaru_slam",        new SkillCosts(List.of(4000)));
-		skills.put("gum_punch",          new SkillCosts(List.of(4000)));
+		skills.put("gum_punch",          new SkillCosts(new ArrayList<>(List.of(4000)), new ArrayList<>(List.of("majin"))));
 		skills.put("blue_hurricane",     new SkillCosts(List.of(5000)));
 		skills.put("dimensional_punch",  new SkillCosts(List.of(18000)));
 		skills.put("dimensional_sword_attack", new SkillCosts(List.of(22000)));
@@ -523,6 +527,28 @@ public class SkillsConfig {
 		}
 
 		return false;
+	}
+
+	public boolean isTechniqueSkill(String skillName) {
+		if (skillName == null) return false;
+		String id = skillName.toLowerCase(Locale.ROOT);
+		return kiSkills.contains(id) || strikeSkills.contains(id) || evasionSkills.contains(id);
+	}
+
+	public MutableComponent describeAllowedRaces(String skillName) {
+		List<String> races = skillName == null ? null : getSkillCosts(skillName).getAllowedRaces();
+		if (races == null || races.isEmpty() || races.stream().anyMatch("all"::equalsIgnoreCase))
+			return Component.translatable("gui.dragonminez.technique.races.all").withStyle(ChatFormatting.GREEN);
+
+		MutableComponent out = Component.empty();
+		boolean first = true;
+		for (String race : races) {
+			if (race == null || race.isBlank()) continue;
+			if (!first) out.append(", ");
+			out.append(Component.translatableWithFallback("race.dragonminez." + race.toLowerCase(Locale.ROOT), race));
+			first = false;
+		}
+		return out;
 	}
 
 	@Getter
