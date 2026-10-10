@@ -50,7 +50,7 @@ public class TechniqueDispatcher {
                         wave.setKiDamage(realDamage);
                         wave.fireHability(maxLife);
                     } else if (activeKi instanceof KiBlastEntity blast) {
-                        blast.setKiDamage(realDamage);
+                        blast.setKiDamage(realDamage * blast.genkiDamageMultiplier());
                         blast.fireHability(maxLife);
                         int renderType = blast.getKiRenderType();
                         if (renderType != 2 && renderType != 5 && renderType != 6 && renderType != 7) {

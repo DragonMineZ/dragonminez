@@ -1,6 +1,7 @@
 package com.dragonminez.client.systems.kishare;
 
 import com.dragonminez.client.systems.FormVisualTransition;
+import com.dragonminez.common.init.entities.ki.KiBlastEntity;
 import com.dragonminez.common.stats.StatsCapability;
 import com.dragonminez.common.stats.StatsData;
 import com.dragonminez.common.stats.StatsProvider;
@@ -24,6 +25,9 @@ public final class KiSharePose {
 	private static final double RING_DROOP = 0.35;
 	private static final double RECEIVER_CHEST_RATIO = 0.6;
 	private static final double MAX_SIDE_ANGLE = Math.toRadians(100.0);
+	private static final double GENKI_SEARCH_RADIUS = 48.0;
+	private static final double RAISED_HAND_HEIGHT = 4.0;
+	private static final double RAISED_HAND_SPREAD = 1.2;
 
 	public record Aim(Vec3 right, Vec3 left) {}
 
@@ -35,6 +39,7 @@ public final class KiSharePose {
 		Status status = data.getStatus();
 		if (status.getGodRitualRole() == Status.GOD_RITUAL_DONOR) return resolveRing(player, data, partialTick);
 		if (status.isSharingKi() && player.level().getEntity(status.getKiTransferTarget()) instanceof Player receiver) {
+			if (genkiOf(receiver) != null) return raisedHands(player, data, partialTick);
 			Vec3 chest = position(receiver, partialTick).add(0.0, receiver.getBbHeight() * RECEIVER_CHEST_RATIO, 0.0);
 			return new Aim(clampToFront(player, data, partialTick, true, chest), clampToFront(player, data, partialTick, false, chest));
 		}
@@ -86,6 +91,25 @@ public final class KiSharePose {
 		Vec3 mid = position(a, partialTick).add(position(b, partialTick)).scale(0.5);
 		float[] scale = FormVisualTransition.modelScale(aData);
 		return mid.add(0.0, SHOULDER_HEIGHT_PX / 16.0 * scale[1] - RING_DROOP, 0.0);
+	}
+
+	public static KiBlastEntity genkiOf(Player caster) {
+		for (KiBlastEntity ball : caster.level().getEntitiesOfClass(KiBlastEntity.class, caster.getBoundingBox().inflate(GENKI_SEARCH_RADIUS))) {
+			if (ball.isChargingGenki() && ball.getOwner() == caster) return ball;
+		}
+		return null;
+	}
+
+	public static Vec3 genkiCenter(KiBlastEntity ball) {
+		return ball.position().add(0.0, ball.getBbHeight() / 2.0, 0.0);
+	}
+
+	private static Aim raisedHands(Player player, StatsData data, float partialTick) {
+		float yaw = Mth.rotLerp(partialTick, player.yBodyRotO, player.yBodyRot) * Mth.DEG_TO_RAD;
+		Vec3 right = new Vec3(-Mth.cos(yaw), 0.0, -Mth.sin(yaw));
+		Vec3 up = new Vec3(0.0, RAISED_HAND_HEIGHT, 0.0);
+		return new Aim(shoulder(player, data, partialTick, true).add(up).add(right.scale(RAISED_HAND_SPREAD)),
+				shoulder(player, data, partialTick, false).add(up).add(right.scale(-RAISED_HAND_SPREAD)));
 	}
 
 	public static Vec3 position(Entity entity, float partialTick) {

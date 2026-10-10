@@ -1003,7 +1003,8 @@ public class TickHandler {
 		}
 
 		boolean reachedCeiling = percent >= ceiling - 0.01f;
-		boolean shouldFire = kiAttack.requiresFullCharge() ? (reachedCeiling || outOfKi) : (!holding || outOfKi);
+		boolean waitingForDonors = holding && KiShareService.isReceiving(player.getUUID()) && KiShareService.chargingGenki(player) != null;
+		boolean shouldFire = kiAttack.requiresFullCharge() ? ((reachedCeiling && !waitingForDonors) || outOfKi) : (!holding || outOfKi);
 		if (shouldFire) {
 			resolveKiAttackOnRelease(player, data, techniques);
 			return;
@@ -1077,7 +1078,7 @@ public class TickHandler {
 		techniques.clearTechniqueCharge();
 	}
 
-	private static AbstractKiProjectile findChargingEntity(ServerPlayer player) {
+	static AbstractKiProjectile findChargingEntity(ServerPlayer player) {
 		UUID playerId = player.getUUID();
 		AbstractKiProjectile cached = CHARGING_CACHE.get(playerId);
 

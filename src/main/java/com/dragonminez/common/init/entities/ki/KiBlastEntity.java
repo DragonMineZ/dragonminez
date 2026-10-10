@@ -5,6 +5,8 @@ import com.dragonminez.common.combat.util.MultipartTargeting;
 import com.dragonminez.client.util.ColorUtils;
 import com.dragonminez.common.alignment.AlignmentBand;
 import com.dragonminez.common.combat.logic.player.TargetHelper;
+import com.dragonminez.common.config.ConfigManager;
+import com.dragonminez.common.config.TechniqueConfig;
 import com.dragonminez.common.init.entities.sagas.DBSagasEntity;
 import com.dragonminez.common.init.MainEntities;
 import com.dragonminez.common.init.MainParticles;
@@ -13,6 +15,7 @@ import com.dragonminez.common.init.particles.KiSheddingParticle;
 import com.dragonminez.common.init.particles.KiTrailParticle;
 import com.dragonminez.common.stats.StatsCapability;
 import com.dragonminez.common.stats.StatsProvider;
+import com.dragonminez.common.stats.techniques.KiAttackData;
 import com.dragonminez.server.events.players.combat.KiTechniqueHandler;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.particle.Particle;
@@ -92,6 +95,11 @@ public class KiBlastEntity extends AbstractKiProjectile {
     private static final EntityDataAccessor<Boolean> IS_FIRING = SynchedEntityData.defineId(KiBlastEntity.class, EntityDataSerializers.BOOLEAN);
     private static final EntityDataAccessor<Float> STRETCH = SynchedEntityData.defineId(KiBlastEntity.class, EntityDataSerializers.FLOAT);
     private static final EntityDataAccessor<Float> PURIFY_RADIUS = SynchedEntityData.defineId(KiBlastEntity.class, EntityDataSerializers.FLOAT);
+    private static final EntityDataAccessor<Float> GENKI_DONATED_SIZE = SynchedEntityData.defineId(KiBlastEntity.class, EntityDataSerializers.FLOAT);
+
+    private static final float GENKI_SIZE_PER_DONATED_BAR = 7.5F;
+    private static final float GENKI_DONATION_CAP_RATIO = 2.5F;
+    private static final float GENKI_MAX_DAMAGE_MULTIPLIER = 3.0F;
 
     public static final String SOUL_PUNISHER_ID = "soul_punisher";
     public static final float SOUL_PUNISHER_CORE_SCALE = 0.15F;
@@ -493,6 +501,41 @@ public class KiBlastEntity extends AbstractKiProjectile {
 
     public void setupKiGenkiPlayer(LivingEntity owner, float damage, float speed, float size) {
         this.setupKiGenkiPlayer(owner, damage, speed, 0xFFFFFF, size);
+    }
+
+    public float getGenkiDonatedSize() {
+        return this.entityData.get(GENKI_DONATED_SIZE);
+    }
+
+    public boolean isChargingGenki() {
+        return this.getKiRenderType() == 5 && !this.isFiring() && !this.isRemoved();
+    }
+
+    public boolean absorbGenkiDonation(float receiverBarFraction) {
+        if (!this.isChargingGenki() || receiverBarFraction <= 0.0F) return false;
+        float size = this.getSize();
+        float cap = this.genkiDonationSizeCap();
+        if (size >= cap) return false;
+        float grown = Math.min(cap, size + receiverBarFraction * GENKI_SIZE_PER_DONATED_BAR);
+        this.entityData.set(GENKI_DONATED_SIZE, this.getGenkiDonatedSize() + (grown - size));
+        this.setSize(grown);
+        return true;
+    }
+
+    public float genkiDamageMultiplier() {
+        float donated = this.getGenkiDonatedSize();
+        float own = this.getSize() - donated;
+        if (donated <= 0.0F || own <= 0.0F) return 1.0F;
+        return Math.min(GENKI_MAX_DAMAGE_MULTIPLIER, this.getSize() / own);
+    }
+
+    private float genkiDonationSizeCap() {
+        double largest = this.getSize() - this.getGenkiDonatedSize();
+        for (KiAttackData.KiType type : KiAttackData.KiType.values()) {
+            TechniqueConfig.TechniqueTypeConfig cfg = ConfigManager.getTechniqueConfig().getKiTypeConfig(type);
+            largest = Math.max(largest, Math.max(cfg.getBaseSizeCap(), cfg.getTransformedSizeCap()));
+        }
+        return (float) largest * GENKI_DONATION_CAP_RATIO;
     }
 
     public void setupKiNovaPlayer(LivingEntity owner, float damage, float speed, int colorOutline, float size) {
@@ -974,6 +1017,7 @@ public class KiBlastEntity extends AbstractKiProjectile {
     @Override
     protected float castClearanceRadius() {
         if ((this.getKiRenderType() == RENDER_TRI_BEAM || this.getKiRenderType() == RENDER_SOUL_PUNISHER) && !this.isFiring()) return 0.0F;
+        if (this.getKiRenderType() == 5) return Math.max(0.0F, this.getSize() - this.getGenkiDonatedSize()) * 0.5F;
         return this.isAnchoredVolley() ? 0.0F : super.castClearanceRadius();
     }
 
@@ -1405,6 +1449,7 @@ public class KiBlastEntity extends AbstractKiProjectile {
         this.entityData.define(DETACHED, false);
         this.entityData.define(STRETCH, 1.0F);
         this.entityData.define(PURIFY_RADIUS, 0.0F);
+        this.entityData.define(GENKI_DONATED_SIZE, 0.0F);
         this.entityData.define(OFFSET_X, 0.0F);
         this.entityData.define(OFFSET_Y, 0.0F);
         this.entityData.define(OFFSET_Z, 0.0F);

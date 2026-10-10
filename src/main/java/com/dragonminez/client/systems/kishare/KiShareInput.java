@@ -8,6 +8,7 @@ import com.dragonminez.common.stats.StatsCapability;
 import com.dragonminez.common.stats.StatsData;
 import com.dragonminez.common.stats.StatsProvider;
 import com.dragonminez.common.util.GodRitualHelper;
+import com.dragonminez.server.events.players.KiShareService;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.player.LocalPlayer;
@@ -77,8 +78,8 @@ public final class KiShareInput {
 		GeneralServerConfig.KiTransferConfig cfg = GodRitualHelper.transferConfig();
 		if (cfg == null || !cfg.getEnabled()) return;
 		Player target = pickTarget(player, cfg.getStartRange());
-		if (target == null) return;
-		NetworkHandler.sendToServer(KiShareC2S.start(target.getId()));
+		if (target == null && !genkiNearby(player)) return;
+		NetworkHandler.sendToServer(KiShareC2S.start(target != null ? target.getId() : -1));
 		requested = true;
 		retryCooldown = RETRY_TICKS;
 	}
@@ -93,6 +94,14 @@ public final class KiShareInput {
 		EntityHitResult hit = ProjectileUtil.getEntityHitResult(player, eye, end, area,
 				entity -> entity instanceof Player other && other != player && other.isAlive() && !other.isSpectator(), maxDistanceSq);
 		return hit != null && hit.getEntity() instanceof Player other ? other : null;
+	}
+
+	private static boolean genkiNearby(LocalPlayer player) {
+		double rangeSq = KiShareService.GENKI_RANGE * KiShareService.GENKI_RANGE;
+		for (Player other : player.level().players()) {
+			if (other != player && other.distanceToSqr(player) <= rangeSq && KiSharePose.genkiOf(other) != null) return true;
+		}
+		return false;
 	}
 
 	@SubscribeEvent

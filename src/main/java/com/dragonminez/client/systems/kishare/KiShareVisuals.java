@@ -4,6 +4,7 @@ import com.dragonminez.Reference;
 import com.dragonminez.client.systems.FormVisualTransition;
 import com.dragonminez.common.config.FormConfig;
 import com.dragonminez.common.init.MainParticles;
+import com.dragonminez.common.init.entities.ki.KiBlastEntity;
 import com.dragonminez.common.init.particles.KiTrailParticle;
 import com.dragonminez.common.stats.StatsCapability;
 import com.dragonminez.common.stats.StatsData;
@@ -36,6 +37,14 @@ public final class KiShareVisuals {
 	private static final int TRACER_LIFETIME = 9;
 	private static final float TRACER_SCALE = 0.65f;
 	private static final double CHEST_RATIO = 0.6;
+	private static final int GENKI_ORBS_PER_TICK = 2;
+	private static final double GENKI_ORB_DISTANCE = 3.0;
+	private static final double GENKI_ORB_SPREAD = 0.9;
+	private static final float GENKI_ORB_SCALE = 4.0f;
+	private static final int GENKI_ORB_LIFETIME = 22;
+	private static final double GENKI_RISE_SPEED = 0.35;
+	private static final float GENKI_HAND_ORB_SCALE = 1.6f;
+	private static final int GENKI_HAND_ORB_LIFETIME = 30;
 
 	private KiShareVisuals() {}
 
@@ -75,6 +84,11 @@ public final class KiShareVisuals {
 
 	private static void transferStream(Minecraft mc, ClientLevel level, Player donor, StatsData data) {
 		if (!(level.getEntity(data.getStatus().getKiTransferTarget()) instanceof Player receiver)) return;
+		KiBlastEntity genki = KiSharePose.genkiOf(receiver);
+		if (genki != null) {
+			genkiFlow(mc, level, donor, data, genki);
+			return;
+		}
 		KiSharePose.Aim aim = KiSharePose.resolve(donor, data, 1.0f);
 		if (aim == null) return;
 		Vec3 chest = receiver.position().add(0.0, receiver.getBbHeight() * CHEST_RATIO, 0.0);
@@ -82,6 +96,35 @@ public final class KiShareVisuals {
 		RandomSource random = level.random;
 		emitStream(mc, KiSharePose.hand(donor, data, 1.0f, true, aim.right()), chest, color, random);
 		emitStream(mc, KiSharePose.hand(donor, data, 1.0f, false, aim.left()), chest, color, random);
+	}
+
+	private static void genkiFlow(Minecraft mc, ClientLevel level, Player donor, StatsData data, KiBlastEntity genki) {
+		RandomSource random = level.random;
+		float[] color = genki.getRgbColorMain();
+		KiSharePose.Aim aim = KiSharePose.resolve(donor, data, 1.0f);
+		if (aim != null && random.nextInt(3) == 0) {
+			Vec3 hand = KiSharePose.hand(donor, data, 1.0f, random.nextBoolean(), random.nextBoolean() ? aim.right() : aim.left());
+			spawn(mc, hand.add(jitter(random), jitter(random), jitter(random)), new Vec3(jitter(random), GENKI_RISE_SPEED, jitter(random)),
+					color, GENKI_HAND_ORB_SCALE, GENKI_HAND_ORB_LIFETIME);
+		}
+
+		Vec3 center = KiSharePose.genkiCenter(genki);
+		double radius = genki.getSize() * 0.5;
+		Vec3 toDonor = donor.getEyePosition().subtract(center);
+		Vec3 bias = toDonor.lengthSqr() > 1.0E-4 ? toDonor.normalize() : new Vec3(0.0, -1.0, 0.0);
+		for (int i = 0; i < GENKI_ORBS_PER_TICK; i++) {
+			Vec3 dir = bias.add(randomUnit(random).scale(GENKI_ORB_SPREAD)).normalize();
+			Vec3 start = center.add(dir.scale(radius + GENKI_ORB_DISTANCE));
+			Vec3 end = center.add(dir.scale(radius * 0.6));
+			spawn(mc, start, end.subtract(start).scale(1.0 / STREAM_TRAVEL_FACTOR), color, GENKI_ORB_SCALE, GENKI_ORB_LIFETIME);
+		}
+	}
+
+	private static Vec3 randomUnit(RandomSource random) {
+		double y = random.nextDouble() * 2.0 - 1.0;
+		double theta = random.nextDouble() * Math.PI * 2.0;
+		double ring = Math.sqrt(1.0 - y * y);
+		return new Vec3(ring * Math.cos(theta), y, ring * Math.sin(theta));
 	}
 
 	private static void emitStream(Minecraft mc, Vec3 from, Vec3 to, float[] color, RandomSource random) {
