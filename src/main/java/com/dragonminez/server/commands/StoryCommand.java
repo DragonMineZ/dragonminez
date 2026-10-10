@@ -729,7 +729,7 @@ public class StoryCommand {
 
 	private static int showDifficulty(CommandContext<CommandSourceStack> context, Collection<ServerPlayer> targets) {
 		for (ServerPlayer player : targets) {
-			StatsProvider.get(StatsCapability.INSTANCE, PartyManager.resolveQuestController(player)).ifPresent(data ->
+			StatsProvider.get(StatsCapability.INSTANCE, PartyManager.resolveDifficultyOwner(player)).ifPresent(data ->
 					context.getSource().sendSystemMessage(Component.translatable("command.dragonminez.quest.difficulty.current",
 							player.getName(), difficultyName(data.getPlayerQuestData().getDifficulty()))));
 		}
@@ -748,7 +748,7 @@ public class StoryCommand {
 		Set<UUID> handledControllers = new HashSet<>();
 		int changed = 0;
 		for (ServerPlayer player : targets) {
-			ServerPlayer controller = PartyManager.resolveQuestController(player);
+			ServerPlayer controller = PartyManager.resolveDifficultyOwner(player);
 			if (!handledControllers.add(controller.getUUID())) continue;
 			StatsData data = StatsProvider.get(StatsCapability.INSTANCE, controller).orElse(null);
 			if (data == null) continue;
@@ -756,7 +756,7 @@ public class StoryCommand {
 			PlayerQuestData pqd = data.getPlayerQuestData();
 			pqd.setDifficulty(difficulty);
 			pqd.setDifficultyChosen(true);
-			PartyManager.syncPartyQuestState(controller);
+			PartyManager.syncPartyDifficulty(controller);
 			changed++;
 
 			List<ServerPlayer> members = PartyManager.getAllPartyMembers(controller);
@@ -971,12 +971,11 @@ public class StoryCommand {
 	private static List<ServerPlayer> getTargetPlayers(CommandContext<CommandSourceStack> context, ServerPlayer targetPlayer) {
 		List<ServerPlayer> players = new ArrayList<>();
 		if (targetPlayer != null) {
-			players.addAll(PartyManager.getAllPartyMembers(targetPlayer));
+			players.add(targetPlayer);
 			return players;
 		}
 		try {
-			ServerPlayer executor = context.getSource().getPlayerOrException();
-			players.addAll(PartyManager.getAllPartyMembers(executor));
+			players.add(context.getSource().getPlayerOrException());
 		} catch (Exception ignored) {
 		}
 		return players;

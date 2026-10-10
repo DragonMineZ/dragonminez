@@ -111,13 +111,14 @@ final class QuestSheet {
 	private static void addObjectives(List<Line> lines, Font font, DialogueQuest entry, DialogueQuest.Status status,
 									  PlayerQuestData questData, int width) {
 		List<QuestObjective> objectives = entry.quest.getObjectives();
-		if (objectives.isEmpty()) return;
+		if (objectives.stream().allMatch(QuestObjective::isPlaceholder)) return;
 		boolean tracked = status == DialogueQuest.Status.IN_PROGRESS || status == DialogueQuest.Status.TURN_IN;
 		boolean completed = status == DialogueQuest.Status.COMPLETED;
 		lines.add(gap(8));
 		lines.add(text(NpcDialogueContent.tr("gui.dragonminez.quests.objectives").getVisualOrderText(), DialogueSkin.ACCENT, 1.0f, 13));
 		for (int i = 0; i < objectives.size(); i++) {
 			QuestObjective objective = objectives.get(i);
+			if (objective.isPlaceholder()) continue;
 			MutableComponent description = Component.empty().append(QuestTextFormatter.describeObjective(objective))
 					.withStyle(Style.EMPTY.withFont(NpcDialogueScreen.FONT));
 			boolean done = completed;

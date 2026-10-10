@@ -6,13 +6,18 @@ import com.dragonminez.common.quest.PlayerQuestData;
 import com.dragonminez.common.quest.QuestRegistry;
 import com.dragonminez.common.stats.StatsCapability;
 import com.dragonminez.common.stats.StatsProvider;
+import com.dragonminez.server.storage.StorageManager;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraftforge.network.NetworkEvent;
 
+import java.util.Map;
+import java.util.UUID;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Supplier;
 
 public class SetTrackedQuestC2S {
+	private static final Map<UUID, Long> LAST_UPDATE = new ConcurrentHashMap<>();
 	private final String questId;
 
 	public SetTrackedQuestC2S(String questId) {
@@ -20,18 +25,26 @@ public class SetTrackedQuestC2S {
 	}
 
 	public SetTrackedQuestC2S(FriendlyByteBuf buffer) {
-		this.questId = buffer.readUtf();
+		this.questId = buffer.readUtf(256);
+	}
+
+	public static void clear(UUID playerId) {
+		LAST_UPDATE.remove(playerId);
 	}
 
 	public void encode(FriendlyByteBuf buffer) {
-		buffer.writeUtf(questId);
+		buffer.writeUtf(questId, 256);
 	}
 
 	public void handle(Supplier<NetworkEvent.Context> contextSupplier) {
 		NetworkEvent.Context context = contextSupplier.get();
 		context.enqueueWork(() -> {
 			ServerPlayer player = context.getSender();
-			if (player == null) return;
+			if (player == null || StorageManager.isLoadPending(player)) return;
+			long now = player.level().getGameTime();
+			Long last = LAST_UPDATE.get(player.getUUID());
+			if (last != null && now >= last && now - last < 5L) return;
+			LAST_UPDATE.put(player.getUUID(), now);
 
 			StatsProvider.get(StatsCapability.INSTANCE, player).ifPresent(data -> {
 				PlayerQuestData pqd = data.getPlayerQuestData();

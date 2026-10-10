@@ -9,12 +9,16 @@ public final class QuestUpdateReport {
 
 	public record Conflict(String path, String userValue, String oldDefault, String newDefault) {}
 
+	public record Retired(String relativePath, String backupPath, String fromVersion) {}
+
 	public static final class FileReport {
 		public final String relativePath;
 		public final String fromVersion;
 		public final String toVersion;
 		public int appliedCount;
 		public final List<Conflict> conflicts = new ArrayList<>();
+		public final List<String> keptDeletions = new ArrayList<>();
+		public final List<String> notes = new ArrayList<>();
 
 		FileReport(String relativePath, String fromVersion, String toVersion) {
 			this.relativePath = relativePath;
@@ -23,20 +27,30 @@ public final class QuestUpdateReport {
 		}
 
 		public boolean hasChanges() {
-			return appliedCount > 0 || !conflicts.isEmpty();
+			return appliedCount > 0 || !conflicts.isEmpty() || !keptDeletions.isEmpty() || !notes.isEmpty();
 		}
 	}
 
 	private static final Map<String, FileReport> REPORTS = new LinkedHashMap<>();
+	private static final List<Retired> RETIRED = new ArrayList<>();
 
 	private QuestUpdateReport() {}
 
 	public static void clear() {
 		REPORTS.clear();
+		RETIRED.clear();
 	}
 
 	static FileReport forFile(String relativePath, String fromVersion, String toVersion) {
 		return REPORTS.computeIfAbsent(relativePath, k -> new FileReport(relativePath, fromVersion, toVersion));
+	}
+
+	static void retired(String relativePath, String backupPath, String fromVersion) {
+		RETIRED.add(new Retired(relativePath, backupPath, fromVersion));
+	}
+
+	public static List<Retired> retiredFiles() {
+		return List.copyOf(RETIRED);
 	}
 
 	public static List<FileReport> changedFiles() {
@@ -48,7 +62,7 @@ public final class QuestUpdateReport {
 	}
 
 	public static boolean isEmpty() {
-		return changedFiles().isEmpty();
+		return changedFiles().isEmpty() && RETIRED.isEmpty();
 	}
 
 	public static int totalApplied() {
@@ -60,6 +74,12 @@ public final class QuestUpdateReport {
 	public static int totalConflicts() {
 		int total = 0;
 		for (FileReport report : REPORTS.values()) total += report.conflicts.size();
+		return total;
+	}
+
+	public static int totalKeptDeletions() {
+		int total = 0;
+		for (FileReport report : REPORTS.values()) total += report.keptDeletions.size();
 		return total;
 	}
 }

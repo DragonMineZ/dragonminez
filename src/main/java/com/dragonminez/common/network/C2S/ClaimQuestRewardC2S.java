@@ -16,11 +16,11 @@ public class ClaimQuestRewardC2S {
 	}
 
 	public ClaimQuestRewardC2S(FriendlyByteBuf buffer) {
-		this.questId = buffer.readUtf();
+		this.questId = buffer.readUtf(256);
 	}
 
 	public void encode(FriendlyByteBuf buffer) {
-		buffer.writeUtf(questId);
+		buffer.writeUtf(questId, 256);
 	}
 
 	public void handle(Supplier<NetworkEvent.Context> contextSupplier) {

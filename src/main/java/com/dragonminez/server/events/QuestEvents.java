@@ -12,8 +12,10 @@ import com.dragonminez.common.quest.PartyManager;
 import com.dragonminez.common.quest.PlayerQuestData;
 import com.dragonminez.common.quest.Quest;
 import com.dragonminez.common.quest.QuestAvailabilityChecker;
+import com.dragonminez.common.quest.QuestDataMigrations;
 import com.dragonminez.common.quest.QuestLocationHelper;
 import com.dragonminez.common.quest.QuestObjective;
+import com.dragonminez.common.quest.QuestParty;
 import com.dragonminez.common.quest.QuestRegistry;
 import com.dragonminez.common.quest.QuestService;
 import com.dragonminez.common.quest.objectives.CheckpointRaceObjective;
@@ -30,13 +32,12 @@ import com.dragonminez.common.quest.objectives.TalkToObjective;
 import com.dragonminez.common.stats.StatsCapability;
 import com.dragonminez.common.stats.StatsData;
 import com.dragonminez.common.stats.StatsProvider;
+import com.dragonminez.server.storage.StorageManager;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.LivingEntity;
-import net.minecraft.world.item.Item;
-import net.minecraft.world.item.ItemStack;
 import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.event.TickEvent;
 import net.minecraft.core.BlockPos;
@@ -45,6 +46,7 @@ import net.minecraftforge.event.entity.living.LivingDeathEvent;
 import net.minecraftforge.event.entity.living.LivingHurtEvent;
 import net.minecraftforge.event.entity.player.PlayerEvent;
 import net.minecraftforge.event.entity.player.PlayerInteractEvent;
+import net.minecraftforge.eventbus.api.EventPriority;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
 
@@ -63,7 +65,7 @@ public class QuestEvents {
 		if (event.player.tickCount % 20 != 0) {
 			return;
 		}
-		if (!(event.player instanceof ServerPlayer player)) {
+		if (!(event.player instanceof ServerPlayer player) || StorageManager.isLoadPending(player)) {
 			return;
 		}
 
@@ -72,22 +74,37 @@ public class QuestEvents {
 			processTickObjectives(player, data);
 			handleQuestTimeLimits(player, data);
 			if (timingChanged) {
-				NetworkHandler.sendToTrackingEntityAndSelf(new ProgressionSyncS2C(player), player);
+				NetworkHandler.sendToPlayer(new ProgressionSyncS2C(player), player);
 			}
 		});
 	}
 
-	/**
-	 * Non-lethal finish for SPAR objectives: when the finishing blow would drop a quest-spawned
-	 * sparring partner below 15% health, the damage is cancelled, the defeat is credited like a
-	 * kill for the whole party, and the partner departs.
-	 */
+	@SubscribeEvent(priority = EventPriority.LOWEST)
+	public static void onPlayerLogin(PlayerEvent.PlayerLoggedInEvent event) {
+		if (event.getEntity() instanceof ServerPlayer player && !StorageManager.isLoadPending(player)) {
+			onPlayerDataReady(player);
+		}
+	}
+
+	public static void onPlayerDataReady(ServerPlayer player) {
+		PartyManager.reconcile(player);
+		StatsProvider.get(StatsCapability.INSTANCE, player).ifPresent(data -> {
+			if (QuestDataMigrations.run(player, data.getPlayerQuestData())) {
+				NetworkHandler.sendToPlayer(new ProgressionSyncS2C(player), player);
+			}
+		});
+	}
+
 	@SubscribeEvent
 	public static void onSparHurt(LivingHurtEvent event) {
 		LivingEntity target = event.getEntity();
 		if (target.level().isClientSide) return;
 		if (!(event.getSource().getEntity() instanceof ServerPlayer attacker)) return;
 		if (!target.getPersistentData().contains(QuestService.QUEST_KEY_TAG)) return;
+		if (target.isRemoved()) {
+			event.setCanceled(true);
+			return;
+		}
 
 		String questKey = target.getPersistentData().getString(QuestService.QUEST_KEY_TAG);
 		int objectiveIndex = target.getPersistentData().getInt(QuestService.QUEST_OBJECTIVE_INDEX_TAG);
@@ -95,15 +112,25 @@ public class QuestEvents {
 		if (quest == null || objectiveIndex < 0 || objectiveIndex >= quest.getObjectives().size()) return;
 		if (!(quest.getObjectives().get(objectiveIndex) instanceof SparObjective)) return;
 
+		List<ServerPlayer> attackerParty = PartyManager.getAllPartyMembers(attacker);
+		String owner = target.getPersistentData().getString(QuestService.QUEST_OWNER_TAG);
+		boolean ownParty = false;
+		for (ServerPlayer member : attackerParty) {
+			if (member.getStringUUID().equals(owner)) {
+				ownParty = true;
+				break;
+			}
+		}
+		if (!ownParty) {
+			event.setCanceled(true);
+			return;
+		}
+
 		if (target.getHealth() - event.getAmount() > target.getMaxHealth() * 0.15f) return;
 
 		event.setCanceled(true);
-		List<ServerPlayer> sparPartyMembers = PartyManager.getAllPartyMembers(attacker);
-		for (ServerPlayer member : sparPartyMembers) {
-			StatsProvider.get(StatsCapability.INSTANCE, member).ifPresent(data ->
-					processAcceptedQuests(member, data, (qk, q, pqd) ->
-							processKillObjectives(member, pqd, qk, q, target, sparPartyMembers)));
-		}
+		forEachSharedQuest(attacker, (member, qk, q, pqd) ->
+				processKillObjectives(member, pqd, qk, q, target, attackerParty));
 		attacker.displayClientMessage(Component.translatable("message.dragonminez.quest.spar_won",
 				target.getDisplayName()), true);
 		target.discard();
@@ -113,6 +140,8 @@ public class QuestEvents {
 	public static void onPlayerLogout(PlayerEvent.PlayerLoggedOutEvent event) {
 		if (event.getEntity() instanceof ServerPlayer player) {
 			QuestFieldSessions.clearAll(player);
+			QuestService.clearPlayer(player.getUUID());
+			com.dragonminez.common.network.C2S.SetTrackedQuestC2S.clear(player.getUUID());
 			com.dragonminez.server.world.tournament.Tournament.Manager.onPlayerLogout(player);
 		}
 	}
@@ -135,23 +164,11 @@ public class QuestEvents {
 
 	public static void creditQuestKill(ServerPlayer killer, LivingEntity killedEntity) {
 		List<ServerPlayer> partyMembers = PartyManager.getAllPartyMembers(killer);
-		for (ServerPlayer member : partyMembers) {
-			StatsProvider.get(StatsCapability.INSTANCE, member).ifPresent(data ->
-					processAcceptedQuests(member, data, (questKey, quest, pqd) ->
-							processKillObjectives(member, pqd, questKey, quest, killedEntity, partyMembers)));
-		}
+		forEachSharedQuest(killer, (member, questKey, quest, pqd) ->
+				processKillObjectives(member, pqd, questKey, quest, killedEntity, partyMembers));
 	}
 
-	/**
-	 * Fails accepted quests whose game-time limit has run out. Evaluated once per second on the
-	 * quest controller only, so party quests fail exactly once.
-	 */
 	private static void handleQuestTimeLimits(ServerPlayer player, StatsData data) {
-		ServerPlayer controller = PartyManager.resolveQuestController(player);
-		if (controller == null || !controller.getUUID().equals(player.getUUID())) {
-			return;
-		}
-
 		PlayerQuestData pqd = data.getPlayerQuestData();
 		Set<String> acceptedQuestIds = new LinkedHashSet<>(pqd.getAcceptedQuestIds());
 		if (acceptedQuestIds.isEmpty()) {
@@ -160,7 +177,6 @@ public class QuestEvents {
 
 		long gameTime = player.serverLevel().getGameTime();
 		Set<String> failedQuestIds = new LinkedHashSet<>();
-		List<ServerPlayer> partyMembers = PartyManager.getAllPartyMembers(controller);
 		for (String questKey : acceptedQuestIds) {
 			Quest quest = QuestRegistry.getQuest(questKey);
 			if (quest == null || !quest.hasTimeLimit()) {
@@ -171,99 +187,73 @@ public class QuestEvents {
 				continue;
 			}
 
-			QuestService.ResolvedQuest resolved = QuestService.resolveQuest(questKey);
-			DMZEvent.QuestFailEvent failEvent = new DMZEvent.QuestFailEvent(
-					controller,
-					questKey,
-					resolved != null ? resolved.saga() : null,
-					quest,
-					partyMembers,
-					DMZEvent.QuestFailEvent.FailureReason.TIME_EXPIRED
-			);
-			if (MinecraftForge.EVENT_BUS.post(failEvent)) {
-				continue;
+			if (failQuestFor(player, pqd, questKey, quest, DMZEvent.QuestFailEvent.FailureReason.TIME_EXPIRED)) {
+				failedQuestIds.add(questKey);
 			}
-
-			pqd.failQuest(questKey);
-			QuestFieldSessions.clearQuest(controller, questKey);
-			failedQuestIds.add(questKey);
 		}
 
 		if (failedQuestIds.isEmpty()) {
 			return;
 		}
 
-		notifyQuestFailure(controller, failedQuestIds);
-		QuestService.syncQuestState(controller);
+		for (String questKey : failedQuestIds) {
+			NetworkHandler.sendToPlayer(StoryToastS2C.questFailed(questKey), player);
+		}
+		QuestService.syncQuestState(player);
 	}
 
 	public static void handlePlayerQuestFailure(ServerPlayer deadPlayer) {
-		ServerPlayer controller = PartyManager.resolveQuestController(deadPlayer);
-		if (controller == null) {
+		PlayerQuestData deadData = QuestParty.questData(deadPlayer);
+		if (deadData == null) {
 			return;
 		}
 
-		if (!isPartyWiped(controller, deadPlayer)) {
-			return;
-		}
-
-		StatsProvider.get(StatsCapability.INSTANCE, controller).ifPresent(data -> {
-			PlayerQuestData pqd = data.getPlayerQuestData();
-			Set<String> acceptedQuestIds = new LinkedHashSet<>(pqd.getAcceptedQuestIds());
-			if (acceptedQuestIds.isEmpty()) {
-				return;
-			}
-
-			Set<String> failedQuestIds = new LinkedHashSet<>();
-			List<ServerPlayer> partyMembers = PartyManager.getAllPartyMembers(controller);
-			for (String questKey : acceptedQuestIds) {
-				Quest quest = QuestRegistry.getQuest(questKey);
-				if (quest == null || pqd.isQuestCompleted(questKey) || !hasKillObjectives(quest)) {
-					continue;
-				}
-
-				QuestService.ResolvedQuest resolved = QuestService.resolveQuest(questKey);
-				DMZEvent.QuestFailEvent failEvent = new DMZEvent.QuestFailEvent(
-						controller,
-						questKey,
-						resolved != null ? resolved.saga() : null,
-						quest,
-						partyMembers,
-						DMZEvent.QuestFailEvent.FailureReason.PLAYER_DEATH
-				);
-				if (MinecraftForge.EVENT_BUS.post(failEvent)) {
-					continue;
-				}
-
-				pqd.failQuest(questKey);
-				QuestFieldSessions.clearQuest(controller, questKey);
-				failedQuestIds.add(questKey);
-			}
-
-			if (failedQuestIds.isEmpty()) {
-				return;
-			}
-
-			notifyQuestFailure(controller, failedQuestIds);
-			QuestService.syncQuestState(controller);
-		});
-	}
-
-	/**
-	 * Returns whether the just-died player's party is fully down — i.e. every other online member is
-	 * dead or dying (health {@code <= 0}). Uses {@link net.minecraft.world.entity.LivingEntity#isDeadOrDying()}
-	 * rather than {@code isAlive()} because a player on the respawn screen is not yet removed and would
-	 * otherwise read as alive. A solo player has no other members, so this is always {@code true}.
-	 */
-	private static boolean isPartyWiped(ServerPlayer controller, ServerPlayer deadPlayer) {
-		for (ServerPlayer member : PartyManager.getAllPartyMembers(controller)) {
-			if (member.getUUID().equals(deadPlayer.getUUID())) {
+		for (String questKey : new LinkedHashSet<>(deadData.getAcceptedQuestIds())) {
+			Quest quest = QuestRegistry.getQuest(questKey);
+			if (quest == null || !hasKillObjectives(quest)) {
 				continue;
 			}
-			if (!member.isDeadOrDying()) {
-				return false;
+
+			List<ServerPlayer> group = QuestParty.allParticipants(deadPlayer, questKey);
+			boolean wiped = true;
+			for (ServerPlayer member : group) {
+				if (member != deadPlayer && !member.isDeadOrDying()) {
+					wiped = false;
+					break;
+				}
+			}
+			if (!wiped) {
+				continue;
+			}
+
+			for (ServerPlayer member : group) {
+				PlayerQuestData memberData = member == deadPlayer ? deadData : QuestParty.questData(member);
+				if (memberData == null || !memberData.isQuestAccepted(questKey)) continue;
+				if (failQuestFor(member, memberData, questKey, quest, DMZEvent.QuestFailEvent.FailureReason.PLAYER_DEATH)) {
+					NetworkHandler.sendToPlayer(StoryToastS2C.questFailed(questKey), member);
+					QuestService.syncQuestState(member);
+				}
 			}
 		}
+	}
+
+	static boolean failQuestFor(ServerPlayer player, PlayerQuestData pqd, String questKey, Quest quest,
+								DMZEvent.QuestFailEvent.FailureReason reason) {
+		QuestService.ResolvedQuest resolved = QuestService.resolveQuest(questKey);
+		DMZEvent.QuestFailEvent failEvent = new DMZEvent.QuestFailEvent(
+				player,
+				questKey,
+				resolved != null ? resolved.saga() : null,
+				quest,
+				QuestParty.allParticipants(player, questKey),
+				reason
+		);
+		if (MinecraftForge.EVENT_BUS.post(failEvent)) {
+			return false;
+		}
+
+		pqd.failQuest(questKey);
+		QuestFieldSessions.clearQuest(player, questKey);
 		return true;
 	}
 
@@ -272,7 +262,7 @@ public class QuestEvents {
 		if (!(event.getEntity() instanceof ServerPlayer interactor)) {
 			return;
 		}
-		if (event.getHand() != net.minecraft.world.InteractionHand.MAIN_HAND) {
+		if (event.getHand() != net.minecraft.world.InteractionHand.MAIN_HAND || StorageManager.isLoadPending(interactor)) {
 			return;
 		}
 
@@ -284,12 +274,14 @@ public class QuestEvents {
 		}
 
 		String finalNpcId = interactedNpcId;
-		List<ServerPlayer> partyMembers = PartyManager.getAllPartyMembers(interactor);
-		for (ServerPlayer member : partyMembers) {
-			StatsProvider.get(StatsCapability.INSTANCE, member).ifPresent(data ->
-					processAcceptedQuests(member, data, (questKey, quest, pqd) ->
-							processInteractObjectives(member, pqd, questKey, quest, event, finalNpcId)));
+		if (finalNpcId != null) {
+			StatsProvider.get(StatsCapability.INSTANCE, interactor).ifPresent(data ->
+					processAcceptedQuests(interactor, data, (questKey, quest, pqd) ->
+							processDeliveries(interactor, pqd, questKey, quest, finalNpcId)));
 		}
+
+		forEachSharedQuest(interactor, (member, questKey, quest, pqd) ->
+				processInteractObjectives(member, pqd, questKey, quest, event, finalNpcId));
 	}
 
 	@SubscribeEvent
@@ -298,12 +290,8 @@ public class QuestEvents {
 			return;
 		}
 
-		List<ServerPlayer> partyMembers = PartyManager.getAllPartyMembers(summoner);
-		for (ServerPlayer member : partyMembers) {
-			StatsProvider.get(StatsCapability.INSTANCE, member).ifPresent(data ->
-					processAcceptedQuests(member, data, (questKey, quest, pqd) ->
-							processDragonSummonObjectives(member, pqd, questKey, quest, event)));
-		}
+		forEachSharedQuest(summoner, (member, questKey, quest, pqd) ->
+				processDragonSummonObjectives(member, pqd, questKey, quest, event));
 	}
 
 	private static boolean primeStartRequirementTimers(ServerPlayer player, StatsData data) {
@@ -313,10 +301,10 @@ public class QuestEvents {
 		for (Map.Entry<String, Quest> entry : QuestRegistry.getAllQuests().entrySet()) {
 			String questKey = entry.getKey();
 			Quest quest = entry.getValue();
-			if (!isQuestTypeEnabled(quest)
-					|| pqd.isQuestAccepted(questKey)
-					|| pqd.isQuestCompleted(questKey)
-					|| pqd.getQuestStatus(questKey) == PlayerQuestData.QuestStatus.FAILED) {
+			if (!QuestAvailabilityChecker.hasTimedStartRequirement(quest)
+					|| !isQuestTypeEnabled(quest)
+					|| pqd.getQuestStatus(questKey) != PlayerQuestData.QuestStatus.NOT_STARTED
+					|| pqd.getStartRequirementTiming(questKey) != null) {
 				continue;
 			}
 			if (!isQuestAvailableForTracking(questKey, quest, data)) {
@@ -332,42 +320,47 @@ public class QuestEvents {
 		processAcceptedQuests(player, data, (questKey, quest, pqd) -> {
 			for (int i = 0; i < quest.getObjectives().size(); i++) {
 				QuestObjective objective = quest.getObjectives().get(i);
+				int required = quest.getObjectiveRequired(pqd, questKey, i);
 				int currentProgress = pqd.getObjectiveProgress(questKey, i);
-				if (currentProgress >= quest.getObjectiveRequired(pqd, questKey, i)) {
+
+				if (objective instanceof ItemObjective itemObjective) {
+					int held = Math.min(QuestParty.countItemById(player, itemObjective.getItemId()), required);
+					if (held != currentProgress) {
+						updateProgress(player, pqd, questKey, quest, i, held);
+					}
+					if (held >= required) continue;
+					if (!quest.isParallelObjectives()) break;
 					continue;
 				}
-				if (!quest.isParallelObjectives() && !isFirstUncompleted(pqd, questKey, quest, i)) {
-					break;
+
+				if (currentProgress >= required || QuestService.isTurnInTalk(quest, objective)) {
+					continue;
 				}
 
 				if (QuestLocationHelper.isLocationObjective(objective)) {
-					List<ServerPlayer> partyMembers = PartyManager.getAllPartyMembers(player);
-					boolean anyMemberInZone = false;
-					for (ServerPlayer member : partyMembers) {
-						if (QuestLocationHelper.isLocationConditionMet(member, objective)) {
-							anyMemberInZone = true;
-							break;
+					boolean inZone = QuestLocationHelper.isLocationConditionMet(player, objective);
+					if (!inZone) {
+						for (ServerPlayer participant : QuestParty.participants(player, questKey)) {
+							if (participant != player && QuestLocationHelper.isLocationConditionMet(participant, objective)) {
+								inZone = true;
+								break;
+							}
 						}
 					}
-					int targetProgress = anyMemberInZone ? 1 : 0;
-					updatePartyProgress(partyMembers, questKey, quest, i, targetProgress);
-				} else if (objective instanceof ItemObjective itemObjective) {
-					int itemCount = countItems(player, itemObjective.getItemId());
-					if (itemCount != currentProgress) {
-						int progressToSet = Math.min(itemCount, quest.getObjectiveRequired(pqd, questKey, i));
-						updateProgress(player, pqd, questKey, quest, i, progressToSet);
+					if (inZone) {
+						updateProgress(player, pqd, questKey, quest, i, required);
 					}
 				} else if (objective instanceof SkillObjective skillObjective) {
 					int skillLevel = data.getSkills().getSkillLevel(skillObjective.getSkill());
 					if (skillLevel != currentProgress) {
-						int progressToSet = Math.min(skillLevel, quest.getObjectiveRequired(pqd, questKey, i));
+						int progressToSet = Math.min(skillLevel, required);
 						updateProgress(player, pqd, questKey, quest, i, progressToSet);
 					}
 				} else if (objective instanceof CheckpointRaceObjective raceObjective) {
 					BlockPos checkpoint = raceObjective.getCheckpoint(currentProgress);
-					if (checkpoint != null && player.distanceToSqr(checkpoint.getX() + 0.5, checkpoint.getY() + 0.5, checkpoint.getZ() + 0.5)
+					if (checkpoint != null && isInObjectiveDimension(player, pqd, questKey, raceObjective.getDimension())
+							&& player.distanceToSqr(checkpoint.getX() + 0.5, checkpoint.getY() + 0.5, checkpoint.getZ() + 0.5)
 							<= (double) raceObjective.getRadius() * raceObjective.getRadius()) {
-						int required = quest.getObjectiveRequired(pqd, questKey, i);
 						updateProgress(player, pqd, questKey, quest, i, currentProgress + 1);
 						player.displayClientMessage(Component.translatable(
 								"message.dragonminez.quest.checkpoint", currentProgress + 1, required), true);
@@ -385,6 +378,17 @@ public class QuestEvents {
 
 			checkAndComplete(player, pqd, questKey, quest);
 		});
+	}
+
+	static boolean isInObjectiveDimension(ServerPlayer player, PlayerQuestData pqd, String questKey, String objectiveDimension) {
+		String dimension = objectiveDimension != null && !objectiveDimension.isBlank()
+				? objectiveDimension
+				: pqd.getAcceptedDimension(questKey);
+		if (dimension == null || dimension.isBlank()) {
+			return true;
+		}
+		ResourceLocation id = ResourceLocation.tryParse(dimension);
+		return id != null && player.level().dimension().location().equals(id);
 	}
 
 	private static void processKillObjectives(ServerPlayer player, PlayerQuestData pqd, String questKey, Quest quest,
@@ -409,6 +413,44 @@ public class QuestEvents {
 		checkAndComplete(player, pqd, questKey, quest);
 	}
 
+	private static void processDeliveries(ServerPlayer player, PlayerQuestData pqd, String questKey, Quest quest, String npcId) {
+		if (QuestService.requiresTurnInAction(quest) && npcId.equalsIgnoreCase(quest.getTurnIn())) {
+			return;
+		}
+		QuestService.ResolvedQuest resolved = QuestService.resolveQuest(questKey);
+		if (resolved == null) {
+			return;
+		}
+
+		boolean delivered = false;
+		for (int i = 0; i < quest.getObjectives().size(); i++) {
+			if (!(quest.getObjectives().get(i) instanceof DeliverObjective deliver) || !deliver.matchesNpc(npcId)) {
+				continue;
+			}
+			if (pqd.getObjectiveProgress(questKey, i) >= quest.getObjectiveRequired(pqd, questKey, i)) {
+				continue;
+			}
+			if (!quest.isParallelObjectives() && !isFirstUncompleted(pqd, questKey, quest, i)) {
+				continue;
+			}
+			Component blocker = QuestService.deliverOnInteract(player, pqd, resolved, npcId, i);
+			if (blocker != null) {
+				player.sendSystemMessage(blocker.copy().withStyle(net.minecraft.ChatFormatting.YELLOW));
+			} else {
+				delivered = true;
+			}
+		}
+
+		if (delivered) {
+			for (ServerPlayer participant : QuestParty.participants(player, questKey)) {
+				PlayerQuestData participantData = participant == player ? pqd : QuestParty.questData(participant);
+				if (participantData == null) continue;
+				checkAndComplete(participant, participantData, questKey, quest);
+				QuestService.syncQuestState(participant);
+			}
+		}
+	}
+
 	private static void processInteractObjectives(ServerPlayer player, PlayerQuestData pqd, String questKey, Quest quest,
 												PlayerInteractEvent.EntityInteract event, String interactedNpcId) {
 		for (int i = 0; i < quest.getObjectives().size(); i++) {
@@ -422,46 +464,31 @@ public class QuestEvents {
 			}
 
 			if (objective instanceof InteractObjective interactObjective) {
-				String targetStr = interactObjective.getEntityTypeId();
-				EntityType<?> requiredType = targetStr != null
-						? BuiltInRegistries.ENTITY_TYPE.get(ResourceLocation.parse(targetStr))
-						: null;
-				if (requiredType == null || event.getTarget().getType().equals(requiredType)) {
+				if (matchesInteractTarget(interactObjective, event)) {
 					updateProgress(player, pqd, questKey, quest, i, currentProgress + 1);
 				}
 			} else if (objective instanceof TalkToObjective talkToObjective
 					&& interactedNpcId != null
-					&& !QuestService.requiresTurnInAction(quest)
-					&& interactedNpcId.equals(talkToObjective.getNpcId())) {
+					&& !QuestService.isTurnInTalk(quest, objective)
+					&& interactedNpcId.equalsIgnoreCase(talkToObjective.getNpcId())) {
 				updateProgress(player, pqd, questKey, quest, i, currentProgress + 1);
-			} else if (objective instanceof DeliverObjective deliverObjective
-					&& interactedNpcId != null
-					&& deliverObjective.matchesNpc(interactedNpcId)) {
-				int needed = quest.getObjectiveRequired(pqd, questKey, i) - currentProgress;
-				int delivered = consumeDeliveryItems(player, deliverObjective.getItem(), needed);
-				if (delivered > 0) {
-					updateProgress(player, pqd, questKey, quest, i, currentProgress + delivered);
-				}
 			}
 		}
 
 		checkAndComplete(player, pqd, questKey, quest);
 	}
 
-	/** Removes up to maxCount of the item from the player's inventory; returns how many were taken. */
-	private static int consumeDeliveryItems(ServerPlayer player, net.minecraft.world.item.Item item, int maxCount) {
-		if (maxCount <= 0 || item == null) return 0;
-		int remaining = maxCount;
-		var inventory = player.getInventory();
-		for (int slot = 0; slot < inventory.getContainerSize() && remaining > 0; slot++) {
-			var stack = inventory.getItem(slot);
-			if (stack.isEmpty() || !stack.is(item)) continue;
-			int take = Math.min(stack.getCount(), remaining);
-			stack.shrink(take);
-			remaining -= take;
+	private static boolean matchesInteractTarget(InteractObjective objective, PlayerInteractEvent.EntityInteract event) {
+		String targetStr = objective.getEntityTypeId();
+		if (targetStr != null) {
+			ResourceLocation id = ResourceLocation.tryParse(targetStr);
+			if (id == null || !BuiltInRegistries.ENTITY_TYPE.containsKey(id)) return false;
+			EntityType<?> requiredType = BuiltInRegistries.ENTITY_TYPE.get(id);
+			if (!event.getTarget().getType().equals(requiredType)) return false;
 		}
-		if (remaining != maxCount) inventory.setChanged();
-		return maxCount - remaining;
+		String requiredName = objective.getEntityName();
+		return requiredName == null || requiredName.isBlank()
+				|| event.getTarget().getName().getString().equals(requiredName);
 	}
 
 	private static void processDragonSummonObjectives(ServerPlayer player, PlayerQuestData pqd, String questKey, Quest quest,
@@ -486,6 +513,9 @@ public class QuestEvents {
 	}
 
 	private static void processAcceptedQuests(ServerPlayer player, StatsData data, AcceptedQuestProcessor processor) {
+		if (StorageManager.isLoadPending(player)) {
+			return;
+		}
 		PlayerQuestData pqd = data.getPlayerQuestData();
 		Set<String> acceptedIds = pqd.getAcceptedQuestIds();
 		for (String questKey : acceptedIds) {
@@ -534,31 +564,6 @@ public class QuestEvents {
 			}
 		}
 		return false;
-	}
-
-	private static void notifyQuestFailure(ServerPlayer controller, Set<String> failedQuestIds) {
-		List<ServerPlayer> partyMembers = PartyManager.getAllPartyMembers(controller);
-		for (String questKey : failedQuestIds) {
-			for (ServerPlayer member : partyMembers) {
-				NetworkHandler.sendToPlayer(StoryToastS2C.questFailed(questKey), member);
-			}
-		}
-	}
-
-	private static int countItems(ServerPlayer player, String itemId) {
-		try {
-			Item item = BuiltInRegistries.ITEM.get(ResourceLocation.parse(itemId));
-			int count = 0;
-			for (int i = 0; i < player.getInventory().getContainerSize(); i++) {
-				ItemStack stack = player.getInventory().getItem(i);
-				if (stack.getItem() == item) {
-					count += stack.getCount();
-				}
-			}
-			return count;
-		} catch (Exception e) {
-			return 0;
-		}
 	}
 
 	private static boolean matchesKillObjective(LivingEntity killedEntity, String questKey, int objectiveIndex,
@@ -628,8 +633,11 @@ public class QuestEvents {
 		return isFirstUncompleted(pqd, questKey, quest, killBlockStart);
 	}
 
-	private static boolean isFirstUncompleted(PlayerQuestData pqd, String questKey, Quest quest, int targetIndex) {
+	static boolean isFirstUncompleted(PlayerQuestData pqd, String questKey, Quest quest, int targetIndex) {
 		for (int i = 0; i < targetIndex; i++) {
+			if (QuestService.isTurnInTalk(quest, quest.getObjectives().get(i))) {
+				continue;
+			}
 			int progress = pqd.getObjectiveProgress(questKey, i);
 			if (progress < quest.getObjectiveRequired(pqd, questKey, i)) {
 				return false;
@@ -638,24 +646,8 @@ public class QuestEvents {
 		return true;
 	}
 
-	private static void updatePartyProgress(List<ServerPlayer> members, String questKey, Quest quest, int objectiveIndex, int newProgress) {
-		for (ServerPlayer member : members) {
-			StatsProvider.get(StatsCapability.INSTANCE, member).ifPresent(data -> {
-				PlayerQuestData pqd = data.getPlayerQuestData();
-				if (!pqd.isQuestAccepted(questKey) || pqd.isQuestCompleted(questKey)) {
-					return;
-				}
-				if (!quest.isParallelObjectives() && !isFirstUncompleted(pqd, questKey, quest, objectiveIndex)) {
-					return;
-				}
-				updateProgress(member, pqd, questKey, quest, objectiveIndex, newProgress);
-				checkAndComplete(member, pqd, questKey, quest);
-			});
-		}
-	}
-
 	static void updateProgress(ServerPlayer player, PlayerQuestData pqd, String questKey, Quest quest,
-									   int objectiveIndex, int newProgress) {
+										   int objectiveIndex, int newProgress) {
 		int current = pqd.getObjectiveProgress(questKey, objectiveIndex);
 		if (current == newProgress) {
 			return;
@@ -670,7 +662,7 @@ public class QuestEvents {
 				questKey,
 				resolved != null ? resolved.saga() : null,
 				quest,
-				PartyManager.getAllPartyMembers(player),
+				QuestParty.allParticipants(player, questKey),
 				objectiveIndex,
 				current,
 				newProgress,
@@ -679,7 +671,7 @@ public class QuestEvents {
 		if (MinecraftForge.EVENT_BUS.post(progressEvent)) {
 			return;
 		}
-		newProgress = progressEvent.getNewProgress();
+		newProgress = Math.max(0, progressEvent.getNewProgress());
 		if (current == newProgress) {
 			return;
 		}
@@ -696,11 +688,11 @@ public class QuestEvents {
 			}
 		}
 
-		NetworkHandler.sendToTrackingEntityAndSelf(new ProgressionSyncS2C(player), player);
+		NetworkHandler.sendToPlayer(new ProgressionSyncS2C(player), player);
 	}
 
 	static void checkAndComplete(ServerPlayer player, PlayerQuestData pqd, String questKey, Quest quest) {
-		if (pqd.isQuestCompleted(questKey) || QuestService.requiresTurnInAction(quest)) {
+		if (!pqd.isQuestAccepted(questKey) || QuestService.requiresTurnInAction(quest)) {
 			return;
 		}
 
@@ -717,7 +709,7 @@ public class QuestEvents {
 				questKey,
 				resolved != null ? resolved.saga() : null,
 				quest,
-				PartyManager.getAllPartyMembers(player)
+				QuestParty.allParticipants(player, questKey)
 		);
 		if (MinecraftForge.EVENT_BUS.post(completeEvent)) {
 			return;
@@ -729,9 +721,29 @@ public class QuestEvents {
 			pqd.setTrackedQuestId(null);
 		}
 		NetworkHandler.sendToPlayer(StoryToastS2C.questComplete(questKey), player);
-		NetworkHandler.sendToTrackingEntityAndSelf(new ProgressionSyncS2C(player), player);
+		QuestService.syncQuestState(player);
 	}
 
+	private static void forEachSharedQuest(ServerPlayer actor, SharedQuestProcessor processor) {
+		PlayerQuestData actorData = QuestParty.questData(actor);
+		if (actorData == null) {
+			return;
+		}
+		Set<String> actorQuests = actorData.getAcceptedQuestIds();
+		for (ServerPlayer member : QuestParty.nearbyMembers(actor)) {
+			StatsProvider.get(StatsCapability.INSTANCE, member).ifPresent(data ->
+					processAcceptedQuests(member, data, (questKey, quest, pqd) -> {
+						if (member == actor || actorQuests.contains(questKey)) {
+							processor.process(member, questKey, quest, pqd);
+						}
+					}));
+		}
+	}
+
+	@FunctionalInterface
+	private interface SharedQuestProcessor {
+		void process(ServerPlayer member, String questKey, Quest quest, PlayerQuestData pqd);
+	}
 
 	@FunctionalInterface
 	private interface AcceptedQuestProcessor {

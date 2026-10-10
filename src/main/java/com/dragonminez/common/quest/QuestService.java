@@ -2,6 +2,7 @@ package com.dragonminez.common.quest;
 
 import com.dragonminez.Env;
 import com.dragonminez.LogUtil;
+import com.dragonminez.common.alignment.NpcDispositionService;
 import com.dragonminez.common.events.DMZEvent;
 import com.dragonminez.common.init.entities.MastersEntity;
 import com.dragonminez.common.init.entities.ai.AiTierResolver;
@@ -11,37 +12,41 @@ import com.dragonminez.common.network.NetworkHandler;
 import com.dragonminez.common.network.S2C.ProgressionSyncS2C;
 import com.dragonminez.common.network.S2C.SagaTitleCardS2C;
 import com.dragonminez.common.network.S2C.StoryToastS2C;
+import com.dragonminez.common.quest.objectives.DeliverObjective;
+import com.dragonminez.common.quest.objectives.ItemObjective;
 import com.dragonminez.common.quest.objectives.KillObjective;
 import com.dragonminez.common.quest.objectives.TalkToObjective;
+import com.dragonminez.common.quest.rewards.KiTechniqueReward;
 import com.dragonminez.common.stats.StatsCapability;
 import com.dragonminez.common.stats.StatsData;
 import com.dragonminez.common.stats.StatsProvider;
+import com.dragonminez.server.storage.StorageManager;
 import net.minecraft.ChatFormatting;
 import net.minecraft.core.BlockPos;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
-import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.util.Mth;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntityType;
+import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.Mob;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.AABB;
 import net.minecraftforge.common.MinecraftForge;
-import net.minecraftforge.registries.ForgeRegistries;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 
-// Es como el QuestRegistry.java pero en vez de ser puras tecnicalidades, ahora usa cosas de MC directamente. Este es como
-// el "bridge" para los packets.
 public final class QuestService {
 
 	public static final String QUEST_KEY_TAG = "dmz_quest_key";
@@ -93,51 +98,95 @@ public final class QuestService {
 		return new ResolvedQuest(questKey, quest, saga);
 	}
 
+	public static void clearPlayer(UUID playerId) {
+		resummonAntiSpam.remove(playerId);
+	}
+
 	@Nullable
 	public static Component startQuest(ServerPlayer requester, String questKey) {
 		ResolvedQuest resolved = resolveQuest(questKey);
 		if (resolved == null) {
-			return Component.translatable("message.dragonminez.quest.start.unavailable");
+			return unavailable();
 		}
 
-		ServerPlayer controller = PartyManager.resolveQuestController(requester);
-		if (controller == null) {
-			return Component.translatable("message.dragonminez.quest.start.unavailable");
-		}
-
-		StatsData data = StatsProvider.get(StatsCapability.INSTANCE, controller).resolve().orElse(null);
+		StatsData data = stats(requester);
 		if (data == null) {
-			return Component.translatable("message.dragonminez.quest.start.unavailable");
+			return unavailable();
 		}
-		return startQuest(requester, controller, resolved, data,
-				data.getPlayerQuestData().getDifficulty());
+
+		Component blocker = describeStartBlocker(requester, data, resolved, true);
+		if (blocker != null) {
+			return blocker;
+		}
+
+		Quest quest = resolved.quest();
+		List<ServerPlayer> joiners = new ArrayList<>();
+		joiners.add(requester);
+		for (ServerPlayer member : QuestParty.nearbyMembers(requester)) {
+			if (member == requester || StorageManager.isLoadPending(member)) continue;
+			StatsData memberData = stats(member);
+			if (memberData == null || memberData.getPlayerQuestData().isQuestAccepted(questKey)) continue;
+
+			Component memberBlocker = describeStartBlocker(member, memberData, resolved, false);
+			if (memberBlocker == null && quest.getQuestGiver() != null && !quest.getQuestGiver().isBlank()) {
+				memberBlocker = NpcDispositionService.masterAlignmentBlocker(memberData, quest.getQuestGiver());
+			}
+			if (memberBlocker == null) {
+				joiners.add(member);
+			} else if (!isFinishedFor(memberData.getPlayerQuestData(), resolved)) {
+				requester.sendSystemMessage(Component.translatable("message.dragonminez.quest.start.party_member_skipped",
+						member.getGameProfile().getName(), memberBlocker).withStyle(ChatFormatting.YELLOW));
+			}
+		}
+
+		DMZEvent.QuestStartEvent startEvent = new DMZEvent.QuestStartEvent(
+				requester,
+				questKey,
+				resolved.saga(),
+				quest,
+				joiners,
+				data.getPlayerQuestData().getDifficulty()
+		);
+		if (MinecraftForge.EVENT_BUS.post(startEvent)) {
+			return unavailable();
+		}
+
+		Difficulty difficulty = startEvent.getDifficulty();
+		for (ServerPlayer joiner : joiners) {
+			StatsData joinerData = stats(joiner);
+			if (joinerData != null) beginQuest(joiner, joinerData.getPlayerQuestData(), resolved, difficulty);
+		}
+
+		int partySize = Math.max(1, QuestParty.participants(requester, questKey).size());
+		for (ServerPlayer joiner : joiners) {
+			PlayerQuestData joinerQuests = QuestParty.questData(joiner);
+			if (joinerQuests != null) quest.initializeObjectiveRequirements(joinerQuests, questKey, partySize);
+		}
+
+		try {
+			spawnKillObjectives(requester, resolved, partySize, difficulty);
+		} catch (Exception exception) {
+			LogUtil.error(Env.SERVER, "Failed to spawn kill objectives for quest '" + questKey
+					+ "' started by " + requester.getGameProfile().getName(), exception);
+		}
+
+		for (ServerPlayer joiner : joiners) {
+			NetworkHandler.sendToPlayer(StoryToastS2C.questStarted(questKey), joiner);
+			syncQuestState(joiner);
+		}
+		return null;
 	}
 
-	/**
-	 * Re-spawns only the still-missing quest-spawned kill enemies for an already-accepted quest.
-	 * Backs the "Start" button reappearing in the quest tree: progress already made is honoured,
-	 * so a "kill 3 / kill 5" objective with 2 / 3 done re-summons just 1 and 2.
-	 */
 	@Nullable
 	public static Component resummonQuest(ServerPlayer requester, String questKey) {
 		ResolvedQuest resolved = resolveQuest(questKey);
 		if (resolved == null) {
-			return Component.translatable("message.dragonminez.quest.start.unavailable");
+			return unavailable();
 		}
 
-		ServerPlayer controller = PartyManager.resolveQuestController(requester);
-		if (controller == null) {
-			return Component.translatable("message.dragonminez.quest.start.unavailable");
-		}
-
-		StatsData data = StatsProvider.get(StatsCapability.INSTANCE, controller).resolve().orElse(null);
-		if (data == null) {
-			return Component.translatable("message.dragonminez.quest.start.unavailable");
-		}
-
-		PlayerQuestData pqd = data.getPlayerQuestData();
-		if (pqd.getQuestStatus(questKey) != PlayerQuestData.QuestStatus.ACCEPTED) {
-			return Component.translatable("message.dragonminez.quest.start.unavailable");
+		PlayerQuestData pqd = QuestParty.questData(requester);
+		if (pqd == null || pqd.getQuestStatus(questKey) != PlayerQuestData.QuestStatus.ACCEPTED) {
+			return unavailable();
 		}
 
 		long now = System.currentTimeMillis();
@@ -147,9 +196,9 @@ public final class QuestService {
 		}
 		resummonAntiSpam.put(requester.getUUID(), now);
 
-		int partySize = PartyManager.getAllPartyMembers(controller).size();
+		int partySize = Math.max(1, QuestParty.participants(requester, questKey).size());
 		try {
-			spawnKillObjectives(requester, resolved, pqd, partySize, pqd.getQuestDifficulty(questKey));
+			spawnKillObjectives(requester, resolved, partySize, pqd.getQuestDifficulty(questKey));
 		} catch (Exception exception) {
 			LogUtil.error(Env.SERVER, "Failed to re-summon kill objectives for quest '" + questKey
 					+ "' requested by " + requester.getGameProfile().getName(), exception);
@@ -161,19 +210,105 @@ public final class QuestService {
 	public static Component turnInQuest(ServerPlayer requester, String questKey, @Nullable String npcId) {
 		ResolvedQuest resolved = resolveQuest(questKey);
 		if (resolved == null || npcId == null || npcId.isBlank() || !isTurnInNpcNearby(requester, npcId)) {
-			return Component.translatable("message.dragonminez.quest.start.unavailable");
+			return unavailable();
 		}
 
-		ServerPlayer controller = PartyManager.resolveQuestController(requester);
-		if (controller == null) {
-			return Component.translatable("message.dragonminez.quest.start.unavailable");
+		Quest quest = resolved.quest();
+		if (!requiresTurnInAction(quest) || !npcId.equalsIgnoreCase(quest.getTurnIn())) {
+			return unavailable();
 		}
 
-		StatsData data = StatsProvider.get(StatsCapability.INSTANCE, controller).resolve().orElse(null);
-		if (data == null) {
-			return Component.translatable("message.dragonminez.quest.start.unavailable");
+		PlayerQuestData pqd = QuestParty.questData(requester);
+		if (pqd == null) {
+			return unavailable();
 		}
-		return turnInQuest(requester, controller, resolved, data, npcId);
+
+		if (pqd.isQuestCompleted(questKey)) {
+			return claimRewardsForRequester(requester, quest, questKey) ? null : unavailable();
+		}
+		if (!pqd.isQuestAccepted(questKey)) {
+			return unavailable();
+		}
+
+		refreshItemObjectives(requester, pqd, resolved);
+		if (!areObjectivesReadyExceptDeliveries(pqd, questKey, quest, npcId)) {
+			return Component.translatable("message.dragonminez.quest.start.locked");
+		}
+
+		Component deliveryBlocker = describeDeliveryBlocker(requester, pqd, questKey, quest, npcId);
+		if (deliveryBlocker != null) {
+			return deliveryBlocker;
+		}
+
+		List<ServerPlayer> participants = QuestParty.participants(requester, questKey);
+		DMZEvent.QuestTurnInEvent turnInEvent = new DMZEvent.QuestTurnInEvent(
+				requester,
+				questKey,
+				resolved.saga(),
+				quest,
+				participants,
+				npcId
+		);
+		if (MinecraftForge.EVENT_BUS.post(turnInEvent)) {
+			return unavailable();
+		}
+
+		performDeliveries(requester, pqd, resolved, npcId, participants);
+		if (!areDeliveriesComplete(pqd, questKey, quest, npcId)) {
+			syncQuestState(requester);
+			return Component.translatable("message.dragonminez.quest.start.locked");
+		}
+
+		if (!finishTurnIn(requester, pqd, resolved, npcId, participants)) {
+			syncQuestState(requester);
+			return unavailable();
+		}
+
+		for (ServerPlayer participant : participants) {
+			if (participant == requester) continue;
+			PlayerQuestData participantData = QuestParty.questData(participant);
+			if (participantData == null || !participantData.isQuestAccepted(questKey)) continue;
+			refreshItemObjectives(participant, participantData, resolved);
+			if (!areObjectivesReadyExceptDeliveries(participantData, questKey, quest, npcId)) continue;
+			if (!areDeliveriesComplete(participantData, questKey, quest, npcId)) continue;
+			finishTurnIn(participant, participantData, resolved, npcId, participants);
+		}
+
+		requester.displayClientMessage(
+				Component.translatable("command.dragonminez.story.sidequest.turned_in", questKey), false);
+		claimRewardsForRequester(requester, quest, questKey);
+		return null;
+	}
+
+	private static boolean finishTurnIn(ServerPlayer player, PlayerQuestData pqd, ResolvedQuest resolved, String npcId,
+										List<ServerPlayer> participants) {
+		Quest quest = resolved.quest();
+		String questKey = resolved.questKey();
+		for (int i = 0; i < quest.getObjectives().size(); i++) {
+			QuestObjective objective = quest.getObjectives().get(i);
+			if (objective instanceof TalkToObjective talkTo && npcId.equalsIgnoreCase(talkTo.getNpcId())) {
+				setObjectiveProgress(player, pqd, resolved, participants, i, quest.getObjectiveRequired(pqd, questKey, i));
+			}
+		}
+
+		DMZEvent.QuestCompletedEvent completeEvent = new DMZEvent.QuestCompletedEvent(
+				player,
+				questKey,
+				resolved.saga(),
+				quest,
+				participants
+		);
+		if (MinecraftForge.EVENT_BUS.post(completeEvent)) {
+			return false;
+		}
+
+		pqd.completeQuest(questKey);
+		if (questKey.equals(pqd.getTrackedQuestId())) {
+			pqd.setTrackedQuestId(null);
+		}
+		NetworkHandler.sendToPlayer(StoryToastS2C.questComplete(questKey), player);
+		syncQuestState(player);
+		return true;
 	}
 
 	private static boolean isTurnInNpcNearby(ServerPlayer player, String npcId) {
@@ -195,43 +330,37 @@ public final class QuestService {
 			return;
 		}
 
-		StatsProvider.get(StatsCapability.INSTANCE, requester).ifPresent(data -> {
-			PlayerQuestData pqd = data.getPlayerQuestData();
-			if (!pqd.isQuestCompleted(questKey)) {
-				return;
-			}
+		PlayerQuestData pqd = QuestParty.questData(requester);
+		if (pqd == null || !pqd.isQuestCompleted(questKey)) {
+			return;
+		}
 
-			if (claimAvailableRewards(requester, resolved.quest(), questKey, pqd)) {
-				syncQuestState(requester);
-			}
-		});
+		if (claimAvailableRewards(requester, resolved.quest(), questKey, pqd)) {
+			syncQuestState(requester);
+		}
 	}
 
-	/**
-	 * Claims every unclaimed reward across all completed quests for the player.
-	 * NPC-only quests are skipped (they must be claimed by talking to their NPC).
-	 * Each party member claims their own rewards independently.
-	 */
 	public static void claimAllRewards(ServerPlayer requester) {
-		StatsProvider.get(StatsCapability.INSTANCE, requester).ifPresent(data -> {
-			PlayerQuestData pqd = data.getPlayerQuestData();
-			boolean anyClaimed = false;
+		PlayerQuestData pqd = QuestParty.questData(requester);
+		if (pqd == null) {
+			return;
+		}
 
-			for (String questKey : new ArrayList<>(pqd.getCompletedQuestIds())) {
-				ResolvedQuest resolved = resolveQuest(questKey);
-				if (resolved == null) {
-					continue;
-				}
-				if (resolved.quest().getClaimMode() == Quest.ClaimMode.NPC_ONLY) {
-					continue;
-				}
-				anyClaimed |= claimAvailableRewards(requester, resolved.quest(), questKey, pqd);
+		boolean anyClaimed = false;
+		for (String questKey : new ArrayList<>(pqd.getCompletedQuestIds())) {
+			ResolvedQuest resolved = resolveQuest(questKey);
+			if (resolved == null) {
+				continue;
 			}
+			if (resolved.quest().getClaimMode() == Quest.ClaimMode.NPC_ONLY) {
+				continue;
+			}
+			anyClaimed |= claimAvailableRewards(requester, resolved.quest(), questKey, pqd);
+		}
 
-			if (anyClaimed) {
-				syncQuestState(requester);
-			}
-		});
+		if (anyClaimed) {
+			syncQuestState(requester);
+		}
 	}
 
 	public static boolean isTurnInReady(PlayerQuestData pqd, String questKey, Quest quest) {
@@ -240,18 +369,59 @@ public final class QuestService {
 		}
 
 		for (int i = 0; i < quest.getObjectives().size(); i++) {
-			QuestObjective objective = quest.getObjectives().get(i);
-			if (objective.getType() == QuestObjective.ObjectiveType.TALK_TO) {
+			if (isTurnInTalk(quest, quest.getObjectives().get(i))) {
 				continue;
 			}
-
-			int progress = pqd.getObjectiveProgress(questKey, i);
-			if (progress < quest.getObjectiveRequired(pqd, questKey, i)) {
+			if (pqd.getObjectiveProgress(questKey, i) < quest.getObjectiveRequired(pqd, questKey, i)) {
 				return false;
 			}
 		}
 
 		return true;
+	}
+
+	public static boolean isTurnInReady(ServerPlayer player, PlayerQuestData pqd, String questKey, Quest quest) {
+		if (player == null) {
+			return isTurnInReady(pqd, questKey, quest);
+		}
+		if (pqd == null || quest == null || !requiresTurnInAction(quest)) {
+			return false;
+		}
+
+		String npcId = quest.getTurnIn();
+		Map<net.minecraft.world.item.Item, Integer> needed = new HashMap<>();
+		Map<net.minecraft.world.item.Item, DeliverObjective> sample = new HashMap<>();
+		for (int i = 0; i < quest.getObjectives().size(); i++) {
+			QuestObjective objective = quest.getObjectives().get(i);
+			if (isTurnInTalk(quest, objective)) {
+				continue;
+			}
+			int required = quest.getObjectiveRequired(pqd, questKey, i);
+			int progress = pqd.getObjectiveProgress(questKey, i);
+			if (objective instanceof ItemObjective itemObjective) {
+				progress = Math.min(QuestParty.countItemById(player, itemObjective.getItemId()), required);
+			}
+			if (progress >= required) {
+				continue;
+			}
+			if (objective instanceof DeliverObjective deliver && deliver.matchesNpc(npcId) && deliver.getItem() != null) {
+				needed.merge(deliver.getItem(), required - progress, Integer::sum);
+				sample.putIfAbsent(deliver.getItem(), deliver);
+				continue;
+			}
+			return false;
+		}
+		for (Map.Entry<net.minecraft.world.item.Item, Integer> entry : needed.entrySet()) {
+			if (partyHeld(player, sample.get(entry.getKey())) < entry.getValue()) {
+				return false;
+			}
+		}
+		return true;
+	}
+
+	public static boolean isTurnInTalk(Quest quest, QuestObjective objective) {
+		return objective instanceof TalkToObjective talkTo && requiresTurnInAction(quest)
+				&& talkTo.getNpcId() != null && talkTo.getNpcId().equalsIgnoreCase(quest.getTurnIn());
 	}
 
 	public static boolean requiresTurnInAction(Quest quest) {
@@ -269,6 +439,7 @@ public final class QuestService {
 		}
 
 		PlayerQuestData pqd = data.getPlayerQuestData();
+		ServerPlayer player = data.getPlayer() instanceof ServerPlayer serverPlayer ? serverPlayer : null;
 		Map<String, Quest> allQuests = QuestRegistry.getAllQuests();
 		long now = System.currentTimeMillis();
 
@@ -312,7 +483,7 @@ public final class QuestService {
 			if (!pqd.isQuestAccepted(questId)) {
 				continue;
 			}
-			if (isTurnInReady(pqd, questId, quest) && !turnInQuestIds.contains(questId)) {
+			if (isTurnInReady(player, pqd, questId, quest) && !turnInQuestIds.contains(questId)) {
 				turnInQuestIds.add(questId);
 			}
 		}
@@ -320,210 +491,132 @@ public final class QuestService {
 		return new NPCQuestOptions(offerableQuestIds, turnInQuestIds, inProgressQuestIds, lockedQuests);
 	}
 
-	public static void spawnKillObjectivesForQuest(ServerPlayer requester, String questKey, int partySize, Difficulty difficulty) {
-		ResolvedQuest resolved = resolveQuest(questKey);
-		if (resolved == null) {
-			return;
-		}
-
-		StatsProvider.get(StatsCapability.INSTANCE, requester).ifPresent(data ->
-				spawnKillObjectives(requester, resolved, data.getPlayerQuestData(), partySize, difficulty));
-	}
-
-	private static Component startQuest(ServerPlayer requester, ServerPlayer controller, ResolvedQuest resolved,
-									 StatsData data, Difficulty difficulty) {
-		PlayerQuestData pqd = data.getPlayerQuestData();
-		String questKey = resolved.questKey();
+	@Nullable
+	public static Component deliverOnInteract(ServerPlayer player, PlayerQuestData pqd, ResolvedQuest resolved,
+											  String npcId, int objectiveIndex) {
 		Quest quest = resolved.quest();
-		List<ServerPlayer> partyMembers = PartyManager.getAllPartyMembers(controller);
-
-		PlayerQuestData.QuestStatus questStatus = pqd.getQuestStatus(questKey);
-		boolean restartingFailed = questStatus == PlayerQuestData.QuestStatus.FAILED;
-		boolean restartingRepeat = questStatus == PlayerQuestData.QuestStatus.SUCCESS
-				&& quest.isRepeatReady(pqd.getLastCompletedRealMs(questKey), System.currentTimeMillis());
-		if ((pqd.isQuestCompleted(questKey) && !restartingRepeat)
-				|| questStatus == PlayerQuestData.QuestStatus.ACCEPTED) {
-			return Component.translatable("message.dragonminez.quest.start.already_active");
+		String questKey = resolved.questKey();
+		if (!(quest.getObjectives().get(objectiveIndex) instanceof DeliverObjective deliver)) {
+			return null;
+		}
+		int required = quest.getObjectiveRequired(pqd, questKey, objectiveIndex);
+		int remaining = required - pqd.getObjectiveProgress(questKey, objectiveIndex);
+		if (remaining <= 0) {
+			return null;
 		}
 
-		if (!restartingFailed && !isQuestAvailableToStart(resolved, data)) {
-			Component reason = QuestAvailabilityChecker.describeAvailabilityFailure(quest, data);
-			return reason != null ? reason : Component.translatable("message.dragonminez.quest.start.locked");
+		int held = QuestParty.countItem(player, deliver.getItem());
+		if (held < remaining) {
+			return partyHeld(player, deliver) >= remaining
+					? carryAllMessage(deliver, remaining, held)
+					: null;
 		}
 
-		Component controllerBlocker = restartingFailed
-				? QuestAvailabilityChecker.describeStartRequirementFailure(quest, questKey, controller, data)
-				: QuestAvailabilityChecker.describeQuestStartBlocker(quest, questKey, controller, data);
-		if (controllerBlocker != null) {
-			if (requester.getUUID().equals(controller.getUUID())) {
-				return controllerBlocker;
-			}
-			return Component.translatable(
-					"message.dragonminez.quest.start.party_member_requirement",
-					controller.getGameProfile().getName(),
-					controllerBlocker
-			);
+		QuestParty.consumeItem(player, deliver.getItem(), remaining);
+		List<ServerPlayer> participants = QuestParty.participants(player, questKey);
+		for (ServerPlayer participant : participants) {
+			PlayerQuestData participantData = participant == player ? pqd : QuestParty.questData(participant);
+			if (participantData == null) continue;
+			setObjectiveProgress(participant, participantData, resolved, participants, objectiveIndex,
+					quest.getObjectiveRequired(participantData, questKey, objectiveIndex));
 		}
-
-		Component partyBlocker = getPartyRequirementFailure(requester, controller, quest, questKey, restartingFailed);
-		if (partyBlocker != null) {
-			return partyBlocker;
-		}
-
-		DMZEvent.QuestStartEvent startEvent = new DMZEvent.QuestStartEvent(
-				controller,
-				questKey,
-				resolved.saga(),
-				quest,
-				partyMembers,
-				difficulty
-		);
-		if (MinecraftForge.EVENT_BUS.post(startEvent)) {
-			return Component.translatable("message.dragonminez.quest.start.unavailable");
-		}
-
-		int partySize = partyMembers.size();
-		if (restartingRepeat) pqd.restartCompletedQuest(questKey);
-		pqd.acceptQuest(questKey);
-		pqd.setQuestAcceptedGameTime(questKey, controller.serverLevel().getGameTime());
-		quest.initializeObjectiveRequirements(pqd, questKey, partySize);
-		pqd.setQuestDifficulty(questKey, startEvent.getDifficulty());
-		pqd.setTrackedQuestId(questKey);
-
-		if (resolved.saga() != null && isFirstSagaQuestStart(resolved.saga(), questKey, pqd)) {
-			SagaTitleCardS2C titleCard = new SagaTitleCardS2C(resolved.saga().getName());
-			NetworkHandler.sendToPlayer(titleCard, controller);
-			for (ServerPlayer member : partyMembers) {
-				if (!member.getUUID().equals(controller.getUUID())) {
-					NetworkHandler.sendToPlayer(titleCard, member);
-				}
-			}
-		}
-
-		try {
-			spawnKillObjectives(requester, resolved, pqd, partySize, startEvent.getDifficulty());
-		} catch (Exception exception) {
-			LogUtil.error(Env.SERVER, "Failed to spawn kill objectives for quest '" + questKey
-					+ "' started by " + requester.getGameProfile().getName(), exception);
-		}
-
-		NetworkHandler.sendToPlayer(StoryToastS2C.questStarted(questKey), controller);
-		if (PartyManager.isInParty(controller)) {
-			PartyManager.syncPartyQuestState(controller);
-			for (ServerPlayer member : partyMembers) {
-				if (!member.getUUID().equals(controller.getUUID())) {
-					NetworkHandler.sendToPlayer(StoryToastS2C.questStarted(questKey), member);
-				}
-			}
-		} else {
-			NetworkHandler.sendToTrackingEntityAndSelf(new ProgressionSyncS2C(controller), controller);
-		}
-
 		return null;
 	}
 
-	/** True when no other quest of the saga has ever been started — i.e. this start begins the saga. */
-	private static boolean isFirstSagaQuestStart(Saga saga, String startedQuestKey, PlayerQuestData pqd) {
-		for (Quest sagaQuest : saga.getQuests()) {
-			String key = PlayerQuestData.sagaQuestKey(saga.getId(), sagaQuest.getId());
-			if (key.equals(startedQuestKey)) continue;
-			if (pqd.getQuestStatus(key) != PlayerQuestData.QuestStatus.NOT_STARTED) return false;
+	private static boolean areObjectivesReadyExceptDeliveries(PlayerQuestData pqd, String questKey, Quest quest, String npcId) {
+		for (int i = 0; i < quest.getObjectives().size(); i++) {
+			QuestObjective objective = quest.getObjectives().get(i);
+			if (isTurnInTalk(quest, objective)) continue;
+			if (objective instanceof DeliverObjective deliver && deliver.matchesNpc(npcId)) continue;
+			if (pqd.getObjectiveProgress(questKey, i) < quest.getObjectiveRequired(pqd, questKey, i)) return false;
 		}
 		return true;
 	}
 
-	private static Component turnInQuest(ServerPlayer requester, ServerPlayer controller, ResolvedQuest resolved,
-									 StatsData data, String npcId) {
-		Quest quest = resolved.quest();
-		String questKey = resolved.questKey();
-		PlayerQuestData pqd = data.getPlayerQuestData();
-		List<ServerPlayer> partyMembers = PartyManager.getAllPartyMembers(controller);
-
-		if (!requiresTurnInAction(quest) || !npcId.equals(quest.getTurnIn())) {
-			return Component.translatable("message.dragonminez.quest.start.unavailable");
-		}
-
-		if (pqd.isQuestCompleted(questKey)) {
-			if (claimRewardsForRequester(requester, quest, questKey)) {
-				return null;
-			}
-			return Component.translatable("message.dragonminez.quest.start.unavailable");
-		}
-		if (!pqd.isQuestAccepted(questKey)) {
-			return Component.translatable("message.dragonminez.quest.start.unavailable");
-		}
-		if (!isTurnInReady(pqd, questKey, quest)) {
-			return Component.translatable("message.dragonminez.quest.start.locked");
-		}
-
-		DMZEvent.QuestTurnInEvent turnInEvent = new DMZEvent.QuestTurnInEvent(
-				controller,
-				questKey,
-				resolved.saga(),
-				quest,
-				partyMembers,
-				npcId
-		);
-		if (MinecraftForge.EVENT_BUS.post(turnInEvent)) {
-			return Component.translatable("message.dragonminez.quest.start.unavailable");
-		}
-
-		boolean objectiveProgressChanged = false;
+	private static boolean areDeliveriesComplete(PlayerQuestData pqd, String questKey, Quest quest, String npcId) {
 		for (int i = 0; i < quest.getObjectives().size(); i++) {
-			QuestObjective objective = quest.getObjectives().get(i);
-			if (objective instanceof TalkToObjective talkToObjective && npcId.equals(talkToObjective.getNpcId())) {
-				int required = quest.getObjectiveRequired(pqd, questKey, i);
-				objectiveProgressChanged |= updateObjectiveProgressWithEvent(
-						controller,
-						pqd,
-						resolved,
-						quest,
-						partyMembers,
-						i,
-						required
-				);
+			if (quest.getObjectives().get(i) instanceof DeliverObjective deliver && deliver.matchesNpc(npcId)
+					&& pqd.getObjectiveProgress(questKey, i) < quest.getObjectiveRequired(pqd, questKey, i)) {
+				return false;
 			}
 		}
+		return true;
+	}
 
-		DMZEvent.QuestCompletedEvent completeEvent = new DMZEvent.QuestCompletedEvent(
-				controller,
-				questKey,
-				resolved.saga(),
-				quest,
-				partyMembers
-		);
-		if (MinecraftForge.EVENT_BUS.post(completeEvent)) {
-			if (objectiveProgressChanged) {
-				syncQuestState(controller);
+	@Nullable
+	private static Component describeDeliveryBlocker(ServerPlayer player, PlayerQuestData pqd, String questKey,
+													 Quest quest, String npcId) {
+		Map<net.minecraft.world.item.Item, Integer> needed = new HashMap<>();
+		Map<net.minecraft.world.item.Item, DeliverObjective> sample = new HashMap<>();
+		for (int i = 0; i < quest.getObjectives().size(); i++) {
+			if (!(quest.getObjectives().get(i) instanceof DeliverObjective deliver) || !deliver.matchesNpc(npcId)) continue;
+			int remaining = quest.getObjectiveRequired(pqd, questKey, i) - pqd.getObjectiveProgress(questKey, i);
+			if (remaining <= 0 || deliver.getItem() == null) continue;
+			needed.merge(deliver.getItem(), remaining, Integer::sum);
+			sample.putIfAbsent(deliver.getItem(), deliver);
+		}
+
+		for (Map.Entry<net.minecraft.world.item.Item, Integer> entry : needed.entrySet()) {
+			int held = QuestParty.countItem(player, entry.getKey());
+			if (held >= entry.getValue()) continue;
+			DeliverObjective deliver = sample.get(entry.getKey());
+			if (partyHeld(player, deliver) >= entry.getValue()) {
+				return carryAllMessage(deliver, entry.getValue(), held);
 			}
-			return Component.translatable("message.dragonminez.quest.start.unavailable");
+			return Component.translatable("message.dragonminez.quest.deliver.missing",
+					entry.getValue(), deliver.getItem().getDescription(), held);
 		}
-
-		pqd.completeQuest(questKey);
-		if (questKey.equals(pqd.getTrackedQuestId())) {
-			pqd.setTrackedQuestId(null);
-		}
-
-		requester.displayClientMessage(
-				Component.translatable("command.dragonminez.story.sidequest.turned_in", questKey), false);
-		NetworkHandler.sendToPlayer(StoryToastS2C.questComplete(questKey), controller);
-
-		if (PartyManager.isInParty(controller)) {
-			for (ServerPlayer member : partyMembers) {
-				if (!member.getUUID().equals(controller.getUUID())) {
-					NetworkHandler.sendToPlayer(StoryToastS2C.questComplete(questKey), member);
-				}
-			}
-		}
-		syncQuestState(controller);
-		claimRewardsForRequester(requester, quest, questKey);
-
 		return null;
 	}
 
-	private static boolean updateObjectiveProgressWithEvent(ServerPlayer controller, PlayerQuestData pqd,
-												  ResolvedQuest resolved, Quest quest, List<ServerPlayer> partyMembers,
-												  int objectiveIndex, int newProgress) {
+	private static void performDeliveries(ServerPlayer player, PlayerQuestData pqd, ResolvedQuest resolved, String npcId,
+										  List<ServerPlayer> participants) {
+		Quest quest = resolved.quest();
+		String questKey = resolved.questKey();
+		for (int i = 0; i < quest.getObjectives().size(); i++) {
+			if (!(quest.getObjectives().get(i) instanceof DeliverObjective deliver) || !deliver.matchesNpc(npcId)) continue;
+			int remaining = quest.getObjectiveRequired(pqd, questKey, i) - pqd.getObjectiveProgress(questKey, i);
+			if (remaining <= 0) continue;
+			if (QuestParty.consumeItem(player, deliver.getItem(), remaining) < remaining) continue;
+			for (ServerPlayer participant : participants) {
+				PlayerQuestData participantData = participant == player ? pqd : QuestParty.questData(participant);
+				if (participantData == null) continue;
+				setObjectiveProgress(participant, participantData, resolved, participants, i,
+						quest.getObjectiveRequired(participantData, questKey, i));
+			}
+		}
+	}
+
+	private static int partyHeld(ServerPlayer player, DeliverObjective deliver) {
+		if (deliver == null || deliver.getItem() == null) return 0;
+		int total = 0;
+		for (ServerPlayer member : QuestParty.nearbyMembers(player)) {
+			total += QuestParty.countItem(member, deliver.getItem());
+		}
+		return total;
+	}
+
+	private static Component carryAllMessage(DeliverObjective deliver, int needed, int held) {
+		return Component.translatable("message.dragonminez.quest.deliver.carry_all",
+				needed, deliver.getItem().getDescription(), held);
+	}
+
+	public static void refreshItemObjectives(ServerPlayer player, PlayerQuestData pqd, ResolvedQuest resolved) {
+		Quest quest = resolved.quest();
+		String questKey = resolved.questKey();
+		for (int i = 0; i < quest.getObjectives().size(); i++) {
+			if (!(quest.getObjectives().get(i) instanceof ItemObjective itemObjective)) continue;
+			int required = quest.getObjectiveRequired(pqd, questKey, i);
+			int held = Math.min(QuestParty.countItemById(player, itemObjective.getItemId()), required);
+			if (held != pqd.getObjectiveProgress(questKey, i)) {
+				setObjectiveProgress(player, pqd, resolved, List.of(player), i, held);
+			}
+		}
+	}
+
+	private static boolean setObjectiveProgress(ServerPlayer player, PlayerQuestData pqd, ResolvedQuest resolved,
+												List<ServerPlayer> partyMembers, int objectiveIndex, int newProgress) {
+		Quest quest = resolved.quest();
 		int current = pqd.getObjectiveProgress(resolved.questKey(), objectiveIndex);
 		if (current == newProgress) {
 			return false;
@@ -533,7 +626,7 @@ public final class QuestService {
 				? quest.getObjectiveRequired(pqd, resolved.questKey(), objectiveIndex)
 				: 0;
 		DMZEvent.QuestObjectiveProgressEvent progressEvent = new DMZEvent.QuestObjectiveProgressEvent(
-				controller,
+				player,
 				resolved.questKey(),
 				resolved.saga(),
 				quest,
@@ -547,12 +640,90 @@ public final class QuestService {
 			return false;
 		}
 
-		int updated = progressEvent.getNewProgress();
+		int updated = Math.max(0, progressEvent.getNewProgress());
 		if (updated == current) {
 			return false;
 		}
 
 		pqd.setObjectiveProgress(resolved.questKey(), objectiveIndex, updated);
+		return true;
+	}
+
+	private static Component describeStartBlocker(ServerPlayer player, StatsData data, ResolvedQuest resolved, boolean positional) {
+		PlayerQuestData pqd = data.getPlayerQuestData();
+		String questKey = resolved.questKey();
+		Quest quest = resolved.quest();
+
+		PlayerQuestData.QuestStatus status = pqd.getQuestStatus(questKey);
+		boolean restartingFailed = status == PlayerQuestData.QuestStatus.FAILED;
+		boolean restartingRepeat = status == PlayerQuestData.QuestStatus.SUCCESS
+				&& quest.isRepeatReady(pqd.getLastCompletedRealMs(questKey), System.currentTimeMillis());
+		if (status == PlayerQuestData.QuestStatus.ACCEPTED
+				|| (status == PlayerQuestData.QuestStatus.SUCCESS && !restartingRepeat)) {
+			return Component.translatable("message.dragonminez.quest.start.already_active");
+		}
+
+		if (!restartingFailed && !isQuestAvailableToStart(resolved, data)) {
+			Component reason = QuestAvailabilityChecker.describeAvailabilityFailure(quest, data);
+			return reason != null ? reason : Component.translatable("message.dragonminez.quest.start.locked");
+		}
+
+		if (positional) {
+			return restartingFailed
+					? QuestAvailabilityChecker.describeStartRequirementFailure(quest, questKey, player, data)
+					: QuestAvailabilityChecker.describeQuestStartBlocker(quest, questKey, player, data);
+		}
+		return restartingFailed
+				? QuestAvailabilityChecker.describeNonPositionalStartRequirementFailure(quest, questKey, player, data)
+				: QuestAvailabilityChecker.describeNonPositionalStartBlocker(quest, questKey, player, data);
+	}
+
+	private static boolean isFinishedFor(PlayerQuestData pqd, ResolvedQuest resolved) {
+		String questKey = resolved.questKey();
+		return pqd.isQuestCompleted(questKey)
+				&& !resolved.quest().isRepeatReady(pqd.getLastCompletedRealMs(questKey), System.currentTimeMillis());
+	}
+
+	private static void beginQuest(ServerPlayer player, PlayerQuestData pqd, ResolvedQuest resolved, Difficulty difficulty) {
+		String questKey = resolved.questKey();
+		Quest quest = resolved.quest();
+		boolean firstSagaStart = resolved.saga() != null && isFirstSagaQuestStart(resolved.saga(), questKey, pqd);
+
+		PlayerQuestData.QuestStatus status = pqd.getQuestStatus(questKey);
+		if (status == PlayerQuestData.QuestStatus.SUCCESS) {
+			claimAvailableRewards(player, quest, questKey, pqd);
+			pqd.restartCompletedQuest(questKey);
+		} else if (status == PlayerQuestData.QuestStatus.FAILED) {
+			pqd.restartFailedQuest(questKey);
+		}
+
+		pqd.acceptQuest(questKey);
+		pqd.setQuestAcceptedGameTime(questKey, player.serverLevel().getGameTime());
+		pqd.setAcceptedDimension(questKey, player.level().dimension().location().toString());
+		pqd.setObjectiveSignature(questKey, objectiveSignature(quest));
+		pqd.setQuestDifficulty(questKey, difficulty);
+		pqd.setTrackedQuestId(questKey);
+
+		if (firstSagaStart) {
+			NetworkHandler.sendToPlayer(new SagaTitleCardS2C(resolved.saga().getName()), player);
+		}
+	}
+
+	public static String objectiveSignature(Quest quest) {
+		StringBuilder builder = new StringBuilder();
+		for (QuestObjective objective : quest.getObjectives()) {
+			if (!builder.isEmpty()) builder.append('|');
+			builder.append(objective.getTypeKey()).append(':').append(objective.getRequired());
+		}
+		return builder.toString();
+	}
+
+	private static boolean isFirstSagaQuestStart(Saga saga, String startedQuestKey, PlayerQuestData pqd) {
+		for (Quest sagaQuest : saga.getQuests()) {
+			String key = PlayerQuestData.sagaQuestKey(saga.getId(), sagaQuest.getId());
+			if (key.equals(startedQuestKey)) continue;
+			if (pqd.getQuestStatus(key) != PlayerQuestData.QuestStatus.NOT_STARTED) return false;
+		}
 		return true;
 	}
 
@@ -585,12 +756,8 @@ public final class QuestService {
 	}
 
 	private static boolean claimRewardsForRequester(ServerPlayer requester, Quest quest, String questKey) {
-		StatsData data = StatsProvider.get(StatsCapability.INSTANCE, requester).resolve().orElse(null);
-		if (data == null) {
-			return false;
-		}
-		PlayerQuestData pqd = data.getPlayerQuestData();
-		if (!pqd.isQuestCompleted(questKey)) {
+		PlayerQuestData pqd = QuestParty.questData(requester);
+		if (pqd == null || !pqd.isQuestCompleted(questKey)) {
 			return false;
 		}
 		if (claimAvailableRewards(requester, quest, questKey, pqd)) {
@@ -602,16 +769,26 @@ public final class QuestService {
 
 	private static boolean claimAvailableRewards(ServerPlayer rewardTarget, Quest quest, String questKey, PlayerQuestData pqd) {
 		boolean anyClaimed = false;
+		boolean techniqueSlotsWarned = false;
 		List<QuestReward> rewards = quest.getRewards();
 		ResolvedQuest resolved = resolveQuest(questKey);
 		Saga saga = resolved != null ? resolved.saga() : null;
 		List<ServerPlayer> partyMembers = PartyManager.getAllPartyMembers(rewardTarget);
 		Difficulty questDifficulty = pqd.getQuestDifficulty(questKey);
 		for (int i = 0; i < rewards.size(); i++) {
+			QuestReward reward = rewards.get(i);
 			if (pqd.isRewardClaimed(questKey, i)) {
 				continue;
 			}
-			if (!rewards.get(i).isUnlockedFor(questDifficulty)) {
+			if (!reward.isUnlockedFor(questDifficulty)) {
+				continue;
+			}
+			if (reward instanceof KiTechniqueReward technique && !technique.canGrant(rewardTarget)) {
+				if (!techniqueSlotsWarned) {
+					rewardTarget.sendSystemMessage(Component.translatable("quest.dmz.reward.technique_slots_full")
+							.withStyle(ChatFormatting.RED));
+					techniqueSlotsWarned = true;
+				}
 				continue;
 			}
 			DMZEvent.QuestRewardClaimEvent rewardEvent = new DMZEvent.QuestRewardClaimEvent(
@@ -625,8 +802,13 @@ public final class QuestService {
 			if (MinecraftForge.EVENT_BUS.post(rewardEvent)) {
 				continue;
 			}
-			rewards.get(i).giveReward(rewardTarget, pqd.rewardMultiplierFor(rewards.get(i), questDifficulty));
 			pqd.claimReward(questKey, i);
+			try {
+				reward.giveReward(rewardTarget, pqd.rewardMultiplierFor(reward, questDifficulty));
+			} catch (Exception exception) {
+				LogUtil.error(Env.SERVER, "Quest reward " + i + " of '" + questKey + "' failed for "
+						+ rewardTarget.getGameProfile().getName(), exception);
+			}
 			anyClaimed = true;
 		}
 		return anyClaimed;
@@ -646,23 +828,42 @@ public final class QuestService {
 		return questIndex >= 0 && QuestAvailabilityChecker.isSagaQuestAvailable(quest, resolved.saga(), questIndex, data);
 	}
 
-	private static void spawnKillObjectives(ServerPlayer requester, ResolvedQuest resolved, PlayerQuestData pqd,
-											int partySize, Difficulty difficulty) {
+	private static Map<Integer, Integer> countAliveQuestMobs(ServerLevel level, String questKey, Set<String> ownerIds) {
+		Map<Integer, Integer> alive = new HashMap<>();
+		for (Entity entity : level.getAllEntities()) {
+			if (!(entity instanceof LivingEntity living) || !living.isAlive()) continue;
+			CompoundTag tags = entity.getPersistentData();
+			if (!questKey.equals(tags.getString(QUEST_KEY_TAG)) || !ownerIds.contains(tags.getString(QUEST_OWNER_TAG))) continue;
+			alive.merge(tags.getInt(QUEST_OBJECTIVE_INDEX_TAG), 1, Integer::sum);
+		}
+		return alive;
+	}
+
+	private static void spawnKillObjectives(ServerPlayer requester, ResolvedQuest resolved, int partySize, Difficulty difficulty) {
 		Quest quest = resolved.quest();
 		String questKey = resolved.questKey();
+		PlayerQuestData pqd = QuestParty.questData(requester);
+		if (pqd == null) {
+			return;
+		}
 
+		Set<String> ownerIds = new HashSet<>();
+		for (UUID memberId : PartyManager.getPartyMemberIds(requester)) {
+			ownerIds.add(memberId.toString());
+		}
+		ownerIds.add(requester.getStringUUID());
+		Map<Integer, Integer> alive = countAliveQuestMobs(requester.serverLevel(), questKey, ownerIds);
+
+		int[] toSpawn = new int[quest.getObjectives().size()];
 		int totalToSpawn = 0;
 		for (int i = 0; i < quest.getObjectives().size(); i++) {
-			QuestObjective objective = quest.getObjectives().get(i);
-			if (!(objective instanceof KillObjective killObjective)) {
+			if (!(quest.getObjectives().get(i) instanceof KillObjective killObjective)
+					|| killObjective.getSpawnMode() != KillObjective.SpawnMode.QUEST) {
 				continue;
 			}
-			if (killObjective.getSpawnMode() != KillObjective.SpawnMode.QUEST) {
-				continue;
-			}
-			int currentProgress = pqd.getObjectiveProgress(questKey, i);
-			int required = quest.getObjectiveRequired(pqd, questKey, i);
-			totalToSpawn += Math.max(0, required - currentProgress);
+			int remaining = quest.getObjectiveRequired(pqd, questKey, i) - pqd.getObjectiveProgress(questKey, i);
+			toSpawn[i] = Math.max(0, remaining - alive.getOrDefault(i, 0));
+			totalToSpawn += toSpawn[i];
 		}
 
 		String questTeam = totalToSpawn > 1
@@ -670,22 +871,11 @@ public final class QuestService {
 				: null;
 
 		for (int i = 0; i < quest.getObjectives().size(); i++) {
-			QuestObjective objective = quest.getObjectives().get(i);
-			if (!(objective instanceof KillObjective killObjective)) {
-				continue;
-			}
-			if (killObjective.getSpawnMode() != KillObjective.SpawnMode.QUEST) {
+			if (!(quest.getObjectives().get(i) instanceof KillObjective killObjective) || toSpawn[i] <= 0) {
 				continue;
 			}
 
-			int currentProgress = pqd.getObjectiveProgress(questKey, i);
-			int required = quest.getObjectiveRequired(pqd, questKey, i);
-			int remaining = Math.max(0, required - currentProgress);
-			if (remaining <= 0) {
-				continue;
-			}
-
-			for (int j = 0; j < remaining; j++) {
+			for (int j = 0; j < toSpawn[i]; j++) {
 				EntityType<?> entityType = killObjective.resolveEntityType();
 				if (entityType == null) {
 					continue;
@@ -694,6 +884,12 @@ public final class QuestService {
 				Entity entity = entityType.create(requester.level());
 				if (entity == null) {
 					continue;
+				}
+
+				boolean oneAtATime = entity instanceof DBSagasEntity sagasEntity && sagasEntity.questSpawnsOneAtATime();
+				if (oneAtATime && alive.getOrDefault(i, 0) > 0) {
+					entity.discard();
+					break;
 				}
 
 				positionQuestEntity(requester, entity);
@@ -757,7 +953,7 @@ public final class QuestService {
 				}
 
 				requester.serverLevel().addFreshEntity(entity);
-				if (entity instanceof DBSagasEntity sagasEntity && sagasEntity.questSpawnsOneAtATime()) {
+				if (oneAtATime) {
 					break;
 				}
 			}
@@ -783,12 +979,14 @@ public final class QuestService {
 		Quest quest = QuestRegistry.getQuest(questKey);
 		if (quest == null || objectiveIndex < 0 || objectiveIndex >= quest.getObjectives().size()) return false;
 
-		ServerPlayer controller = PartyManager.resolveQuestController(owner);
-		PlayerQuestData pqd = StatsProvider.get(StatsCapability.INSTANCE, controller).resolve()
-				.map(StatsData::getPlayerQuestData).orElse(null);
-		if (pqd == null || pqd.getQuestStatus(questKey) != PlayerQuestData.QuestStatus.ACCEPTED) return false;
-
-		return pqd.getObjectiveProgress(questKey, objectiveIndex) < quest.getObjectiveRequired(pqd, questKey, objectiveIndex);
+		for (ServerPlayer member : PartyManager.getAllPartyMembers(owner)) {
+			PlayerQuestData pqd = QuestParty.questData(member);
+			if (pqd == null || !pqd.isQuestAccepted(questKey)) continue;
+			if (pqd.getObjectiveProgress(questKey, objectiveIndex) < quest.getObjectiveRequired(pqd, questKey, objectiveIndex)) {
+				return true;
+			}
+		}
+		return false;
 	}
 
 	// Quest-spawned enemies used to appear on top of the player. Instead, drop them ~10 blocks away in a
@@ -840,50 +1038,15 @@ public final class QuestService {
 		return null;
 	}
 
-	@Nullable
-	private static Component getPartyRequirementFailure(ServerPlayer requester, ServerPlayer controller, Quest quest,
-														String questKey, boolean restartingFailed) {
-		if (!PartyManager.isInParty(controller)) {
-			return null;
-		}
-
-		for (ServerPlayer member : PartyManager.getAllPartyMembers(controller)) {
-			if (member.getUUID().equals(controller.getUUID())) {
-				continue;
-			}
-
-			// A null describe*() result legitimately means "member is fine"; only an absent
-			// capability should map to the unavailable message. LazyOptional.map can't model
-			// that distinction (it NPEs on a null mapper return), so resolve explicitly.
-			StatsData memberData = StatsProvider.get(StatsCapability.INSTANCE, member).resolve().orElse(null);
-			Component blocker = memberData == null
-					? Component.translatable("message.dragonminez.quest.start.unavailable")
-					: (restartingFailed
-							? QuestAvailabilityChecker.describeNonPositionalStartRequirementFailure(quest, questKey, member, memberData)
-							: QuestAvailabilityChecker.describeNonPositionalStartBlocker(quest, questKey, member, memberData));
-			if (blocker == null) {
-				continue;
-			}
-
-			if (member.getUUID().equals(requester.getUUID())) {
-				return blocker;
-			}
-
-			return Component.translatable(
-					"message.dragonminez.quest.start.party_member_requirement",
-					member.getGameProfile().getName(),
-					blocker
-			);
-		}
-
-		return null;
+	public static void syncQuestState(ServerPlayer player) {
+		NetworkHandler.sendToTrackingEntityAndSelf(new ProgressionSyncS2C(player), player);
 	}
 
-	public static void syncQuestState(ServerPlayer controller) {
-		if (PartyManager.isInParty(controller)) {
-			PartyManager.syncPartyQuestState(controller);
-		} else {
-			NetworkHandler.sendToTrackingEntityAndSelf(new ProgressionSyncS2C(controller), controller);
-		}
+	private static StatsData stats(ServerPlayer player) {
+		return StatsProvider.get(StatsCapability.INSTANCE, player).resolve().orElse(null);
+	}
+
+	private static Component unavailable() {
+		return Component.translatable("message.dragonminez.quest.start.unavailable");
 	}
 }

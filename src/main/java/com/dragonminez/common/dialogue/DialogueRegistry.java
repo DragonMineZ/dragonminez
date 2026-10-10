@@ -12,6 +12,7 @@ import java.io.IOException;
 import java.io.Reader;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.Comparator;
 import java.util.Locale;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -41,7 +42,7 @@ public final class DialogueRegistry {
 
 		try (Stream<Path> files = Files.list(dialogueDir)) {
 			files.filter(path -> path.getFileName().toString().toLowerCase(Locale.ROOT).endsWith(".json"))
-					.sorted()
+					.sorted(Comparator.comparing(path -> path.getFileName().toString()))
 					.forEach(DialogueRegistry::loadFile);
 		} catch (IOException e) {
 			LogUtil.error(Env.SERVER, "Could not list dialogue folder '{}'", dialogueDir, e);

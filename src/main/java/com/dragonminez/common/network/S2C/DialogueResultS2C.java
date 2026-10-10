@@ -3,9 +3,11 @@ package com.dragonminez.common.network.S2C;
 import com.dragonminez.common.network.ClientPacketHandler;
 import lombok.Getter;
 import net.minecraft.network.FriendlyByteBuf;
+import net.minecraft.network.chat.Component;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.fml.DistExecutor;
 import net.minecraftforge.network.NetworkEvent;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.function.Supplier;
 
@@ -14,17 +16,25 @@ public class DialogueResultS2C {
 	private final String npcId;
 	private final String action;
 	private final boolean success;
+	@Nullable
+	private final Component reason;
 
 	public DialogueResultS2C(String npcId, String action, boolean success) {
+		this(npcId, action, success, null);
+	}
+
+	public DialogueResultS2C(String npcId, String action, boolean success, @Nullable Component reason) {
 		this.npcId = npcId == null ? "" : npcId;
 		this.action = action == null ? "" : action;
 		this.success = success;
+		this.reason = reason;
 	}
 
 	public DialogueResultS2C(FriendlyByteBuf buf) {
 		this.npcId = buf.readUtf(64);
 		this.action = buf.readUtf(320);
 		this.success = buf.readBoolean();
+		this.reason = buf.readBoolean() ? buf.readComponent() : null;
 	}
 
 	public static String npcAction(int actionId) {
@@ -43,6 +53,8 @@ public class DialogueResultS2C {
 		buf.writeUtf(npcId, 64);
 		buf.writeUtf(action, 320);
 		buf.writeBoolean(success);
+		buf.writeBoolean(reason != null);
+		if (reason != null) buf.writeComponent(reason);
 	}
 
 	public void handle(Supplier<NetworkEvent.Context> contextSupplier) {

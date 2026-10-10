@@ -1,5 +1,6 @@
 package com.dragonminez.common.dialogue;
 
+import com.dragonminez.common.quest.rewards.CommandReward;
 import com.dragonminez.common.quest.QuestService;
 import com.dragonminez.common.stats.StatsCapability;
 import com.dragonminez.common.stats.StatsProvider;
@@ -43,11 +44,7 @@ public class DialogueAction {
 						.ifPresent(data -> data.getResources().addTrainingPoints(amount, false));
 			}
 			case COMMAND -> {
-				if (!value.isBlank()) {
-					String parsed = value.replace("%player%", player.getName().getString());
-					player.getServer().getCommands().performPrefixedCommand(
-							player.getServer().createCommandSourceStack().withPermission(4), parsed);
-				}
+				if (!value.isBlank()) CommandReward.runAs(player, value);
 			}
 			case START_QUEST -> {
 				if (!value.isBlank()) QuestService.startQuest(player, value);

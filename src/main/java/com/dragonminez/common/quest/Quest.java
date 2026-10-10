@@ -92,7 +92,9 @@ public class Quest {
 		this.prerequisites = prerequisites;
 		this.startRequirements = startRequirements;
 		this.secret = secret;
-		this.claimMode = claimMode != null ? claimMode : ClaimMode.TREE_OR_NPC;
+		this.claimMode = claimMode == ClaimMode.NPC_ONLY && (turnIn == null || turnIn.isBlank())
+				? ClaimMode.TREE_OR_NPC
+				: claimMode != null ? claimMode : ClaimMode.TREE_OR_NPC;
 	}
 
 	/** Set post-construction by the parser; DAILY quests are always repeatable. */
@@ -154,6 +156,9 @@ public class Quest {
 		}
 
 		QuestObjective objective = objectives.get(objectiveIndex);
+		if (objective.isPlaceholder()) {
+			return 0;
+		}
 		if (pqd == null) {
 			return objective.getRequired();
 		}

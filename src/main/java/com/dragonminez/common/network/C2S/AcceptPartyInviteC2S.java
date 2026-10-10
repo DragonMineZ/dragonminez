@@ -2,6 +2,7 @@ package com.dragonminez.common.network.C2S;
 
 import com.dragonminez.common.quest.PartyFeedback;
 import com.dragonminez.common.quest.PartyManager;
+import com.dragonminez.server.commands.DMZPermissions;
 import net.minecraft.ChatFormatting;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.network.chat.Component;
@@ -45,6 +46,7 @@ public class AcceptPartyInviteC2S {
         context.enqueueWork(() -> {
             ServerPlayer player = context.getSender();
             if (player == null) return;
+            if (!DMZPermissions.hasPermission(player.createCommandSourceStack(), DMZPermissions.PARTY_USE)) return;
 
             PartyManager.PendingInvite invite = PartyManager.getPendingInvite(player, partyId);
             if (invite == null) {

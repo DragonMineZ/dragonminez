@@ -14,9 +14,9 @@ import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.level.Level;
 
-import java.io.File;
-import java.io.FileWriter;
 import java.io.IOException;
+import java.io.Writer;
+import java.nio.charset.StandardCharsets;
 import java.lang.reflect.Type;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -61,7 +61,7 @@ public class WishManager {
 
 			try (var stream = Files.list(wishDir)) {
 				stream.filter(path -> path.getFileName().toString().endsWith(".json"))
-						.sorted()
+						.sorted(Comparator.comparing(path -> path.getFileName().toString()))
 						.forEach(path -> loadWishConfig(path, merged));
 			}
 		} catch (IOException e) {
@@ -110,8 +110,8 @@ public class WishManager {
 	}
 
 	private static void writeDefaultWishes(Path wishDir, String dragonId, List<Wish> defaultWishes) {
-		File wishFile = wishDir.resolve(dragonId + ".json").toFile();
-		try (FileWriter writer = new FileWriter(wishFile)) {
+		Path wishFile = wishDir.resolve(dragonId + ".json");
+		try (Writer writer = Files.newBufferedWriter(wishFile, StandardCharsets.UTF_8)) {
 			Type listType = new TypeToken<ArrayList<Wish>>() {
 			}.getType();
 			GsonUtils.GSON.toJson(defaultWishes, listType, writer);

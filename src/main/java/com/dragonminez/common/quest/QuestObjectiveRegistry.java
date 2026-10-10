@@ -47,6 +47,10 @@ public final class QuestObjectiveRegistry {
 								BiConsumer<QuestObjective, JsonObject> syncWriter,
 								Function<QuestObjective, Component> describer) {
 		if (typeKey == null || typeKey.isBlank() || factory == null) return;
+		if (QuestObjective.ObjectiveType.PLACEHOLDER.name().equals(normalize(typeKey))) {
+			LogUtil.warn(Env.COMMON, "Objective type key '{}' is reserved and cannot be registered", typeKey);
+			return;
+		}
 		ENTRIES.put(normalize(typeKey), new Entry(factory, syncWriter, describer));
 	}
 
@@ -68,6 +72,7 @@ public final class QuestObjectiveRegistry {
 
 	/** Writes the objective's custom fields for client sync. Returns false when unhandled. */
 	public static boolean writeSync(QuestObjective objective, JsonObject out) {
+		if (objective.isPlaceholder()) return false;
 		Entry entry = ENTRIES.get(normalize(objective.getTypeKey()));
 		if (entry == null || entry.syncWriter() == null) return false;
 		entry.syncWriter().accept(objective, out);
@@ -76,6 +81,7 @@ public final class QuestObjectiveRegistry {
 
 	/** Display text for a registered objective, or null when none is registered. */
 	public static Component describe(QuestObjective objective) {
+		if (objective.isPlaceholder()) return null;
 		Entry entry = ENTRIES.get(normalize(objective.getTypeKey()));
 		return entry != null && entry.describer() != null ? entry.describer().apply(objective) : null;
 	}

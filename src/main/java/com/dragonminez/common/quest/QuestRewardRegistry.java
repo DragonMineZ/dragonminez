@@ -32,6 +32,10 @@ public final class QuestRewardRegistry {
 	public static void register(String typeKey, RewardFactory factory,
 								BiConsumer<QuestReward, JsonObject> syncWriter) {
 		if (typeKey == null || typeKey.isBlank() || factory == null) return;
+		if (QuestReward.RewardType.PLACEHOLDER.name().equals(normalize(typeKey))) {
+			LogUtil.warn(Env.COMMON, "Reward type key '{}' is reserved and cannot be registered", typeKey);
+			return;
+		}
 		ENTRIES.put(normalize(typeKey), new Entry(factory, syncWriter));
 	}
 
@@ -51,6 +55,7 @@ public final class QuestRewardRegistry {
 	}
 
 	public static boolean writeSync(QuestReward reward, JsonObject out) {
+		if (reward.isPlaceholder()) return false;
 		Entry entry = ENTRIES.get(normalize(reward.getTypeKey()));
 		if (entry == null || entry.syncWriter() == null) return false;
 		entry.syncWriter().accept(reward, out);

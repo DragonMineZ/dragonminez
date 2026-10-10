@@ -17,6 +17,7 @@ import java.io.BufferedReader;
 import java.io.InputStreamReader;
 import java.io.Reader;
 import java.lang.reflect.Type;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -91,7 +92,9 @@ public final class DragonBallPackManager {
 
 	private static void loadFolderPack(Path packRoot, LoadedDefinitions loaded) {
 		try (var stream = Files.walk(packRoot)) {
-			stream.filter(Files::isRegularFile).filter(path -> path.toString().endsWith(".json")).sorted().forEach(path -> loadFolderFile(path, loaded));
+			stream.filter(Files::isRegularFile).filter(path -> path.toString().endsWith(".json"))
+					.sorted(Comparator.comparing(path -> packRoot.relativize(path).toString().replace('\\', '/')))
+					.forEach(path -> loadFolderFile(path, loaded));
 		} catch (Exception exception) {
 			LogUtil.warn(Env.COMMON, "Failed to load dragonball folder pack '{}': {}", packRoot.getFileName(), exception.toString());
 		}
@@ -114,7 +117,7 @@ public final class DragonBallPackManager {
 			entries.sort(Comparator.comparing(ZipEntry::getName));
 			for (ZipEntry entry : entries) {
 				if (entry.isDirectory() || !entry.getName().endsWith(".json")) continue;
-				try (BufferedReader reader = new BufferedReader(new InputStreamReader(zip.getInputStream(entry)))) {
+				try (BufferedReader reader = new BufferedReader(new InputStreamReader(zip.getInputStream(entry), StandardCharsets.UTF_8))) {
 					JsonObject root = GsonUtils.GSON.fromJson(reader, JsonObject.class);
 					if (root == null) continue;
 					readDefinition(entry.getName().replace('\\', '/'), root, loaded);

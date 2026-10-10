@@ -32,6 +32,7 @@ import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 import java.util.regex.Matcher;
@@ -77,7 +78,7 @@ public final class QuestTextFormatter {
 	}
 
 	public static Component describeObjective(QuestObjective objective) {
-		if (objective == null) {
+		if (objective == null || objective.isPlaceholder()) {
 			return Component.empty();
 		}
 
@@ -326,7 +327,7 @@ public final class QuestTextFormatter {
 			return Component.literal("?");
 		}
 		String normalized = skill.contains(":") ? skill.substring(skill.indexOf(':') + 1) : skill;
-		String key = normalized.contains(".") ? normalized : "skill.dragonminez." + normalized.toLowerCase();
+		String key = normalized.contains(".") ? normalized : "skill.dragonminez." + normalized.toLowerCase(Locale.ROOT);
 		Component translated = Component.translatable(key);
 		return translated.getString().equals(key)
 				? Component.literal(humanizeIdentifier(normalized))
@@ -452,9 +453,6 @@ public final class QuestTextFormatter {
 		}
 
 		Saga saga = clientSide ? QuestRegistry.getClientSaga(sagaId) : QuestRegistry.getSaga(sagaId);
-		if (saga == null) {
-			saga = clientSide ? QuestRegistry.getSaga(sagaId) : QuestRegistry.getClientSaga(sagaId);
-		}
 		if (saga != null) {
 			Quest quest = saga.getQuestById(questId);
 			if (quest != null) {
@@ -470,9 +468,6 @@ public final class QuestTextFormatter {
 		}
 
 		Quest quest = clientSide ? QuestRegistry.getClientQuest(questId) : QuestRegistry.getQuest(questId);
-		if (quest == null) {
-			quest = clientSide ? QuestRegistry.getQuest(questId) : QuestRegistry.getClientQuest(questId);
-		}
 		if (quest != null) {
 			return displayText(quest.getTitle());
 		}
@@ -526,6 +521,7 @@ public final class QuestTextFormatter {
 		LinkedHashMap<Set<Difficulty>, List<QuestReward>> grouped = new LinkedHashMap<>();
 		if (rewards != null) {
 			for (QuestReward reward : rewards) {
+				if (reward.isPlaceholder()) continue;
 				if (excludeCommands && reward.getType() == QuestReward.RewardType.COMMAND) continue;
 				grouped.computeIfAbsent(reward.getDifficulties(), key -> new ArrayList<>()).add(reward);
 			}
@@ -553,7 +549,7 @@ public final class QuestTextFormatter {
 	public static boolean hasRewardTiers(List<QuestReward> rewards) {
 		if (rewards == null) return false;
 		for (QuestReward reward : rewards) {
-			if (reward.getType() == QuestReward.RewardType.COMMAND) continue;
+			if (reward.isPlaceholder() || reward.getType() == QuestReward.RewardType.COMMAND) continue;
 			if (!isUniversalDifficulty(reward.getDifficulties())) return true;
 		}
 		return false;
@@ -568,7 +564,7 @@ public final class QuestTextFormatter {
 		for (Difficulty difficulty : Difficulty.values()) {
 			if (!difficulties.contains(difficulty)) continue;
 			if (!first) joined.append(", ");
-			joined.append(Component.translatable("gui.dragonminez.quest_tree.difficulty." + difficulty.name().toLowerCase()));
+			joined.append(Component.translatable("gui.dragonminez.quest_tree.difficulty." + difficulty.name().toLowerCase(Locale.ROOT)));
 			first = false;
 		}
 		return Component.translatable("gui.dragonminez.quests.rewards.tier.only", joined);
