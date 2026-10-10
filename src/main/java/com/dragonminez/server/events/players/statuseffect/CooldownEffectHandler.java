@@ -20,6 +20,11 @@ public class CooldownEffectHandler implements IStatusEffectHandler {
 		PotionEffectHelper.syncCooldownIndicator(player, data, Cooldowns.MAJIN_REVIVE_CD, MainEffects.MAJIN_REVIVE.get());
 		PotionEffectHelper.syncCooldownIndicator(player, data, Cooldowns.ZENKAI, MainEffects.SAIYAN_PASSIVE.get());
 		PotionEffectHelper.syncCooldownIndicator(player, data, Cooldowns.DRAIN, MainEffects.BIOANDROID_PASSIVE.get());
+		if (data.getStatus().isKnockedDown()) {
+			PotionEffectHelper.syncCooldownIndicator(player, data, Cooldowns.KNOCKDOWN_DURATION, MainEffects.KNOCKOUT.get());
+		} else if (player.hasEffect(MainEffects.KNOCKOUT.get())) {
+			player.removeEffect(MainEffects.KNOCKOUT.get());
+		}
 	}
 
 	@Override

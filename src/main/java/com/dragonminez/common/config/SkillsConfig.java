@@ -89,7 +89,7 @@ public class SkillsConfig {
 		skills.put("taiyoken", new SkillCosts(List.of(2000)));
 		skills.put("afterimage", new SkillCosts(List.of(2500)));
 		skills.put("dimensional_teleport", new SkillCosts(List.of(12000)));
-		skills.put("sleep_recovery", new SkillCosts(List.of(3000)));
+		skills.put("sleep_recovery", new SkillCosts(new ArrayList<>(List.of(3000)), new ArrayList<>(List.of("majin"))));
 		skills.put("death_beam", new SkillCosts(List.of(2500)));
 		skills.put("dodonpa", new SkillCosts(List.of(3000)));
 		skills.put("fake_moon", new SkillCosts(List.of(3000)));

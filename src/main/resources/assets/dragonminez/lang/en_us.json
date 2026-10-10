@@ -1821,6 +1821,7 @@
   "technique.dragonminez.spirit_breaking_cannon": "Spirit Breaking Cannon",
   "//": "EFFECTS",
   "effect.dragonminez.stun": "Stunned",
+  "effect.dragonminez.knockout": "K.O.",
   "effect.dragonminez.ki_slow": "Ki Slow",
   "effect.dragonminez.stagger": "Staggered",
   "effect.dragonminez.dash_cd": "Dash",

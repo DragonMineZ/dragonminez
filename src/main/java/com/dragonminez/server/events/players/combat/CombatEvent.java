@@ -66,6 +66,7 @@ import net.minecraftforge.event.entity.living.LivingDamageEvent;
 import net.minecraftforge.event.entity.living.LivingHealEvent;
 import net.minecraftforge.event.entity.living.LivingHurtEvent;
 import net.minecraftforge.event.entity.living.LivingKnockBackEvent;
+import net.minecraftforge.event.entity.living.MobEffectEvent;
 import net.minecraftforge.eventbus.api.EventPriority;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
@@ -697,6 +698,24 @@ public class CombatEvent {
 				event.setCanceled(true);
 			}
 		});
+	}
+
+	@SubscribeEvent
+	public static void onKnockoutEffectRemoved(MobEffectEvent.Remove event) {
+		if (event.getEffect() != MainEffects.KNOCKOUT.get()) return;
+		if (!(event.getEntity() instanceof ServerPlayer player)) return;
+		StatsProvider.get(StatsCapability.INSTANCE, player).ifPresent(data -> releaseKnockdown(player, data));
+	}
+
+	public static void releaseKnockdown(ServerPlayer player, StatsData data) {
+		if (!data.getStatus().isKnockedDown()) return;
+		data.getStatus().setKnockedDown(false);
+		data.getCooldowns().removeCooldown(Cooldowns.KNOCKDOWN_DURATION);
+		data.getCooldowns().removeCooldown(Cooldowns.KNOCKDOWN_INVULN);
+		data.getCooldowns().removeCooldown(Cooldowns.ZENKAI_KNOCKOUT);
+		data.getCooldowns().removeCooldown(Cooldowns.BABA_KNOCKOUT);
+		data.getCooldowns().removeCooldown(Cooldowns.BIO_EXPLODE_RECOVERY);
+		NetworkHandler.sendToTrackingEntityAndSelf(new StatsSyncS2C(player), player);
 	}
 
 	@SubscribeEvent

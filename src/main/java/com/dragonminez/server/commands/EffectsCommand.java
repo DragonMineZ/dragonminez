@@ -9,6 +9,7 @@ import com.dragonminez.common.stats.StatsData;
 import com.dragonminez.common.stats.StatsProvider;
 import com.dragonminez.common.stats.character.Cooldowns;
 import com.dragonminez.server.events.players.KiShareService;
+import com.dragonminez.server.events.players.combat.CombatEvent;
 import com.dragonminez.server.util.FusionLogic;
 import com.dragonminez.server.util.MutantManager;
 import com.mojang.brigadier.CommandDispatcher;
@@ -27,8 +28,11 @@ import java.util.List;
 import java.util.UUID;
 
 public class EffectsCommand {
+	private static final String KNOCKOUT_EFFECT = "knockout";
 	private static final SuggestionProvider<CommandSourceStack> EFFECT_SUGGESTIONS = (ctx, builder) ->
 			SharedSuggestionProvider.suggest(List.of("mightfruit", "majin", "mutant"), builder);
+	private static final SuggestionProvider<CommandSourceStack> REMOVE_SUGGESTIONS = (ctx, builder) ->
+			SharedSuggestionProvider.suggest(List.of("mightfruit", "majin", "mutant", KNOCKOUT_EFFECT), builder);
 
 	public static void register(CommandDispatcher<CommandSourceStack> dispatcher) {
 		dispatcher.register(Commands.literal("dmzeffect")
@@ -45,7 +49,7 @@ public class EffectsCommand {
 
 				.then(Commands.literal("remove")
 						.requires(source -> DMZPermissions.check(source, DMZPermissions.EFFECTS_REMOVE_SELF, DMZPermissions.EFFECTS_REMOVE_OTHERS))
-						.then(Commands.argument("effect", StringArgumentType.string()).suggests(EFFECT_SUGGESTIONS)
+						.then(Commands.argument("effect", StringArgumentType.string()).suggests(REMOVE_SUGGESTIONS)
 								.executes(ctx -> removeEffect(ctx.getSource(), List.of(ctx.getSource().getPlayerOrException()), StringArgumentType.getString(ctx, "effect")))
 								.then(Commands.argument("targets", EntityArgument.players())
 										.requires(source -> DMZPermissions.hasPermission(source, DMZPermissions.EFFECTS_REMOVE_OTHERS))
@@ -95,6 +99,11 @@ public class EffectsCommand {
 		boolean isMutant = effectName.equalsIgnoreCase(MutantManager.EFFECT_NAME);
 		for (ServerPlayer player : targets) {
 			StatsProvider.get(StatsCapability.INSTANCE, player).ifPresent(data -> {
+				if (effectName.equalsIgnoreCase(KNOCKOUT_EFFECT)) {
+					player.removeEffect(MainEffects.KNOCKOUT.get());
+					CombatEvent.releaseKnockdown(player, data);
+					return;
+				}
 				if (data.getEffects().hasEffect(effectName)) {
 					if (isMutant) MutantManager.revoke(player, data);
 					else {
@@ -131,6 +140,8 @@ public class EffectsCommand {
 				FusionLogic.breakPothala(player);
 				clearFusionCooldown(player, data);
 				clearRitualAndTransfer(player, data);
+				player.removeEffect(MainEffects.KNOCKOUT.get());
+				CombatEvent.releaseKnockdown(player, data);
 				if (partnerUUID != null) {
 					ServerPlayer partner = player.getServer().getPlayerList().getPlayer(partnerUUID);
 					if (partner != null) {
