@@ -2143,23 +2143,27 @@ public class StrikeAttackHandler {
 
 		PartEntity<?> best = null;
 		double bestDist = range * range;
+		double maxPartDistance = range + 8.0;
 		for (PartEntity<?> part : level.getPartEntities()) {
 			if (!(part.getParent() instanceof LivingEntity parent) || !parent.isAlive()) continue;
-			if (!TargetHelper.canAttack(player, parent, range)) continue;
-			if (player.distanceTo(part) > range + 8.0) continue;
-			if (!player.hasLineOfSight(part)) continue;
+			if (player.distanceToSqr(part) > maxPartDistance * maxPartDistance) continue;
 
 			AABB box = part.getBoundingBox().inflate(part.getPickRadius());
-			if (box.contains(eyePos)) return part;
-
-			Optional<Vec3> hit = box.clip(eyePos, endPos);
-			if (hit.isPresent()) {
-				double dist = eyePos.distanceToSqr(hit.get());
-				if (dist < bestDist) {
-					best = part;
-					bestDist = dist;
-				}
+			boolean inside = box.contains(eyePos);
+			double dist = 0.0D;
+			if (!inside) {
+				Optional<Vec3> hit = box.clip(eyePos, endPos);
+				if (hit.isEmpty()) continue;
+				dist = eyePos.distanceToSqr(hit.get());
+				if (dist >= bestDist) continue;
 			}
+
+			if (!TargetHelper.canAttack(player, parent, range)) continue;
+			if (!player.hasLineOfSight(part)) continue;
+			if (inside) return part;
+
+			best = part;
+			bestDist = dist;
 		}
 		return best;
 	}

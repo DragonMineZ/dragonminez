@@ -8,6 +8,7 @@ import com.dragonminez.common.stats.StatsCapability;
 import com.dragonminez.common.stats.StatsData;
 import com.dragonminez.common.stats.StatsProvider;
 import com.dragonminez.common.stats.character.Cooldowns;
+import com.dragonminez.server.events.players.KiShareService;
 import com.dragonminez.server.util.FusionLogic;
 import com.dragonminez.server.util.MutantManager;
 import com.mojang.brigadier.CommandDispatcher;
@@ -129,6 +130,7 @@ public class EffectsCommand {
 				clearPotaraPose(data);
 				FusionLogic.breakPothala(player);
 				clearFusionCooldown(player, data);
+				clearRitualAndTransfer(player, data);
 				if (partnerUUID != null) {
 					ServerPlayer partner = player.getServer().getPlayerList().getPlayer(partnerUUID);
 					if (partner != null) {
@@ -155,6 +157,12 @@ public class EffectsCommand {
 	private static void clearFusionCooldown(ServerPlayer player, StatsData data) {
 		data.getCooldowns().removeCooldown(Cooldowns.FUSION_CD);
 		if (player.hasEffect(MainEffects.FUSION_CD.get())) player.removeEffect(MainEffects.FUSION_CD.get());
+	}
+
+	private static void clearRitualAndTransfer(ServerPlayer player, StatsData data) {
+		data.getCooldowns().removeCooldown(Cooldowns.GOD_RITUAL);
+		if (player.hasEffect(MainEffects.GOD_RITUAL_CD.get())) player.removeEffect(MainEffects.GOD_RITUAL_CD.get());
+		KiShareService.clearTransferEffects(player);
 	}
 
 	private static void clearPotaraPose(StatsData data) {

@@ -160,6 +160,7 @@ public class ModClientEvents {
 
 			BetaWhitelist.reload();
 			SkinCacheManager.init();
+			DBSagasEntity.setRenderExtentsProvider(GiantRenderBounds::extentsFor);
 
 			//Bloques
 			BlockEntityRenderers.register(MainBlockEntities.DRAGON_BALL_BLOCK_ENTITY.get(), DragonBallBlockRenderer::new);

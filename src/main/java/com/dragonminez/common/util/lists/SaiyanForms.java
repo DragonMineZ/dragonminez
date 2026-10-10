@@ -26,6 +26,9 @@ public class SaiyanForms {
 	public static final String GROUP_FALSEFORM = "falseform";
 	public static final String FALSE_SUPER_SAIYAN = "falsesupersaiyan";
 
+	public static final String GROUP_GODRITUAL = "godritual";
+	public static final String SUPER_SAIYAN_GOD_RITUAL = "supersaiyangodritual";
+
 	// Legendary Forms group
 	public static final String GROUP_LEGENDARYFORMS = "legendaryforms";
 	public static final String IKARI = "ikari";

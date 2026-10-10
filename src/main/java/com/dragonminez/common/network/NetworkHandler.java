@@ -834,6 +834,12 @@ public class NetworkHandler {
 				.encoder(SilentDamageS2C::encode)
 				.consumerMainThread(SilentDamageS2C::handle)
 				.add();
+
+		net.messageBuilder(KiShareC2S.class, id(), NetworkDirection.PLAY_TO_SERVER)
+				.decoder(KiShareC2S::new)
+				.encoder(KiShareC2S::encode)
+				.consumerMainThread(KiShareC2S::handle)
+				.add();
 	}
 
 	public static <MSG> void sendToServer(MSG message) {

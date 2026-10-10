@@ -38,6 +38,9 @@ public class MainEffects {
 	public static final RegistryObject<MobEffect> MAJIN_REVIVE = EFFECTS.register("majin_revive", DMZEffect::new);
 	public static final RegistryObject<MobEffect> KI_BLAST_CD = EFFECTS.register("ki_blast_cd", DMZEffect::new);
 	public static final RegistryObject<MobEffect> POISE_CD = EFFECTS.register("poise_cd", DMZEffect::new);
+	public static final RegistryObject<MobEffect> GOD_RITUAL_CD = EFFECTS.register("god_ritual_cd", DMZEffect::new);
+	public static final RegistryObject<MobEffect> KI_TRANSFER_DRAIN = EFFECTS.register("ki_transfer_drain", () -> new DMZEffect(MobEffectCategory.HARMFUL, 0x5A6B85));
+	public static final RegistryObject<MobEffect> KI_TRANSFER_BOOST = EFFECTS.register("ki_transfer_boost", () -> new DMZEffect(MobEffectCategory.BENEFICIAL, 0x5CE1FF));
 	public static final RegistryObject<MobEffect> ADRENALINE = EFFECTS.register("adrenaline", () -> new DMZEffect(true));
 
 	// Status Effects | Beneficial

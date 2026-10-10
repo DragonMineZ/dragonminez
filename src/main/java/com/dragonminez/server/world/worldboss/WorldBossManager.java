@@ -6,8 +6,11 @@ import com.dragonminez.common.init.entities.worldboss.WorldBossEntity;
 import com.dragonminez.common.network.NetworkHandler;
 import com.dragonminez.common.network.S2C.WorldBossStateS2C;
 import com.dragonminez.common.stats.StatsData;
+import com.dragonminez.server.world.structure.placement.StructureRepairManager;
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.registries.Registries;
 import net.minecraft.nbt.CompoundTag;
+import net.minecraft.resources.ResourceKey;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
@@ -17,13 +20,17 @@ import net.minecraft.world.entity.MobSpawnType;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.ChunkPos;
 import net.minecraft.world.level.Level;
+import net.minecraft.world.level.levelgen.structure.Structure;
+import net.minecraft.world.level.levelgen.structure.StructureStart;
 import net.minecraft.world.level.saveddata.SavedData;
 import net.minecraft.world.level.storage.DimensionDataStorage;
+import net.minecraft.world.phys.Vec3;
 
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
 
 public final class WorldBossManager {
@@ -39,7 +46,17 @@ public final class WorldBossManager {
     private static final int DISCOVERY_INTERVAL = 20;
     private static final int MISSING_BOSS_TICKS_BEFORE_END = 200;
 
+    private static final int LAIR_REPAIR_RETRY_TICKS = 600;
+    private static final int LAIR_REPAIR_WAIT_TICKS = 1200;
+    private static final double HOME_HORIZONTAL_TOLERANCE = 4.0D;
+    private static final double HOME_VERTICAL_TOLERANCE = 3.0D;
+
     private static final Map<String, WorldBossSession> ACTIVE = new HashMap<>();
+    private static final Map<String, Long> LAST_REPAIR = new HashMap<>();
+    private static final Map<String, Long> REPAIR_STARTED = new HashMap<>();
+    private static final Map<String, Truce> TRUCES = new HashMap<>();
+
+    private record Truce(Set<UUID> members, long expiresAt) {}
 
     private WorldBossManager() {}
 
@@ -98,10 +115,101 @@ public final class WorldBossManager {
             data.markDirty();
         }
 
-        if (isBossPresent(level, lair, entry, data)) return;
+        WorldBossSession session = ACTIVE.get(lair.key());
+        boolean fighting = session != null && !session.isEnded();
+        boolean intact = lair.isLairIntact(level, entry.lair);
+        if (intact) {
+            LAST_REPAIR.remove(lair.key());
+            REPAIR_STARTED.remove(lair.key());
+        } else if (!fighting) {
+            repairLair(level, lair, entry, data);
+        }
+
+        if (isBossPresent(level, lair, entry, data)) {
+            if (!fighting) keepSleepingBossHome(level, lair, entry);
+            return;
+        }
         if (level.getGameTime() < entry.nextRespawnTick) return;
+        if (!intact && isRepairPending(lair.key(), level.getGameTime())) return;
 
         spawnBoss(level, lair, entry, data);
+    }
+
+    private static void repairLair(ServerLevel level, WorldBossLair lair, Data.Entry entry, Data data) {
+        long now = level.getGameTime();
+        Long last = LAST_REPAIR.get(lair.key());
+        if (last != null && now - last < LAIR_REPAIR_RETRY_TICKS) return;
+        LAST_REPAIR.put(lair.key(), now);
+        boolean firstAttempt = REPAIR_STARTED.putIfAbsent(lair.key(), now) == null;
+
+        if (lair.structure() == null) {
+            entry.arenaBuilt = false;
+            data.markDirty();
+            if (firstAttempt) LogUtil.info(Env.SERVER, "World boss {} lair floor at {} is gone, rebuilding its arena", lair.key(), entry.lair);
+            return;
+        }
+        String note = restoreLairStructure(level, lair, entry.lair);
+        if (firstAttempt) LogUtil.info(Env.SERVER, "World boss {} lair floor at {} is gone, restoring its structure.{}", lair.key(), entry.lair, note);
+    }
+
+    private static boolean isRepairPending(String key, long now) {
+        Long started = REPAIR_STARTED.get(key);
+        return started != null && now - started < LAIR_REPAIR_WAIT_TICKS;
+    }
+
+    private static void keepSleepingBossHome(ServerLevel level, WorldBossLair lair, Data.Entry entry) {
+        if (entry.bossId == null || !(level.getEntity(entry.bossId) instanceof WorldBossEntity boss)) return;
+        if (!boss.isAlive() || !boss.isBossAsleep()) return;
+        BlockPos anchor = boss.getAnchor();
+        double homeX = anchor.getX() + 0.5D;
+        double homeY = anchor.getY() + 1.0D;
+        double homeZ = anchor.getZ() + 0.5D;
+        double dx = boss.getX() - homeX;
+        double dz = boss.getZ() - homeZ;
+        if (dx * dx + dz * dz <= HOME_HORIZONTAL_TOLERANCE * HOME_HORIZONTAL_TOLERANCE
+                && Math.abs(boss.getY() - homeY) <= HOME_VERTICAL_TOLERANCE) return;
+
+        LogUtil.info(Env.SERVER, "World boss {} was asleep away from its lair ({}), sending it back to {}", lair.key(), boss.blockPosition(), anchor);
+        boss.setDeltaMovement(Vec3.ZERO);
+        boss.getNavigation().stop();
+        boss.teleportTo(homeX, homeY, homeZ);
+        boss.fallDistance = 0.0F;
+    }
+
+    public static String restoreLairStructure(ServerLevel level, WorldBossLair lair, BlockPos knownLair) {
+        if (level == null) return "";
+        ResourceKey<Structure> key = lair.structure();
+        if (key == null) return " Its arena is rebuilt when a player gets close.";
+        Structure structure = level.registryAccess().registryOrThrow(Registries.STRUCTURE).get(key);
+        BlockPos at = knownLair != null ? knownLair : lair.pickColumn(level);
+        if (structure == null || at == null) return " Its structure has not been planned yet, nothing to restore.";
+        StructureStart start = level.structureManager().getStructureAt(at, structure);
+        if (!start.isValid()) return " Its structure has not generated yet, nothing to restore.";
+        int unloaded = StructureRepairManager.restore(level, start);
+        if (unloaded == 0) return " Restoring its structure over the next few seconds.";
+        return " Restoring the loaded part of its structure; " + unloaded
+                + " chunks are not loaded, stand next to it and run the reset again to restore the rest.";
+    }
+
+    public static boolean areTruceAllies(UUID a, UUID b, long gameTime) {
+        if (a == null || b == null || a.equals(b)) return false;
+        for (WorldBossSession session : ACTIVE.values()) {
+            if (!session.isEnded() && session.isEngaged(a) && session.isEngaged(b)) return true;
+        }
+        if (TRUCES.isEmpty()) return false;
+        TRUCES.values().removeIf(truce -> gameTime >= truce.expiresAt());
+        for (Truce truce : TRUCES.values()) {
+            if (truce.members().contains(a) && truce.members().contains(b)) return true;
+        }
+        return false;
+    }
+
+    static void recordTruce(String bossKey, Set<UUID> members, long expiresAt) {
+        if (members.size() < 2) {
+            TRUCES.remove(bossKey);
+            return;
+        }
+        TRUCES.put(bossKey, new Truce(Set.copyOf(members), expiresAt));
     }
 
     private static boolean hasNearbyPlayer(ServerLevel level, BlockPos lair) {
@@ -392,6 +500,12 @@ public final class WorldBossManager {
         if (session != null) session.interruptCast(caster, true);
     }
 
+    public static void noteReviveCasterDamage(ServerPlayer caster, float amount) {
+        if (ACTIVE.isEmpty()) return;
+        WorldBossSession session = activeFor(caster);
+        if (session != null) session.noteCasterDamage(caster, amount);
+    }
+
     public static void onPlayerLogout(ServerPlayer player) {
         for (WorldBossSession session : ACTIVE.values()) session.onPlayerLogout(player);
     }
@@ -412,6 +526,9 @@ public final class WorldBossManager {
 
     public static void clearAll() {
         ACTIVE.clear();
+        LAST_REPAIR.clear();
+        REPAIR_STARTED.clear();
+        TRUCES.clear();
     }
 
     public static final class Data extends SavedData {

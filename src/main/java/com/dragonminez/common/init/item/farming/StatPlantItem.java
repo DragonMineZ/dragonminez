@@ -38,7 +38,7 @@ public class StatPlantItem extends Item {
 	private static final Set<String> CLEANSE_KEPT_COOLDOWNS = Set.of(
 			Cooldowns.OLDKAI_ZSWORD, Cooldowns.KARIN_NIMBUS, Cooldowns.SENZU_KARIN, Cooldowns.KAMI_BLESS, Cooldowns.REVIVE_BABA,
 			Cooldowns.ZENKAI, Cooldowns.ZENKAI_TEMP_BUFF, Cooldowns.MAJIN_REVIVE_CD, Cooldowns.FUSION_CD,
-			Cooldowns.KNOCKDOWN_INVULN);
+			Cooldowns.KNOCKDOWN_INVULN, Cooldowns.GOD_RITUAL);
 
 	public enum StatType {
 		STR, SKP, RES, VIT, PWR, ENE, MASTERY

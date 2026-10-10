@@ -4,6 +4,7 @@ import com.dragonminez.client.render.DMZRendererCache;
 import com.dragonminez.Reference;
 import com.dragonminez.client.animation.IPlayerAnimatable;
 import com.dragonminez.client.render.util.RenderUtil;
+import com.dragonminez.client.systems.kishare.KiSharePose;
 import com.dragonminez.client.util.SkinGathererProvider;
 import com.dragonminez.common.config.ConfigManager;
 import com.dragonminez.common.config.FormConfig;
@@ -375,6 +376,7 @@ public class DMZPlayerModel<T extends AbstractClientPlayer & GeoAnimatable> exte
             if (leftArm != null) RenderUtil.animateHand(animatable, leftArm, partialTick, ageInTicks);
         } catch (Exception ignored) {}
 
+        KiSharePose.apply(animatable, rightArm, leftArm, partialTick);
         applyBoobScale(animatable);
         clearExplosionHeadOffset(animatable);
     }

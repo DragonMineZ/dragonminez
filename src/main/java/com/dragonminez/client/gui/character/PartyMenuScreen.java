@@ -9,6 +9,7 @@ import com.dragonminez.client.util.ScrollbarState;
 import com.dragonminez.client.util.TextUtil;
 import com.dragonminez.common.init.MainSounds;
 import com.dragonminez.common.network.PartyPackets;
+import com.dragonminez.common.quest.Difficulty;
 import com.dragonminez.common.quest.PlayerQuestData;
 import com.dragonminez.common.stats.StatsCapability;
 import com.dragonminez.common.stats.StatsProvider;
@@ -62,6 +63,8 @@ public class PartyMenuScreen extends BaseMenuScreen {
 	private TexturedTextButton actionBtn;
 	private TexturedTextButton altBtn;
 	private TexturedTextButton backBtn;
+	private TexturedTextButton inviteMoreBtn;
+	private UUID pendingConfirmParty;
 	private TexturedTextButton createBtn;
 	private TexturedTextButton joinBtn;
 	private CustomTextureButton prevBtn, nextBtn;
@@ -92,14 +95,6 @@ public class PartyMenuScreen extends BaseMenuScreen {
 				.orElse(false);
 	}
 
-	private boolean isPartyLeader() {
-		if (Minecraft.getInstance().player == null) return false;
-		UUID self = Minecraft.getInstance().player.getUUID();
-		return StatsProvider.get(StatsCapability.INSTANCE, Minecraft.getInstance().player)
-				.map(data -> self.equals(data.getPlayerQuestData().getPartyLeaderId()))
-				.orElse(false);
-	}
-
 	private List<PlayerQuestData.PartyInviteData> pendingInvites() {
 		if (Minecraft.getInstance().player == null) return List.of();
 		return StatsProvider.get(StatsCapability.INSTANCE, Minecraft.getInstance().player)
@@ -110,6 +105,7 @@ public class PartyMenuScreen extends BaseMenuScreen {
 	private void setView(View view) {
 		currentView = view;
 		selectedIndex = -1;
+		pendingConfirmParty = null;
 		listScroll.reset();
 		welcomeScroll.reset();
 		refreshPlayerList();
@@ -164,11 +160,13 @@ public class PartyMenuScreen extends BaseMenuScreen {
 						true, true, invite.getPartyId()));
 			}
 		} else if (currentView == View.CREATE) {
-			// Only other people: you are already in the party you are building.
+			List<UUID> currentMembers = StatsProvider.get(StatsCapability.INSTANCE, Minecraft.getInstance().player)
+					.map(data -> data.getPlayerQuestData().getPartyMemberIds())
+					.orElse(List.of());
 			onlinePlayers.sort((p1, p2) -> p1.getProfile().getName().compareToIgnoreCase(p2.getProfile().getName()));
 
 			for (PlayerInfo p : onlinePlayers) {
-				if (p.getProfile().getId().equals(localId)) continue;
+				if (p.getProfile().getId().equals(localId) || currentMembers.contains(p.getProfile().getId())) continue;
 				displayList.add(new PartyEntry(p.getProfile().getId(), p.getProfile().getName(), true, false, null));
 			}
 		} else {
@@ -245,6 +243,8 @@ public class PartyMenuScreen extends BaseMenuScreen {
 				btn -> answerInvite(false));
 		backBtn = menuButton(12 + Math.round(getLeftPanelSwitchOffset(1.0f)) + 35, rightPanelY + 180,
 				"gui.dragonminez.party.back", btn -> goBack());
+		inviteMoreBtn = menuButton(12 + Math.round(getLeftPanelSwitchOffset(1.0f)) + 35, rightPanelY + 180,
+				"gui.dragonminez.party.invite_players", btn -> setView(View.CREATE));
 
 		int centreX = getUiWidth() / 2;
 		int welcomeY = welcomeTop() + WELCOME_HEIGHT + 8;
@@ -258,6 +258,7 @@ public class PartyMenuScreen extends BaseMenuScreen {
 		this.addRenderableWidget(actionBtn);
 		this.addRenderableWidget(altBtn);
 		this.addRenderableWidget(backBtn);
+		this.addRenderableWidget(inviteMoreBtn);
 		this.addRenderableWidget(createBtn);
 		this.addRenderableWidget(joinBtn);
 
@@ -277,25 +278,22 @@ public class PartyMenuScreen extends BaseMenuScreen {
 	}
 
 	private void goBack() {
-		if (currentView == View.CREATE && isInParty() && isPartyLeader()) {
-			if (partyMemberCount() <= 1) {
-				if (Minecraft.getInstance().player != null) {
-					Minecraft.getInstance().player.connection.sendCommand("dmzparty disband");
-				}
-				setView(View.WELCOME);
-				return;
-			}
-			setView(View.PARTY);
-			return;
-		}
 		setView(isInParty() ? View.PARTY : View.WELCOME);
 	}
 
-	private int partyMemberCount() {
-		if (Minecraft.getInstance().player == null) return 0;
+	private Difficulty ownDifficulty() {
+		if (Minecraft.getInstance().player == null) return Difficulty.NORMAL;
 		return StatsProvider.get(StatsCapability.INSTANCE, Minecraft.getInstance().player)
-				.map(data -> data.getPlayerQuestData().getPartyMemberIds().size())
-				.orElse(0);
+				.map(data -> data.getPlayerQuestData().getDifficulty())
+				.orElse(Difficulty.NORMAL);
+	}
+
+	private PlayerQuestData.PartyInviteData inviteFor(UUID partyId) {
+		if (partyId == null) return null;
+		for (PlayerQuestData.PartyInviteData pending : pendingInvites()) {
+			if (partyId.equals(pending.getPartyId())) return pending;
+		}
+		return null;
 	}
 
 	private void answerInvite(boolean accept) {
@@ -303,13 +301,23 @@ public class PartyMenuScreen extends BaseMenuScreen {
 
 		UUID partyId = displayList.get(selectedIndex).partyId();
 		if (accept) {
+			PlayerQuestData.PartyInviteData invite = inviteFor(partyId);
+			int ownRank = ownDifficulty().ordinal();
+			int partyRank = invite != null ? invite.getPartyDifficulty().ordinal() : ownRank;
+			if (partyRank < ownRank) return;
+			if (partyRank > ownRank && (partyId == null || !partyId.equals(pendingConfirmParty))) {
+				pendingConfirmParty = partyId;
+				refreshActionButtons();
+				return;
+			}
 			com.dragonminez.common.network.NetworkHandler.sendToServer(
-					new com.dragonminez.common.network.C2S.AcceptPartyInviteC2S(false, partyId));
+					new com.dragonminez.common.network.C2S.AcceptPartyInviteC2S(partyRank > ownRank, partyId));
 		} else {
 			com.dragonminez.common.network.NetworkHandler.sendToServer(
 					new com.dragonminez.common.network.C2S.RejectPartyInviteC2S(partyId));
 		}
 		selectedIndex = -1;
+		pendingConfirmParty = null;
 		refreshPlayerList();
 	}
 
@@ -326,6 +334,7 @@ public class PartyMenuScreen extends BaseMenuScreen {
 		selectedIndex += direction;
 		if (selectedIndex < 0) selectedIndex = displayList.size() - 1;
 		if (selectedIndex >= displayList.size()) selectedIndex = 0;
+		pendingConfirmParty = null;
 		refreshActionButtons();
 	}
 
@@ -338,6 +347,7 @@ public class PartyMenuScreen extends BaseMenuScreen {
 		joinBtn.active = !pendingInvites().isEmpty();
 
 		backBtn.visible = currentView == View.CREATE || currentView == View.JOIN;
+		inviteMoreBtn.visible = currentView == View.PARTY && isInParty();
 		prevBtn.visible = !welcome;
 		nextBtn.visible = !welcome;
 		prevBtn.active = validSelection && displayList.size() > 1;
@@ -362,9 +372,13 @@ public class PartyMenuScreen extends BaseMenuScreen {
 				actionBtn.setMessage(tr("gui.dragonminez.party.invite"));
 			}
 			case JOIN -> {
+				PlayerQuestData.PartyInviteData invite = inviteFor(targetEntry.partyId());
+				int ownRank = ownDifficulty().ordinal();
+				int partyRank = invite != null ? invite.getPartyDifficulty().ordinal() : ownRank;
+				boolean confirming = targetEntry.partyId() != null && targetEntry.partyId().equals(pendingConfirmParty);
 				actionBtn.visible = true;
-				actionBtn.active = true;
-				actionBtn.setMessage(tr("gui.dragonminez.party.invite.accept"));
+				actionBtn.active = partyRank >= ownRank;
+				actionBtn.setMessage(tr(confirming ? "quest.dmz.party.invite.difficulty_confirm.button" : "gui.dragonminez.party.invite.accept"));
 			}
 			default -> {
 				actionBtn.visible = true;
@@ -384,7 +398,8 @@ public class PartyMenuScreen extends BaseMenuScreen {
 		switch (currentView) {
 			case CREATE -> {
 				if (!isSelf && target.isOnline()) {
-					Minecraft.getInstance().player.connection.sendCommand("dmzparty invite " + name);
+					com.dragonminez.common.network.NetworkHandler.sendToServer(
+							new com.dragonminez.common.network.C2S.InvitePartyMemberC2S(target.id()));
 				}
 			}
 			case JOIN -> answerInvite(true);
@@ -626,10 +641,20 @@ public class PartyMenuScreen extends BaseMenuScreen {
 		y = inviteRow(graphics, centreX, y, tr("gui.dragonminez.party.invite.from"),
 				txt(invite.getInviterName()), 0xFFFFFF);
 		y = inviteRow(graphics, centreX, y, tr("gui.dragonminez.party.invite.difficulty"),
-				tr("gui.dragonminez.quest_tree.difficulty." + invite.getPartyDifficulty().name().toLowerCase()),
-				0xFFFFFF);
-		inviteRow(graphics, centreX, y, tr("gui.dragonminez.party.invite.expires"),
+				difficultyLabel(invite.getPartyDifficulty()), 0xFFFFFF);
+		y = inviteRow(graphics, centreX, y, tr("gui.dragonminez.party.invite.expires"),
 				txt(secondsLeft + "s"), secondsLeft <= 10 ? 0xFFFF5555 : 0xFFFFFF);
+
+		Difficulty own = ownDifficulty();
+		if (invite.getPartyDifficulty().ordinal() < own.ordinal()) {
+			drawWrappedCentered(graphics, tr("gui.dragonminez.party.invite.difficulty_low", difficultyLabel(own)), centreX, y, 0xFF5555);
+		} else if (invite.getPartyDifficulty().ordinal() > own.ordinal()) {
+			drawWrappedCentered(graphics, tr("gui.dragonminez.party.invite.difficulty_change", difficultyLabel(invite.getPartyDifficulty())), centreX, y, 0xFFE066);
+		}
+	}
+
+	private Component difficultyLabel(Difficulty difficulty) {
+		return tr("gui.dragonminez.quest_tree.difficulty." + difficulty.name().toLowerCase(java.util.Locale.ROOT));
 	}
 
 	private int inviteRow(GuiGraphics graphics, int centreX, int y, Component label, Component value, int valueColour) {
@@ -744,6 +769,7 @@ public class PartyMenuScreen extends BaseMenuScreen {
 		if (uiMouseX >= leftPanelX + 10 && uiMouseX <= leftPanelX + 120 && uiMouseY >= startY && uiMouseY <= startY + viewHeight) {
 			int index = (int) ((uiMouseY - startY + listScroll.scroll()) / ITEM_HEIGHT);
 			if (index >= 0 && index < displayList.size()) {
+				if (index != selectedIndex) pendingConfirmParty = null;
 				selectedIndex = index;
 				refreshActionButtons();
 				return true;

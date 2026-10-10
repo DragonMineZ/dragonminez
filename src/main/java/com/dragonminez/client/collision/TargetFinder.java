@@ -13,7 +13,10 @@ import net.minecraft.world.level.ClipContext;
 import net.minecraft.world.phys.HitResult;
 import net.minecraft.world.phys.Vec3;
 
+import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 public class TargetFinder {
@@ -43,45 +46,40 @@ public class TargetFinder {
 
         OrientedBoundingBox obb = MeleeHitbox.build(player, origin, attack, attackRange, player.getXRot(), player.getYRot());
 
-        List<Entity> validTargets = filterTargetsByOBB(entities, origin, obb);
-
-        validTargets.sort((e1, e2) -> {
+        entities.sort((e1, e2) -> {
             if (e1 == cursorTarget) return -1;
             if (e2 == cursorTarget) return 1;
             return Double.compare(e1.distanceToSqr(player), e2.distanceToSqr(player));
         });
+
+        List<Entity> validTargets = filterTargetsByOBB(entities, origin, obb);
 
         return new TargetResult(validTargets, obb);
     }
 
     private static List<Entity> getInitialTargets(Player player, Entity cursorTarget, double attackRange) {
         var box = player.getBoundingBox().inflate(attackRange + 1.0);
-        List<Entity> targets = player.level().getEntitiesOfClass(Entity.class, box)
+        return player.level().getEntitiesOfClass(Entity.class, box)
                 .stream()
                 .filter(e -> e != player && e.isAttackable() && !e.isSpectator())
                 .filter(e -> TargetHelper.getRelation(player, e) != TargetHelper.Relation.FRIENDLY)
                 .collect(Collectors.toList());
-
-        if (player.level() instanceof net.minecraft.client.multiplayer.ClientLevel clientLevel) {
-            for (net.minecraftforge.entity.PartEntity<?> part : clientLevel.getPartEntities()) {
-                if (part.isAttackable() && !part.isSpectator() && part.getBoundingBox().intersects(box)
-                        && TargetHelper.getRelation(player, part) != TargetHelper.Relation.FRIENDLY) {
-                    targets.add(part);
-                }
-            }
-        }
-        return targets;
     }
 
     private static List<Entity> filterTargetsByOBB(List<Entity> entities, Vec3 origin, OrientedBoundingBox obb) {
-        return entities.stream()
-                .filter(entity -> {
-                    if (!obb.intersects(entity.getBoundingBox())) return false;
-                    Vec3 distanceVector = CollisionHelper.distanceVector(origin, entity.getBoundingBox());
-                    Vec3 closestPoint = origin.add(distanceVector);
-                    return rayContainsNoObstacle(origin, closestPoint);
-                })
-                .collect(Collectors.toList());
+        List<Entity> valid = new ArrayList<>();
+        Set<Entity> owners = new HashSet<>();
+        for (Entity entity : entities) {
+            Entity owner = TargetHelper.resolveHittable(entity);
+            if (owners.contains(owner)) continue;
+            if (!obb.intersects(entity.getBoundingBox())) continue;
+            Vec3 distanceVector = CollisionHelper.distanceVector(origin, entity.getBoundingBox());
+            Vec3 closestPoint = origin.add(distanceVector);
+            if (!rayContainsNoObstacle(origin, closestPoint)) continue;
+            owners.add(owner);
+            valid.add(entity);
+        }
+        return valid;
     }
 
     private static boolean rayContainsNoObstacle(Vec3 start, Vec3 end) {

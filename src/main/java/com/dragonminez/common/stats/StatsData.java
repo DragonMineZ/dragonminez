@@ -23,6 +23,7 @@ import com.dragonminez.common.stats.skills.Skills;
 import com.dragonminez.common.stats.techniques.TechniqueData;
 import com.dragonminez.common.stats.techniques.Techniques;
 import com.dragonminez.common.util.FusionForms;
+import com.dragonminez.common.util.GodRitualHelper;
 import com.dragonminez.common.util.TransformationsHelper;
 import com.dragonminez.common.util.lists.StackForms;
 import com.dragonminez.server.util.GravityLogic;
@@ -497,15 +498,17 @@ public class StatsData {
 	}
 
 	public double getFlightStateSpeedMultiplier() {
+		double share = GodRitualHelper.donorSpeedMultiplier(this);
 		CombatConfig combatConfig = ConfigManager.getCombatConfig();
-		if (combatConfig == null) return 1.0;
-		return status.isSurgeActive() ? combatConfig.getSurgeFlySpeedMultiplier() : 1.0;
+		if (combatConfig == null) return share;
+		return (status.isSurgeActive() ? combatConfig.getSurgeFlySpeedMultiplier() : 1.0) * share;
 	}
 
 	public double getMovementSpeedMultiplier() {
+		double share = GodRitualHelper.donorSpeedMultiplier(this);
 		CombatConfig combatConfig = ConfigManager.getCombatConfig();
-		if (combatConfig == null || !combatConfig.getEnableSpeedSystem()) return 1.0;
-		return Math.min(combatConfig.getSpeedMovementCap(), getSpeed());
+		if (combatConfig == null || !combatConfig.getEnableSpeedSystem()) return share;
+		return Math.min(combatConfig.getSpeedMovementCap(), getSpeed()) * share;
 	}
 
 	public double getMeleeDamage() {
@@ -774,26 +777,38 @@ public class StatsData {
 		return baseStaminaRequired * getAdjustedStaminaDrainMultiplier();
 	}
 
-	private double getFormOffenseCostFactor() {
-		boolean hasFormMult = character.hasActiveForm() && character.getActiveFormData() != null;
-		boolean hasStackMult = character.hasActiveStackForm() && character.getActiveStackFormData() != null;
-		double formCostMultiplier;
-		if (hasFormMult && hasStackMult) {
-			formCostMultiplier = (character.getActiveFormData().getMaxCostMultiplier()
-					+ character.getActiveStackFormData().getMaxCostMultiplier()) / 2.0;
-		} else if (hasFormMult) {
-			formCostMultiplier = character.getActiveFormData().getMaxCostMultiplier();
-		} else if (hasStackMult) {
-			formCostMultiplier = character.getActiveStackFormData().getMaxCostMultiplier();
-		} else {
-			formCostMultiplier = 1.0;
+	private double activeFormCostFactor() {
+		FormConfig.FormData form = character.getActiveFormData();
+		if (!character.hasActiveForm() || form == null) return 1.0;
+		return getMasteryCostFactor(form, character.getFormMasteries().getMastery(character.getActiveFormGroup(), character.getActiveForm()));
+	}
+
+	private double activeStackCostFactor() {
+		FormConfig.FormData stack = character.getActiveStackFormData();
+		if (!character.hasActiveStackForm() || stack == null || isUltimateStackFormActive()) return 1.0;
+		return getMasteryCostFactor(stack, character.getStackFormMasteries().getMastery(character.getActiveStackFormGroup(), character.getActiveStackForm()));
+	}
+
+	private double masteryWeightedCostFactor(java.util.function.ToDoubleFunction<FormConfig.FormData> drain) {
+		double weight = 0.0;
+		double total = 0.0;
+		FormConfig.FormData form = character.getActiveFormData();
+		if (character.hasActiveForm() && form != null) {
+			double d = Math.max(0.0, drain.applyAsDouble(form));
+			weight += d;
+			total += d * activeFormCostFactor();
 		}
-		return Math.min(1.0, formCostMultiplier);
+		FormConfig.FormData stack = character.getActiveStackFormData();
+		if (character.hasActiveStackForm() && stack != null) {
+			double d = Math.max(0.0, drain.applyAsDouble(stack));
+			weight += d;
+			total += d * activeStackCostFactor();
+		}
+		return weight > 0.0 ? total / weight : 1.0;
 	}
 
 	private double getReducedOffense() {
-		double totalOffense = getMeleeDamageNoBonus() + getStrikeDamageNoBonus() + getKiDamageNoBonus();
-		return totalOffense * getFormOffenseCostFactor();
+		return getMeleeDamageNoBonus() + getStrikeDamageNoBonus() + getKiDamageNoBonus();
 	}
 
 	private double getMeleeDamageNoBonus() {
@@ -827,14 +842,13 @@ public class StatsData {
 		double base = getAdjustedEnergyDrain();
 		if (base <= 0.0) return base;
 		double maxEnergy = getMaxEnergy();
-		double rawEnergyRatio = getReducedOffense() / Math.max(1.0, maxEnergy * 1.5);
-		double energyRatio = Math.max(1.0, Math.sqrt(rawEnergyRatio));
+		double energyRatio = Math.max(1.0, getReducedOffense() / Math.max(1.0, maxEnergy * 5.0));
 		double formRawEneDrain = 0.0;
 		if (character.hasActiveForm() && character.getActiveFormData() != null)
 			formRawEneDrain += Math.max(0.0, character.getActiveFormData().getEnergyDrain());
 		if (character.hasActiveStackForm() && character.getActiveStackFormData() != null)
 			formRawEneDrain += Math.max(0.0, character.getActiveStackFormData().getEnergyDrain());
-		double percentageEnergy = maxEnergy * (formRawEneDrain * 0.01) * 0.75;
+		double percentageEnergy = maxEnergy * (formRawEneDrain * 0.01) * 0.75 * masteryWeightedCostFactor(FormConfig.FormData::getEnergyDrain);
 		return (base * energyRatio) + percentageEnergy;
 	}
 
@@ -843,7 +857,7 @@ public class StatsData {
 		if (base <= 0.0) return base;
 		double maxStamina = getMaxStamina();
 		double staminaRatio = Math.max(1.0, getReducedOffense() / Math.max(1.0, maxStamina * 1.5));
-		double percentageStamina = maxStamina * 0.005;
+		double percentageStamina = maxStamina * 0.005 * masteryWeightedCostFactor(FormConfig.FormData::getStaminaDrain);
 		return (base * staminaRatio) + percentageStamina;
 	}
 
@@ -852,7 +866,7 @@ public class StatsData {
 		if (base <= 0.0) return base;
 		double maxHealth = getMaxHealth();
 		double healthRatio = Math.max(1.0, getReducedOffense() / Math.max(1.0, maxHealth * 1.5));
-		double percentageHealth = maxHealth * 0.005;
+		double percentageHealth = maxHealth * 0.005 * masteryWeightedCostFactor(FormConfig.FormData::getHealthDrain);
 		return (base * healthRatio) + percentageHealth;
 	}
 
@@ -861,9 +875,10 @@ public class StatsData {
 		double stack = getStackFormMultiplier(statName);
 		double effect = getEffectsMultiplier(statName);
 		double secondary = statName.equalsIgnoreCase("DEF") ? 1.0 : secondaryStatEffects.getMultiplier(statName);
+		double kiShare = GodRitualHelper.kiShareMultiplier(this, statName);
 
-		if (ConfigManager.getServerConfig().getGameplay().getMultiplicationInsteadOfAdditionForMultipliers()) return form * stack * effect * secondary;
-		else return 1.0 + (form - 1.0) + (stack - 1.0) + (effect - 1.0) + (secondary - 1.0);
+		if (ConfigManager.getServerConfig().getGameplay().getMultiplicationInsteadOfAdditionForMultipliers()) return form * stack * effect * secondary * kiShare;
+		else return (1.0 + (form - 1.0) + (stack - 1.0) + (effect - 1.0) + (secondary - 1.0)) * kiShare;
 	}
 
 	public double getFormMultiplier(String statName) {
@@ -891,6 +906,10 @@ public class StatsData {
 			case "SPEED" -> formData.getSpeedMultiplier();
 			default -> 1.0;
 		};
+
+		if (TransformationsHelper.isGodRitualFormType(formConfig.getFormType())) {
+			return applyRacialFormPowerModifier(currentFormGroup, getGodRitualMultiplier(formData, statName));
+		}
 
 		if (isRageBorrowedForm(currentFormGroup, formData)) {
 			return applyRacialFormPowerModifier(currentFormGroup, getRageBorrowedMultiplier(formData, statName));
@@ -925,6 +944,22 @@ public class StatsData {
 		double reference = legendary.getStrMultiplier() - 1.0;
 		double share = reference > 0.0 ? (legendaryBase - 1.0) / reference : 1.0;
 		return Math.min(bestMult + bonus * share, splendor);
+	}
+
+	private double getGodRitualMultiplier(FormConfig.FormData ritualForm, String statName) {
+		double floor = getBaseFormMultiplier(ritualForm, statName);
+		Object[] bestResult = findBestForm(false, false, true);
+		if (!(bestResult[1] instanceof FormConfig.FormData bestForm)) return floor;
+		double bestMastery = character.getFormMasteries().getMastery((String) bestResult[0], bestForm.getName());
+		double bestMult = getMasteryAdjustedMultiplier(bestForm, statName, bestMastery);
+		if (bestMult <= 1.0) return floor;
+		double boosted = 1.0 + (bestMult - 1.0) * (1.0 + GodRitualHelper.powerBonus(this));
+		return Math.max(boosted, floor);
+	}
+
+	public FormConfig.FormData getGodRitualReferenceForm() {
+		Object[] bestResult = findBestForm(false, false, true);
+		return bestResult[1] instanceof FormConfig.FormData bestForm ? bestForm : null;
 	}
 
 	private double applyRacialFormPowerModifier(String groupName, double multiplier) {
@@ -1024,6 +1059,10 @@ public class StatsData {
 	}
 
 	private Object[] getBestBaseFormWithGroup(boolean forUltimate) {
+		return findBestForm(forUltimate, !forUltimate, false);
+	}
+
+	private Object[] findBestForm(boolean forUltimate, boolean skipLegendary, boolean skipRageBorrowed) {
 		String raceName = character.getRaceName();
 		Map<String, FormConfig> groups = FusionForms.allFormGroups(this);
 		if (groups == null || groups.isEmpty()) return new Object[]{null, null};
@@ -1035,12 +1074,13 @@ public class StatsData {
 			String groupName = entry.getKey();
 			FormConfig group = entry.getValue();
 			if (group == null) continue;
-			if (!forUltimate && TransformationsHelper.isMutantLegendaryGroup(groupName)) continue;
+			if (skipLegendary && TransformationsHelper.isMutantLegendaryGroup(groupName)) continue;
 
 			List<FormConfig.FormData> unlocked = TransformationsHelper.getUnlockedForms(this, raceName, groupName);
 			for (FormConfig.FormData formData : unlocked) {
 				if (formData == null) continue;
 				if (forUltimate && formData.isIncompatibleWith(StackForms.GROUP_ULTIMATE, StackForms.ULTIMATE)) continue;
+				if (skipRageBorrowed && isRageBorrowedForm(groupName, formData)) continue;
 
 				double mastery = character.getFormMasteries().getMastery(groupName, formData.getName());
 

@@ -108,6 +108,9 @@ public class ModRenderTypes extends RenderType {
     private static final RenderStateShard.ShaderStateShard TRANSFORMATION_MASK_TEX_SHADER = new RenderStateShard.ShaderStateShard(() -> DMZShaders.outlineMaskTexShader);
 
     private static final Map<ResourceLocation, RenderType> TEXTURED_MASK_CACHE = new HashMap<>();
+    private static final Map<ResourceLocation, RenderType> RITUAL_SHELL_CACHE = new HashMap<>();
+    private static final Map<ResourceLocation, RenderType> RITUAL_SHELL_VIEW_OFFSET_CACHE = new HashMap<>();
+    private static final Map<ResourceLocation, RenderType> RITUAL_SHELL_SKIN_OVERLAY_CACHE = new HashMap<>();
     private static final Map<ResourceLocation, RenderType> TEXTURED_MASK_VIEW_OFFSET_CACHE = new HashMap<>();
     private static final Map<ResourceLocation, RenderType> TEXTURED_MASK_SKIN_OVERLAY_CACHE = new HashMap<>();
 
@@ -513,6 +516,39 @@ public class ModRenderTypes extends RenderType {
         if (sourceName.contains(SKIN_OVERLAY_LAYERING_TOKEN)) return AFTERIMAGE_SKIN_OVERLAY.apply(texture);
         if (sourceName.contains(POLYGON_OFFSET_LAYERING_TOKEN)) return AFTERIMAGE_OFFSET.apply(texture);
         return AFTERIMAGE.apply(texture);
+    }
+
+    @Nullable
+    public static RenderType ritualShell(@Nullable RenderType sourceRenderType) {
+        if (sourceRenderType == null || sourceRenderType.format() != DefaultVertexFormat.NEW_ENTITY) return null;
+        if (sourceRenderType.mode() != VertexFormat.Mode.QUADS || isGlint(sourceRenderType)) return null;
+        ResourceLocation texture = resolveSourceTexture(sourceRenderType);
+        if (texture == null) return null;
+        RenderStateShard.LayeringStateShard layering = layeringOf(sourceRenderType);
+        Map<ResourceLocation, RenderType> cache = layering == VIEW_OFFSET_Z_LAYERING ? RITUAL_SHELL_VIEW_OFFSET_CACHE
+                : layering == SKIN_OVERLAY_LAYERING ? RITUAL_SHELL_SKIN_OVERLAY_CACHE
+                : RITUAL_SHELL_CACHE;
+        return cache.computeIfAbsent(texture, t -> buildRitualShell(t, layering));
+    }
+
+    private static RenderType buildRitualShell(ResourceLocation texture, RenderStateShard.LayeringStateShard layering) {
+        return create(
+                "dmz_ritual_shell",
+                DefaultVertexFormat.NEW_ENTITY,
+                VertexFormat.Mode.QUADS,
+                1536,
+                false,
+                true,
+                CompositeState.builder()
+                        .setShaderState(RENDERTYPE_OUTLINE_SHADER)
+                        .setTextureState(new RenderStateShard.TextureStateShard(texture, false, false))
+                        .setTransparencyState(TRANSLUCENT_TRANSPARENCY)
+                        .setCullState(NO_CULL)
+                        .setDepthTestState(LEQUAL_DEPTH_TEST)
+                        .setWriteMaskState(COLOR_WRITE)
+                        .setLayeringState(layering)
+                        .createCompositeState(false)
+        );
     }
 
     public static RenderType transformationMask() {

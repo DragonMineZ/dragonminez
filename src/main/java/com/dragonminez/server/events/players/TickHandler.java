@@ -363,7 +363,8 @@ public class TickHandler {
 				else flySprintAuraTicks.remove(playerId);
 			}
 			boolean auraFromFlySprint = flySprintAuraTicks.containsKey(playerId);
-			data.getStatus().setAuraActive(auraFromActions || auraFromFlySprint);
+			boolean auraFromRitual = GodRitualService.isParticipant(serverPlayer);
+			data.getStatus().setAuraActive(auraFromActions || auraFromFlySprint || auraFromRitual);
 
 			if (tickCounter % 5 == 0) {
 				boolean hasYajirobe = serverPlayer.getInventory().hasAnyOf(Set.of(MainItems.KATANA_YAJIROBE.get()));
@@ -766,7 +767,8 @@ public class TickHandler {
 			int newEnergy = (int) Math.max(0, Math.min(effectiveMaxEnergy, currentEnergy + Math.ceil(energyChange)));
 			data.getResources().setCurrentEnergy(newEnergy);
 
-			if (newEnergy <= maxEnergy * 0.05 && !data.getStatus().isAndroidUpgraded() && (hasActiveForm || hasActiveStackForm)) {
+			if (newEnergy <= maxEnergy * 0.05 && !data.getStatus().isAndroidUpgraded() && (hasActiveForm || hasActiveStackForm)
+					&& !GodRitualService.isParticipant(player)) {
 				if (!TransformationsHelper.clampToEvolutionFloor(data)) data.getCharacter().clearActiveForm(player, false);
 				data.getCharacter().clearActiveStackForm(player, false);
 				data.getResources().setPowerRelease(0);
@@ -841,6 +843,7 @@ public class TickHandler {
 	}
 
 	private static void handleActionCharge(ServerPlayer player, StatsData data) {
+		if (GodRitualService.ownsActionCharge(player)) return;
 		if (!data.getStatus().isActionCharging()) {
 			if (data.getResources().getActionCharge() > 0) data.getResources().setActionCharge(0);
 			return;
@@ -974,6 +977,8 @@ public class TickHandler {
 				double chargeCost = 0.5 * base * (KiAttackData.costMultiplier(newP) - KiAttackData.costMultiplier(percent));
 				double costModifier = data.getKiAttackCostModifier();
 				float accum = CHARGE_COST_ACCUM.getOrDefault(player.getUUID(), 0.0f) + (float) (chargeCost * costModifier);
+				int credited = KiShareService.drawAttackCredit(player, (int) accum);
+				accum -= credited;
 				float energy = data.getResources().getCurrentEnergy();
 				int effectiveWhole = (int) accum;
 
@@ -1148,7 +1153,7 @@ public class TickHandler {
 
 		if (hasActiveForm && data.getCharacter().getSelectedFormGroup().contains("oozaru") && !data.getCharacter().isHasSaiyanTail()
 				&& !SaiyanForms.SUPER_SAIYAN_4.equals(data.getCharacter().getActiveForm())
-				&& !TransformationsHelper.isInFalseForm(data)) {
+				&& !TransformationsHelper.isInScriptedForm(data)) {
 			if (TransformationsHelper.revertToBaseForm(player, data)) {
 				player.removeEffect(MainEffects.TRANSFORMED.get());
 			}
@@ -1167,7 +1172,7 @@ public class TickHandler {
 			hasActiveStackForm = data.getCharacter().getActiveStackForm() != null && !data.getCharacter().getActiveStackForm().isEmpty();
 		}
 
-		if ((hasActiveForm || hasActiveStackForm) && !player.isCreative() && !player.isSpectator()) {
+		if ((hasActiveForm || hasActiveStackForm) && !player.isCreative() && !player.isSpectator() && !GodRitualService.isParticipant(player)) {
 
 			int rawEnergyDrain = (int) Math.round(data.getEffectiveEnergyDrain());
 			int energyDrain = RacialRegistry.forPlayer(data)

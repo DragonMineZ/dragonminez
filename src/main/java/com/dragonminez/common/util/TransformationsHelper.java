@@ -22,6 +22,8 @@ public class TransformationsHelper {
 
 	private static final String FROST_DEMON_RACE = "frostdemon";
 	public static final String FALSE_FORM_TYPE = "falseform";
+	public static final String GOD_RITUAL_FORM_TYPE = "godritual";
+	private static final String GOD_FORM_SKILL = "godforms";
 
 	public static class OrderedFormEntry {
 		private final String groupName;
@@ -66,7 +68,7 @@ public class TransformationsHelper {
 
 			String formType = formConfig.getFormType() != null ? formConfig.getFormType().toLowerCase(Locale.ROOT) : "";
 			if (formType.equalsIgnoreCase("android")) continue;
-			if (isFalseFormType(formType)) continue;
+			if (isScriptedFormType(formType)) continue;
 
 			for (FormConfig.FormData formData : formConfig.getForms().values()) {
 				if (formData == null) continue;
@@ -88,7 +90,7 @@ public class TransformationsHelper {
 		if (formConfig == null) {
 			return unlockedForms;
 		}
-		if (isFalseFormType(formConfig.getFormType())) {
+		if (isScriptedFormType(formConfig.getFormType())) {
 			return unlockedForms;
 		}
 		if (FusionForms.isQualified(groupName) && !FusionForms.isForeignGroupAllowed(statsData, groupName)) {
@@ -162,15 +164,29 @@ public class TransformationsHelper {
 		return formType != null && formType.equalsIgnoreCase(FALSE_FORM_TYPE);
 	}
 
-	public static boolean isFalseFormGroup(String raceName, String groupName) {
-		if (raceName == null || groupName == null || groupName.isEmpty()) return false;
-		FormConfig config = ConfigManager.getFormGroup(raceName, groupName);
-		return config != null && isFalseFormType(config.getFormType());
+	public static boolean isGodRitualFormType(String formType) {
+		return formType != null && formType.equalsIgnoreCase(GOD_RITUAL_FORM_TYPE);
 	}
 
-	public static boolean isInFalseForm(StatsData statsData) {
+	public static boolean isScriptedFormType(String formType) {
+		return isFalseFormType(formType) || isGodRitualFormType(formType);
+	}
+
+	public static boolean isScriptedFormGroup(String raceName, String groupName) {
+		if (raceName == null || groupName == null || groupName.isEmpty()) return false;
+		FormConfig config = ConfigManager.getFormGroup(raceName, groupName);
+		return config != null && isScriptedFormType(config.getFormType());
+	}
+
+	public static boolean isInScriptedForm(StatsData statsData) {
 		if (statsData == null || !statsData.getCharacter().hasActiveForm()) return false;
-		return isFalseFormGroup(statsData.getCharacter().getRaceName(), statsData.getCharacter().getActiveFormGroup());
+		return isScriptedFormGroup(statsData.getCharacter().getRaceName(), statsData.getCharacter().getActiveFormGroup());
+	}
+
+	public static boolean isGodRitualGroup(String raceName, String groupName) {
+		if (raceName == null || groupName == null || groupName.isEmpty()) return false;
+		FormConfig config = ConfigManager.getFormGroup(raceName, groupName);
+		return config != null && isGodRitualFormType(config.getFormType());
 	}
 
 	public static boolean hasMutantLegendaryAccess(StatsData statsData, String groupName) {
@@ -585,7 +601,7 @@ public class TransformationsHelper {
 		String race = statsData.getCharacter().getRaceName();
 		String group = getTransformTargetGroup(statsData);
 		if (group == null || group.isEmpty()) return null;
-		if (isInFalseForm(statsData) || isFalseFormGroup(race, group)) return null;
+		if (isInScriptedForm(statsData) || isScriptedFormGroup(race, group)) return null;
 		FormConfig config = ConfigManager.getFormGroup(race, group);
 		if (config == null) return null;
 
@@ -847,7 +863,13 @@ public class TransformationsHelper {
 	public static boolean isInstantTransmissionBlocked(StatsData requester, StatsData target) {
 		if (target.getStatus().isAndroidUpgraded()) return true;
 		if (GlindDivinity.isHiddenFrom(target, requester)) return true;
-		return hasGodFormActive(target) && requester.getSkills().getSkillLevel("godforms") < 1;
+		return hasGodFormActive(target) && !hasGodKi(requester);
+	}
+
+	public static boolean hasGodKi(StatsData statsData) {
+		if (statsData == null) return false;
+		if (statsData.getSkills().getSkillLevel(GOD_FORM_SKILL) >= 1) return true;
+		return hasGodFormActive(statsData) || GlindDivinity.hasDivineKi(statsData);
 	}
 
 	public static boolean hasAntiKiCloak(Player target) {

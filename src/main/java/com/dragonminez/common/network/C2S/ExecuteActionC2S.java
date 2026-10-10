@@ -64,11 +64,11 @@ public class ExecuteActionC2S {
 				if (player.hasEffect(MainEffects.STUN.get())) return;
 				if (!PacketRateLimiter.allow(player.getUUID(), "execute_action_" + action.name(), player.level().getGameTime(), 2)) return;
 				StatsProvider.get(StatsCapability.INSTANCE, player).ifPresent(data -> {
-					if (data.getStatus().isKnockedDown() || data.getStatus().isMatchFrozen()) return;
+					if (data.getStatus().isKnockedDown() || data.getStatus().isMatchFrozen() || data.getStatus().isInGodRitual()) return;
 					boolean needsSync = false;
 					switch (action) {
 						case FORCE_DESCEND, MENU_DESCEND -> {
-							if (TransformationsHelper.isInFalseForm(data)) return;
+							if (TransformationsHelper.isInScriptedForm(data)) return;
 							boolean menuDescend = action == ActionType.MENU_DESCEND;
 							if (rightClick) {
 								data.getCharacter().clearActiveStackForm(player);

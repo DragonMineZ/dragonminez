@@ -1,6 +1,7 @@
 package com.dragonminez.common.combat.clash;
 
 import com.dragonminez.Reference;
+import com.dragonminez.common.combat.logic.player.TargetHelper;
 import com.dragonminez.common.init.MainSounds;
 import com.dragonminez.common.init.entities.ki.AbstractKiProjectile;
 import com.dragonminez.common.network.NetworkHandler;
@@ -11,6 +12,7 @@ import net.minecraft.sounds.SoundEvent;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.phys.Vec3;
 import net.minecraftforge.registries.RegistryObject;
 import net.minecraftforge.event.TickEvent;
@@ -111,7 +113,7 @@ public class BeamClashManager {
                 AbstractKiProjectile beamB = majors.get(j);
                 if (beamB.isClashLocked()) continue;
                 if (!(beamB.getOwner() instanceof LivingEntity ownerB)) continue;
-                if (ownerA == ownerB) continue;
+                if (ownerA == ownerB || areAllies(ownerA, ownerB)) continue;
 
                 if (beamsClash(beamA, beamB)) {
                     BeamClash clash = new BeamClash(
@@ -125,6 +127,10 @@ public class BeamClashManager {
                 }
             }
         }
+    }
+
+    private static boolean areAllies(LivingEntity a, LivingEntity b) {
+        return a instanceof Player playerA && b instanceof Player playerB && TargetHelper.areFriendlyPlayers(playerA, playerB);
     }
 
     private static boolean beamsClash(AbstractKiProjectile beamA, AbstractKiProjectile beamB) {
@@ -153,6 +159,7 @@ public class BeamClashManager {
             for (AbstractKiProjectile minor : minors) {
                 if (minor.isRemoved()) continue;
                 if (minor.getOwner() == majorOwner) continue;
+                if (minor.getOwner() instanceof LivingEntity minorOwner && areAllies(majorOwner, minorOwner)) continue;
                 double threshold = (major.getSize() + minor.getSize()) * MINOR_BREAK_FACTOR + MINOR_BREAK_PAD;
                 if (pointSegmentDistanceSq(minor.position(), a0, a1) <= threshold * threshold) {
                     shatterMinor(level, minor);

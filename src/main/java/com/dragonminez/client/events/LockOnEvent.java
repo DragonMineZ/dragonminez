@@ -291,7 +291,7 @@ public class LockOnEvent {
 		if (targetData == null) return true;
 		if (KiSenseScan.isCloaked(targetPlayer)) return false;
 		if (KiSenseScan.isKiSuppressed(targetData)) return false;
-		if (TransformationsHelper.hasGodFormActive(targetData) && myData.getSkills().getSkillLevel("godforms") <= 0) return false;
+		if (TransformationsHelper.hasGodFormActive(targetData) && !TransformationsHelper.hasGodKi(myData)) return false;
 		return true;
 	}
 }

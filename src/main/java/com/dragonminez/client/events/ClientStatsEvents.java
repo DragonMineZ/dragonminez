@@ -6,6 +6,7 @@ import com.dragonminez.client.flight.FlightSoundInstance;
 import com.dragonminez.client.gui.hud.ScouterHUD;
 import com.dragonminez.client.systems.BioSwellRenderState;
 import com.dragonminez.client.systems.FormVisualTransition;
+import com.dragonminez.client.systems.kishare.KiShareInput;
 import com.dragonminez.client.systems.kisense.CombatIndicators;
 import com.dragonminez.client.systems.kisense.KiSenseScan;
 import com.dragonminez.client.systems.kisense.KiSenseState;
@@ -21,6 +22,7 @@ import com.dragonminez.common.network.TriBeamPackets;
 import com.dragonminez.common.stats.*;
 import com.dragonminez.common.stats.character.Character;
 import com.dragonminez.common.stats.character.Cooldowns;
+import com.dragonminez.common.stats.character.Status;
 import com.dragonminez.common.stats.extras.ActionMode;
 import com.dragonminez.common.stats.skills.Skill;
 import com.dragonminez.common.stats.techniques.*;
@@ -178,7 +180,7 @@ public class ClientStatsEvents {
 
 				float totalScale = getBodyScale(stats)[0];
 
-				if (player.onGround()) {
+				if (player.onGround() && stats.getStatus().getGodRitualRole() != Status.GOD_RITUAL_DONOR) {
 					spawnGroundDust(player, totalScale);
 					spawnFloatingRubble(player, totalScale);
 				}
@@ -219,7 +221,7 @@ public class ClientStatsEvents {
 
 			Character character = data.getCharacter();
 
-			boolean isStunned = data.getStatus().isStunned();
+			boolean isStunned = data.getStatus().isStunned() || data.getStatus().isSharingKi();
 			boolean isKiChargeKeyPressed = KeyBinds.KI_CHARGE.isDown() && !isStunned;
 			boolean isDescendKeyPressed = KeyBinds.SECOND_FUNCTION_KEY.isDown() && !isStunned;
 			boolean isActionKeyPressed = KeyBinds.ACTION_KEY.isDown() && !isStunned;
@@ -286,7 +288,7 @@ public class ClientStatsEvents {
 			}
 
 			boolean chargeSessionActive = data.getTechniques().isTechniqueCharging() || data.getTechniques().isTechniqueChargeActive();
-			if (isDescendKeyPressed && isRightClickDown && !wasRightClickDown && !chargeSessionActive
+			if (isDescendKeyPressed && isRightClickDown && !wasRightClickDown && !chargeSessionActive && !KiShareInput.isChordDown()
 					&& !TechniqueDispatcher.isFiringKiAttack(localPlayer) && (!data.getStatus().isFused() && !data.getStatus().isFusionLeader())) {
 				float[] kiRgb;
 				if (character.hasActiveStackForm()
@@ -573,7 +575,7 @@ public class ClientStatsEvents {
 
 		StatsProvider.get(StatsCapability.INSTANCE, player).ifPresent(data -> {
 			if (!data.getStatus().isHasCreatedCharacter()) return;
-			boolean isStunned = data.getStatus().isStunned();
+			boolean isStunned = data.getStatus().isStunned() || data.getStatus().isSharingKi();
 			if (TechniqueDispatcher.isMovementRestrictedKiAttack(player, data) || isStunned) return;
 
 			boolean isDashKeyDown = KeyBinds.DASH_KEY.isDown();

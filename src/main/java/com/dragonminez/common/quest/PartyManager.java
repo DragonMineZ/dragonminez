@@ -184,8 +184,26 @@ public final class PartyManager {
         return members;
     }
 
+    public static int maxLevelGap() {
+        return ConfigManager.getServerConfig().getGameplay().getPartyMaxLevelGap();
+    }
+
+    public static int maxMembers() {
+        return ConfigManager.getServerConfig().getGameplay().getPartyMaxMembers();
+    }
+
+    public static int levelOf(ServerPlayer player) {
+        StatsData data = player != null ? getStatsData(player) : null;
+        return data != null ? data.getLevel() : 0;
+    }
+
+    public static Difficulty difficultyOf(ServerPlayer player) {
+        StatsData data = player != null ? getStatsData(player) : null;
+        return data != null ? data.getPlayerQuestData().getDifficulty() : Difficulty.NORMAL;
+    }
+
     private static boolean validateLevelGap(ServerPlayer leader, ServerPlayer target) {
-        int maxGap = ConfigManager.getServerConfig().getGameplay().getPartyMaxLevelGap();
+        int maxGap = maxLevelGap();
         if (maxGap == -1) return true;
 
         StatsData leaderData = getStatsData(leader);
@@ -201,15 +219,19 @@ public final class PartyManager {
 
     public static InviteRequestResult requestInvite(ServerPlayer inviter, ServerPlayer invitee) {
         if (inviter.getUUID().equals(invitee.getUUID())) return InviteRequestResult.CANNOT_INVITE_SELF;
-        if (isInParty(invitee)) return InviteRequestResult.ALREADY_IN_PARTY;
+        UUID inviterParty = getPartyId(inviter);
+        if (inviterParty != null && inviterParty.equals(getPartyId(invitee))) return InviteRequestResult.ALREADY_IN_PARTY;
 
         // A run is drawn when it starts: nobody joins a party that is in the middle of one.
         if (isInTournament(inviter) || isInTournament(invitee)) return InviteRequestResult.TOURNAMENT_ACTIVE;
 
         ServerPlayer resolvedLeader = isInParty(inviter) ? getPartyLeader(inviter) : inviter;
         if (resolvedLeader != null && !validateLevelGap(resolvedLeader, invitee)) return InviteRequestResult.LEVEL_GAP;
+        if (resolvedLeader != null && difficultyOf(resolvedLeader).ordinal() < difficultyOf(invitee).ordinal()) {
+            return InviteRequestResult.DIFFICULTY_TOO_LOW;
+        }
 
-        int maxMembers = ConfigManager.getServerConfig().getGameplay().getPartyMaxMembers();
+        int maxMembers = maxMembers();
         if (maxMembers != -1) {
             if (isInParty(inviter) && getAllPartyMembers(inviter).size() >= maxMembers) return InviteRequestResult.PARTY_FULL;
             else if (!isInParty(inviter) && maxMembers < 2) return InviteRequestResult.PARTY_FULL;
@@ -274,23 +296,27 @@ public final class PartyManager {
             return InviteAcceptResult.TOURNAMENT_ACTIVE;
         }
 
-        ServerPlayer resolvedLeader = isInParty(invitee) ? getPartyLeader(invitee) : invitee;
-        if (resolvedLeader != null && !validateLevelGap(resolvedLeader, invitee)) return InviteAcceptResult.LEVEL_GAP;
-
         if (invite.isExpired()) {
             inviteeQuestData.removePendingPartyInvite(invite.getPartyId());
             syncSelf(invitee);
             return InviteAcceptResult.EXPIRED;
         }
 
-        ServerPlayer leader = invitee.getServer().getPlayerList().getPlayer(invite.getPartyLeaderId());
-        if (leader == null || !isPartyLeader(leader) || !Objects.equals(getPartyId(leader), invite.getPartyId())) {
+        ServerPlayer leader = pendingLeader;
+        if (leader == null) {
             inviteeQuestData.removePendingPartyInvite(invite.getPartyId());
             syncSelf(invitee);
-            return InviteAcceptResult.INVALID;
+            return InviteAcceptResult.LEADER_OFFLINE;
+        }
+        if (!isPartyLeader(leader) || !Objects.equals(getPartyId(leader), invite.getPartyId())) {
+            inviteeQuestData.removePendingPartyInvite(invite.getPartyId());
+            syncSelf(invitee);
+            return InviteAcceptResult.PARTY_DISBANDED;
         }
 
-        int maxMembers = ConfigManager.getServerConfig().getGameplay().getPartyMaxMembers();
+        if (!validateLevelGap(leader, invitee)) return InviteAcceptResult.LEVEL_GAP;
+
+        int maxMembers = maxMembers();
         if (maxMembers != -1 && getAllPartyMembers(leader).size() >= maxMembers) {
             inviteeQuestData.removePendingPartyInvite(invite.getPartyId());
             syncSelf(invitee);
@@ -613,11 +639,11 @@ public final class PartyManager {
 
     public enum InviteRequestResult {
         INVITED, SUGGESTED, PARTY_FULL, ALREADY_IN_PARTY, NO_PERMISSION, LEVEL_GAP, CANNOT_INVITE_SELF,
-        TOURNAMENT_ACTIVE
+        TOURNAMENT_ACTIVE, DIFFICULTY_TOO_LOW
     }
 
     public enum InviteAcceptResult {
         SUCCESS, EXPIRED, PARTY_FULL, INVALID, LEVEL_GAP, DIFFICULTY_TOO_LOW, DIFFICULTY_CONFIRM_REQUIRED,
-        TOURNAMENT_ACTIVE
+        TOURNAMENT_ACTIVE, LEADER_OFFLINE, PARTY_DISBANDED
     }
 }

@@ -25,6 +25,7 @@ import com.dragonminez.common.stats.StatsCapability;
 import com.dragonminez.common.stats.StatsData;
 import com.dragonminez.common.stats.StatsProvider;
 import com.dragonminez.common.stats.techniques.TechniqueDispatcher;
+import it.unimi.dsi.fastutil.ints.IntOpenHashSet;
 import lombok.Getter;
 import lombok.Setter;
 import net.minecraft.core.BlockPos;
@@ -70,10 +71,8 @@ import software.bernie.geckolib.core.animation.AnimationController;
 import software.bernie.geckolib.core.animation.RawAnimation;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
-import java.util.UUID;
+import java.util.function.Function;
 
 public abstract class DBSagasEntity extends Monster implements GeoEntity, ITextureVariant {
 
@@ -385,8 +384,12 @@ public abstract class DBSagasEntity extends Monster implements GeoEntity, ITextu
     private final AnimatableInstanceCache geoCache = new SingletonAnimatableInstanceCache(this);
 
     private PartEntity<?>[] hitboxParts;
-    private static final UUID GLOBAL_GATE_KEY = new UUID(0L, 0L);
-    private final Map<UUID, Long> partHitGate = new HashMap<>();
+    private static final int NO_ATTACKER_GATE_ID = Integer.MIN_VALUE;
+    private long partGateTick = Long.MIN_VALUE;
+    private final IntOpenHashSet partGateAttackers = new IntOpenHashSet();
+
+    private static Function<DBSagasEntity, float[]> renderExtentsProvider = entity -> null;
+    private float[] renderExtents;
 
     protected DBSagasEntity(EntityType<? extends Monster> pEntityType, Level pLevel) {
         super(pEntityType, pLevel);
@@ -447,6 +450,36 @@ public abstract class DBSagasEntity extends Monster implements GeoEntity, ITextu
         if (!this.hasHitboxParts() && this.getScale() <= 2.0F) return super.shouldRenderAtSqrDistance(distance);
         double range = GIANT_RENDER_RANGE * getViewScale();
         return distance < range * range;
+    }
+
+    public static void setRenderExtentsProvider(Function<DBSagasEntity, float[]> provider) {
+        renderExtentsProvider = provider;
+    }
+
+    private void refreshRenderExtents() {
+        this.renderExtents = renderExtentsProvider.apply(this);
+        this.noCulling = this.renderExtents == null;
+    }
+
+    @Override
+    public AABB getBoundingBoxForCulling() {
+        float[] extents = this.renderExtents;
+        if (this.hitboxParts == null || extents == null) return super.getBoundingBoxForCulling();
+
+        float hitboxScale = this.getHitboxScale();
+        double radius = this.getBbWidth() * 0.5D;
+        for (PartEntity<?> generic : this.hitboxParts) {
+            if (generic instanceof DBSagasPart part) {
+                radius = Math.max(radius, Math.hypot(part.forwardOffset, part.sideOffset) * hitboxScale + part.getBbWidth() * 0.5D);
+            }
+        }
+
+        float scale = this.getScale();
+        radius = Math.max(radius, extents[0] * scale);
+        double top = Math.max(this.getVisualHeight(), extents[1] * scale);
+        double bottom = Math.min(0.0D, extents[2] * scale);
+        return new AABB(this.getX() - radius, this.getY() + bottom, this.getZ() - radius,
+                this.getX() + radius, this.getY() + top, this.getZ() + radius);
     }
 
     @Override
@@ -513,23 +546,18 @@ public abstract class DBSagasEntity extends Monster implements GeoEntity, ITextu
             part.yo = part.yOld = prevY;
             part.zo = part.zOld = prevZ;
         }
-
-        if (!this.partHitGate.isEmpty()) {
-            long now = this.level().getGameTime();
-            this.partHitGate.values().removeIf(tick -> tick < now);
-        }
     }
 
     public boolean receivePartDamage(DamageSource pSource, float pAmount, DBSagasPart part) {
         if (this.isInvulnerableTo(pSource)) return false;
 
         long now = this.level().getGameTime();
+        if (now != this.partGateTick) {
+            this.partGateTick = now;
+            this.partGateAttackers.clear();
+        }
         Entity attacker = pSource.getEntity();
-        UUID key = attacker != null ? attacker.getUUID() : GLOBAL_GATE_KEY;
-
-        Long last = this.partHitGate.get(key);
-        if (last != null && last == now) return false;
-        this.partHitGate.put(key, now);
+        if (!this.partGateAttackers.add(attacker != null ? attacker.getId() : NO_ATTACKER_GATE_ID)) return false;
 
         return this.hurt(pSource, pAmount);
     }
@@ -1011,6 +1039,7 @@ public abstract class DBSagasEntity extends Monster implements GeoEntity, ITextu
 
         if (this.hitboxParts != null) {
             this.positionHitboxParts();
+            if (this.level().isClientSide) this.refreshRenderExtents();
         }
 
         if (this.level().isClientSide) {

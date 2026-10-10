@@ -92,7 +92,7 @@ public final class FusionForms {
 	private static boolean isForeignGroupAllowed(FusedData fused, String rawGroup, FormConfig config) {
 		if (config == null || "androidforms".equalsIgnoreCase(rawGroup)) return false;
 		String type = config.getFormType() != null ? config.getFormType().toLowerCase(Locale.ROOT) : "";
-		if (TransformationsHelper.isFalseFormType(type)) return false;
+		if (TransformationsHelper.isScriptedFormType(type)) return false;
 		return !fused.isPartnerAndroid() || type.contains("god");
 	}
 

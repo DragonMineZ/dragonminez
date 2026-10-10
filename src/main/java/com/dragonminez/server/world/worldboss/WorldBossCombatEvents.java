@@ -15,10 +15,10 @@ import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.tags.DamageTypeTags;
 import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.entity.Entity;
+import net.minecraftforge.event.entity.living.LivingAttackEvent;
 import net.minecraftforge.event.entity.living.LivingDamageEvent;
 import net.minecraftforge.event.entity.living.LivingDeathEvent;
 import net.minecraftforge.event.entity.living.LivingHealEvent;
-import net.minecraftforge.event.entity.living.LivingHurtEvent;
 import net.minecraftforge.eventbus.api.EventPriority;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
@@ -84,10 +84,17 @@ public final class WorldBossCombatEvents {
 		player.setHealth(1.0F);
 	}
 
+	@SubscribeEvent(priority = EventPriority.LOWEST)
+	public static void onCasterDamaged(LivingDamageEvent event) {
+		if (event.isCanceled() || event.getAmount() <= 0.0F || !(event.getEntity() instanceof ServerPlayer player)) return;
+		WorldBossManager.noteReviveCasterDamage(player, event.getAmount());
+	}
+
 	@SubscribeEvent(priority = EventPriority.HIGHEST)
-	public static void onCasterHurt(LivingHurtEvent event) {
-		if (event.getAmount() <= 0.0F || !(event.getEntity() instanceof ServerPlayer player)) return;
-		if (WorldBossManager.isCastingRevive(player)) WorldBossManager.interruptRevive(player);
+	public static void onTruceAttack(LivingAttackEvent event) {
+		if (!(event.getEntity() instanceof ServerPlayer victim)) return;
+		if (!(event.getSource().getEntity() instanceof ServerPlayer attacker) || attacker == victim) return;
+		if (WorldBossManager.areTruceAllies(attacker.getUUID(), victim.getUUID(), victim.level().getGameTime())) event.setCanceled(true);
 	}
 
 	public static String resolveBossKey(Entity entity) {

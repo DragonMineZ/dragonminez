@@ -9,6 +9,7 @@ import com.dragonminez.common.stats.StatsCapability;
 import com.dragonminez.common.stats.StatsData;
 import com.dragonminez.common.stats.StatsProvider;
 import com.dragonminez.common.util.FusionTraits;
+import com.dragonminez.common.util.TransformationsHelper;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.player.Player;
@@ -16,7 +17,6 @@ import net.minecraft.world.entity.player.Player;
 public class GlindDivinity implements RacialAbility {
 	public static final String ID = "glind";
 
-	private static final String GOD_FORM_SKILL = "godforms";
 	private static final String FROST_DEMON_FAMILY = "frostdemon";
 	private static final String MAJIN_FAMILY = "majin";
 
@@ -48,8 +48,7 @@ public class GlindDivinity implements RacialAbility {
 
 	public static boolean canPerceiveDivineKi(Player viewer, StatsData viewerData) {
 		if (viewer != null && viewer.hasEffect(MainEffects.KAMI_BLESS.get())) return true;
-		if (hasDivineKi(viewerData)) return true;
-		return viewerData != null && viewerData.getSkills().getSkillLevel(GOD_FORM_SKILL) >= 1;
+		return TransformationsHelper.hasGodKi(viewerData);
 	}
 
 	public static boolean isHiddenFrom(StatsData target, StatsData viewer) {

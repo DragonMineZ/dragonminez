@@ -46,7 +46,9 @@ public class UpdateStatC2S {
             if (player == null) return;
 
             StatsProvider.get(StatsCapability.INSTANCE, player).ifPresent(data -> {
-                    if (player.hasEffect(MainEffects.STUN.get()) && msg.statusKey != StatAction.BLOCK) {
+                    boolean locked = player.hasEffect(MainEffects.STUN.get()) || data.getStatus().isKiShareLocked();
+                    if (locked && (msg.statusKey != StatAction.BLOCK || data.getStatus().isKiShareLocked())) {
+                      if (msg.statusKey == StatAction.BLOCK && data.getStatus().isBlocking()) data.getStatus().setBlocking(false);
                       if (msg.statusKey == StatAction.CHARGE_KI && data.getStatus().isChargingKi()) data.getStatus().setChargingKi(false);
                       if (msg.statusKey == StatAction.DESCEND && data.getStatus().isDescending()) data.getStatus().setDescending(false);
                       if (msg.statusKey == StatAction.ACTION_CHARGE && data.getStatus().isActionCharging()) data.getStatus().setActionCharging(false);
