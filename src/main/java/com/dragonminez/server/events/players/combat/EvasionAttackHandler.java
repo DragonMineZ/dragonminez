@@ -70,8 +70,8 @@ public class EvasionAttackHandler {
 	private static final double RAGE_SCREAM_VERTICAL_LIFT = 0.12;
 	private static final int SHARED_EVASION_COOLDOWN_TICKS = 60;
 
-	private static final int SLEEP_RECOVERY_PULSE_INTERVAL_TICKS = 20;
-	private static final float SLEEP_RECOVERY_HEAL_PER_PULSE = 0.10F;
+	public static final int SLEEP_RECOVERY_PULSE_INTERVAL_TICKS = 20;
+	public static final float SLEEP_RECOVERY_HEAL_PER_PULSE = 0.10F;
 
 	private static final double AFTERIMAGE_RANGE = 24.0;
 	private static final double DIMENSIONAL_WARP_RANGE = 64.0;

@@ -11,6 +11,8 @@ import com.dragonminez.common.network.S2C.TriggerAnimationS2C;
 import com.dragonminez.common.stats.StatsCapability;
 import com.dragonminez.common.stats.StatsProvider;
 import com.dragonminez.common.init.MainDamageTypes;
+import com.dragonminez.common.stats.techniques.EvasionAttackData;
+import com.dragonminez.server.events.players.combat.EvasionAttackHandler;
 import com.dragonminez.server.events.players.combat.KnockbackHelper;
 import com.dragonminez.server.events.players.combat.MeteorBurstCombo;
 import com.dragonminez.server.events.players.combat.MomentumImpactHandler;
@@ -20,6 +22,8 @@ import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundEvent;
+import net.minecraft.sounds.SoundEvents;
+import net.minecraft.util.Mth;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.entity.LivingEntity;
@@ -34,6 +38,7 @@ import java.util.WeakHashMap;
 
 public class ComboManager {
 
+    private static final int SLEEP_Z_INTERVAL_TICKS = 10;
     private static final Map<DBSagasEntity, MeteorBurstCombo.State> METEOR_BURSTS = new WeakHashMap<>();
     private static final Map<DBSagasEntity, MysticBallCombo.State> MYSTIC_BALLS = new WeakHashMap<>();
 
@@ -777,18 +782,27 @@ public class ComboManager {
     }
 
     private static void handleSleepRecovery(DBSagasEntity user, int timer) {
-        if (timer > 0 && timer < 100 && timer % 10 == 0) {
-            float healAmount = user.getMaxHealth() * 0.05F;
-            user.heal(healAmount);
+        user.setDeltaMovement(0.0D, user.getDeltaMovement().y, 0.0D);
 
-            if (user.level() instanceof ServerLevel serverLevel) {
-                serverLevel.sendParticles(ParticleTypes.HAPPY_VILLAGER,
-                        user.getX(), user.getY() + 2, user.getZ(),
-                        5, 0.5, 0.5, 0.5, 0.1);
-            }
+        if (timer == 1) {
+            user.level().playSound(null, user.getX(), user.getY(), user.getZ(), SoundEvents.FOX_SLEEP, SoundSource.HOSTILE, 1.0F, 0.8F);
         }
 
-        if (timer >= 100) {
+        if (timer > 0 && timer < EvasionAttackData.SLEEP_RECOVERY_MAX_TICKS
+                && timer % EvasionAttackHandler.SLEEP_RECOVERY_PULSE_INTERVAL_TICKS == 0) {
+            user.heal(user.getMaxHealth() * EvasionAttackHandler.SLEEP_RECOVERY_HEAL_PER_PULSE);
+        }
+
+        if (timer % SLEEP_Z_INTERVAL_TICKS == 0 && user.level() instanceof ServerLevel serverLevel && !user.isInvisible()) {
+            float yaw = user.yBodyRot * Mth.DEG_TO_RAD;
+            double rightX = -Mth.cos(yaw);
+            double rightZ = -Mth.sin(yaw);
+            serverLevel.sendParticles(MainParticles.SLEEP_Z.get(),
+                    user.getX() + rightX * 0.25D, user.getY() + user.getBbHeight() + 0.15D, user.getZ() + rightZ * 0.25D,
+                    0, rightX * 0.015D, 0.0D, rightZ * 0.015D, 1.0D);
+        }
+
+        if (timer >= EvasionAttackData.SLEEP_RECOVERY_MAX_TICKS) {
             user.stopCombo();
         }
     }
