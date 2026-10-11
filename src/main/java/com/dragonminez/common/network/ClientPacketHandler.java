@@ -212,6 +212,14 @@ public class ClientPacketHandler {
 		SilentDamageState.add(amount);
 	}
 
+	public static void handleStrikeRush(int playerId, int ticks, int targetId, boolean connected) {
+		var localPlayer = Minecraft.getInstance().player;
+		if (localPlayer != null && localPlayer.getId() == playerId) {
+			if (ticks > 0) com.dragonminez.client.events.FlySkillEvent.startStrikeRush(ticks, targetId);
+			else com.dragonminez.client.events.FlySkillEvent.stopStrikeRush(connected);
+		} else com.dragonminez.client.events.FlySkillEvent.setRemoteStrikeRush(playerId, ticks);
+	}
+
 	public static void handleTriggerAnimationPacket(UUID playerUUID, TriggerAnimationS2C.AnimationType animationType,
 			int variant, int entityId, String stringPayload) {
 		var clientLevel = Minecraft.getInstance().level;

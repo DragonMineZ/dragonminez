@@ -25,7 +25,9 @@ import net.minecraft.client.player.AbstractClientPlayer;
 import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.network.chat.Component;
 import net.minecraft.util.Mth;
+import net.minecraft.world.entity.Entity;
 import net.minecraft.world.level.ClipContext;
+import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.HitResult;
 import net.minecraft.world.phys.Vec3;
 import net.minecraftforge.api.distmarker.Dist;
@@ -72,8 +74,85 @@ public class FlySkillEvent {
 	private static long lastRightTapTime = 0;
 	private static int lastFlightMode = Status.FLIGHT_SEARCH;
 
+	private static final double STRIKE_RUSH_HOLD_DISTANCE = 0.8D;
+	private static final double STRIKE_RUSH_MISS_CARRY = 0.35D;
+	private static final double STRIKE_RUSH_SPEED_SCALE = 0.6D;
+	private static final double STRIKE_RUSH_MIN_SPEED = 0.9D;
+	private static final double STRIKE_RUSH_MAX_SPEED = 1.5D;
+	private static int strikeRushTicks = 0;
+	private static int strikeRushTargetId = -1;
+	private static final java.util.Map<Integer, Long> REMOTE_STRIKE_RUSHES = new java.util.HashMap<>();
+
 	public static FlySkillEvent getInstance() {
 		return INSTANCE;
+	}
+
+	public static void startStrikeRush(int ticks, int targetId) {
+		LocalPlayer player = Minecraft.getInstance().player;
+		if (player != null && strikeRushTicks <= 0) player.playSound(MainSounds.TRANSFORM_ON.get(), 0.7F, 1.2F);
+		strikeRushTicks = ticks;
+		strikeRushTargetId = targetId;
+		wasSprintingInAir = true;
+	}
+
+	public static void setRemoteStrikeRush(int playerId, int ticks) {
+		var level = Minecraft.getInstance().level;
+		if (ticks > 0 && level != null) REMOTE_STRIKE_RUSHES.put(playerId, level.getGameTime() + ticks);
+		else REMOTE_STRIKE_RUSHES.remove(playerId);
+	}
+
+	public static boolean isStrikeRushing(AbstractClientPlayer player) {
+		if (player == null) return false;
+		if (player == Minecraft.getInstance().player) return strikeRushTicks > 0;
+		Long until = REMOTE_STRIKE_RUSHES.get(player.getId());
+		if (until == null) return false;
+		if (player.level().getGameTime() < until) return true;
+		REMOTE_STRIKE_RUSHES.remove(player.getId());
+		return false;
+	}
+
+	public static void stopStrikeRush(boolean connected) {
+		if (strikeRushTicks <= 0) return;
+		strikeRushTicks = 0;
+		strikeRushTargetId = -1;
+		LocalPlayer player = Minecraft.getInstance().player;
+		if (player == null) return;
+		player.setDeltaMovement(connected ? Vec3.ZERO : player.getDeltaMovement().scale(STRIKE_RUSH_MISS_CARRY));
+		player.fallDistance = 0F;
+		flightVector = player.getDeltaMovement();
+		CombatFlightHandler.initFromMotion(player);
+	}
+
+	private static double strikeRushSpeed(LocalPlayer player) {
+		return StatsProvider.get(StatsCapability.INSTANCE, player).map(data -> {
+			float levelMultiplier = 1.0F + (0.20F * data.getSkills().getSkillLevel("fly"));
+			double sprintSpeed = SPRINT_MAX_SPEED * levelMultiplier * getFlySpeedScale(player) * data.getResources().getFlightSpeedLimit() / 100;
+			return Mth.clamp(sprintSpeed * STRIKE_RUSH_SPEED_SCALE, STRIKE_RUSH_MIN_SPEED, STRIKE_RUSH_MAX_SPEED);
+		}).orElse(STRIKE_RUSH_MIN_SPEED);
+	}
+
+	private static void tickStrikeRush(LocalPlayer player) {
+		if (!player.isAlive()) {
+			stopStrikeRush(false);
+			return;
+		}
+		double speed = strikeRushSpeed(player);
+		Vec3 velocity;
+		Entity target = strikeRushTargetId > 0 ? player.level().getEntity(strikeRushTargetId) : null;
+		if (target != null && target.isAlive()) {
+			Vec3 from = player.getBoundingBox().getCenter();
+			AABB box = target.getBoundingBox();
+			Vec3 closest = new Vec3(Mth.clamp(from.x, box.minX, box.maxX), Mth.clamp(from.y, box.minY, box.maxY), Mth.clamp(from.z, box.minZ, box.maxZ));
+			double gap = closest.distanceTo(from) - STRIKE_RUSH_HOLD_DISTANCE;
+			Vec3 toCenter = box.getCenter().subtract(from);
+			velocity = gap <= 0.0D || toCenter.lengthSqr() < 1.0E-6 ? Vec3.ZERO : toCenter.normalize().scale(Math.min(speed, gap));
+		} else velocity = FlightOrientationHandler.getForwardVector(player).scale(speed);
+
+		player.setDeltaMovement(velocity);
+		player.fallDistance = 0F;
+		flightVector = velocity;
+		fastFlight = true;
+		if (--strikeRushTicks <= 0) stopStrikeRush(false);
 	}
 
 	@SubscribeEvent
@@ -221,6 +300,11 @@ public class FlySkillEvent {
 			} else if (!startedGroundActivation && player.onGround()) {
 				pendingFlightActivation = false;
 			}
+		}
+
+		if (strikeRushTicks > 0) {
+			tickStrikeRush(player);
+			return;
 		}
 
 		StatsProvider.get(StatsCapability.INSTANCE, player).ifPresent(data -> {
@@ -505,6 +589,7 @@ public class FlySkillEvent {
 
 	public boolean isFlyingFast(AbstractClientPlayer player) {
 		if (player == null) return false;
+		if (isStrikeRushing(player)) return true;
 
 		LocalPlayer localPlayer = Minecraft.getInstance().player;
 		if (localPlayer != null && player == localPlayer) return isFlyingFast();

@@ -42,6 +42,7 @@ import com.dragonminez.server.events.players.actionmode.FusionModeHandler;
 import com.dragonminez.server.events.players.actionmode.RacialModeHandler;
 import com.dragonminez.server.events.players.actionmode.StackFormModeHandler;
 import com.dragonminez.server.events.players.combat.KiTechniqueHandler;
+import com.dragonminez.server.events.players.combat.StrikeAttackHandler;
 import com.dragonminez.server.events.players.statuseffect.*;
 import com.dragonminez.server.util.BabaReviveService;
 import com.dragonminez.server.util.BeetleFusionTracker;
@@ -364,7 +365,8 @@ public class TickHandler {
 			}
 			boolean auraFromFlySprint = flySprintAuraTicks.containsKey(playerId);
 			boolean auraFromRitual = GodRitualService.isParticipant(serverPlayer);
-			data.getStatus().setAuraActive(auraFromActions || auraFromFlySprint || auraFromRitual);
+			boolean auraFromStrikeRush = StrikeAttackHandler.isRushing(serverPlayer);
+			data.getStatus().setAuraActive(auraFromActions || auraFromFlySprint || auraFromRitual || auraFromStrikeRush);
 
 			if (tickCounter % 5 == 0) {
 				boolean hasYajirobe = serverPlayer.getInventory().hasAnyOf(Set.of(MainItems.KATANA_YAJIROBE.get()));

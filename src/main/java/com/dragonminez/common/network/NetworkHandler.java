@@ -840,6 +840,12 @@ public class NetworkHandler {
 				.encoder(KiShareC2S::encode)
 				.consumerMainThread(KiShareC2S::handle)
 				.add();
+
+		net.messageBuilder(StrikeRushS2C.class, id(), NetworkDirection.PLAY_TO_CLIENT)
+				.decoder(StrikeRushS2C::new)
+				.encoder(StrikeRushS2C::encode)
+				.consumerMainThread(StrikeRushS2C::handle)
+				.add();
 	}
 
 	public static <MSG> void sendToServer(MSG message) {

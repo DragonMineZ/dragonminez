@@ -28,6 +28,7 @@ import com.dragonminez.common.network.S2C.ImpactBurstVfxS2C;
 import com.dragonminez.common.network.S2C.KiBurstVfxS2C;
 import com.dragonminez.common.network.S2C.ShockwaveVfxS2C;
 import com.dragonminez.common.network.S2C.StatsSyncS2C;
+import com.dragonminez.common.network.S2C.StrikeRushS2C;
 import com.dragonminez.common.network.S2C.TriggerAnimationS2C;
 import com.dragonminez.common.racial.RacialStatUtil;
 import com.dragonminez.common.stats.StatsCapability;
@@ -63,13 +64,15 @@ import java.util.ArrayList;
 
 @Mod.EventBusSubscriber(modid = Reference.MOD_ID, bus = Mod.EventBusSubscriber.Bus.FORGE)
 public class StrikeAttackHandler {
-	private static final int CONNECT_WINDOW_TICKS = 10;
 	private static final double CONNECT_RANGE = 4.0;
 	private static final double CONE_RANGE = 6.0;
 	private static final double CONE_RANGE_FLY = 12.0;
 	private static final double CONE_HALF_ANGLE_COS = 0.5;
-	private static final double DASH_BASE_DISTANCE = 4.0;
-	private static final double DASH_DISTANCE_SCALE = 0.3;
+	private static final int RUSH_TICKS = 40;
+	private static final double RUSH_LOCK_RANGE = 64.0;
+	private static final double RUSH_CONNECT_RANGE = 1.8;
+	private static final double RUSH_GRAB_RADIUS = 1.2;
+	private static final double RUSH_SNAP_GAP = 1.0;
 	private static final double KNOCKBACK_FORCE = 1.8;
 	private static final double FINAL_HIT_RATIO = 0.35;
 	private static final double IMPACT_DAMAGE_RATIO = 0.20;
@@ -271,17 +274,19 @@ public class StrikeAttackHandler {
 			boolean isFlying = stats.getSkills().isSkillActive("fly");
 			double coneRange = isFlying ? CONE_RANGE_FLY : CONE_RANGE;
 
+			LivingEntity lockedTarget = resolveRushLockTarget(player, preferredTargetId);
 			LivingEntity immediateTarget = findConeTarget(player, coneRange, preferredTargetId);
+			if (lockedTarget != null && immediateTarget != lockedTarget) immediateTarget = null;
 
 			PendingStrike pending = new PendingStrike(
 					player.getUUID(),
-					immediateTarget != null ? immediateTarget.getUUID() : null,
+					immediateTarget != null ? immediateTarget.getUUID() : lockedTarget != null ? lockedTarget.getUUID() : null,
 					strike.getId(),
 					strike.getAnimationId(),
 					strike.getDurationTicks(),
 					strike.getActualCooldown(),
 					cost,
-					CONNECT_WINDOW_TICKS
+					RUSH_TICKS
 			);
 
 			MinecraftForge.EVENT_BUS.post(new DMZEvent.StrikeAttackCastEvent(player, stats, strike));
@@ -307,8 +312,7 @@ public class StrikeAttackHandler {
 			} else if (TARGETLESS_STRIKES.contains(strike.getId())) {
 				startTargetlessStrike(player, stats, strike, pending, true);
 			} else {
-				dashForward(player, isFlying);
-				PENDING.put(player.getUUID(), pending);
+				startRush(player, stats, pending, lockedTarget);
 			}
 		});
 	}
@@ -420,14 +424,86 @@ public class StrikeAttackHandler {
 			return;
 		}
 
+		if (!player.isAlive()) {
+			failPending(player, pending);
+			return;
+		}
+
+		player.fallDistance = 0.0F;
+
+		if (pending.preferredTargetId() != null) {
+			LivingEntity locked = resolveLiving(player, pending.preferredTargetId());
+			if (locked == null || !locked.isAlive()) {
+				pending = pending.withTarget(null);
+				NetworkHandler.sendToPlayer(new StrikeRushS2C(player.getId(), pending.ticksRemaining(), -1, false), player);
+			}
+		}
+
 		LivingEntity target = resolveTargetForPending(player, pending);
 		if (target != null) {
 			PENDING.remove(player.getUUID());
+			endRushVisuals(player, true);
+			if (!METEOR_BURST_ID.equals(pending.techniqueId())) snapToRushTarget(player, target);
 			startStrike(player, target, pending);
 			return;
 		}
 
 		PENDING.put(player.getUUID(), pending.withTicksRemaining(pending.ticksRemaining() - 1));
+	}
+
+	public static boolean isRushing(ServerPlayer player) {
+		return PENDING.containsKey(player.getUUID());
+	}
+
+	private static void startRush(ServerPlayer player, com.dragonminez.common.stats.StatsData stats, PendingStrike pending, LivingEntity lockedTarget) {
+		PENDING.put(player.getUUID(), pending);
+		stats.getStatus().setAuraActive(true);
+		NetworkHandler.sendToTrackingEntityAndSelf(new StatsSyncS2C(player), player);
+		NetworkHandler.sendToTrackingEntityAndSelf(new StrikeRushS2C(player.getId(), pending.ticksRemaining(), lockedTarget != null ? lockedTarget.getId() : -1, false), player);
+	}
+
+	private static void endRushVisuals(ServerPlayer player, boolean connected) {
+		NetworkHandler.sendToTrackingEntityAndSelf(new StrikeRushS2C(player.getId(), 0, -1, connected), player);
+		StatsProvider.get(StatsCapability.INSTANCE, player).ifPresent(stats -> stats.getStatus().setAuraActive(false));
+	}
+
+	private static LivingEntity resolveRushLockTarget(ServerPlayer player, int targetId) {
+		if (targetId <= 0) return null;
+		if (!(TargetHelper.resolveHittable(TargetHelper.getEntityOrPart(player.level(), targetId)) instanceof LivingEntity living)) return null;
+		if (living == player || !living.isAlive() || player.distanceTo(living) > RUSH_LOCK_RANGE) return null;
+		if (living instanceof com.dragonminez.common.init.entities.MastersEntity) return null;
+		if (TargetHelper.getRelation(player, living) == TargetHelper.Relation.FRIENDLY) return null;
+		return living;
+	}
+
+	private static double rushGap(ServerPlayer player, LivingEntity target) {
+		Vec3 from = player.getBoundingBox().getCenter();
+		double best = distanceToBox(from, target.getBoundingBox());
+		if (target.isMultipartEntity() && target.getParts() != null) {
+			for (PartEntity<?> part : target.getParts()) best = Math.min(best, distanceToBox(from, part.getBoundingBox()));
+		}
+		return best;
+	}
+
+	private static double distanceToBox(Vec3 point, AABB box) {
+		double dx = Math.max(0.0, Math.max(box.minX - point.x, point.x - box.maxX));
+		double dy = Math.max(0.0, Math.max(box.minY - point.y, point.y - box.maxY));
+		double dz = Math.max(0.0, Math.max(box.minZ - point.z, point.z - box.maxZ));
+		return Math.sqrt(dx * dx + dy * dy + dz * dz);
+	}
+
+	private static void snapToRushTarget(ServerPlayer player, LivingEntity target) {
+		PartEntity<?> hitPart = nearestPartInSight(player, CONE_RANGE_FLY);
+		if (hitPart != null && hitPart.getParent() == target) {
+			teleportToPartFront(player, hitPart, target, true);
+			return;
+		}
+		Vec3 approach = new Vec3(target.getX() - player.getX(), 0.0, target.getZ() - player.getZ());
+		if (approach.lengthSqr() < 1.0E-6) approach = Vec3.directionFromRotation(0, player.getYRot());
+		approach = approach.normalize();
+		double distance = target.getBbWidth() * 0.5 + RUSH_SNAP_GAP;
+		player.teleportTo(target.getX() - approach.x * distance, target.getY(), target.getZ() - approach.z * distance);
+		player.lookAt(EntityAnchorArgument.Anchor.EYES, target.getEyePosition());
 	}
 
     private static void processActive(ServerPlayer player) {
@@ -2126,6 +2202,7 @@ public class StrikeAttackHandler {
 	private static void failPending(ServerPlayer player, PendingStrike pending) {
 		PENDING.remove(player.getUUID());
 		STRIKE_ANCHOR_PART.remove(player.getUUID());
+		endRushVisuals(player, false);
 		StatsProvider.get(StatsCapability.INSTANCE, player).ifPresent(stats -> {
 			String cooldownKey = getTechniqueCooldownKey(pending.techniqueId());
 			int halfCooldown = Math.max(1, pending.cooldownTicks() / 2);
@@ -2153,10 +2230,34 @@ public class StrikeAttackHandler {
 	}
 
 	private static LivingEntity resolveTargetForPending(ServerPlayer player, PendingStrike pending) {
-		LivingEntity preferred = pending.preferredTargetId() != null ? resolveLiving(player, pending.preferredTargetId()) : null;
-		if (preferred != null && player.distanceTo(preferred) <= CONNECT_RANGE && player.hasLineOfSight(preferred)
-				&& TargetHelper.canAttack(player, preferred, CONNECT_RANGE)) return preferred;
-		return findTargetInFront(player, CONNECT_RANGE).orElse(null);
+		if (pending.preferredTargetId() != null) {
+			LivingEntity locked = resolveLiving(player, pending.preferredTargetId());
+			if (locked == null || !locked.isAlive() || rushGap(player, locked) > RUSH_CONNECT_RANGE) return null;
+			return player.hasLineOfSight(locked) ? locked : null;
+		}
+
+		AABB grabBox = player.getBoundingBox().inflate(RUSH_GRAB_RADIUS);
+		LivingEntity closest = null;
+		double closestGap = Double.MAX_VALUE;
+		for (LivingEntity e : player.level().getEntitiesOfClass(LivingEntity.class, grabBox,
+				e -> e != player && e.isAlive() && e.isPickable() && !e.isInvisibleTo(player)
+						&& TargetHelper.canAttack(player, e, CONNECT_RANGE) && player.hasLineOfSight(e))) {
+			double gap = rushGap(player, e);
+			if (gap < closestGap) {
+				closest = e;
+				closestGap = gap;
+			}
+		}
+		if (closest != null) return closest;
+
+		if (player.level() instanceof ServerLevel level) {
+			for (PartEntity<?> part : level.getPartEntities()) {
+				if (!(part.getParent() instanceof LivingEntity parent) || parent == player || !parent.isAlive()) continue;
+				if (!part.getBoundingBox().intersects(grabBox)) continue;
+				if (TargetHelper.canAttack(player, parent, CONNECT_RANGE) && player.hasLineOfSight(part)) return parent;
+			}
+		}
+		return findTargetInFront(player, RUSH_CONNECT_RANGE + 1.0).orElse(null);
 	}
 
 	private static LivingEntity resolveLiving(ServerPlayer player, UUID id) {
@@ -2248,17 +2349,6 @@ public class StrikeAttackHandler {
 		Vec3 teleportPos = center.subtract(look.scale(distance));
 		player.teleportTo(teleportPos.x, center.y - player.getEyeHeight(), teleportPos.z);
 		if (faceTarget) player.lookAt(EntityAnchorArgument.Anchor.EYES, center);
-	}
-
-	private static void dashForward(ServerPlayer player, boolean isFlying) {
-		double speedMultiplier = player.getAttributeValue(Attributes.MOVEMENT_SPEED) / 0.1;
-		double distance = DASH_BASE_DISTANCE * speedMultiplier;
-		if (isFlying) distance *= 3.0;
-		Vec3 direction = Vec3.directionFromRotation(0, player.getYRot()).normalize();
-		Vec3 velocity = direction.scale(distance * DASH_DISTANCE_SCALE);
-		double yVel = player.onGround() ? 0.35 : 0.2;
-		player.setDeltaMovement(player.getDeltaMovement().add(velocity.x, yVel, velocity.z));
-		player.hurtMarked = true;
 	}
 
 	private static LivingEntity findConeTarget(ServerPlayer player, double range, int preferredTargetId) {
@@ -2551,6 +2641,10 @@ public class StrikeAttackHandler {
 	private record PendingStrike(UUID playerId, UUID preferredTargetId, String techniqueId, String animationId,
 	                             int durationTicks, int cooldownTicks, double energyCost, int ticksRemaining) {
 		private PendingStrike withTicksRemaining(int ticksRemaining) {
+			return new PendingStrike(playerId, preferredTargetId, techniqueId, animationId, durationTicks, cooldownTicks, energyCost, ticksRemaining);
+		}
+
+		private PendingStrike withTarget(UUID preferredTargetId) {
 			return new PendingStrike(playerId, preferredTargetId, techniqueId, animationId, durationTicks, cooldownTicks, energyCost, ticksRemaining);
 		}
 	}
