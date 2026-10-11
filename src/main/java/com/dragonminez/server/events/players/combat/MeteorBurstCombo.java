@@ -54,6 +54,7 @@ public final class MeteorBurstCombo {
 	private static final int[] BLAST_VISUAL_TICKS = {LEAD + 175, LEAD + 183, LEAD + 191};
 	private static final float[] BLAST_VISUAL_SIZES = {5.0F, 6.5F, 5.5F};
 	private static final int WHITEOUT_TICK = LEAD + 187;
+	private static final int[] SHOT_TICKS = {LEAD + 159, LEAD + 162, LEAD + 165, LEAD + 168, LEAD + 171, LEAD + 174};
 
 	private static final double VICTIM_GAP = 0.35D;
 	private static final double HIT_NUDGE = 0.35D;
@@ -76,6 +77,10 @@ public final class MeteorBurstCombo {
 	private static final float STOMP_SHARE = 0.2F;
 	private static final float KNEE_SHARE = 0.15F;
 	private static final float SLAM_SHARE = 0.35F;
+	private static final float SHOT_SHARE = 0.1F;
+	private static final float BLAST_SHARE = 0.4F;
+	private static final float SHOT_SIZE = 0.7F;
+	private static final float SHOT_SPEED = 1.2F;
 
 	public interface Performer {
 		LivingEntity self();
@@ -154,6 +159,7 @@ public final class MeteorBurstCombo {
 			performer.place(state.foot, state.yaw);
 			if (state.victim != null) {
 				if (state.victim.entity().isAlive()) {
+					state.victim.entity().invulnerableTime = 0;
 					state.victim.hold(state.ground, state.yaw + 180.0F);
 				} else {
 					state.victim.release();
@@ -325,6 +331,10 @@ public final class MeteorBurstCombo {
 				Vec3 at = state.ground.add(0.0D, 0.4D, 0.0D);
 				state.ball.setPos(at.x, at.y - state.ball.getBbHeight() * 0.5D, at.z);
 			}
+			victim.invulnerableTime = 0;
+			for (int shot : SHOT_TICKS) {
+				if (shot == tick) fireSphere(level, performer, state);
+			}
 			return true;
 		}
 
@@ -380,7 +390,7 @@ public final class MeteorBurstCombo {
 		state.blasted = true;
 
 		victim.invulnerableTime = 0;
-		performer.kiHit(victim, performer.kiBudget(), true);
+		performer.kiHit(victim, performer.kiBudget() * BLAST_SHARE, true);
 		if (victim.isAlive()) {
 			state.victim.hold(state.ground, state.yaw + 180.0F);
 		} else {
@@ -394,6 +404,32 @@ public final class MeteorBurstCombo {
 		NetworkHandler.sendToTrackingEntityAndSelf(new ShockwaveVfxS2C(state.ground.x, state.ground.y + 0.2D, state.ground.z,
 				10.0F, COLOR_BORDER, 18), self);
 		playSound(level, state.ground, self, MainSounds.KI_EXPLOSION_IMPACT.get(), 3.5F, 0.7F);
+	}
+
+	private static void fireSphere(ServerLevel level, Performer performer, State state) {
+		LivingEntity self = performer.self();
+		Vec3 facing = facing(state.yaw);
+		Vec3 right = Vec3.directionFromRotation(0.0F, state.yaw + 90.0F);
+		Vec3 from = state.foot.add(0.0D, 1.1D, 0.0D).add(facing.scale(0.8D)).add(right.scale(HAND_SIDE * 0.7D));
+		Vec3 aim = state.ground.add(0.0D, 0.5D, 0.0D);
+		Vec3 dir = aim.subtract(from).normalize();
+
+		KiBlastEntity shot = new KiBlastEntity(level, self);
+		shot.setKiRenderType(0);
+		shot.setSize(SHOT_SIZE);
+		shot.setKiSpeed(SHOT_SPEED);
+		shot.setKiDamage(performer.kiBudget() * SHOT_SHARE);
+		shot.setColors(COLOR_MAIN, COLOR_BORDER, COLOR_OUTLINE);
+		shot.setFiring(true);
+		shot.setCastTime(0);
+		shot.setMaxLife(20);
+		shot.setBlockDestructionEnabled(false);
+		shot.setPos(from.x, from.y - SHOT_SIZE * 0.5D, from.z);
+		shot.setDeltaMovement(dir.scale(SHOT_SPEED));
+		shot.hasImpulse = true;
+		level.addFreshEntity(shot);
+
+		playSound(level, from, self, MainSounds.KIBLAST_ATTACK.get(), 1.3F, 0.9F + self.getRandom().nextFloat() * 0.3F);
 	}
 
 	private static void blastVisual(ServerLevel level, Vec3 at, float size) {
