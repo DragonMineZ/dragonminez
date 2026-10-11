@@ -339,6 +339,8 @@ public class DMZPlayerRenderer<T extends AbstractClientPlayer & GeoAnimatable> e
 
 	@Override
 	public void renderRecursively(PoseStack poseStack, T animatable, GeoBone bone, RenderType renderType, MultiBufferSource bufferSource, VertexConsumer buffer, boolean isReRender, float partialTick, int packedLight, int packedOverlay, float red, float green, float blue, float alpha) {
+		if (SkinPaintContext.hidesBone(bone.getName())) return;
+		SkinPaintContext.recordPickedBone(bone);
 		if (!HeadPortraitRenderer.isActive()) {
 			if (editorHeadOnly() && !isHeadOrHeadChild(bone)) {
 				if (!containsHead(bone)) return;

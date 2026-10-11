@@ -29,6 +29,7 @@ import com.dragonminez.common.stats.character.SkinPixels;
 import com.mojang.blaze3d.platform.NativeImage;
 import com.mojang.blaze3d.platform.Window;
 import com.mojang.blaze3d.systems.RenderSystem;
+import net.minecraft.Util;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.EditBox;
@@ -45,14 +46,22 @@ import net.minecraft.world.entity.LivingEntity;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 import org.joml.Quaternionf;
+import org.joml.Vector3f;
 import org.lwjgl.BufferUtils;
 import org.lwjgl.glfw.GLFW;
 import org.lwjgl.opengl.GL11;
+import software.bernie.geckolib.cache.object.GeoBone;
+import software.bernie.geckolib.cache.object.GeoCube;
+import software.bernie.geckolib.cache.object.GeoQuad;
+import software.bernie.geckolib.cache.object.GeoVertex;
 
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.EnumSet;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 @OnlyIn(Dist.CLIENT)
 public class PixelEditorScreen extends ScaledScreen {
@@ -62,7 +71,54 @@ public class PixelEditorScreen extends ScaledScreen {
 
 	private enum Tool { BRUSH, AXIS_LINE }
 
+	private enum ViewPreset {
+		FRONT(0.0f, 0.0f),
+		BACK(180.0f, 0.0f),
+		LEFT(90.0f, 0.0f),
+		RIGHT(-90.0f, 0.0f),
+		TOP(0.0f, 90.0f),
+		BOTTOM(0.0f, -90.0f),
+		RESET(0.0f, 0.0f);
+
+		private final float yaw;
+		private final float pitch;
+
+		ViewPreset(float yaw, float pitch) {
+			this.yaw = yaw;
+			this.pitch = pitch;
+		}
+
+		private String key() {
+			return "gui.dragonminez.pixel_editor.view." + name().toLowerCase();
+		}
+	}
+
+	private enum BodyPart {
+		HEAD("head", 9, 0, 17, 16),
+		RIGHT_ARM("right_arm", 0, 17, 8, 24),
+		BODY("body", 9, 17, 17, 24),
+		LEFT_ARM("left_arm", 27, 17, 8, 24),
+		RIGHT_LEG("right_leg", 9, 42, 8, 24),
+		LEFT_LEG("left_leg", 18, 42, 8, 24);
+
+		private final String bone;
+		private final int x;
+		private final int y;
+		private final int width;
+		private final int height;
+
+		BodyPart(String bone, int x, int y, int width, int height) {
+			this.bone = bone;
+			this.x = x;
+			this.y = y;
+			this.width = width;
+			this.height = height;
+		}
+	}
+
 	private record Placement(TopButton button, int x, int width) {}
+
+	private record ViewButton(ViewPreset preset, int x, int y, int width) {}
 
 	private static final ResourceLocation BUTTONS = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "textures/gui/buttons/characterbuttons.png");
 	private static final ResourceLocation PANORAMA = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "textures/gui/background/roshi");
@@ -84,7 +140,16 @@ public class PixelEditorScreen extends ScaledScreen {
 	private static final float MAX_ZOOM = 700.0f;
 	private static final float ZOOM_FACTOR = 1.12f;
 	private static final float ORBIT_SPEED = 1.0f;
+	private static final double MODEL_DEPTH = 4000.0D;
+	private static final int VIEW_BUTTON_HEIGHT = 13;
+	private static final int DOLL_WIDTH = 35;
+	private static final int DOLL_HEIGHT = 66;
+	private static final int DOLL_LABEL_HEIGHT = 11;
 	private static final int CONNECT_DISTANCE = 8;
+	private static final long DOUBLE_CLICK_MILLIS = 250L;
+	private static final double DOUBLE_CLICK_SLOP = 3.0D;
+	private static final float INTERIOR_PROBE = 0.005f;
+	private static final float FACING_THRESHOLD = -0.05f;
 	private static final int VIEW_BACKGROUND = 0xFF15191E;
 	private static final int[] EYE_MARK_COLORS = {0, 0xE08A2E, 0x6EDCFF, 0xE84FE0};
 	private static final int HAIR_MARK_COLOR = 0x5BE04F;
@@ -116,11 +181,16 @@ public class PixelEditorScreen extends ScaledScreen {
 	private int viewY1;
 	private float targetZoom;
 	private float zoom;
-	private float yaw = 180.0f;
+	private float yaw;
 	private float pitch;
-	private int panX;
-	private int panY;
+	private boolean orbitFlipped;
+	private final Vector3f orbitTarget = new Vector3f();
+	private boolean orbitTargetInitialized;
+	private int modelScale;
 	private boolean viewInitialized;
+	private final List<ViewButton> viewButtons = new ArrayList<>();
+	private final EnumSet<BodyPart> hiddenParts = EnumSet.noneOf(BodyPart.class);
+	private Set<String> hiddenBones = Set.of();
 
 	private double screenMouseX;
 	private double screenMouseY;
@@ -150,6 +220,11 @@ public class PixelEditorScreen extends ScaledScreen {
 	private PixelEditHistory.Snapshot strokeBefore;
 	private int anchorX = -1;
 	private int anchorY = -1;
+	private long lastClickMillis;
+	private double lastClickX;
+	private double lastClickY;
+	private PixelEditHistory.Snapshot lastClickBefore;
+	private boolean lastClickRecorded;
 	private boolean confirmClose;
 
 	private ResourceLocation baseTexture;
@@ -272,10 +347,40 @@ public class PixelEditorScreen extends ScaledScreen {
 		viewY1 = getUiHeight() - MARGIN;
 		if (!viewInitialized) {
 			viewInitialized = true;
-			float height = viewY1 - viewY0 - 16;
-			targetZoom = Mth.clamp(mode == Mode.EYES ? height * 1.35f : height / 2.0f, MIN_ZOOM, MAX_ZOOM);
+			targetZoom = defaultZoom();
 			zoom = targetZoom;
 		}
+		layoutViewButtons();
+	}
+
+	private float defaultZoom() {
+		float height = viewY1 - viewY0 - 16;
+		return Mth.clamp(mode == Mode.EYES ? height * 1.35f : height / 2.0f, MIN_ZOOM, MAX_ZOOM);
+	}
+
+	private void layoutViewButtons() {
+		viewButtons.clear();
+		int startX = viewX0 + 6;
+		int limitX = dollX() - 6;
+		int x = startX;
+		int y = viewY0 + 6;
+		for (ViewPreset preset : ViewPreset.values()) {
+			int width = Math.max(26, this.font.width(tr(preset.key())) + 8);
+			if (x > startX && x + width > limitX) {
+				x = startX;
+				y += VIEW_BUTTON_HEIGHT + 2;
+			}
+			viewButtons.add(new ViewButton(preset, x, y, width));
+			x += width + 2;
+		}
+	}
+
+	private int dollX() {
+		return viewX1 - 8 - DOLL_WIDTH;
+	}
+
+	private int dollY() {
+		return viewY0 + 6 + DOLL_LABEL_HEIGHT;
 	}
 
 	private int previewRowY() {
@@ -316,6 +421,7 @@ public class PixelEditorScreen extends ScaledScreen {
 	}
 
 	private void releaseTextures() {
+		SkinPaintContext.clearPickedBones();
 		var manager = Minecraft.getInstance().getTextureManager();
 		if (pickTexture != null) {
 			manager.release(PICK_LOCATION);
@@ -433,6 +539,7 @@ public class PixelEditorScreen extends ScaledScreen {
 		if (mode == Mode.HAIR) overlayLayer = step == 1;
 		anchorX = -1;
 		anchorY = -1;
+		lastClickBefore = null;
 		updateStepButtons();
 		HairEditorSounds.select();
 	}
@@ -608,10 +715,171 @@ public class PixelEditorScreen extends ScaledScreen {
 			lastPaintX = strokeStartX;
 			lastPaintY = strokeStartY;
 		}
-		if (differsFrom(strokeBefore)) history.record(strokeBefore);
+		boolean changed = differsFrom(strokeBefore);
+		if (changed) history.record(strokeBefore);
+		if (strokeTool == Tool.BRUSH && !strokeMoved) {
+			lastClickBefore = strokeBefore;
+			lastClickRecorded = changed;
+		} else {
+			lastClickMillis = 0L;
+			lastClickBefore = null;
+		}
 		anchorX = lastPaintX;
 		anchorY = lastPaintY;
 		strokeBefore = null;
+	}
+
+	private boolean isDoubleClick(double uiX, double uiY) {
+		if (lastClickBefore == null || lastClickMillis <= 0L) return false;
+		if (Util.getMillis() - lastClickMillis > DOUBLE_CLICK_MILLIS) return false;
+		return Math.hypot(uiX - lastClickX, uiY - lastClickY) <= DOUBLE_CLICK_SLOP;
+	}
+
+	private void fillBoneFace(int x, int y) {
+		PixelEditHistory.Snapshot before = lastClickBefore;
+		boolean recorded = lastClickRecorded;
+		lastClickMillis = 0L;
+		lastClickBefore = null;
+		List<int[]> rects = boneFaceAt(x, y);
+		if (rects.isEmpty() || before == null) return;
+		restore(before);
+		erasing = eraser || hasAltDown();
+		for (int[] rect : rects) {
+			for (int py = rect[1]; py < rect[3]; py++) {
+				for (int px = rect[0]; px < rect[2]; px++) paintTexel(px, py);
+			}
+		}
+		if (!recorded && differsFrom(before)) history.record(before);
+		anchorX = x;
+		anchorY = y;
+	}
+
+	private List<int[]> boneFaceAt(int x, int y) {
+		int res = resolution();
+		float u = (x + 0.5f) / res;
+		float v = (y + 0.5f) / res;
+		Quaternionf view = new Quaternionf().rotateX(-pitch * Mth.DEG_TO_RAD).rotateY(yaw * Mth.DEG_TO_RAD);
+		GeoBone hitBone = null;
+		GeoQuad hitQuad = null;
+		int hitAxis = -1;
+		float hitScore = Float.MAX_VALUE;
+		for (GeoBone bone : SkinPaintContext.pickedBones()) {
+			for (GeoCube cube : bone.getCubes()) {
+				Vector3f center = cubeCenter(cube);
+				for (GeoQuad quad : cube.quads()) {
+					if (quad == null) continue;
+					float[] uv = uvBounds(quad);
+					float area = (uv[2] - uv[0]) * (uv[3] - uv[1]);
+					if (area <= 0.0f || u < uv[0] || u >= uv[2] || v < uv[1] || v >= uv[3]) continue;
+					int axis = faceAxis(quad, center);
+					float score = area;
+					if (view.transform(axisVector(axis)).z >= FACING_THRESHOLD) score += 2.0f;
+					if (isInterior(bone, cube, quad, axis)) score += 4.0f;
+					if (score < hitScore) {
+						hitScore = score;
+						hitBone = bone;
+						hitQuad = quad;
+						hitAxis = axis;
+					}
+				}
+			}
+		}
+		if (hitBone == null) return List.of();
+
+		List<int[]> rects = new ArrayList<>();
+		for (GeoCube cube : hitBone.getCubes()) {
+			Vector3f center = cubeCenter(cube);
+			for (GeoQuad quad : cube.quads()) {
+				if (quad == null) continue;
+				if (quad != hitQuad && (faceAxis(quad, center) != hitAxis || isInterior(hitBone, cube, quad, hitAxis))) continue;
+				float[] uv = uvBounds(quad);
+				if ((uv[2] - uv[0]) * (uv[3] - uv[1]) <= 0.0f) continue;
+				rects.add(new int[]{Math.round(uv[0] * res), Math.round(uv[1] * res), Math.round(uv[2] * res), Math.round(uv[3] * res)});
+			}
+		}
+		return rects;
+	}
+
+	private static float[] uvBounds(GeoQuad quad) {
+		float minU = Float.MAX_VALUE;
+		float minV = Float.MAX_VALUE;
+		float maxU = -Float.MAX_VALUE;
+		float maxV = -Float.MAX_VALUE;
+		for (GeoVertex vertex : quad.vertices()) {
+			minU = Math.min(minU, vertex.texU());
+			minV = Math.min(minV, vertex.texV());
+			maxU = Math.max(maxU, vertex.texU());
+			maxV = Math.max(maxV, vertex.texV());
+		}
+		return new float[]{minU, minV, maxU, maxV};
+	}
+
+	private static Vector3f quadCenter(GeoQuad quad) {
+		Vector3f center = new Vector3f();
+		for (GeoVertex vertex : quad.vertices()) center.add(vertex.position());
+		return center.div(quad.vertices().length);
+	}
+
+	private static Vector3f cubeCenter(GeoCube cube) {
+		float[] bounds = cubeBounds(cube);
+		return new Vector3f((bounds[0] + bounds[3]) / 2.0f, (bounds[1] + bounds[4]) / 2.0f, (bounds[2] + bounds[5]) / 2.0f);
+	}
+
+	private static float[] cubeBounds(GeoCube cube) {
+		float[] bounds = {Float.MAX_VALUE, Float.MAX_VALUE, Float.MAX_VALUE, -Float.MAX_VALUE, -Float.MAX_VALUE, -Float.MAX_VALUE};
+		for (GeoQuad quad : cube.quads()) {
+			if (quad == null) continue;
+			for (GeoVertex vertex : quad.vertices()) {
+				Vector3f p = vertex.position();
+				bounds[0] = Math.min(bounds[0], p.x);
+				bounds[1] = Math.min(bounds[1], p.y);
+				bounds[2] = Math.min(bounds[2], p.z);
+				bounds[3] = Math.max(bounds[3], p.x);
+				bounds[4] = Math.max(bounds[4], p.y);
+				bounds[5] = Math.max(bounds[5], p.z);
+			}
+		}
+		return bounds;
+	}
+
+	private static int faceAxis(GeoQuad quad, Vector3f cubeCenter) {
+		Vector3f offset = quadCenter(quad).sub(cubeCenter);
+		float ax = Math.abs(offset.x);
+		float ay = Math.abs(offset.y);
+		float az = Math.abs(offset.z);
+		if (Math.max(ax, Math.max(ay, az)) < 1.0e-4f) {
+			return switch (quad.direction()) {
+				case EAST -> 0;
+				case WEST -> 1;
+				case UP -> 2;
+				case DOWN -> 3;
+				case SOUTH -> 4;
+				case NORTH -> 5;
+			};
+		}
+		if (ax >= ay && ax >= az) return offset.x >= 0.0f ? 0 : 1;
+		if (ay >= az) return offset.y >= 0.0f ? 2 : 3;
+		return offset.z >= 0.0f ? 4 : 5;
+	}
+
+	private static Vector3f axisVector(int axis) {
+		float sign = (axis & 1) == 0 ? 1.0f : -1.0f;
+		return switch (axis >> 1) {
+			case 0 -> new Vector3f(sign, 0.0f, 0.0f);
+			case 1 -> new Vector3f(0.0f, sign, 0.0f);
+			default -> new Vector3f(0.0f, 0.0f, sign);
+		};
+	}
+
+	private static boolean isInterior(GeoBone bone, GeoCube cube, GeoQuad quad, int axis) {
+		if (cube.rotation().lengthSqr() > 1.0e-6) return false;
+		Vector3f probe = quadCenter(quad).add(axisVector(axis).mul(INTERIOR_PROBE));
+		for (GeoCube other : bone.getCubes()) {
+			if (other == cube || other.rotation().lengthSqr() > 1.0e-6) continue;
+			float[] bounds = cubeBounds(other);
+			if (probe.x > bounds[0] && probe.y > bounds[1] && probe.z > bounds[2] && probe.x < bounds[3] && probe.y < bounds[4] && probe.z < bounds[5]) return true;
+		}
+		return false;
 	}
 
 	private void undo() {
@@ -623,6 +891,7 @@ public class PixelEditorScreen extends ScaledScreen {
 		restore(snapshot);
 		anchorX = -1;
 		anchorY = -1;
+		lastClickBefore = null;
 		HairEditorSounds.click();
 	}
 
@@ -635,6 +904,7 @@ public class PixelEditorScreen extends ScaledScreen {
 		restore(snapshot);
 		anchorX = -1;
 		anchorY = -1;
+		lastClickBefore = null;
 		HairEditorSounds.click();
 	}
 
@@ -654,6 +924,7 @@ public class PixelEditorScreen extends ScaledScreen {
 		if (differsFrom(before)) history.record(before);
 		anchorX = -1;
 		anchorY = -1;
+		lastClickBefore = null;
 		HairEditorSounds.click();
 	}
 
@@ -668,6 +939,7 @@ public class PixelEditorScreen extends ScaledScreen {
 		history.record(before);
 		anchorX = -1;
 		anchorY = -1;
+		lastClickBefore = null;
 		HairEditorSounds.toggle(true);
 	}
 
@@ -679,6 +951,7 @@ public class PixelEditorScreen extends ScaledScreen {
 		}
 		anchorX = -1;
 		anchorY = -1;
+		lastClickBefore = null;
 		HairEditorSounds.toggle(overlayLayer);
 	}
 
@@ -690,6 +963,48 @@ public class PixelEditorScreen extends ScaledScreen {
 	private void toggleEraser() {
 		eraser = !eraser;
 		HairEditorSounds.toggle(eraser);
+	}
+
+	private void applyView(ViewPreset preset) {
+		yaw = preset.yaw;
+		pitch = preset.pitch;
+		if (preset == ViewPreset.RESET) {
+			orbitTargetInitialized = false;
+			targetZoom = defaultZoom();
+		}
+		HairEditorSounds.click();
+	}
+
+	private void togglePart(BodyPart part, boolean solo) {
+		if (solo) {
+			EnumSet<BodyPart> others = EnumSet.complementOf(EnumSet.of(part));
+			boolean alreadySolo = !hiddenParts.contains(part) && hiddenParts.containsAll(others);
+			hiddenParts.clear();
+			if (!alreadySolo) hiddenParts.addAll(others);
+		} else if (!hiddenParts.remove(part)) {
+			hiddenParts.add(part);
+		}
+		Set<String> bones = new HashSet<>();
+		for (BodyPart hidden : hiddenParts) bones.add(hidden.bone);
+		hiddenBones = Set.copyOf(bones);
+		HairEditorSounds.toggle(!hiddenParts.contains(part));
+	}
+
+	private Quaternionf orbitRotation() {
+		return new Quaternionf().rotateX(pitch * Mth.DEG_TO_RAD).rotateY(yaw * Mth.DEG_TO_RAD);
+	}
+
+	private void panBy(double dx, double dy) {
+		if (modelScale <= 0) return;
+		Vector3f delta = new Vector3f((float) dx, (float) -dy, 0.0f).div(modelScale);
+		orbitRotation().conjugate().transform(delta);
+		orbitTarget.sub(-delta.x, delta.y, -delta.z);
+	}
+
+	private void resetOrbitTarget(LivingEntity player) {
+		float height = mode == Mode.EYES ? 1.62f : 0.9f;
+		orbitTarget.set(0.0f, height * visualScale(player) / 0.9375f, 0.0f);
+		orbitTargetInitialized = true;
 	}
 
 	private void save() {
@@ -745,7 +1060,7 @@ public class PixelEditorScreen extends ScaledScreen {
 		zoom = Mth.lerp(0.3f, zoom, targetZoom);
 		renderTopBar(graphics, uiMouseX, uiMouseY);
 		renderLeftPanel(graphics);
-		renderViewport(graphics);
+		renderViewport(graphics, uiMouseX, uiMouseY);
 
 		graphics.pose().pushPose();
 		graphics.pose().translate(0.0D, 0.0D, 400.0D);
@@ -753,6 +1068,7 @@ public class PixelEditorScreen extends ScaledScreen {
 		RenderSystem.clear(GL11.GL_DEPTH_BUFFER_BIT, Minecraft.ON_OSX);
 		super.render(graphics, uiMouseX, uiMouseY, partialTick);
 		if (mode == Mode.TATTOO) renderColorExtras(graphics, uiMouseX, uiMouseY);
+		if (!confirmClose) renderPartTooltip(graphics, uiMouseX, uiMouseY);
 		graphics.pose().popPose();
 
 		if (confirmClose) renderConfirmClose(graphics, uiMouseX, uiMouseY);
@@ -866,19 +1182,85 @@ public class PixelEditorScreen extends ScaledScreen {
 	}
 
 	private void renderHelp(GuiGraphics graphics) {
-		String[] keys = layered
-				? new String[]{"help.paint", "help.line", "help.view", "help.undo", "help.locked"}
-				: new String[]{"help.paint", "help.line", "help.view", "help.undo"};
-		int lineY = viewY1 - 6 - keys.length * 10;
-		int right = viewX1 - 6;
+		if (!layered) return;
+		Component text = tr("gui.dragonminez.pixel_editor.help.locked");
 		graphics.pose().pushPose();
 		graphics.pose().translate(0.0D, 0.0D, 900.0D);
-		for (String key : keys) {
-			Component text = tr("gui.dragonminez.pixel_editor." + key);
-			TextUtil.drawStringWithBorder(graphics, this.font, text, right - this.font.width(text), lineY, HairEditorUi.MUTED);
-			lineY += 10;
+		TextUtil.drawStringWithBorder(graphics, this.font, text, viewX1 - 6 - this.font.width(text), viewY1 - 16, HairEditorUi.MUTED);
+		graphics.pose().popPose();
+	}
+
+	private void renderViewportOverlay(GuiGraphics graphics, int mouseX, int mouseY) {
+		boolean interactive = !confirmClose && !painting && !orbiting && !panning;
+		graphics.pose().pushPose();
+		graphics.pose().translate(0.0D, 0.0D, 900.0D);
+		for (ViewButton button : viewButtons) {
+			boolean hovered = interactive && HairEditorUi.inside(mouseX, mouseY, button.x(), button.y(), button.width(), VIEW_BUTTON_HEIGHT);
+			HairEditorUi.button(graphics, this.font, tr(button.preset().key()), button.x(), button.y(), button.width(), VIEW_BUTTON_HEIGHT, hovered, false, true);
+		}
+
+		int dollX = dollX();
+		int dollY = dollY();
+		Component label = tr("gui.dragonminez.pixel_editor.parts");
+		int labelWidth = this.font.width(label);
+		int labelX = Math.min(dollX + (DOLL_WIDTH - labelWidth) / 2, viewX1 - 6 - labelWidth);
+		TextUtil.drawStringWithBorder(graphics, this.font, label, labelX, dollY - DOLL_LABEL_HEIGHT, HairEditorUi.TITLE);
+		for (BodyPart part : BodyPart.values()) {
+			int px = dollX + part.x;
+			int py = dollY + part.y;
+			boolean hovered = interactive && HairEditorUi.inside(mouseX, mouseY, px, py, part.width, part.height);
+			boolean visible = !hiddenParts.contains(part);
+			HairEditorUi.button(graphics, this.font, Component.empty(), px, py, part.width, part.height, hovered, visible, visible || hovered);
+			if (hovered) HairEditorUi.outline(graphics, px - 1, py - 1, part.width + 2, part.height + 2, HairEditorUi.HOVER_TEXT);
 		}
 		graphics.pose().popPose();
+	}
+
+	private BodyPart partAt(double mouseX, double mouseY) {
+		int dollX = dollX();
+		int dollY = dollY();
+		for (BodyPart part : BodyPart.values()) {
+			if (HairEditorUi.inside(mouseX, mouseY, dollX + part.x, dollY + part.y, part.width, part.height)) return part;
+		}
+		return null;
+	}
+
+	private ViewButton viewButtonAt(double mouseX, double mouseY) {
+		for (ViewButton button : viewButtons) {
+			if (HairEditorUi.inside(mouseX, mouseY, button.x(), button.y(), button.width(), VIEW_BUTTON_HEIGHT)) return button;
+		}
+		return null;
+	}
+
+	private boolean overViewportOverlay(double mouseX, double mouseY) {
+		if (HairEditorUi.inside(mouseX, mouseY, dollX() - 2, dollY() - DOLL_LABEL_HEIGHT, DOLL_WIDTH + 4, DOLL_HEIGHT + DOLL_LABEL_HEIGHT + 2)) return true;
+		return viewButtonAt(mouseX, mouseY) != null;
+	}
+
+	private boolean handleViewportOverlayClick(double mouseX, double mouseY) {
+		ViewButton button = viewButtonAt(mouseX, mouseY);
+		if (button != null) {
+			applyView(button.preset());
+			return true;
+		}
+		BodyPart part = partAt(mouseX, mouseY);
+		if (part != null) {
+			togglePart(part, hasShiftDown());
+			return true;
+		}
+		return overViewportOverlay(mouseX, mouseY);
+	}
+
+	private void renderPartTooltip(GuiGraphics graphics, int mouseX, int mouseY) {
+		if (painting || orbiting || panning) return;
+		BodyPart part = partAt(mouseX, mouseY);
+		if (part == null) return;
+		boolean hidden = hiddenParts.contains(part);
+		TextUtil.renderAdvancedTooltip(graphics, this.font, mouseX, mouseY, getUiWidth(), getUiHeight(),
+				tr("gui.dragonminez.pixel_editor.part." + part.bone),
+				List.of(tr("gui.dragonminez.pixel_editor.part." + (hidden ? "hidden" : "visible")).withStyle(style -> style.withColor(hidden ? HairEditorUi.DISABLED : HairEditorUi.SUCCESS))),
+				List.of(tr("gui.dragonminez.pixel_editor.part.hint").withStyle(style -> style.withColor(HairEditorUi.MUTED))),
+				HairEditorUi.HOVER_TEXT);
 	}
 
 	private int legendRow(GuiGraphics graphics, int x, int y, byte mark, String key) {
@@ -908,7 +1290,10 @@ public class PixelEditorScreen extends ScaledScreen {
 			if (hovered && !allowed) lockedHovered = true;
 			HairEditorUi.button(graphics, this.font, txt(String.valueOf(size)), bx, buttonY, buttonWidth, TOP_BAR_HEIGHT, hovered, size == pixels.getTattooSize(), allowed);
 		}
-		if (lockedHovered && !confirmClose) graphics.renderTooltip(this.font, tr("gui.dragonminez.pixel_editor.resolution.locked"), mouseX, mouseY);
+		if (lockedHovered && !confirmClose) {
+			TextUtil.renderAdvancedTooltip(graphics, this.font, mouseX, mouseY, getUiWidth(), getUiHeight(),
+					tr("gui.dragonminez.pixel_editor.resolution"), List.of(tr("gui.dragonminez.pixel_editor.resolution.locked")), null, HairEditorUi.WARNING);
+		}
 	}
 
 	private boolean handleResolutionClick(double mouseX, double mouseY) {
@@ -926,7 +1311,7 @@ public class PixelEditorScreen extends ScaledScreen {
 		return false;
 	}
 
-	private void renderViewport(GuiGraphics graphics) {
+	private void renderViewport(GuiGraphics graphics, int mouseX, int mouseY) {
 		HairEditorUi.panel(graphics, viewX0, viewY0, viewX1 - viewX0, viewY1 - viewY0);
 		int innerX0 = viewX0 + 4;
 		int innerY0 = viewY0 + 4;
@@ -936,7 +1321,10 @@ public class PixelEditorScreen extends ScaledScreen {
 
 		graphics.enableScissor(toScreenCoord(innerX0), toScreenCoord(innerY0), toScreenCoord(innerX1), toScreenCoord(innerY1));
 		try {
-			boolean wantPick = player != null && !confirmClose && !orbiting && !panning && insideViewport(toUiX(screenMouseX), toUiY(screenMouseY));
+			double pickX = toUiX(screenMouseX);
+			double pickY = toUiY(screenMouseY);
+			boolean overOverlay = !painting && overViewportOverlay(pickX, pickY);
+			boolean wantPick = player != null && !confirmClose && !orbiting && !panning && !overOverlay && (painting || !hasControlDown()) && insideViewport(pickX, pickY);
 			hoverValid = false;
 			if (wantPick) {
 				graphics.fill(innerX0, innerY0, innerX1, innerY1, VIEW_BACKGROUND);
@@ -953,6 +1341,9 @@ public class PixelEditorScreen extends ScaledScreen {
 		} finally {
 			graphics.disableScissor();
 		}
+		graphics.flush();
+		RenderSystem.clear(GL11.GL_DEPTH_BUFFER_BIT, Minecraft.ON_OSX);
+		renderViewportOverlay(graphics, mouseX, mouseY);
 		renderHelp(graphics);
 	}
 
@@ -1085,10 +1476,13 @@ public class PixelEditorScreen extends ScaledScreen {
 		FormPreview.Snapshot snapshot = formPreview.apply(player);
 		boolean previewApplied = !formPreview.current().isBase();
 
+		if (!orbitTargetInitialized) resetOrbitTarget(player);
 		int scale = adjustedModelScale(player, Math.round(zoom));
-		int centerX = (viewX0 + viewX1) / 2 + panX;
-		int centerY = (viewY0 + viewY1) / 2 + panY;
-		int baseY = centerY + Math.round(scale * (mode == Mode.EYES ? 1.62f : 0.9f));
+		modelScale = scale;
+		int centerX = (viewX0 + viewX1) / 2;
+		int centerY = (viewY0 + viewY1) / 2;
+		Quaternionf modelPose = new Quaternionf().rotateZ((float) Math.PI).rotateX(-pitch * Mth.DEG_TO_RAD).rotateY(yaw * Mth.DEG_TO_RAD);
+		Vector3f pivot = modelPose.transform(new Vector3f(orbitTarget)).mul(scale, scale, -scale);
 
 		float bodyYaw = player.yBodyRot;
 		float bodyYawO = player.yBodyRotO;
@@ -1098,23 +1492,23 @@ public class PixelEditorScreen extends ScaledScreen {
 		float headYawO = player.yHeadRotO;
 		float headYaw = player.yHeadRot;
 
-		player.yBodyRot = yaw;
-		player.yBodyRotO = yaw;
-		player.setYRot(yaw);
-		player.setXRot(pitch);
-		player.xRotO = pitch;
-		player.yHeadRot = yaw;
-		player.yHeadRotO = yaw;
+		player.yBodyRot = 180.0f;
+		player.yBodyRotO = 180.0f;
+		player.setYRot(180.0f);
+		player.setXRot(0.0f);
+		player.xRotO = 0.0f;
+		player.yHeadRot = 180.0f;
+		player.yHeadRotO = 180.0f;
 
 		List<SkinPaintContext.Overlay> overlays = pick ? List.of() : markOverlays(player);
 		SkinPaintContext.Overlay highlight = !pick && hoverValid ? new SkinPaintContext.Overlay(HIGHLIGHT_LOCATION, WHITE_RGB, 1.0f) : null;
 
 		graphics.pose().pushPose();
-		graphics.pose().translate(0.0D, 0.0D, 150.0D);
+		graphics.pose().translate(-pivot.x, -pivot.y, MODEL_DEPTH - pivot.z);
 		DMZSkinLayer.PREVIEW_MODE = previewApplied;
-		try (SkinPaintContext.Scope ignored = SkinPaintContext.begin(pick, PICK_LOCATION, showHair, overlayLayer, overlays, highlight);
+		try (SkinPaintContext.Scope ignored = SkinPaintContext.begin(pick, PICK_LOCATION, showHair, overlayLayer, hiddenBones, overlays, highlight);
 		     HairRenderContext.Scope hairScope = HairRenderContext.editorPreview(hairPreview)) {
-			InventoryScreen.renderEntityInInventory(graphics, centerX, baseY, scale, new Quaternionf().rotateZ((float) Math.PI), new Quaternionf(), player);
+			InventoryScreen.renderEntityInInventory(graphics, centerX, centerY, scale, modelPose, new Quaternionf(), player);
 		} finally {
 			DMZSkinLayer.PREVIEW_MODE = false;
 			graphics.pose().popPose();
@@ -1131,6 +1525,12 @@ public class PixelEditorScreen extends ScaledScreen {
 	}
 
 	private int adjustedModelScale(LivingEntity player, int baseScale) {
+		float visual = visualScale(player);
+		if (visual <= 0.9375f) return baseScale;
+		return Math.max(1, Math.round(baseScale * 0.9375f / visual));
+	}
+
+	private static float visualScale(LivingEntity player) {
 		float[] visual = {0.9375f};
 		StatsProvider.get(StatsCapability.INSTANCE, player).ifPresent(stats -> {
 			Float[] resolved = stats.getCharacter().getResolvedModelScaling();
@@ -1138,8 +1538,7 @@ public class PixelEditorScreen extends ScaledScreen {
 			float scaleY = resolved != null && resolved.length > 1 && resolved[1] != null && resolved[1] > 0.0f ? resolved[1] : 0.9375f;
 			visual[0] = Math.max(0.1f, (scaleX + scaleY) / 2.0f);
 		});
-		if (visual[0] <= 0.9375f) return baseScale;
-		return Math.max(1, Math.round(baseScale * 0.9375f / visual[0]));
+		return visual[0];
 	}
 
 	private void renderConfirmClose(GuiGraphics graphics, int mouseX, int mouseY) {
@@ -1217,6 +1616,7 @@ public class PixelEditorScreen extends ScaledScreen {
 		if (button == 0 && handleTopBarClick(uiX, uiY)) return true;
 		if (button == 0 && handleResolutionClick(uiX, uiY)) return true;
 		if (!insideViewport(uiX, uiY)) return false;
+		if (button == 0 && handleViewportOverlayClick(uiX, uiY)) return true;
 
 		orbiting = false;
 		panning = false;
@@ -1224,8 +1624,20 @@ public class PixelEditorScreen extends ScaledScreen {
 		pressHoverX = hoverX;
 		pressHoverY = hoverY;
 		if (button == 0) {
-			if (hoverValid) beginStroke(shiftDown() ? Tool.AXIS_LINE : Tool.BRUSH);
-			else pressingViewport = true;
+			if (hoverValid && !hasControlDown()) {
+				if (!shiftDown() && isDoubleClick(uiX, uiY)) {
+					fillBoneFace(hoverX, hoverY);
+					return true;
+				}
+				beginStroke(shiftDown() ? Tool.AXIS_LINE : Tool.BRUSH);
+				lastClickMillis = Util.getMillis();
+				lastClickX = uiX;
+				lastClickY = uiY;
+				lastClickBefore = null;
+			} else {
+				pressingViewport = true;
+				lastClickMillis = 0L;
+			}
 		} else if (button == 1) {
 			pressingSecondary = true;
 		} else {
@@ -1253,18 +1665,22 @@ public class PixelEditorScreen extends ScaledScreen {
 			panning = true;
 		}
 		if (pressingViewport) {
-			if (!orbiting && moved) orbiting = true;
+			if (!orbiting && moved) {
+				orbiting = true;
+				orbitFlipped = Mth.cos(pitch * Mth.DEG_TO_RAD) < 0.0f;
+			}
 			if (orbiting) {
-				yaw -= (float) (uiX - lastX) * ORBIT_SPEED;
-				pitch = Mth.clamp(pitch + (float) (uiY - lastY) * ORBIT_SPEED, -90.0f, 90.0f);
+				float dx = (float) (uiX - lastX) * ORBIT_SPEED;
+				float dy = (float) (uiY - lastY) * ORBIT_SPEED;
+				yaw = Mth.wrapDegrees(yaw + (orbitFlipped ? -dx : dx));
+				pitch = Mth.wrapDegrees(pitch + dy);
 			}
 			lastX = uiX;
 			lastY = uiY;
 			return true;
 		}
 		if (panning) {
-			panX += (int) Math.round(uiX - lastX);
-			panY += (int) Math.round(uiY - lastY);
+			panBy(uiX - lastX, uiY - lastY);
 			lastX = uiX;
 			lastY = uiY;
 			return true;
