@@ -2,6 +2,7 @@ package com.dragonminez.common.init.entities.sagas;
 
 import com.dragonminez.client.util.ColorUtils;
 import com.dragonminez.common.combat.clash.BeamClashManager;
+import com.dragonminez.common.combat.clash.StrikeClash;
 import com.dragonminez.common.config.ConfigManager;
 import com.dragonminez.common.config.EntitiesConfig;
 import com.dragonminez.common.init.EntityAttributes;
@@ -224,6 +225,7 @@ public abstract class DBSagasEntity extends Monster implements GeoEntity, ITextu
     private static final EntityDataAccessor<Boolean> IS_COMBOING = SynchedEntityData.defineId(DBSagasEntity.class, EntityDataSerializers.BOOLEAN);
     private static final EntityDataAccessor<Integer> CURRENT_COMBO_ID = SynchedEntityData.defineId(DBSagasEntity.class, EntityDataSerializers.INT);
     private static final EntityDataAccessor<Boolean> IS_STRIKE_RUSHING = SynchedEntityData.defineId(DBSagasEntity.class, EntityDataSerializers.BOOLEAN);
+    private static final EntityDataAccessor<Boolean> IS_STRIKE_CLASHING = SynchedEntityData.defineId(DBSagasEntity.class, EntityDataSerializers.BOOLEAN);
 
     private static final EntityDataAccessor<Integer> BATTLE_POWER = SynchedEntityData.defineId(DBSagasEntity.class, EntityDataSerializers.INT);
     private static final EntityDataAccessor<Boolean> TRANSFORMING = SynchedEntityData.defineId(DBSagasEntity.class, EntityDataSerializers.BOOLEAN);
@@ -1074,7 +1076,7 @@ public abstract class DBSagasEntity extends Monster implements GeoEntity, ITextu
 
             if (this.kiHitSlowTicks > 0) this.kiHitSlowTicks--;
 
-            this.handleCommonCombatMovement(this.getTarget(), this.isCasting() || this.isComboing() || this.isTransforming() || this.isStunned());
+            this.handleCommonCombatMovement(this.getTarget(), this.isCasting() || this.isComboing() || this.isTransforming() || this.isStunned() || this.isStrikeClashing());
 
             if (this.tickCount % AURA_LIGHT_INTERVAL == 0) updateAuraLight();
 
@@ -1256,6 +1258,7 @@ public abstract class DBSagasEntity extends Monster implements GeoEntity, ITextu
     }
 
     private void tickStrikeRush() {
+        if (StrikeClash.tryStart(this)) return;
         ComboManager.RushStep step = ComboManager.tickStrikeRush(this, this.comboTarget, this.strikeRushTicks--);
         if (step == ComboManager.RushStep.MISSED) this.stopCombo();
         else if (step == ComboManager.RushStep.CONNECTED) this.endStrikeRush();
@@ -1268,6 +1271,31 @@ public abstract class DBSagasEntity extends Monster implements GeoEntity, ITextu
     }
 
     public boolean isStrikeRushing() {return this.entityData.get(IS_STRIKE_RUSHING);}
+
+    public boolean isStrikeClashing() {return this.entityData.get(IS_STRIKE_CLASHING);}
+
+    public LivingEntity getStrikeRushTarget() {
+        return this.isStrikeRushing() ? this.comboTarget : null;
+    }
+
+    public void beginStrikeClash() {
+        this.stopCombo();
+        this.entityData.set(IS_STRIKE_CLASHING, true);
+        this.getNavigation().stop();
+        this.setNoGravity(true);
+        this.setDeltaMovement(Vec3.ZERO);
+    }
+
+    public void endStrikeClash(Boolean won) {
+        this.entityData.set(IS_STRIKE_CLASHING, false);
+        if (!this.isFlying()) this.setNoGravity(false);
+        if (Boolean.TRUE.equals(won)) {
+            this.currentComboCooldown = 0;
+            this.globalActionCooldown = 0;
+        } else if (Boolean.FALSE.equals(won)) {
+            this.currentComboCooldown = this.comboCooldownMax;
+        }
+    }
 
     public void setMeleeAllowed(boolean allowed) {
         this.meleeAllowed = allowed;
@@ -1639,7 +1667,16 @@ public abstract class DBSagasEntity extends Monster implements GeoEntity, ITextu
 
     @Override
     public void travel(Vec3 pTravelVector) {
-        if (this.isCasting() || this.isComboing() || this.isTransforming() || this.isZanzoken() || this.isStunned()) {
+        if (this.isStrikeClashing()) {
+            this.setDeltaMovement(Vec3.ZERO);
+            return;
+        }
+        boolean acting = this.isCasting() || this.isComboing() || this.isTransforming() || this.isZanzoken();
+        if (!acting && this.isStunned() && this.knockbackLockTicks > 0) {
+            super.travel(Vec3.ZERO);
+            return;
+        }
+        if (acting || this.isStunned()) {
             this.setDeltaMovement(0, this.getDeltaMovement().y, 0);
             super.travel(Vec3.ZERO);
             return;
@@ -1772,6 +1809,7 @@ public abstract class DBSagasEntity extends Monster implements GeoEntity, ITextu
         if (this.isStunned()) return;
         if (this.globalActionCooldown > 0) return;
         if (this.getTarget() == null) return;
+        if (BeamClashManager.isClashing(this.getUUID())) return;
 
         int resolved = comboId;
         if (resolved < 0) {
@@ -1953,6 +1991,7 @@ public abstract class DBSagasEntity extends Monster implements GeoEntity, ITextu
         this.entityData.define(IS_COMBOING, false);
         this.entityData.define(CURRENT_COMBO_ID, -1);
         this.entityData.define(IS_STRIKE_RUSHING, false);
+        this.entityData.define(IS_STRIKE_CLASHING, false);
         this.entityData.define(DBZ_STYLE, 0);
         this.entityData.define(TEXTURE_VARIANT, 0);
         this.entityData.define(IS_SUPERVILLAIN, false);

@@ -3,6 +3,7 @@ package com.dragonminez.server.events.players;
 import com.dragonminez.Env;
 import com.dragonminez.Reference;
 import com.dragonminez.common.combat.SilentDamage;
+import com.dragonminez.common.combat.clash.StrikeClash;
 import com.dragonminez.common.combat.logic.player.MeleeWindupTracker;
 import com.dragonminez.common.config.ConfigManager;
 import com.dragonminez.common.config.FormConfig;
@@ -365,7 +366,7 @@ public class TickHandler {
 			}
 			boolean auraFromFlySprint = flySprintAuraTicks.containsKey(playerId);
 			boolean auraFromRitual = GodRitualService.isParticipant(serverPlayer);
-			boolean auraFromStrikeRush = StrikeAttackHandler.isRushing(serverPlayer);
+			boolean auraFromStrikeRush = StrikeAttackHandler.isRushing(serverPlayer) || StrikeClash.isClashing(serverPlayer.getUUID());
 			data.getStatus().setAuraActive(auraFromActions || auraFromFlySprint || auraFromRitual || auraFromStrikeRush);
 
 			if (tickCounter % 5 == 0) {

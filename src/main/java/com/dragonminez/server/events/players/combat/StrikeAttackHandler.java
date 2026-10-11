@@ -21,6 +21,7 @@ import com.dragonminez.common.init.entities.ki.SPBlueHurricaneEntity;
 import com.dragonminez.common.init.entities.ki.SPDragonFistEntity;
 import com.dragonminez.common.init.entities.sagas.DBSagasEntity;
 import com.dragonminez.common.init.item.weapons.BraveSwordItem;
+import com.dragonminez.common.combat.clash.StrikeClash;
 import com.dragonminez.common.combat.logic.player.TargetHelper;
 import com.dragonminez.common.network.NetworkHandler;
 import com.dragonminez.common.network.S2C.ClawSlashVfxS2C;
@@ -296,7 +297,9 @@ public class StrikeAttackHandler {
 				return;
 			}
 
-			if (immediateTarget != null && METEOR_BURST_ID.equals(strike.getId())) {
+			if (immediateTarget != null && !TARGETLESS_STRIKES.contains(strike.getId()) && StrikeClash.isRushingAt(immediateTarget, player)) {
+				startRush(player, stats, pending, immediateTarget);
+			} else if (immediateTarget != null && METEOR_BURST_ID.equals(strike.getId())) {
 				startStrike(player, immediateTarget, pending);
 			} else if (immediateTarget != null) {
 				boolean faceTarget = !"dragon_fist".equals(strike.getId());
@@ -439,6 +442,8 @@ public class StrikeAttackHandler {
 			}
 		}
 
+		if (StrikeClash.tryStart(player)) return;
+
 		LivingEntity target = resolveTargetForPending(player, pending);
 		if (target != null) {
 			PENDING.remove(player.getUUID());
@@ -454,6 +459,50 @@ public class StrikeAttackHandler {
 	public static boolean isRushing(ServerPlayer player) {
 		return PENDING.containsKey(player.getUUID());
 	}
+
+	public static UUID rushTargetId(ServerPlayer player) {
+		PendingStrike pending = PENDING.get(player.getUUID());
+		return pending != null ? pending.preferredTargetId() : null;
+	}
+
+	public static void cancelRush(ServerPlayer player) {
+		PendingStrike pending = PENDING.get(player.getUUID());
+		if (pending != null) failPending(player, pending);
+	}
+
+	public static ClashRush takeRushForClash(ServerPlayer player) {
+		PendingStrike pending = PENDING.remove(player.getUUID());
+		if (pending == null) return null;
+		STRIKE_ANCHOR_PART.remove(player.getUUID());
+		NetworkHandler.sendToTrackingEntityAndSelf(new StrikeRushS2C(player.getId(), 0, -1, true), player);
+		return new ClashRush(pending.techniqueId(), pending.cooldownTicks());
+	}
+
+	public static double clashStrikeDamage(ServerPlayer player, LivingEntity target, String techniqueId) {
+		return StatsProvider.get(StatsCapability.INSTANCE, player).map(stats -> {
+			if (!(stats.getTechniques().getUnlockedTechniques().get(techniqueId) instanceof StrikeAttackData strike)) return 0.0;
+			double damage = stats.getStrikeDamage() * strike.getDamageMultiplier() * Math.max(0.0,
+					ConfigManager.getTechniqueConfig().getStrikeConfig(strike.getId()).getDamageMultiplier());
+			DMZEvent.DamageModifyEvent modifyEvent = new DMZEvent.DamageModifyEvent(player, target, damage, 0.0, DMZEvent.DamageSourceType.STRIKE);
+			return MinecraftForge.EVENT_BUS.post(modifyEvent) ? 0.0 : Math.max(0.0, modifyEvent.getAmount());
+		}).orElse(0.0);
+	}
+
+	public static void settleClashCooldown(ServerPlayer player, ClashRush rush, float ratio) {
+		StatsProvider.get(StatsCapability.INSTANCE, player).ifPresent(stats -> {
+			String cooldownKey = getTechniqueCooldownKey(rush.techniqueId());
+			if (ratio <= 0.0f) {
+				stats.getCooldowns().removeCooldown(cooldownKey);
+				stats.getCooldowns().removeCooldown(Cooldowns.STRIKE_GLOBAL);
+			} else {
+				stats.getCooldowns().setCooldown(cooldownKey, Math.max(1, Math.round(rush.cooldownTicks() * ratio)));
+				applyGlobalStrikeCooldown(stats, ratio);
+			}
+			NetworkHandler.sendToTrackingEntityAndSelf(new StatsSyncS2C(player), player);
+		});
+	}
+
+	public record ClashRush(String techniqueId, int cooldownTicks) {}
 
 	private static void startRush(ServerPlayer player, com.dragonminez.common.stats.StatsData stats, PendingStrike pending, LivingEntity lockedTarget) {
 		PENDING.put(player.getUUID(), pending);

@@ -23,7 +23,7 @@ public class DBSagasAnimationHandler {
             return event.setAndContinue(entity.getSleepAnimation());
         }
 
-        if (entity.getBossAbility() >= 0) {
+        if (entity.getBossAbility() >= 0 || entity.isStrikeClashing()) {
             event.getController().setAnimationSpeed(1.0D);
             return PlayState.STOP;
         }
@@ -111,6 +111,8 @@ public class DBSagasAnimationHandler {
 
     public static <T extends GeoAnimatable> PlayState skillPredicate(AnimationState<T> event, DBSagasEntity entity) {
 
+        if (entity.isStrikeClashing()) return event.setAndContinue(DBSagasAnimations.ANIM_STRIKE_CLASH);
+
         if (entity.isComboing() && !entity.isStrikeRushing()) {
             int comboId = entity.getComboId();
 
@@ -196,7 +198,7 @@ public class DBSagasAnimationHandler {
     public static <T extends GeoAnimatable> PlayState attackPredicate(AnimationState<T> event, DBSagasEntity entity) {
 
         if (entity.isCasting() || entity.isTransforming() || entity.isComboing() ||
-                entity.isEvading() || entity.isZanzoken()) {
+                entity.isEvading() || entity.isZanzoken() || entity.isStrikeClashing()) {
             return PlayState.STOP;
         }
 
@@ -379,7 +381,7 @@ public class DBSagasAnimationHandler {
 
         if (entity.isDeadOrDying() || entity.isInSleepPose() || entity.getBossAbility() >= 0
                 || entity.isCasting() || entity.isComboing() || entity.isTransforming()
-                || entity.isEvading() || entity.isZanzoken()) {
+                || entity.isEvading() || entity.isZanzoken() || entity.isStrikeClashing()) {
             return PlayState.STOP;
         }
 

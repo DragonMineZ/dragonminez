@@ -186,5 +186,6 @@ public class DBSagasAnimations {
     public static final RawAnimation ANIM_SPIRIT_BREAKING_CANNON = RawAnimation.begin().thenPlay("skp.spirit_breaking_cannon");
     public static final RawAnimation ANIM_SUPER_GOD_FIST = RawAnimation.begin().thenPlay("skp.super_god_fist");
     public static final RawAnimation ANIM_DEADLY_DANCE_VEGETTO = RawAnimation.begin().thenPlay("skp.deadly_dance_vegetto");
+    public static final RawAnimation ANIM_STRIKE_CLASH = RawAnimation.begin().thenPlayAndHold("skp.strike_clash");
 
 }

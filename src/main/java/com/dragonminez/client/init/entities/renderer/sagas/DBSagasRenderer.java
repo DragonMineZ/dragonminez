@@ -127,7 +127,7 @@ public class DBSagasRenderer<T extends DBSagasEntity> extends GeoEntityRenderer<
         }
 
 
-        boolean showAura = entity.isTransforming() || entity.isCharge() || entity.isStrikeRushing();
+        boolean showAura = entity.isTransforming() || entity.isCharge() || entity.isStrikeRushing() || entity.isStrikeClashing();
         boolean showLightning = entity.isLightning();
 
         if ((showAura || showLightning) && !com.dragonminez.client.render.effects.AfterimageEffect.isRendering()) {

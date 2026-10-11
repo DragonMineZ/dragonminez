@@ -82,6 +82,8 @@ public class FlySkillEvent {
 	private static int strikeRushTicks = 0;
 	private static int strikeRushTargetId = -1;
 	private static final java.util.Map<Integer, Long> REMOTE_STRIKE_RUSHES = new java.util.HashMap<>();
+	private static Vec3 strikeClashAnchor = null;
+	private static float strikeClashYaw = 0.0F;
 
 	public static FlySkillEvent getInstance() {
 		return INSTANCE;
@@ -121,6 +123,43 @@ public class FlySkillEvent {
 		player.fallDistance = 0F;
 		flightVector = player.getDeltaMovement();
 		CombatFlightHandler.initFromMotion(player);
+	}
+
+	public static void holdStrikeClash(Vec3 anchor, float yaw) {
+		strikeRushTicks = 0;
+		strikeRushTargetId = -1;
+		strikeClashAnchor = anchor;
+		strikeClashYaw = yaw;
+		LocalPlayer player = Minecraft.getInstance().player;
+		if (player != null) applyStrikeClashHold(player);
+	}
+
+	public static void releaseStrikeClash() {
+		if (strikeClashAnchor == null) return;
+		strikeClashAnchor = null;
+		LocalPlayer player = Minecraft.getInstance().player;
+		if (player == null) return;
+		player.setDeltaMovement(Vec3.ZERO);
+		flightVector = Vec3.ZERO;
+		CombatFlightHandler.initFromMotion(player);
+	}
+
+	public static boolean isStrikeClashHeld() {
+		return strikeClashAnchor != null;
+	}
+
+	private static void applyStrikeClashHold(LocalPlayer player) {
+		player.setPos(strikeClashAnchor.x, strikeClashAnchor.y, strikeClashAnchor.z);
+		player.setDeltaMovement(Vec3.ZERO);
+		player.fallDistance = 0F;
+		player.setYRot(strikeClashYaw);
+		player.yRotO = strikeClashYaw;
+		player.setXRot(0.0F);
+		player.xRotO = 0.0F;
+		player.setYHeadRot(strikeClashYaw);
+		player.yBodyRot = strikeClashYaw;
+		player.yBodyRotO = strikeClashYaw;
+		flightVector = Vec3.ZERO;
 	}
 
 	private static double strikeRushSpeed(LocalPlayer player) {
@@ -300,6 +339,11 @@ public class FlySkillEvent {
 			} else if (!startedGroundActivation && player.onGround()) {
 				pendingFlightActivation = false;
 			}
+		}
+
+		if (strikeClashAnchor != null) {
+			applyStrikeClashHold(player);
+			return;
 		}
 
 		if (strikeRushTicks > 0) {

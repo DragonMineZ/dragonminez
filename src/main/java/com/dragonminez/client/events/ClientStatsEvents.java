@@ -82,6 +82,7 @@ public class ClientStatsEvents {
 	private static boolean wasITKeyDown = false;
 	private static boolean itMenuOpened = false;
 	private static boolean wasRightClickDown = false;
+	private static boolean wasClashPressDown = false;
 	private static long triBeamFollowUpUntil = 0L;
 	private static boolean wasInstantTransformKeyDown = false;
 	private static final long TAP_ACTION_COOLDOWN_MS = 500;
@@ -311,9 +312,11 @@ public class ClientStatsEvents {
 				blockLockTicks = 20;
 			}
 
-			if (ClientBeamClashState.isActive() && isRightClickDown && !wasRightClickDown) {
+			boolean clashPressDown = mc.options.keyUse.isDown() && (!isStunned || FlySkillEvent.isStrikeClashHeld());
+			if (ClientBeamClashState.isActive() && clashPressDown && !wasClashPressDown) {
 				ClientBeamClashState.onLocalPress();
 			}
+			wasClashPressDown = clashPressDown;
 
 			if (triBeamFollowUpUntil > 0L && isRightClickDown && !wasRightClickDown) {
 				if (mc.level.getGameTime() <= triBeamFollowUpUntil) NetworkHandler.sendToServer(new TriBeamPackets.FollowUpC2S());
@@ -658,6 +661,7 @@ public class ClientStatsEvents {
 	public static void onMovementInput(MovementInputUpdateEvent event) {
 		StatsProvider.get(StatsCapability.INSTANCE, event.getEntity()).ifPresent(data -> {
 			if (TechniqueDispatcher.isMovementRestrictedKiAttack(event.getEntity(), data) || data.getStatus().isStunned()
+					|| FlySkillEvent.isStrikeClashHeld()
 					|| com.dragonminez.client.systems.worldboss.ClientWorldBossState.Player.isCasting()
 					|| data.getStatus().isActionCharging() || data.getStatus().isChargingKi()
 					|| data.getStatus().getPotaraPoseTimer() > 0

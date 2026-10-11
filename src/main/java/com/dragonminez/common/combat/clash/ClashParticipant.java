@@ -45,11 +45,19 @@ public class ClashParticipant {
     private int idleTicks;
 
     public ClashParticipant(AbstractKiProjectile beam, LivingEntity owner) {
+        this(beam, owner, beam.getKiDamage());
+    }
+
+    public ClashParticipant(LivingEntity owner, double power) {
+        this(null, owner, power);
+    }
+
+    private ClashParticipant(AbstractKiProjectile beam, LivingEntity owner, double power) {
         this.beam = beam;
         this.owner = owner;
         this.npc = !(owner instanceof ServerPlayer);
         this.wasNoAi = owner instanceof Mob mob && mob.isNoAi();
-        this.statPower = Math.max(1.0, beam.getKiDamage());
+        this.statPower = Math.max(1.0, power);
         this.npcAccuracy = resolveNpcAccuracy(this.statPower, this.npc);
         this.meterSeed = owner.getRandom().nextLong();
     }

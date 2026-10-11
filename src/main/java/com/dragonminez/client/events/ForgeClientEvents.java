@@ -286,6 +286,7 @@ public class ForgeClientEvents {
 		com.dragonminez.client.render.shader.KnockoutShaderManager.reset();
 		com.dragonminez.client.render.effects.BeamClashScreenRenderer.reset();
 		com.dragonminez.client.clash.ClientBeamClashState.clear();
+		FlySkillEvent.releaseStrikeClash();
 		com.dragonminez.client.render.shader.ClientGravityState.reset();
 		LockOnEvent.unlock();
 		DMZRendererCache.clear();

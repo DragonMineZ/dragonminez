@@ -220,6 +220,11 @@ public class ClientPacketHandler {
 		} else com.dragonminez.client.events.FlySkillEvent.setRemoteStrikeRush(playerId, ticks);
 	}
 
+	public static void handleStrikeClashHold(boolean active, double x, double y, double z, float yaw) {
+		if (active) com.dragonminez.client.events.FlySkillEvent.holdStrikeClash(new Vec3(x, y, z), yaw);
+		else com.dragonminez.client.events.FlySkillEvent.releaseStrikeClash();
+	}
+
 	public static void handleTriggerAnimationPacket(UUID playerUUID, TriggerAnimationS2C.AnimationType animationType,
 			int variant, int entityId, String stringPayload) {
 		var clientLevel = Minecraft.getInstance().level;

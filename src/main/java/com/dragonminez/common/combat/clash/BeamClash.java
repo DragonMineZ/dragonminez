@@ -22,7 +22,7 @@ public class BeamClash {
     private static final float STR_FLOOR = 0.6f;
     private static final float STR_SPAN = 0.95f;
     private static final float MIN_TRACTION = 0.35f;
-    private static final float WIN_THRESHOLD = 0.8f;
+    public static final float WIN_THRESHOLD = 0.8f;
     private static final int IDLE_DISSOLVE_TICKS = 140;
     private static final int MAX_DURATION = 600;
     private static final int WINNER_BREAKTHROUGH_TICKS = 60;
@@ -101,19 +101,7 @@ public class BeamClash {
         a.tickMeter(age);
         b.tickMeter(age);
 
-        double pa = a.statPower();
-        double pb = b.statPower();
-        float strengthA = (float) (pa / (pa + pb));
-        float strengthB = 1.0f - strengthA;
-
-        float tracA = Mth.clamp(2.0f * biasT, MIN_TRACTION, 1.0f);
-        float tracB = Mth.clamp(2.0f * (1.0f - biasT), MIN_TRACTION, 1.0f);
-
-        float pushA = a.momentum() * (STR_FLOOR + STR_SPAN * strengthA) * tracA;
-        float pushB = b.momentum() * (STR_FLOOR + STR_SPAN * strengthB) * tracB;
-
-        biasT += DRIFT_PER_TICK * (pushA - pushB);
-        biasT = Mth.clamp(biasT, 0.0f, 1.0f);
+        biasT = advanceBias(biasT, a, b);
 
         applyLock();
 
@@ -126,6 +114,21 @@ public class BeamClash {
             return Result.DISSOLVED;
         }
         return Result.ONGOING;
+    }
+
+    public static float advanceBias(float bias, ClashParticipant a, ClashParticipant b) {
+        double pa = a.statPower();
+        double pb = b.statPower();
+        float strengthA = (float) (pa / (pa + pb));
+        float strengthB = 1.0f - strengthA;
+
+        float tracA = Mth.clamp(2.0f * bias, MIN_TRACTION, 1.0f);
+        float tracB = Mth.clamp(2.0f * (1.0f - bias), MIN_TRACTION, 1.0f);
+
+        float pushA = a.momentum() * (STR_FLOOR + STR_SPAN * strengthA) * tracA;
+        float pushB = b.momentum() * (STR_FLOOR + STR_SPAN * strengthB) * tracB;
+
+        return Mth.clamp(bias + DRIFT_PER_TICK * (pushA - pushB), 0.0f, 1.0f);
     }
 
     public static float visualBias(float bias) {
@@ -177,11 +180,10 @@ public class BeamClash {
 
         winner.unfreezeOwner();
         loser.unfreezeOwner();
-        exhaust(loser);
+        exhaust(loser.owner());
     }
 
-    private static void exhaust(ClashParticipant loser) {
-        var owner = loser.owner();
+    public static void exhaust(LivingEntity owner) {
         owner.removeEffect(MainEffects.STUN.get());
         owner.addEffect(new MobEffectInstance(MainEffects.STUN.get(), LOSER_EXHAUST_TICKS, 0, false, false, true));
         if (owner instanceof ServerPlayer player) {
