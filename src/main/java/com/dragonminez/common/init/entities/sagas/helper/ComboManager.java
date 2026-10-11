@@ -10,7 +10,9 @@ import com.dragonminez.common.network.S2C.ShockwaveVfxS2C;
 import com.dragonminez.common.network.S2C.TriggerAnimationS2C;
 import com.dragonminez.common.stats.StatsCapability;
 import com.dragonminez.common.stats.StatsProvider;
+import com.dragonminez.common.init.MainDamageTypes;
 import com.dragonminez.server.events.players.combat.KnockbackHelper;
+import com.dragonminez.server.events.players.combat.MeteorBurstCombo;
 import com.dragonminez.server.events.players.combat.MomentumImpactHandler;
 import net.minecraft.commands.arguments.EntityAnchorArgument;
 import net.minecraft.core.particles.ParticleTypes;
@@ -24,7 +26,12 @@ import net.minecraft.world.entity.MoverType;
 import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.phys.Vec3;
 
+import java.util.Map;
+import java.util.WeakHashMap;
+
 public class ComboManager {
+
+    private static final Map<DBSagasEntity, MeteorBurstCombo.State> METEOR_BURSTS = new WeakHashMap<>();
 
     private static final int SPIRIT_CANNON_KNEE_TICK = 6;
     private static final int SPIRIT_CANNON_UPPERCUT_TICK = 13;
@@ -93,12 +100,19 @@ public class ComboManager {
             case 9 -> handleSpiritBreakingCannon(user, target, timer);
             case 11 -> handleSuperGodFist(user, target, timer);
             case 12 -> handleDeadlyDanceVegetto(user, target, timer);
+            case 13 -> handleMeteorBurst(user, target, timer);
 
         }
     }
 
     public static void onComboStopped(DBSagasEntity user, int comboId, LivingEntity target) {
         if (user.level().isClientSide) return;
+        if (comboId == DBSagasEntity.ComboType.METEOR_BURST.getId()) {
+            MeteorBurstCombo.State state = METEOR_BURSTS.remove(user);
+            if (state != null) MeteorBurstCombo.release(state);
+            if (!user.isFlying()) user.setNoGravity(false);
+            return;
+        }
         boolean spiritCannon = comboId == DBSagasEntity.ComboType.SPIRIT_BREAKING_CANNON.getId();
         boolean godFist = comboId == DBSagasEntity.ComboType.SUPER_GOD_FIST.getId();
         if (!spiritCannon && !godFist) return;
@@ -117,6 +131,71 @@ public class ComboManager {
             saga.stopTriggeredAnimation(DBSagasEntity.HURT_CONTROLLER, DBSagasEntity.HURT_ANIM_TOP2);
             saga.stopTriggeredAnimation(DBSagasEntity.HURT_CONTROLLER, DBSagasEntity.HURT_ANIM_TOP);
             saga.stopTriggeredAnimation(DBSagasEntity.HURT_CONTROLLER, DBSagasEntity.HURT_ANIM_DOWN);
+        }
+    }
+
+    private static void handleMeteorBurst(DBSagasEntity user, LivingEntity target, int timer) {
+        if (!(user.level() instanceof ServerLevel level)) return;
+
+        user.invulnerableTime = 20;
+        user.setNoGravity(true);
+        user.setDeltaMovement(Vec3.ZERO);
+
+        MeteorBurstCombo.State state = METEOR_BURSTS.computeIfAbsent(user, key -> new MeteorBurstCombo.State());
+        if (!MeteorBurstCombo.tick(level, new SagaMeteorBurst(user, target), state, timer) || timer >= MeteorBurstCombo.DURATION) {
+            user.stopCombo();
+        }
+    }
+
+    private record SagaMeteorBurst(DBSagasEntity user, LivingEntity target) implements MeteorBurstCombo.Performer {
+
+        @Override
+        public LivingEntity self() {
+            return this.user;
+        }
+
+        @Override
+        public void place(Vec3 position, float yaw) {
+            this.user.setPos(position.x, position.y, position.z);
+            this.user.setDeltaMovement(Vec3.ZERO);
+            this.user.setYRot(yaw);
+            this.user.setYHeadRot(yaw);
+            this.user.yBodyRot = yaw;
+            this.user.fallDistance = 0.0F;
+        }
+
+        @Override
+        public boolean isInterrupted() {
+            return this.user.isStunned();
+        }
+
+        @Override
+        public float strikeBudget() {
+            return comboHitDamage(this.user, DBSagasEntity.ComboType.METEOR_BURST, 1);
+        }
+
+        @Override
+        public float kiBudget() {
+            return this.user.getKiBlastDamage() * DBSagasEntity.ComboType.METEOR_BURST.getTier().getDamageMultiplier();
+        }
+
+        @Override
+        public void strikeHit(LivingEntity victim, float amount, boolean lethal) {
+            float damage = amount;
+            if (!lethal && victim.getHealth() - damage <= 1.0F) damage = Math.max(0.01F, victim.getHealth() - 1.0F);
+            victim.hurt(MainDamageTypes.strikeAttack(this.user.level(), this.user, MeteorBurstCombo.TECHNIQUE_ID), damage);
+        }
+
+        @Override
+        public void kiHit(LivingEntity victim, float amount, boolean lethal) {
+            float damage = amount;
+            if (!lethal && victim.getHealth() - damage <= 1.0F) damage = Math.max(0.01F, victim.getHealth() - 1.0F);
+            victim.hurt(MainDamageTypes.kiblast(this.user.level(), this.user, this.user), damage);
+        }
+
+        @Override
+        public boolean canHitArea(LivingEntity entity) {
+            return !entity.isAlliedTo(this.user) && !(entity instanceof DBSagasEntity);
         }
     }
 

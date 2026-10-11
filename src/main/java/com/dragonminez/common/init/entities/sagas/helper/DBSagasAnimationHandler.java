@@ -123,6 +123,7 @@ public class DBSagasAnimationHandler {
             if (comboId == 9) return event.setAndContinue(DBSagasAnimations.ANIM_SPIRIT_BREAKING_CANNON);
             if (comboId == 11) return event.setAndContinue(DBSagasAnimations.ANIM_SUPER_GOD_FIST);
             if (comboId == 12) return event.setAndContinue(DBSagasAnimations.ANIM_DEADLY_DANCE_VEGETTO);
+            if (comboId == 13) return event.setAndContinue(DBSagasAnimations.ANIM_METEOR_BURST);
 
         }
 

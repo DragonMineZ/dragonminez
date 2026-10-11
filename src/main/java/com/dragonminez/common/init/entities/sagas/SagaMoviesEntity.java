@@ -86,7 +86,7 @@ public class SagaMoviesEntity {
             this.setAuraColor(0xF52727);
             this.setKiBlastSpeed(2.0f);
 
-            this.setAllowedCombos(150, ComboType.AIR, ComboType.BASIC, ComboType.KI_CHARGE_ATTACK);
+            this.setAllowedCombos(150, ComboType.AIR, ComboType.BASIC, ComboType.KI_CHARGE_ATTACK, ComboType.METEOR_BURST);
 
             this.addKiSkill(KiSkillType.GENERIC_KI_WAVE, 450, 1.0F, 0xA946E3, 0x671199);
             this.addKiSkill(KiSkillType.KI_AIR_VOLLEY, 300 //uff
