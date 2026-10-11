@@ -271,6 +271,14 @@ public final class MinigameSessionManager {
 			}
 			logic.tick();
 		}
+		if (msg.isFinished()) {
+			while (index < events.size() && !logic.isFinished()) {
+				MinigameEvent event = events.get(index++);
+				if (event.tick < lastTick || event.tick > logic.tickCount()) continue;
+				lastTick = event.tick;
+				logic.applyEvent(event);
+			}
+		}
 		session.lastInputMs = now;
 
 		if (!session.desyncLogged && !logic.isFinished() && msg.getChecksum() != 0L && msg.getChecksum() != logic.checksum()) {
@@ -367,6 +375,13 @@ public final class MinigameSessionManager {
 		UUID uuid = player.getUUID();
 		ChallengeProgress progress = CHALLENGES.get(uuid);
 		if (session.invalid || progress == null || progress.nextStage != session.challengeStage || !session.logic.isTargetReached()) {
+			String reason = session.invalid ? "invalid input" : progress == null ? "no challenge in progress"
+					: progress.nextStage != session.challengeStage ? "expected stage " + progress.nextStage
+					: "target not reached in the server replay";
+			LogUtil.info(Env.SERVER, "Old Kai challenge failed for {} at stage {} ({}): {} ({}/{} levels, tick {})",
+					player.getGameProfile().getName(), session.challengeStage + 1, session.minigameId, reason,
+					session.logic.levelsCleared(), ConfigManager.getTrainingConfig().getChallengeTargetLevels(session.minigameId),
+					session.logic.tickCount());
 			CHALLENGES.remove(uuid);
 			return MinigameResultS2C.CHALLENGE_FAILED;
 		}

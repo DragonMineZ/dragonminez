@@ -221,12 +221,11 @@ public abstract class BaseMinigameScreen extends Screen {
 		Iterator<MinigameEvent> it = outbox.iterator();
 		while (it.hasNext()) {
 			MinigameEvent event = it.next();
-			if (event.tick < now) {
+			if (finished || event.tick < now) {
 				chunk.add(event);
 				it.remove();
 			}
 		}
-		if (finished) outbox.clear();
 		NetworkHandler.sendToServer(new MinigameInputC2S(sessionId, chunkStartTick, now, finished, keepAlive ? 0L : logic.checksum(), chunk));
 		chunkStartTick = now;
 	}
