@@ -1,10 +1,14 @@
 package com.dragonminez.common.init.entities.worldboss;
 
+import com.dragonminez.common.config.ConfigManager;
+import com.dragonminez.common.config.GeneralServerConfig;
+import com.dragonminez.common.init.EntityAttributes;
 import com.dragonminez.common.init.MainEntities;
 import com.dragonminez.common.init.MainSounds;
 import com.dragonminez.common.init.entities.ai.AiTier;
 import com.dragonminez.common.init.entities.sagas.DBSagasEntity;
 import com.dragonminez.common.init.entities.sagas.helper.DBSagasAnimationHandler;
+import com.dragonminez.common.quest.Difficulty;
 import com.dragonminez.common.stats.StatsCapability;
 import com.dragonminez.common.stats.StatsProvider;
 import net.minecraft.core.BlockPos;
@@ -21,6 +25,10 @@ import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.entity.ai.attributes.Attribute;
+import net.minecraft.world.entity.ai.attributes.AttributeInstance;
+import net.minecraft.world.entity.ai.attributes.AttributeModifier;
+import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.entity.monster.Monster;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.Level;
@@ -30,6 +38,7 @@ import software.bernie.geckolib.core.animation.AnimationController;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.UUID;
 
 public abstract class WorldBossEntity extends DBSagasEntity {
 
@@ -47,6 +56,20 @@ public abstract class WorldBossEntity extends DBSagasEntity {
             case 2 -> TAMAGAMI_2;
             default -> TAMAGAMI_3;
         };
+    }
+
+    public static final double HEALTH_OVER_HARD = 4.0D;
+
+    private static final UUID GROUP_HEALTH_ID = UUID.fromString("3f1c2a5e-7b8d-4e61-9a0c-5d2e8f4b7a11");
+    private static final UUID GROUP_MELEE_ID = UUID.fromString("8a4d6e2b-1c3f-4b7a-a95e-0f6c2d8b3e22");
+    private static final UUID GROUP_KI_ID = UUID.fromString("c27e9b14-5a6d-4f83-b0e1-7d4a9c3f5e33");
+
+    public static float bossHealth(float sagaNormalHealth) {
+        return (float) (sagaNormalHealth * Difficulty.HARD.hpMultiplier() * HEALTH_OVER_HARD);
+    }
+
+    public static float bossDamage(float sagaNormalDamage) {
+        return (float) (sagaNormalDamage * Difficulty.HARD.damageMultiplier());
     }
 
     private static final EntityDataAccessor<Boolean> BOSS_ASLEEP =
@@ -168,7 +191,41 @@ public abstract class WorldBossEntity extends DBSagasEntity {
         this.entityData.set(BOSS_ASLEEP, asleep);
         this.setRaidDormant(asleep);
         this.setCombatFrozen(asleep);
-        if (asleep) this.clearBossEvent();
+        if (asleep) {
+            this.clearBossEvent();
+            this.clearGroupScaling();
+        }
+    }
+
+    public void applyGroupScaling(int members) {
+        if (this.level().isClientSide || this.isBossAsleep()) return;
+        GeneralServerConfig.WorldBossConfig config = ConfigManager.getServerConfig().getWorldBoss();
+        int extra = Math.max(0, members - 1);
+        float fraction = this.getMaxHealth() > 0.0F ? this.getHealth() / this.getMaxHealth() : 1.0F;
+        boolean healthChanged = setGroupModifier(Attributes.MAX_HEALTH, GROUP_HEALTH_ID, config.getHealthPerExtraMember() * extra);
+        setGroupModifier(Attributes.ATTACK_DAMAGE, GROUP_MELEE_ID, config.getDamagePerExtraMember() * extra);
+        setGroupModifier(EntityAttributes.KI_BLAST_DAMAGE.get(), GROUP_KI_ID, config.getDamagePerExtraMember() * extra);
+        if (healthChanged && this.isAlive()) this.setHealth(Math.max(1.0F, this.getMaxHealth() * fraction));
+    }
+
+    private void clearGroupScaling() {
+        setGroupModifier(Attributes.MAX_HEALTH, GROUP_HEALTH_ID, 0.0D);
+        setGroupModifier(Attributes.ATTACK_DAMAGE, GROUP_MELEE_ID, 0.0D);
+        setGroupModifier(EntityAttributes.KI_BLAST_DAMAGE.get(), GROUP_KI_ID, 0.0D);
+        if (this.getHealth() > this.getMaxHealth()) this.setHealth(this.getMaxHealth());
+    }
+
+    private boolean setGroupModifier(Attribute attribute, UUID id, double amount) {
+        AttributeInstance instance = this.getAttribute(attribute);
+        if (instance == null) return false;
+        AttributeModifier current = instance.getModifier(id);
+        if (current == null && amount <= 0.0D) return false;
+        if (current != null && Math.abs(current.getAmount() - amount) < 1.0E-6D) return false;
+        if (current != null) instance.removeModifier(id);
+        if (amount > 0.0D) {
+            instance.addPermanentModifier(new AttributeModifier(id, "World boss group scaling", amount, AttributeModifier.Operation.MULTIPLY_TOTAL));
+        }
+        return true;
     }
 
     public void wakeUp(Player trigger) {

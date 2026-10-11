@@ -9,6 +9,7 @@ import com.dragonminez.common.network.NetworkHandler;
 import com.dragonminez.common.network.S2C.ProgressionSyncS2C;
 import com.dragonminez.common.quest.QuestParser;
 import com.dragonminez.common.quest.QuestReward;
+import com.dragonminez.common.quest.rewards.AttributesReward;
 import com.dragonminez.common.quest.rewards.ItemReward;
 import com.dragonminez.common.quest.rewards.SkillReward;
 import com.dragonminez.common.quest.rewards.TPSReward;
@@ -17,6 +18,7 @@ import com.dragonminez.common.stats.StatsProvider;
 import com.dragonminez.common.stats.techniques.PredefinedTechniques;
 import com.dragonminez.common.stats.techniques.TechniqueData;
 import com.dragonminez.common.worldboss.WorldBossResults;
+import com.dragonminez.common.worldboss.WorldBossRewardText;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.JsonObject;
@@ -143,7 +145,7 @@ public final class WorldBossRewards {
 					(float) score.mitigated(WorldBossContribution.MitigationKind.DEFENSE), (float) score.mitigated(WorldBossContribution.MitigationKind.BLOCK),
 					(float) score.mitigated(WorldBossContribution.MitigationKind.SHIELD), receivedList(score.received()),
 					(float) score.healed(WorldBossContribution.HealKind.SELF), (float) score.healed(WorldBossContribution.HealKind.ALLY),
-					chances, amounts));
+					(float) score.healedValue(), chances, amounts));
 
 			if (player != null) {
 				if (!granted.isEmpty()) NetworkHandler.sendToTrackingEntityAndSelf(new ProgressionSyncS2C(player), player);
@@ -177,11 +179,13 @@ public final class WorldBossRewards {
 			return skill.getLevel();
 		}
 		if (reward instanceof TPSReward tps) return tps.scaledAmount(ratio);
+		if (reward instanceof AttributesReward attributes) return attributes.scaledAmount(ratio);
 		if (reward instanceof ItemReward item) return item.scaledCount(ratio);
 		return 1.0f;
 	}
 
 	public static MutableComponent describe(QuestReward reward, float amount) {
+		if (reward instanceof AttributesReward) return WorldBossRewardText.describe(reward, amount);
 		if (reward instanceof ItemReward item) {
 			return Component.translatable("worldboss.dragonminez.results.item", Math.max(1, Math.round(amount)), item.itemName());
 		}

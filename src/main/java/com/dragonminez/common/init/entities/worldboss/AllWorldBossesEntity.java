@@ -137,9 +137,21 @@ public class AllWorldBossesEntity {
 
     public static class JanembaFat extends WorldBossEntity {
 
-        public static final float BASE_HEALTH = 6720000.0F;
-        public static final float BASE_MELEE = 56160.0F;
-        public static final float BASE_KI = 51000.0F;
+        public static final float SAGA_HEALTH = 1008000.0F;
+        public static final float SAGA_MELEE = 42120.0F;
+        public static final float SAGA_KI = 38250.0F;
+
+        public static float baseHealth() {
+            return bossHealth(SAGA_HEALTH);
+        }
+
+        public static float baseMelee() {
+            return bossDamage(SAGA_MELEE);
+        }
+
+        public static float baseKi() {
+            return bossDamage(SAGA_KI);
+        }
 
         public static final int ABILITY_STOMP = 2;
         public static final int ABILITY_SUMMON = 3;
@@ -220,14 +232,14 @@ public class AllWorldBossesEntity {
 
         @Override
         protected void applyFixedStats() {
-            this.getAttribute(Attributes.MAX_HEALTH).setBaseValue(BASE_HEALTH);
-            this.getAttribute(Attributes.ATTACK_DAMAGE).setBaseValue(BASE_MELEE);
+            this.getAttribute(Attributes.MAX_HEALTH).setBaseValue(baseHealth());
+            this.getAttribute(Attributes.ATTACK_DAMAGE).setBaseValue(baseMelee());
             this.getAttribute(Attributes.MOVEMENT_SPEED).setBaseValue(0.14D);
             this.getAttribute(Attributes.KNOCKBACK_RESISTANCE).setBaseValue(1.0D);
             this.getAttribute(Attributes.ATTACK_SPEED).setBaseValue(3.0D);
-            this.getAttribute(EntityAttributes.KI_BLAST_DAMAGE.get()).setBaseValue(BASE_KI);
-            this.setKiBlastDamage(BASE_KI);
-            this.setHealth(BASE_HEALTH);
+            this.getAttribute(EntityAttributes.KI_BLAST_DAMAGE.get()).setBaseValue(baseKi());
+            this.setKiBlastDamage(baseKi());
+            this.setHealth(baseHealth());
         }
 
         @Override
@@ -516,9 +528,21 @@ public class AllWorldBossesEntity {
 
     public static class SuperJanemba extends WorldBossEntity {
 
-        public static final float BASE_HEALTH = 7350000.0F;
-        public static final float BASE_MELEE = 61920.0F;
-        public static final float BASE_KI = 56304.0F;
+        public static final float SAGA_HEALTH = 1102500.0F;
+        public static final float SAGA_MELEE = 46440.0F;
+        public static final float SAGA_KI = 42230.0F;
+
+        public static float baseHealth() {
+            return bossHealth(SAGA_HEALTH);
+        }
+
+        public static float baseMelee() {
+            return bossDamage(SAGA_MELEE);
+        }
+
+        public static float baseKi() {
+            return bossDamage(SAGA_KI);
+        }
 
         public static final int ABILITY_CUTS = 5;
 
@@ -585,13 +609,13 @@ public class AllWorldBossesEntity {
 
         @Override
         protected void applyFixedStats() {
-            this.getAttribute(Attributes.MAX_HEALTH).setBaseValue(BASE_HEALTH);
-            this.getAttribute(Attributes.ATTACK_DAMAGE).setBaseValue(BASE_MELEE);
+            this.getAttribute(Attributes.MAX_HEALTH).setBaseValue(baseHealth());
+            this.getAttribute(Attributes.ATTACK_DAMAGE).setBaseValue(baseMelee());
             this.getAttribute(Attributes.MOVEMENT_SPEED).setBaseValue(0.42D);
             this.getAttribute(Attributes.ATTACK_SPEED).setBaseValue(9.0D);
-            this.getAttribute(EntityAttributes.KI_BLAST_DAMAGE.get()).setBaseValue(BASE_KI);
-            this.setKiBlastDamage(BASE_KI);
-            this.setHealth(BASE_HEALTH);
+            this.getAttribute(EntityAttributes.KI_BLAST_DAMAGE.get()).setBaseValue(baseKi());
+            this.setKiBlastDamage(baseKi());
+            this.setHealth(baseHealth());
         }
 
         @Override
@@ -706,13 +730,13 @@ public class AllWorldBossesEntity {
             this.setScaleVal(0.8F);
             this.setKiBlastSpeed(1.2F);
 
-            this.getAttribute(Attributes.MAX_HEALTH).setBaseValue(JanembaFat.BASE_HEALTH * STAT_RATIO);
-            this.getAttribute(Attributes.ATTACK_DAMAGE).setBaseValue(JanembaFat.BASE_MELEE * STAT_RATIO);
-            this.getAttribute(EntityAttributes.KI_BLAST_DAMAGE.get()).setBaseValue(JanembaFat.BASE_KI * STAT_RATIO);
+            this.getAttribute(Attributes.MAX_HEALTH).setBaseValue(JanembaFat.baseHealth() * STAT_RATIO);
+            this.getAttribute(Attributes.ATTACK_DAMAGE).setBaseValue(JanembaFat.baseMelee() * STAT_RATIO);
+            this.getAttribute(EntityAttributes.KI_BLAST_DAMAGE.get()).setBaseValue(JanembaFat.baseKi() * STAT_RATIO);
             this.getAttribute(Attributes.MOVEMENT_SPEED).setBaseValue(0.46D);
             this.getAttribute(Attributes.ATTACK_SPEED).setBaseValue(9.0D);
             this.getAttribute(Attributes.KNOCKBACK_RESISTANCE).setBaseValue(0.0D);
-            this.setKiBlastDamage(JanembaFat.BASE_KI * STAT_RATIO);
+            this.setKiBlastDamage(JanembaFat.baseKi() * STAT_RATIO);
             this.setHealth(this.getMaxHealth());
             this.setAiTier(AiTier.ELITE);
 
@@ -819,9 +843,21 @@ public class AllWorldBossesEntity {
 
     public static class Turles extends WorldBossEntity {
 
-        public static final float BASE_HEALTH = 72000.0F;
-        public static final float BASE_MELEE = 600.0F;
-        public static final float BASE_KI = 600.0F;
+        public static final float SAGA_HEALTH = 10900.0F;
+        public static final float SAGA_MELEE = 360.0F;
+        public static final float SAGA_KI = 360.0F;
+
+        public static float baseHealth() {
+            return bossHealth(SAGA_HEALTH);
+        }
+
+        public static float baseMelee() {
+            return bossDamage(SAGA_MELEE);
+        }
+
+        public static float baseKi() {
+            return bossDamage(SAGA_KI);
+        }
 
         public static final int ABILITY_MIGHT_FRUIT = 6;
         public static final int ABILITY_KILL_DRIVER = 7;
@@ -1022,16 +1058,16 @@ public class AllWorldBossesEntity {
 
         @Override
         protected void applyFixedStats() {
-            this.getAttribute(Attributes.MAX_HEALTH).setBaseValue(BASE_HEALTH);
-            this.getAttribute(Attributes.ATTACK_DAMAGE).setBaseValue(BASE_MELEE);
+            this.getAttribute(Attributes.MAX_HEALTH).setBaseValue(baseHealth());
+            this.getAttribute(Attributes.ATTACK_DAMAGE).setBaseValue(baseMelee());
             this.getAttribute(Attributes.MOVEMENT_SPEED).setBaseValue(0.3D);
             this.setDefaultMovementSpeed(0.3D);
             this.getAttribute(Attributes.ATTACK_SPEED).setBaseValue(6.0D);
             this.setDefaultAttackSpeed(6.0D);
             this.getAttribute(Attributes.KNOCKBACK_RESISTANCE).setBaseValue(0.5D);
-            this.getAttribute(EntityAttributes.KI_BLAST_DAMAGE.get()).setBaseValue(BASE_KI);
-            this.setKiBlastDamage(BASE_KI);
-            this.setHealth(BASE_HEALTH);
+            this.getAttribute(EntityAttributes.KI_BLAST_DAMAGE.get()).setBaseValue(baseKi());
+            this.setKiBlastDamage(baseKi());
+            this.setHealth(baseHealth());
         }
 
         @Override
@@ -1413,9 +1449,21 @@ public class AllWorldBossesEntity {
 
     public static class MetalCoolerCore extends WorldBossEntity {
 
-        public static final float BASE_HEALTH = 468000.0F;
-        public static final float BASE_MELEE = 4440.0F;
-        public static final float BASE_KI = 3720.0F;
+        public static final float SAGA_HEALTH = 80000.0F;
+        public static final float SAGA_MELEE = 2880.0F;
+        public static final float SAGA_KI = 2410.0F;
+
+        public static float baseHealth() {
+            return bossHealth(SAGA_HEALTH);
+        }
+
+        public static float baseMelee() {
+            return bossDamage(SAGA_MELEE);
+        }
+
+        public static float baseKi() {
+            return bossDamage(SAGA_KI);
+        }
 
         public static final int ABILITY_ORBITAL_LASERS = 10;
         public static final int ABILITY_CABLES = 11;
@@ -1566,14 +1614,14 @@ public class AllWorldBossesEntity {
 
         @Override
         protected void applyFixedStats() {
-            this.getAttribute(Attributes.MAX_HEALTH).setBaseValue(BASE_HEALTH);
-            this.getAttribute(Attributes.ATTACK_DAMAGE).setBaseValue(BASE_MELEE);
+            this.getAttribute(Attributes.MAX_HEALTH).setBaseValue(baseHealth());
+            this.getAttribute(Attributes.ATTACK_DAMAGE).setBaseValue(baseMelee());
             this.getAttribute(Attributes.MOVEMENT_SPEED).setBaseValue(WALK_SPEED);
             this.setDefaultMovementSpeed(WALK_SPEED);
             this.getAttribute(Attributes.KNOCKBACK_RESISTANCE).setBaseValue(1.0D);
-            this.getAttribute(EntityAttributes.KI_BLAST_DAMAGE.get()).setBaseValue(BASE_KI);
-            this.setKiBlastDamage(BASE_KI);
-            this.setHealth(BASE_HEALTH);
+            this.getAttribute(EntityAttributes.KI_BLAST_DAMAGE.get()).setBaseValue(baseKi());
+            this.setKiBlastDamage(baseKi());
+            this.setHealth(baseHealth());
         }
 
         @Override
@@ -2503,10 +2551,12 @@ public class AllWorldBossesEntity {
 
     public static class MetalCooler extends DBSagasEntity {
 
-        public static final float GUARDIAN_HEALTH = 9360.0F;
-        public static final float GUARDIAN_MELEE = 1080.0F;
-        public static final float GUARDIAN_KI = 936.0F;
-        private static final float SCOUT_RATIO = 0.75F;
+        private static final float GUARDIAN_HEALTH_RATIO = 0.02F;
+        private static final float GUARDIAN_MELEE_RATIO = 0.243F;
+        private static final float GUARDIAN_KI_RATIO = 0.25F;
+        private static final float SCOUT_HEALTH = 7020.0F;
+        private static final float SCOUT_MELEE = 810.0F;
+        private static final float SCOUT_KI = 702.0F;
         private static final int REGEN_DELAY = 80;
         private static final int REGEN_INTERVAL = 20;
         private static final float REGEN_RATIO = 0.015F;
@@ -2525,7 +2575,8 @@ public class AllWorldBossesEntity {
             this.getAttribute(Attributes.MOVEMENT_SPEED).setBaseValue(0.34D);
             this.setDefaultMovementSpeed(0.34D);
             this.getAttribute(Attributes.KNOCKBACK_RESISTANCE).setBaseValue(0.4D);
-            this.applyStats(1.0F);
+            this.applyStats(MetalCoolerCore.baseHealth() * GUARDIAN_HEALTH_RATIO, MetalCoolerCore.baseMelee() * GUARDIAN_MELEE_RATIO,
+                    MetalCoolerCore.baseKi() * GUARDIAN_KI_RATIO);
             this.setAiTier(AiTier.ELITE);
             this.getPersistentData().putBoolean("dmz_stats_configured", true);
         }
@@ -2540,17 +2591,17 @@ public class AllWorldBossesEntity {
             return "saga_metal_cooler";
         }
 
-        private void applyStats(float ratio) {
-            this.getAttribute(Attributes.MAX_HEALTH).setBaseValue(GUARDIAN_HEALTH * ratio);
-            this.getAttribute(Attributes.ATTACK_DAMAGE).setBaseValue(GUARDIAN_MELEE * ratio);
-            this.getAttribute(EntityAttributes.KI_BLAST_DAMAGE.get()).setBaseValue(GUARDIAN_KI * ratio);
-            this.setKiBlastDamage(GUARDIAN_KI * ratio);
+        private void applyStats(float health, float melee, float ki) {
+            this.getAttribute(Attributes.MAX_HEALTH).setBaseValue(health);
+            this.getAttribute(Attributes.ATTACK_DAMAGE).setBaseValue(melee);
+            this.getAttribute(EntityAttributes.KI_BLAST_DAMAGE.get()).setBaseValue(ki);
+            this.setKiBlastDamage(ki);
             this.setHealth(this.getMaxHealth());
         }
 
         public void makeScout() {
             this.scout = true;
-            this.applyStats(SCOUT_RATIO);
+            this.applyStats(SCOUT_HEALTH, SCOUT_MELEE, SCOUT_KI);
             this.setAiTier(AiTier.SMART);
         }
 
@@ -2625,10 +2676,9 @@ public class AllWorldBossesEntity {
 
     public static class MetalCoolerCopy extends DBSagasEntity {
 
-        public static final float STAT_RATIO = 0.03F;
-        private static final float SAGA_HEALTH = 156000.0F;
-        private static final float SAGA_MELEE = 5400.0F;
-        private static final float SAGA_KI = 4680.0F;
+        private static final float HEALTH_RATIO = 0.01F;
+        private static final float MELEE_RATIO = 0.0365F;
+        private static final float KI_RATIO = 0.0377F;
         private static final EntityDataAccessor<Integer> LATCHED =
                 SynchedEntityData.defineId(MetalCoolerCopy.class, EntityDataSerializers.INT);
         private static final RawAnimation LATCH_ANIMATION = RawAnimation.begin().thenPlayAndHold("skp.grab");
@@ -2649,10 +2699,10 @@ public class AllWorldBossesEntity {
             this.setKiBlastSpeed(2.0F);
             this.setScaleVal(0.9F);
             this.addKiSkill(KiSkillType.KI_LASER, 220, 0.6F, 0xAA00FF, 0x6C00A3);
-            this.getAttribute(Attributes.MAX_HEALTH).setBaseValue(SAGA_HEALTH * STAT_RATIO);
-            this.getAttribute(Attributes.ATTACK_DAMAGE).setBaseValue(SAGA_MELEE * STAT_RATIO);
-            this.getAttribute(EntityAttributes.KI_BLAST_DAMAGE.get()).setBaseValue(SAGA_KI * STAT_RATIO);
-            this.setKiBlastDamage(SAGA_KI * STAT_RATIO);
+            this.getAttribute(Attributes.MAX_HEALTH).setBaseValue(MetalCoolerCore.baseHealth() * HEALTH_RATIO);
+            this.getAttribute(Attributes.ATTACK_DAMAGE).setBaseValue(MetalCoolerCore.baseMelee() * MELEE_RATIO);
+            this.getAttribute(EntityAttributes.KI_BLAST_DAMAGE.get()).setBaseValue(MetalCoolerCore.baseKi() * KI_RATIO);
+            this.setKiBlastDamage(MetalCoolerCore.baseKi() * KI_RATIO);
             this.getAttribute(Attributes.MOVEMENT_SPEED).setBaseValue(0.38D);
             this.setDefaultMovementSpeed(0.38D);
             this.getAttribute(Attributes.KNOCKBACK_RESISTANCE).setBaseValue(0.0D);
@@ -2970,15 +3020,16 @@ public class AllWorldBossesEntity {
         @Override
         protected void applyFixedStats() {
             double speed = this.powered ? POWERED_WALK_SPEED : WALK_SPEED;
-            float ki = this.powered ? this.profile.poweredKi() : this.profile.ki();
-            this.getAttribute(Attributes.MAX_HEALTH).setBaseValue(this.profile.health());
-            this.getAttribute(Attributes.ATTACK_DAMAGE).setBaseValue(this.powered ? this.profile.poweredMelee() : this.profile.melee());
+            float health = bossHealth(this.profile.health());
+            float ki = bossDamage(this.powered ? this.profile.poweredKi() : this.profile.ki());
+            this.getAttribute(Attributes.MAX_HEALTH).setBaseValue(health);
+            this.getAttribute(Attributes.ATTACK_DAMAGE).setBaseValue(bossDamage(this.powered ? this.profile.poweredMelee() : this.profile.melee()));
             this.getAttribute(Attributes.MOVEMENT_SPEED).setBaseValue(speed);
             this.setDefaultMovementSpeed(speed);
             this.getAttribute(Attributes.KNOCKBACK_RESISTANCE).setBaseValue(this.profile.knockbackResistance());
             this.getAttribute(EntityAttributes.KI_BLAST_DAMAGE.get()).setBaseValue(ki);
             this.setKiBlastDamage(ki);
-            this.setHealth(this.profile.health());
+            this.setHealth(health);
         }
 
         @Override
@@ -3258,7 +3309,7 @@ public class AllWorldBossesEntity {
         public static final int CYCLONE_WINDUP = 10;
         public static final double SLAM_ANIMATION_SPEED = 0.4D;
 
-        private static final Profile PROFILE = new Profile(3, 2340000.0F, 59040.0F, 67896.0F, 53424.0F, 61440.0F,
+        private static final Profile PROFILE = new Profile(3, 390000.0F, 49200.0F, 56580.0F, 44520.0F, 51200.0F,
                 0, 9, 1.0F, 0.6F, 1.0D, 1.6D, 0.8D, new OutlineStyle(0xFF9A2E, 0xB84A00, 3.0F));
 
         private static final int THROW_DURATION = 26;
@@ -4083,7 +4134,7 @@ public class AllWorldBossesEntity {
         public static final int LUNGE_DASH = 18;
         public static final int FOLLOW_DASH = 9;
 
-        private static final Profile PROFILE = new Profile(2, 9465000.0F, 79560.0F, 91500.0F, 71988.0F, 82788.0F,
+        private static final Profile PROFILE = new Profile(2, 1577500.0F, 66300.0F, 76250.0F, 59990.0F, 68990.0F,
                 7, 4, 0.45F, 0.4F, 1.6D, 2.4D, 0.6D, new OutlineStyle(0x7FD4FF, 0x2F6BFF, 3.0F));
 
         private static final int WHIRLWIND_DURATION = 45;
@@ -4569,7 +4620,7 @@ public class AllWorldBossesEntity {
         public static final int FLASH_FIRST = 16;
         public static final int CHASE_STRIKE = 16;
 
-        private static final Profile PROFILE = new Profile(1, 12750000.0F, 107172.0F, 123252.0F, 96972.0F, 111516.0F,
+        private static final Profile PROFILE = new Profile(1, 2125000.0F, 89310.0F, 102710.0F, 80810.0F, 92930.0F,
                 6, 4, 0.45F, 0.4F, 1.6D, 2.4D, 0.6D, new OutlineStyle(0xFF3030, 0x8A0000, 3.0F));
 
         private static final OutlineStyle STANCE_OUTLINE = new OutlineStyle(0xFF2020, 0xFF7070, 4.0F);
@@ -5369,9 +5420,21 @@ public class AllWorldBossesEntity {
 
     public static class Gomah extends WorldBossEntity {
 
-        public static final float BASE_HEALTH = 18969000.0F;
-        public static final float BASE_MELEE = 159396.0F;
-        public static final float BASE_KI = 144252.0F;
+        public static final float SAGA_HEALTH = 3161500.0F;
+        public static final float SAGA_MELEE = 132830.0F;
+        public static final float SAGA_KI = 120210.0F;
+
+        public static float baseHealth() {
+            return bossHealth(SAGA_HEALTH);
+        }
+
+        public static float baseMelee() {
+            return bossDamage(SAGA_MELEE);
+        }
+
+        public static float baseKi() {
+            return bossDamage(SAGA_KI);
+        }
         public static final int MAX_STACKS = 5;
 
         public static final int ABILITY_GREAT_SPHERE = 17;
@@ -5679,13 +5742,13 @@ public class AllWorldBossesEntity {
 
         @Override
         protected void applyFixedStats() {
-            this.getAttribute(Attributes.MAX_HEALTH).setBaseValue(BASE_HEALTH);
-            this.getAttribute(Attributes.ATTACK_DAMAGE).setBaseValue(BASE_MELEE);
+            this.getAttribute(Attributes.MAX_HEALTH).setBaseValue(baseHealth());
+            this.getAttribute(Attributes.ATTACK_DAMAGE).setBaseValue(baseMelee());
             this.getAttribute(Attributes.MOVEMENT_SPEED).setBaseValue(WALK_SPEED);
             this.setDefaultMovementSpeed(WALK_SPEED);
             this.getAttribute(Attributes.KNOCKBACK_RESISTANCE).setBaseValue(0.9D);
-            this.getAttribute(EntityAttributes.KI_BLAST_DAMAGE.get()).setBaseValue(BASE_KI);
-            this.setHealth(BASE_HEALTH);
+            this.getAttribute(EntityAttributes.KI_BLAST_DAMAGE.get()).setBaseValue(baseKi());
+            this.setHealth(baseHealth());
             this.applyStackPower();
         }
 
@@ -5702,7 +5765,7 @@ public class AllWorldBossesEntity {
                             AttributeModifier.Operation.MULTIPLY_TOTAL));
                 }
             }
-            float ki = BASE_KI * this.stackMultiplier();
+            float ki = baseKi() * this.stackMultiplier();
             this.getAttribute(EntityAttributes.KI_BLAST_DAMAGE.get()).setBaseValue(ki);
             this.setKiBlastDamage(ki);
         }
@@ -6744,9 +6807,9 @@ public class AllWorldBossesEntity {
                 soldier.setPersistenceRequired();
                 CompoundTag data = soldier.getPersistentData();
                 data.putBoolean(ESCORT_TAG, true);
-                data.putDouble("dmz_quest_hp", BASE_HEALTH * ESCORT_HEALTH_RATIO);
-                data.putDouble("dmz_quest_melee", BASE_MELEE * ESCORT_MELEE_RATIO);
-                data.putDouble("dmz_quest_ki", BASE_KI * ESCORT_KI_RATIO);
+                data.putDouble("dmz_quest_hp", baseHealth() * ESCORT_HEALTH_RATIO);
+                data.putDouble("dmz_quest_melee", baseMelee() * ESCORT_MELEE_RATIO);
+                data.putDouble("dmz_quest_ki", baseKi() * ESCORT_KI_RATIO);
                 data.putBoolean("dmz_quest_no_transform", true);
                 if (!players.isEmpty()) soldier.setTarget(players.get(this.random.nextInt(players.size())));
                 if (!level.addFreshEntity(soldier)) continue;

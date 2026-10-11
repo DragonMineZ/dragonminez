@@ -37,7 +37,7 @@ public final class WorldBossResults {
 							  float damageMelee, float damageStrike, float damageKi, float damageOther,
 							  float mitigatedDefense, float mitigatedBlock, float mitigatedShield,
 							  List<NamedAmount> received,
-							  float healedSelf, float healedAllies,
+							  float healedSelf, float healedAllies, float healedValue,
 							  float[] rewardChance, float[] rewardAmount) {
 
 		public float damage() {
@@ -52,10 +52,6 @@ public final class WorldBossResults {
 			float total = 0.0f;
 			for (NamedAmount amount : received) total += amount.amount();
 			return total;
-		}
-
-		public float healed() {
-			return healedSelf + healedAllies;
 		}
 
 		public void encode(FriendlyByteBuf buf) {
@@ -76,6 +72,7 @@ public final class WorldBossResults {
 			for (int i = 0; i < Math.min(received.size(), MAX_RECEIVED_SOURCES); i++) received.get(i).encode(buf);
 			buf.writeFloat(healedSelf);
 			buf.writeFloat(healedAllies);
+			buf.writeFloat(healedValue);
 			buf.writeVarInt(rewardChance.length);
 			for (float chance : rewardChance) buf.writeFloat(chance);
 			buf.writeVarInt(rewardAmount.length);
@@ -101,6 +98,7 @@ public final class WorldBossResults {
 			for (int i = 0; i < receivedCount; i++) received.add(NamedAmount.decode(buf));
 			float healedSelf = buf.readFloat();
 			float healedAllies = buf.readFloat();
+			float healedValue = buf.readFloat();
 			int chanceCount = Math.min(buf.readVarInt(), MAX_REWARDS);
 			float[] rewardChance = new float[chanceCount];
 			for (int i = 0; i < chanceCount; i++) rewardChance[i] = buf.readFloat();
@@ -108,7 +106,7 @@ public final class WorldBossResults {
 			float[] rewardAmount = new float[amountCount];
 			for (int i = 0; i < amountCount; i++) rewardAmount[i] = buf.readFloat();
 			return new PlayerEntry(id, name, rank, points, share, auraRgb, damageMelee, damageStrike, damageKi, damageOther,
-					mitigatedDefense, mitigatedBlock, mitigatedShield, received, healedSelf, healedAllies, rewardChance, rewardAmount);
+					mitigatedDefense, mitigatedBlock, mitigatedShield, received, healedSelf, healedAllies, healedValue, rewardChance, rewardAmount);
 		}
 	}
 

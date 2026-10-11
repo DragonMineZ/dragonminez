@@ -242,7 +242,7 @@ public class WorldBossResultsScreen extends ScaledScreen {
 				entry.damage() * (float) config.getDamageWeight(),
 				entry.mitigated() * (float) config.getMitigatedWeight(),
 				entry.receivedTotal() * (float) config.getReceivedWeight(),
-				entry.healed() * (float) config.getHealedWeight()};
+				entry.healedValue() * (float) config.getHealedWeight()};
 		float weightedTotal = weighted[0] + weighted[1] + weighted[2] + weighted[3];
 		int[] colors = {DAMAGE_COLOR, MITIGATED_COLOR, RECEIVED_DAMAGE_COLOR, HEALED_COLOR};
 		Segment[] segments = Segment.values();

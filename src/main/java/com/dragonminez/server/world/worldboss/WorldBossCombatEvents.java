@@ -70,7 +70,7 @@ public final class WorldBossCombatEvents {
 
 		ServerPlayer healer = HealContext.getAllyHealer() instanceof ServerPlayer ally ? ally : target;
 		double effective = Math.min(event.getAmount(), Math.max(0.0F, target.getMaxHealth() - target.getHealth()));
-		WorldBossContribution.addHealed(session.bossKey(), healer, effective,
+		WorldBossContribution.addHealed(session.bossKey(), healer, target, effective,
 				healer == target ? WorldBossContribution.HealKind.SELF : WorldBossContribution.HealKind.ALLY);
 	}
 

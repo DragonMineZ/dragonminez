@@ -3529,6 +3529,7 @@
   "worldboss.dragonminez.results.none": "There is no recent world boss fight to show.",
   "worldboss.dragonminez.results.item": "x%s %s",
   "worldboss.dragonminez.results.tps": "%s TPs",
+  "worldboss.dragonminez.results.attributes": "x%s Attributes",
   "gui.dragonminez.npc.show_location": "Location",
   "dialogue.dragonminez.story.sidequest.hell_ogre.boss_alive": "At last, someone who doesn't run! Hear me out, I beg you.\n\nHell's purifier has been broken for days. All the malice that should dissolve down there has been piling up at the bottom... and it has taken shape. An enormous thing, yellow, grinning. It doesn't think. It only destroys.\n\nIt has settled among the spikes, far from here. My fellow ogres won't go down to that place any more. Lord Enma says that if nobody stops it, the whole Otherworld will start to crack apart.\n\nI can't face that. You look like you can.\n\nAnd a warning: it sleeps. While it sleeps it looks harmless. Don't be fooled. The moment it sees you, it wakes.",
   "dialogue.dragonminez.story.sidequest.hell_ogre.boss_respawning": "You did it! Thank you, truly. We hadn't breathed easy in weeks.\n\nBut don't celebrate yet. The purifier is still broken, and while it is, the malice will gather in the same spot again. It always does.\n\nBy my reckoning, it will take shape again in %s.\n\nCome back and see me when the hour draws near.",

@@ -100,6 +100,7 @@ public final class WorldBossSession {
 	private long lastAudienceRefresh = -1_000_000L;
 	private long lastContributionSync = -1_000_000L;
 	private int bossMissingTicks;
+	private int scaledMembers;
 	private boolean ended;
 	private boolean wiping;
 
@@ -153,6 +154,7 @@ public final class WorldBossSession {
 		this.bossId = boss.getUUID();
 		this.bossNameKey = boss.getType().getDescriptionId();
 		this.bossMissingTicks = 0;
+		if (scaledMembers > 0) boss.applyGroupScaling(scaledMembers);
 	}
 
 	WorldBossEntity resolveBoss(ServerLevel level) {
@@ -208,12 +210,16 @@ public final class WorldBossSession {
 	private void refreshAudience(ServerLevel level, WorldBossEntity boss, GeneralServerConfig.WorldBossConfig config) {
 		double rangeSqr = (double) config.getContributionRange() * config.getContributionRange();
 		Set<UUID> next = new HashSet<>();
+		int members = 0;
 		for (ServerPlayer player : level.players()) {
 			if (player.isSpectator()) continue;
 			if (player.distanceToSqr(boss) > rangeSqr) continue;
 			next.add(player.getUUID());
 			if (!participants.containsKey(player.getUUID())) join(level, player, config);
+			if (participants.containsKey(player.getUUID()) && !player.isCreative()) members++;
 		}
+		scaledMembers = Math.max(1, members);
+		boss.applyGroupScaling(scaledMembers);
 		boolean changed = !next.equals(audience);
 		audience.clear();
 		audience.addAll(next);

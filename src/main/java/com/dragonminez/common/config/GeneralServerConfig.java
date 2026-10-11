@@ -79,7 +79,9 @@ public class GeneralServerConfig {
 		private Integer knockoutTitleSeconds = 5;
 		private List<Double> rankChanceBonus = new ArrayList<>(List.of(0.25, 0.15, 0.10));
 		private Double guaranteedRewardMinRatio = 0.5;
-		private Double minContributionShare = 0.0;
+		private Double minContributionShare = 0.075;
+		private Double healthPerExtraMember = 0.5;
+		private Double damagePerExtraMember = 0.25;
 		private Map<String, List<WorldBossRewardEntry>> rewards = defaultWorldBossRewards();
 
 		public int getContributionRange() { return Math.max(16, positiveInt(contributionRange, 150)); }
@@ -101,7 +103,9 @@ public class GeneralServerConfig {
 		public double getReviveRestoreRatio() { return clamp01(reviveRestoreRatio, 0.25); }
 		public int getKnockoutTitleSeconds() { return Math.max(1, positiveInt(knockoutTitleSeconds, 5)); }
 		public double getGuaranteedRewardMinRatio() { return clamp01(guaranteedRewardMinRatio, 0.5); }
-		public double getMinContributionShare() { return clamp01(minContributionShare, 0.0); }
+		public double getMinContributionShare() { return clamp01(minContributionShare, 0.075); }
+		public double getHealthPerExtraMember() { return positive(healthPerExtraMember, 0.5); }
+		public double getDamagePerExtraMember() { return positive(damagePerExtraMember, 0.25); }
 
 		public double getRankChanceBonus(int rank) {
 			if (rankChanceBonus == null || rank < 0 || rank >= rankChanceBonus.size()) return 0.0;
@@ -118,28 +122,28 @@ public class GeneralServerConfig {
 		private static Map<String, List<WorldBossRewardEntry>> defaultWorldBossRewards() {
 			Map<String, List<WorldBossRewardEntry>> map = new LinkedHashMap<>();
 			List<WorldBossRewardEntry> janemba = new ArrayList<>();
-			janemba.add(WorldBossRewardEntry.tps(1_350_000, 1.0));
+			janemba.add(WorldBossRewardEntry.attributes(500, 1.0));
 			janemba.add(WorldBossRewardEntry.item("dragonminez:dimensional_sword", 1, 0.5));
 			janemba.add(WorldBossRewardEntry.skill("dimensional_teleport", 1, 0.2));
 			map.put("janemba", janemba);
 			List<WorldBossRewardEntry> turles = new ArrayList<>();
-			turles.add(WorldBossRewardEntry.tps(50_000, 1.0));
+			turles.add(WorldBossRewardEntry.attributes(50, 1.0));
 			turles.add(WorldBossRewardEntry.item("dragonminez:might_tree_fruit", 1, 0.5));
 			turles.add(WorldBossRewardEntry.skill("kill_driver", 1, 0.25));
 			turles.add(WorldBossRewardEntry.skill("meteor_burst", 1, 0.15));
 			map.put("turles", turles);
 			List<WorldBossRewardEntry> metalCoolerCore = new ArrayList<>();
-			metalCoolerCore.add(WorldBossRewardEntry.tps(750_000, 1.0));
+			metalCoolerCore.add(WorldBossRewardEntry.attributes(105, 1.0));
 			metalCoolerCore.add(WorldBossRewardEntry.skill("supernova_cooler", 1, 0.2));
 			metalCoolerCore.add(WorldBossRewardEntry.item("dragonminez:gete_ingot", 4, 1.0));
 			for (String capsule : List.of("red", "purple", "yellow", "green", "orange", "blue")) {
 				metalCoolerCore.add(WorldBossRewardEntry.item("dragonminez:gete_" + capsule + "_capsule", 1, 0.12));
 			}
 			map.put("metal_cooler_core", metalCoolerCore);
-			map.put("tamagami_3", List.of(WorldBossRewardEntry.tps(1_500_000, 1.0), WorldBossRewardEntry.item("dragonminez:tamagami_hammer", 1, 0.3)));
-			map.put("tamagami_2", List.of(WorldBossRewardEntry.tps(2_000_000, 1.0), WorldBossRewardEntry.item("dragonminez:tamagami_trident", 1, 0.3)));
-			map.put("tamagami_1", List.of(WorldBossRewardEntry.tps(2_700_000, 1.0), WorldBossRewardEntry.item("dragonminez:tamagami_sword", 1, 0.3)));
-			map.put("gomah", List.of(WorldBossRewardEntry.tps(3_500_000, 1.0), WorldBossRewardEntry.item("dragonminez:demon_eye", 1, 0.02)));
+			map.put("tamagami_3", List.of(WorldBossRewardEntry.attributes(90, 1.0), WorldBossRewardEntry.item("dragonminez:tamagami_hammer", 1, 0.3)));
+			map.put("tamagami_2", List.of(WorldBossRewardEntry.attributes(300, 1.0), WorldBossRewardEntry.item("dragonminez:tamagami_trident", 1, 0.3)));
+			map.put("tamagami_1", List.of(WorldBossRewardEntry.attributes(360, 1.0), WorldBossRewardEntry.item("dragonminez:tamagami_sword", 1, 0.3)));
+			map.put("gomah", List.of(WorldBossRewardEntry.attributes(435, 1.0), WorldBossRewardEntry.item("dragonminez:demon_eye", 1, 0.02)));
 			return map;
 		}
 
@@ -174,9 +178,9 @@ public class GeneralServerConfig {
 		private String code;
 		private Double chance = 1.0;
 
-		public static WorldBossRewardEntry tps(int amount, double chance) {
+		public static WorldBossRewardEntry attributes(int amount, double chance) {
 			WorldBossRewardEntry entry = new WorldBossRewardEntry();
-			entry.type = "TPS";
+			entry.type = "ATTRIBUTES";
 			entry.amount = amount;
 			entry.chance = chance;
 			return entry;

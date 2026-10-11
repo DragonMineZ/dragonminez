@@ -33,6 +33,7 @@ public final class WorldBossContribution {
 		private final double[] mitigated = new double[MitigationKind.values().length];
 		private final Map<String, Double> received = new LinkedHashMap<>();
 		private final double[] healed = new double[HealKind.values().length];
+		private double healedValue;
 
 		private Score(UUID id) {
 			this.id = id;
@@ -64,10 +65,8 @@ public final class WorldBossContribution {
 			return total;
 		}
 
-		public double healedTotal() {
-			double total = 0.0;
-			for (double value : healed) total += value;
-			return total;
+		public double healedValue() {
+			return healedValue;
 		}
 
 		public double points() {
@@ -75,7 +74,14 @@ public final class WorldBossContribution {
 			return damageTotal() * config.getDamageWeight()
 					+ mitigatedTotal() * config.getMitigatedWeight()
 					+ receivedTotal() * config.getReceivedWeight()
-					+ healedTotal() * config.getHealedWeight();
+					+ healedValue * config.getHealedWeight();
+		}
+
+		private double healValueFactor() {
+			double taken = receivedTotal();
+			if (taken <= 0.0) return 1.0;
+			double raw = taken + mitigated(MitigationKind.DEFENSE) + mitigated(MitigationKind.BLOCK);
+			return Math.min(MAX_HEAL_VALUE_FACTOR, raw / taken);
 		}
 
 		private Score copy() {
@@ -86,9 +92,12 @@ public final class WorldBossContribution {
 			System.arraycopy(mitigated, 0, copy.mitigated, 0, mitigated.length);
 			copy.received.putAll(received);
 			System.arraycopy(healed, 0, copy.healed, 0, healed.length);
+			copy.healedValue = healedValue;
 			return copy;
 		}
 	}
+
+	private static final double MAX_HEAL_VALUE_FACTOR = 10.0;
 
 	private static final Map<String, Map<UUID, Score>> SESSIONS = new HashMap<>();
 	private static final Set<String> DIRTY = new HashSet<>();
@@ -124,10 +133,14 @@ public final class WorldBossContribution {
 		if (score != null) score.received.merge(attackerNameKey == null ? "" : attackerNameKey, amount, Double::sum);
 	}
 
-	public static void addHealed(String bossKey, ServerPlayer player, double amount, HealKind kind) {
+	public static void addHealed(String bossKey, ServerPlayer player, ServerPlayer target, double amount, HealKind kind) {
 		if (amount <= 0.0 || !Double.isFinite(amount)) return;
+		Score targetScore = target != null ? peek(bossKey, target.getUUID()) : null;
+		double factor = targetScore != null ? targetScore.healValueFactor() : 1.0;
 		Score score = score(bossKey, player);
-		if (score != null) score.healed[kind.ordinal()] += amount;
+		if (score == null) return;
+		score.healed[kind.ordinal()] += amount;
+		score.healedValue += amount * factor;
 	}
 
 	public static void touch(String bossKey, ServerPlayer player) {
