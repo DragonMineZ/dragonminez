@@ -24,6 +24,7 @@ public final class HeldVictim {
 	private static final String PLAYER_HURT_RIGHT = "base.hurt_right";
 	private static final String PLAYER_HURT_DOWN = "base.hurt_down";
 	private static final String PLAYER_HURT_TOP = "base.hurt_top";
+	private static final String PLAYER_KNOCKED_OUT = "base.faint_horizontal";
 	private final LivingEntity entity;
 	private final boolean pinned;
 	private String sagaPose;
@@ -106,6 +107,10 @@ public final class HeldVictim {
 
 	public void launched() {
 		this.pose(PLAYER_HURT_TOP, DBSagasEntity.HURT_ANIM_TOP);
+	}
+
+	public void knockOut() {
+		this.pose(PLAYER_KNOCKED_OUT, DBSagasEntity.HURT_ANIM_KO);
 	}
 
 	public void knockDown() {

@@ -89,7 +89,7 @@ public class PredefinedTechniques {
 		registerStrike("skp.grab", 1.6f, 50);
 		registerStrike("skp.shining_sword_attack", 2.4f, 66);
 		registerStrike("skp.combo_meteor", 2.2f, 90);
-		registerStrike("skp.meteor_burst", 2.6f, 120);
+		registerStrike("skp.meteor_burst", 2.6f, 201);
 		registerStrike("skp.mystic_ball", 2.4f, 96);
 	}
 

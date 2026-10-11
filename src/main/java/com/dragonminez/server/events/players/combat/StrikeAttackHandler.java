@@ -291,7 +291,9 @@ public class StrikeAttackHandler {
 				return;
 			}
 
-			if (immediateTarget != null) {
+			if (immediateTarget != null && METEOR_BURST_ID.equals(strike.getId())) {
+				startStrike(player, immediateTarget, pending);
+			} else if (immediateTarget != null) {
 				boolean faceTarget = !"dragon_fist".equals(strike.getId());
 				PartEntity<?> hitPart = nearestPartInSight(player, coneRange);
 					if (hitPart != null && hitPart.getParent() == immediateTarget) {
@@ -1416,7 +1418,7 @@ public class StrikeAttackHandler {
 			endStrike(player, target, active, true);
 			return;
 		}
-		if (nextTick >= active.durationTicks()) {
+		if (nextTick >= MeteorBurstCombo.DURATION) {
 			endStrike(player, target, active);
 			return;
 		}

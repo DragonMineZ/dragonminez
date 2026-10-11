@@ -340,6 +340,7 @@ public abstract class DBSagasEntity extends Monster implements GeoEntity, ITextu
     public static final String HURT_ANIM_TOP2 = "hurt_top2";
     public static final String HURT_ANIM_DOWN = "hurt_down";
     public static final String HURT_ANIM_GRABBED = "grabbed";
+    public static final String HURT_ANIM_KO = "knocked_out";
 
     @Getter @Setter
     private boolean isAttacking = false;
@@ -1610,6 +1611,7 @@ public abstract class DBSagasEntity extends Monster implements GeoEntity, ITextu
                 .triggerableAnim(HURT_ANIM_TOP2, DBSagasAnimations.ANIM_HURT_TOP2)
                 .triggerableAnim(HURT_ANIM_DOWN, DBSagasAnimations.ANIM_HURT_DOWN)
                 .triggerableAnim(HURT_ANIM_GRABBED, DBSagasAnimations.ANIM_HURT_GRABBED)
+                .triggerableAnim(HURT_ANIM_KO, DBSagasAnimations.ANIM_HURT_KO)
                 .receiveTriggeredAnimations());
         controllers.add(new AnimationController<>(this, "tail_controller", 5, DBSagasAnimationHandler::tailPredicate));
         controllers.add(new AnimationController<>(this, "cape_controller", 5, DBSagasAnimationHandler::capePredicate));
