@@ -191,7 +191,7 @@ public abstract class DBSagasEntity extends Monster implements GeoEntity, ITextu
         METEOR_COMBINATION(3, Tier.STRONG), ANDROID_ABSORPTION(4, Tier.STRONG),
         GUM_PUNCH(5, Tier.MEDIUM), GUM_EXPAND(6, Tier.WEAK), SLEEP_RECOVERY(7, Tier.WEAK),
         RAPID_KICKS(8, Tier.WEAK), SPIRIT_BREAKING_CANNON(9, Tier.STRONG), SUPER_GOD_FIST(11, Tier.STRONG),
-        DEADLY_DANCE_VEGETTO(12, Tier.STRONG), METEOR_BURST(13, Tier.STRONG);
+        DEADLY_DANCE_VEGETTO(12, Tier.STRONG), METEOR_BURST(13, Tier.STRONG), MYSTIC_BALL(14, Tier.STRONG);
 
         private final int id;
         private final Tier tier;
@@ -223,6 +223,7 @@ public abstract class DBSagasEntity extends Monster implements GeoEntity, ITextu
     private static final EntityDataAccessor<Boolean> IS_EVADING = SynchedEntityData.defineId(DBSagasEntity.class, EntityDataSerializers.BOOLEAN);
     private static final EntityDataAccessor<Boolean> IS_COMBOING = SynchedEntityData.defineId(DBSagasEntity.class, EntityDataSerializers.BOOLEAN);
     private static final EntityDataAccessor<Integer> CURRENT_COMBO_ID = SynchedEntityData.defineId(DBSagasEntity.class, EntityDataSerializers.INT);
+    private static final EntityDataAccessor<Boolean> IS_STRIKE_RUSHING = SynchedEntityData.defineId(DBSagasEntity.class, EntityDataSerializers.BOOLEAN);
 
     private static final EntityDataAccessor<Integer> BATTLE_POWER = SynchedEntityData.defineId(DBSagasEntity.class, EntityDataSerializers.INT);
     private static final EntityDataAccessor<Boolean> TRANSFORMING = SynchedEntityData.defineId(DBSagasEntity.class, EntityDataSerializers.BOOLEAN);
@@ -288,6 +289,7 @@ public abstract class DBSagasEntity extends Monster implements GeoEntity, ITextu
     private int comboCooldownMax = 0;
     private int currentComboCooldown = 0;
     public int comboTimer = 0;
+    private int strikeRushTicks = 0;
     private LivingEntity comboTarget = null;
     private int activeComboId = -1;
     private int[] allowedCombos = new int[0];
@@ -1194,8 +1196,12 @@ public abstract class DBSagasEntity extends Monster implements GeoEntity, ITextu
                 }
 
                 if (this.comboEnabled && this.isComboing()) {
-                    this.comboTimer++;
-                    handleComboLogic();
+                    if (this.isStrikeRushing()) {
+                        this.tickStrikeRush();
+                    } else {
+                        this.comboTimer++;
+                        handleComboLogic();
+                    }
                 }
 
                 this.tickManeuver();
@@ -1248,6 +1254,20 @@ public abstract class DBSagasEntity extends Monster implements GeoEntity, ITextu
         int comboId = this.getComboId();
         ComboManager.handleCombo(this, this.comboTarget, comboId, this.comboTimer);
     }
+
+    private void tickStrikeRush() {
+        ComboManager.RushStep step = ComboManager.tickStrikeRush(this, this.comboTarget, this.strikeRushTicks--);
+        if (step == ComboManager.RushStep.MISSED) this.stopCombo();
+        else if (step == ComboManager.RushStep.CONNECTED) this.endStrikeRush();
+    }
+
+    private void endStrikeRush() {
+        this.entityData.set(IS_STRIKE_RUSHING, false);
+        this.strikeRushTicks = 0;
+        if (!this.isFlying()) this.setNoGravity(false);
+    }
+
+    public boolean isStrikeRushing() {return this.entityData.get(IS_STRIKE_RUSHING);}
 
     public void setMeleeAllowed(boolean allowed) {
         this.meleeAllowed = allowed;
@@ -1592,7 +1612,7 @@ public abstract class DBSagasEntity extends Monster implements GeoEntity, ITextu
     public void remove(RemovalReason reason) {
         if (!this.level().isClientSide && this.level() instanceof ServerLevel serverLevel) {
             removeAuraLight(serverLevel);
-            if (this.isComboing()) ComboManager.onComboStopped(this, this.getComboId(), this.comboTarget);
+            if (this.isComboing() && !this.isStrikeRushing()) ComboManager.onComboStopped(this, this.getComboId(), this.comboTarget);
         }
         super.remove(reason);
     }
@@ -1728,7 +1748,8 @@ public abstract class DBSagasEntity extends Monster implements GeoEntity, ITextu
     }
 
     public void stopCombo() {
-        ComboManager.onComboStopped(this, this.getComboId(), this.comboTarget);
+        if (this.isStrikeRushing()) this.endStrikeRush();
+        else ComboManager.onComboStopped(this, this.getComboId(), this.comboTarget);
         this.setComboing(false);
         this.entityData.set(CURRENT_COMBO_ID, -1);
         this.comboTimer = 0;
@@ -1768,6 +1789,11 @@ public abstract class DBSagasEntity extends Monster implements GeoEntity, ITextu
         this.setComboing(true);
         this.entityData.set(CURRENT_COMBO_ID, resolved);
         this.comboTimer = 0;
+        if (!this.level().isClientSide && ComboManager.usesStrikeRush(resolved)) {
+            this.entityData.set(IS_STRIKE_RUSHING, true);
+            this.strikeRushTicks = ComboManager.STRIKE_RUSH_TICKS;
+            ComboManager.startStrikeRush(this);
+        }
         this.currentComboCooldown = Math.round(this.comboCooldownMax * ComboType.tierOf(resolved).getCooldownFactor());
         if (!this.level().isClientSide) this.combatBrain.onComboStarted(resolved);
     }
@@ -1926,6 +1952,7 @@ public abstract class DBSagasEntity extends Monster implements GeoEntity, ITextu
         this.entityData.define(IS_EVADING, false);
         this.entityData.define(IS_COMBOING, false);
         this.entityData.define(CURRENT_COMBO_ID, -1);
+        this.entityData.define(IS_STRIKE_RUSHING, false);
         this.entityData.define(DBZ_STYLE, 0);
         this.entityData.define(TEXTURE_VARIANT, 0);
         this.entityData.define(IS_SUPERVILLAIN, false);

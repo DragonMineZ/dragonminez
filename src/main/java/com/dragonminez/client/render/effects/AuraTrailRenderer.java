@@ -123,7 +123,12 @@ public final class AuraTrailRenderer {
 
 	public static void submitFlightTrail(Entity entity, Matrix4f entityPose, float partialTick, float[] color, float alpha,
 										 float anchorBack, float anchorHeight) {
-		submitEntityTrail(entity, entityPose, partialTick, color, alpha, MAX_SAMPLES, MAX_HALF_WIDTH, anchorBack, anchorHeight, true,
+		submitFlightTrail(entity, entityPose, partialTick, color, alpha, anchorBack, anchorHeight, true);
+	}
+
+	public static void submitFlightTrail(Entity entity, Matrix4f entityPose, float partialTick, float[] color, float alpha,
+										 float anchorBack, float anchorHeight, boolean active) {
+		submitEntityTrail(entity, entityPose, partialTick, color, alpha, MAX_SAMPLES, MAX_HALF_WIDTH, anchorBack, anchorHeight, active,
 				CORE_WHITE, 1.0f);
 	}
 

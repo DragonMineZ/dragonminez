@@ -1,5 +1,6 @@
 package com.dragonminez.common.init.entities.sagas.helper;
 
+import com.dragonminez.server.events.players.combat.MysticBallCombo;
 import software.bernie.geckolib.core.animation.RawAnimation;
 
 public class DBSagasAnimations {
@@ -70,6 +71,7 @@ public class DBSagasAnimations {
     public static final RawAnimation ANIM_KILL_DRIVER_CAST = RawAnimation.begin().thenPlayAndHold("ki.kill_driver_cast");
     public static final RawAnimation ANIM_KILL_DRIVER_FIRE = RawAnimation.begin().thenPlayAndHold("ki.kill_driver_fire");
     public static final RawAnimation ANIM_METEOR_BURST = RawAnimation.begin().thenPlayAndHold("skp.meteor_burst");
+    public static final RawAnimation ANIM_MYSTIC_BALL = RawAnimation.begin().thenPlayAndHold(MysticBallCombo.ANIMATION);
     public static final RawAnimation ANIM_BOSS_GRAB = RawAnimation.begin().thenPlayAndHold("skp.grab");
     public static final RawAnimation ANIM_TAMAGAMI_SLEEP = RawAnimation.begin().thenLoop("tamagami.sleep");
     public static final RawAnimation ANIM_TAMAGAMI_RAISE = RawAnimation.begin().thenPlayAndHold("ki.kienzan_cast");

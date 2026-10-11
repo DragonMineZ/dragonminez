@@ -242,7 +242,8 @@ public class SagaBuuEntity {
             this.setAuraColor(0xFF82F3);
             this.setKiBlastSpeed(2.2f);
 
-            this.setAllowedCombos(60, ComboType.GUM_PUNCH, ComboType.AIR, ComboType.BASIC, ComboType.GUM_EXPAND, ComboType.RAPID_KICKS, ComboType.SLEEP_RECOVERY);
+            this.setAllowedCombos(60, ComboType.GUM_PUNCH, ComboType.AIR, ComboType.BASIC, ComboType.GUM_EXPAND, ComboType.RAPID_KICKS, ComboType.SLEEP_RECOVERY,
+                    ComboType.MYSTIC_BALL);
 
             this.addKiSkill(KiSkillType.KI_SMALL, 40, 1.5F, 0xFF82F3, 0xFF1AEC);
             this.addKiSkill(KiSkillType.GENERIC_KI_WAVE, 400, 2.0F, 0xFF82F3, 0xFF1AEC, 0xDE0BCD);

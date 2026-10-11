@@ -39,6 +39,7 @@ import net.minecraft.client.renderer.RenderType;
 import net.minecraft.client.renderer.entity.EntityRendererProvider;
 import net.minecraft.client.renderer.texture.OverlayTexture;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.world.entity.Entity;
 import net.minecraft.world.phys.Vec3;
 import org.jetbrains.annotations.Nullable;
 import org.joml.Quaternionf;
@@ -109,8 +110,7 @@ public class DMZPlayerRenderer<T extends AbstractClientPlayer & GeoAnimatable> e
 		BoneVisibilityHandler.updateVisibility(model, animatable, this.caller);
 	}
 
-	private static void submitMysticBallTrail(AbstractClientPlayer entity, PoseStack poseStack, float partialTick) {
-		boolean playing = entity instanceof IPlayerAnimatable anim && MysticBallCombo.ANIMATION.equals(anim.dragonminez$getCurrentPlayingAnimation());
+	public static void submitMysticBallTrail(Entity entity, boolean playing, PoseStack poseStack, float partialTick) {
 		int[] ticks = MYSTIC_BALL_TICKS.get(entity.getId());
 		if (playing && (ticks == null || entity.tickCount - ticks[1] > 5)) {
 			ticks = new int[]{entity.tickCount, entity.tickCount};
@@ -128,7 +128,11 @@ public class DMZPlayerRenderer<T extends AbstractClientPlayer & GeoAnimatable> e
 				MYSTIC_BALL_TRAIL_SAMPLES, MYSTIC_BALL_TRAIL_HALF_WIDTH, 0.0f, MYSTIC_BALL_TRAIL_HEIGHT, active);
 	}
 
-	private static void applyMysticBallSmear(AbstractClientPlayer entity, PoseStack poseStack, float partialTick) {
+	public static boolean hasMysticBallTrail(Entity entity) {
+		return MYSTIC_BALL_TICKS.containsKey(entity.getId());
+	}
+
+	public static void applyMysticBallSmear(Entity entity, PoseStack poseStack, float partialTick) {
 		int[] ticks = MYSTIC_BALL_TICKS.get(entity.getId());
 		float elapsed = ticks != null ? entity.tickCount - ticks[0] + partialTick : -1.0f;
 		if (ticks == null || ticks[1] != entity.tickCount || !MysticBallCombo.isBallTick((int) elapsed)) {
@@ -161,7 +165,8 @@ public class DMZPlayerRenderer<T extends AbstractClientPlayer & GeoAnimatable> e
 			return;
 		}
 
-		submitMysticBallTrail(entity, poseStack, partialTick);
+		boolean mysticBall = entity instanceof IPlayerAnimatable anim && MysticBallCombo.ANIMATION.equals(anim.dragonminez$getCurrentPlayingAnimation());
+		submitMysticBallTrail(entity, mysticBall, poseStack, partialTick);
 		HairRenderCapture.beginEntity(entity, poseStack);
 		((GeoModelAccessor) (Object) getGeoModel()).dmz$setLastRenderedInstance(-1L);
 

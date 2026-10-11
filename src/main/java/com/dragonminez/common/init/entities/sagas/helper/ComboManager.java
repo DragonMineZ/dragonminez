@@ -14,6 +14,7 @@ import com.dragonminez.common.init.MainDamageTypes;
 import com.dragonminez.server.events.players.combat.KnockbackHelper;
 import com.dragonminez.server.events.players.combat.MeteorBurstCombo;
 import com.dragonminez.server.events.players.combat.MomentumImpactHandler;
+import com.dragonminez.server.events.players.combat.MysticBallCombo;
 import net.minecraft.commands.arguments.EntityAnchorArgument;
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.server.level.ServerLevel;
@@ -24,7 +25,9 @@ import net.minecraft.world.InteractionHand;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.MoverType;
 import net.minecraft.world.entity.ai.attributes.Attributes;
+import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
+import net.minecraftforge.entity.PartEntity;
 
 import java.util.Map;
 import java.util.WeakHashMap;
@@ -32,6 +35,16 @@ import java.util.WeakHashMap;
 public class ComboManager {
 
     private static final Map<DBSagasEntity, MeteorBurstCombo.State> METEOR_BURSTS = new WeakHashMap<>();
+    private static final Map<DBSagasEntity, MysticBallCombo.State> MYSTIC_BALLS = new WeakHashMap<>();
+
+    public enum RushStep { RUSHING, CONNECTED, MISSED }
+
+    public static final int STRIKE_RUSH_TICKS = 40;
+    public static final double STRIKE_RUSH_RANGE = 24.0D;
+    private static final double STRIKE_RUSH_SPEED = 1.3D;
+    private static final double STRIKE_RUSH_CONNECT_RANGE = 1.8D;
+    private static final double STRIKE_RUSH_HOLD_DISTANCE = 0.8D;
+    private static final double STRIKE_RUSH_SNAP_GAP = 0.7D;
 
     private static final int SPIRIT_CANNON_KNEE_TICK = 6;
     private static final int SPIRIT_CANNON_UPPERCUT_TICK = 13;
@@ -101,6 +114,7 @@ public class ComboManager {
             case 11 -> handleSuperGodFist(user, target, timer);
             case 12 -> handleDeadlyDanceVegetto(user, target, timer);
             case 13 -> handleMeteorBurst(user, target, timer);
+            case 14 -> handleMysticBall(user, target, timer);
 
         }
     }
@@ -110,6 +124,12 @@ public class ComboManager {
         if (comboId == DBSagasEntity.ComboType.METEOR_BURST.getId()) {
             MeteorBurstCombo.State state = METEOR_BURSTS.remove(user);
             if (state != null) MeteorBurstCombo.release(state);
+            if (!user.isFlying()) user.setNoGravity(false);
+            return;
+        }
+        if (comboId == DBSagasEntity.ComboType.MYSTIC_BALL.getId()) {
+            MysticBallCombo.State state = MYSTIC_BALLS.remove(user);
+            if (state != null) MysticBallCombo.release(state);
             if (!user.isFlying()) user.setNoGravity(false);
             return;
         }
@@ -131,6 +151,113 @@ public class ComboManager {
             saga.stopTriggeredAnimation(DBSagasEntity.HURT_CONTROLLER, DBSagasEntity.HURT_ANIM_TOP2);
             saga.stopTriggeredAnimation(DBSagasEntity.HURT_CONTROLLER, DBSagasEntity.HURT_ANIM_TOP);
             saga.stopTriggeredAnimation(DBSagasEntity.HURT_CONTROLLER, DBSagasEntity.HURT_ANIM_DOWN);
+        }
+    }
+
+    public static boolean usesStrikeRush(int comboId) {
+        return comboId == DBSagasEntity.ComboType.SPIRIT_BREAKING_CANNON.getId()
+                || comboId == DBSagasEntity.ComboType.METEOR_BURST.getId()
+                || comboId == DBSagasEntity.ComboType.MYSTIC_BALL.getId();
+    }
+
+    public static void startStrikeRush(DBSagasEntity user) {
+        user.getNavigation().stop();
+        user.setNoGravity(true);
+        user.setDeltaMovement(Vec3.ZERO);
+        user.playSound(MainSounds.TRANSFORM_ON.get(), 0.7F, 1.2F);
+    }
+
+    public static RushStep tickStrikeRush(DBSagasEntity user, LivingEntity target, int ticksLeft) {
+        if (ticksLeft <= 0 || target == null || !target.isAlive() || !user.isAlive() || user.isTransforming()
+                || target.level() != user.level()) {
+            return RushStep.MISSED;
+        }
+
+        user.getNavigation().stop();
+        user.fallDistance = 0.0F;
+        faceTowards(user, target);
+
+        Vec3 from = user.getBoundingBox().getCenter();
+        double gap = rushGap(from, target);
+        if (gap <= STRIKE_RUSH_CONNECT_RANGE) {
+            if (user.getComboId() != DBSagasEntity.ComboType.METEOR_BURST.getId()) snapToRushTarget(user, target);
+            user.setDeltaMovement(Vec3.ZERO);
+            return RushStep.CONNECTED;
+        }
+
+        Vec3 dir = target.getBoundingBox().getCenter().subtract(from);
+        if (dir.lengthSqr() > 1.0E-6D) {
+            double step = Math.min(STRIKE_RUSH_SPEED, Math.max(0.1D, gap - STRIKE_RUSH_HOLD_DISTANCE));
+            user.move(MoverType.SELF, dir.normalize().scale(step));
+        }
+        user.setDeltaMovement(Vec3.ZERO);
+        return RushStep.RUSHING;
+    }
+
+    private static double rushGap(Vec3 from, LivingEntity target) {
+        double best = distanceToBox(from, target.getBoundingBox());
+        if (target.isMultipartEntity() && target.getParts() != null) {
+            for (PartEntity<?> part : target.getParts()) best = Math.min(best, distanceToBox(from, part.getBoundingBox()));
+        }
+        return best;
+    }
+
+    private static double distanceToBox(Vec3 point, AABB box) {
+        double dx = Math.max(0.0D, Math.max(box.minX - point.x, point.x - box.maxX));
+        double dy = Math.max(0.0D, Math.max(box.minY - point.y, point.y - box.maxY));
+        double dz = Math.max(0.0D, Math.max(box.minZ - point.z, point.z - box.maxZ));
+        return Math.sqrt(dx * dx + dy * dy + dz * dz);
+    }
+
+    private static void snapToRushTarget(DBSagasEntity user, LivingEntity target) {
+        Vec3 approach = new Vec3(target.getX() - user.getX(), 0.0D, target.getZ() - user.getZ());
+        if (approach.lengthSqr() < 1.0E-6D) approach = Vec3.directionFromRotation(0.0F, user.getYRot());
+        approach = approach.normalize();
+        double distance = target.getBbWidth() * 0.5D + user.getBbWidth() * 0.5D + STRIKE_RUSH_SNAP_GAP;
+        Vec3 snap = new Vec3(target.getX() - approach.x * distance, target.getY(), target.getZ() - approach.z * distance);
+        if (user.level().noCollision(user, user.getBoundingBox().move(snap.subtract(user.position())))) {
+            user.teleportTo(snap.x, snap.y, snap.z);
+        }
+        faceTowards(user, target);
+    }
+
+    private static void handleMysticBall(DBSagasEntity user, LivingEntity target, int timer) {
+        if (!(user.level() instanceof ServerLevel level)) return;
+
+        user.invulnerableTime = 20;
+        user.setNoGravity(true);
+        user.setDeltaMovement(Vec3.ZERO);
+
+        MysticBallCombo.State state = MYSTIC_BALLS.computeIfAbsent(user, key -> new MysticBallCombo.State());
+        if (!MysticBallCombo.tick(level, new SagaMysticBall(user, target), state, timer) || timer >= MysticBallCombo.DURATION) {
+            user.stopCombo();
+        }
+    }
+
+    private record SagaMysticBall(DBSagasEntity user, LivingEntity target) implements MysticBallCombo.Performer {
+
+        @Override
+        public LivingEntity self() {
+            return this.user;
+        }
+
+        @Override
+        public void place(Vec3 feet) {
+            this.user.setPos(feet.x, feet.y, feet.z);
+            this.user.setDeltaMovement(Vec3.ZERO);
+            this.user.fallDistance = 0.0F;
+        }
+
+        @Override
+        public float strikeBudget() {
+            return comboHitDamage(this.user, DBSagasEntity.ComboType.MYSTIC_BALL, 1);
+        }
+
+        @Override
+        public void strikeHit(LivingEntity victim, float amount, boolean lethal) {
+            float damage = amount;
+            if (!lethal && victim.getHealth() - damage <= 1.0F) damage = Math.max(0.01F, victim.getHealth() - 1.0F);
+            victim.hurt(MainDamageTypes.strikeAttack(this.user.level(), this.user, MysticBallCombo.TECHNIQUE_ID), damage);
         }
     }
 

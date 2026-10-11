@@ -8,6 +8,7 @@ import com.dragonminez.common.init.entities.sagas.DBSagasEntity.KiSkillType;
 import com.dragonminez.common.init.entities.sagas.DBSagasEntity.LocomotionMode;
 import com.dragonminez.common.init.entities.sagas.DBSagasEntity.SkillRole;
 import com.dragonminez.common.init.entities.sagas.DBSagasEntity.Tier;
+import com.dragonminez.common.init.entities.sagas.helper.ComboManager;
 import com.dragonminez.common.init.entities.sagas.helper.SkillManager;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.util.Mth;
@@ -603,6 +604,20 @@ public final class EnemyBrain {
                         options.add(combo);
                     }
                 }
+            } else if (s.dist <= ComboManager.STRIKE_RUSH_RANGE && s.los) {
+                int comboId = this.pickRushCombo(allowedCombos, now, rnd);
+                if (comboId >= 0) {
+                    Option rush = new Option(Kind.COMBO, 0.95D);
+                    rush.comboId = comboId;
+                    if (s.read.helpless()) rush.score += 0.4D;
+                    if (s.read.casting) rush.score += 0.3D;
+                    if (profile.memory) {
+                        CombatMemory.Outcome last = this.memory.lastOutcome(comboId, true);
+                        if (last == CombatMemory.Outcome.HIT) rush.score += 0.15D;
+                        else if (last == CombatMemory.Outcome.MISS) rush.score -= 0.2D;
+                    }
+                    options.add(rush);
+                }
             }
         }
 
@@ -695,6 +710,16 @@ public final class EnemyBrain {
     private static int firstAllowed(int[] allowed, int[] preferred) {
         for (int pref : preferred) if (hasCombo(allowed, pref)) return pref;
         return -1;
+    }
+
+    private int pickRushCombo(int[] allowed, long now, RandomSource rnd) {
+        int pick = -1;
+        int seen = 0;
+        for (int candidate : allowed) {
+            if (!ComboManager.usesStrikeRush(candidate) || !this.economy.canCombo(ComboType.tierOf(candidate), now)) continue;
+            if (rnd.nextInt(++seen) == 0) pick = candidate;
+        }
+        return pick;
     }
 
     private int pickCombo(int[] allowed, Situation s, AiProfile profile, RandomSource rnd) {

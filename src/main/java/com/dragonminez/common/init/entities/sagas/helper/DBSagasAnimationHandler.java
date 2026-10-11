@@ -28,6 +28,12 @@ public class DBSagasAnimationHandler {
             return PlayState.STOP;
         }
 
+        if (entity.isStrikeRushing()) {
+            event.getController().setAnimationSpeed(1.0D);
+            if (entity.getDBZStyle() == 3) return event.setAndContinue(DBSagasAnimations.ANIM_FLY_FAST4);
+            return event.setAndContinue(DBSagasAnimations.ANIM_FLY_FAST);
+        }
+
         if (entity.isEvading() || entity.isComboing()) {
             event.getController().setAnimationSpeed(1.0D);
             return PlayState.STOP;
@@ -105,7 +111,7 @@ public class DBSagasAnimationHandler {
 
     public static <T extends GeoAnimatable> PlayState skillPredicate(AnimationState<T> event, DBSagasEntity entity) {
 
-        if (entity.isComboing()) {
+        if (entity.isComboing() && !entity.isStrikeRushing()) {
             int comboId = entity.getComboId();
 
             if (comboId == 0) return event.setAndContinue(DBSagasAnimations.ANIM_COMBO1);
@@ -124,6 +130,7 @@ public class DBSagasAnimationHandler {
             if (comboId == 11) return event.setAndContinue(DBSagasAnimations.ANIM_SUPER_GOD_FIST);
             if (comboId == 12) return event.setAndContinue(DBSagasAnimations.ANIM_DEADLY_DANCE_VEGETTO);
             if (comboId == 13) return event.setAndContinue(DBSagasAnimations.ANIM_METEOR_BURST);
+            if (comboId == 14) return event.setAndContinue(DBSagasAnimations.ANIM_MYSTIC_BALL);
 
         }
 

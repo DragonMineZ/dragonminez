@@ -70,7 +70,7 @@ public class AuraRenderer {
 	private static final float AURA_RELEASE_LERP_PER_TICK = 0.02f;
 	private static final float AURA_3D_FLIGHT_LEAD = 1.10f;
 	private static final float AURA_TRAIL_ALPHA = 0.55f;
-	private static final float AURA_2D_FLIGHT_OFFSET = 0.31f;
+	public static final float AURA_2D_FLIGHT_OFFSET = 0.31f;
 	private static final float AURA_3D_BACKFACE = 0.02f;
 	private static final float AURA_3D_BACKFACE_FIRST_PERSON = 0.85f;
 	private static final float AURA_3D_FIRST_PERSON_ALPHA = 0.15f;
@@ -1237,7 +1237,7 @@ public class AuraRenderer {
 		return (float) Math.abs(viewDir.dot(flightAxis(player, partialTick)));
 	}
 
-	private static float cameraTilt(Vec3 up, Vec3 facing) {
+	public static float cameraTilt(Vec3 up, Vec3 facing) {
 		double length = facing.length();
 		if (length < 1.0e-6) return 0.0f;
 		double elevation = Math.asin(Mth.clamp(facing.dot(up) / length, -1.0, 1.0));
@@ -1245,7 +1245,7 @@ public class AuraRenderer {
 		return (float) (elevation - limit * Math.tanh(elevation / limit));
 	}
 
-	private static boolean applyAxisBillboard(PoseStack poseStack, Camera camera, Vec3 up, Vec3 facing, float tilt, double pivot) {
+	public static boolean applyAxisBillboard(PoseStack poseStack, Camera camera, Vec3 up, Vec3 facing, float tilt, double pivot) {
 		Vec3 forward = facing.subtract(up.scale(facing.dot(up)));
 		if (forward.lengthSqr() < 1.0e-6) {
 			Vec3 cameraUp = new Vec3(camera.getUpVector());
@@ -1273,6 +1273,29 @@ public class AuraRenderer {
 				0.0f, 0.0f, 0.0f, 1.0f));
 		poseStack.translate(0.0, -pivot, 0.0);
 		return true;
+	}
+
+	public static void layEntityAuraForFlight(PoseStack poseStack, String type, float bodyScale, float bodyHeight, float yaw, float pitch) {
+		float scaleY;
+		float center;
+		float lead;
+		if (Aura3DRenderer.isGod(type)) {
+			scaleY = bodyScale;
+			center = GOD_CENTER;
+			lead = SMOOTH_FLIGHT_LEAD;
+		} else if (Aura3DRenderer.isSmooth(type)) {
+			scaleY = bodyScale;
+			center = Aura3DRenderer.SMOOTH_CENTER;
+			lead = SMOOTH_FLIGHT_LEAD;
+		} else {
+			scaleY = bodyScale * Aura3DRenderer.heightFactor(type);
+			center = Aura3DRenderer.coreFactor(type);
+			lead = AURA_3D_FLIGHT_LEAD;
+		}
+		poseStack.mulPose(Axis.YP.rotationDegrees(180.0f - yaw));
+		poseStack.translate(0.0f, bodyHeight * 0.5f, 0.0f);
+		poseStack.mulPose(Axis.XP.rotationDegrees(90.0f - pitch));
+		poseStack.translate(0.0f, -center * scaleY - lead * bodyScale, 0.0f);
 	}
 
 	private static float auraLeanDegrees(Player player, float partialTick) {
