@@ -31,6 +31,10 @@ public abstract class QuestObjective {
         return type == ObjectiveType.CUSTOM && customType != null ? customType : type.name();
     }
 
+    public boolean isPlaceholder() {
+        return type == ObjectiveType.PLACEHOLDER;
+    }
+
 	public void setProgress(int progress) {
         this.progress = Math.min(progress, required);
         checkCompletion();
@@ -64,7 +68,8 @@ public abstract class QuestObjective {
         SURVIVE_WAVES,
         ESCORT,
         CHECKPOINT_RACE,
-        CUSTOM
+        CUSTOM,
+        PLACEHOLDER
     }
 }
 

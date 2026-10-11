@@ -138,6 +138,7 @@ final class NpcDialogueContent {
 		Runnable onSuccess = pending.remove(result.getAction());
 		if (onSuccess == null) return;
 		if (result.isSuccess()) onSuccess.run();
+		else if (result.getReason() != null) host.say(result.getReason());
 		else host.say(DialogueReplies.reply(npcId, result.getAction().startsWith("quest_") ? "quest_failure" : "failure"));
 		host.refreshOptions();
 	}

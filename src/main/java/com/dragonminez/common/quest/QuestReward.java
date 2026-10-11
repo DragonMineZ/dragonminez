@@ -32,6 +32,10 @@ public abstract class QuestReward {
 		return type == RewardType.CUSTOM && customType != null ? customType : type.name();
 	}
 
+	public boolean isPlaceholder() {
+		return type == RewardType.PLACEHOLDER;
+	}
+
 	public void setDifficulties(Set<Difficulty> difficulties) {
 		this.difficulties = (difficulties == null || difficulties.isEmpty())
 				? EnumSet.allOf(Difficulty.class)
@@ -55,6 +59,7 @@ public abstract class QuestReward {
 	}
 
 	public boolean isUnlockedFor(Difficulty difficulty) {
+		if (isPlaceholder()) return false;
 		return difficulties.contains(difficulty != null ? difficulty : Difficulty.NORMAL);
 	}
 
@@ -69,6 +74,7 @@ public abstract class QuestReward {
 		KI_TECHNIQUE,
 		CUSTOM,
 		ATTRIBUTES,
-		ATTRIBUTE_POINTS
+		ATTRIBUTE_POINTS,
+		PLACEHOLDER
 	}
 }

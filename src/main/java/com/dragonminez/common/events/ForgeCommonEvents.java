@@ -38,6 +38,7 @@ import com.dragonminez.common.dialogue.DialogueRegistry;
 import com.dragonminez.common.quest.QuestRegistry;
 import com.dragonminez.common.stats.character.Cooldowns;
 import com.dragonminez.common.stats.StatsCapability;
+import com.dragonminez.common.stats.StatsData;
 import com.dragonminez.common.stats.StatsProvider;
 import com.dragonminez.common.util.BetaWhitelist;
 import com.dragonminez.common.wish.WishManager;
@@ -736,9 +737,11 @@ public class ForgeCommonEvents {
 				UUID partnerUUID = data.getStatus().getFusionPartnerUUID();
 				if (partnerUUID != null) {
 					ServerPlayer partner = player.getServer().getPlayerList().getPlayer(partnerUUID);
-					if (partner != null) {
+					StatsData partnerData = partner != null ? StatsProvider.get(StatsCapability.INSTANCE, partner).orElse(null) : null;
+					boolean linked = partnerData != null && player.getUUID().equals(partnerData.getStatus().getFusionPartnerUUID());
+					if (linked) {
 						if (!partner.isDeadOrDying()) partner.kill();
-						StatsProvider.get(StatsCapability.INSTANCE, partner).ifPresent(partnerData -> FusionLogic.endFusion(partner, partnerData, true));
+						FusionLogic.endFusion(partner, partnerData, true);
 					}
 				}
 				FusionLogic.endFusion(player, data, true);

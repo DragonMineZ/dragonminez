@@ -1389,6 +1389,7 @@ public class QuestTreeScreen extends BaseMenuScreen {
 		}
 
 		if (inParty) {
+			boolean isOwner = isLocalPartyOwner();
 			if (isLeader) {
 				partyPrimaryButton = buildPartyButton(
 						tr("gui.dragonminez.party.invite_players"),
@@ -1396,7 +1397,20 @@ public class QuestTreeScreen extends BaseMenuScreen {
 						footer.bottom() - 46,
 						btn -> openInvitePopup()
 				);
+				String closeKey = isOwner ? "gui.dragonminez.party.disband" : "gui.dragonminez.party.leave";
+				String confirmKey = isOwner ? "gui.dragonminez.party.confirm.disband" : "gui.dragonminez.party.confirm.leave";
 				partySecondaryButton = buildPartyButton(
+						tr(closeKey),
+						footer.x + (footer.width - 74) / 2,
+						footer.bottom() - 20,
+						btn -> requestConfirm(
+								PartyConfirmAction.LEAVE_PARTY,
+								tr(closeKey),
+								tr(confirmKey)
+						)
+				);
+			} else if (isOwner) {
+				partyPrimaryButton = buildPartyButton(
 						tr("gui.dragonminez.party.disband"),
 						footer.x + (footer.width - 74) / 2,
 						footer.bottom() - 20,
@@ -2465,6 +2479,7 @@ public class QuestTreeScreen extends BaseMenuScreen {
 
 		for (int i = 0; i < objectives.size(); i++) {
 			QuestObjective objective = objectives.get(i);
+			if (objective.isPlaceholder()) continue;
 			int progress = pqd.getObjectiveProgress(questKey, i);
 			boolean completed = progress >= selectedQuest.getObjectiveRequired(pqd, questKey, i);
 			String marker = completed ? "✓ " : "✕ ";
@@ -2842,6 +2857,11 @@ public class QuestTreeScreen extends BaseMenuScreen {
 	private boolean isLocalPartyLeader() {
 		if (statsData == null || Minecraft.getInstance().player == null) return false;
 		return statsData.getPlayerQuestData().isPartyLeader(Minecraft.getInstance().player.getUUID());
+	}
+
+	private boolean isLocalPartyOwner() {
+		if (statsData == null || Minecraft.getInstance().player == null) return false;
+		return statsData.getPlayerQuestData().isPartyOwner(Minecraft.getInstance().player.getUUID());
 	}
 
 	private PlayerQuestData.PartyInviteData getVisiblePartyInvite() {

@@ -168,6 +168,7 @@ public class ConfigManager {
 			stream.filter(Files::isRegularFile)
 					.filter(p -> p.toString().endsWith(".json"))
 					.filter(p -> !p.getFileName().toString().toLowerCase().startsWith("old_"))
+					.sorted(Comparator.comparing(p -> p.getFileName().toString()))
 					.forEach(path -> {
 						String id = path.getFileName().toString();
 						id = id.substring(0, id.length() - 5);
@@ -210,6 +211,7 @@ public class ConfigManager {
 			stream.filter(Files::isRegularFile)
 					.filter(p -> p.toString().endsWith(".json"))
 					.filter(p -> !p.getFileName().toString().toLowerCase().startsWith("old_"))
+					.sorted(Comparator.comparing(p -> p.getFileName().toString()))
 					.forEach(path -> {
 						String id = path.getFileName().toString();
 						id = id.substring(0, id.length() - 5);
@@ -649,6 +651,7 @@ public class ConfigManager {
 		try (Stream<Path> stream = Files.list(formsDir)) {
 			stream.filter(p -> p.toString().endsWith(".json"))
 					.filter(p -> !p.getFileName().toString().toLowerCase().startsWith("old_"))
+					.sorted(Comparator.comparing(p -> p.getFileName().toString()))
 					.forEach(p -> {
 						try {
 							FormConfig existing = LOADER.loadConfig(p, FormConfig.class);
@@ -678,6 +681,7 @@ public class ConfigManager {
 		try (Stream<Path> stream = Files.list(formsDir)) {
 			stream.filter(p -> p.toString().endsWith(".json"))
 					.filter(p -> !p.getFileName().toString().toLowerCase().startsWith("old_"))
+					.sorted(Comparator.comparing(p -> p.getFileName().toString()))
 					.forEach(p -> {
 						try {
 							FormConfig existing = LOADER.loadConfig(p, FormConfig.class);
@@ -865,7 +869,7 @@ public class ConfigManager {
 		for (String raceName : DEFAULT_RACES) createOrLoadRace(raceName, true);
 
 		try (var stream = Files.list(RACES_DIR)) {
-			stream.forEach(racePath -> {
+			stream.sorted(Comparator.comparing(p -> p.getFileName().toString())).forEach(racePath -> {
 				if (Files.isDirectory(racePath)) {
 					String raceName = racePath.getFileName().toString();
 					if (!isDefaultRace(raceName)) {

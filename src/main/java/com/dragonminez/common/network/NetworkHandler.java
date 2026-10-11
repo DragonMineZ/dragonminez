@@ -852,6 +852,12 @@ public class NetworkHandler {
 				.encoder(StrikeClashHoldS2C::encode)
 				.consumerMainThread(StrikeClashHoldS2C::handle)
 				.add();
+
+		net.messageBuilder(KickPartyMemberC2S.class, id(), NetworkDirection.PLAY_TO_SERVER)
+				.decoder(KickPartyMemberC2S::new)
+				.encoder(KickPartyMemberC2S::encode)
+				.consumerMainThread(KickPartyMemberC2S::handle)
+				.add();
 	}
 
 	public static <MSG> void sendToServer(MSG message) {

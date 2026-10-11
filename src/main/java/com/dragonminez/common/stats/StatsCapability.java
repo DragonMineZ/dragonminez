@@ -14,7 +14,6 @@ import com.dragonminez.common.network.S2C.SkinPixelsSyncS2C;
 import com.dragonminez.common.network.S2C.StatsSyncS2C;
 import com.dragonminez.common.network.S2C.SyncQuestRegistryS2C;
 import com.dragonminez.common.quest.PlayerQuestData;
-import com.dragonminez.common.quest.QuestRegistry;
 import com.dragonminez.common.util.TransformationsHelper;
 import com.dragonminez.server.world.structure.helper.QuestStructureHints;
 import net.minecraft.server.MinecraftServer;
@@ -82,14 +81,14 @@ public class StatsCapability {
 	public static void onPlayerLogin(PlayerEvent.PlayerLoggedInEvent event) {
 		if (event.getEntity() instanceof ServerPlayer serverPlayer) {
 			ConfigManager.sendConfigSync(serverPlayer);
-			NetworkHandler.sendToPlayer(new SyncQuestRegistryS2C(QuestRegistry.getAllSagas(), QuestRegistry.getAllQuests()), serverPlayer);
+			SyncQuestRegistryS2C.sendTo(serverPlayer);
 
 			MinecraftServer server = serverPlayer.getServer();
 			if (server != null && !QuestStructureHints.isResolved()) {
 				UUID playerId = serverPlayer.getUUID();
 				QuestStructureHints.ensureResolvedAsync(server).thenRun(() -> server.execute(() -> {
 					ServerPlayer online = server.getPlayerList().getPlayer(playerId);
-					if (online != null) NetworkHandler.sendToPlayer(new SyncQuestRegistryS2C(QuestRegistry.getAllSagas(), QuestRegistry.getAllQuests()), online);
+					if (online != null) SyncQuestRegistryS2C.sendTo(online);
 				}));
 			}
 

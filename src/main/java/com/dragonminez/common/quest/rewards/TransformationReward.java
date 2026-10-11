@@ -12,6 +12,9 @@ import lombok.Getter;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerPlayer;
 
+import java.util.HashSet;
+import java.util.Set;
+
 @Getter
 public class TransformationReward extends QuestReward {
 	private final String formGroup;
@@ -40,11 +43,12 @@ public class TransformationReward extends QuestReward {
 				masteries.setMastery(formGroup, formName, mastery, Double.MAX_VALUE);
 			}
 
-			grantRequisiteChain(character, character.getRaceName(), formGroup, formName);
+			grantRequisiteChain(character, character.getRaceName(), formGroup, formName, new HashSet<>());
 		});
 	}
 
-	private void grantRequisiteChain(Character character, String raceName, String group, String form) {
+	private void grantRequisiteChain(Character character, String raceName, String group, String form, Set<String> visited) {
+		if (!visited.add(group + "." + form)) return;
 		FormConfig config = ConfigManager.getFormGroup(raceName, group);
 		if (config == null) config = ConfigManager.getStackFormGroup(group);
 		if (config == null) return;
@@ -68,7 +72,7 @@ public class TransformationReward extends QuestReward {
 				reqMasteries.setMastery(reqGroup, reqForm, need, Double.MAX_VALUE);
 			}
 
-			grantRequisiteChain(character, raceName, reqGroup, reqForm);
+			grantRequisiteChain(character, raceName, reqGroup, reqForm, visited);
 		}
 	}
 

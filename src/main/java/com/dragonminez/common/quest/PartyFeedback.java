@@ -7,6 +7,7 @@ import net.minecraft.network.chat.HoverEvent;
 import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.server.level.ServerPlayer;
 
+import java.util.List;
 import java.util.Locale;
 import java.util.UUID;
 
@@ -30,7 +31,7 @@ public final class PartyFeedback {
 			case NO_PERMISSION -> inviter.sendSystemMessage(red("quest.dmz.party.invite.leader_offline"));
 			case TOURNAMENT_ACTIVE -> inviter.sendSystemMessage(red("tournament.dragonminez.party_locked"));
 			case PARTY_FULL -> inviter.sendSystemMessage(red("quest.dmz.party.invite.party_full_inviter",
-					PartyManager.getAllPartyMembers(inviter).size(), PartyManager.maxMembers()));
+					PartyManager.getPartySize(inviter), PartyManager.maxMembers()));
 			case LEVEL_GAP -> {
 				ServerPlayer leader = resolvedLeader(inviter);
 				String inviteeName = invitee.getGameProfile().getName();
@@ -50,6 +51,50 @@ public final class PartyFeedback {
 				invitee.sendSystemMessage(red("quest.dmz.party.invite.difficulty_low.invitee",
 						inviter.getGameProfile().getName(), partyDifficulty, inviteeDifficulty));
 			}
+		}
+	}
+
+	public static void leaveRequested(ServerPlayer player) {
+		if (!PartyManager.isInParty(player)) {
+			player.sendSystemMessage(red("quest.dmz.party.leave.solo"));
+			return;
+		}
+
+		boolean owner = PartyManager.isPartyOwner(player);
+		List<ServerPlayer> members = PartyManager.getAllPartyMembers(player);
+		if (owner) PartyManager.disbandParty(player);
+		else PartyManager.leaveParty(player);
+
+		player.sendSystemMessage(Component.translatable(owner ? "quest.dmz.party.disbanded.self" : "quest.dmz.party.left")
+				.withStyle(ChatFormatting.YELLOW));
+		for (ServerPlayer member : members) {
+			if (member == player) continue;
+			member.sendSystemMessage(Component.translatable(owner ? "quest.dmz.party.disbanded.other" : "quest.dmz.party.player.left",
+					player.getName()).withStyle(ChatFormatting.YELLOW));
+		}
+	}
+
+	public static void kick(ServerPlayer leader, UUID targetId, String targetName) {
+		List<ServerPlayer> members = PartyManager.getAllPartyMembers(leader);
+		PartyManager.KickResult result = PartyManager.kickMember(leader, targetId);
+		switch (result) {
+			case SUCCESS -> {
+				leader.sendSystemMessage(Component.translatable("quest.dmz.party.kick.success", targetName).withStyle(ChatFormatting.GREEN));
+				for (ServerPlayer member : members) {
+					if (member == leader) continue;
+					if (member.getUUID().equals(targetId)) {
+						member.sendSystemMessage(red("quest.dmz.party.kick.kicked"));
+					} else {
+						member.sendSystemMessage(Component.translatable("quest.dmz.party.player.kicked", targetName).withStyle(ChatFormatting.YELLOW));
+					}
+				}
+			}
+			case NOT_IN_PARTY -> leader.sendSystemMessage(red("quest.dmz.party.leave.solo"));
+			case NOT_LEADER -> leader.sendSystemMessage(red("quest.dmz.party.not_leader"));
+			case SELF -> leader.sendSystemMessage(red("quest.dmz.party.kick.self"));
+			case TARGET_NOT_IN_PARTY -> leader.sendSystemMessage(red("quest.dmz.party.kick.not_in_party"));
+			case OWNER -> leader.sendSystemMessage(red("quest.dmz.party.kick.owner"));
+			case TOURNAMENT_ACTIVE -> leader.sendSystemMessage(red("tournament.dragonminez.party_locked"));
 		}
 	}
 
@@ -73,7 +118,7 @@ public final class PartyFeedback {
 			case LEADER_OFFLINE -> invitee.sendSystemMessage(red("quest.dmz.party.accept.leader_offline"));
 			case PARTY_DISBANDED -> invitee.sendSystemMessage(red("quest.dmz.party.accept.party_gone"));
 			case PARTY_FULL -> {
-				int members = leader != null ? PartyManager.getAllPartyMembers(leader).size() : PartyManager.maxMembers();
+				int members = leader != null ? PartyManager.getPartySize(leader) : PartyManager.maxMembers();
 				invitee.sendSystemMessage(red("quest.dmz.party.accept.party_full", members, PartyManager.maxMembers()));
 				if (leader != null) leader.sendSystemMessage(red("quest.dmz.party.accept.party_full.leader",
 						invitee.getGameProfile().getName(), members, PartyManager.maxMembers()));

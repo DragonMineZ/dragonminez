@@ -73,26 +73,28 @@ public class QuestActionC2S {
 					case TURN_IN -> QuestService.turnInQuest(player, questId, npcId);
 				};
 
-				if (failure != null) {
+				if (failure != null && (npcId.isBlank() || actionType == ActionType.RESUMMON)) {
 					NetworkHandler.sendToPlayer(new QuestActionFeedbackS2C(
 							failure.copy().withStyle(ChatFormatting.RED)), player);
+				} else if (failure != null) {
+					player.sendSystemMessage(failure.copy().withStyle(ChatFormatting.RED));
 				}
-				replyToDialogue(player, failure == null);
+				replyToDialogue(player, failure == null, failure);
 			} catch (Exception exception) {
 				LogUtil.error(Env.SERVER, "Failed to handle quest action " + actionType + " for quest '"
 						+ questId + "' requested by " + player.getGameProfile().getName(), exception);
 				NetworkHandler.sendToPlayer(new QuestActionFeedbackS2C(
 						Component.translatable("message.dragonminez.quest.start.unavailable")
 								.withStyle(ChatFormatting.RED)), player);
-				replyToDialogue(player, false);
+				replyToDialogue(player, false, null);
 			}
 		});
 		context.setPacketHandled(true);
 	}
 
-	private void replyToDialogue(ServerPlayer player, boolean success) {
+	private void replyToDialogue(ServerPlayer player, boolean success, Component reason) {
 		if (npcId.isBlank() || actionType == ActionType.RESUMMON) return;
 		String action = actionType == ActionType.START ? DialogueResultS2C.questStart(questId) : DialogueResultS2C.questTurnIn(questId);
-		NetworkHandler.sendToPlayer(new DialogueResultS2C(npcId, action, success), player);
+		NetworkHandler.sendToPlayer(new DialogueResultS2C(npcId, action, success, success ? null : reason), player);
 	}
 }

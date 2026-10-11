@@ -14,6 +14,7 @@ import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -56,6 +57,7 @@ public class ConfigLoader {
 		try (var stream = Files.list(formsPath)) {
 			stream.filter(path -> path.toString().endsWith(".json"))
 					.filter(path -> !path.getFileName().toString().toLowerCase().startsWith("old_"))
+					.sorted(Comparator.comparing(path -> path.getFileName().toString()))
 					.forEach(formFile -> {
 						try {
 							FormConfig formConfig = loadConfig(formFile, FormConfig.class);
@@ -90,6 +92,7 @@ public class ConfigLoader {
 		try (var stream = Files.list(formsPath)) {
 			stream.filter(path -> path.toString().endsWith(".json"))
 					.filter(path -> !path.getFileName().toString().toLowerCase().startsWith("old_"))
+					.sorted(Comparator.comparing(path -> path.getFileName().toString()))
 					.forEach(formFile -> {
 						try {
 							FormConfig formConfig = loadConfig(formFile, FormConfig.class);

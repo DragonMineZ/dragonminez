@@ -145,6 +145,9 @@ public class StorageManager {
 				} finally {
 					pendingLoads.remove(uuid, loadToken);
 				}
+				if (!pendingLoads.containsKey(uuid) && isCurrentOnlinePlayer(player)) {
+					com.dragonminez.server.events.QuestEvents.onPlayerDataReady(player);
+				}
 			});
 		});
 	}

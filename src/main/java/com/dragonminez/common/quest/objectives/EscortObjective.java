@@ -22,13 +22,20 @@ public class EscortObjective extends QuestObjective {
 	private final BlockPos targetPos;
 	private final int radius;
 	private final double escortHealth;
+	@Nullable
+	private final String dimension;
 
 	public EscortObjective(String entityId, BlockPos targetPos, int radius, double escortHealth) {
+		this(entityId, targetPos, radius, escortHealth, null);
+	}
+
+	public EscortObjective(String entityId, BlockPos targetPos, int radius, double escortHealth, @Nullable String dimension) {
 		super(ObjectiveType.ESCORT, 1);
 		this.entityId = entityId;
 		this.targetPos = targetPos;
 		this.radius = Math.max(1, radius);
 		this.escortHealth = escortHealth;
+		this.dimension = dimension == null || dimension.isBlank() ? null : dimension.trim();
 	}
 
 	@Nullable

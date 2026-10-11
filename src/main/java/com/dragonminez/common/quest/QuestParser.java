@@ -15,6 +15,7 @@ import com.dragonminez.common.quest.objectives.KillObjective;
 import com.dragonminez.common.quest.objectives.SkillObjective;
 import com.dragonminez.common.quest.objectives.StructureObjective;
 import com.dragonminez.common.quest.objectives.TalkToObjective;
+import com.dragonminez.common.quest.objectives.PlaceholderObjective;
 import com.dragonminez.common.diagnostics.JsonKeys;
 import com.dragonminez.common.quest.rewards.CommandReward;
 import com.dragonminez.common.quest.rewards.AlignmentReward;
@@ -26,12 +27,14 @@ import com.dragonminez.common.quest.rewards.AttributePointsReward;
 import com.dragonminez.common.quest.rewards.AttributesReward;
 import com.dragonminez.common.quest.rewards.TPSReward;
 import com.dragonminez.common.quest.rewards.TransformationReward;
+import com.dragonminez.common.quest.rewards.PlaceholderReward;
 import com.dragonminez.common.stats.techniques.KiAttackData;
 import com.dragonminez.common.util.gson.GsonUtils;
 import com.dragonminez.common.util.types.items.GenericItemDTO;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
+import com.google.gson.JsonPrimitive;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.resources.ResourceLocation;
@@ -43,6 +46,7 @@ import net.minecraft.world.item.Items;
 import java.util.ArrayList;
 import java.util.EnumSet;
 import java.util.List;
+import java.util.Locale;
 import java.util.Set;
 
 /**
@@ -53,29 +57,20 @@ public class QuestParser {
 	 * Parses a quest from the unified quest JSON format.
 	 */
 	public static Quest parseQuest(JsonObject json) {
-		if (json == null || !json.has("id") || !json.has("title") || !json.has("type")) {
+		if (rejectionReason(json) != null) {
 			return null;
 		}
 
 		int numericId = -1;
 		String stringId = null;
-		JsonElement idElement = json.get("id");
-		if (idElement.getAsJsonPrimitive().isNumber()) {
+		JsonPrimitive idElement = json.getAsJsonPrimitive("id");
+		if (idElement.isNumber()) {
 			numericId = idElement.getAsInt();
 		} else {
 			stringId = idElement.getAsString();
 		}
 
-		if (numericId == -1 && (stringId == null || stringId.isBlank())) {
-			return null;
-		}
-
-		Quest.QuestType type;
-		try {
-			type = Quest.QuestType.valueOf(json.get("type").getAsString().toUpperCase());
-		} catch (IllegalArgumentException ignored) {
-			return null;
-		}
+		Quest.QuestType type = parseQuestType(json.get("type").getAsString());
 
 		String title = json.get("title").getAsString();
 		String description = json.has("description") ? json.get("description").getAsString() : "";
@@ -89,9 +84,7 @@ public class QuestParser {
 				? json.get("turn_in").getAsString()
 				: null;
 		boolean secret = json.has("secret") && json.get("secret").getAsBoolean();
-		Quest.ClaimMode claimMode = parseClaimMode(json.has("claim_mode") && !json.get("claim_mode").isJsonNull()
-				? json.get("claim_mode").getAsString()
-				: null);
+		Quest.ClaimMode claimMode = parseClaimMode(rawClaimMode(json));
 
 		QuestPrerequisites prerequisites = parseConditionsBlock(json, "prerequisites");
 		QuestPrerequisites startRequirements = parseConditionsBlock(json, "requirements");
@@ -108,6 +101,82 @@ public class QuestParser {
 		quest.setTimeLimitSeconds(json.has("time_limit_seconds") ? json.get("time_limit_seconds").getAsInt() : 0);
 
 		return quest;
+	}
+
+	public static String rejectionReason(JsonObject json) {
+		if (json == null) {
+			return "the file is empty or is not a JSON object";
+		}
+		for (String key : new String[]{"id", "title", "type"}) {
+			if (!json.has(key) || json.get(key).isJsonNull()) {
+				return "missing required field '" + key + "'";
+			}
+			if (!json.get(key).isJsonPrimitive()) {
+				return "field '" + key + "' must be a plain value, not an object or a list";
+			}
+		}
+		JsonPrimitive id = json.getAsJsonPrimitive("id");
+		if (id.isNumber()) {
+			if (id.getAsInt() == -1) {
+				return "'id' -1 is reserved, use another id";
+			}
+		} else if (id.getAsString().isBlank()) {
+			return "'id' is blank";
+		}
+		String rawType = json.get("type").getAsString();
+		if (parseQuestType(rawType) == null) {
+			return "unknown quest type '" + rawType + "' (expected SAGA, SIDEQUEST, DAILY or EVENT)";
+		}
+		return null;
+	}
+
+	public static List<String> describeIssues(JsonObject json, Quest quest) {
+		List<String> issues = new ArrayList<>();
+		if (json == null || quest == null) {
+			return issues;
+		}
+
+		List<QuestObjective> objectives = quest.getObjectives();
+		for (int i = 0; i < objectives.size(); i++) {
+			if (objectives.get(i) instanceof PlaceholderObjective placeholder && placeholder.isTypeKnown()) {
+				issues.add("objectives[" + i + "]" + typeLabel(placeholder.getOriginalType()) + " ignored: "
+						+ placeholder.getReason() + " (it counts as already done)");
+			}
+		}
+
+		List<QuestReward> rewards = quest.getRewards();
+		for (int i = 0; i < rewards.size(); i++) {
+			if (rewards.get(i) instanceof PlaceholderReward placeholder && placeholder.isTypeKnown()) {
+				issues.add("rewards[" + i + "]" + typeLabel(placeholder.getOriginalType()) + " ignored: "
+						+ placeholder.getReason() + " (it can never be claimed)");
+			}
+		}
+
+		if (parseClaimMode(rawClaimMode(json)) == Quest.ClaimMode.NPC_ONLY && quest.getClaimMode() != Quest.ClaimMode.NPC_ONLY) {
+			issues.add("claim_mode NPC_ONLY needs a 'turn_in' NPC; using TREE_OR_NPC so the rewards can still be claimed");
+		}
+		return issues;
+	}
+
+	private static String typeLabel(String type) {
+		return type == null || type.isBlank() ? "" : " (" + type + ")";
+	}
+
+	private static String rawClaimMode(JsonObject json) {
+		return json.has("claim_mode") && !json.get("claim_mode").isJsonNull()
+				? json.get("claim_mode").getAsString()
+				: null;
+	}
+
+	private static Quest.QuestType parseQuestType(String raw) {
+		if (raw == null || raw.isBlank()) {
+			return null;
+		}
+		try {
+			return Quest.QuestType.valueOf(raw.trim().toUpperCase(Locale.ROOT));
+		} catch (IllegalArgumentException ignored) {
+			return null;
+		}
 	}
 
 	private static QuestPrerequisites parseConditionsBlock(JsonObject json, String key) {
@@ -128,10 +197,9 @@ public class QuestParser {
 
 		JsonArray objArray = questJson.getAsJsonArray("objectives");
 		for (JsonElement element : objArray) {
-			QuestObjective obj = parseObjective(element.getAsJsonObject());
-			if (obj != null) {
-				objectives.add(obj);
-			}
+			objectives.add(element != null && element.isJsonObject()
+					? parseObjectiveOrPlaceholder(element.getAsJsonObject())
+					: new PlaceholderObjective(null, "the entry is not a JSON object", true));
 		}
 		return objectives;
 	}
@@ -140,18 +208,34 @@ public class QuestParser {
 	 * Parses a single objective from a JSON object.
 	 */
 	public static QuestObjective parseObjective(JsonObject json) {
-		if (json == null || !json.has("type")) {
-			return null;
+		QuestObjective objective = parseObjectiveOrPlaceholder(json);
+		return objective.isPlaceholder() ? null : objective;
+	}
+
+	public static QuestObjective parseObjectiveOrPlaceholder(JsonObject json) {
+		try {
+			return parseObjectiveUnchecked(json);
+		} catch (RuntimeException e) {
+			return new PlaceholderObjective(rawType(json), "invalid entry (" + e + ")", true);
+		}
+	}
+
+	private static QuestObjective parseObjectiveUnchecked(JsonObject json) {
+		if (json == null) {
+			return new PlaceholderObjective(null, "the entry is not a JSON object", true);
+		}
+		if (!json.has("type") || json.get("type").isJsonNull()) {
+			return new PlaceholderObjective(null, "missing 'type'", false);
 		}
 
 		String type = json.get("type").getAsString();
 
-		return switch (type.toUpperCase()) {
+		return switch (type.trim().toUpperCase(Locale.ROOT)) {
 			case "ITEM" -> {
 				String itemId = json.get("item").getAsString();
 				int count = json.get("count").getAsInt();
-				Item item = BuiltInRegistries.ITEM.get(ResourceLocation.parse(itemId));
-				yield (item != Items.AIR) ? new ItemObjective(item, count) : null;
+				Item item = resolveItem(itemId);
+				yield item != null ? new ItemObjective(item, count) : invalidObjective(type, "item '" + itemId + "' does not exist");
 			}
 			case "KILL", "SPAR" -> {
 				String entityId = json.get("entity").getAsString();
@@ -181,7 +265,7 @@ public class QuestParser {
 				Double transformMeleeMultiplier = getNullableDouble(json, "TransformMeleeDamageMultiplier");
 				Double transformKiMultiplier = getNullableDouble(json, "TransformKiMultiplier");
 				Double transformTriggerPercent = getNullableDouble(json, "TransformTriggerPercent");
-				yield "SPAR".equalsIgnoreCase(type)
+				yield "SPAR".equalsIgnoreCase(type.trim())
 						? new SparObjective(entityId, killCount, health, meleeDamage, kiDamage, spawnMode, countMode, textureVariant, aiTier, canTransform)
 						: new KillObjective(entityId, killCount, health, meleeDamage, kiDamage, spawnMode, countMode,
 								textureVariant, aiTier, canTransform, transformHealth, transformMeleeDamage, transformKiDamage,
@@ -212,19 +296,20 @@ public class QuestParser {
 			}
 			case "TALK_TO" -> {
 				String npcId = json.has("npcId") ? json.get("npcId").getAsString() : null;
-				yield npcId != null ? new TalkToObjective(npcId) : null;
+				yield npcId != null ? new TalkToObjective(npcId) : invalidObjective(type, "missing 'npcId'");
 			}
 			case "SKILL" -> {
 				String skill = firstString(json, "skill", "skillId", "id");
 				int level = firstInt(json, 1, "level", "minLevel", "required");
-				yield skill != null ? new SkillObjective(skill, level) : null;
+				yield skill != null ? new SkillObjective(skill, level) : invalidObjective(type, "missing 'skill'");
 			}
 			case "DELIVER" -> {
 				String itemId = json.get("item").getAsString();
 				int count = json.has("count") ? json.get("count").getAsInt() : 1;
 				String npcId = firstString(json, "npcId", "npc_id", "npc");
-				Item item = BuiltInRegistries.ITEM.get(ResourceLocation.parse(itemId));
-				yield (item != Items.AIR && npcId != null) ? new DeliverObjective(item, itemId, count, npcId) : null;
+				Item item = resolveItem(itemId);
+				if (item == null) yield invalidObjective(type, "item '" + itemId + "' does not exist");
+				yield npcId != null ? new DeliverObjective(item, itemId, count, npcId) : invalidObjective(type, "missing 'npcId'");
 			}
 			case "SURVIVE_WAVES" -> {
 				String entityId = json.get("entity").getAsString();
@@ -248,7 +333,7 @@ public class QuestParser {
 				BlockPos targetPos = new BlockPos(json.get("x").getAsInt(), json.get("y").getAsInt(), json.get("z").getAsInt());
 				int radius = json.has("radius") ? json.get("radius").getAsInt() : 6;
 				double health = json.has("health") ? json.get("health").getAsDouble() : 0.0;
-				yield new EscortObjective(entityId, targetPos, radius, health);
+				yield new EscortObjective(entityId, targetPos, radius, health, firstString(json, "dimension"));
 			}
 			case "CHECKPOINT_RACE" -> {
 				int radius = json.has("radius") ? json.get("radius").getAsInt() : 8;
@@ -260,10 +345,34 @@ public class QuestParser {
 						checkpoints.add(new BlockPos(point.get("x").getAsInt(), point.get("y").getAsInt(), point.get("z").getAsInt()));
 					}
 				}
-				yield checkpoints.isEmpty() ? null : new CheckpointRaceObjective(checkpoints, radius);
+				yield checkpoints.isEmpty()
+						? invalidObjective(type, "it has no checkpoints")
+						: new CheckpointRaceObjective(checkpoints, radius, firstString(json, "dimension"));
 			}
-			default -> QuestObjectiveRegistry.parse(type, json);
+			default -> {
+				if (!QuestObjectiveRegistry.isRegistered(type)) {
+					yield new PlaceholderObjective(type, "unknown objective type '" + type + "'", false);
+				}
+				QuestObjective parsed = QuestObjectiveRegistry.parse(type, json);
+				yield parsed != null ? parsed : invalidObjective(type, "the registered objective type failed to parse it");
+			}
 		};
+	}
+
+	private static QuestObjective invalidObjective(String type, String reason) {
+		return new PlaceholderObjective(type, reason, true);
+	}
+
+	private static Item resolveItem(String itemId) {
+		if (itemId == null || itemId.isBlank()) {
+			return null;
+		}
+		try {
+			Item item = BuiltInRegistries.ITEM.get(ResourceLocation.parse(itemId));
+			return item != Items.AIR ? item : null;
+		} catch (RuntimeException ignored) {
+			return null;
+		}
 	}
 
 	/**
@@ -277,10 +386,9 @@ public class QuestParser {
 
 		JsonArray rewardArray = questJson.getAsJsonArray("rewards");
 		for (JsonElement element : rewardArray) {
-			QuestReward reward = parseReward(element.getAsJsonObject());
-			if (reward != null) {
-				rewards.add(reward);
-			}
+			rewards.add(element != null && element.isJsonObject()
+					? parseRewardOrPlaceholder(element.getAsJsonObject())
+					: new PlaceholderReward(null, "the entry is not a JSON object", true));
 		}
 		return rewards;
 	}
@@ -289,8 +397,32 @@ public class QuestParser {
 	 * Parses a single reward from a JSON object.
 	 */
 	public static QuestReward parseReward(JsonObject json) {
-		if (json == null || !json.has("type")) {
+		QuestReward reward = parseRewardOrPlaceholder(json);
+		return reward.isPlaceholder() ? null : reward;
+	}
+
+	public static QuestReward parseRewardOrPlaceholder(JsonObject json) {
+		try {
+			return parseRewardUnchecked(json);
+		} catch (RuntimeException e) {
+			return new PlaceholderReward(rawType(json), "invalid entry (" + e + ")", true);
+		}
+	}
+
+	private static String rawType(JsonObject json) {
+		try {
+			return json != null && json.has("type") && json.get("type").isJsonPrimitive() ? json.get("type").getAsString() : null;
+		} catch (RuntimeException e) {
 			return null;
+		}
+	}
+
+	private static QuestReward parseRewardUnchecked(JsonObject json) {
+		if (json == null) {
+			return new PlaceholderReward(null, "the entry is not a JSON object", true);
+		}
+		if (!json.has("type") || json.get("type").isJsonNull()) {
+			return new PlaceholderReward(null, "missing 'type'", false);
 		}
 
 		String type = json.get("type").getAsString();
@@ -298,27 +430,27 @@ public class QuestParser {
 
 		// Pre-2.2 files encoded reward difficulty as a "hard:"/"normal:" prefix on the type.
 		boolean explicitDifficulty = firstElement(json, "difficulty", "difficulties", "difficultyType", "minDifficulty") != null;
-		if (type.toLowerCase().startsWith("hard:")) {
+		if (type.toLowerCase(Locale.ROOT).startsWith("hard:")) {
 			type = type.substring("hard:".length());
 			if (!explicitDifficulty) difficulties = EnumSet.of(Difficulty.HARD);
-		} else if (type.toLowerCase().startsWith("normal:")) {
+		} else if (type.toLowerCase(Locale.ROOT).startsWith("normal:")) {
 			type = type.substring("normal:".length());
 			if (!explicitDifficulty) difficulties = EnumSet.of(Difficulty.EASY, Difficulty.NORMAL);
 		}
 
-		QuestReward reward = switch (type.toUpperCase()) {
+		QuestReward reward = switch (type.trim().toUpperCase(Locale.ROOT)) {
 			case "ITEM" -> {
 				String itemId = json.get("item").getAsString();
 				int count = json.has("count") ? json.get("count").getAsInt() : 1;
-				Item item = BuiltInRegistries.ITEM.get(ResourceLocation.parse(itemId));
-				yield (item != Items.AIR) ? new ItemReward(new ItemStack(item, count)) : null;
+				Item item = resolveItem(itemId);
+				yield item != null ? new ItemReward(new ItemStack(item, count)) : invalidReward(type, "item '" + itemId + "' does not exist");
 			}
 			case "GENERIC_ITEM" -> {
 				GenericItemDTO genericItem = GsonUtils.GSON.fromJson(
 						json.getAsJsonObject("itemReward"),
 						GenericItemDTO.class
 				);
-				yield (genericItem != null) ? new GenericItemReward(genericItem) : null;
+				yield genericItem != null ? new GenericItemReward(genericItem) : invalidReward(type, "missing 'itemReward'");
 			}
 			case "TPS" -> new TPSReward(json.get("amount").getAsInt());
 			case "ATTRIBUTES" -> new AttributesReward(json.get("amount").getAsInt());
@@ -333,24 +465,34 @@ public class QuestParser {
 			case "TRANSFORMATION" -> {
 				String formGroup = firstString(json, "formGroup", "form_group", "group");
 				String formName = firstString(json, "formName", "form_name", "form");
-				if (formGroup == null || formName == null) yield null;
+				if (formGroup == null || formName == null) yield invalidReward(type, "missing 'formGroup' or 'formName'");
 				double mastery = json.has("mastery") ? json.get("mastery").getAsDouble() : 100.0;
 				boolean stack = json.has("stack") && json.get("stack").getAsBoolean();
 				yield new TransformationReward(formGroup, formName, mastery, stack);
 			}
 			case "KI_TECHNIQUE" -> {
 				String code = firstString(json, "code", "techniqueCode", "technique_code");
-				if (code == null) yield null;
+				if (code == null) yield invalidReward(type, "missing 'code'");
 				KiAttackData technique = KiAttackData.importFromCode(code);
-				yield technique != null ? new KiTechniqueReward(technique) : null;
+				yield technique != null ? new KiTechniqueReward(technique) : invalidReward(type, "the ki technique code is not valid");
 			}
-			default -> QuestRewardRegistry.parse(type, json);
+			default -> {
+				if (!QuestRewardRegistry.isRegistered(type)) {
+					yield new PlaceholderReward(type, "unknown reward type '" + type + "'", false);
+				}
+				QuestReward parsed = QuestRewardRegistry.parse(type, json);
+				yield parsed != null ? parsed : invalidReward(type, "the registered reward type failed to parse it");
+			}
 		};
 
-		if (reward != null) {
+		if (!reward.isPlaceholder()) {
 			reward.setDifficulties(difficulties);
 		}
 		return reward;
+	}
+
+	private static QuestReward invalidReward(String type, String reason) {
+		return new PlaceholderReward(type, reason, true);
 	}
 
 	private static Set<Difficulty> parseRewardDifficulties(JsonObject json) {
@@ -376,7 +518,7 @@ public class QuestParser {
 		for (String token : raw.split("[,\\s]+")) {
 			if (token.isBlank()) continue;
 			try {
-				out.add(Difficulty.valueOf(token.trim().toUpperCase()));
+				out.add(Difficulty.valueOf(token.trim().toUpperCase(Locale.ROOT)));
 			} catch (IllegalArgumentException ignored) {
 				// Unknown difficulty name — skip it.
 			}
@@ -420,7 +562,7 @@ public class QuestParser {
 			return fallback;
 		}
 
-		String normalized = rawMode.trim().toUpperCase().replace('-', '_').replace(' ', '_');
+		String normalized = rawMode.trim().toUpperCase(Locale.ROOT).replace('-', '_').replace(' ', '_');
 		try {
 			return Enum.valueOf(enumClass, normalized);
 		} catch (IllegalArgumentException ignored) {
@@ -471,7 +613,7 @@ public class QuestParser {
 			return null;
 		}
 
-		String type = json.get("type").getAsString().toUpperCase();
+		String type = json.get("type").getAsString().toUpperCase(Locale.ROOT);
 		return switch (type) {
 			case "SAGA_QUEST" -> QuestPrerequisites.Condition.sagaQuest(
 					json.get("sagaId").getAsString(),
@@ -479,7 +621,7 @@ public class QuestParser {
 			);
 			case "QUEST" -> QuestPrerequisites.Condition.quest(json.get("questId").getAsString());
 			case "STAT" -> QuestPrerequisites.Condition.stat(
-					json.get("stat").getAsString().toUpperCase(),
+					json.get("stat").getAsString().toUpperCase(Locale.ROOT),
 					json.get("minValue").getAsInt()
 			);
 			case "LEVEL" -> QuestPrerequisites.Condition.level(json.get("minLevel").getAsInt());
@@ -548,7 +690,7 @@ public class QuestParser {
 			return QuestPrerequisites.TimeMode.GAME_TIME;
 		}
 
-		String normalized = rawMode.trim().toUpperCase().replace('-', '_').replace(' ', '_');
+		String normalized = rawMode.trim().toUpperCase(Locale.ROOT).replace('-', '_').replace(' ', '_');
 
 		try {
 			return QuestPrerequisites.TimeMode.valueOf(normalized);
@@ -609,7 +751,7 @@ public class QuestParser {
 
 	private static void validateObjective(String source, String file, String path, JsonObject json) {
 		String rawType = json.has("type") && !json.get("type").isJsonNull() ? json.get("type").getAsString() : null;
-		String type = rawType != null ? rawType.toUpperCase() : null;
+		String type = rawType != null ? rawType.toUpperCase(Locale.ROOT) : null;
 		Set<String> allowed;
 		switch (type == null ? "" : type) {
 			case "ITEM" -> allowed = JsonKeys.of("type", "item", "count");
@@ -623,8 +765,8 @@ public class QuestParser {
 			case "SURVIVE_WAVES" -> allowed = JsonKeys.of("type", "entity", "waves", "mobs_per_wave", "mobsPerWave",
 					"wave_delay_seconds", "waveDelaySeconds", "health", "meleeDamage", "kiDamage",
 					"TextureVariant", "AITier", "CanTransform", "canTransform");
-			case "ESCORT" -> allowed = JsonKeys.of("type", "entity", "x", "y", "z", "radius", "health");
-			case "CHECKPOINT_RACE" -> allowed = JsonKeys.of("type", "radius", "checkpoints");
+			case "ESCORT" -> allowed = JsonKeys.of("type", "entity", "x", "y", "z", "radius", "health", "dimension");
+			case "CHECKPOINT_RACE" -> allowed = JsonKeys.of("type", "radius", "checkpoints", "dimension");
 			case "BIOME" -> allowed = JsonKeys.of("type", "biome");
 			case "DIMENSION" -> allowed = JsonKeys.of("type", "dimension");
 			case "COORDS" -> allowed = JsonKeys.of("type", "x", "y", "z", "radius");
@@ -644,10 +786,10 @@ public class QuestParser {
 
 	private static void validateReward(String source, String file, String path, JsonObject json) {
 		String rawType = json.has("type") && !json.get("type").isJsonNull() ? json.get("type").getAsString() : null;
-		if (rawType != null && (rawType.toLowerCase().startsWith("hard:") || rawType.toLowerCase().startsWith("normal:"))) {
+		if (rawType != null && (rawType.toLowerCase(Locale.ROOT).startsWith("hard:") || rawType.toLowerCase(Locale.ROOT).startsWith("normal:"))) {
 			rawType = rawType.substring(rawType.indexOf(':') + 1);
 		}
-		String type = rawType != null ? rawType.toUpperCase() : null;
+		String type = rawType != null ? rawType.toUpperCase(Locale.ROOT) : null;
 		Set<String> common = JsonKeys.of("type", "difficulty", "difficulties", "difficultyType", "minDifficulty");
 		Set<String> allowed;
 		switch (type == null ? "" : type) {
@@ -691,7 +833,7 @@ public class QuestParser {
 			return;
 		}
 
-		String type = json.has("type") && !json.get("type").isJsonNull() ? json.get("type").getAsString().toUpperCase() : null;
+		String type = json.has("type") && !json.get("type").isJsonNull() ? json.get("type").getAsString().toUpperCase(Locale.ROOT) : null;
 		Set<String> allowed;
 		switch (type == null ? "" : type) {
 			case "SAGA_QUEST" -> allowed = JsonKeys.of("type", "sagaId", "questId");

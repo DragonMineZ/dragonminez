@@ -38,6 +38,10 @@ public class QuestAvailabilityChecker {
 		return evaluate(quest.getStartRequirements(), new EvaluationContext(statsData, player, questKey), EvalOptions.STRICT);
 	}
 
+	public static boolean hasTimedStartRequirement(Quest quest) {
+		return quest != null && quest.hasStartRequirements() && containsTimeCondition(quest.getStartRequirements());
+	}
+
 	public static boolean primeStartRequirementTiming(Quest quest, String questKey, Player player, StatsData statsData) {
 		if (quest == null || statsData == null || player == null) return false;
 		if (player.level().isClientSide) return false;

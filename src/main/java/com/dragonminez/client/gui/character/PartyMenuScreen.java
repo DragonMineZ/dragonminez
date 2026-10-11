@@ -383,9 +383,18 @@ public class PartyMenuScreen extends BaseMenuScreen {
 			default -> {
 				actionBtn.visible = true;
 				actionBtn.active = true;
-				actionBtn.setMessage(tr(isSelf ? "gui.dragonminez.party.leave" : "gui.dragonminez.party.kick"));
+				String selfKey = isLocalPartyOwner() ? "gui.dragonminez.party.disband" : "gui.dragonminez.party.leave";
+				actionBtn.setMessage(tr(isSelf ? selfKey : "gui.dragonminez.party.kick"));
 			}
 		}
+	}
+
+	private boolean isLocalPartyOwner() {
+		Player player = Minecraft.getInstance().player;
+		if (player == null) return false;
+		return StatsProvider.get(StatsCapability.INSTANCE, player)
+				.map(data -> data.getPlayerQuestData().isPartyOwner(player.getUUID()))
+				.orElse(false);
 	}
 
 	private void executePlayerAction() {
@@ -393,7 +402,6 @@ public class PartyMenuScreen extends BaseMenuScreen {
 
 		PartyEntry target = displayList.get(selectedIndex);
 		boolean isSelf = target.id().equals(Minecraft.getInstance().player.getUUID());
-		String name = target.name();
 
 		switch (currentView) {
 			case CREATE -> {
@@ -404,8 +412,13 @@ public class PartyMenuScreen extends BaseMenuScreen {
 			}
 			case JOIN -> answerInvite(true);
 			default -> {
-				if (isSelf) Minecraft.getInstance().player.connection.sendCommand("dmzparty leave");
-				else Minecraft.getInstance().player.connection.sendCommand("dmzparty kick " + name);
+				if (isSelf) {
+					com.dragonminez.common.network.NetworkHandler.sendToServer(
+							new com.dragonminez.common.network.C2S.LeavePartyC2S());
+				} else {
+					com.dragonminez.common.network.NetworkHandler.sendToServer(
+							new com.dragonminez.common.network.C2S.KickPartyMemberC2S(target.id()));
+				}
 			}
 		}
 	}

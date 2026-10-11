@@ -1,5 +1,7 @@
 package com.dragonminez.server.commands;
 
+import com.dragonminez.Env;
+import com.dragonminez.LogUtil;
 import com.dragonminez.common.config.ConfigManager;
 import com.dragonminez.common.alignment.NpcAlignmentRules;
 import com.dragonminez.common.network.NetworkHandler;
@@ -69,30 +71,32 @@ public class ReloadCommand {
 				WishManager.loadWishes(server);
 			}
 
+			SyncQuestRegistryS2C questSync = scope.includesStory() ? SyncQuestRegistryS2C.fromRegistry() : null;
 			int syncedPlayers = 0;
 			for (ServerPlayer player : server.getPlayerList().getPlayers()) {
-				if (scope.includesConfig()) {
-					ConfigManager.sendConfigSync(player);
+				try {
+					if (scope.includesConfig()) {
+						ConfigManager.sendConfigSync(player);
 
-					StatsProvider.get(StatsCapability.INSTANCE, player).ifPresent(data -> {
-						String raceName = data.getCharacter().getRaceName();
-						if (raceName != null && !raceName.isEmpty()) data.updateTransformationSkillLimits(raceName);
-						else data.getSkills().refreshNonFormSkillMaxLevels();
-						NetworkHandler.sendToTrackingEntityAndSelf(new ProgressionSyncS2C(player), player);
-					});
-				}
+						StatsProvider.get(StatsCapability.INSTANCE, player).ifPresent(data -> {
+							String raceName = data.getCharacter().getRaceName();
+							if (raceName != null && !raceName.isEmpty()) data.updateTransformationSkillLimits(raceName);
+							else data.getSkills().refreshNonFormSkillMaxLevels();
+							NetworkHandler.sendToTrackingEntityAndSelf(new ProgressionSyncS2C(player), player);
+						});
+					}
 
-				if (scope.includesStory()) {
-					NetworkHandler.sendToPlayer(
-							new SyncQuestRegistryS2C(QuestRegistry.getAllSagas(), QuestRegistry.getAllQuests()),
-							player
-					);
-				}
+					if (scope.includesStory()) {
+						SyncQuestRegistryS2C.sendTo(questSync, player);
+					}
 
-				if (scope.includesWishes()) {
-					NetworkHandler.sendToPlayer(new SyncWishesS2C(WishManager.getAllWishes()), player);
+					if (scope.includesWishes()) {
+						NetworkHandler.sendToPlayer(new SyncWishesS2C(WishManager.getAllWishes()), player);
+					}
+					syncedPlayers++;
+				} catch (Exception e) {
+					LogUtil.error(Env.SERVER, "Failed to resync {} after /dmzreload: {}", player.getGameProfile().getName(), e.toString());
 				}
-				syncedPlayers++;
 			}
 
 			logConsoleReport();

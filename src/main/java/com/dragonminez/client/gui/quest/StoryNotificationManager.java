@@ -52,6 +52,9 @@ public final class StoryNotificationManager {
 		}
 
 		QuestObjective objective = quest.getObjectives().get(idx);
+		if (objective.isPlaceholder()) {
+			return toComponent(quest.getTitle());
+		}
 		Component objectiveText = QuestTextFormatter.describeObjective(objective);
 		int progress = message.getObjectiveProgress();
 		int required = message.getObjectiveRequired();
