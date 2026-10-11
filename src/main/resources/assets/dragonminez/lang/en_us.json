@@ -3088,7 +3088,7 @@
   "command.dragonminez.points.remove.multiple": "§e[DMZ-Points]§r Removed %s Training Points from %d players.",
   "command.dragonminez.points.invalid_number": "§e[DMZ-Points]§r Invalid number: %s",
   "command.dragonminez.debug.success": "§e[DMZ-Debug]§r Debug file for %s created at: %s",
-  "command.dragonminez.debug.invalid_value": "§e[DMZ-Debug]§r Invalid debug value '%s'. Use: ALL, STATS, CHARACTER, TECHNIQUES",
+  "command.dragonminez.debug.invalid_value": "§e[DMZ-Debug]§r Invalid debug value '%s'. Use: ALL, STATS, CHARACTER, TECHNIQUES, QUESTS",
   "command.dragonminez.debug.no_data": "§e[DMZ-Debug]§r No stats data available for %s",
   "command.dragonminez.debug.error": "§e[DMZ-Debug]§r Failed to create debug file: %s",
   "command.dragonminez.saiyantail.set.success": "§e[DMZ-SaiyanTail]§r Saiyan Tail set to %s for %s",
