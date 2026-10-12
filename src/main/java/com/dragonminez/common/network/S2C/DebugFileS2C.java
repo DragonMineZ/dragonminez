@@ -17,7 +17,7 @@ import java.util.zip.GZIPInputStream;
 import java.util.zip.GZIPOutputStream;
 
 public class DebugFileS2C {
-	private static final int MAX_COMPRESSED_BYTES = 4 * 1024 * 1024;
+	private static final int MAX_COMPRESSED_BYTES = 1000 * 1000;
 	private static final int MAX_TEXT_BYTES = 16 * 1024 * 1024;
 
 	private final String playerName;
@@ -26,6 +26,10 @@ public class DebugFileS2C {
 	public DebugFileS2C(String playerName, String text) {
 		this.playerName = playerName;
 		this.compressed = compress(text);
+	}
+
+	public boolean fitsInPacket() {
+		return compressed.length <= MAX_COMPRESSED_BYTES;
 	}
 
 	public DebugFileS2C(FriendlyByteBuf buf) {
@@ -57,10 +61,11 @@ public class DebugFileS2C {
 
 	private static String decompress(byte[] data) {
 		try (InputStream gzip = new GZIPInputStream(new ByteArrayInputStream(data))) {
-			byte[] bytes = gzip.readNBytes(MAX_TEXT_BYTES);
+			byte[] bytes = gzip.readNBytes(MAX_TEXT_BYTES + 1);
+			if (bytes.length > MAX_TEXT_BYTES) return null;
 			return new String(bytes, StandardCharsets.UTF_8);
 		} catch (IOException exception) {
-			return "Failed to decode debug data: " + exception.getMessage();
+			return null;
 		}
 	}
 }
