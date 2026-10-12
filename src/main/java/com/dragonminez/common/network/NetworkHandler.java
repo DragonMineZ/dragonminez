@@ -864,6 +864,12 @@ public class NetworkHandler {
 				.encoder(DebugFileS2C::encode)
 				.consumerMainThread(DebugFileS2C::handle)
 				.add();
+
+		net.messageBuilder(VehicleFlightModeC2S.class, id(), NetworkDirection.PLAY_TO_SERVER)
+				.decoder(VehicleFlightModeC2S::new)
+				.encoder(VehicleFlightModeC2S::encode)
+				.consumerMainThread(VehicleFlightModeC2S::handle)
+				.add();
 	}
 
 	public static <MSG> void sendToServer(MSG message) {
