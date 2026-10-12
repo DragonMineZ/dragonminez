@@ -3,6 +3,8 @@ package com.dragonminez.server.commands;
 import com.dragonminez.Reference;
 import com.dragonminez.common.config.ConfigManager;
 import com.dragonminez.common.hair.HairStyleSlot;
+import com.dragonminez.common.network.NetworkHandler;
+import com.dragonminez.common.network.S2C.DebugFileS2C;
 import com.dragonminez.common.quest.PlayerQuestData;
 import com.dragonminez.common.stats.StatsCapability;
 import com.dragonminez.common.stats.StatsData;
@@ -17,6 +19,7 @@ import com.google.gson.JsonObject;
 import com.google.gson.JsonPrimitive;
 import com.mojang.brigadier.CommandDispatcher;
 import com.mojang.brigadier.arguments.StringArgumentType;
+import com.mojang.brigadier.exceptions.CommandSyntaxException;
 import com.mojang.brigadier.suggestion.SuggestionProvider;
 import net.minecraft.ChatFormatting;
 import net.minecraft.SharedConstants;
@@ -46,8 +49,10 @@ import java.time.temporal.ChronoUnit;
 import java.util.Collection;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 import java.util.TreeSet;
 import java.util.UUID;
+import java.util.concurrent.ConcurrentHashMap;
 
 public class DebugCommand {
 	private static final int SCHEMA_VERSION = 1;
@@ -56,18 +61,28 @@ public class DebugCommand {
 	private static final SuggestionProvider<CommandSourceStack> DEBUG_VALUE_SUGGESTIONS = (ctx, builder) ->
 			SharedSuggestionProvider.suggest(List.of("ALL", "STATS", "CHARACTER", "TECHNIQUES", "QUESTS"), builder);
 
+	private static final long COOLDOWN_MS = 5000L;
+	private static final Map<UUID, Long> LAST_USE = new ConcurrentHashMap<>();
+
 	public static void register(CommandDispatcher<CommandSourceStack> dispatcher) {
 		dispatcher.register(Commands.literal("dmzdebug")
-				.requires(source -> DMZPermissions.check(source, DMZPermissions.ADMIN, DMZPermissions.ADMIN))
 				.executes(ctx -> writeDebugFile(ctx.getSource(), ctx.getSource().getPlayerOrException(), DebugScope.ALL))
 				.then(Commands.argument("value", StringArgumentType.word()).suggests(DEBUG_VALUE_SUGGESTIONS)
-						.executes(ctx -> writeDebugFile(ctx.getSource(), ctx.getSource().getPlayerOrException(), StringArgumentType.getString(ctx, "value"))))
+						.executes(ctx -> writeSelfOrNamed(ctx.getSource(), StringArgumentType.getString(ctx, "value"))))
 				.then(Commands.argument("target", EntityArgument.player())
 						.requires(source -> DMZPermissions.hasPermission(source, DMZPermissions.ADMIN))
 						.executes(ctx -> writeDebugFile(ctx.getSource(), EntityArgument.getPlayer(ctx, "target"), DebugScope.ALL))
 						.then(Commands.argument("value", StringArgumentType.word()).suggests(DEBUG_VALUE_SUGGESTIONS)
 								.executes(ctx -> writeDebugFile(ctx.getSource(), EntityArgument.getPlayer(ctx, "target"), StringArgumentType.getString(ctx, "value")))))
 		);
+	}
+
+	private static int writeSelfOrNamed(CommandSourceStack source, String value) throws CommandSyntaxException {
+		if (DebugScope.from(value) == null && DMZPermissions.hasPermission(source, DMZPermissions.ADMIN)) {
+			ServerPlayer named = source.getServer().getPlayerList().getPlayerByName(value);
+			if (named != null) return writeDebugFile(source, named, DebugScope.ALL);
+		}
+		return writeDebugFile(source, source.getPlayerOrException(), value);
 	}
 
 	private static int writeDebugFile(CommandSourceStack source, ServerPlayer target, String rawScope) {
@@ -80,20 +95,42 @@ public class DebugCommand {
 	}
 
 	private static int writeDebugFile(CommandSourceStack source, ServerPlayer target, DebugScope scope) {
+		ServerPlayer requester = source.getPlayer();
+		if (requester != null && !DMZPermissions.hasPermission(source, DMZPermissions.ADMIN)) {
+			long now = System.currentTimeMillis();
+			Long last = LAST_USE.get(requester.getUUID());
+			if (last != null && now - last < COOLDOWN_MS) {
+				long seconds = (COOLDOWN_MS - (now - last) + 999L) / 1000L;
+				source.sendFailure(Component.translatable("command.dragonminez.debug.cooldown", seconds));
+				return 0;
+			}
+			LAST_USE.put(requester.getUUID(), now);
+		}
+
 		boolean log = ConfigManager.getServerConfig().getGameplay().getCommandOutputOnConsole();
 		return StatsProvider.get(StatsCapability.INSTANCE, target)
 				.map(data -> {
+					String json = GSON.toJson(buildDebugJson(target, data, scope));
+					if (requester != null) {
+						DebugFileS2C packet = new DebugFileS2C(target.getGameProfile().getName(), json);
+						if (!packet.fitsInPacket()) {
+							source.sendFailure(Component.translatable("command.dragonminez.debug.error", "dump too large to send"));
+							return 0;
+						}
+						NetworkHandler.sendToPlayer(packet, requester);
+						return 1;
+					}
 					try {
 						Path outputPath = getOutputPath(target);
 						Files.createDirectories(outputPath.getParent());
-						Files.writeString(outputPath, GSON.toJson(buildDebugJson(target, data, scope)), StandardCharsets.UTF_8);
+						Files.writeString(outputPath, json, StandardCharsets.UTF_8);
 						Path debugDir = outputPath.getParent();
 						Component clickablePath = Component.literal(debugDir.toString())
 								.withStyle(style -> style
 										.withColor(ChatFormatting.AQUA)
 										.withUnderlined(true)
 										.withClickEvent(new ClickEvent(ClickEvent.Action.OPEN_FILE, debugDir.toString()))
-										.withHoverEvent(new HoverEvent(HoverEvent.Action.SHOW_TEXT, Component.literal("Click to open folder"))));
+										.withHoverEvent(new HoverEvent(HoverEvent.Action.SHOW_TEXT, Component.translatable("command.dragonminez.debug.open_folder"))));
 						source.sendSuccess(() -> Component.translatable("command.dragonminez.debug.success", target.getName().getString(), clickablePath), log);
 						return 1;
 					} catch (IOException exception) {
@@ -235,7 +272,14 @@ public class DebugCommand {
 		quests.addProperty("tracked", quest.getTrackedQuestId());
 
 		String lastCompleted = null;
-		for (String id : quest.getCompletedQuestIds()) lastCompleted = id;
+		long lastCompletedMs = Long.MIN_VALUE;
+		for (String id : quest.getCompletedQuestIds()) {
+			long completedMs = quest.getLastCompletedRealMs(id);
+			if (completedMs >= lastCompletedMs) {
+				lastCompleted = id;
+				lastCompletedMs = completedMs;
+			}
+		}
 		if (lastCompleted == null) {
 			quests.add("lastCompleted", JsonNull.INSTANCE);
 		} else {

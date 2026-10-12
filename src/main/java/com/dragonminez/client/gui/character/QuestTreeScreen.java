@@ -745,7 +745,7 @@ public class QuestTreeScreen extends BaseMenuScreen {
 			bottomLabelColor = 0;
 			bottomLabelOffsetX = 0;
 		} else {
-			String questNum = String.valueOf(node.getQuest().getId());
+			String questNum = String.valueOf(node.getGridCol() + 1);
 			bottomLabel = txt(questNum);
 			bottomLabelColor = 0xFFCCCCCC;
 			bottomLabelOffsetX = (NODE_SIZE - TextUtil.width(this.font, questNum, DMZ_STYLE)) / 2;
@@ -1938,7 +1938,7 @@ public class QuestTreeScreen extends BaseMenuScreen {
 
 		String label = quest.isSideQuest()
 				? "- " + LocalizationUtil.localizedOrReadableText(quest.getTitle())
-				: quest.getId() + ". " + LocalizationUtil.localizedOrReadableText(quest.getTitle());
+				: (entry.saga() != null ? entry.saga().getQuests().indexOf(quest) + 1 : quest.getId()) + ". " + LocalizationUtil.localizedOrReadableText(quest.getTitle());
 		String clipped = fitSingleLineEllipsis(label, Math.max(24, usableWidth - (textX - x) - 4));
 
 		int color = getStatusColor(getNodeStatus(quest));

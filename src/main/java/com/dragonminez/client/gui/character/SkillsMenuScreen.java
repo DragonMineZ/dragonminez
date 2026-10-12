@@ -879,7 +879,7 @@ public class SkillsMenuScreen extends BaseMenuScreen {
 		for (Saga saga : QuestRegistry.getClientSagas().values()) {
 			for (Quest quest : saga.getQuests()) {
 				if (!questGrantsFormAtLevel(quest, formType, requiredLevel)) continue;
-				Component ref = tr("gui.dragonminez.skills.quest_ref", tr(saga.getName()), quest.getId());
+				Component ref = tr("gui.dragonminez.skills.quest_ref", tr(saga.getName()), saga.getQuests().indexOf(quest) + 1);
 				if (refs.stream().noneMatch(r -> r.getString().equals(ref.getString()))) refs.add(ref);
 			}
 		}

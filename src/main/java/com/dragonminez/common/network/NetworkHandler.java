@@ -858,6 +858,18 @@ public class NetworkHandler {
 				.encoder(KickPartyMemberC2S::encode)
 				.consumerMainThread(KickPartyMemberC2S::handle)
 				.add();
+
+		net.messageBuilder(DebugFileS2C.class, id(), NetworkDirection.PLAY_TO_CLIENT)
+				.decoder(DebugFileS2C::new)
+				.encoder(DebugFileS2C::encode)
+				.consumerMainThread(DebugFileS2C::handle)
+				.add();
+
+		net.messageBuilder(VehicleFlightModeC2S.class, id(), NetworkDirection.PLAY_TO_SERVER)
+				.decoder(VehicleFlightModeC2S::new)
+				.encoder(VehicleFlightModeC2S::encode)
+				.consumerMainThread(VehicleFlightModeC2S::handle)
+				.add();
 	}
 
 	public static <MSG> void sendToServer(MSG message) {
