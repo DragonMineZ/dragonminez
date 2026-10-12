@@ -589,6 +589,8 @@ public final class MainItems {
 			new ForgeSpawnEggItem(MainEntities.DINOSAUR3, 0xED5B18, 0x6ED610, new Item.Properties()));
 	public static final RegistryObject<Item> DINO_KID = ITEM_REGISTER.register("dinokid_spawn_egg", () ->
 			new ForgeSpawnEggItem(MainEntities.DINO_KID, 0xED5B18, 0x6ED610, new Item.Properties()));
+	public static final RegistryObject<Item> GIRAN_SE = ITEM_REGISTER.register("giran_spawn_egg", () ->
+			new ForgeSpawnEggItem(MainEntities.WILD_GIRAN, 0x4E8A3A, 0xC9A66B, new Item.Properties()));
 	public static final RegistryObject<Item> NAMEK_FROG_SE = ITEM_REGISTER.register("namek_frog_spawn_egg", () ->
 			new ForgeSpawnEggItem(MainEntities.NAMEK_FROG, 0x22C96B, 0xD62B52, new Item.Properties()));
 	public static final RegistryObject<Item> GINYU_FROG_SE = ITEM_REGISTER.register("ginyu_frog_spawn_egg", () ->

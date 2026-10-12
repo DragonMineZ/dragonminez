@@ -120,6 +120,7 @@ public class DMZItemModelProvider extends ItemModelProvider {
 		withExistingParent(MainItems.DINO_2.getId().getPath(), mcLoc("item/template_spawn_egg"));
 		withExistingParent(MainItems.DINO_3.getId().getPath(), mcLoc("item/template_spawn_egg"));
 		withExistingParent(MainItems.DINO_KID.getId().getPath(), mcLoc("item/template_spawn_egg"));
+		withExistingParent(MainItems.GIRAN_SE.getId().getPath(), mcLoc("item/template_spawn_egg"));
 		withExistingParent(MainItems.NAMEK_FROG_SE.getId().getPath(), mcLoc("item/template_spawn_egg"));
 		withExistingParent(MainItems.GINYU_FROG_SE.getId().getPath(), mcLoc("item/template_spawn_egg"));
 		withExistingParent(MainItems.GIANT_FISH_SE.getId().getPath(), mcLoc("item/template_spawn_egg"));

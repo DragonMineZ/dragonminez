@@ -144,7 +144,7 @@ public class MainEntities {
                 SAGA_TAMAGAMI_1, SAGA_TAMAGAMI_1_POWERED, SAGA_TAMAGAMI_2, SAGA_TAMAGAMI_2_POWERED, SAGA_TAMAGAMI_3, SAGA_TAMAGAMI_3_POWERED,
 
                 // EXTRA
-                SHADOW_DUMMY, MINI_BUU, SAGA_OGRE_RED, SAGA_OGRE_BLUE, MINI_JANEMBA_STAMPEDE,
+                SHADOW_DUMMY, MINI_BUU, WILD_GIRAN, SAGA_OGRE_RED, SAGA_OGRE_BLUE, MINI_JANEMBA_STAMPEDE,
 
                 // WORLD BOSSES
                 WORLDBOSS_JANEMBA_FAT, WORLDBOSS_SUPER_JANEMBA, WORLDBOSS_MINI_JANEMBA, WORLDBOSS_TURLES,
@@ -336,6 +336,11 @@ public class MainEntities {
                     () -> EntityType.Builder.of(SabertoothEntity::new, WILD_ENEMY)
                             .sized(1.8f, 1.2f)
                             .build(ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "sabertooth").toString()));
+    public static final RegistryObject<EntityType<SagaZFightersEntity.WildGiranEntity>> WILD_GIRAN =
+            ENTITY_TYPES.register("giran",
+                    () -> EntityType.Builder.of(SagaZFightersEntity.WildGiranEntity::new, WILD_ENEMY)
+                            .sized(1.2f, 2.9f)
+                            .build(ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "giran").toString()));
     public static final RegistryObject<EntityType<NamekFrogEntity>> NAMEK_FROG =
             ENTITY_TYPES.register("namek_frog",
                     () -> EntityType.Builder.of(NamekFrogEntity::new, MobCategory.AMBIENT)
@@ -2204,6 +2209,11 @@ public class MainEntities {
         for (RegistryObject<? extends EntityType<? extends Mob>> wE : getWildEnemies()) {
             registerWildSpawn(event, wE.get());
         }
+
+        event.register(WILD_GIRAN.get(), SpawnPlacements.Type.ON_GROUND,
+                Heightmap.Types.MOTION_BLOCKING_NO_LEAVES,
+                SagaZFightersEntity.WildGiranEntity::canSpawnNaturally,
+                SpawnPlacementRegisterEvent.Operation.REPLACE);
 
         event.register(GIANT_FISH.get(), SpawnPlacements.Type.IN_WATER,
                 Heightmap.Types.MOTION_BLOCKING_NO_LEAVES,

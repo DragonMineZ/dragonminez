@@ -9,6 +9,11 @@ import com.dragonminez.common.stats.StatsCapability;
 import com.dragonminez.common.stats.StatsData;
 import com.dragonminez.common.stats.StatsProvider;
 import net.minecraft.core.BlockPos;
+import com.dragonminez.common.init.entities.WildSpawnRules;
+import net.minecraft.util.RandomSource;
+import net.minecraft.world.entity.Mob;
+import net.minecraft.world.entity.MobSpawnType;
+import net.minecraft.world.level.ServerLevelAccessor;
 import net.minecraft.network.syncher.EntityDataAccessor;
 import net.minecraft.network.syncher.EntityDataSerializers;
 import net.minecraft.network.syncher.SynchedEntityData;
@@ -21,6 +26,7 @@ import net.minecraft.server.level.ServerLevel;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.world.entity.ai.attributes.AttributeInstance;
 import net.minecraft.world.entity.ai.attributes.AttributeModifier;
+import net.minecraft.world.entity.ai.attributes.AttributeSupplier;
 import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.entity.ai.goal.Goal;
 import net.minecraft.world.entity.monster.Monster;
@@ -457,6 +463,43 @@ public class SagaZFightersEntity {
             this.setScaleVal(1.3f);
         }
 
+    }
+
+    public static class WildGiranEntity extends GiranEntity {
+
+        private static final float NATURAL_SPAWN_CHANCE = 0.2F;
+        private static final double NATURAL_SPAWN_EXCLUSION_RADIUS = 64.0D;
+
+        public WildGiranEntity(EntityType<? extends Monster> pEntityType, Level pLevel) {
+            super(pEntityType, pLevel);
+            this.setScaleVal(1.56f);
+        }
+
+        public static boolean canSpawnNaturally(EntityType<? extends Mob> type, ServerLevelAccessor level, MobSpawnType reason, BlockPos pos, RandomSource random) {
+            if (!WildSpawnRules.canSpawn(type, level, reason, pos, random)) return false;
+            if (reason != MobSpawnType.NATURAL) return true;
+            if (random.nextFloat() >= NATURAL_SPAWN_CHANCE) return false;
+            return level.getEntitiesOfClass(WildGiranEntity.class, new AABB(pos).inflate(NATURAL_SPAWN_EXCLUSION_RADIUS)).isEmpty();
+        }
+
+        public static AttributeSupplier.Builder createAttributes() {
+            return Monster.createMonsterAttributes()
+                    .add(Attributes.MAX_HEALTH, 180.0D)
+                    .add(Attributes.MOVEMENT_SPEED, 0.24D)
+                    .add(Attributes.ATTACK_DAMAGE, 14.0D)
+                    .add(Attributes.FOLLOW_RANGE, 24.0D)
+                    .add(Attributes.KNOCKBACK_RESISTANCE, 0.6D);
+        }
+
+        @Override
+        public String getGeckolibModelName() {
+            return "saga_giran";
+        }
+
+        @Override
+        public String getGeckolibTextureName() {
+            return "saga_giran";
+        }
     }
 
     public static class NamEntity extends DBSagasEntity {
