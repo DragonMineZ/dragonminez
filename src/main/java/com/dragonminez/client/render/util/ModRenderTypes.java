@@ -300,6 +300,13 @@ public class ModRenderTypes extends RenderType {
                     .setOverlayState(OVERLAY)
                     .createCompositeState(false)));
 
+    private static final RenderType KI_BLADE = create("dmz_ki_blade", DefaultVertexFormat.POSITION_COLOR_TEX, VertexFormat.Mode.QUADS, 256, false, true, CompositeState.builder()
+            .setShaderState(new RenderStateShard.ShaderStateShard(() -> DMZShaders.kiBladeShader))
+            .setTransparencyState(TRANSLUCENT_TRANSPARENCY)
+            .setCullState(NO_CULL)
+            .setWriteMaskState(COLOR_WRITE)
+            .createCompositeState(false));
+
     private static final Function<ResourceLocation, RenderType> ENERGY2 = Util.memoize((pLocation) ->
             create("energy2", DefaultVertexFormat.NEW_ENTITY, VertexFormat.Mode.QUADS, 256, false, true, CompositeState.builder()
                     .setShaderState(RENDERTYPE_EYES_SHADER)
@@ -405,6 +412,7 @@ public class ModRenderTypes extends RenderType {
     public static RenderType glow_ki(ResourceLocation pLocation) { return GLOW_KI.apply(pLocation); }
     public static RenderType energy(ResourceLocation pLocation) { return ENERGY.apply(pLocation); }
     public static RenderType energy2(ResourceLocation pLocation) { return ENERGY2.apply(pLocation); }
+    public static RenderType kiBlade() { return KI_BLADE; }
     public static RenderType auraBillboard(ResourceLocation pLocation) { return AURA_BILLBOARD.apply(pLocation); }
     public static RenderType scouterLens(ResourceLocation pLocation) { return SCOUTER_LENS.apply(pLocation); }
     public static RenderType skinOverlayCutout(ResourceLocation pLocation) { return SKIN_OVERLAY_CUTOUT.apply(pLocation); }
