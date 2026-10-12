@@ -71,6 +71,14 @@ public class FittedTemplatePiece extends TemplateStructurePiece {
 		return this.makeTemplateLocation();
 	}
 
+	public BlockPos origin() {
+		return this.templatePosition;
+	}
+
+	public Rotation rotation() {
+		return this.rotation;
+	}
+
 	@Override
 	protected void addAdditionalSaveData(StructurePieceSerializationContext context, CompoundTag tag) {
 		super.addAdditionalSaveData(context, tag);

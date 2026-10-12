@@ -27,22 +27,26 @@ public class FittedTemplateStructure extends Structure {
 			settingsCodec(instance),
 			ResourceLocation.CODEC.fieldOf("template").forGetter(FittedTemplateStructure::template),
 			TerrainFit.CODEC.optionalFieldOf("terrain_fit", TerrainFit.NONE).forGetter(structure -> structure.fit),
-			Rotation.CODEC.optionalFieldOf("rotation").forGetter(structure -> structure.fixedRotation)
+			Rotation.CODEC.optionalFieldOf("rotation").forGetter(structure -> structure.fixedRotation),
+			Codec.floatRange(0.0F, 64.0F).optionalFieldOf("max_deviation", 0.0F).forGetter(structure -> structure.maxDeviation)
 	).apply(instance, FittedTemplateStructure::new));
 
 	private static final Rotation[] ROTATIONS = {Rotation.NONE, Rotation.CLOCKWISE_90, Rotation.CLOCKWISE_180, Rotation.COUNTERCLOCKWISE_90};
 	private static final int REFERENCE_REACH = 120;
 	private static final int MAX_FALLBACK_SAMPLES = 128;
+	private static final float MAX_WATER_FRACTION = 0.1F;
 
 	private final ResourceLocation template;
 	private final TerrainFit fit;
 	private final Optional<Rotation> fixedRotation;
+	private final float maxDeviation;
 
-	public FittedTemplateStructure(StructureSettings settings, ResourceLocation template, TerrainFit fit, Optional<Rotation> fixedRotation) {
+	public FittedTemplateStructure(StructureSettings settings, ResourceLocation template, TerrainFit fit, Optional<Rotation> fixedRotation, float maxDeviation) {
 		super(settings);
 		this.template = template;
 		this.fit = fit;
 		this.fixedRotation = fixedRotation;
+		this.maxDeviation = maxDeviation;
 	}
 
 	public ResourceLocation template() {
@@ -54,7 +58,13 @@ public class FittedTemplateStructure extends Structure {
 		StructureTemplateManager templates = context.structureTemplateManager();
 		HeightSampler sampler = HeightSampler.direct(context.chunkGenerator(), context.heightAccessor(), context.randomState());
 		return this.plan(templates, sampler, context.chunkPos())
+				.filter(this::acceptsSite)
 				.map(site -> new GenerationStub(site.center(), builder -> this.addPieces(builder, templates, site)));
+	}
+
+	private boolean acceptsSite(SitePlan site) {
+		if (this.maxDeviation <= 0.0F) return true;
+		return site.deviation() <= this.maxDeviation && site.water() <= MAX_WATER_FRACTION;
 	}
 
 	private void addPieces(StructurePiecesBuilder builder, StructureTemplateManager templates, SitePlan site) {

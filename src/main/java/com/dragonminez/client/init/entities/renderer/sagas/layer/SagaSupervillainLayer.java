@@ -15,9 +15,9 @@ import software.bernie.geckolib.renderer.layer.GeoRenderLayer;
 
 public class SagaSupervillainLayer<T extends DBSagasEntity> extends GeoRenderLayer<T> {
 
-	private static final float[] BORDER_COLOR = ColorUtils.hexToRgb("#9A1CFF");
-	private static final float[] TINT = ColorUtils.hexToRgb("#9B30D9");
-	private static final float TINT_ALPHA = 0.42f;
+	public static final float[] BORDER_COLOR = ColorUtils.hexToRgb("#9A1CFF");
+	public static final float[] TINT = ColorUtils.hexToRgb("#9B30D9");
+	public static final float TINT_ALPHA = 0.42f;
 
 	public SagaSupervillainLayer(GeoRenderer<T> geoRenderer) {
 		super(geoRenderer);

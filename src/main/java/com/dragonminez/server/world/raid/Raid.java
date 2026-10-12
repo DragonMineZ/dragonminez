@@ -58,6 +58,7 @@ public class Raid {
 	private static final int GLOW_DURATION_TICKS = 200;
 	private static final int LEASH_GRACE_TICKS = 15 * 20;
 	private static final int GROUND_SEARCH_UP = 24;
+	private static final int WALKER_SEARCH_UP = 4;
 	private static final int GROUND_SEARCH_DOWN = 32;
 
 	@Getter
@@ -266,7 +267,7 @@ public class Raid {
 			return null;
 		}
 
-		BlockPos pos = findSpawnPos(level, random);
+		BlockPos pos = findSpawnPos(level, random, mob);
 		mob.moveTo(pos.getX() + 0.5, pos.getY(), pos.getZ() + 0.5, random.nextFloat() * 360.0F, 0.0F);
 		mob.finalizeSpawn(level, level.getCurrentDifficultyAt(pos), MobSpawnType.EVENT, null, null);
 
@@ -342,25 +343,30 @@ public class Raid {
 		}
 	}
 
-	private BlockPos findSpawnPos(ServerLevel level, RandomSource random) {
+	private BlockPos findSpawnPos(ServerLevel level, RandomSource random, Mob mob) {
+		boolean airborne = mob instanceof DBSagasEntity;
 		for (int attempt = 0; attempt < 12; attempt++) {
 			double angle = random.nextDouble() * Math.PI * 2.0;
 			double dist = 6.0 + random.nextDouble() * 10.0;
 			int x = center.getX() + (int) Math.round(Math.cos(angle) * dist);
 			int z = center.getZ() + (int) Math.round(Math.sin(angle) * dist);
-			int ground = groundNear(level, x, z);
+			int ground = groundNear(level, x, z, airborne ? GROUND_SEARCH_UP : WALKER_SEARCH_UP);
 			if (ground == Integer.MIN_VALUE) continue;
 			BlockPos groundPos = new BlockPos(x, ground, z);
 			if (!level.noCollision(new AABB(groundPos))) continue;
+			if (!airborne) {
+				if (!level.noCollision(mob.getType().getAABB(x + 0.5D, ground, z + 0.5D))) continue;
+				return groundPos;
+			}
 
 			BlockPos sky = groundPos.above(SKY_SPAWN_HEIGHT);
 			return level.noCollision(new AABB(sky)) ? sky : groundPos;
 		}
-		return center.above(SKY_SPAWN_HEIGHT);
+		return airborne ? center.above(SKY_SPAWN_HEIGHT) : center;
 	}
 
-	private int groundNear(ServerLevel level, int x, int z) {
-		int top = Math.min(level.getHeight(Heightmap.Types.MOTION_BLOCKING_NO_LEAVES, x, z), center.getY() + GROUND_SEARCH_UP);
+	private int groundNear(ServerLevel level, int x, int z, int searchUp) {
+		int top = Math.min(level.getHeight(Heightmap.Types.MOTION_BLOCKING_NO_LEAVES, x, z), center.getY() + searchUp);
 		int bottom = center.getY() - GROUND_SEARCH_DOWN;
 		BlockPos.MutableBlockPos pos = new BlockPos.MutableBlockPos(x, top, z);
 		boolean openAbove = level.getBlockState(pos).getCollisionShape(level, pos).isEmpty();

@@ -41,7 +41,7 @@ public class DMZStructureSets {
 			SAIYAN_CRATER = createKey("saiyan_crater"), GETE_STAR = createKey("gete_star"),
 			DEMON_VILLAGE = createKey("demon_village"),
 			GOMAH_CAMP = createKey("gomah_camp"), BUU_HOUSE = createKey("buu_house"),
-			GOMAH_CRADLE = createKey("gomah_cradle");
+			GOMAH_CRADLE = createKey("gomah_cradle"), RED_RIBBON_BASE = createKey("red_ribbon_base");
 
 	public static void bootstrap(BootstapContext<StructureSet> context) {
 		HolderGetter<Structure> structures = context.lookup(Registries.STRUCTURE);
@@ -121,6 +121,20 @@ public class DMZStructureSets {
 				)
 		));
 
+		context.register(RED_RIBBON_BASE, new StructureSet(
+				structures.getOrThrow(DMZStructures.RED_RIBBON_BASE),
+				new RandomSpreadStructurePlacement(
+						Vec3i.ZERO,
+						StructurePlacement.FrequencyReductionMethod.DEFAULT,
+						1.0f,
+						RED_RIBBON_BASE_SALT,
+						Optional.of(new StructurePlacement.ExclusionZone(sets.getOrThrow(BuiltinStructureSets.VILLAGES), 8)),
+						RED_RIBBON_BASE_SPACING,
+						RED_RIBBON_BASE_SEPARATION,
+						RandomSpreadType.LINEAR
+				)
+		));
+
 		context.register(DEMON_VILLAGE, new StructureSet(
 				structures.getOrThrow(DMZStructures.DEMON_VILLAGE),
 				new RandomSpreadStructurePlacement(
@@ -170,6 +184,9 @@ public class DMZStructureSets {
 	private static final int SAIYAN_CRATER_SALT = 51738264;
 	private static final int SAIYAN_CRATER_SPACING = 40;
 	private static final int SAIYAN_CRATER_SEPARATION = 20;
+	private static final int RED_RIBBON_BASE_SALT = 40318627;
+	private static final int RED_RIBBON_BASE_SPACING = 32;
+	private static final int RED_RIBBON_BASE_SEPARATION = 16;
 	private static final int TREE_OF_MIGHT_MIN_DISTANCE = 1000;
 	private static final int DEMON_VILLAGE_SALT = 73019284;
 	private static final int DEMON_VILLAGE_SPACING = 24;

@@ -9,6 +9,7 @@ public final class RaidDefaults {
 	public static final String FRIEZA_INVASION = "frieza_invasion";
 	public static final String SAIYAN_ASSAULT = "saiyan_assault";
 	public static final String GOMAH_ASSAULT = "gomah_assault";
+	public static final String RED_RIBBON_ASSAULT = "red_ribbon_assault";
 
 	private RaidDefaults() {}
 
@@ -17,6 +18,7 @@ public final class RaidDefaults {
 		defaults.put(FRIEZA_INVASION, friezaInvasion());
 		defaults.put(SAIYAN_ASSAULT, saiyanAssault());
 		defaults.put(GOMAH_ASSAULT, gomahAssault());
+		defaults.put(RED_RIBBON_ASSAULT, redRibbonAssault());
 		return defaults;
 	}
 	private static RaidDefinition friezaInvasion() {
@@ -187,6 +189,68 @@ public final class RaidDefaults {
 				item("dragonminez:medi_bug_ant", 4)));
 		def.setRewards(rewards);
 		def.setDefeat(defeat("raid.dragonminez.gomah_assault.defeat", -30));
+
+		return def;
+	}
+
+	private static RaidDefinition redRibbonAssault() {
+		RaidDefinition def = new RaidDefinition();
+		def.setConfigVersion(RaidDefinition.CURRENT_VERSION);
+		def.setDisplayName("raid.dragonminez.red_ribbon_assault");
+		def.setEnabled(true);
+		def.setActivationRadius(48.0D);
+		def.setLeashDistance(80.0D);
+		def.setInterWaveDelaySeconds(5);
+
+		RaidDefinition.Music music = new RaidDefinition.Music();
+		music.setPreparation("dragonminez:menu_music_11");
+		music.setBattle("dragonminez:raid_ost_1");
+		def.setMusic(music);
+
+		String soldier = "dragonminez:red_ribbon_soldier";
+		String robots = "#dragonminez:red_ribbon_robots";
+
+		RaidDefinition.Trigger trigger = new RaidDefinition.Trigger();
+		trigger.setEntityId(soldier);
+		trigger.setDimension("minecraft:overworld");
+		trigger.setSpawnChance(0.0D);
+		trigger.setSupervillain(true);
+		trigger.setPreparationSeconds(60);
+		trigger.setAnnounceMessage("raid.dragonminez.red_ribbon_assault.base");
+		trigger.setOmenMessage("raid.dragonminez.red_ribbon_assault.omen");
+		trigger.setStartMessage("raid.dragonminez.red_ribbon_assault.start");
+		trigger.setHealth(150.0D);
+		trigger.setMeleeDamage(8.0D);
+		trigger.setKiDamage(0.0D);
+		trigger.setAiTier(1);
+		def.setTrigger(trigger);
+
+		def.setWaves(List.of(
+				wave(mob(soldier, 8, 60, 6, 0, 1)),
+				wave(mob(soldier, 10, 70, 7, 0, 1),
+						mob(robots, 3, 150, 10, 0, 1)),
+				wave(mob(soldier, 10, 80, 8, 0, 1),
+						boss("dragonminez:saga_colonel_silver", 560, 26, 10, 2)),
+				wave(mob(soldier, 12, 90, 9, 0, 1),
+						mob(robots, 3, 170, 12, 0, 1),
+						boss("dragonminez:saga_sergeant_metallic", 740, 36, 0, 2),
+						boss("dragonminez:saga_ninja_murasaki", 640, 31, 12, 2)),
+				wave(mob(soldier, 12, 100, 10, 0, 1),
+						boss("dragonminez:saga_general_blue", 820, 38, 20, 2),
+						boss("dragonminez:saga_general_black_robot", 1100, 54, 45, 3))));
+
+		RaidDefinition.Rewards rewards = new RaidDefinition.Rewards();
+		rewards.setTrainingPoints(5_700F);
+		rewards.setEffects(List.of(
+				effect("minecraft:hero_of_the_village", 600, 0),
+				effect("dragonminez:world_hero", 600, 0)));
+		rewards.setItems(List.of(
+				item("minecraft:golden_carrot", 8),
+				item("dragonminez:senzu_bean", 2),
+				item("dragonminez:red_capsule", 1),
+				item("dragonminez:blue_capsule", 1)));
+		def.setRewards(rewards);
+		def.setDefeat(defeat("raid.dragonminez.red_ribbon_assault.defeat", -5));
 
 		return def;
 	}

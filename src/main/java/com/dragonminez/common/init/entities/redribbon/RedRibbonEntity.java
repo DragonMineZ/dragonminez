@@ -1,5 +1,9 @@
 package com.dragonminez.common.init.entities.redribbon;
 
+import net.minecraft.nbt.CompoundTag;
+import net.minecraft.network.syncher.EntityDataAccessor;
+import net.minecraft.network.syncher.EntityDataSerializers;
+import net.minecraft.network.syncher.SynchedEntityData;
 import net.minecraft.world.Difficulty;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.MobSpawnType;
@@ -26,6 +30,9 @@ import software.bernie.geckolib.core.animation.RawAnimation;
 import software.bernie.geckolib.core.object.PlayState;
 
 public class RedRibbonEntity extends Monster implements GeoEntity {
+
+    private static final EntityDataAccessor<Boolean> SUPERVILLAIN = SynchedEntityData.defineId(RedRibbonEntity.class, EntityDataSerializers.BOOLEAN);
+    private static final String NBT_SUPERVILLAIN = "Supervillain";
 
     private final AnimatableInstanceCache geoCache = new SingletonAnimatableInstanceCache(this);
     private boolean isAttacking = false;
@@ -57,6 +64,32 @@ public class RedRibbonEntity extends Monster implements GeoEntity {
         this.targetSelector.addGoal(2, new PartyAwareTargetGoal(this, true));
         this.targetSelector.addGoal(3, new NearestAttackableTargetGoal<>(this, Villager.class, true));
 
+    }
+
+    @Override
+    protected void defineSynchedData() {
+        super.defineSynchedData();
+        this.entityData.define(SUPERVILLAIN, false);
+    }
+
+    @Override
+    public void addAdditionalSaveData(CompoundTag pCompound) {
+        super.addAdditionalSaveData(pCompound);
+        pCompound.putBoolean(NBT_SUPERVILLAIN, isSupervillain());
+    }
+
+    @Override
+    public void readAdditionalSaveData(CompoundTag pCompound) {
+        super.readAdditionalSaveData(pCompound);
+        setSupervillain(pCompound.getBoolean(NBT_SUPERVILLAIN));
+    }
+
+    public boolean isSupervillain() {
+        return this.entityData.get(SUPERVILLAIN);
+    }
+
+    public void setSupervillain(boolean supervillain) {
+        this.entityData.set(SUPERVILLAIN, supervillain);
     }
 
     @Override

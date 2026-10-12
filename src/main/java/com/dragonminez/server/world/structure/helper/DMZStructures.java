@@ -21,6 +21,7 @@ import net.minecraft.resources.ResourceKey;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.tags.BiomeTags;
 import net.minecraft.world.level.biome.Biome;
+import net.minecraft.world.level.biome.Biomes;
 import net.minecraft.world.level.block.Rotation;
 import net.minecraft.world.level.levelgen.GenerationStep;
 import net.minecraft.world.level.levelgen.Heightmap;
@@ -35,6 +36,8 @@ import java.util.Map;
 import java.util.Optional;
 
 public class DMZStructures {
+	private static final float RED_RIBBON_BASE_MAX_DEVIATION = 2.5F;
+
 	public static final ResourceKey<Structure> GOKU_HOUSE = createKey("goku_house"),
 			ROSHI_HOUSE = createKey("roshi_house"), TIMECHAMBER = createKey("timechamber"),
 			ELDER_GURU = createKey("elder_guru"), KAMILOOKOUT = createKey("kamilookout"),
@@ -47,7 +50,7 @@ public class DMZStructures {
 			SAIYAN_CRATER = createKey("saiyan_crater"), NAMEK_RUINS = createKey("namek_ruins"),
 			GETE_STAR = createKey("gete_star"), DEMON_VILLAGE = createKey("demon_village"),
 			GOMAH_CAMP = createKey("gomah_camp"), BUU_HOUSE = createKey("buu_house"),
-			GOMAH_CRADLE = createKey("gomah_cradle");
+			GOMAH_CRADLE = createKey("gomah_cradle"), RED_RIBBON_BASE = createKey("red_ribbon_base");
 
 	public static void bootstrap(BootstapContext<Structure> context) {
 		HolderGetter<Biome> biomes = context.lookup(Registries.BIOME);
@@ -71,6 +74,9 @@ public class DMZStructures {
 		fitted(context, BUU_HOUSE, overworld, "buu_house", TerrainFit.terrain(1, 20, 1.0F, 64, 64));
 		fitted(context, TRUNKS_SHIP, land, "trunks_ship", TerrainFit.pillar(0, 4, 16, 24));
 		fitted(context, VEGETA_POD, land, "vegeta_pod", TerrainFit.terrain(0, 12, 1.0F, 48, 48));
+		fitted(context, RED_RIBBON_BASE, HolderSet.direct(biomes.getOrThrow(Biomes.PLAINS), biomes.getOrThrow(Biomes.SUNFLOWER_PLAINS),
+						biomes.getOrThrow(Biomes.SAVANNA)), "red_ribbon_base", TerrainFit.terrain(0, 12, 1.0F, 64, 48), Optional.empty(),
+				RED_RIBBON_BASE_MAX_DEVIATION);
 
 		context.register(GERO_LAB, new JigsawStructure(
 				new Structure.StructureSettings(
@@ -173,14 +179,19 @@ public class DMZStructures {
 
 	private static void fitted(BootstapContext<Structure> context, ResourceKey<Structure> key, HolderSet<Biome> biomes,
 							   String template, TerrainFit fit) {
-		fitted(context, key, biomes, template, fit, Optional.empty());
+		fitted(context, key, biomes, template, fit, Optional.empty(), 0.0F);
 	}
 
 	private static void fitted(BootstapContext<Structure> context, ResourceKey<Structure> key, HolderSet<Biome> biomes,
 							   String template, TerrainFit fit, Optional<Rotation> rotation) {
+		fitted(context, key, biomes, template, fit, rotation, 0.0F);
+	}
+
+	private static void fitted(BootstapContext<Structure> context, ResourceKey<Structure> key, HolderSet<Biome> biomes,
+							   String template, TerrainFit fit, Optional<Rotation> rotation, float maxDeviation) {
 		context.register(key, new FittedTemplateStructure(
 				new Structure.StructureSettings(biomes, Map.of(), GenerationStep.Decoration.TOP_LAYER_MODIFICATION, TerrainAdjustment.NONE),
-				ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, template), fit, rotation));
+				ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, template), fit, rotation, maxDeviation));
 	}
 
 	private static ResourceKey<Structure> createKey(String name) {

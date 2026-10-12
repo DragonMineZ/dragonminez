@@ -8,10 +8,12 @@ import com.dragonminez.common.config.RaidDefinition;
 import com.dragonminez.common.init.EntityAttributes;
 import com.dragonminez.common.init.MainEntities;
 import com.dragonminez.common.init.entities.SpacePodEntity;
+import com.dragonminez.common.init.entities.redribbon.RedRibbonEntity;
 import com.dragonminez.common.init.entities.sagas.DBSagasEntity;
 import com.dragonminez.common.init.entities.sagas.SagaSaiyanInvadersEntity;
 import com.dragonminez.server.world.dimension.DemonRealmDimension;
 import com.dragonminez.server.world.dimension.NamekDimension;
+import com.dragonminez.server.world.structure.fitted.FittedTemplatePiece;
 import com.dragonminez.server.world.structure.helper.DMZStructures;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
@@ -22,6 +24,7 @@ import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.ListTag;
 import net.minecraft.nbt.NbtUtils;
 import net.minecraft.nbt.Tag;
+import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
@@ -37,10 +40,13 @@ import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.level.ChunkPos;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.ServerLevelAccessor;
+import net.minecraft.world.level.block.Mirror;
 import net.minecraft.world.level.chunk.LevelChunk;
 import net.minecraft.world.level.levelgen.structure.BoundingBox;
 import net.minecraft.world.level.levelgen.structure.Structure;
+import net.minecraft.world.level.levelgen.structure.StructurePiece;
 import net.minecraft.world.level.levelgen.structure.StructureStart;
+import net.minecraft.world.level.levelgen.structure.templatesystem.StructureTemplate;
 import net.minecraft.world.level.saveddata.SavedData;
 import net.minecraft.world.phys.AABB;
 import net.minecraftforge.event.TickEvent;
@@ -81,7 +87,9 @@ public final class RaidSiteManager {
 		NAMEK_RUINS(NamekDimension.NAMEK_KEY, RaidDefaults.FRIEZA_INVASION, List.of(DMZStructures.NAMEK_RUINS), false,
 				"raid.dragonminez.frieza_invasion.ruins", 400.0D, 18.0D, 12.0D, () -> MainEntities.SAGA_FRIEZA_SOLDIER.get()),
 		GOMAH_CAMP(DemonRealmDimension.DEMON_REALM_KEY, RaidDefaults.GOMAH_ASSAULT, List.of(DMZStructures.GOMAH_CAMP), false,
-				"raid.dragonminez.gomah_assault.camp", 10000.0D, 900.0D, 800.0D, () -> MainEntities.SAGA_GOMAH_SOLDIER_1.get());
+				"raid.dragonminez.gomah_assault.camp", 10000.0D, 900.0D, 800.0D, () -> MainEntities.SAGA_GOMAH_SOLDIER_1.get()),
+		RED_RIBBON_BASE(Level.OVERWORLD, RaidDefaults.RED_RIBBON_ASSAULT, List.of(DMZStructures.RED_RIBBON_BASE), false,
+				"raid.dragonminez.red_ribbon_assault.base", 150.0D, 8.0D, 0.0D, () -> MainEntities.RED_RIBBON_SOLDIER.get());
 
 		private final ResourceKey<Level> dimension;
 		private final String raidId;
@@ -110,11 +118,12 @@ public final class RaidSiteManager {
 			return this.structures;
 		}
 
-		private static Kind forDimension(ResourceKey<Level> dimension) {
+		private static List<Kind> forDimension(ResourceKey<Level> dimension) {
+			List<Kind> kinds = new ArrayList<>();
 			for (Kind kind : values()) {
-				if (kind.dimension.equals(dimension)) return kind;
+				if (kind.dimension.equals(dimension)) kinds.add(kind);
 			}
-			return null;
+			return kinds;
 		}
 	}
 
@@ -126,8 +135,7 @@ public final class RaidSiteManager {
 		if (!(event.level instanceof ServerLevel level)) return;
 		if (level.getGameTime() % SCAN_INTERVAL != 0L) return;
 
-		Kind kind = Kind.forDimension(level.dimension());
-		if (kind != null) scan(level, kind);
+		for (Kind kind : Kind.forDimension(level.dimension())) scan(level, kind);
 	}
 
 	@SubscribeEvent
@@ -169,7 +177,7 @@ public final class RaidSiteManager {
 					for (Structure structure : structures) {
 						StructureStart start = chunk.getStartForStructure(structure);
 						if (start == null || !start.isValid()) continue;
-						visitSite(level, kind, data, key, start.getPieces().get(0).getBoundingBox());
+						visitSite(level, kind, data, key, start);
 						break;
 					}
 				}
@@ -177,7 +185,8 @@ public final class RaidSiteManager {
 		}
 	}
 
-	private static void visitSite(ServerLevel level, Kind kind, Data data, long key, BoundingBox box) {
+	private static void visitSite(ServerLevel level, Kind kind, Data data, long key, StructureStart start) {
+		BoundingBox box = start.getPieces().get(0).getBoundingBox();
 		Data.Entry entry = data.entry(key);
 		if (entry.consumed) return;
 
@@ -190,7 +199,8 @@ public final class RaidSiteManager {
 			AABB area = AABB.of(box).inflate(CREW_SEARCH_MARGIN);
 			Mob existing = findScout(level, area, key);
 			if (existing != null) entry.scout = existing.getUUID();
-			else if (!spawnMissingCrew(level, kind, entry, key, box, area)) return;
+			else if (kind == Kind.RED_RIBBON_BASE ? !RedRibbonGarrison.spawn(level, kind, entry, key, start)
+					: !spawnMissingCrew(level, kind, entry, key, box, area)) return;
 			data.setDirty();
 		} else if (scoutLost(level, entry, key, center)) {
 			entry.consumed = true;
@@ -314,6 +324,7 @@ public final class RaidSiteManager {
 			saga.setAiTierById(trigger != null && trigger.getAiTier() != null ? trigger.getAiTier() : 1);
 		}
 		if (scout instanceof SagaSaiyanInvadersEntity.Soldier soldier) soldier.setHome(home);
+		if (scout instanceof RedRibbonEntity redRibbon) redRibbon.setSupervillain(trigger == null || trigger.isSupervillain());
 
 		applyStats(scout,
 				trigger != null && trigger.getHealth() != null ? trigger.getHealth() : kind.defaultHealth,
@@ -345,6 +356,71 @@ public final class RaidSiteManager {
 			pos.move(Direction.DOWN);
 		}
 		return new BlockPos(x, box.minY(), z);
+	}
+
+	static final class RedRibbonGarrison {
+		private static final int[] COMMANDER = {48, 100};
+		private static final int[][] GUARDS = {
+				{39, 121}, {47, 121}, {25, 117}, {55, 117}, {70, 117}, {14, 80}, {14, 50}, {25, 27},
+				{37, 27}, {49, 27}, {70, 60}, {70, 30}, {30, 11}, {60, 11}, {30, 98}, {60, 100}};
+		private static final int[][] ROBOTS = {{37, 48}, {20, 118}, {71, 90}};
+		private static final int WALK_LEVEL = 1;
+		private static final int GUARD_LEASH = 12;
+		private static final String ROBOT_TAG = "#dragonminez:red_ribbon_robots";
+		private static final String COMMANDER_NAME = "entity.dragonminez.red_ribbon_commander";
+
+		private RedRibbonGarrison() {}
+
+		static boolean spawn(ServerLevel level, Kind kind, Data.Entry entry, long key, StructureStart start) {
+			FittedTemplatePiece piece = null;
+			for (StructurePiece candidate : start.getPieces()) {
+				if (candidate instanceof FittedTemplatePiece fitted) piece = fitted;
+			}
+			if (piece == null) return false;
+
+			BlockPos commanderPos = place(piece, COMMANDER);
+			List<BlockPos> guardPositions = new ArrayList<>();
+			for (int[] guard : GUARDS) guardPositions.add(place(piece, guard));
+			List<BlockPos> robotPositions = new ArrayList<>();
+			for (int[] robot : ROBOTS) robotPositions.add(place(piece, robot));
+
+			if (!level.areEntitiesLoaded(ChunkPos.asLong(commanderPos))) return false;
+			for (BlockPos pos : guardPositions) {
+				if (!level.areEntitiesLoaded(ChunkPos.asLong(pos))) return false;
+			}
+			for (BlockPos pos : robotPositions) {
+				if (!level.areEntitiesLoaded(ChunkPos.asLong(pos))) return false;
+			}
+
+			Mob commander = createScout(level, kind, key, commanderPos, commanderPos);
+			if (commander == null) return false;
+			commander.setCustomName(Component.translatable(COMMANDER_NAME));
+			commander.setCustomNameVisible(true);
+			if (!level.addFreshEntity(commander)) return false;
+			entry.scout = commander.getUUID();
+
+			for (BlockPos pos : guardPositions) spawnGuard(level, MainEntities.RED_RIBBON_SOLDIER.get(), pos);
+			for (BlockPos pos : robotPositions) spawnGuard(level, RaidEntityResolver.resolve(ROBOT_TAG, level.getRandom()), pos);
+			LogUtil.info(Env.SERVER, "Red Ribbon base at {} garrisoned with {} soldiers and {} robots", commanderPos,
+					guardPositions.size(), robotPositions.size());
+			return true;
+		}
+
+		private static BlockPos place(FittedTemplatePiece piece, int[] local) {
+			BlockPos relative = new BlockPos(local[0], WALK_LEVEL, local[1]);
+			return StructureTemplate.transform(relative, Mirror.NONE, piece.rotation(), BlockPos.ZERO).offset(piece.origin());
+		}
+
+		private static void spawnGuard(ServerLevel level, EntityType<?> type, BlockPos pos) {
+			if (type == null) return;
+			if (!(type.create(level) instanceof PathfinderMob soldier)) return;
+			soldier.moveTo(pos.getX() + 0.5D, pos.getY(), pos.getZ() + 0.5D, level.getRandom().nextFloat() * 360.0F, 0.0F);
+			soldier.finalizeSpawn(level, level.getCurrentDifficultyAt(pos), MobSpawnType.STRUCTURE, null, null);
+			soldier.setPersistenceRequired();
+			if (soldier instanceof RedRibbonEntity redRibbon) redRibbon.setSupervillain(true);
+			soldier.restrictTo(pos, GUARD_LEASH);
+			level.addFreshEntity(soldier);
+		}
 	}
 
 	static final class Data extends SavedData {
