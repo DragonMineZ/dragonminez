@@ -1,53 +1,63 @@
 package com.dragonminez.server.commands;
 
-import com.dragonminez.common.hair.HairStyleSlot;
+import com.dragonminez.Reference;
 import com.dragonminez.common.config.ConfigManager;
-import com.dragonminez.common.network.NetworkHandler;
-import com.dragonminez.common.network.S2C.DebugFileS2C;
 import com.dragonminez.common.quest.PlayerQuestData;
 import com.dragonminez.common.stats.StatsCapability;
 import com.dragonminez.common.stats.StatsData;
 import com.dragonminez.common.stats.StatsProvider;
 import com.dragonminez.server.world.data.PartySavedData;
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
+import com.google.gson.JsonArray;
+import com.google.gson.JsonElement;
+import com.google.gson.JsonNull;
+import com.google.gson.JsonObject;
+import com.google.gson.JsonPrimitive;
 import com.mojang.brigadier.CommandDispatcher;
 import com.mojang.brigadier.arguments.StringArgumentType;
 import com.mojang.brigadier.suggestion.SuggestionProvider;
+import net.minecraft.ChatFormatting;
+import net.minecraft.SharedConstants;
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.commands.Commands;
 import net.minecraft.commands.SharedSuggestionProvider;
 import net.minecraft.commands.arguments.EntityArgument;
+import net.minecraft.nbt.CollectionTag;
 import net.minecraft.nbt.CompoundTag;
-import net.minecraft.nbt.ListTag;
+import net.minecraft.nbt.NumericTag;
 import net.minecraft.nbt.Tag;
 import net.minecraft.network.chat.ClickEvent;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.HoverEvent;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerPlayer;
-import net.minecraft.ChatFormatting;
+import net.minecraftforge.fml.ModList;
 import net.minecraftforge.fml.loading.FMLPaths;
+import net.minecraftforge.versions.forge.ForgeVersion;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.ArrayList;
+import java.time.Instant;
+import java.time.temporal.ChronoUnit;
+import java.util.Collection;
 import java.util.List;
 import java.util.Locale;
-import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
-import java.util.concurrent.ConcurrentHashMap;
 
 public class DebugCommand {
+	private static final int SCHEMA_VERSION = 1;
+	private static final Gson GSON = new GsonBuilder().setPrettyPrinting().disableHtmlEscaping().serializeNulls().serializeSpecialFloatingPointValues().create();
+	private static final List<String> STATS_SECTIONS = List.of("Stats", "BonusStats", "Resources", "Status", "Cooldowns", "Effects", "Skills");
 	private static final SuggestionProvider<CommandSourceStack> DEBUG_VALUE_SUGGESTIONS = (ctx, builder) ->
 			SharedSuggestionProvider.suggest(List.of("ALL", "STATS", "CHARACTER", "TECHNIQUES", "QUESTS"), builder);
 
-	private static final long COOLDOWN_MS = 5000L;
-	private static final Map<UUID, Long> LAST_USE = new ConcurrentHashMap<>();
-
 	public static void register(CommandDispatcher<CommandSourceStack> dispatcher) {
 		dispatcher.register(Commands.literal("dmzdebug")
+				.requires(source -> DMZPermissions.check(source, DMZPermissions.ADMIN, DMZPermissions.ADMIN))
 				.executes(ctx -> writeDebugFile(ctx.getSource(), ctx.getSource().getPlayerOrException(), DebugScope.ALL))
 				.then(Commands.argument("value", StringArgumentType.word()).suggests(DEBUG_VALUE_SUGGESTIONS)
 						.executes(ctx -> writeDebugFile(ctx.getSource(), ctx.getSource().getPlayerOrException(), StringArgumentType.getString(ctx, "value"))))
@@ -69,36 +79,20 @@ public class DebugCommand {
 	}
 
 	private static int writeDebugFile(CommandSourceStack source, ServerPlayer target, DebugScope scope) {
-		ServerPlayer requester = source.getPlayer();
-		if (requester != null && !DMZPermissions.hasPermission(source, DMZPermissions.ADMIN)) {
-			long now = System.currentTimeMillis();
-			Long last = LAST_USE.get(requester.getUUID());
-			if (last != null && now - last < COOLDOWN_MS) {
-				long seconds = (COOLDOWN_MS - (now - last) + 999L) / 1000L;
-				source.sendFailure(Component.translatable("command.dragonminez.debug.cooldown", seconds));
-				return 0;
-			}
-			LAST_USE.put(requester.getUUID(), now);
-		}
-
 		boolean log = ConfigManager.getServerConfig().getGameplay().getCommandOutputOnConsole();
 		return StatsProvider.get(StatsCapability.INSTANCE, target)
 				.map(data -> {
-					if (requester != null) {
-						NetworkHandler.sendToPlayer(new DebugFileS2C(target.getGameProfile().getName(), buildDebugText(target, data, scope)), requester);
-						return 1;
-					}
 					try {
 						Path outputPath = getOutputPath(target);
 						Files.createDirectories(outputPath.getParent());
-						Files.writeString(outputPath, buildDebugText(target, data, scope), StandardCharsets.UTF_8);
+						Files.writeString(outputPath, GSON.toJson(buildDebugJson(target, data, scope)), StandardCharsets.UTF_8);
 						Path debugDir = outputPath.getParent();
 						Component clickablePath = Component.literal(debugDir.toString())
 								.withStyle(style -> style
 										.withColor(ChatFormatting.AQUA)
 										.withUnderlined(true)
 										.withClickEvent(new ClickEvent(ClickEvent.Action.OPEN_FILE, debugDir.toString()))
-										.withHoverEvent(new HoverEvent(HoverEvent.Action.SHOW_TEXT, Component.translatable("command.dragonminez.debug.open_folder"))));
+										.withHoverEvent(new HoverEvent(HoverEvent.Action.SHOW_TEXT, Component.literal("Click to open folder"))));
 						source.sendSuccess(() -> Component.translatable("command.dragonminez.debug.success", target.getName().getString(), clickablePath), log);
 						return 1;
 					} catch (IOException exception) {
@@ -113,46 +107,70 @@ public class DebugCommand {
 	}
 
 	private static Path getOutputPath(ServerPlayer target) {
-		Path debugDir = FMLPaths.GAMEDIR.get().resolve("dmzdebug");
-		String fileName = target.getGameProfile().getName() + ".log";
-		return debugDir.resolve(fileName);
+		return FMLPaths.GAMEDIR.get().resolve("dmzdebug").resolve(target.getGameProfile().getName() + ".json");
 	}
 
-	private static String buildDebugText(ServerPlayer target, StatsData data, DebugScope scope) {
+	private static JsonObject buildDebugJson(ServerPlayer target, StatsData data, DebugScope scope) {
+		MinecraftServer server = target.getServer();
 		CompoundTag root = data.save();
-		StringBuilder builder = new StringBuilder();
-		String playerName = target.getGameProfile().getName();
 
-		builder.append("##############\n");
-		builder.append("## DMZ DEBUG ##\n");
-		builder.append("## ").append(playerName).append(" ##\n");
-		builder.append("##############\n\n");
+		JsonObject json = new JsonObject();
+		json.addProperty("schemaVersion", SCHEMA_VERSION);
+		json.addProperty("generatedAt", Instant.now().truncatedTo(ChronoUnit.SECONDS).toString());
+		json.addProperty("scope", scope.name());
+
+		JsonObject mod = new JsonObject();
+		mod.addProperty("version", ModList.get().getModContainerById(Reference.MOD_ID)
+				.map(container -> container.getModInfo().getVersion().toString()).orElse("unknown"));
+		mod.addProperty("mc", SharedConstants.getCurrentVersion().getName());
+		mod.addProperty("forge", ForgeVersion.getVersion());
+		json.add("mod", mod);
+
+		JsonObject serverInfo = new JsonObject();
+		serverInfo.addProperty("dedicated", server != null && server.isDedicatedServer());
+		json.add("server", serverInfo);
+
+		JsonObject player = new JsonObject();
+		player.addProperty("name", target.getGameProfile().getName());
+		player.addProperty("uuid", target.getStringUUID());
+		player.addProperty("online", !target.hasDisconnected());
+		player.addProperty("dimension", target.level().dimension().location().toString());
+		JsonArray pos = new JsonArray();
+		pos.add(round2(target.getX()));
+		pos.add(round2(target.getY()));
+		pos.add(round2(target.getZ()));
+		player.add("pos", pos);
+		json.add("player", player);
 
 		if (scope.includesStats()) {
-			appendSection(builder, "Stats", root.getCompound("Stats"));
-			appendSection(builder, "BonusStats", root.getCompound("BonusStats"));
-			appendSection(builder, "Resources", root.getCompound("Resources"));
-			appendSection(builder, "Status", root.getCompound("Status"));
-			appendSection(builder, "Cooldowns", root.getCompound("Cooldowns"));
-			appendSection(builder, "Effects", root.getCompound("Effects"));
-			appendSection(builder, "Skills", root.getCompound("Skills"));
-		}
-
-		if (scope.includesCharacter()) {
-			appendSection(builder, "Character", withoutHairData(root.getCompound("Character")));
-		}
-
-		if (scope.includesTechniques()) {
-			appendSection(builder, "Techniques", root.getCompound("Techniques"));
+			JsonObject derived = new JsonObject();
+			derived.addProperty("battlePower", data.getBattlePowerExact());
+			derived.addProperty("level", data.getLevel());
+			derived.addProperty("maxHealth", data.getMaxHealth());
+			derived.addProperty("maxEnergy", data.getMaxEnergy());
+			derived.addProperty("maxStamina", data.getMaxStamina());
+			json.add("derived", derived);
 		}
 
 		if (scope.includesQuests()) {
-			appendPartySection(builder, target, data);
-			appendQuestsSection(builder, target, data);
-			appendSection(builder, "PlayerQuestData (raw)", root.getCompound("PlayerQuestData"));
+			json.add("party", partyJson(server, target, data.getPlayerQuestData()));
+			json.add("quests", questsJson(data.getPlayerQuestData()));
 		}
 
-		return builder.toString();
+		JsonObject sections = new JsonObject();
+		if (scope.includesStats()) {
+			for (String key : STATS_SECTIONS) sections.add(key, nbtToJson(root.getCompound(key)));
+		}
+		if (scope.includesCharacter()) sections.add("Character", nbtToJson(withoutHairData(root.getCompound("Character"))));
+		if (scope.includesTechniques()) sections.add("Techniques", nbtToJson(root.getCompound("Techniques")));
+		if (scope.includesQuests()) sections.add("PlayerQuestData", nbtToJson(root.getCompound("PlayerQuestData")));
+		json.add("sections", sections);
+
+		return json;
+	}
+
+	private static double round2(double value) {
+		return Math.round(value * 100) / 100.0;
 	}
 
 	private static CompoundTag withoutHairData(CompoundTag character) {
@@ -161,160 +179,109 @@ public class DebugCommand {
 		return copy;
 	}
 
-	private static void appendPartySection(StringBuilder builder, ServerPlayer target, StatsData data) {
-		builder.append("# Party:\n");
-		PlayerQuestData quest = data.getPlayerQuestData();
-		MinecraftServer server = target.getServer();
+	private static JsonObject partyJson(MinecraftServer server, ServerPlayer target, PlayerQuestData quest) {
+		JsonObject client = new JsonObject();
+		client.addProperty("inParty", quest.isInParty());
+		client.addProperty("partyId", uuidOrNull(quest.getActivePartyId()));
+		client.add("leader", memberJson(server, quest.getPartyLeaderId(), false));
+		client.add("members", membersJson(server, quest.getPartyMemberIds(), null));
 
-		builder.append("In party (client view): ").append(quest.isInParty()).append("\n");
-		builder.append("Active party id (client): ").append(formatUuid(quest.getActivePartyId())).append("\n");
-		builder.append("Party leader (client): ").append(formatMember(server, quest.getPartyLeaderId())).append("\n");
-
-		List<UUID> clientMembers = quest.getPartyMemberIds();
-		builder.append("Party members (client) [").append(clientMembers.size()).append("]:\n");
-		if (clientMembers.isEmpty()) {
-			builder.append("  (none)\n");
+		JsonObject serverSide = new JsonObject();
+		PartySavedData.PartyInstance serverParty = server == null ? null : PartySavedData.get(server).getPartyOf(target.getUUID());
+		serverSide.addProperty("inParty", serverParty != null);
+		if (serverParty == null) {
+			serverSide.add("members", new JsonArray());
 		} else {
-			for (UUID memberId : clientMembers) {
-				builder.append("  - ").append(formatMember(server, memberId)).append("\n");
-			}
+			serverSide.addProperty("partyId", uuidOrNull(serverParty.getPartyId()));
+			serverSide.add("leader", memberJson(server, serverParty.getLeaderId(), true));
+			serverSide.addProperty("pvpEnabled", serverParty.isPvpEnabled());
+			serverSide.add("members", membersJson(server, serverParty.getMembers(), serverParty.getLeaderId()));
 		}
 
+		JsonObject party = new JsonObject();
+		party.add("client", client);
+		party.add("server", serverSide);
 		PlayerQuestData.PartyInviteData invite = quest.getPendingPartyInviteData();
 		if (invite == null) {
-			builder.append("Pending invite: none\n");
+			party.add("pendingInvite", JsonNull.INSTANCE);
 		} else {
-			builder.append("Pending invite: from ").append(invite.getInviterName())
-					.append(" (").append(formatUuid(invite.getInviterUUID())).append(")")
-					.append(invite.isExpired() ? " [EXPIRED]" : "").append("\n");
+			JsonObject inviteJson = new JsonObject();
+			inviteJson.addProperty("name", invite.getInviterName());
+			inviteJson.addProperty("uuid", uuidOrNull(invite.getInviterUUID()));
+			inviteJson.addProperty("expired", invite.isExpired());
+			party.add("pendingInvite", inviteJson);
 		}
-
-		PartySavedData.PartyInstance serverParty = server == null ? null
-				: PartySavedData.get(server).getPartyOf(target.getUUID());
-		if (serverParty == null) {
-			builder.append("Server party (PartySavedData): not in a server party\n");
-		} else {
-			builder.append("Server party id: ").append(formatUuid(serverParty.getPartyId())).append("\n");
-			builder.append("Server leader: ").append(formatMember(server, serverParty.getLeaderId())).append("\n");
-			builder.append("Server PvP enabled: ").append(serverParty.isPvpEnabled()).append("\n");
-			List<UUID> serverMembers = serverParty.getMembers();
-			builder.append("Server members [").append(serverMembers.size()).append("]:\n");
-			for (UUID memberId : serverMembers) {
-				boolean isLeader = memberId.equals(serverParty.getLeaderId());
-				builder.append("  - ").append(formatMember(server, memberId))
-						.append(isLeader ? " [LEADER]" : "").append("\n");
-			}
-		}
-
-		builder.append("\n");
+		return party;
 	}
 
-	private static void appendQuestsSection(StringBuilder builder, ServerPlayer target, StatsData data) {
-		builder.append("# Quests:\n");
-		PlayerQuestData quest = data.getPlayerQuestData();
+	private static JsonArray membersJson(MinecraftServer server, Collection<UUID> ids, UUID leaderId) {
+		JsonArray members = new JsonArray();
+		for (UUID id : ids) members.add(memberJson(server, id, id.equals(leaderId)));
+		return members;
+	}
 
-		String tracked = quest.getTrackedQuestId();
-		builder.append("Tracked quest: ").append(tracked == null ? "none" : tracked).append("\n");
+	private static JsonElement memberJson(MinecraftServer server, UUID id, boolean leader) {
+		if (id == null) return JsonNull.INSTANCE;
+		JsonObject member = new JsonObject();
+		member.addProperty("uuid", id.toString());
+		member.addProperty("name", resolveName(server, id));
+		member.addProperty("leader", leader);
+		return member;
+	}
 
-		Set<String> completed = quest.getCompletedQuestIds();
+	private static JsonObject questsJson(PlayerQuestData quest) {
+		JsonObject quests = new JsonObject();
+		quests.addProperty("tracked", quest.getTrackedQuestId());
+
 		String lastCompleted = null;
-		for (String id : completed) {
-			lastCompleted = id;
+		for (String id : quest.getCompletedQuestIds()) lastCompleted = id;
+		if (lastCompleted == null) {
+			quests.add("lastCompleted", JsonNull.INSTANCE);
+		} else {
+			JsonObject last = new JsonObject();
+			last.addProperty("questId", lastCompleted);
+			last.addProperty("status", String.valueOf(quest.getQuestStatus(lastCompleted)));
+			quests.add("lastCompleted", last);
 		}
-		builder.append("Last completed quest: ").append(lastCompleted == null ? "none" : lastCompleted)
-				.append(lastCompleted == null ? "" : " (status " + quest.getQuestStatus(lastCompleted) + ")").append("\n");
 
-		appendQuestList(builder, "Completed", completed);
-		appendQuestList(builder, "In progress (accepted)", quest.getAcceptedQuestIds());
-		appendQuestList(builder, "Failed", quest.getFailedQuestIds());
-
-		builder.append("\n");
+		quests.add("completed", stringArray(quest.getCompletedQuestIds()));
+		quests.add("inProgress", stringArray(quest.getAcceptedQuestIds()));
+		quests.add("failed", stringArray(quest.getFailedQuestIds()));
+		return quests;
 	}
 
-	private static void appendQuestList(StringBuilder builder, String title, Set<String> questIds) {
-		builder.append(title).append(" [").append(questIds.size()).append("]:\n");
-		if (questIds.isEmpty()) {
-			builder.append("  (none)\n");
-			return;
-		}
-		for (String id : questIds) {
-			builder.append("  - ").append(id).append("\n");
-		}
+	private static JsonArray stringArray(Collection<String> values) {
+		JsonArray array = new JsonArray();
+		values.forEach(array::add);
+		return array;
 	}
 
-	private static String formatMember(MinecraftServer server, UUID id) {
-		if (id == null) {
-			return "null";
+	private static JsonElement nbtToJson(Tag tag) {
+		if (tag instanceof CompoundTag compound) {
+			JsonObject object = new JsonObject();
+			for (String key : new TreeSet<>(compound.getAllKeys())) object.add(key, nbtToJson(compound.get(key)));
+			return object;
 		}
-		return id + " (" + resolveName(server, id) + ")";
+		if (tag instanceof CollectionTag<?> collection) {
+			JsonArray array = new JsonArray();
+			for (Tag element : collection) array.add(nbtToJson(element));
+			return array;
+		}
+		if (tag instanceof NumericTag numeric) return new JsonPrimitive(numeric.getAsNumber());
+		return tag == null ? JsonNull.INSTANCE : new JsonPrimitive(tag.getAsString());
 	}
 
-	private static String formatUuid(UUID id) {
-		return id == null ? "null" : id.toString();
+	private static String uuidOrNull(UUID id) {
+		return id == null ? null : id.toString();
 	}
 
 	private static String resolveName(MinecraftServer server, UUID id) {
-		if (server == null || id == null) {
-			return "unknown";
-		}
+		if (server == null) return "unknown";
 		ServerPlayer online = server.getPlayerList().getPlayer(id);
-		if (online != null) {
-			return online.getGameProfile().getName();
-		}
+		if (online != null) return online.getGameProfile().getName();
 		return server.getProfileCache() == null
 				? "offline"
 				: server.getProfileCache().get(id).map(profile -> profile.getName()).orElse("offline");
-	}
-
-	private static void appendSection(StringBuilder builder, String title, CompoundTag tag) {
-		builder.append("# ").append(title).append(":\n");
-		if (tag.isEmpty()) {
-			builder.append("(empty)\n\n");
-			return;
-		}
-		appendCompound(builder, tag, 0);
-		builder.append("\n");
-	}
-
-	private static void appendCompound(StringBuilder builder, CompoundTag tag, int indent) {
-		List<String> keys = new ArrayList<>(tag.getAllKeys());
-		keys.sort(String::compareTo);
-		for (String key : keys) {
-			appendTag(builder, key, tag.get(key), indent);
-		}
-	}
-
-	private static void appendTag(StringBuilder builder, String key, Tag tag, int indent) {
-		String pad = " ".repeat(indent);
-		if (tag instanceof CompoundTag nested) {
-			builder.append(pad).append(key).append(":\n");
-			if (nested.isEmpty()) {
-				builder.append(pad).append("  (empty)\n");
-			} else {
-				appendCompound(builder, nested, indent + 2);
-			}
-			return;
-		}
-
-		if (tag instanceof ListTag listTag) {
-			builder.append(pad).append(key).append(":\n");
-			if (listTag.isEmpty()) {
-				builder.append(pad).append("  (empty)\n");
-				return;
-			}
-			for (int i = 0; i < listTag.size(); i++) {
-				Tag listElement = listTag.get(i);
-				if (listElement instanceof CompoundTag listCompound) {
-					builder.append(pad).append("  - ").append(i).append(":\n");
-					appendCompound(builder, listCompound, indent + 4);
-				} else {
-					builder.append(pad).append("  - ").append(listElement.getAsString()).append("\n");
-				}
-			}
-			return;
-		}
-
-		builder.append(pad).append(key).append(": ").append(tag == null ? "null" : tag.getAsString()).append("\n");
 	}
 
 	private enum DebugScope {
@@ -349,4 +316,3 @@ public class DebugCommand {
 		}
 	}
 }
-
