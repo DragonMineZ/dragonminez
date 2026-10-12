@@ -359,7 +359,7 @@ public class SaiyanInvaderRenderer<T extends DBSagasEntity & SagaSaiyanInvadersE
 
 			Status status = data.getStatus();
 			status.setHasCreatedCharacter(true);
-			status.setTailVisible(false);
+			status.setTailVisible(oozaru);
 
 			this.getInventory().armor.set(EquipmentSlot.CHEST.getIndex(), look.armorPiece(ArmorItem.Type.CHESTPLATE));
 			this.getInventory().armor.set(EquipmentSlot.LEGS.getIndex(), look.armorPiece(ArmorItem.Type.LEGGINGS));
