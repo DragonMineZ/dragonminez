@@ -274,6 +274,10 @@
       "required": false
     },
     {
+      "id": "dragonminez:scarletblaze_armor_boots",
+      "required": false
+    },
+    {
       "id": "dragonminez:tien_armor_boots",
       "required": false
     },

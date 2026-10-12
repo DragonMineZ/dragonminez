@@ -318,6 +318,7 @@ public final class MainItems {
 	public static final Map<ArmorItem.Type, RegistryObject<Item>> SUPER_BUU_ARMOR = fullArmorNoHelmetSet("super_buu_armor", "super_buu");
 	public static final Map<ArmorItem.Type, RegistryObject<Item>> THRAGG_ARMOR = fullArmorNoHelmetSet("thragg_armor", "thragg");
     public static final Map<ArmorItem.Type, RegistryObject<Item>> GILGAMESH_ARMOR = fullArmorNoHelmetSet("gilgamesh_armor", "gilgamesh");
+    public static final Map<ArmorItem.Type, RegistryObject<Item>> SCARLETBLAZE_ARMOR = fullArmorNoHelmetSet("scarletblaze_armor", "scarletblaze");
 
 	// TAIYOU GI
 	public static final Map<ArmorItem.Type, RegistryObject<Item>> TAIYOU_GI_ARMOR = fullArmorPatrollerNoHelmetSet("taiyou_gi_armor", "taiyou_gi");

@@ -240,6 +240,7 @@ public class DMZItemModelProvider extends ItemModelProvider {
 		generateArmorSetModels(MainItems.ZAMASU_ARMOR);
         generateArmorSetModels(MainItems.THRAGG_ARMOR);
         generateArmorSetModels(MainItems.GILGAMESH_ARMOR);
+        generateArmorSetModels(MainItems.SCARLETBLAZE_ARMOR);
         generateArmorSetModels(MainItems.SUBARU_NATSUKI_ARMOR);
         generateArmorSetModels(MainItems.SUBARU_NATSUKI_ARC6_ARMOR);
         generateArmorSetModels(MainItems.RADITZ_ARMOR);
