@@ -858,6 +858,12 @@ public class NetworkHandler {
 				.encoder(KickPartyMemberC2S::encode)
 				.consumerMainThread(KickPartyMemberC2S::handle)
 				.add();
+
+		net.messageBuilder(DebugFileS2C.class, id(), NetworkDirection.PLAY_TO_CLIENT)
+				.decoder(DebugFileS2C::new)
+				.encoder(DebugFileS2C::encode)
+				.consumerMainThread(DebugFileS2C::handle)
+				.add();
 	}
 
 	public static <MSG> void sendToServer(MSG message) {

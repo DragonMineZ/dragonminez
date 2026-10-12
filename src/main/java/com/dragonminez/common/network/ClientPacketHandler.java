@@ -15,6 +15,7 @@ import com.dragonminez.client.clash.ClientBeamClashState;
 import com.dragonminez.client.render.effects.AuraModeState;
 import com.dragonminez.client.systems.DragonSkyState;
 import com.dragonminez.client.systems.SilentDamageState;
+import com.dragonminez.client.util.DebugFileWriter;
 import com.dragonminez.client.util.TextureCounter;
 import com.dragonminez.common.network.S2C.BeamClashStateS2C;
 import com.dragonminez.common.network.S2C.DialogueResultS2C;
@@ -202,6 +203,10 @@ public class ClientPacketHandler {
 
 	public static void handleDragonSky(ResourceLocation dimension, boolean active) {
 		DragonSkyState.update(dimension, active);
+	}
+
+	public static void handleDebugFile(String playerName, String text) {
+		DebugFileWriter.write(playerName, text);
 	}
 
 	public static void handleConfigSyncCommitted() {
