@@ -20,6 +20,15 @@ public class DynamicGrowthData {
 	private final Set<String> disabledStats = new HashSet<>();
 	private long lastCombatMs;
 	private int growthStats;
+	private boolean statGainNotificationsEnabled = true;
+
+	public boolean areStatGainNotificationsEnabled() {
+		return statGainNotificationsEnabled;
+	}
+
+	public void setStatGainNotificationsEnabled(boolean enabled) {
+		statGainNotificationsEnabled = enabled;
+	}
 
 	public boolean isGrowthEnabled(DynamicGrowthStat stat) {
 		return !disabledStats.contains(stat.key());
@@ -137,6 +146,7 @@ public class DynamicGrowthData {
 		}
 		tag.put("PracticeXp", xpTag);
 		tag.putInt("GrowthStats", growthStats);
+		tag.putBoolean("StatGainNotificationsEnabled", statGainNotificationsEnabled);
 		if (!disabledStats.isEmpty()) {
 			ListTag disabledTag = new ListTag();
 			for (String key : disabledStats) disabledTag.add(StringTag.valueOf(key));
@@ -156,6 +166,7 @@ public class DynamicGrowthData {
 		ListTag disabledTag = tag.getList("DisabledStats", Tag.TAG_STRING);
 		for (int i = 0; i < disabledTag.size(); i++) disabledStats.add(disabledTag.getString(i));
 		growthStats = Math.max(0, tag.getInt("GrowthStats"));
+		statGainNotificationsEnabled = !tag.contains("StatGainNotificationsEnabled") || tag.getBoolean("StatGainNotificationsEnabled");
 	}
 
 	public void toBytes(FriendlyByteBuf buf) {
@@ -167,6 +178,7 @@ public class DynamicGrowthData {
 		buf.writeInt(disabledStats.size());
 		for (String key : disabledStats) buf.writeUtf(key);
 		buf.writeInt(growthStats);
+		buf.writeBoolean(statGainNotificationsEnabled);
 	}
 
 	public void fromBytes(FriendlyByteBuf buf) {
@@ -181,6 +193,7 @@ public class DynamicGrowthData {
 		int disabledSize = buf.readInt();
 		for (int i = 0; i < disabledSize; i++) disabledStats.add(buf.readUtf());
 		growthStats = Math.max(0, buf.readInt());
+		statGainNotificationsEnabled = buf.readBoolean();
 	}
 
 	public void copyFrom(DynamicGrowthData other) {
@@ -195,6 +208,7 @@ public class DynamicGrowthData {
 		}
 		this.lastCombatMs = other.lastCombatMs;
 		this.growthStats = other.growthStats;
+		this.statGainNotificationsEnabled = other.statGainNotificationsEnabled;
 	}
 
 	public void clear() {

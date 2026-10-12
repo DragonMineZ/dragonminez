@@ -177,6 +177,10 @@ public class ConfigMenuScreen extends BaseMenuScreen {
 		if (!ConfigManager.getServerConfig().getDynamicGrowth().isEnabled()) return;
 
 		StatsProvider.get(StatsCapability.INSTANCE, this.minecraft.player).ifPresent(data -> {
+			toggle(Category.GAMEPLAY, "config.dynamicGrowthStatGainNotifications", data.getDynamicGrowth().areStatGainNotificationsEnabled(), enabled -> {
+				data.getDynamicGrowth().setStatGainNotificationsEnabled(enabled);
+				NetworkHandler.sendToServer(new DynamicGrowthToggleC2S("NOTIFICATIONS", enabled));
+			});
 			for (DynamicGrowthStat stat : DynamicGrowthStat.values()) {
 				toggle(Category.GAMEPLAY, "config.dynamicGrowthFor" + stat.key(), data.getDynamicGrowth().isGrowthEnabled(stat), enabled -> {
 					data.getDynamicGrowth().setGrowthEnabled(stat, enabled);
