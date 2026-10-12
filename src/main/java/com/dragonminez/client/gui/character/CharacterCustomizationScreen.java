@@ -20,6 +20,7 @@ import com.dragonminez.client.render.effects.AuraRenderer;
 import com.dragonminez.client.render.hair.HairRenderContext;
 import com.dragonminez.client.render.layer.DMZSkinLayer;
 import com.dragonminez.client.util.ColorUtils;
+import com.dragonminez.client.util.SaiyanTailRules;
 import com.dragonminez.client.util.ScrollbarState;
 import com.dragonminez.client.util.TextUtil;
 import com.dragonminez.client.util.TextureCounter;
@@ -1840,6 +1841,7 @@ public class CharacterCustomizationScreen extends ScaledScreen {
 			hadTailState[0] = true;
 			oldTailVisible[0] = stats.getStatus().isTailVisible();
 			stats.getStatus().setTailVisible(false);
+			SaiyanTailRules.wrapFrozen = true;
 		});
 
 		String originalGender = character.getGender();
@@ -1982,6 +1984,7 @@ public class CharacterCustomizationScreen extends ScaledScreen {
 		player.yHeadRot = yHeadRot;
 		player.tickCount = tickCountO;
 		player.setDeltaMovement(oldDeltaMovement);
+		SaiyanTailRules.wrapFrozen = false;
 		if (hadTailState[0]) StatsProvider.get(StatsCapability.INSTANCE, player).ifPresent(stats -> stats.getStatus().setTailVisible(oldTailVisible[0]));
 
 		character.setGender(originalGender);

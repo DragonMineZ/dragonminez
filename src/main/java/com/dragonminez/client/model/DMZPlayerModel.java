@@ -7,6 +7,7 @@ import com.dragonminez.client.render.util.RenderUtil;
 import com.dragonminez.client.systems.kishare.KiSharePose;
 import com.dragonminez.server.events.players.combat.MeteorBurstCombo;
 import com.dragonminez.server.events.players.combat.MysticBallCombo;
+import com.dragonminez.client.util.SaiyanTailRules;
 import com.dragonminez.client.util.SkinGathererProvider;
 import com.dragonminez.common.config.ConfigManager;
 import com.dragonminez.common.config.FormConfig;
@@ -380,6 +381,11 @@ public class DMZPlayerModel<T extends AbstractClientPlayer & GeoAnimatable> exte
             if (leftArm != null) RenderUtil.animateHand(animatable, leftArm, partialTick, ageInTicks);
         } catch (Exception ignored) {}
 
+        StatsProvider.get(StatsCapability.INSTANCE, animatable).ifPresent(data -> {
+            if (SaiyanTailRules.hasTail(data.getCharacter())) {
+                SaiyanTailRules.applyWrapCurl(animatable, data.getStatus().isTailVisible(), this.getAnimationProcessor()::getBone);
+            }
+        });
         KiSharePose.apply(animatable, rightArm, leftArm, partialTick);
         applyBoobScale(animatable);
         clearExplosionHeadOffset(animatable);

@@ -304,15 +304,18 @@ public class DMZRacePartsLayer<T extends AbstractClientPlayer & GeoAnimatable> e
 			boolean isSaiyanLogic = race.equals("saiyan");
 			boolean hasSaiyanTail = raceConfig.getHasSaiyanTail() != null && raceConfig.getHasSaiyanTail();
 
-			if ((isSaiyanLogic || hasSaiyanTail) && !stats.getStatus().isTailVisible() && SaiyanTailRules.hasTail(character)) {
+			float enrolledAlpha = (isSaiyanLogic || hasSaiyanTail) && SaiyanTailRules.hasTail(character)
+					? SaiyanTailRules.enrolledTailAlpha(animatable, stats.getStatus().isTailVisible()) : 0.0f;
+			if (enrolledAlpha > 0.0f) {
 				RenderType tailRenderType = RenderType.entityTranslucentCull(RACES_PARTS_TEXTURE);
+				float tailAlpha = alpha * enrolledAlpha;
 				partsModel.getBone("tailenrolled").ifPresent(targetBone -> {
 					syncTargetBoneAndParents(targetBone, playerModel);
 					float[] tailColor = resolveTailColor(stats);
 					float[] tintedColor = applyAuraTint(tailColor[0], tailColor[1], tailColor[2], formTintColor, formTintIntensity, topAuraColor, tintProgress);
 					float[] shadowColor = tintedShadow(tailColor, formTintColor, formTintIntensity, topAuraColor, tintProgress);
-					renderTargetedBone(targetBone, poseStack, bufferSource, animatable, tailRenderType, tintedColor[0], tintedColor[1], tintedColor[2], alpha, partialTick, packedLight);
-					renderTargetedBone(targetBone, poseStack, bufferSource, animatable, RenderType.entityTranslucentCull(RACES_PARTS_SHADOW_TEXTURE), shadowColor[0], shadowColor[1], shadowColor[2], alpha, partialTick, packedLight);
+					renderTargetedBone(targetBone, poseStack, bufferSource, animatable, tailRenderType, tintedColor[0], tintedColor[1], tintedColor[2], tailAlpha, partialTick, packedLight);
+					renderTargetedBone(targetBone, poseStack, bufferSource, animatable, RenderType.entityTranslucentCull(RACES_PARTS_SHADOW_TEXTURE), shadowColor[0], shadowColor[1], shadowColor[2], tailAlpha, partialTick, packedLight);
 				});
 			}
 		}

@@ -104,9 +104,9 @@ public class BoneVisibilityHandler {
 			if (SaiyanTailRules.formHidesTail(stats.getCharacter())) {
 				showNormalTail = false;
 			} else if (logicKey.contains("ssj4") || SaiyanTailRules.ssj4ForcesTail(stats.getCharacter())) {
-				showNormalTail = stats.getStatus().isTailVisible();
+				showNormalTail = SaiyanTailRules.looseTailShown(player, stats.getStatus().isTailVisible());
 			} else if (tailRace.equals("saiyan") || configHasSaiyanTail) {
-				showNormalTail = stats.getStatus().isTailVisible() && stats.getCharacter().isHasSaiyanTail();
+				showNormalTail = stats.getCharacter().isHasSaiyanTail() && SaiyanTailRules.looseTailShown(player, stats.getStatus().isTailVisible());
 			} else if (logicKey.equals("glindtrueform") || logicKey.equals("trascended")) {
 				showNormalTail = true;
 			} else if (isTaillessRace || isTaillessModel) {
