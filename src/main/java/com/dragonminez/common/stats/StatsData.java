@@ -50,6 +50,7 @@ import java.util.Map;
 @Getter
 public class StatsData {
 	private static final double DEFENSE_FLAT_FOLD = 0.12;
+	private static final double RUN_SPEED_BONUS_SCALE = 0.85;
 
 	private static final double STAT_COST_PER_POINT = 1.25;
 	private static final double STAT_COST_LATE_KNEE_FRACTION = 0.05;
@@ -508,7 +509,7 @@ public class StatsData {
 		double share = GodRitualHelper.donorSpeedMultiplier(this);
 		CombatConfig combatConfig = ConfigManager.getCombatConfig();
 		if (combatConfig == null || !combatConfig.getEnableSpeedSystem()) return share;
-		return Math.min(combatConfig.getSpeedMovementCap(), getSpeed()) * share;
+		return (1.0 + (Math.min(combatConfig.getSpeedMovementCap(), getSpeed()) - 1.0) * RUN_SPEED_BONUS_SCALE) * share;
 	}
 
 	public double getMeleeDamage() {

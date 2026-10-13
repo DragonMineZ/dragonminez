@@ -870,6 +870,12 @@ public class NetworkHandler {
 				.encoder(VehicleFlightModeC2S::encode)
 				.consumerMainThread(VehicleFlightModeC2S::handle)
 				.add();
+
+		net.messageBuilder(StatsDeltaS2C.class, id(), NetworkDirection.PLAY_TO_CLIENT)
+				.decoder(StatsDeltaS2C::decode)
+				.encoder(StatsDeltaS2C::encode)
+				.consumerMainThread(StatsDeltaS2C::handle)
+				.add();
 	}
 
 	public static <MSG> void sendToServer(MSG message) {
@@ -885,6 +891,16 @@ public class NetworkHandler {
 	}
 
 	public static <MSG> void sendToTrackingEntityAndSelf(MSG message, Entity entity) {
+		if (entity instanceof ServerPlayer player) {
+			Object trackerCopy = message instanceof StatsSyncS2C stats ? stats.forTrackers()
+					: message instanceof ProgressionSyncS2C progression ? progression.forTrackers()
+					: message instanceof StatsDeltaS2C delta ? delta.forTrackers() : null;
+			if (trackerCopy != null) {
+				sendToPlayer(message, player);
+				sendToTrackingEntity(trackerCopy, player);
+				return;
+			}
+		}
 		INSTANCE.send(PacketDistributor.TRACKING_ENTITY_AND_SELF.with(() -> entity), message);
 	}
 

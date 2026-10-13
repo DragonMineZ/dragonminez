@@ -32,6 +32,7 @@ public class SagaCellEntity {
             this.setWildSense(true, 250);
 
             this.getAttribute(Attributes.MOVEMENT_SPEED).setBaseValue(0.35D);
+            this.setDefaultMovementSpeed(0.35D);
 
         }
     }
@@ -172,6 +173,7 @@ public class SagaCellEntity {
             this.setWildSense(true, 250);
 
             this.getAttribute(Attributes.MOVEMENT_SPEED).setBaseValue(0.35D);
+            this.setDefaultMovementSpeed(0.35D);
             this.getAttribute(Attributes.KNOCKBACK_RESISTANCE).setBaseValue(0.20D);
 
 

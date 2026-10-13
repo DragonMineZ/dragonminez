@@ -17,6 +17,7 @@ import com.dragonminez.common.init.entities.sagas.helper.SkillManager;
 import com.dragonminez.common.init.entities.ki.AbstractKiProjectile;
 import com.dragonminez.common.network.C2S.SummonPlayerShadowDummyC2S;
 import com.dragonminez.common.network.NetworkHandler;
+import com.dragonminez.common.network.StatsDeltaSync;
 import com.dragonminez.common.network.S2C.StatsSyncS2C;
 import com.dragonminez.common.network.S2C.TriggerImpactFrameS2C;
 import com.dragonminez.common.quest.PartyManager;
@@ -106,7 +107,7 @@ public class CombatEvent {
 			}
 			data.getCooldowns().setCooldown(Cooldowns.COMBAT_FLY_LOCK, lockTicks);
 
-			if (switched) NetworkHandler.sendToTrackingEntityAndSelf(new StatsSyncS2C(serverPlayer), serverPlayer);
+			if (switched) StatsDeltaSync.markDirty(serverPlayer);
 		});
 	}
 
@@ -326,7 +327,7 @@ public class CombatEvent {
 				}
 
 				if (attacker instanceof ServerPlayer serverPlayer) {
-					NetworkHandler.sendToTrackingEntityAndSelf(new StatsSyncS2C(serverPlayer), serverPlayer);
+					StatsDeltaSync.markDirty(serverPlayer);
 				}
 			});
 		}
@@ -548,7 +549,7 @@ public class CombatEvent {
 					victim.getPersistentData().putDouble("dmz_defense_pen", finalDefensePenetration);
 
 					if (victim instanceof ServerPlayer serverPlayer) {
-						NetworkHandler.sendToTrackingEntityAndSelf(new StatsSyncS2C(serverPlayer), serverPlayer);
+						StatsDeltaSync.markDirty(serverPlayer);
 					}
 				}
 			});
@@ -607,7 +608,7 @@ public class CombatEvent {
 
 			if (attacker instanceof ServerPlayer serverPlayer) {
 				StrikeAttackHandler.interrupt(serverPlayer);
-				NetworkHandler.sendToTrackingEntityAndSelf(new StatsSyncS2C(serverPlayer), serverPlayer);
+				StatsDeltaSync.markDirty(serverPlayer);
 			}
 		});
 	}
@@ -873,7 +874,7 @@ public class CombatEvent {
 								stats.getCharacter().clearActiveStackForm();
 
 								if (victim instanceof ServerPlayer serverPlayer) {
-									NetworkHandler.sendToTrackingEntityAndSelf(new StatsSyncS2C(serverPlayer), serverPlayer);
+									StatsDeltaSync.markDirty(serverPlayer);
 								}
 
 								if (shadowKnockdown) {

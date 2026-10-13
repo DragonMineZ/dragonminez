@@ -25,7 +25,7 @@ import com.dragonminez.common.init.entities.redribbon.RobotEntity;
 import com.dragonminez.common.init.entities.sagas.SagaFriezaSoldier01Entity;
 import com.dragonminez.common.init.entities.sagas.SagaFriezaSoldier02Entity;
 import com.dragonminez.common.network.NetworkHandler;
-import com.dragonminez.common.network.S2C.AppearanceSyncS2C;
+import com.dragonminez.common.network.StatsDeltaSync;
 import com.dragonminez.common.passives.PassiveEventHandler;
 import com.dragonminez.common.network.S2C.StatsSyncS2C;
 import com.dragonminez.common.racial.impl.MajinAbsorption;
@@ -402,7 +402,7 @@ public class StatsEvents {
 						}
 					}
 				}
-				NetworkHandler.sendToTrackingEntityAndSelf(new AppearanceSyncS2C(attacker), attacker);
+				StatsDeltaSync.markDirty(attacker);
 			});
 		}
 
@@ -434,7 +434,7 @@ public class StatsEvents {
 						}
 					}
 				}
-				NetworkHandler.sendToTrackingEntityAndSelf(new AppearanceSyncS2C(victim), victim);
+				StatsDeltaSync.markDirty(victim);
 			});
 		}
 	}
@@ -923,7 +923,7 @@ public class StatsEvents {
 				event.setDamageMultiplier(event.getDamageMultiplier() * (1.0f - paid / cost));
 			}
 
-			NetworkHandler.sendToTrackingEntityAndSelf(new StatsSyncS2C(player), player);
+			StatsDeltaSync.markDirty(player);
 		});
 	}
 

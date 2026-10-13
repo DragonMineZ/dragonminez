@@ -170,6 +170,7 @@ public class SagaTrunksEntity {
             this.addKiSkill(KiSkillType.BURNING_ATTACK, 300, 1.5F);
 
             this.getAttribute(Attributes.MOVEMENT_SPEED).setBaseValue(0.14D);
+            this.setDefaultMovementSpeed(0.14D);
             this.getAttribute(Attributes.KNOCKBACK_RESISTANCE).setBaseValue(0.20D);
 
         }

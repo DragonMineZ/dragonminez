@@ -17,9 +17,9 @@ import com.dragonminez.common.init.entities.ShadowDummyEntity;
 import com.dragonminez.common.init.entities.ki.*;
 import com.dragonminez.common.network.C2S.SummonPlayerShadowDummyC2S;
 import com.dragonminez.common.network.NetworkHandler;
+import com.dragonminez.common.network.StatsDeltaSync;
 import com.dragonminez.common.network.S2C.ResourceSyncS2C;
 import com.dragonminez.common.network.PartyPackets;
-import com.dragonminez.common.network.S2C.AppearanceSyncS2C;
 import com.dragonminez.common.network.S2C.StatsSyncS2C;
 import com.dragonminez.common.network.S2C.TechniqueChargeSyncS2C;
 import com.dragonminez.common.network.S2C.TriggerAnimationS2C;
@@ -96,6 +96,7 @@ public class TickHandler {
 	private static final Map<UUID, Integer> masterySecondsByPlayer = new HashMap<>();
 	private static final Map<UUID, Integer> chargeTicksByPlayer = new HashMap<>();
 	private static final Map<UUID, Integer> flySprintAuraTicks = new HashMap<>();
+	private static final Set<UUID> unlitFlySprintAura = new HashSet<>();
 	private static final int FLY_SPRINT_AURA_LINGER_TICKS = 6;
 	private static final Map<UUID, Integer> playerTickCounters = new HashMap<>();
 	private static final Map<UUID, BlockPos> auraLightPositions = new HashMap<>();
@@ -153,7 +154,7 @@ public class TickHandler {
 				if (!isStunned && data.getStatus().isStunEffect()) data.getStatus().setStunEffect(false);
 			} else if (data.getStatus().isStunEffect()) data.getStatus().setStunEffect(false);
 			if (wasStunEffect != data.getStatus().isStunEffect()) {
-				NetworkHandler.sendToTrackingEntityAndSelf(new StatsSyncS2C(serverPlayer), serverPlayer);
+				StatsDeltaSync.markDirty(serverPlayer);
 			}
 
 			data.getCooldowns().tick();
@@ -368,6 +369,8 @@ public class TickHandler {
 			boolean auraFromRitual = GodRitualService.isParticipant(serverPlayer);
 			boolean auraFromStrikeRush = StrikeAttackHandler.isRushing(serverPlayer) || StrikeClash.isClashing(serverPlayer.getUUID());
 			data.getStatus().setAuraActive(auraFromActions || auraFromFlySprint || auraFromRitual || auraFromStrikeRush);
+			if (auraFromFlySprint && !auraFromActions && !auraFromRitual && !auraFromStrikeRush) unlitFlySprintAura.add(playerId);
+			else unlitFlySprintAura.remove(playerId);
 
 			if (tickCounter % 5 == 0) {
 				boolean hasYajirobe = serverPlayer.getInventory().hasAnyOf(Set.of(MainItems.KATANA_YAJIROBE.get()));
@@ -481,7 +484,7 @@ public class TickHandler {
 			data.getFormTransition().tick(data, serverPlayer.tickCount);
 			if (data.getFormTransition().consumeDimensionRefresh()) serverPlayer.refreshDimensions();
 
-			if (shouldSync) NetworkHandler.sendToTrackingEntityAndSelf(new StatsSyncS2C(serverPlayer), serverPlayer);
+			if (shouldSync) StatsDeltaSync.periodic(serverPlayer);
 			if (shouldSync) PartyPackets.sendHudSync(serverPlayer);
 		});
 	}
@@ -546,6 +549,8 @@ public class TickHandler {
 		CHARGE_COST_ACCUM.remove(playerId);
 		chargeTicksByPlayer.remove(playerId);
 		flySprintAuraTicks.remove(playerId);
+		unlitFlySprintAura.remove(playerId);
+		StatsDeltaSync.clear(playerId);
 		masterySecondsByPlayer.remove(playerId);
 		playerTickCounters.remove(playerId);
 		forceKillGraceByPlayer.remove(playerId);
@@ -604,9 +609,10 @@ public class TickHandler {
 
 
 	private static void updateAuraLight(ServerPlayer player, StatsData data) {
-		boolean auraActive = data.getStatus().isAuraActive() || data.getStatus().isPermanentAura() || data.getStatus().isForcedAura();
 		ServerLevel level = player.serverLevel();
 		UUID playerId = player.getUUID();
+		boolean auraActive = (data.getStatus().isAuraActive() && !unlitFlySprintAura.contains(playerId))
+				|| data.getStatus().isPermanentAura() || data.getStatus().isForcedAura();
 		int currentLevel = auraLightLevels.getOrDefault(playerId, 0);
 		int targetLevel = auraActive ? AURA_LIGHT_LEVEL : 0;
 		int nextLevel = approach(currentLevel, targetLevel, AURA_LIGHT_STEP);
@@ -733,7 +739,7 @@ public class TickHandler {
 					double masteryGain = formData != null ? formData.getPassiveMasteryEveryFiveSeconds() : 0.001;
 					masteryGain = PotionEffectHelper.applyMasteryGainMultiplier(player, masteryGain);
 					data.getCharacter().gainMastery(activeFormGroup, activeFormName, masteryGain);
-					NetworkHandler.sendToTrackingEntityAndSelf(new AppearanceSyncS2C(player), player);
+					StatsDeltaSync.markDirty(player);
 				}
 			}
 
@@ -749,7 +755,7 @@ public class TickHandler {
 					double masteryGain = formData != null ? formData.getPassiveMasteryEveryFiveSeconds() : 0.001;
 					masteryGain = PotionEffectHelper.applyMasteryGainMultiplier(player, masteryGain);
 					data.getCharacter().gainMastery(activeFormGroup, activeFormName, masteryGain);
-					NetworkHandler.sendToTrackingEntityAndSelf(new AppearanceSyncS2C(player), player);
+					StatsDeltaSync.markDirty(player);
 				}
 			}
 		}

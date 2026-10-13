@@ -3,6 +3,7 @@ package com.dragonminez.server.world.feature;
 import com.dragonminez.Reference;
 import com.dragonminez.common.init.MainBlocks;
 import com.dragonminez.common.init.block.custom.DemonRealmBlocks;
+import com.dragonminez.server.world.gen.ColumnCache;
 import com.dragonminez.server.world.gen.DemonRealmGeneration;
 import com.mojang.serialization.Codec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
@@ -67,6 +68,8 @@ public class DemonRealmFeatures {
 
 	public static final RegistryObject<Codec<TunnelDistance>> TUNNEL_DISTANCE = DENSITY_FUNCTIONS.register("tunnel_distance",
 			TunnelDistance.CODEC::codec);
+	public static final RegistryObject<Codec<ColumnCache>> COLUMN_CACHE = DENSITY_FUNCTIONS.register("column_cache",
+			ColumnCache.CODEC::codec);
 
 	public static final ResourceKey<ConfiguredFeature<?, ?>> SEA_CONFIGURED = configuredKey("demon_realm_sea");
 	public static final ResourceKey<ConfiguredFeature<?, ?>> TUNNEL_SHIELD_CONFIGURED = configuredKey("demon_realm_tunnel_shield");

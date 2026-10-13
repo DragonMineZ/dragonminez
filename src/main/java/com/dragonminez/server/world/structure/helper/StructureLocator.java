@@ -1,5 +1,6 @@
 package com.dragonminez.server.world.structure.helper;
 
+import com.dragonminez.server.world.structure.fitted.FittedTemplateStructure;
 import com.dragonminez.server.world.structure.placement.BiomeAwareUniquePlacement;
 import com.dragonminez.server.world.structure.placement.FixedStructurePlacement;
 import com.dragonminez.server.world.structure.placement.UniqueNearSpawnPlacement;
@@ -20,6 +21,7 @@ import net.minecraft.world.level.ChunkPos;
 import net.minecraft.world.level.biome.Biome;
 import net.minecraft.world.level.chunk.ChunkGenerator;
 import net.minecraft.world.level.chunk.LevelChunk;
+import net.minecraft.world.level.levelgen.Heightmap;
 import net.minecraft.world.level.levelgen.structure.BoundingBox;
 import net.minecraft.world.level.levelgen.structure.Structure;
 import net.minecraft.world.level.levelgen.structure.StructureSet;
@@ -126,16 +128,27 @@ public class StructureLocator {
 		BlockPos cached = PREDICTED_CENTERS.get(key);
 		if (cached != null) return cached;
 		try {
-			ChunkGenerator generator = level.getChunkSource().getGenerator();
-			Structure.GenerationContext context = new Structure.GenerationContext(level.registryAccess(), generator,
-					generator.getBiomeSource(), level.getChunkSource().randomState(), level.getStructureManager(),
-					level.getSeed(), chunkPos, level, biome -> true);
-			BlockPos predicted = structure.findValidGenerationPoint(context).map(Structure.GenerationStub::position).orElse(null);
+			BlockPos predicted = predictCenter(level, structure, chunkPos);
 			if (predicted != null) PREDICTED_CENTERS.put(key, predicted);
 			return predicted;
 		} catch (RuntimeException e) {
 			return null;
 		}
+	}
+
+	@Nullable
+	private static BlockPos predictCenter(ServerLevel level, Structure structure, ChunkPos chunkPos) {
+		ChunkGenerator generator = level.getChunkSource().getGenerator();
+		if (structure instanceof FittedTemplateStructure) {
+			int x = chunkPos.getMiddleBlockX();
+			int z = chunkPos.getMiddleBlockZ();
+			int y = generator.getBaseHeight(x, z, Heightmap.Types.WORLD_SURFACE_WG, level, level.getChunkSource().randomState());
+			return new BlockPos(x, y, z);
+		}
+		Structure.GenerationContext context = new Structure.GenerationContext(level.registryAccess(), generator,
+				generator.getBiomeSource(), level.getChunkSource().randomState(), level.getStructureManager(),
+				level.getSeed(), chunkPos, level, biome -> true);
+		return structure.findValidGenerationPoint(context).map(Structure.GenerationStub::position).orElse(null);
 	}
 
 	public static int getDistanceTo(BlockPos from, BlockPos to) {
