@@ -62,7 +62,7 @@ public class SagaSaibamanEntity extends DBSagasEntity{
 
         float healthThreshold = this.getMaxHealth() * 0.25f;
 
-        if (this.getHealth() <= healthThreshold && !this.hasCheckedExplosionChance && !isExploding()) {
+        if (this.canSelfDestruct() && this.getHealth() <= healthThreshold && !this.hasCheckedExplosionChance && !isExploding()) {
             this.hasCheckedExplosionChance = true;
 
             if (this.random.nextFloat() < 0.05F) {
@@ -220,6 +220,44 @@ public class SagaSaibamanEntity extends DBSagasEntity{
 
     public boolean isExploding() {
         return this.entityData.get(IS_EXPLODING);
+    }
+
+    protected boolean canSelfDestruct() {
+        return true;
+    }
+
+    @Override
+    public String getGeckolibModelName() {
+        return "saga_saibaman";
+    }
+
+    public static class BiomanEntity extends SagaSaibamanEntity {
+
+        public BiomanEntity(EntityType<? extends Monster> pEntityType, Level pLevel) {
+            super(pEntityType, pLevel);
+            if (this instanceof IBattlePower bp) {
+                bp.setBattlePower(1100);
+            }
+        }
+
+        public static AttributeSupplier.Builder createAttributes() {
+            return Monster.createMonsterAttributes()
+                    .add(Attributes.MAX_HEALTH, 70.0D)
+                    .add(Attributes.MOVEMENT_SPEED, 0.31D)
+                    .add(Attributes.ATTACK_DAMAGE, 13.0D)
+                    .add(Attributes.FOLLOW_RANGE, 32.0D)
+                    .add(Attributes.KNOCKBACK_RESISTANCE, 0.5D);
+        }
+
+        @Override
+        protected boolean canSelfDestruct() {
+            return false;
+        }
+
+        @Override
+        public String getGeckolibModelName() {
+            return "saga_bioman";
+        }
     }
 }
 

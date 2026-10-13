@@ -94,6 +94,7 @@ public class ModCommonEvents {
         );
 
         for (var saibaman : saibamans) event.put((EntityType<? extends LivingEntity>) saibaman.get(), SagaSaibamanEntity.createAttributes().build());
+        event.put(MainEntities.SAGA_BIOMAN.get(), SagaSaibamanEntity.BiomanEntity.createAttributes().build());
         for (var soldier : soldiers) event.put((EntityType<? extends LivingEntity>) soldier.get(), SagaFriezaSoldier01Entity.createAttributes().build());
         for (var ozaru : ozarus) event.put((EntityType<? extends LivingEntity>) ozaru.get(), SagaOzaruEntity.createAttributes().build());
         var ogres = List.of(MainEntities.SAGA_OGRE_RED, MainEntities.SAGA_OGRE_BLUE);
@@ -107,7 +108,7 @@ public class ModCommonEvents {
         AttributeSupplier defaultSagaAttributes = DBSagasEntity.createAttributes().build();
 
         for (var sagaEntity : MainEntities.getSagaEntities()) {
-            if (saibamans.contains(sagaEntity) || soldiers.contains(sagaEntity) || ozarus.contains(sagaEntity) || ogres.contains(sagaEntity) || sagaEntity == MainEntities.MINI_JANEMBA_STAMPEDE || sagaEntity == MainEntities.WILD_GIRAN) {
+            if (saibamans.contains(sagaEntity) || soldiers.contains(sagaEntity) || ozarus.contains(sagaEntity) || ogres.contains(sagaEntity) || sagaEntity == MainEntities.MINI_JANEMBA_STAMPEDE || sagaEntity == MainEntities.WILD_GIRAN || sagaEntity == MainEntities.SAGA_BIOMAN) {
                 continue;
             }
             event.put((EntityType<? extends LivingEntity>) sagaEntity.get(), defaultSagaAttributes);

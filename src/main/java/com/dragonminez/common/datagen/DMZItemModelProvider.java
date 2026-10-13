@@ -137,6 +137,7 @@ public class DMZItemModelProvider extends ItemModelProvider {
 		withExistingParent(MainItems.COPYMAN_SE.getId().getPath(), mcLoc("item/template_spawn_egg"));
 		withExistingParent(MainItems.TENNENMAN_SE.getId().getPath(), mcLoc("item/template_spawn_egg"));
 		withExistingParent(MainItems.JINKOUMAN_SE.getId().getPath(), mcLoc("item/template_spawn_egg"));
+		withExistingParent(MainItems.BIOMAN_SE.getId().getPath(), mcLoc("item/template_spawn_egg"));
 		withExistingParent(MainItems.REDRIBBONSOLDIER_SE.getId().getPath(), mcLoc("item/template_spawn_egg"));
 		withExistingParent(MainItems.REDRIBBONROBOT1_SE.getId().getPath(), mcLoc("item/template_spawn_egg"));
 		withExistingParent(MainItems.REDRIBBONROBOT2_SE.getId().getPath(), mcLoc("item/template_spawn_egg"));

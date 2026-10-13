@@ -249,7 +249,8 @@ public class ModClientEvents {
 
         regRender(event, SagaSaibamanRenderer::new,
                 MainEntities.SAGA_SAIBAMAN, MainEntities.SAGA_SAIBAMAN2, MainEntities.SAGA_SAIBAMAN3,
-                MainEntities.SAGA_SAIBAMAN4, MainEntities.SAGA_SAIBAMAN5, MainEntities.SAGA_SAIBAMAN6);
+                MainEntities.SAGA_SAIBAMAN4, MainEntities.SAGA_SAIBAMAN5, MainEntities.SAGA_SAIBAMAN6,
+                MainEntities.SAGA_BIOMAN);
 
         event.registerEntityRenderer(MainEntities.DINOSAUR1.get(), DinosRenderer::new);
         event.registerEntityRenderer(MainEntities.DINOSAUR2.get(), GranDinoRenderer::new);

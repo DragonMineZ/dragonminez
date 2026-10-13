@@ -80,7 +80,7 @@ public class MainEntities {
 
                 // SAGA SAIYAN
                 SAGA_GOKU_EARLY, SAGA_GOKU_EARLY_NOWEIGHTS, SAGA_PICCOLO_EARLY, SAGA_CHAOZ,
-                SAGA_SAIBAMAN, SAGA_SAIBAMAN2, SAGA_SAIBAMAN3, SAGA_SAIBAMAN4, SAGA_SAIBAMAN5, SAGA_SAIBAMAN6,
+                SAGA_SAIBAMAN, SAGA_SAIBAMAN2, SAGA_SAIBAMAN3, SAGA_SAIBAMAN4, SAGA_SAIBAMAN5, SAGA_SAIBAMAN6, SAGA_BIOMAN,
                 SAGA_RADITZ, SAGA_NAPPA, SAGA_VEGETA, SAGA_OZARU_VEGETA, SAGA_OZARU,
 
                 // SAGA FRIEZA
@@ -715,6 +715,11 @@ public class MainEntities {
                     () -> EntityType.Builder.of(SagaSaibamanEntity::new, MobCategory.MONSTER)
                             .sized(0.8f, 1.6f)
                             .build(ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "saga_saibaman6").toString()));
+    public static final RegistryObject<EntityType<SagaSaibamanEntity.BiomanEntity>> SAGA_BIOMAN =
+            ENTITY_TYPES.register("saga_bioman",
+                    () -> EntityType.Builder.of(SagaSaibamanEntity.BiomanEntity::new, MobCategory.MONSTER)
+                            .sized(0.8f, 1.6f)
+                            .build(ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "saga_bioman").toString()));
     public static final RegistryObject<EntityType<SagaRaditzEntity>> SAGA_RADITZ =
             ENTITY_TYPES.register("saga_raditz",
                     () -> EntityType.Builder.of(SagaRaditzEntity::new, MobCategory.MONSTER)

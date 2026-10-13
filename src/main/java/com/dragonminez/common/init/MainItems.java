@@ -623,6 +623,8 @@ public final class MainItems {
 			new ForgeSpawnEggItem(MainEntities.SAGA_SAIBAMAN5, 0xb971d1, 0x298ba3, new Item.Properties()));
 	public static final RegistryObject<Item> JINKOUMAN_SE = ITEM_REGISTER.register("jinkouman_spawn_egg", () ->
 			new ForgeSpawnEggItem(MainEntities.SAGA_SAIBAMAN6, 0xb3acb5, 0x242321, new Item.Properties()));
+	public static final RegistryObject<Item> BIOMAN_SE = ITEM_REGISTER.register("bioman_spawn_egg", () ->
+			new ForgeSpawnEggItem(MainEntities.SAGA_BIOMAN, 0x78D4D4, 0x3E5294, new Item.Properties()));
 	public static final RegistryObject<Item> REDRIBBONSOLDIER_SE = ITEM_REGISTER.register("redribbon_soldier_spawn_egg", () ->
 			new ForgeSpawnEggItem(MainEntities.RED_RIBBON_SOLDIER, 0xe6975e, 0xe63c29, new Item.Properties()));
 	public static final RegistryObject<Item> REDRIBBONROBOT1_SE = ITEM_REGISTER.register("redribbon_robot1_spawn_egg", () ->

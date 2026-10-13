@@ -86,6 +86,10 @@
       "required": false
     },
     {
+      "id": "dragonminez:saga_bioman",
+      "required": false
+    },
+    {
       "id": "dragonminez:saga_raditz",
       "required": false
     },
