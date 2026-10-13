@@ -870,6 +870,12 @@ public class NetworkHandler {
 				.encoder(VehicleFlightModeC2S::encode)
 				.consumerMainThread(VehicleFlightModeC2S::handle)
 				.add();
+
+		net.messageBuilder(DynamicGrowthNotificationsC2S.class, id(), NetworkDirection.PLAY_TO_SERVER)
+				.decoder(DynamicGrowthNotificationsC2S::new)
+				.encoder(DynamicGrowthNotificationsC2S::encode)
+				.consumerMainThread(DynamicGrowthNotificationsC2S::handle)
+				.add();
 	}
 
 	public static <MSG> void sendToServer(MSG message) {

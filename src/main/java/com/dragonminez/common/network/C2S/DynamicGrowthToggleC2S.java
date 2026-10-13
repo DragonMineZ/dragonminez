@@ -41,18 +41,15 @@ public class DynamicGrowthToggleC2S {
 			if (!PacketRateLimiter.allow(player.getUUID(), "dynamicgrowthtogglec2s", player.level().getGameTime(), 4)) return;
 			if (!ConfigManager.getServerConfig().getDynamicGrowth().isEnabled()) return;
 
+			DynamicGrowthStat parsed;
+			try {
+				parsed = DynamicGrowthStat.valueOf(stat);
+			} catch (IllegalArgumentException e) {
+				return;
+			}
+
 			StatsProvider.get(StatsCapability.INSTANCE, player).ifPresent(data -> {
-				if ("NOTIFICATIONS".equals(stat)) {
-					data.getDynamicGrowth().setStatGainNotificationsEnabled(enabled);
-				} else {
-					DynamicGrowthStat parsed;
-					try {
-						parsed = DynamicGrowthStat.valueOf(stat);
-					} catch (IllegalArgumentException e) {
-						return;
-					}
-					data.getDynamicGrowth().setGrowthEnabled(parsed, enabled);
-				}
+				data.getDynamicGrowth().setGrowthEnabled(parsed, enabled);
 				NetworkHandler.sendToTrackingEntityAndSelf(new StatsSyncS2C(player), player);
 			});
 		});
