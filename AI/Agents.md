@@ -1,6 +1,6 @@
 # AI Agent Onboarding: DragonMineZ
 
-This is the first local AI entry point for DragonMineZ work. Read this before inspecting code, planning changes, or answering implementation questions. Then read `AI/Memory.md` and `AI/Context.md` before acting.
+This is the first local AI entry point for DragonMineZ work. Read this before inspecting code, planning changes, or answering implementation questions. Then read `AI/Memory.md` before acting.
 
 ## Operating Rules
 
@@ -20,14 +20,13 @@ This is the first local AI entry point for DragonMineZ work. Read this before in
 
 1. Read this file.
 2. Read `AI/Memory.md` for durable user instructions and prohibitions.
-3. Read `AI/Context.md` for current project architecture and data-system notes.
-4. Check `git status --short` before editing.
-5. Inspect only the files needed for the task.
-6. Identify whether the task touches code, assets, generated data, runtime/player-editable JSON, configs, networking, storage, worldgen, localization, or dependencies.
-7. Ask for clarification only when the answer changes behavior, compatibility, migration, or risk.
-8. Make the smallest coherent change that solves the request.
-9. Run fresh verification before claiming success.
-10. Stage changed tracked files before finishing, respecting explicit user staging limits.
+3. Check `git status --short` before editing.
+4. Inspect only the files needed for the task.
+5. Identify whether the task touches code, assets, generated data, runtime/player-editable JSON, configs, networking, storage, worldgen, localization, or dependencies.
+6. Ask for clarification only when the answer changes behavior, compatibility, migration, or risk.
+7. Make the smallest coherent change that solves the request.
+8. Run fresh verification before claiming success.
+9. Stage changed tracked files before finishing, respecting explicit user staging limits.
 11. Final response should summarize what changed, what was verified, and any remaining risk.
 
 ## Tone And Collaboration

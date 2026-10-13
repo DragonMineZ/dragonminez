@@ -30,6 +30,7 @@ import net.minecraftforge.fml.common.Mod;
 public class EffectsEvents {
 	private static boolean isBioAndroidDrainingCache = false;
 	private static boolean isChargingFormCache = false;
+	private static boolean isOverchargingCache = false;
 
 	@SubscribeEvent
 	public static void onClientTick(TickEvent.ClientTickEvent event) {
@@ -46,6 +47,8 @@ public class EffectsEvents {
 
 		isChargingFormCache = StatsProvider.get(StatsCapability.INSTANCE, player)
 				.map(data -> (data.getStatus().isAuraActive() && !data.getStatus().isPermanentAura() && !data.getStatus().isForcedAura())).orElse(false);
+		isOverchargingCache = StatsProvider.get(StatsCapability.INSTANCE, player)
+				.map(data -> data.getStatus().isChargingKi() && (data.getStatus().isKiBurstArmed() || data.getStatus().isSurgeActive())).orElse(false);
 	}
 
 	private static final double BIO_SHAKE_RANGE_MULT = 1.5D;
@@ -57,6 +60,11 @@ public class EffectsEvents {
 	private static final double KI_BURST_SHAKE_RANGE_MULT = 1.5D;
 	private static final float KI_BURST_SHAKE_OPENING = 1.2F;
 	private static final float KI_BURST_SHAKE_FULL = 2.8F;
+
+	private static final float CHARGE_SHAKE = 0.05F;
+	private static final float CHARGE_JITTER = 0.2F;
+	private static final float OVERCHARGE_SHAKE = 0.16F;
+	private static final float OVERCHARGE_JITTER = 1.2F;
 
 	@SubscribeEvent
 	public static void onCameraSetup(ViewportEvent.ComputeCameraAngles event) {
@@ -203,14 +211,14 @@ public class EffectsEvents {
 			event.setRoll(event.getRoll() + rollShake);
 		}
 
-		if (isChargingFormCache) {
-			float globalshake = 0.05F;
+		if (isChargingFormCache || isOverchargingCache) {
+			float globalshake = isOverchargingCache ? OVERCHARGE_SHAKE : CHARGE_SHAKE;
 
 			float sweepIntensity = 2.5F * globalshake;
 			float sweepYaw = (float) (Math.sin(time * 1.5D) * sweepIntensity);
 			float sweepPitch = (float) (Math.cos(time * 1.2D) * (sweepIntensity * 0.6F));
 
-			float shakeIntensity = 0.2F * globalshake;
+			float shakeIntensity = (isOverchargingCache ? OVERCHARGE_JITTER : CHARGE_JITTER) * globalshake;
 			float shakeYaw = (float) (Math.sin(time * 5.0D) * shakeIntensity);
 			float shakePitch = (float) (Math.cos(time * 6.0D) * shakeIntensity);
 

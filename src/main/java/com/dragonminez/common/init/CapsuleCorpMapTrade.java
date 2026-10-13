@@ -30,6 +30,7 @@ public class CapsuleCorpMapTrade implements VillagerTrades.ItemListing {
 
 	public static final String STRUCTURE_TAG = "dmz_structure";
 	public static final String PENDING_TAG = "dmz_pending";
+	private static final double TARGET_TOLERANCE = 8.0D;
 
 	private final ItemStack priceA;
 	private final ItemStack priceB;
@@ -154,8 +155,8 @@ public class CapsuleCorpMapTrade implements VillagerTrades.ItemListing {
 		for (int i = 0; i < decorations.size(); i++) {
 			CompoundTag decoration = decorations.getCompound(i);
 			if (!"+".equals(decoration.getString("id"))) continue;
-			return (int) decoration.getDouble("x") == pos.getX()
-					&& (int) decoration.getDouble("z") == pos.getZ();
+			return Math.abs(decoration.getDouble("x") - pos.getX()) <= TARGET_TOLERANCE
+					&& Math.abs(decoration.getDouble("z") - pos.getZ()) <= TARGET_TOLERANCE;
 		}
 		return false;
 	}

@@ -36,6 +36,9 @@ import net.minecraftforge.event.TickEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
 
+import java.util.Map;
+import java.util.WeakHashMap;
+
 @Mod.EventBusSubscriber(modid = Reference.MOD_ID, bus = Mod.EventBusSubscriber.Bus.FORGE, value = Dist.CLIENT)
 public class FlySkillEvent {
 	private static final FlySkillEvent INSTANCE = new FlySkillEvent();
@@ -45,8 +48,10 @@ public class FlySkillEvent {
 	private static int verticalHover = 0;
 	private static float hovering = 0F;
 
-	private static final float NORMAL_MAX_SPEED = 0.6F;
-	private static final float SPRINT_MAX_SPEED = 1.05F;
+	private static final float SEARCH_SPEED_SCALE = 0.82F;
+	private static final float BASE_SPRINT_SPEED = 1.05F;
+	private static final float NORMAL_MAX_SPEED = 0.6F * SEARCH_SPEED_SCALE;
+	private static final float SPRINT_MAX_SPEED = BASE_SPRINT_SPEED * SEARCH_SPEED_SCALE;
 	private static final float ACCELERATION = 0.055F;
 	private static final float DECELERATION = 0.035F;
 	private static final float EXIT_DECELERATION = 0.08F;
@@ -55,8 +60,11 @@ public class FlySkillEvent {
 	private static final float TURN_SPEED_FAST = 0.6F;
 	private static final double TURN_REVERSAL_DOT = -0.2D;
 	private static final float BASE_ATTRIBUTE_FLY_SPEED = 0.35F;
-	private static final float FAST_FLYING_THRESHOLD = 0.55F;
-	private static final float FAST_FLYING_EXIT_THRESHOLD = 0.4F;
+	private static final float FAST_FLYING_THRESHOLD = 0.55F * SEARCH_SPEED_SCALE;
+	private static final float FAST_FLYING_EXIT_THRESHOLD = 0.4F * SEARCH_SPEED_SCALE;
+	private static final double REMOTE_TELEPORT_STEP = 32.0D;
+	private static final double REMOTE_SPEED_SMOOTHING = 0.2D;
+	private static final Map<AbstractClientPlayer, RemoteFlight> REMOTE_FLIGHT = new WeakHashMap<>();
 	private static final double MIN_GROUND_CLEARANCE = 0.25D;
 
 	private static long pendingGroundActivationStartTime = 0;
@@ -165,7 +173,7 @@ public class FlySkillEvent {
 	private static double strikeRushSpeed(LocalPlayer player) {
 		return StatsProvider.get(StatsCapability.INSTANCE, player).map(data -> {
 			float levelMultiplier = 1.0F + (0.20F * data.getSkills().getSkillLevel("fly"));
-			double sprintSpeed = SPRINT_MAX_SPEED * levelMultiplier * getFlySpeedScale(player) * data.getResources().getFlightSpeedLimit() / 100;
+			double sprintSpeed = BASE_SPRINT_SPEED * levelMultiplier * getFlySpeedScale(player) * data.getResources().getFlightSpeedLimit() / 100;
 			return Mth.clamp(sprintSpeed * STRIKE_RUSH_SPEED_SCALE, STRIKE_RUSH_MIN_SPEED, STRIKE_RUSH_MAX_SPEED);
 		}).orElse(STRIKE_RUSH_MIN_SPEED);
 	}
@@ -643,8 +651,30 @@ public class FlySkillEvent {
 					Skill flySkill = data.getSkills().getSkill("fly");
 					return flySkill != null && flySkill.isActive() && data.getStatus().getFlightMode() != Status.FLIGHT_COMBAT;
 				}).orElse(false);
+		if (!flyActive) {
+			REMOTE_FLIGHT.remove(player);
+			return false;
+		}
 
-		return flyActive && player.getDeltaMovement().lengthSqr() > (FAST_FLYING_THRESHOLD * FAST_FLYING_THRESHOLD);
+		RemoteFlight state = REMOTE_FLIGHT.computeIfAbsent(player, key -> new RemoteFlight());
+		if (state.tick != player.tickCount) {
+			state.tick = player.tickCount;
+			double dx = player.getX() - player.xo;
+			double dy = player.getY() - player.yo;
+			double dz = player.getZ() - player.zo;
+			double step = Math.sqrt(dx * dx + dy * dy + dz * dz);
+			if (step > REMOTE_TELEPORT_STEP) step = state.speed;
+			state.speed = Mth.lerp(REMOTE_SPEED_SMOOTHING, state.speed, step);
+			if (state.fast) state.fast = state.speed >= FAST_FLYING_EXIT_THRESHOLD;
+			else state.fast = state.speed > FAST_FLYING_THRESHOLD;
+		}
+		return state.fast;
+	}
+
+	private static final class RemoteFlight {
+		private int tick = Integer.MIN_VALUE;
+		private double speed;
+		private boolean fast;
 	}
 
 	private static double getActivationEnergyPercent(int flyLevel) {

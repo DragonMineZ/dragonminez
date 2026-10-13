@@ -5,6 +5,7 @@ import com.dragonminez.LogUtil;
 import com.dragonminez.Reference;
 import com.dragonminez.common.config.ConfigManager;
 import com.dragonminez.common.network.NetworkHandler;
+import com.dragonminez.common.network.StatsDeltaSync;
 import com.dragonminez.common.racial.RacialContext;
 import com.dragonminez.common.racial.RacialRegistry;
 import com.dragonminez.common.stats.character.Cooldowns;
@@ -112,6 +113,7 @@ public class StatsCapability {
 				}
 				data.getSkills().setSkillActive("kisense", false);
 				RacialRegistry.forPlayer(data).ifPresent(ability -> ability.onLogin(new RacialContext(serverPlayer, data)));
+				StatsDeltaSync.reset(serverPlayer);
 				NetworkHandler.sendToTrackingEntityAndSelf(new StatsSyncS2C(serverPlayer), serverPlayer);
 				syncSkinPixels(serverPlayer, data);
 			});
@@ -131,6 +133,7 @@ public class StatsCapability {
 				data.getStatus().setMatchFrozen(false);
 				data.getCooldowns().removeCooldown(Cooldowns.KNOCKDOWN_DURATION);
 				RacialRegistry.forPlayer(data).ifPresent(ability -> ability.onRespawn(new RacialContext(serverPlayer, data)));
+				StatsDeltaSync.reset(serverPlayer);
 				NetworkHandler.sendToTrackingEntityAndSelf(new ResourceSyncS2C(serverPlayer), serverPlayer);
 			});
 		}
@@ -150,6 +153,7 @@ public class StatsCapability {
 				data.getCooldowns().removeCooldown(Cooldowns.KNOCKDOWN_DURATION);
 				com.dragonminez.server.world.worldboss.WorldBossManager.onPlayerChangedDimension(serverPlayer, data);
 				RacialRegistry.forPlayer(data).ifPresent(ability -> ability.onDimensionChange(new RacialContext(serverPlayer, data)));
+				StatsDeltaSync.reset(serverPlayer);
 
 				NetworkHandler.sendToTrackingEntityAndSelf(new StatsSyncS2C(serverPlayer), serverPlayer);
 				syncSkinPixels(serverPlayer, data);
@@ -160,6 +164,8 @@ public class StatsCapability {
 	@SubscribeEvent
 	public static void onStartTracking(PlayerEvent.StartTracking event) {
 		if (!(event.getTarget() instanceof ServerPlayer target) || !(event.getEntity() instanceof ServerPlayer viewer)) return;
+		StatsSyncS2C snapshot = StatsDeltaSync.trackerSnapshot(target);
+		if (snapshot != null) NetworkHandler.sendToPlayer(snapshot, viewer);
 		StatsProvider.get(INSTANCE, target).ifPresent(data -> {
 			if (!data.getCharacter().getSkinPixels().isEmpty()) NetworkHandler.sendToPlayer(new SkinPixelsSyncS2C(target), viewer);
 		});

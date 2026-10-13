@@ -235,6 +235,7 @@ public class AllWorldBossesEntity {
             this.getAttribute(Attributes.MAX_HEALTH).setBaseValue(baseHealth());
             this.getAttribute(Attributes.ATTACK_DAMAGE).setBaseValue(baseMelee());
             this.getAttribute(Attributes.MOVEMENT_SPEED).setBaseValue(0.14D);
+            this.setDefaultMovementSpeed(0.14D);
             this.getAttribute(Attributes.KNOCKBACK_RESISTANCE).setBaseValue(1.0D);
             this.getAttribute(Attributes.ATTACK_SPEED).setBaseValue(3.0D);
             this.getAttribute(EntityAttributes.KI_BLAST_DAMAGE.get()).setBaseValue(baseKi());
@@ -612,6 +613,7 @@ public class AllWorldBossesEntity {
             this.getAttribute(Attributes.MAX_HEALTH).setBaseValue(baseHealth());
             this.getAttribute(Attributes.ATTACK_DAMAGE).setBaseValue(baseMelee());
             this.getAttribute(Attributes.MOVEMENT_SPEED).setBaseValue(0.42D);
+            this.setDefaultMovementSpeed(0.42D);
             this.getAttribute(Attributes.ATTACK_SPEED).setBaseValue(9.0D);
             this.getAttribute(EntityAttributes.KI_BLAST_DAMAGE.get()).setBaseValue(baseKi());
             this.setKiBlastDamage(baseKi());
@@ -734,6 +736,7 @@ public class AllWorldBossesEntity {
             this.getAttribute(Attributes.ATTACK_DAMAGE).setBaseValue(JanembaFat.baseMelee() * STAT_RATIO);
             this.getAttribute(EntityAttributes.KI_BLAST_DAMAGE.get()).setBaseValue(JanembaFat.baseKi() * STAT_RATIO);
             this.getAttribute(Attributes.MOVEMENT_SPEED).setBaseValue(0.46D);
+            this.setDefaultMovementSpeed(0.46D);
             this.getAttribute(Attributes.ATTACK_SPEED).setBaseValue(9.0D);
             this.getAttribute(Attributes.KNOCKBACK_RESISTANCE).setBaseValue(0.0D);
             this.setKiBlastDamage(JanembaFat.baseKi() * STAT_RATIO);

@@ -7,10 +7,9 @@ This file records instructions, preferences, prohibitions, decisions, and durabl
 ## Relationship To Other AI Docs
 
 - `AI/Agents.md` is the local AI onboarding entry point. Always read it first.
-- `AI/Context.md` stores current project architecture, systems, commands, and nuanced repo facts.
 - `AI/Skills.md` describes how to package repeatable workflows.
 - `AI/Memory.md` stores durable behavior guidance that remains useful across future sessions.
-- If information belongs only to the current task, put it in `AI/Context.md` or a task note, not here.
+- If information belongs only to the current task, put it in a task note, not here.
 - Do not duplicate broad architecture already documented elsewhere unless the memory changes future behavior.
 
 ## What To Record
@@ -68,7 +67,7 @@ Use this schema for each memory entry:
 - Guidance: What future AI agents should do because of this.
 - Do Not: Optional. What future AI agents should avoid.
 - Verification: Optional. How to confirm the memory is still true.
-- Related: Optional. Link to `AI/Agents.md`, `AI/Context.md`, source files, issues, or PRs.
+- Related: Optional. Link to `AI/Agents.md`, source files, issues, or PRs.
 ```
 
 ## Seed Entries
@@ -82,7 +81,6 @@ Use this schema for each memory entry:
 - Summary: Many DragonMineZ JSON files are intended to be edited by players and addon authors.
 - Guidance: Preserve readability, clear field names, lenient loading where appropriate, useful errors, and migration/backfill paths for JSON-backed user data.
 - Do Not: Do not replace user-facing JSON formats with opaque or generated-only structures unless the user explicitly approves the break.
-- Related: `AI/Agents.md`, `AI/Context.md`
 
 ### 2026-05-05 - Prefer Replacing Old Code Over Compatibility Branching
 
@@ -120,7 +118,7 @@ Add durable memories below this line, newest first.
 - Guidance: Treat cooldown values as real ticks (`xxxSeconds * 20` = real seconds). Before adding a `PlayerTickEvent` subscriber that advances player state, check that nothing else already advances it.
 - Do Not: Do not tick `Cooldowns` from a second place, and do not halve config values or constants to "restore" the old 2.1 timing without asking.
 - Verification: `grep -rn "getCooldowns().tick()" src/main/java` has exactly one hit, in `TickHandler`.
-- Related: `AI/Context.md` (Player state ticking), `client/gui/dialogue/CooldownClock`
+- Related: `client/gui/dialogue/CooldownClock`
 
 ### 2026-10-01 - Client Code Must Not Recompute Server-Only Gameplay State
 
@@ -152,7 +150,6 @@ Add durable memories below this line, newest first.
 - Summary: `RenderTarget.resize` deletes and recreates its textures and NVIDIA returns the same texture names, so a raw framebuffer whose attachments were cached by id kept pointing at the deleted textures, still reported `GL_FRAMEBUFFER_COMPLETE`, and drew nowhere. Every bloom (ki attacks and auras) vanished after the first maximise or fullscreen switch until a restart.
 - Guidance: Re-attach such framebuffers once per frame. To verify, make the effect render once, then resize the window (GLFW maximise/restore, `Window.toggleFullScreen`) and read the target texture back.
 - Do Not: Do not treat an unchanged texture id or a complete framebuffer status as proof that an attachment is still the live texture.
-- Related: `AI/Context.md` (Bloom)
 
 ### 2026-09-26 - RenderType Clear State Leaks Into Manual Draw Passes
 
@@ -184,7 +181,6 @@ Add durable memories below this line, newest first.
 - Summary: The beam clash timing meter is simulated identically on client and server from `(seed, ticks since clash start)`; the client stamps presses with the meter time it rendered and the server re-simulates that instant and checks plausibility (latency window bounded by real time, marker consistency, monotonic claims, one press per cycle).
 - Guidance: Any change to `ClashMeter` (cycle lengths, window placement, grading) changes both sides at once; keep it free of `Random`, side effects and platform-dependent math. Tune feel in `BeamClash` (`DRIFT_PER_TICK`, `MOMENTUM_DECAY`, `BURST_PER_PERFECT_PRESS`) rather than by sending meter state over the network.
 - Do Not: Do not reintroduce a server-ticked meter phase in `BeamClashStateS2C`, and do not score from the client's claimed marker — it is only a consistency check against the re-simulation.
-- Related: `AI/Context.md` (Beam Clash section)
 
 ### 2026-07-12 - Post Shaders Must Output Alpha 1.0 Before The Vanilla Blit Pass
 

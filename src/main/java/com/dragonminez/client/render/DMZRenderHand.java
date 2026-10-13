@@ -8,6 +8,8 @@ import com.dragonminez.client.render.layer.AuraTintTracker;
 import com.dragonminez.client.render.layer.BodyLayerFadeTracker;
 import com.dragonminez.client.render.layer.DMZSkinLayer;
 import com.dragonminez.client.render.util.ModRenderTypes;
+import com.dragonminez.client.render.effects.KiWeaponRenderer;
+import org.joml.Vector3f;
 import com.dragonminez.client.render.util.PlayerEffectQueue;
 import com.dragonminez.client.util.SkinGathererProvider;
 import com.dragonminez.common.config.ConfigManager;
@@ -168,6 +170,18 @@ public class DMZRenderHand extends LivingEntityRenderer<AbstractClientPlayer, Pl
 		if (type == null || type.equalsIgnoreCase("none")) return;
 		float[] color = KiWeaponHelper.resolveColorForType(type, getKiColor(stats));
 		String lower = type.toLowerCase();
+
+		if (KiWeaponRenderer.usesShaderBlade(type)) {
+			ps.pushPose();
+			(arm == HumanoidArm.RIGHT ? this.model.rightArm : this.model.leftArm).translateAndRotate(ps);
+			float cx = (arm == HumanoidArm.RIGHT ? -1.0F : 1.0F) / 16.0F;
+			float handEnd = 10.0F / 16.0F;
+			Vector3f start = new Vector3f(cx, handEnd - KiWeaponRenderer.BLADE_WRIST_OFFSET, 0.0F);
+			Vector3f end = new Vector3f(cx, handEnd + KiWeaponRenderer.BLADE_REACH, 0.0F);
+			KiWeaponRenderer.renderBlade(ps.last().pose(), buffer.getBuffer(ModRenderTypes.kiBlade()), start, end, KiWeaponRenderer.BLADE_HALF_WIDTH, color, KiWeaponRenderer.bladeSeed(player));
+			ps.popPose();
+			return;
+		}
 
 		ModelPart geoPart = KiWeaponModelLoader.get(lower);
 		if (geoPart == null) return;

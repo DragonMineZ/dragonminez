@@ -29,6 +29,7 @@ public class CombatFlightHandler {
 
 	private static final long DOUBLE_TAP_WINDOW_MS = 250;
 	private static final float BASE_ATTRIBUTE_FLY_SPEED = 0.35F;
+	private static final double COMBAT_SPEED_SCALE = 0.85D;
 	private static final float SMOOTHING = 0.35F;
 	private static final float BURST_DECAY = 0.88F;
 	private static final double PASSIVE_DESCENT = -0.05D;
@@ -59,8 +60,8 @@ public class CombatFlightHandler {
 		float speedScale = getFlySpeedScale(player);
 		float levelMultiplier = 1.0F + (0.20F * flyLevel);
 
-		double baseSpeed = config.getCombatFlyBaseSpeed() * levelMultiplier * speedScale * data.getResources().getFlightSpeedLimit() / 100;
-		double sprintSpeed = config.getCombatFlySprintSpeed() * levelMultiplier * speedScale * data.getResources().getFlightSpeedLimit() / 100;
+		double baseSpeed = config.getCombatFlyBaseSpeed() * COMBAT_SPEED_SCALE * levelMultiplier * speedScale * data.getResources().getFlightSpeedLimit() / 100;
+		double sprintSpeed = config.getCombatFlySprintSpeed() * COMBAT_SPEED_SCALE * levelMultiplier * speedScale * data.getResources().getFlightSpeedLimit() / 100;
 
 		Minecraft mc = Minecraft.getInstance();
 		boolean forward = !movementRestricted && mc.options.keyUp.isDown();

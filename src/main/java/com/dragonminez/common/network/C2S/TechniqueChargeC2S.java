@@ -1,7 +1,7 @@
 package com.dragonminez.common.network.C2S;
 
-import com.dragonminez.common.network.NetworkHandler;
-import com.dragonminez.common.network.S2C.ProgressionSyncS2C;
+import com.dragonminez.common.network.PacketRateLimiter;
+import com.dragonminez.common.network.StatsDeltaSync;
 import com.dragonminez.common.stats.StatsCapability;
 import com.dragonminez.common.stats.StatsData;
 import com.dragonminez.common.stats.StatsProvider;
@@ -19,6 +19,7 @@ import java.util.function.Supplier;
 public class TechniqueChargeC2S {
 
 	private static final double LOCK_RANGE_MARGIN = 8.0;
+	private static final long START_MIN_INTERVAL_TICKS = 2L;
 
 	public enum Action { START, SET_HOLDING }
 
@@ -64,12 +65,13 @@ public class TechniqueChargeC2S {
 			StatsProvider.get(StatsCapability.INSTANCE, player).ifPresent(data -> {
 				if (!data.getStatus().isHasCreatedCharacter() || data.getStatus().isStunned()) {
 					data.getTechniques().clearTechniqueCharge();
-					NetworkHandler.sendToTrackingEntityAndSelf(new ProgressionSyncS2C(player), player);
+					StatsDeltaSync.markDirty(player, StatsDeltaSync.TECHNIQUES);
 					return;
 				}
 
 				switch (msg.action) {
 					case START -> {
+						if (!PacketRateLimiter.allow(player.getUUID(), "technique_charge_start", player.level().getGameTime(), START_MIN_INTERVAL_TICKS)) break;
 						if (player.isSpectator()
 								|| (data.getStatus().isFused() && !data.getStatus().isFusionLeader())) {
 							data.getTechniques().clearTechniqueCharge();
@@ -112,7 +114,7 @@ public class TechniqueChargeC2S {
 					}
 				}
 
-				NetworkHandler.sendToTrackingEntityAndSelf(new ProgressionSyncS2C(player), player);
+				StatsDeltaSync.markDirty(player, StatsDeltaSync.TECHNIQUES);
 			});
 		});
 

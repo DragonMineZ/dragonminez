@@ -4,11 +4,19 @@ import com.dragonminez.common.alignment.AlignmentBand;
 import com.dragonminez.common.init.MainGameRules;
 import com.dragonminez.common.init.MainItems;
 import com.dragonminez.common.init.MainParticles;
+import com.dragonminez.common.init.MainSounds;
 import com.dragonminez.common.init.entities.IBattlePower;
 import com.dragonminez.common.stats.StatsCapability;
 import com.dragonminez.common.stats.StatsData;
 import com.dragonminez.common.stats.StatsProvider;
 import net.minecraft.core.BlockPos;
+import com.dragonminez.common.init.entities.WildSpawnRules;
+import net.minecraft.util.RandomSource;
+import net.minecraft.world.entity.Mob;
+import net.minecraft.world.entity.MobSpawnType;
+import net.minecraft.world.level.ServerLevelAccessor;
+import net.minecraft.core.particles.ParticleTypes;
+import net.minecraft.util.Mth;
 import net.minecraft.network.syncher.EntityDataAccessor;
 import net.minecraft.network.syncher.EntityDataSerializers;
 import net.minecraft.network.syncher.SynchedEntityData;
@@ -21,6 +29,7 @@ import net.minecraft.server.level.ServerLevel;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.world.entity.ai.attributes.AttributeInstance;
 import net.minecraft.world.entity.ai.attributes.AttributeModifier;
+import net.minecraft.world.entity.ai.attributes.AttributeSupplier;
 import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.entity.ai.goal.Goal;
 import net.minecraft.world.entity.monster.Monster;
@@ -459,6 +468,43 @@ public class SagaZFightersEntity {
 
     }
 
+    public static class WildGiranEntity extends GiranEntity {
+
+        private static final float NATURAL_SPAWN_CHANCE = 0.2F;
+        private static final double NATURAL_SPAWN_EXCLUSION_RADIUS = 64.0D;
+
+        public WildGiranEntity(EntityType<? extends Monster> pEntityType, Level pLevel) {
+            super(pEntityType, pLevel);
+            this.setScaleVal(1.56f);
+        }
+
+        public static boolean canSpawnNaturally(EntityType<? extends Mob> type, ServerLevelAccessor level, MobSpawnType reason, BlockPos pos, RandomSource random) {
+            if (!WildSpawnRules.canSpawn(type, level, reason, pos, random)) return false;
+            if (reason != MobSpawnType.NATURAL) return true;
+            if (random.nextFloat() >= NATURAL_SPAWN_CHANCE) return false;
+            return level.getEntitiesOfClass(WildGiranEntity.class, new AABB(pos).inflate(NATURAL_SPAWN_EXCLUSION_RADIUS)).isEmpty();
+        }
+
+        public static AttributeSupplier.Builder createAttributes() {
+            return Monster.createMonsterAttributes()
+                    .add(Attributes.MAX_HEALTH, 180.0D)
+                    .add(Attributes.MOVEMENT_SPEED, 0.24D)
+                    .add(Attributes.ATTACK_DAMAGE, 14.0D)
+                    .add(Attributes.FOLLOW_RANGE, 24.0D)
+                    .add(Attributes.KNOCKBACK_RESISTANCE, 0.6D);
+        }
+
+        @Override
+        public String getGeckolibModelName() {
+            return "saga_giran";
+        }
+
+        @Override
+        public String getGeckolibTextureName() {
+            return "saga_giran";
+        }
+    }
+
     public static class NamEntity extends DBSagasEntity {
 
         private static final double LEAP_POWER = 1.15D;
@@ -768,6 +814,141 @@ public class SagaZFightersEntity {
         @Override
         public String getGeckolibModelName() {
             return "saga_videl";
+        }
+
+    }
+
+    public static class SagaVidelEntity extends DBSagasEntity {
+        public SagaVidelEntity(EntityType<? extends Monster> pEntityType, Level pLevel) {
+            super(pEntityType, pLevel);
+
+            this.setCanFly(true);
+            this.setAuraColor(0xFFFFFF);
+            this.setKiBlastSpeed(1.0F);
+            this.setDBZStyle(0);
+            this.addKiSkill(KiSkillType.KI_SMALL, 120, 0.7F, 0xFFFFFF, 0xFFFFFF);
+        }
+
+    }
+
+    public static class SagaMrSatanEntity extends DBSagasEntity {
+        private static final int LEAP_COOLDOWN = 70;
+        private static final double LEAP_MIN_DISTANCE = 4.0D;
+        private static final double LEAP_MAX_DISTANCE = 14.0D;
+        private static final double LEAP_MIN_RISE = 2.0D;
+        private static final double LEAP_MAX_RISE = 9.0D;
+        private static final double LEAP_ARC = 3.0D;
+        private static final double LEAP_MAX_HORIZONTAL_SPEED = 1.1D;
+        private static final double GRAVITY = 0.08D;
+
+        private int leapCooldown = 40;
+        private int leapTicks = 0;
+        private int leapDuration = 0;
+        private boolean leapStruck = false;
+
+        public SagaMrSatanEntity(EntityType<? extends Monster> pEntityType, Level pLevel) {
+            super(pEntityType, pLevel);
+
+            this.setCanFly(false);
+            this.setDBZStyle(0);
+        }
+
+        @Override
+        public void tick() {
+            super.tick();
+            if (this.level().isClientSide || !this.isAlive()) return;
+
+            if (this.leapCooldown > 0) this.leapCooldown--;
+            LivingEntity target = this.getTarget();
+            if (this.leapDuration > 0) this.tickLeap(target);
+            else if (this.canLeapAt(target)) this.startLeap(target);
+        }
+
+        private boolean isBusy() {
+            return this.isCasting() || this.isComboing() || this.isEvading() || this.isStunned()
+                    || this.isTransforming() || this.isCombatFrozen();
+        }
+
+        private boolean canLeapAt(LivingEntity target) {
+            if (target == null || !target.isAlive() || this.leapCooldown > 0 || !this.onGround() || this.isBusy()) return false;
+            double rise = target.getY() - this.getY();
+            if (rise > LEAP_MAX_RISE) return false;
+            double horizontal = Math.sqrt(this.distanceToSqr(target.getX(), this.getY(), target.getZ()));
+            if (horizontal > LEAP_MAX_DISTANCE) return false;
+            return horizontal >= LEAP_MIN_DISTANCE || rise >= LEAP_MIN_RISE;
+        }
+
+        private void startLeap(LivingEntity target) {
+            double rise = target.getY() - this.getY();
+            double apex = Math.max(rise, 0.0D) + LEAP_ARC;
+            double upward = Math.sqrt(2.0D * GRAVITY * apex) * 1.05D;
+            double fall = Math.sqrt(2.0D * Math.max(apex - rise, 0.5D) / GRAVITY);
+
+            this.leapDuration = Math.max(8, Mth.ceil(upward / GRAVITY + fall));
+            this.leapTicks = 0;
+            this.leapStruck = false;
+            this.getNavigation().stop();
+            this.rotateBodyToTarget(target);
+            this.setDeltaMovement(this.leapVelocity(target, upward));
+            this.hasImpulse = true;
+
+            this.playSound(MainSounds.EVASION1.get(), 1.0F, 0.8F);
+            if (this.level() instanceof ServerLevel serverLevel) {
+                serverLevel.sendParticles(ParticleTypes.CLOUD, this.getX(), this.getY() + 0.1D, this.getZ(), 8, 0.3D, 0.05D, 0.3D, 0.03D);
+            }
+        }
+
+        private Vec3 leapVelocity(LivingEntity target, double vertical) {
+            Vec3 toTarget = new Vec3(target.getX() - this.getX(), 0.0D, target.getZ() - this.getZ());
+            double distance = toTarget.length();
+            double stopShort = (target.getBbWidth() + this.getBbWidth()) * 0.5D + 0.4D;
+            if (distance <= stopShort) return new Vec3(0.0D, vertical, 0.0D);
+
+            int remaining = Math.max(1, this.leapDuration - this.leapTicks);
+            Vec3 horizontal = toTarget.scale((distance - stopShort) / distance / remaining);
+            if (horizontal.length() > LEAP_MAX_HORIZONTAL_SPEED) horizontal = horizontal.normalize().scale(LEAP_MAX_HORIZONTAL_SPEED);
+            return new Vec3(horizontal.x, vertical, horizontal.z);
+        }
+
+        private void tickLeap(LivingEntity target) {
+            this.leapTicks++;
+            if (target == null || !target.isAlive() || this.isBusy() || this.leapTicks > this.leapDuration + 20) {
+                this.endLeap();
+                return;
+            }
+
+            this.getNavigation().stop();
+            this.rotateBodyToTarget(target);
+            boolean landed = this.leapTicks > 2 && this.onGround();
+            double contactRange = landed ? 1.5D : 1.0D;
+            if (!this.leapStruck && this.getBoundingBox().inflate(contactRange).intersects(target.getBoundingBox())) {
+                this.leapStrike(target);
+            }
+
+            if (landed) {
+                if (this.level() instanceof ServerLevel serverLevel) {
+                    serverLevel.sendParticles(ParticleTypes.POOF, this.getX(), this.getY() + 0.1D, this.getZ(), 10, 0.4D, 0.05D, 0.4D, 0.02D);
+                }
+                this.endLeap();
+                return;
+            }
+
+            if (!this.leapStruck) this.setDeltaMovement(this.leapVelocity(target, this.getDeltaMovement().y));
+        }
+
+        private void leapStrike(LivingEntity target) {
+            this.leapStruck = true;
+            if (this.doHurtTarget(target)) {
+                this.playSound(MainSounds.CRITICO1.get(), 1.0F, 1.1F);
+                this.spawnPunchParticles(target);
+            }
+            this.setDeltaMovement(0.0D, Math.min(this.getDeltaMovement().y, 0.0D), 0.0D);
+        }
+
+        private void endLeap() {
+            this.leapDuration = 0;
+            this.leapTicks = 0;
+            this.leapCooldown = LEAP_COOLDOWN;
         }
 
     }

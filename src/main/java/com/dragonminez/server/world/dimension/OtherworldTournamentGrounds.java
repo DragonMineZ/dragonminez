@@ -46,11 +46,11 @@ public final class OtherworldTournamentGrounds {
 	public static final float GRAND_KAI_RETURN_YAW = 0.0F;
 	public static final String ANNOUNCER_PLACEMENT_ID = "master_otherworld_announcer";
 
-	private static final long TICK_BUDGET_NANOS = 15_000_000L;
+	private static final long TICK_BUDGET_NANOS = 4_000_000L;
 	private static final int PLACE_FLAGS = Block.UPDATE_CLIENTS | Block.UPDATE_KNOWN_SHAPE;
 	private static final int MAX_PALETTE = 1 << 14;
 	private static final int MAX_HEIGHT = 1 << 10;
-	private static final int LOOKAHEAD_COLUMNS = 8;
+	private static final int LOOKAHEAD_COLUMNS = 4;
 	private static final TicketType<ChunkPos> BUILD_TICKET =
 			TicketType.create(Reference.MOD_ID + "_tournament_build", Comparator.comparingLong(ChunkPos::toLong));
 
@@ -91,6 +91,7 @@ public final class OtherworldTournamentGrounds {
 			}
 			return;
 		}
+		if (level.players().isEmpty()) return;
 
 		if (active == null || active.level != level) {
 			active = Build.load(level);

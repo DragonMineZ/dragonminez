@@ -139,6 +139,7 @@ public final class Tournament {
 			var tags = ForgeRegistries.ENTITY_TYPES.tags();
 			if (tags == null) return "";
 			tags.getTag(TagKey.create(Registries.ENTITY_TYPE, tagId)).forEach(type -> {
+				if (type.is(MainTags.EntityTypes.NON_FIGHTERS)) return;
 				ResourceLocation key = ForgeRegistries.ENTITY_TYPES.getKey(type);
 				if (key != null) members.add(key.toString());
 			});

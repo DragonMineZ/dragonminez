@@ -107,7 +107,7 @@ public class ModCommonEvents {
         AttributeSupplier defaultSagaAttributes = DBSagasEntity.createAttributes().build();
 
         for (var sagaEntity : MainEntities.getSagaEntities()) {
-            if (saibamans.contains(sagaEntity) || soldiers.contains(sagaEntity) || ozarus.contains(sagaEntity) || ogres.contains(sagaEntity) || sagaEntity == MainEntities.MINI_JANEMBA_STAMPEDE) {
+            if (saibamans.contains(sagaEntity) || soldiers.contains(sagaEntity) || ozarus.contains(sagaEntity) || ogres.contains(sagaEntity) || sagaEntity == MainEntities.MINI_JANEMBA_STAMPEDE || sagaEntity == MainEntities.WILD_GIRAN) {
                 continue;
             }
             event.put((EntityType<? extends LivingEntity>) sagaEntity.get(), defaultSagaAttributes);
@@ -125,6 +125,7 @@ public class ModCommonEvents {
         event.put(MainEntities.DEMON_VILLAGER.get(), DemonVillagersEntity.Resident.createAttributes().build());
         event.put(MainEntities.TIME_PATROLLER.get(), DemonVillagersEntity.Resident.createAttributes().build());
         event.put(MainEntities.SABERTOOTH.get(), SabertoothEntity.createAttributes().build());
+        event.put(MainEntities.WILD_GIRAN.get(), SagaZFightersEntity.WildGiranEntity.createAttributes().build());
         event.put(MainEntities.GIANT_FISH.get(), GiantFishEntity.createAttributes());
         event.put(MainEntities.GIANT_TURTLE.get(), GiantTurtleEntity.createAttributes());
 

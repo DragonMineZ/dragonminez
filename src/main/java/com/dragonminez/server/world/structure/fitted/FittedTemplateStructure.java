@@ -4,9 +4,12 @@ import com.dragonminez.server.world.structure.helper.MainStructureTypes;
 import com.mojang.serialization.Codec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.Holder;
+import net.minecraft.core.QuartPos;
 import net.minecraft.core.Vec3i;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.level.ChunkPos;
+import net.minecraft.world.level.biome.Biome;
 import net.minecraft.world.level.block.Mirror;
 import net.minecraft.world.level.block.Rotation;
 import net.minecraft.world.level.levelgen.structure.BoundingBox;
@@ -35,6 +38,7 @@ public class FittedTemplateStructure extends Structure {
 	private static final int REFERENCE_REACH = 120;
 	private static final int MAX_FALLBACK_SAMPLES = 128;
 	private static final float MAX_WATER_FRACTION = 0.1F;
+	private static final float ESTIMATE_SLACK = 2.0F;
 
 	private final ResourceLocation template;
 	private final TerrainFit fit;
@@ -57,9 +61,27 @@ public class FittedTemplateStructure extends Structure {
 	protected Optional<GenerationStub> findGenerationPoint(GenerationContext context) {
 		StructureTemplateManager templates = context.structureTemplateManager();
 		HeightSampler sampler = HeightSampler.direct(context.chunkGenerator(), context.heightAccessor(), context.randomState());
+		if (!this.biomeAllowsSite(context, sampler)) return Optional.empty();
+		if (!this.roughlyAcceptable(templates, sampler, context.chunkPos())) return Optional.empty();
 		return this.plan(templates, sampler, context.chunkPos())
 				.filter(this::acceptsSite)
 				.map(site -> new GenerationStub(site.center(), builder -> this.addPieces(builder, templates, site)));
+	}
+
+	private boolean biomeAllowsSite(GenerationContext context, HeightSampler sampler) {
+		int x = context.chunkPos().getMiddleBlockX();
+		int z = context.chunkPos().getMiddleBlockZ();
+		int y = HeightSampler.surface(sampler.sample(x, z)) + this.fit.yOffset();
+		Holder<Biome> biome = context.chunkGenerator().getBiomeSource().getNoiseBiome(
+				QuartPos.fromBlock(x), QuartPos.fromBlock(y), QuartPos.fromBlock(z), context.randomState().sampler());
+		return context.validBiome().test(biome);
+	}
+
+	private boolean roughlyAcceptable(StructureTemplateManager templates, HeightSampler sampler, ChunkPos chunk) {
+		if (this.maxDeviation <= 0.0F) return true;
+		return this.estimate(templates, sampler, chunk)
+				.map(site -> site.deviation() <= this.maxDeviation * ESTIMATE_SLACK && site.water() <= MAX_WATER_FRACTION * ESTIMATE_SLACK)
+				.orElse(false);
 	}
 
 	private boolean acceptsSite(SitePlan site) {
