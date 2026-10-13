@@ -167,7 +167,7 @@ public final class HudLayout {
 					SKILL_MARGIN_X + SKILL_LADDER_STEP * element.skillRow(),
 					-(SKILL_MARGIN_BOTTOM + (3 - element.skillRow()) * SIZE_SKILL[1] * SKILL_SCALE), SKILL_SCALE);
 			case NOTIFICATIONS -> new HudPlacement(1.0f, 0.0f, -6.0f, 6.0f, 0.9f);
-			case SCOUTER -> new HudPlacement(0.0f, 0.5f, 0.0f, -37.0f, 2.0f);
+			case SCOUTER -> new HudPlacement(0.0f, 0.5f, 0.0f, 0.0f, 2.0f);
 			case BABA_TIMER -> new HudPlacement(1.0f, 1.0f, -6.0f, -2.0f, 0.8f);
 			case BOSS_CONTRIBUTION -> new HudPlacement(1.0f, 0.5f, -6.0f, 0.0f, 0.8f);
 		};

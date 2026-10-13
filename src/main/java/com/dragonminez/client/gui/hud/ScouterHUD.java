@@ -7,6 +7,7 @@ import com.dragonminez.client.gui.hud.layout.HudElement;
 import com.dragonminez.client.gui.hud.layout.HudLayout;
 import com.dragonminez.common.config.ConfigManager;
 import com.dragonminez.common.init.MainItems;
+import com.dragonminez.common.init.MainSounds;
 import com.dragonminez.common.init.entities.IBattlePower;
 import com.dragonminez.common.quest.QuestUnlocks;
 import com.dragonminez.common.racial.impl.GlindDivinity;
@@ -17,7 +18,9 @@ import com.dragonminez.common.util.CuriosUtil;
 import com.mojang.blaze3d.systems.RenderSystem;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.resources.sounds.SimpleSoundInstance;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.sounds.SoundEvent;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.util.Mth;
 import net.minecraft.world.entity.Entity;
@@ -25,9 +28,10 @@ import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.level.ClipContext;
 import net.minecraft.world.phys.AABB;
-import net.minecraft.world.phys.EntityHitResult;
 import net.minecraft.world.phys.HitResult;
+import net.minecraft.world.phys.Vec3;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.client.gui.overlay.IGuiOverlay;
 import net.minecraftforge.event.TickEvent;
@@ -37,6 +41,7 @@ import top.theillusivec4.curios.api.CuriosApi;
 
 import java.util.List;
 import java.util.Locale;
+import java.util.Optional;
 
 @Mod.EventBusSubscriber(modid = Reference.MOD_ID, value = Dist.CLIENT)
 public class ScouterHUD {
@@ -54,8 +59,8 @@ public class ScouterHUD {
 	private static final float RETICLE_SIZE = 18.0f;
 	private static final float ARROW_SIZE = 5.0f;
 	private static final float ARROW_GAP = 2.0f;
-	private static final float NUMBERS_RIGHT = 30.0f;
-	private static final float NUMBERS_Y = 17.0f;
+	private static final float NUMBERS_RIGHT = 36.0f;
+	private static final float NUMBERS_Y = 30.0f;
 	private static final int MAX_NUMBER_CHARS = 5;
 	private static final float GLYPH_SPACING = 1.0f;
 	private static final double PREVIEW_BP = 12300.0;
@@ -67,7 +72,10 @@ public class ScouterHUD {
 	private static int scanTimer = 0;
 	private static int strongestEntityID = -1;
 	private static double cachedBP = 0;
+	private static int lockedTargetID = -1;
 	private static final double SCAN_RANGE = 50.0;
+	private static final double READ_RANGE = 20.0;
+	private static final double AIM_TOLERANCE = 0.5;
 	private static final int BP_LIMIT = 150000000;
 
 	private static ItemStack getScouterStack(Player player) {
@@ -119,6 +127,7 @@ public class ScouterHUD {
 		}
 
 		if (newStrongest != null) {
+			if (newStrongest.getId() != strongestEntityID) playSound(MainSounds.PIP_MENU.get(), 1.2f);
 			strongestEntityID = newStrongest.getId();
 			cachedBP = maxFoundBP;
 		} else if (!cachedIsAlive) {
@@ -178,7 +187,7 @@ public class ScouterHUD {
 				renderCustomNumbers(guiGraphics, currentTexture, formatBP(PREVIEW_BP));
 				renderEntityInfo(guiGraphics, currentTexture, true, true);
 			} else if (isRenderingInfo) {
-				renderInfo(guiGraphics, mc, currentTexture);
+				renderInfo(guiGraphics, mc, currentTexture, partialTicks);
 			}
 		} finally {
 			RenderSystem.setShaderColor(1.0F, 1.0F, 1.0F, 1.0F);
@@ -186,25 +195,27 @@ public class ScouterHUD {
 		}
 	}
 
-	private static void renderInfo(GuiGraphics guiGraphics, Minecraft mc, ResourceLocation currentTexture) {
-		HitResult hit = mc.hitResult;
-		LivingEntity focusedEntity = null;
-		if (hit != null && hit.getType() == HitResult.Type.ENTITY) {
-			if (((EntityHitResult) hit).getEntity() instanceof LivingEntity living && !GlindDivinity.isHiddenFrom(living, mc.player)) focusedEntity = living;
-		}
+	private static void renderInfo(GuiGraphics guiGraphics, Minecraft mc, ResourceLocation currentTexture, float partialTicks) {
+		LivingEntity focusedEntity = pickTarget(mc, partialTicks);
 
 		double distToFocus = (focusedEntity != null) ? mc.player.distanceTo(focusedEntity) : Double.MAX_VALUE;
 
-		if (focusedEntity != null && distToFocus <= 20) {
+		if (focusedEntity != null && distToFocus <= READ_RANGE) {
+			if (focusedEntity.getId() != lockedTargetID) {
+				lockedTargetID = focusedEntity.getId();
+				playSound(MainSounds.LOCKON.get(), 1.0f);
+			}
 			double bp = getEntityBP(focusedEntity);
 			if (bp > BP_LIMIT) {
 				damageScouter(mc.player);
 				return;
 			}
-			if (QuestUnlocks.isCompleted(mc.player, QuestUnlocks.SCOUTER_CALIBRATION))
-				renderCustomNumbers(guiGraphics, currentTexture, formatBP(bp));
+			renderCustomNumbers(guiGraphics, currentTexture, formatBP(bp));
 			renderEntityInfo(guiGraphics, currentTexture, QuestUnlocks.isCompleted(mc.player, QuestUnlocks.SCOUTER_BIOSCAN), focusedEntity instanceof Player);
-		} else if (focusedEntity != null && distToFocus <= 50) {
+			return;
+		}
+		lockedTargetID = -1;
+		if (focusedEntity != null && distToFocus <= SCAN_RANGE) {
 			renderDirectionIcon(guiGraphics, currentTexture, mc.player, focusedEntity);
 			renderEntityInfo(guiGraphics, currentTexture, false, focusedEntity instanceof Player);
 		} else {
@@ -215,6 +226,33 @@ public class ScouterHUD {
 				}
 			}
 		}
+	}
+
+	private static LivingEntity pickTarget(Minecraft mc, float partialTicks) {
+		Entity camera = mc.getCameraEntity();
+		if (camera == null || mc.level == null) return null;
+
+		Vec3 eye = camera.getEyePosition(partialTicks);
+		Vec3 look = camera.getViewVector(partialTicks);
+		Vec3 end = eye.add(look.scale(SCAN_RANGE));
+		HitResult block = mc.level.clip(new ClipContext(eye, end, ClipContext.Block.COLLIDER, ClipContext.Fluid.NONE, camera));
+		if (block.getType() != HitResult.Type.MISS) end = block.getLocation();
+
+		AABB area = new AABB(eye, end).inflate(AIM_TOLERANCE + 1.0);
+		LivingEntity best = null;
+		double bestDist = Double.MAX_VALUE;
+		for (LivingEntity living : mc.level.getEntitiesOfClass(LivingEntity.class, area,
+				e -> e != camera && e != mc.player && e.isAlive() && !e.isSpectator() && !GlindDivinity.isHiddenFrom(e, mc.player))) {
+			AABB bounds = living.getBoundingBox().inflate(Math.max(AIM_TOLERANCE, living.getPickRadius()));
+			Optional<Vec3> crossing = bounds.contains(eye) ? Optional.of(eye) : bounds.clip(eye, end);
+			if (crossing.isEmpty()) continue;
+			double dist = eye.distanceToSqr(crossing.get());
+			if (dist < bestDist) {
+				bestDist = dist;
+				best = living;
+			}
+		}
+		return best;
 	}
 
 	private static void damageScouter(Player player) {
@@ -328,6 +366,16 @@ public class ScouterHUD {
 		return (long) (bp / 1000000.0) + "m";
 	}
 
-	public static void setRenderingInfo(boolean render) { isRenderingInfo = render; }
+	private static void playSound(SoundEvent sound, float pitch) {
+		Minecraft.getInstance().getSoundManager().play(SimpleSoundInstance.forUI(sound, pitch, 0.6f));
+	}
+
+	public static void setRenderingInfo(boolean render) {
+		if (render == isRenderingInfo) return;
+		isRenderingInfo = render;
+		lockedTargetID = -1;
+		scanTimer = 20;
+		playSound(render ? MainSounds.SWITCH_ON.get() : MainSounds.SWITCH_OFF.get(), 1.0f);
+	}
 	public static boolean isRenderingInfo() { return isRenderingInfo; }
 }
