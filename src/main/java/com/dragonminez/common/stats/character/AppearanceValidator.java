@@ -6,6 +6,10 @@ import com.dragonminez.common.config.RaceStatsConfig;
 import com.dragonminez.common.hair.HairPresets;
 import net.minecraft.util.Mth;
 
+import java.util.Arrays;
+import java.util.LinkedHashSet;
+import java.util.List;
+import java.util.Set;
 import java.util.regex.Pattern;
 
 public final class AppearanceValidator {
@@ -42,10 +46,13 @@ public final class AppearanceValidator {
 		if (incoming == null || incoming.isEmpty()) return "";
 		RaceCharacterConfig config = ConfigManager.getRaceCharacter(race);
 		if (config == null || config.getHeadBones() == null) return current;
-		for (String bone : config.getHeadBones()) {
-			if (incoming.equals(bone)) return incoming;
+		List<String> allowed = Arrays.asList(config.getHeadBones());
+		Set<String> tokens = new LinkedHashSet<>();
+		for (String token : incoming.split("\\+", -1)) {
+			if (token.isEmpty() || !allowed.contains(token)) return current;
+			tokens.add(token);
 		}
-		return current;
+		return String.join("+", tokens);
 	}
 
 	public static String characterClass(String race, String incoming, String current) {

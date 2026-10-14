@@ -1642,6 +1642,7 @@ public class DefaultFormsFactory {
 		buffed.setPwrMultiplier(1.75);
 		buffed.setEnergyDrain(0.106);
 		buffed.setHairType("base");
+		buffed.setKeepBaseFormHeadBones(true);
 		setDefaultMasteryValues(buffed);
 		buffed.setAura3DStyle(aura3D().waves(2.0f, 5.0f, 0.78f).turbulence(0.12f, 0.54f));
 		buffed.setStackDrainMultiplier(2.0);
@@ -1665,6 +1666,7 @@ public class DefaultFormsFactory {
 		outOfControl.setEye2Color("#E01414");
 		outOfControl.setAuraColor("#E01B1B");
 		outOfControl.setHairType("base");
+		outOfControl.setKeepBaseFormHeadBones(true);
 		setDefaultMasteryValues(outOfControl);
 		outOfControl.setAura3DStyle(aura3D().waves(2.1f, 5.4f, 0.8f).turbulence(0.35f, 0.55f).colors("", "", "#FF3A3A"));
 		outOfControl.setStackDrainMultiplier(2.0);
@@ -1687,6 +1689,7 @@ public class DefaultFormsFactory {
 		superForm.setEye2Color("#E01414");
 		superForm.setAuraColor("#2F6BFF");
 		superForm.setHairType("base");
+		superForm.setKeepBaseFormHeadBones(true);
 		setDefaultMasteryValues(superForm);
 		superForm.setAura3DStyle(aura3D().size(1.12f, 1.2f, 1.04f).waves(2.1f, 5.6f, 0.82f).turbulence(0.2f, 0.55f).colors("", "", "#9CC8FF"));
 		superForm.setStackDrainMultiplier(2.0);
