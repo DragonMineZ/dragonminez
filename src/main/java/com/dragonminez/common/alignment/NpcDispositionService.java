@@ -3,6 +3,8 @@ package com.dragonminez.common.alignment;
 import com.dragonminez.common.combat.logic.player.TargetHelper;
 import com.dragonminez.common.init.entities.MastersEntity;
 import com.dragonminez.common.init.entities.questnpc.QuestNPCEntity;
+import com.dragonminez.common.quest.Quest;
+import com.dragonminez.common.quest.QuestAvailabilityChecker;
 import com.dragonminez.common.stats.StatsCapability;
 import com.dragonminez.common.stats.StatsData;
 import com.dragonminez.common.stats.StatsProvider;
@@ -24,6 +26,9 @@ public final class NpcDispositionService {
 
 	private static final Set<String> GOOD_ALIGNED_MASTERS = Set.of("goku", "gohan", "kingkai", "oldkai", "roshi", "krillin");
 	private static final Set<String> EVIL_ALIGNED_MASTERS = Set.of("cell", "frieza");
+	private static final Set<String> MASTER_IDS = Set.of("baba", "baba_earth", "babidi", "beerus", "cell", "dende", "enma",
+			"frieza", "gero", "gohan", "goku", "grandkai", "guru", "karin", "kingkai", "krillin", "oldkai",
+			"otherworld_announcer", "piccolo", "popo", "roshi", "toribot", "trunks", "vegeta", "whis", "yamcha");
 	private static final int GOOD_ALIGNMENT_MIN = 61;
 	private static final int EVIL_ALIGNMENT_MAX = 40;
 
@@ -85,24 +90,42 @@ public final class NpcDispositionService {
 
 	@Nullable
 	public static Component getDialogueBlocker(ServerPlayer player, Entity npc) {
-		if (player == null || npc == null) {
+		if (player == null || npc == null || StatsProvider.get(StatsCapability.INSTANCE, player).orElse(null) == null) {
 			return Component.translatable("message.dragonminez.npc.unavailable");
 		}
+		return null;
+	}
 
-		StatsData data = StatsProvider.get(StatsCapability.INSTANCE, player).orElse(null);
+	public static boolean dislikes(ServerPlayer player, @Nullable Entity npc, String npcId) {
+		StatsData data = player != null ? StatsProvider.get(StatsCapability.INSTANCE, player).orElse(null) : null;
 		if (data == null) {
-			return Component.translatable("message.dragonminez.npc.unavailable");
+			return false;
 		}
+		if (npc != null && getRelation(player, npc) == TargetHelper.Relation.HOSTILE) {
+			return true;
+		}
+		return npcAlignmentBlocker(data, npc != null ? resolveNpcKey(npc) : npcId) != null;
+	}
 
-		if (npc instanceof MastersEntity master && master.getMasterName() != null && !master.getMasterName().isBlank()) {
+	@Nullable
+	public static Component questGiverBlocker(StatsData data, Quest quest) {
+		if (data == null || quest == null || quest.isSagaQuest()) {
 			return null;
 		}
-
-		TargetHelper.Relation relation = getRelation(player, npc);
-		if (relation == TargetHelper.Relation.HOSTILE) {
-			return Component.translatable("message.dragonminez.npc.hostile");
+		String giver = quest.getQuestGiver();
+		if (giver == null || giver.isBlank() || QuestAvailabilityChecker.declaresAlignment(quest)) {
+			return null;
 		}
-		return getAlignmentBlocker(data, resolveNpcKey(npc));
+		return npcAlignmentBlocker(data, giver);
+	}
+
+	@Nullable
+	public static Component npcAlignmentBlocker(StatsData data, String npcId) {
+		String key = normalizeNpcKey(npcId);
+		if (MASTER_IDS.contains(key)) {
+			return masterAlignmentBlocker(data, key);
+		}
+		return getAlignmentBlocker(data, key);
 	}
 
 	@Nullable
@@ -178,10 +201,10 @@ public final class NpcDispositionService {
 		Integer min = rule.minInteractionAlignment();
 		Integer max = rule.maxInteractionAlignment();
 		if (min != null && alignment < min) {
-			return Component.translatable("message.dragonminez.npc.alignment_too_low", min);
+			return Component.translatable("message.dragonminez.npc.master_alignment_too_low", min);
 		}
 		if (max != null && alignment > max) {
-			return Component.translatable("message.dragonminez.npc.alignment_too_high", max);
+			return Component.translatable("message.dragonminez.npc.master_alignment_too_high", max);
 		}
 		return Component.translatable("message.dragonminez.npc.unavailable");
 	}

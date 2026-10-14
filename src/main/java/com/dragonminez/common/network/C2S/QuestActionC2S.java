@@ -50,9 +50,9 @@ public class QuestActionC2S {
 
 	private static Component giverAlignmentBlocker(ServerPlayer player, String questId) {
 		QuestService.ResolvedQuest resolved = QuestService.resolveQuest(questId);
-		if (resolved == null || resolved.quest().getQuestGiver() == null || resolved.quest().getQuestGiver().isBlank()) return null;
+		if (resolved == null) return null;
 		StatsData data = StatsProvider.get(StatsCapability.INSTANCE, player).orElse(null);
-		return data != null ? NpcDispositionService.masterAlignmentBlocker(data, resolved.quest().getQuestGiver()) : null;
+		return NpcDispositionService.questGiverBlocker(data, resolved.quest());
 	}
 
 	public void handle(Supplier<NetworkEvent.Context> contextSupplier) {

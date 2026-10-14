@@ -1,5 +1,6 @@
 package com.dragonminez.common.dialogue;
 
+import com.dragonminez.common.alignment.NpcDispositionService;
 import com.dragonminez.common.init.entities.MastersEntity;
 import com.dragonminez.common.network.NetworkHandler;
 import com.dragonminez.common.network.PacketRateLimiter;
@@ -108,7 +109,8 @@ public final class DialogueService {
 	private static void openQuestScreen(ServerPlayer player, StatsData data, String npcId, int entityId) {
 		QuestService.NPCQuestOptions options = QuestService.collectNpcQuestOptions(npcId, data);
 		NetworkHandler.sendToPlayer(
-				new OpenQuestNPCDialogueS2C(npcId, options, true, entityId),
+				new OpenQuestNPCDialogueS2C(npcId, options, true,
+						NpcDispositionService.dislikes(player, player.serverLevel().getEntity(entityId), npcId), entityId),
 				player);
 	}
 
