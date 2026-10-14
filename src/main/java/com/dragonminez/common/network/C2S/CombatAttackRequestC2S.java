@@ -9,6 +9,7 @@ import com.dragonminez.common.combat.logic.player.PlayerAttackHelper;
 import com.dragonminez.common.combat.logic.player.PlayerAttackProperties;
 import com.dragonminez.common.combat.logic.player.TargetHelper;
 import com.dragonminez.common.combat.weapon.WeaponAttributes;
+import com.dragonminez.common.training.MinigameSessionManager;
 import lombok.Getter;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.server.level.ServerPlayer;
@@ -82,6 +83,7 @@ public class CombatAttackRequestC2S {
 		ctx.get().enqueueWork(() -> {
 			ServerPlayer player = ctx.get().getSender();
 			if (player == null) return;
+			MinigameSessionManager.onPlayerAction(player, "melee");
 			this.arrivalPitch = player.getXRot();
 			this.arrivalYaw = player.getYRot();
 			if (MeleeWindupTracker.canStrike(player)) MeleeWindupTracker.submitHit(player, this, arrivalNanos);

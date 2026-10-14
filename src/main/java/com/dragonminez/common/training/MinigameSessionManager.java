@@ -27,7 +27,10 @@ import net.minecraft.sounds.SoundEvents;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.RecordItem;
 import net.minecraftforge.event.TickEvent;
+import net.minecraftforge.event.entity.player.AttackEntityEvent;
 import net.minecraftforge.event.entity.player.PlayerEvent;
+import net.minecraftforge.event.entity.player.PlayerInteractEvent;
+import net.minecraftforge.event.level.BlockEvent;
 import net.minecraftforge.event.server.ServerStoppingEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
@@ -405,6 +408,40 @@ public final class MinigameSessionManager {
 	private static void stopAnimation(ServerPlayer player) {
 		NetworkHandler.sendToTrackingEntityAndSelf(
 				new TriggerAnimationS2C(player.getUUID(), TriggerAnimationS2C.AnimationType.KI_ANIMATION_STOP, 0, -1, ""), player);
+	}
+
+	public static void onPlayerAction(ServerPlayer player, String action) {
+		Session session = SESSIONS.get(player.getUUID());
+		if (session == null) return;
+		session.invalid = true;
+		LogUtil.warn(Env.SERVER, "Invalidated minigame {} for {}: {} while the session was open",
+				session.minigameId, player.getGameProfile().getName(), action);
+		finish(player, session, true);
+	}
+
+	@SubscribeEvent(receiveCanceled = true)
+	public static void onAttackEntity(AttackEntityEvent event) {
+		if (event.getEntity() instanceof ServerPlayer player) onPlayerAction(player, "attack");
+	}
+
+	@SubscribeEvent(receiveCanceled = true)
+	public static void onBlockBreak(BlockEvent.BreakEvent event) {
+		if (event.getPlayer() instanceof ServerPlayer player) onPlayerAction(player, "block break");
+	}
+
+	@SubscribeEvent(receiveCanceled = true)
+	public static void onBlockPlace(BlockEvent.EntityPlaceEvent event) {
+		if (event.getEntity() instanceof ServerPlayer player) onPlayerAction(player, "block place");
+	}
+
+	@SubscribeEvent(receiveCanceled = true)
+	public static void onRightClickItem(PlayerInteractEvent.RightClickItem event) {
+		if (event.getEntity() instanceof ServerPlayer player) onPlayerAction(player, "item use");
+	}
+
+	@SubscribeEvent
+	public static void onItemCrafted(PlayerEvent.ItemCraftedEvent event) {
+		if (event.getEntity() instanceof ServerPlayer player) onPlayerAction(player, "crafting");
 	}
 
 	@SubscribeEvent

@@ -9,6 +9,7 @@ import com.dragonminez.common.stats.techniques.KiAttackData;
 import com.dragonminez.common.stats.techniques.TechniqueData;
 import com.dragonminez.common.stats.techniques.TechniqueDispatcher;
 import com.dragonminez.common.stats.techniques.Techniques;
+import com.dragonminez.common.training.MinigameSessionManager;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.Entity;
@@ -71,6 +72,7 @@ public class TechniqueChargeC2S {
 
 				switch (msg.action) {
 					case START -> {
+						MinigameSessionManager.onPlayerAction(player, "technique");
 						if (!PacketRateLimiter.allow(player.getUUID(), "technique_charge_start", player.level().getGameTime(), START_MIN_INTERVAL_TICKS)) break;
 						if (player.isSpectator()
 								|| (data.getStatus().isFused() && !data.getStatus().isFusionLeader())) {
