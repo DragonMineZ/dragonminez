@@ -15,17 +15,26 @@ public class NetworkHandler {
 
 	public static SimpleChannel INSTANCE;
 	private static int packetId = 0;
+	private static final int NETWORK_REVISION = 1;
 
 	private static int id() {
 		return packetId++;
 	}
 
+	public static String protocolVersion() {
+		return Reference.VERSION + "+" + packetId + "." + NETWORK_REVISION + "-" + NetworkFingerprint.get();
+	}
+
+	private static boolean isSameProtocol(String remoteVersion) {
+		return protocolVersion().equals(remoteVersion);
+	}
+
 	public static void register() {
 		SimpleChannel net = NetworkRegistry.ChannelBuilder
 				.named(ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "network"))
-				.networkProtocolVersion(() -> "1.0")
-				.clientAcceptedVersions(s -> true)
-				.serverAcceptedVersions(s -> true)
+				.networkProtocolVersion(NetworkHandler::protocolVersion)
+				.clientAcceptedVersions(NetworkHandler::isSameProtocol)
+				.serverAcceptedVersions(NetworkHandler::isSameProtocol)
 				.simpleChannel();
 
 		INSTANCE = net;

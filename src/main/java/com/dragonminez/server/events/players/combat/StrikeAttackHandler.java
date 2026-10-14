@@ -66,6 +66,7 @@ import java.util.ArrayList;
 @Mod.EventBusSubscriber(modid = Reference.MOD_ID, bus = Mod.EventBusSubscriber.Bus.FORGE)
 public class StrikeAttackHandler {
 	private static final double CONNECT_RANGE = 4.0;
+	private static final int ORPHANED_LOCK_RELEASE_TICKS = 40;
 	private static final double CONE_RANGE = 6.0;
 	private static final double CONE_RANGE_FLY = 12.0;
 	private static final double CONE_HALF_ANGLE_COS = 0.5;
@@ -220,6 +221,7 @@ public class StrikeAttackHandler {
 
 	private static final Map<UUID, PendingStrike> PENDING = new HashMap<>();
 	private static final Map<UUID, ActiveStrike> ACTIVE = new HashMap<>();
+	private static final Map<UUID, Integer> ORPHANED_LOCK_TICKS = new HashMap<>();
 	private static final Map<UUID, RecentHit> RECENTLY_DAMAGED = new HashMap<>();
 	private static final Map<UUID, Integer> STRIKE_ANCHOR_PART = new HashMap<>();
 	private static final Map<UUID, HurtPose> STRIKE_HURT_VICTIM = new HashMap<>();
@@ -363,12 +365,38 @@ public class StrikeAttackHandler {
 
 		processPending(player);
 		processActive(player);
+		releaseOrphanedStrikeLock(player);
+	}
+
+	private static void releaseOrphanedStrikeLock(ServerPlayer player) {
+		UUID id = player.getUUID();
+		boolean locked = StatsProvider.get(StatsCapability.INSTANCE, player).map(stats -> stats.getStatus().isStrikeLocked()).orElse(false);
+		if (!locked || isStrikeLockOwned(player)) {
+			ORPHANED_LOCK_TICKS.remove(id);
+			return;
+		}
+		if (ORPHANED_LOCK_TICKS.merge(id, 1, Integer::sum) < ORPHANED_LOCK_RELEASE_TICKS) return;
+		ORPHANED_LOCK_TICKS.remove(id);
+		LogUtil.warn(Env.SERVER, "Released a strike lock on {} that no strike, clash or grab was holding", player.getGameProfile().getName());
+		setStrikeLocked(player, false);
+	}
+
+	private static boolean isStrikeLockOwned(ServerPlayer player) {
+		UUID id = player.getUUID();
+		if (PENDING.containsKey(id) || ACTIVE.containsKey(id) || SLAM_RINGS.containsKey(id)) return true;
+		if (METEOR_BURSTS.containsKey(id) || MYSTIC_BALLS.containsKey(id)) return true;
+		for (ActiveStrike active : ACTIVE.values()) {
+			if (id.equals(active.targetId())) return true;
+		}
+		return StrikeClash.isClashing(id) || HeldVictim.isHeld(player);
 	}
 
 	@SubscribeEvent
 	public static void onPlayerLoggedOut(PlayerEvent.PlayerLoggedOutEvent event) {
 		UUID id = event.getEntity().getUUID();
 		PENDING.remove(id);
+		ORPHANED_LOCK_TICKS.remove(id);
+		HeldVictim.forget(id);
 		STRIKE_ANCHOR_PART.remove(id);
 		SLAM_RINGS.remove(id);
 		ActiveStrike active = ACTIVE.remove(id);

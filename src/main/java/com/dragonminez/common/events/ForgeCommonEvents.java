@@ -336,7 +336,7 @@ public class ForgeCommonEvents {
 
 		if (!level.isClientSide() && level instanceof ServerLevel serverLevel) {
 			TargetHelper.Relation relation = TargetHelper.getRelation(attacker, target);
-			if (!TargetHelper.canAttack(attacker, target, attacker.distanceTo(target) + 1.0D)) {
+			if (!TargetHelper.isApprovedMeleeTarget(target) && !TargetHelper.canAttack(attacker, target, attacker.distanceTo(target) + 1.0D)) {
 				event.setCanceled(true);
 				return;
 			}

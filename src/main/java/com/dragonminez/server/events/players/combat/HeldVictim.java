@@ -18,7 +18,13 @@ import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.phys.Vec3;
 
+import java.util.HashMap;
+import java.util.Map;
+import java.util.UUID;
+
 public final class HeldVictim {
+	private static final int LEASE_TICKS = 40;
+	private static final Map<UUID, Long> LEASES = new HashMap<>();
 
 	private static final String PLAYER_HURT_LEFT = "base.hurt_left";
 	private static final String PLAYER_HURT_RIGHT = "base.hurt_right";
@@ -68,7 +74,22 @@ public final class HeldVictim {
 		if (!(target instanceof ServerPlayer)) {
 			target.addEffect(new MobEffectInstance(MainEffects.STUN.get(), stunTicks, 0, false, false, true));
 		}
-		return new HeldVictim(target, true);
+		HeldVictim victim = new HeldVictim(target, true);
+		victim.renewLease();
+		return victim;
+	}
+
+	public static boolean isHeld(ServerPlayer player) {
+		Long renewed = LEASES.get(player.getUUID());
+		return renewed != null && player.level().getGameTime() - renewed <= LEASE_TICKS;
+	}
+
+	public static void forget(UUID playerId) {
+		LEASES.remove(playerId);
+	}
+
+	private void renewLease() {
+		if (this.pinned && this.entity instanceof ServerPlayer player) LEASES.put(player.getUUID(), player.level().getGameTime());
 	}
 
 	public static HeldVictim root(LivingEntity target) {
@@ -84,6 +105,7 @@ public final class HeldVictim {
 	}
 
 	public boolean isValid(LivingEntity holder, double maxDistance) {
+		this.renewLease();
 		if (!this.entity.isAlive() || this.entity.isRemoved() || this.entity.level() != holder.level()) return false;
 		if (this.entity.distanceToSqr(holder) > maxDistance * maxDistance) return false;
 		if (this.entity instanceof Player player) {
@@ -95,6 +117,7 @@ public final class HeldVictim {
 
 	public void hold(Vec3 position, float faceYaw) {
 		if (!this.pinned) return;
+		this.renewLease();
 		this.entity.fallDistance = 0.0F;
 		StrikeAttackHandler.placeHeldVictim(this.entity, position.x, position.y, position.z, faceYaw);
 	}
@@ -134,6 +157,7 @@ public final class HeldVictim {
 
 	public void release() {
 		if (!this.pinned) return;
+		if (this.entity instanceof ServerPlayer player) LEASES.remove(player.getUUID());
 		StrikeAttackHandler.setStrikeLocked(this.entity, false);
 		if (!(this.entity instanceof ServerPlayer)) this.entity.removeEffect(MainEffects.STUN.get());
 		if (this.entity instanceof ServerPlayer player) {

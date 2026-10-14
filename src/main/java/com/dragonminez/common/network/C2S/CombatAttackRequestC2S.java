@@ -173,7 +173,7 @@ public class CombatAttackRequestC2S {
 
 				double maxRange = PlayerAttackHelper.getEffectiveAttackRange(player, hand.attributes().attackRange());
 				TargetHelper.Relation relation = TargetHelper.getRelation(player, entity);
-				if (!TargetHelper.canAttack(player, entity, maxRange + 4.0D)) continue;
+				if (!TargetHelper.canAttack(player, entity, maxRange + 4.0D, aims)) continue;
 
 				if (player.distanceToSqr(entity) <= (maxRange * maxRange) + 16.0
 						&& MeleeTargetValidator.canHit(player, entity, reachAttacks, maxRange, aims)) {
@@ -187,7 +187,7 @@ public class CombatAttackRequestC2S {
 					}
 
 					TargetHelper.onSuccessfulAttack(player, entity, relation);
-					player.attack(entity);
+					TargetHelper.attackApproved(player, entity);
 				}
 
 				if (entity instanceof LivingEntity livingEntity) {
