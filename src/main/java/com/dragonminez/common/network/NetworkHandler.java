@@ -22,7 +22,7 @@ public class NetworkHandler {
 	}
 
 	public static String protocolVersion() {
-		return Reference.VERSION + "+" + packetId + "." + NETWORK_REVISION + "-" + NetworkFingerprint.get();
+		return Reference.VERSION + "+" + NETWORK_REVISION + "-" + NetworkFingerprint.get();
 	}
 
 	private static boolean isSameProtocol(String remoteVersion) {
