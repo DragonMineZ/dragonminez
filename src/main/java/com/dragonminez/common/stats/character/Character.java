@@ -583,7 +583,13 @@ public class Character {
 		this.characterClass = tag.getString("Class");
 		this.hairId = tag.getInt("HairId");
 		for (HairStyleSlot slot : HairStyleSlot.values()) {
-			hairStyles.put(slot, tag.contains(slot.getNbtKey()) ? CustomHair.fromTag(tag.getCompound(slot.getNbtKey())) : new CustomHair());
+			if (!tag.contains(slot.getNbtKey())) {
+				hairStyles.put(slot, new CustomHair());
+				continue;
+			}
+			CompoundTag hairTag = tag.getCompound(slot.getNbtKey());
+			CustomHair current = hairStyles.get(slot);
+			if (current == null || !current.save().equals(hairTag)) hairStyles.put(slot, CustomHair.fromTag(hairTag));
 		}
 		this.activeHeadBone = tag.getString("ActiveHeadBone");
 		this.bodyType = tag.getInt("BodyType");

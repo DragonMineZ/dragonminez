@@ -105,11 +105,11 @@ public class NpcDialogueScreen extends ScaledScreen {
 	private int textH;
 	private int footerY;
 
-	private NpcDialogueScreen(String npcId, int entityId, boolean masterNpc, List<DialogueQuest> quests) {
+	private NpcDialogueScreen(String npcId, int entityId, boolean masterNpc, boolean npcDisliked, List<DialogueQuest> quests) {
 		super(Component.translatable("entity.dragonminez.questnpc." + npcId).withStyle(Style.EMPTY.withFont(FONT)));
 		this.npcId = npcId;
 		this.entityId = entityId;
-		this.content = new NpcDialogueContent(this, npcId, masterNpc, quests);
+		this.content = new NpcDialogueContent(this, npcId, masterNpc, npcDisliked, quests);
 		setPage(content.root());
 	}
 
@@ -120,12 +120,12 @@ public class NpcDialogueScreen extends ScaledScreen {
 		if (minecraft.screen instanceof NpcDialogueScreen current && current.treeMode && current.entityId == msg.getEntityId()) {
 			current.treeMode = false;
 			current.awaitingServer = false;
-			current.content = new NpcDialogueContent(current, msg.getNpcId(), msg.isMasterNpc(), quests);
+			current.content = new NpcDialogueContent(current, msg.getNpcId(), msg.isMasterNpc(), msg.isNpcDisliked(), quests);
 			current.history.clear();
 			current.setPage(current.content.questsAsRoot());
 			return;
 		}
-		minecraft.setScreen(new NpcDialogueScreen(msg.getNpcId(), msg.getEntityId(), msg.isMasterNpc(), quests));
+		minecraft.setScreen(new NpcDialogueScreen(msg.getNpcId(), msg.getEntityId(), msg.isMasterNpc(), msg.isNpcDisliked(), quests));
 	}
 
 	public static void handleResult(DialogueResultS2C msg) {
@@ -146,7 +146,7 @@ public class NpcDialogueScreen extends ScaledScreen {
 			current.showNode(msg);
 			return;
 		}
-		NpcDialogueScreen screen = new NpcDialogueScreen(msg.getNpcId(), msg.getEntityId(), true, List.of());
+		NpcDialogueScreen screen = new NpcDialogueScreen(msg.getNpcId(), msg.getEntityId(), true, false, List.of());
 		screen.showNode(msg);
 		minecraft.setScreen(screen);
 	}

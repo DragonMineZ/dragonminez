@@ -29,6 +29,8 @@ import com.dragonminez.common.stats.character.Status;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.player.AbstractClientPlayer;
 import net.minecraft.core.BlockPos;
+import com.dragonminez.common.network.S2C.StatsDeltaS2C;
+import com.dragonminez.common.stats.character.SkinPixels;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
@@ -101,6 +103,34 @@ public class ClientPacketHandler {
 			});
 			AuraModeState.reconcileLocal(player);
 		}
+	}
+
+	public static void handleStatsDeltaPacket(int playerId, CompoundTag nbt) {
+		var clientLevel = Minecraft.getInstance().level;
+		if (clientLevel == null) return;
+		if (!(clientLevel.getEntity(playerId) instanceof Player player)) return;
+
+		StatsProvider.get(StatsCapability.INSTANCE, player).ifPresent(data -> {
+			CompoundTag groups = new CompoundTag();
+			for (String key : nbt.getAllKeys()) {
+				if (key.equals(StatsDeltaS2C.CHARACTER_PATCH) || key.equals(StatsDeltaS2C.CHARACTER_REMOVED)) continue;
+				groups.put(key, nbt.get(key));
+			}
+			if (StatsDeltaS2C.hasCharacterPatch(nbt)) {
+				CompoundTag character = data.getCharacter().save();
+				character.remove(SkinPixels.NBT_KEY);
+				StatsDeltaS2C.applyCharacterPatch(character, nbt, false);
+				data.getCharacter().load(character);
+			}
+			try {
+				data.load(groups);
+			} catch (ClassNotFoundException e) {
+				throw new RuntimeException(e);
+			}
+			player.refreshDimensions();
+			player.refreshDisplayName();
+		});
+		AuraModeState.reconcileLocal(player);
 	}
 
 	public static void handleSkinPixelsSync(int playerId, CompoundTag tag) {

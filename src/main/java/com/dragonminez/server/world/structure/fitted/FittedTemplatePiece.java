@@ -1,6 +1,7 @@
 package com.dragonminez.server.world.structure.fitted;
 
 import com.dragonminez.mixin.common.StructureTemplateAccessor;
+import com.dragonminez.mixin.common.StructureTemplatePaletteInvoker;
 import com.dragonminez.server.world.structure.helper.MainStructureTypes;
 import com.dragonminez.server.world.structure.processor.ExteriorAirProcessor;
 import net.minecraft.core.BlockPos;
@@ -88,8 +89,36 @@ public class FittedTemplatePiece extends TemplateStructurePiece {
 	@Override
 	public void postProcess(WorldGenLevel level, StructureManager structureManager, ChunkGenerator generator,
 							RandomSource random, BoundingBox box, ChunkPos chunkPos, BlockPos pivot) {
-		this.template.placeInWorld(level, this.templatePosition, pivot, settings(this.template, this.rotation).setBoundingBox(box), random, 2);
+		StructurePlaceSettings settings = settings(this.template, this.rotation).setBoundingBox(box);
+		List<StructureTemplate.StructureBlockInfo> blocks = this.blocksWithin(settings, box);
+		if (!blocks.isEmpty()) {
+			StructureTemplate clipped = new StructureTemplate();
+			((StructureTemplateAccessor) clipped).getPalettes().add(StructureTemplatePaletteInvoker.dragonminez$create(blocks));
+			((StructureTemplateAccessor) clipped).setSize(this.template.getSize());
+			clipped.placeInWorld(level, this.templatePosition, pivot, settings, random, 2);
+		}
 		this.placeEntities(level, box);
+	}
+
+	private List<StructureTemplate.StructureBlockInfo> blocksWithin(StructurePlaceSettings settings, BoundingBox box) {
+		List<StructureTemplate.Palette> palettes = ((StructureTemplateAccessor) this.template).getPalettes();
+		if (palettes.isEmpty()) return List.of();
+		StructureTemplate.Palette palette = settings.getRandomPalette(palettes, this.templatePosition);
+		Rotation inverse = inverse(this.rotation);
+		BlockPos a = StructureTemplate.transform(new BlockPos(box.minX() - this.templatePosition.getX(), 0, box.minZ() - this.templatePosition.getZ()),
+				Mirror.NONE, inverse, BlockPos.ZERO);
+		BlockPos b = StructureTemplate.transform(new BlockPos(box.maxX() - this.templatePosition.getX(), 0, box.maxZ() - this.templatePosition.getZ()),
+				Mirror.NONE, inverse, BlockPos.ZERO);
+		return TemplateColumns.of(palette, this.template.getSize()).within(
+				Math.min(a.getX(), b.getX()), Math.min(a.getZ(), b.getZ()), Math.max(a.getX(), b.getX()), Math.max(a.getZ(), b.getZ()));
+	}
+
+	private static Rotation inverse(Rotation rotation) {
+		return switch (rotation) {
+			case CLOCKWISE_90 -> Rotation.COUNTERCLOCKWISE_90;
+			case COUNTERCLOCKWISE_90 -> Rotation.CLOCKWISE_90;
+			default -> rotation;
+		};
 	}
 
 	private void placeEntities(WorldGenLevel level, BoundingBox box) {

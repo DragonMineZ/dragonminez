@@ -44,6 +44,7 @@ public class CellJrEntity extends DBSagasEntity {
 		this.setTextureVariant(0);
 		this.setAiTier(AiTier.ELITE);
 		this.getAttribute(Attributes.MOVEMENT_SPEED).setBaseValue(0.35D);
+		this.setDefaultMovementSpeed(0.35D);
 	}
 
 	@Override

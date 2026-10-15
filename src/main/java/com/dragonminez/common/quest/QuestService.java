@@ -128,8 +128,8 @@ public final class QuestService {
 			if (memberData == null || memberData.getPlayerQuestData().isQuestAccepted(questKey)) continue;
 
 			Component memberBlocker = describeStartBlocker(member, memberData, resolved, false);
-			if (memberBlocker == null && quest.getQuestGiver() != null && !quest.getQuestGiver().isBlank()) {
-				memberBlocker = NpcDispositionService.masterAlignmentBlocker(memberData, quest.getQuestGiver());
+			if (memberBlocker == null) {
+				memberBlocker = NpcDispositionService.questGiverBlocker(memberData, quest);
 			}
 			if (memberBlocker == null) {
 				joiners.add(member);
@@ -461,7 +461,12 @@ public final class QuestService {
 			if (pqd.isQuestAccepted(questId)) {
 				inProgressQuestIds.add(questId);
 			} else if (isOfferableNpcQuest(questId, quest, data)) {
-				offerableQuestIds.add(questId);
+				Component alignmentBlocker = NpcDispositionService.questGiverBlocker(data, quest);
+				if (alignmentBlocker == null) {
+					offerableQuestIds.add(questId);
+				} else {
+					lockedQuests.add(new LockedNpcQuest(questId, alignmentBlocker, 0L));
+				}
 			} else if (!quest.isSecret()) {
 				Component reason = QuestAvailabilityChecker.describeAvailabilityFailure(quest, data);
 				lockedQuests.add(new LockedNpcQuest(questId,

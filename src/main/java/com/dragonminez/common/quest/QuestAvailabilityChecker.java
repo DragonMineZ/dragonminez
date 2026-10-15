@@ -42,6 +42,12 @@ public class QuestAvailabilityChecker {
 		return quest != null && quest.hasStartRequirements() && containsTimeCondition(quest.getStartRequirements());
 	}
 
+	public static boolean declaresAlignment(Quest quest) {
+		if (quest == null) return false;
+		return (quest.hasPrerequisites() && containsCondition(quest.getPrerequisites(), QuestPrerequisites.ConditionType.ALIGNMENT))
+				|| (quest.hasStartRequirements() && containsCondition(quest.getStartRequirements(), QuestPrerequisites.ConditionType.ALIGNMENT));
+	}
+
 	public static boolean primeStartRequirementTiming(Quest quest, String questKey, Player player, StatsData statsData) {
 		if (quest == null || statsData == null || player == null) return false;
 		if (player.level().isClientSide) return false;
@@ -167,17 +173,21 @@ public class QuestAvailabilityChecker {
 	}
 
 	private static boolean containsTimeCondition(QuestPrerequisites prereqs) {
+		return containsCondition(prereqs, QuestPrerequisites.ConditionType.TIME);
+	}
+
+	private static boolean containsCondition(QuestPrerequisites prereqs, QuestPrerequisites.ConditionType type) {
 		if (prereqs == null || prereqs.conditions().isEmpty()) return false;
 		for (QuestPrerequisites.Condition condition : prereqs.conditions()) {
 			if (condition == null) continue;
 			if (condition.isNestedGroup()) {
-				if (containsTimeCondition(condition.getNested())) {
+				if (containsCondition(condition.getNested(), type)) {
 					return true;
 				}
 				continue;
 			}
 
-			if (condition.getType() == QuestPrerequisites.ConditionType.TIME) {
+			if (condition.getType() == type) {
 				return true;
 			}
 		}

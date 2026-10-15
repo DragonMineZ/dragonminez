@@ -35,6 +35,10 @@ public class ProgressionSyncS2C {
 		this.nbt = nbt;
 	}
 
+	public ProgressionSyncS2C forTrackers() {
+		return new ProgressionSyncS2C(this.playerId, StatsSyncS2C.withoutQuestHistory(this.nbt));
+	}
+
 	public static void encode(ProgressionSyncS2C msg, FriendlyByteBuf buf) {
 		buf.writeInt(msg.playerId);
 		buf.writeNbt(msg.nbt);

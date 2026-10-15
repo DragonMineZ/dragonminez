@@ -61,6 +61,7 @@ public class SagaBuuEntity {
             this.setZanzoken(3, 250);
 
             this.getAttribute(Attributes.MOVEMENT_SPEED).setBaseValue(0.3D);
+            this.setDefaultMovementSpeed(0.3D);
             this.getAttribute(Attributes.KNOCKBACK_RESISTANCE).setBaseValue(0.30D);
 
         }

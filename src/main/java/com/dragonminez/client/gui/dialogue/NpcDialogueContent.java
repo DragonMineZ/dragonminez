@@ -61,16 +61,18 @@ final class NpcDialogueContent {
 	private final NpcDialogueScreen host;
 	private final String npcId;
 	private final boolean masterNpc;
+	private final boolean npcDisliked;
 	private final List<DialogueQuest> quests;
 	private final MasterServices services;
 	private final Map<String, Runnable> pending = new HashMap<>();
 	private final Set<String> used = new HashSet<>();
 	private final Map<String, String> picks = new HashMap<>();
 
-	NpcDialogueContent(NpcDialogueScreen host, String npcId, boolean masterNpc, List<DialogueQuest> quests) {
+	NpcDialogueContent(NpcDialogueScreen host, String npcId, boolean masterNpc, boolean npcDisliked, List<DialogueQuest> quests) {
 		this.host = host;
 		this.npcId = npcId;
 		this.masterNpc = masterNpc;
+		this.npcDisliked = npcDisliked;
 		this.quests = quests;
 		this.services = new MasterServices(this, host, npcId);
 	}
@@ -199,7 +201,7 @@ final class NpcDialogueContent {
 	private List<DialogueOption> rootOptions() {
 		List<DialogueOption> options = new ArrayList<>();
 		Component alignmentLock = alignmentLock();
-		if (!quests.isEmpty()) options.add(questsOption(alignmentLock));
+		if (!quests.isEmpty()) options.add(questsOption());
 
 		if (masterNpc) {
 			boolean skillMaster = !TEXT_MASTERS.contains(npcId);
@@ -252,13 +254,13 @@ final class NpcDialogueContent {
 		});
 	}
 
-	private DialogueOption questsOption(Component alignmentLock) {
+	private DialogueOption questsOption() {
 		DialogueSkin.Icon icon = DialogueSkin.Icon.LOCK;
 		int color = DialogueSkin.MUTED;
 		if (hasQuest(DialogueQuest.Status.TURN_IN)) {
 			icon = DialogueSkin.Icon.TURN_IN;
 			color = DialogueSkin.TURN_IN;
-		} else if (hasQuest(DialogueQuest.Status.OFFER) && alignmentLock == null) {
+		} else if (hasQuest(DialogueQuest.Status.OFFER)) {
 			icon = DialogueSkin.Icon.OFFER;
 			color = DialogueSkin.OFFER;
 		} else if (hasQuest(DialogueQuest.Status.IN_PROGRESS)) {
@@ -267,10 +269,8 @@ final class NpcDialogueContent {
 		} else if (!hasQuest(DialogueQuest.Status.LOCKED) && !hasQuest(DialogueQuest.Status.OFFER)) {
 			icon = DialogueSkin.Icon.CHECK;
 		}
-		DialogueOption option = DialogueOption.of("quests", tr("gui.dragonminez.dialogue.quests"), () -> host.push(questList()))
+		return DialogueOption.of("quests", tr("gui.dragonminez.dialogue.quests"), () -> host.push(questList()))
 				.icon(icon, color).submenu();
-		boolean ongoing = hasQuest(DialogueQuest.Status.TURN_IN) || hasQuest(DialogueQuest.Status.IN_PROGRESS);
-		return ongoing ? option : lockedBy(option, alignmentLock);
 	}
 
 	private DialoguePage questList() {
@@ -281,7 +281,7 @@ final class NpcDialogueContent {
 		if (quests.isEmpty()) return line("gui.dragonminez.sidequest.no_quests");
 		if (masterNpc) {
 			if (hasQuest(DialogueQuest.Status.TURN_IN) && I18n.exists(STAGE + npcId + ".complete")) return line(STAGE + npcId + ".complete");
-			if (hasQuest(DialogueQuest.Status.OFFER) && alignmentLock() == null && I18n.exists(STAGE + npcId + ".offer")) return line(STAGE + npcId + ".offer");
+			if (hasQuest(DialogueQuest.Status.OFFER) && I18n.exists(STAGE + npcId + ".offer")) return line(STAGE + npcId + ".offer");
 			if (hasQuest(DialogueQuest.Status.IN_PROGRESS) && I18n.exists(STAGE + npcId + ".in_progress")) return line(STAGE + npcId + ".in_progress");
 		}
 		return line("gui.dragonminez.dialogue.quests.prompt");
@@ -290,7 +290,6 @@ final class NpcDialogueContent {
 	List<DialogueOption> questOptions() {
 		List<DialogueOption> options = new ArrayList<>();
 		long now = Util.getMillis();
-		Component alignmentLock = alignmentLock();
 		List<DialogueQuest> ordered = new ArrayList<>(quests);
 		ordered.sort(Comparator.comparing(quest -> quest.done(now)));
 		for (DialogueQuest quest : ordered) {
@@ -299,12 +298,7 @@ final class NpcDialogueContent {
 					() -> host.showQuest(DialoguePage.quest(quest, this::questOptions)));
 			switch (status) {
 				case TURN_IN -> option.icon(DialogueSkin.Icon.TURN_IN, DialogueSkin.TURN_IN);
-				case OFFER -> {
-					option.icon(DialogueSkin.Icon.OFFER, DialogueSkin.OFFER);
-					if (alignmentLock != null) {
-						option.icon(DialogueSkin.Icon.LOCK, DialogueSkin.MUTED).locked(tr("gui.dragonminez.dialogue.quest.locked"), List.of(alignmentLock));
-					}
-				}
+				case OFFER -> option.icon(DialogueSkin.Icon.OFFER, DialogueSkin.OFFER);
 				case IN_PROGRESS -> option.icon(DialogueSkin.Icon.PROGRESS, DialogueSkin.PROGRESS);
 				case COOLDOWN -> option.icon(DialogueSkin.Icon.CLOCK, DialogueSkin.MUTED)
 						.cooldownUntil(quest.cooldownEndMs)
@@ -349,7 +343,7 @@ final class NpcDialogueContent {
 	}
 
 	private boolean disliked(StatsData stats) {
-		return alignmentLock() != null || masterNpc && stats != null && MasterServices.dislikes(npcId, stats);
+		return npcDisliked || alignmentLock() != null || masterNpc && stats != null && MasterServices.dislikes(npcId, stats);
 	}
 
 	private String dislikedKey() {

@@ -21,15 +21,17 @@ public class OpenQuestNPCDialogueS2C {
 	private final List<String> inProgressQuestIds;
 	private final List<QuestService.LockedNpcQuest> lockedQuests;
 	private final boolean masterNpc;
+	private final boolean npcDisliked;
 	private final int entityId;
 
-	public OpenQuestNPCDialogueS2C(String npcId, QuestService.NPCQuestOptions options, boolean masterNpc, int entityId) {
+	public OpenQuestNPCDialogueS2C(String npcId, QuestService.NPCQuestOptions options, boolean masterNpc, boolean npcDisliked, int entityId) {
 		this.npcId = npcId;
 		this.offerableQuestIds = options.offerableQuestIds();
 		this.turnInQuestIds = options.turnInQuestIds();
 		this.inProgressQuestIds = options.inProgressQuestIds();
 		this.lockedQuests = options.lockedQuests();
 		this.masterNpc = masterNpc;
+		this.npcDisliked = npcDisliked;
 		this.entityId = entityId;
 	}
 
@@ -49,6 +51,7 @@ public class OpenQuestNPCDialogueS2C {
 		}
 
 		this.masterNpc = buffer.readBoolean();
+		this.npcDisliked = buffer.readBoolean();
 		this.entityId = buffer.readVarInt();
 	}
 
@@ -78,6 +81,7 @@ public class OpenQuestNPCDialogueS2C {
 		}
 
 		buffer.writeBoolean(masterNpc);
+		buffer.writeBoolean(npcDisliked);
 		buffer.writeVarInt(entityId);
 	}
 

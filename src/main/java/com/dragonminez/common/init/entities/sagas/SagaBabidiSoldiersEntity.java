@@ -43,6 +43,7 @@ public class SagaBabidiSoldiersEntity {
             this.addKiSkill(KiSkillType.KI_VOLLEY, 170, 1.0F, 0x9E61FF, 0x9E61FF);
             this.addKiSkill(KiSkillType.KI_SMALL, 80, 1.0F, 0x9E61FF, 0x9E61FF);
             this.getAttribute(Attributes.MOVEMENT_SPEED).setBaseValue(0.4D);
+            this.setDefaultMovementSpeed(0.4D);
 
         }
 

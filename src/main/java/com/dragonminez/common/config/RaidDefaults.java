@@ -55,7 +55,7 @@ public final class RaidDefaults {
 				wave(mob(soldiers, 5, 100, 15, 10, 1)),
 				wave(mob(soldiers, 10, 130, 18, 12, 1)),
 				wave(mob(soldiers, 15, 160, 22, 15, 1),
-						boss("dragonminez:saga_cui", 900, 45, 40, 2)),
+						boss("dragonminez:saga_cui", 5500, 45, 40, 2)),
 				wave(mob(soldiers, 15, 190, 26, 18, 1),
 						boss("dragonminez:saga_dodoria", 7000, 60, 50, 2),
 						transformingBoss("dragonminez:saga_zarbon", 6800, 65, 55, 2, 10200)),

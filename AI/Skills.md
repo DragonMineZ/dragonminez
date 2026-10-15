@@ -10,7 +10,6 @@ Use the right layer:
 
 - `AI/Agents.md`: Local onboarding, repo rules, and operating procedure every AI agent must follow.
 - `AI/Skills.md`: How to design and apply repeatable AI workflows.
-- `AI/Context.md`: Current repo map, architecture notes, commands, and known hotspots.
 - `AI/Memory.md`: Durable lessons, decisions, pitfalls, and conventions learned from past work.
 - Codex/Superpowers skills: Runtime-loaded procedural workflows for broadly reusable techniques.
 
@@ -58,7 +57,6 @@ Create or update a reusable workflow when:
 Do not create a skill for:
 
 - One-off task notes.
-- Facts that belong in `AI/Context.md`.
 - Durable lessons that belong in `AI/Memory.md`.
 - Mechanical checks that should be automated by scripts.
 
@@ -111,7 +109,7 @@ Skill authoring guidelines:
 Capture the exact situation that caused the instruction to be needed. Prefer concrete examples from DragonMineZ tasks.
 
 2. Choose the storage layer.
-Put repo-wide guardrails and local onboarding in `AI/Agents.md`, current architecture in `AI/Context.md`, durable lessons in `AI/Memory.md`, and procedural reusable workflows in a skill or `AI/Skills.md`.
+Put repo-wide guardrails and local onboarding in `AI/Agents.md`, durable lessons in `AI/Memory.md`, and procedural reusable workflows in a skill or `AI/Skills.md`.
 
 3. Define the trigger.
 Write the condition that tells an AI agent, "use this workflow now." Include filenames, systems, symptoms, and task types where useful.
@@ -134,7 +132,7 @@ Mention relevant files and systems, such as:
 Require evidence, not assumptions. Prefer `.\gradlew.bat build` for broad validation, `.\gradlew.bat runData` for generated data changes, `.\gradlew.bat runClient` or `.\gradlew.bat runServer` for gameplay behavior, and targeted JSON/lang checks where relevant.
 
 7. Document update points.
-State what should be added to `AI/Memory.md` or `AI/Context.md` after the workflow reveals a reusable lesson.
+State what should be added to `AI/Memory.md` after the workflow reveals a reusable lesson.
 
 8. Review for future-agent usability.
 A future agent should be able to discover the workflow from the trigger, follow it without hidden context, and know how to verify completion.
@@ -147,7 +145,6 @@ Planning checklist:
 
 - Read `AI/Agents.md`.
 - Check `AI/Memory.md`.
-- Check `AI/Context.md`.
 - Inspect the files closest to the requested system.
 - Identify whether JSON formats, addons, configs, generated data, or network packets are involved.
 - Ask only when a decision changes behavior, compatibility, or user-facing data formats.
@@ -174,20 +171,6 @@ Before saying work is complete:
 
 Do not claim "fixed," "complete," or "passing" without verification evidence.
 
-## Updating Context.md
-
-Update `AI/Context.md` when the repo map or current working knowledge changes.
-
-Good candidates:
-
-- New subsystem entry points.
-- New registries, packet flows, lifecycle hooks, or config managers.
-- New generated-data workflow.
-- Important commands or environment assumptions.
-- Known places where runtime files are generated or loaded.
-
-Keep `Context.md` factual and current. Do not store long narratives or one-off debugging history there.
-
 ## Updating Memory.md
 
 Update `AI/Memory.md` when a lesson should persist across future sessions.
@@ -210,6 +193,6 @@ When finishing a task:
 - Summarize what changed.
 - Mention verification performed.
 - Mention any verification not run.
-- Mention updates made or recommended for `AI/Memory.md` and `AI/Context.md`.
+- Mention updates made or recommended for `AI/Memory.md`.
 - If files changed, stage changed tracked files before final response unless explicitly excluded.
 - If no files changed, say no files were edited.

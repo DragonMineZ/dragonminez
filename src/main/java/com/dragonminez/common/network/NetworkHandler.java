@@ -15,17 +15,26 @@ public class NetworkHandler {
 
 	public static SimpleChannel INSTANCE;
 	private static int packetId = 0;
+	private static final int NETWORK_REVISION = 1;
 
 	private static int id() {
 		return packetId++;
 	}
 
+	public static String protocolVersion() {
+		return Reference.VERSION + "+" + packetId + "." + NETWORK_REVISION + "-" + NetworkFingerprint.get();
+	}
+
+	private static boolean isSameProtocol(String remoteVersion) {
+		return protocolVersion().equals(remoteVersion);
+	}
+
 	public static void register() {
 		SimpleChannel net = NetworkRegistry.ChannelBuilder
 				.named(ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "network"))
-				.networkProtocolVersion(() -> "1.0")
-				.clientAcceptedVersions(s -> true)
-				.serverAcceptedVersions(s -> true)
+				.networkProtocolVersion(NetworkHandler::protocolVersion)
+				.clientAcceptedVersions(NetworkHandler::isSameProtocol)
+				.serverAcceptedVersions(NetworkHandler::isSameProtocol)
 				.simpleChannel();
 
 		INSTANCE = net;
@@ -870,6 +879,12 @@ public class NetworkHandler {
 				.encoder(VehicleFlightModeC2S::encode)
 				.consumerMainThread(VehicleFlightModeC2S::handle)
 				.add();
+
+		net.messageBuilder(StatsDeltaS2C.class, id(), NetworkDirection.PLAY_TO_CLIENT)
+				.decoder(StatsDeltaS2C::decode)
+				.encoder(StatsDeltaS2C::encode)
+				.consumerMainThread(StatsDeltaS2C::handle)
+				.add();
 	}
 
 	public static <MSG> void sendToServer(MSG message) {
@@ -885,6 +900,16 @@ public class NetworkHandler {
 	}
 
 	public static <MSG> void sendToTrackingEntityAndSelf(MSG message, Entity entity) {
+		if (entity instanceof ServerPlayer player) {
+			Object trackerCopy = message instanceof StatsSyncS2C stats ? stats.forTrackers()
+					: message instanceof ProgressionSyncS2C progression ? progression.forTrackers()
+					: message instanceof StatsDeltaS2C delta ? delta.forTrackers() : null;
+			if (trackerCopy != null) {
+				sendToPlayer(message, player);
+				sendToTrackingEntity(trackerCopy, player);
+				return;
+			}
+		}
 		INSTANCE.send(PacketDistributor.TRACKING_ENTITY_AND_SELF.with(() -> entity), message);
 	}
 

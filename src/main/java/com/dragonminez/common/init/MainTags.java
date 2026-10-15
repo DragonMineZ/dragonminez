@@ -54,6 +54,7 @@ public class MainTags {
 		public static final TagKey<EntityType<?>> NPC_FUSIONS = create("npc_fusions");
 		public static final TagKey<EntityType<?>> NPC_GIANTS = create("npc_giants");
 		public static final TagKey<EntityType<?>> NPC_FINALBOSSES = create("npc_finalbosses");
+		public static final TagKey<EntityType<?>> NON_FIGHTERS = create("non_fighters");
 
 		private static TagKey<EntityType<?>> create(String name) {
 			return TagKey.create(Registries.ENTITY_TYPE, ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, name));

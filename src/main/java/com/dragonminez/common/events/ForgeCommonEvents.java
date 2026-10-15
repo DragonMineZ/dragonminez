@@ -5,6 +5,7 @@ import com.dragonminez.LogUtil;
 import com.dragonminez.Reference;
 import com.dragonminez.client.util.ColorUtils;
 import com.dragonminez.common.alignment.NpcAlignmentRules;
+import com.dragonminez.common.combat.logic.player.PlayerAttackHelper;
 import com.dragonminez.common.combat.logic.player.TargetHelper;
 import com.dragonminez.common.combat.logic.weapon.WeaponRegistry;
 import com.dragonminez.common.combat.util.Player_DMZ;
@@ -73,6 +74,7 @@ import net.minecraft.util.profiling.ProfilerFiller;
 import net.minecraft.world.entity.*;
 import net.minecraft.world.entity.ai.attributes.AttributeModifier;
 import net.minecraft.world.entity.ai.attributes.Attributes;
+import net.minecraft.world.entity.decoration.ArmorStand;
 import net.minecraft.world.entity.npc.VillagerTrades;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.entity.projectile.AbstractArrow;
@@ -336,7 +338,14 @@ public class ForgeCommonEvents {
 
 		if (!level.isClientSide() && level instanceof ServerLevel serverLevel) {
 			TargetHelper.Relation relation = TargetHelper.getRelation(attacker, target);
-			if (!TargetHelper.canAttack(attacker, target, attacker.distanceTo(target) + 1.0D)) {
+			boolean approved = TargetHelper.isApprovedMeleeTarget(target);
+			Entity hittable = TargetHelper.resolveHittable(target);
+			if (!approved && hittable instanceof LivingEntity && !(hittable instanceof ArmorStand)
+					&& PlayerAttackHelper.getCurrentAttack(attacker, 0) != null) {
+				event.setCanceled(true);
+				return;
+			}
+			if (!approved && !TargetHelper.canAttack(attacker, target, attacker.distanceTo(target) + 1.0D)) {
 				event.setCanceled(true);
 				return;
 			}

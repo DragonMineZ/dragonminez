@@ -68,6 +68,7 @@ public class SagaGokuEntity{
 
             if (entityName != null && entityName.contains("noweights")) {
                 this.getAttribute(Attributes.MOVEMENT_SPEED).setBaseValue(0.35D);
+                this.setDefaultMovementSpeed(0.35D);
                 this.setCanFly(false);
                 this.setEvade(true, 100);
                 this.setAuraColor(0xFFFFFF);
@@ -76,6 +77,7 @@ public class SagaGokuEntity{
                 }
             } else {
                 this.getAttribute(Attributes.MOVEMENT_SPEED).setBaseValue(0.25D);
+                this.setDefaultMovementSpeed(0.25D);
                 this.setCanFly(true);
                 this.setAllowedCombos(200, ComboType.KI_CHARGE_ATTACK);
                 this.setWildSense(true, 200);

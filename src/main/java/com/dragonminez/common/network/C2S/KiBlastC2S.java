@@ -9,6 +9,7 @@ import com.dragonminez.common.network.S2C.TriggerAnimationS2C;
 import com.dragonminez.common.stats.character.Cooldowns;
 import com.dragonminez.common.stats.StatsCapability;
 import com.dragonminez.common.stats.StatsProvider;
+import com.dragonminez.common.training.MinigameSessionManager;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.effect.MobEffectInstance;
@@ -46,6 +47,7 @@ public class KiBlastC2S {
 			if (player.isDeadOrDying() || player.isSpectator()) return;
 
 			if (msg.isShooting) {
+				MinigameSessionManager.onPlayerAction(player, "ki blast");
 				StatsProvider.get(StatsCapability.INSTANCE, player).ifPresent(data -> {
 					if (data.getCooldowns().hasCooldown(Cooldowns.KI_BLAST_CD)) return;
 					if (data.getStatus().isStunned()) return;

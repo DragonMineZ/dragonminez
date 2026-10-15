@@ -234,6 +234,10 @@
       "required": false
     },
     {
+      "id": "dragonminez:saga_mr_satan",
+      "required": false
+    },
+    {
       "id": "dragonminez:saga_goku_end_base",
       "required": false
     },

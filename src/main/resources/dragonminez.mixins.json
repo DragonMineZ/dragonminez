@@ -16,6 +16,7 @@
     "common.RangedAttributeMixin",
     "common.SinglePoolElementAccessor",
     "common.StructureTemplateAccessor",
+    "common.StructureTemplatePaletteInvoker",
     "common.StructureTemplatePoolAccessor",
     "common.SweepingEdgeEnchantmentMixin"
   ],

@@ -20,7 +20,11 @@ import net.minecraft.world.phys.Vec3;
 import net.minecraftforge.entity.PartEntity;
 import net.minecraftforge.registries.ForgeRegistries;
 
+import java.util.List;
+
 public class TargetHelper {
+
+    private static final ThreadLocal<Entity> APPROVED_MELEE_TARGET = new ThreadLocal<>();
 
     public static Entity resolveHittable(Entity entity) {
         return entity instanceof PartEntity<?> part ? part.getParent() : entity;
@@ -122,10 +126,45 @@ public class TargetHelper {
         };
     }
 
+    public static boolean canAttack(Player attacker, Entity target, double maxRange, List<MeleeTargetValidator.Aim> aims) {
+        target = resolveHittable(target);
+        Relation relation = getRelation(attacker, target);
+        if (target instanceof MastersEntity) return false;
+        return switch (relation) {
+            case FRIENDLY -> false;
+            case HOSTILE -> true;
+            case NEUTRAL -> isLookingAtAny(attacker, target, maxRange, aims);
+        };
+    }
+
+    public static void attackApproved(Player attacker, Entity target) {
+        APPROVED_MELEE_TARGET.set(target);
+        try {
+            attacker.attack(target);
+        } finally {
+            APPROVED_MELEE_TARGET.remove();
+        }
+    }
+
+    public static boolean isApprovedMeleeTarget(Entity target) {
+        return target != null && APPROVED_MELEE_TARGET.get() == target;
+    }
+
     public static void onSuccessfulAttack(Player attacker, Entity target, Relation relation) {
         if (relation == Relation.NEUTRAL && attacker instanceof ServerPlayer serverPlayer && NpcDispositionService.isInteractiveNpc(target)) {
             NpcDispositionService.markHostile(serverPlayer, target);
         }
+    }
+
+    private static boolean isLookingAtAny(Player attacker, Entity target, double maxRange, List<MeleeTargetValidator.Aim> aims) {
+        if (aims == null || aims.isEmpty()) return isLookingAt(attacker, target, maxRange);
+        Vec3 eye = attacker.getEyePosition();
+        AABB box = target.getBoundingBox().inflate(0.15);
+        for (MeleeTargetValidator.Aim aim : aims) {
+            Vec3 look = Vec3.directionFromRotation(aim.pitch(), aim.yaw());
+            if (box.clip(eye, eye.add(look.scale(maxRange + 1.0))).isPresent()) return true;
+        }
+        return false;
     }
 
     private static boolean isLookingAt(Player attacker, Entity target, double maxRange) {

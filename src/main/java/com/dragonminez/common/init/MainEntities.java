@@ -96,7 +96,7 @@ public class MainEntities {
                 SAGA_VEGETA_MID, SAGA_VEGETA_MID_SSJ, SAGA_VEGETA_MID_SSG2,
                 SAGA_FUTURE_TRUNKS_KID_BASE, SAGA_FUTURE_TRUNKS_KID_SSJ, SAGA_FUTURE_TRUNKS_BASE, SAGA_FUTURE_TRUNKS_SSJ, SAGA_FUTURE_TRUNKS_SSG3,
                 SAGA_CELL_PERFECT, SAGA_GOHAN_MID_BASE, SAGA_GOHAN_MID_SSJ, SAGA_GOHAN_MID_SSJ2,
-                SAGA_FUTURE_GOHAN_BASE, SAGA_FUTURE_GOHAN_SSJ, SAGA_CELL_SUPERPERFECT, SAGA_CELL_JR,
+                SAGA_FUTURE_GOHAN_BASE, SAGA_FUTURE_GOHAN_SSJ, SAGA_CELL_SUPERPERFECT, SAGA_CELL_JR, SAGA_MR_SATAN,
 
                 // SAGA MAJIN BUU
                 SAGA_GOKU_END_BASE, SAGA_GOKU_END_SSJ, SAGA_GOKU_END_SSJ2, SAGA_GOKU_END_SSJ3,
@@ -1039,6 +1039,11 @@ public class MainEntities {
                     () -> EntityType.Builder.of(SagaCellEntity.SagaCellJREntity::new, MobCategory.MONSTER)
                             .sized(0.8f, 1.6f)
                             .build(ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "saga_cell_jr").toString()));
+    public static final RegistryObject<EntityType<SagaZFightersEntity.SagaMrSatanEntity>> SAGA_MR_SATAN =
+            ENTITY_TYPES.register("saga_mr_satan",
+                    () -> EntityType.Builder.of(SagaZFightersEntity.SagaMrSatanEntity::new, MobCategory.MONSTER)
+                            .sized(0.6f, 1.8f)
+                            .build(ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "saga_mr_satan").toString()));
 
     /*
      BUU SAGA ENTITIES
@@ -1143,9 +1148,9 @@ public class MainEntities {
                     () -> EntityType.Builder.of(SagaZFightersEntity.SagaShinEntity::new, MobCategory.MONSTER)
                             .sized(0.6f, 1.8f)
                             .build(ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "saga_shin").toString()));
-    public static final RegistryObject<EntityType<SagaZFightersEntity.SagaShinEntity>> SAGA_VIDEL =
+    public static final RegistryObject<EntityType<SagaZFightersEntity.SagaVidelEntity>> SAGA_VIDEL =
             ENTITY_TYPES.register("saga_videl",
-                    () -> EntityType.Builder.of(SagaZFightersEntity.SagaShinEntity::new, MobCategory.MONSTER)
+                    () -> EntityType.Builder.of(SagaZFightersEntity.SagaVidelEntity::new, MobCategory.MONSTER)
                             .sized(0.6f, 1.8f)
                             .build(ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "saga_videl").toString()));
     public static final RegistryObject<EntityType<SagaZFightersEntity.BasicNPCEntity>> SAGA_BULMA =
