@@ -15,6 +15,7 @@ import com.dragonminez.common.init.MainSounds;
 import com.dragonminez.common.init.item.PothalaPairItem;
 import com.dragonminez.common.init.entities.ShadowDummyEntity;
 import com.dragonminez.common.init.entities.ki.*;
+import com.dragonminez.common.network.C2S.KiBlastC2S;
 import com.dragonminez.common.network.C2S.SummonPlayerShadowDummyC2S;
 import com.dragonminez.common.network.NetworkHandler;
 import com.dragonminez.common.network.StatsDeltaSync;
@@ -158,6 +159,7 @@ public class TickHandler {
 			}
 
 			data.getCooldowns().tick();
+			KiBlastC2S.tickVolley(serverPlayer, data, isStunned || isDowned || isFrozen);
 			data.getEffects().tick();
 			data.getSecondaryStatEffects().tick();
 			clearExpiredKnockdown(serverPlayer, data);
@@ -546,6 +548,7 @@ public class TickHandler {
 			NetworkHandler.sendToTrackingEntityAndSelf(new TriggerAnimationS2C(serverPlayer.getUUID(), TriggerAnimationS2C.AnimationType.KI_ANIMATION_STOP, 0, -1, ""), serverPlayer);
 		}
 		CHARGING_CACHE.remove(playerId);
+		KiBlastC2S.clearVolley(playerId);
 		CHARGE_COST_ACCUM.remove(playerId);
 		chargeTicksByPlayer.remove(playerId);
 		flySprintAuraTicks.remove(playerId);

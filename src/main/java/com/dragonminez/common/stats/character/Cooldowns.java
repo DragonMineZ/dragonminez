@@ -24,6 +24,7 @@ public class Cooldowns {
 	public static final String TELEPORT_CD = "TeleportCooldown";
 	public static final String DASH_ACTIVE = "DashActive";
 	public static final String KI_BLAST_CD = "KiBlastCooldown";
+	public static final String KI_VOLLEY_CD = "KiVolleyCooldown";
 	public static final String MAJIN_REVIVE_ACTIVE = "MajinReviveActive";
 	public static final String MAJIN_REVIVE_CD = "MajinReviveCooldown";
 	public static final String KNOCKDOWN_DURATION = "KnockdownDuration";

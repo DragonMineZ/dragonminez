@@ -354,9 +354,10 @@ public class DMZPlayerModel<T extends AbstractClientPlayer & GeoAnimatable> exte
         }
 
         if (animatable instanceof IPlayerAnimatable playerAnim && playerAnim.dragonminez$isShootingKi()) {
-            if (rightArm != null) {
-                rightArm.setRotX(lookPitch + 1.5708F);
-                rightArm.setRotY(lookYaw);
+            CoreGeoBone shootingArm = playerAnim.dragonminez$isShootingKiLeftHand() ? leftArm : rightArm;
+            if (shootingArm != null) {
+                shootingArm.setRotX(lookPitch + 1.5708F);
+                shootingArm.setRotY(lookYaw);
             }
         }
 

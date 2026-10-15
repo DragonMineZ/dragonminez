@@ -79,6 +79,7 @@ public abstract class PlayerGeoAnimatableMixin implements GeoAnimatable, IPlayer
 	@Unique private int dragonminez$miningAnimTicks = 0;
 	@Unique private int dragonminez$lastMiningTickRun = -1;
 	@Unique private boolean dragonminez$isShootingKi = false;
+	@Unique private boolean dragonminez$shootingKiLeftHand = false;
 	@Unique private String dragonminez$currentMeleeAnim = null;
 	@Unique private String dragonminez$currentPoseAnim = null;
 	@Unique private boolean dragonminez$poseInstantResume = false;
@@ -801,6 +802,16 @@ public abstract class PlayerGeoAnimatableMixin implements GeoAnimatable, IPlayer
 	@Override
 	public boolean dragonminez$isShootingKi() {
 		return dragonminez$isShootingKi;
+	}
+
+	@Override
+	public void dragonminez$setShootingKiHand(boolean leftHand) {
+		this.dragonminez$shootingKiLeftHand = leftHand;
+	}
+
+	@Override
+	public boolean dragonminez$isShootingKiLeftHand() {
+		return dragonminez$shootingKiLeftHand;
 	}
 
 	@Override

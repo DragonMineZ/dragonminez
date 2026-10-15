@@ -68,6 +68,8 @@ public class ClientStatsEvents {
 	private static long lastTransformTapTime = 0;
 	private static long lastKiChargeTapTime = 0;
 	private static int kiBlastTimer = 0;
+	private static int kiBlastHoldTicks = 0;
+	private static final int KI_VOLLEY_HOLD_TICKS = 6;
 	private static int blockLockTicks = 0;
 	private static final int BLOCK_REACTIVATION_LOCK_TICKS = 5;
 	private static final int SLEEP_Z_INTERVAL_TICKS = 10;
@@ -291,8 +293,26 @@ public class ClientStatsEvents {
 			}
 
 			boolean chargeSessionActive = data.getTechniques().isTechniqueCharging() || data.getTechniques().isTechniqueChargeActive();
-			if (isDescendKeyPressed && isRightClickDown && !wasRightClickDown && !chargeSessionActive && !KiShareInput.isChordDown()
-					&& !TechniqueDispatcher.isFiringKiAttack(localPlayer) && (!data.getStatus().isFused() && !data.getStatus().isFusionLeader())) {
+			boolean kiBlastChordDown = isDescendKeyPressed && isRightClickDown;
+			boolean kiBlastAllowed = !chargeSessionActive && !KiShareInput.isChordDown()
+					&& !TechniqueDispatcher.isFiringKiAttack(localPlayer) && (!data.getStatus().isFused() && !data.getStatus().isFusionLeader());
+			boolean fireKiBlast = false;
+			boolean fireKiVolley = false;
+			if (!kiBlastAllowed) {
+				kiBlastHoldTicks = 0;
+			} else if (kiBlastChordDown && !wasRightClickDown) {
+				kiBlastHoldTicks = 1;
+			} else if (kiBlastHoldTicks > 0) {
+				if (!kiBlastChordDown) {
+					fireKiBlast = true;
+					kiBlastHoldTicks = 0;
+				} else if (++kiBlastHoldTicks >= KI_VOLLEY_HOLD_TICKS) {
+					fireKiBlast = true;
+					fireKiVolley = true;
+					kiBlastHoldTicks = 0;
+				}
+			}
+			if (fireKiBlast) {
 				float[] kiRgb;
 				if (character.hasActiveStackForm()
 						&& character.getActiveStackFormData() != null
@@ -307,9 +327,9 @@ public class ClientStatsEvents {
 				} else kiRgb = character.getRgbAuraColor();
 				int colorMain = ColorUtils.rgbToInt(kiRgb[0], kiRgb[1], kiRgb[2]);
 				int colorBorder = ColorUtils.darkenColor(colorMain, 0.85f);
-				NetworkHandler.sendToServer(new KiBlastC2S(true, colorMain, colorBorder));
+				NetworkHandler.sendToServer(new KiBlastC2S(true, fireKiVolley, colorMain, colorBorder));
 				kiBlastTimer = 10;
-				blockLockTicks = 20;
+				blockLockTicks = fireKiVolley ? 30 : 20;
 			}
 
 			boolean clashPressDown = mc.options.keyUse.isDown() && (!isStunned || FlySkillEvent.isStrikeClashHeld());

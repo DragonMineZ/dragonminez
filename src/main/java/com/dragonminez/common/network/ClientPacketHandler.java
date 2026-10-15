@@ -270,7 +270,10 @@ public class ClientPacketHandler {
 			switch (animationType) {
 				case EVASION -> animatable.dragonminez$triggerEvasion(variant);
 				case DASH -> animatable.dragonminez$triggerDash(variant);
-				case KI_BLAST_SHOT -> animatable.dragonminez$setShootingKi(variant == 0);
+				case KI_BLAST_SHOT -> {
+					if (variant != 1) animatable.dragonminez$setShootingKiHand(variant == 2);
+					animatable.dragonminez$setShootingKi(variant != 1);
+				}
 				case KI_ANIMATION -> {
 					String anim = stringPayload.startsWith("evs.") ? EvasionAnimations.resolve(stringPayload) : KiAnimations.resolve(stringPayload);
 					animatable.dragonminez$playKiAnimation(anim, variant == 1);

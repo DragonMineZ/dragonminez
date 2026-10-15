@@ -2135,9 +2135,8 @@ public abstract class DBSagasEntity extends Monster implements GeoEntity, ITextu
 
         if (actuallyHurt && !this.level().isClientSide) {
 
-            if (pSource.is(MainDamageTypes.KIBLAST)) {
-                // While being struck by a ki technique (e.g. a kamehameha beam) the enemy
-                // should be pushed/slowed instead of continuing to cruise at full flight speed.
+            if (pSource.is(MainDamageTypes.KIBLAST)
+                    && !(pSource.getDirectEntity() instanceof AbstractKiProjectile smallKi && smallKi.getKiType() == AbstractKiProjectile.KiType.SMALL_BALL)) {
                 this.kiHitSlowTicks = KI_HIT_SLOW_TICKS;
             }
 
