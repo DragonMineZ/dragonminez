@@ -3,11 +3,13 @@ package com.dragonminez.common.racial.impl;
 import com.dragonminez.common.combat.logic.player.TargetHelper;
 import com.dragonminez.common.config.ConfigManager;
 import com.dragonminez.common.config.GeneralServerConfig;
+import com.dragonminez.common.init.MainSounds;
 import com.dragonminez.common.init.entities.MastersEntity;
 import com.dragonminez.common.init.entities.PunchMachineEntity;
 import com.dragonminez.common.init.entities.namek.NamekTraderEntity;
 import com.dragonminez.common.init.entities.namek.NamekWarriorEntity;
 import com.dragonminez.common.network.NetworkHandler;
+import com.dragonminez.common.network.S2C.AssimilationVfxS2C;
 import com.dragonminez.common.network.S2C.StatsSyncS2C;
 import com.dragonminez.common.racial.RacialAbility;
 import com.dragonminez.common.racial.RacialContext;
@@ -22,6 +24,7 @@ import com.dragonminez.common.stats.character.Cooldowns;
 import com.dragonminez.common.stats.character.SecondaryStatEffects;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.entity.LivingEntity;
 
 import java.util.HashMap;
@@ -190,6 +193,8 @@ public class NamekAssimilation implements RacialAbility {
 		data.getRacialData().addAssimilation(new RacialData.AssimilationSlot(
 				bonusName, target.getUUID(), target.getName().getString(), grantedStats, player.level().getGameTime()));
 
+		NetworkHandler.sendToTrackingEntityAndSelf(new AssimilationVfxS2C(target.getId(), player.getId()), target);
+		player.level().playSound(null, player.getX(), player.getY(), player.getZ(), MainSounds.STACK_FORM.get(), SoundSource.PLAYERS, 1.0F, 1.0F);
 		RacialCapture.finalizeKill(player, target, config.getAssimilationHealthRegen());
 		player.displayClientMessage(Component.translatable("message.dragonminez.racial.namek.success"), true);
 		NetworkHandler.sendToTrackingEntityAndSelf(new StatsSyncS2C(player), player);

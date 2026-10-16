@@ -54,7 +54,8 @@ public final class AuraFxState {
 
 	public static boolean hasLightning(StatsData stats) {
 		if (stats == null) return false;
-		return formLightning(stats) != null || isSurging(stats) || isReserveDischarging(stats);
+		return formLightning(stats) != null || isSurging(stats) || isReserveDischarging(stats)
+				|| NamekAssimilationEffect.hasLightning(stats.getPlayer());
 	}
 
 	public static boolean hasLightning(Player player) {

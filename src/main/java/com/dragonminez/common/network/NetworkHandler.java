@@ -885,6 +885,12 @@ public class NetworkHandler {
 				.encoder(StatsDeltaS2C::encode)
 				.consumerMainThread(StatsDeltaS2C::handle)
 				.add();
+
+		net.messageBuilder(AssimilationVfxS2C.class, id(), NetworkDirection.PLAY_TO_CLIENT)
+				.decoder(AssimilationVfxS2C::new)
+				.encoder(AssimilationVfxS2C::encode)
+				.consumerMainThread(AssimilationVfxS2C::handle)
+				.add();
 	}
 
 	public static <MSG> void sendToServer(MSG message) {

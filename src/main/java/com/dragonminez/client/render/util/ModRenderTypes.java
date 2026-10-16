@@ -567,6 +567,55 @@ public class ModRenderTypes extends RenderType {
         );
     }
 
+    private static final RenderStateShard.ShaderStateShard ASSIMILATION_SKETCH_SHADER = new RenderStateShard.ShaderStateShard(() -> DMZShaders.assimilationSketchShader);
+    private static final Map<ResourceLocation, RenderType> ASSIMILATION_SKETCH_CACHE = new HashMap<>();
+    private static final Map<ResourceLocation, RenderType> ASSIMILATION_SKETCH_VIEW_OFFSET_CACHE = new HashMap<>();
+    private static final Map<ResourceLocation, RenderType> ASSIMILATION_SKETCH_SKIN_OVERLAY_CACHE = new HashMap<>();
+
+    public static boolean hasAssimilationSketchShader() {
+        return DMZShaders.assimilationSketchShader != null;
+    }
+
+    @Nullable
+    public static RenderType assimilationSketch(@Nullable RenderType sourceRenderType) {
+        if (sourceRenderType == null || sourceRenderType.format() != DefaultVertexFormat.NEW_ENTITY) return null;
+        if (sourceRenderType.mode() != VertexFormat.Mode.QUADS || isGlint(sourceRenderType)) return null;
+        String sourceName = sourceRenderType.toString();
+        if (sourceName.contains("shadow")) return null;
+        ResourceLocation texture = resolveSourceTexture(sourceRenderType);
+        if (texture == null) return null;
+        RenderStateShard.LayeringStateShard layering = sourceName.contains(VIEW_OFFSET_LAYERING_TOKEN) ? VIEW_OFFSET_Z_LAYERING
+                : sourceName.contains(SKIN_OVERLAY_LAYERING_TOKEN) ? SKIN_OVERLAY_LAYERING
+                : null;
+        Map<ResourceLocation, RenderType> cache = layering == VIEW_OFFSET_Z_LAYERING ? ASSIMILATION_SKETCH_VIEW_OFFSET_CACHE
+                : layering == SKIN_OVERLAY_LAYERING ? ASSIMILATION_SKETCH_SKIN_OVERLAY_CACHE
+                : ASSIMILATION_SKETCH_CACHE;
+        return cache.computeIfAbsent(texture, t -> buildAssimilationSketch(t, layering));
+    }
+
+    private static RenderType buildAssimilationSketch(ResourceLocation texture, @Nullable RenderStateShard.LayeringStateShard layering) {
+        CompositeState.CompositeStateBuilder builder = CompositeState.builder()
+                .setShaderState(ASSIMILATION_SKETCH_SHADER)
+                .setTextureState(new RenderStateShard.TextureStateShard(texture, false, false))
+                .setTransparencyState(TRANSLUCENT_TRANSPARENCY)
+                .setCullState(NO_CULL)
+                .setDepthTestState(LEQUAL_DEPTH_TEST)
+                .setLightmapState(LIGHTMAP)
+                .setOverlayState(NO_OVERLAY)
+                .setWriteMaskState(COLOR_DEPTH_WRITE);
+        if (layering != null) builder.setLayeringState(layering);
+
+        return create(
+                "dmz_assimilation_sketch",
+                DefaultVertexFormat.NEW_ENTITY,
+                VertexFormat.Mode.QUADS,
+                1536,
+                true,
+                true,
+                builder.createCompositeState(true)
+        );
+    }
+
     public static RenderType transformationMask() {
         return TRANSFORMATION_MASK;
     }
