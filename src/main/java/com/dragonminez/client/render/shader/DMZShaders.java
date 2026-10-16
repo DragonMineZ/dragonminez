@@ -35,6 +35,7 @@ public class DMZShaders {
 	public static ShaderInstance afterimageShader;
 	public static ShaderInstance blueHurricaneShader;
 	public static ShaderInstance kiBladeShader;
+	public static ShaderInstance solarisSmokeShader;
 
 	@SubscribeEvent
 	public static void onRegisterShaders(RegisterShadersEvent event) throws IOException {
@@ -148,5 +149,10 @@ public class DMZShaders {
 						ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "ki_blade"),
 						DefaultVertexFormat.POSITION_COLOR_TEX),
 				shaderInstance -> kiBladeShader = shaderInstance);
+
+		event.registerShader(new ShaderInstance(event.getResourceProvider(),
+						ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "solaris_smoke"),
+						DefaultVertexFormat.POSITION_COLOR_TEX),
+				shaderInstance -> solarisSmokeShader = shaderInstance);
 	}
 }

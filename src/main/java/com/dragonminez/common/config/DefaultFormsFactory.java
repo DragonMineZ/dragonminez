@@ -439,6 +439,7 @@ public class DefaultFormsFactory {
 		solaris.setDefMultiplier(3.6);
 		solaris.setPwrMultiplier(4.25);
 		solaris.setEnergyDrain(0.479);
+        solaris.setAuraColor("#FFE11A");
 		solaris.setHairType("ssj2");
 		setDefaultMasteryValues(solaris);
 		solaris.setAura3DStyle(aura3D().waves(1.9f, 4.6f, 0.66f).turbulence(0.10f, 0.52f).rim(0.04f, 1.0f, 3.2f, 0.07f).colors("", "", "#FFB300"));

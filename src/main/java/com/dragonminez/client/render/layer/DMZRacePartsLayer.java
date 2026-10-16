@@ -5,6 +5,7 @@ import com.dragonminez.Reference;
 import com.dragonminez.client.render.HeadPortraitRenderer;
 import com.dragonminez.client.render.hair.SaiyanTailMeshBuilder;
 import com.dragonminez.client.render.firstperson.dto.FirstPersonManager;
+import com.dragonminez.client.render.effects.SolarisSmokeRenderer;
 import com.dragonminez.client.render.util.DonorBoneRenderer;
 import com.dragonminez.client.render.util.ModRenderTypes;
 import com.dragonminez.client.systems.FormVisualTransition;
@@ -25,6 +26,7 @@ import com.dragonminez.common.stats.StatsProvider;
 import com.dragonminez.common.stats.character.Character;
 import com.dragonminez.common.util.FusionForms;
 import com.dragonminez.common.util.FusionTraits;
+import com.dragonminez.common.util.lists.HumanForms;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
 import com.mojang.math.Axis;
@@ -135,6 +137,7 @@ public class DMZRacePartsLayer<T extends AbstractClientPlayer & GeoAnimatable> e
 		if (isLimb) {
 			if (!animatable.isSpectator() && !stats.getCharacter().isOozaruCached()) {
 				renderWeights(poseStack, animatable, bufferSource, anchor, partialTick, packedLight, alpha);
+				renderSolarisSmoke(poseStack, animatable, stats.getCharacter(), playerBone, bufferSource, partialTick);
 			}
 			bufferSource.getBuffer(renderType);
 			return;
@@ -153,6 +156,7 @@ public class DMZRacePartsLayer<T extends AbstractClientPlayer & GeoAnimatable> e
 				renderSword(poseStack, animatable, playerBone, bufferSource, partialTick, packedLight);
 				if ("body".equals(anchor) && !stats.getCharacter().isOozaruCached()) {
 					renderWeights(poseStack, animatable, bufferSource, anchor, partialTick, packedLight, alpha);
+					renderSolarisSmoke(poseStack, animatable, stats.getCharacter(), playerBone, bufferSource, partialTick);
 				}
 			}
 		}
@@ -687,6 +691,23 @@ public class DMZRacePartsLayer<T extends AbstractClientPlayer & GeoAnimatable> e
 					case "left_arm" -> renderWeightBone(weightModel, "piccoloweight_left", poseStack, animatable, bufferSource, type, partialTick, packedLight, alpha);
 				}
 			}
+		}
+	}
+
+	private static boolean isSolaris(Character character) {
+		return "human".equalsIgnoreCase(character.getRaceName())
+				&& HumanForms.GROUP_SUPERFORMS.equals(character.getActiveFormGroup())
+				&& HumanForms.SOLARIS.equals(character.getActiveForm());
+	}
+
+	private void renderSolarisSmoke(PoseStack poseStack, T animatable, Character character, GeoBone playerBone, MultiBufferSource bufferSource, float partialTick) {
+		if (!isSolaris(character)) return;
+		float age = animatable.tickCount + partialTick;
+		boolean bloom = !HeadPortraitRenderer.isActive();
+		if ("body".equals(playerBone.getName())) {
+			SolarisSmokeRenderer.renderBody(poseStack, bufferSource, animatable.getId(), age, bloom);
+		} else {
+			SolarisSmokeRenderer.renderWrist(poseStack, playerBone, bufferSource, animatable.getId(), age, bloom);
 		}
 	}
 
