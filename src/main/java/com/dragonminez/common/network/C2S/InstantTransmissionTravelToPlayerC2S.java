@@ -92,7 +92,8 @@ public class InstantTransmissionTravelToPlayerC2S {
 				}
 
 				double distance = sameDimension ? player.position().distanceTo(target.position()) : 0.0;
-				int kiCost = (DashHandler.getFlyDashKiCost() * 5) + ITTeleportHelper.extraKiCostForDistance(distance);
+				int kiCost = ITTeleportHelper.travelKiCost(DashHandler.getFlyDashKiCost() * 5, distance,
+						player.level().dimension().location().toString(), target.level().dimension().location().toString());
 				if (!bypassCosts) {
 					if (data.getResources().getCurrentEnergy() < kiCost) {
 						fail(player, "no_ki");

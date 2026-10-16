@@ -10,7 +10,9 @@ import com.dragonminez.common.stats.StatsCapability;
 import com.dragonminez.common.stats.StatsData;
 import com.dragonminez.common.stats.StatsProvider;
 import com.dragonminez.common.stats.character.MasterLocation;
+import com.dragonminez.common.util.ITTeleportHelper;
 import com.dragonminez.common.util.TransformationsHelper;
+import com.dragonminez.server.events.players.combat.DashHandler;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraftforge.network.NetworkEvent;
@@ -50,8 +52,15 @@ public class RequestITTargetsC2S {
 
 				for (MasterLocation master : data.getCharacter().getInteractedMasters().values()) {
 					boolean reachable = skillLevel >= CROSS_DIMENSION_SKILL_LEVEL || master.getDimension().equals(currentDim);
-					entries.add(new ITTargetEntry(ITTargetEntry.Type.MASTER, master.getMasterId(), master.getDisplayName(), master.getDimension(), reachable));
+					double distance = master.getDimension().equals(currentDim)
+							? Math.sqrt(player.distanceToSqr(master.getPosition().getX() + 0.5, master.getPosition().getY(), master.getPosition().getZ() + 0.5)) : 0;
+					entries.add(new ITTargetEntry(ITTargetEntry.Type.MASTER, master.getMasterId(), master.getDisplayName(), master.getDimension(), reachable,
+							travelCost(distance, master.getDimension(), currentDim)));
 				}
+
+				int rangePerLevel = ConfigManager.getServerConfig().getGameplay().getInstantTransmissionPlayerRangePerLevel();
+				double maxRange = (double) rangePerLevel * skillLevel;
+				double selfBp = data.getBattlePowerExact();
 
 				for (ServerPlayer member : PartyManager.getAllPartyMembers(player)) {
 					if (member.getUUID().equals(player.getUUID())) continue;
@@ -62,13 +71,11 @@ public class RequestITTargetsC2S {
 
 					String memberDim = member.level().dimension().location().toString();
 					boolean reachable = skillLevel >= CROSS_DIMENSION_SKILL_LEVEL || memberDim.equals(currentDim);
-					entries.add(new ITTargetEntry(ITTargetEntry.Type.PARTY, member.getUUID().toString(), member.getGameProfile().getName(), memberDim, reachable));
+					double distance = memberDim.equals(currentDim) ? player.distanceTo(member) : 0;
+					entries.add(new ITTargetEntry(ITTargetEntry.Type.PARTY, member.getUUID().toString(), member.getGameProfile().getName(), memberDim, reachable,
+							travelCost(distance, memberDim, currentDim)));
 					listedPlayers.add(member.getUUID());
 				}
-
-				double selfBp = data.getBattlePowerExact();
-				int rangePerLevel = ConfigManager.getServerConfig().getGameplay().getInstantTransmissionPlayerRangePerLevel();
-				double maxRange = (double) rangePerLevel * skillLevel;
 
 				for (ServerPlayer other : player.server.getPlayerList().getPlayers()) {
 					if (other.getUUID().equals(player.getUUID()) || listedPlayers.contains(other.getUUID())) continue;
@@ -76,8 +83,10 @@ public class RequestITTargetsC2S {
 					if (otherData == null || !otherData.getStatus().isHasCreatedCharacter()) continue;
 					if (!isValidExternalTarget(player, data, selfBp, other, otherData, maxRange)) continue;
 
+					double distance = player.distanceTo(other);
 					entries.add(new ITTargetEntry(ITTargetEntry.Type.EXTERNAL, other.getUUID().toString(),
-							other.getGameProfile().getName(), currentDim, true));
+							other.getGameProfile().getName(), currentDim, true,
+							travelCost(distance, currentDim, currentDim)));
 				}
 
 				NetworkHandler.sendToPlayer(new OpenITMenuS2C(entries), player);
@@ -96,5 +105,10 @@ public class RequestITTargetsC2S {
 
 		double targetBp = targetData.getBattlePowerExact();
 		return targetBp >= (selfBp * BP_LOWER_RATIO) && targetBp <= (selfBp * BP_UPPER_RATIO);
+	}
+
+	private static int travelCost(double distance, String destinationDimension, String currentDimension) {
+		return ITTeleportHelper.travelKiCost(DashHandler.getFlyDashKiCost() * 5,
+				distance, currentDimension, destinationDimension);
 	}
 }
