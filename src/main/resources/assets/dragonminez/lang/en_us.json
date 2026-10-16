@@ -4637,7 +4637,7 @@
   "skill.dragonminez.healing_reduction": "Healing Reduction",
   "skill.dragonminez.healing_reduction.desc": "Your attacks reduce the target's healing (health regeneration and food healing) by 2% per level for a short time.",
   "skill.dragonminez.instant_transmission": "Instant Transmission",
-  "skill.dragonminez.instant_transmission.desc": "Instantly teleport to a location within your line of sight by controlling your Ki. Leveling up this skill increases the maximum teleportation distance. (Lv 5+) Hold the Key to open the NPC menu; players become available at Lv 10.",
+  "skill.dragonminez.instant_transmission.desc": "Instantly teleport to a location within your line of sight by controlling your Ki. Leveling up this skill increases the maximum teleportation distance. (Lv 5+) Hold the Key to open an interface to teleport to Masters.",
   "skill.dragonminez.kiboost": "Ki Boost",
   "skill.dragonminez.kiboost.desc": "Increases your Active Ki regeneration rate by 25% per level. Does not affect your passive Ki regeneration rate.",
   "skill.dragonminez.kaioken": "Kaioken",
