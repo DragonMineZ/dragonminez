@@ -6,6 +6,7 @@ import com.dragonminez.client.render.HeadPortraitRenderer;
 import com.dragonminez.client.render.hair.SaiyanTailMeshBuilder;
 import com.dragonminez.client.render.firstperson.dto.FirstPersonManager;
 import com.dragonminez.client.render.effects.SolarisSmokeRenderer;
+import com.dragonminez.client.render.effects.TimeHaloRenderer;
 import com.dragonminez.client.render.util.DonorBoneRenderer;
 import com.dragonminez.client.render.util.ModRenderTypes;
 import com.dragonminez.client.systems.FormVisualTransition;
@@ -26,6 +27,7 @@ import com.dragonminez.common.stats.StatsProvider;
 import com.dragonminez.common.stats.character.Character;
 import com.dragonminez.common.util.FusionForms;
 import com.dragonminez.common.util.FusionTraits;
+import com.dragonminez.common.util.lists.GlindForms;
 import com.dragonminez.common.util.lists.HumanForms;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
@@ -157,6 +159,7 @@ public class DMZRacePartsLayer<T extends AbstractClientPlayer & GeoAnimatable> e
 				if ("body".equals(anchor) && !stats.getCharacter().isOozaruCached()) {
 					renderWeights(poseStack, animatable, bufferSource, anchor, partialTick, packedLight, alpha);
 					renderSolarisSmoke(poseStack, animatable, stats.getCharacter(), playerBone, bufferSource, partialTick);
+					renderTimeHalo(poseStack, animatable, stats.getCharacter(), partialTick);
 				}
 			}
 		}
@@ -698,6 +701,17 @@ public class DMZRacePartsLayer<T extends AbstractClientPlayer & GeoAnimatable> e
 		return "human".equalsIgnoreCase(character.getRaceName())
 				&& HumanForms.GROUP_SUPERFORMS.equals(character.getActiveFormGroup())
 				&& HumanForms.SOLARIS.equals(character.getActiveForm());
+	}
+
+	private static boolean isRealmOfLight(Character character) {
+		return "glind".equalsIgnoreCase(character.getRaceName())
+				&& GlindForms.GROUP_LEGENDARYFORMS.equalsIgnoreCase(character.getActiveFormGroup())
+				&& GlindForms.TIME_POWER_REALM_OF_LIGHT.equalsIgnoreCase(character.getActiveForm());
+	}
+
+	private void renderTimeHalo(PoseStack poseStack, T animatable, Character character, float partialTick) {
+		if (HeadPortraitRenderer.isActive() || DMZSkinLayer.PREVIEW_MODE) return;
+		TimeHaloRenderer.submit(animatable, isRealmOfLight(character) && !animatable.isInvisible(), poseStack, partialTick);
 	}
 
 	private void renderSolarisSmoke(PoseStack poseStack, T animatable, Character character, GeoBone playerBone, MultiBufferSource bufferSource, float partialTick) {
