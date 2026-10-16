@@ -43,10 +43,13 @@ public final class TransformationPostShaderManager {
 	private static final String BLUR_V_PASS_NAME = Reference.MOD_ID + ":transformation_blur_v";
 	private static final String COMPOSITE_PASS_NAME = Reference.MOD_ID + ":transformation_composite";
 	private static final String BLOOM_SOURCE_PASS_NAME = Reference.MOD_ID + ":transformation_bloom_source";
+	private static final String OUTER_BLUR_H_PASS_NAME = Reference.MOD_ID + ":transformation_blur_outer_h";
+	private static final String OUTER_BLUR_V_PASS_NAME = Reference.MOD_ID + ":transformation_blur_outer_v";
 	private static final String MASK_TARGET = "entity_mask";
 
 	private static final float FIXED_GLOW_STRENGTH = 1.35f;
 	private static final float FIXED_BLOOM_STRENGTH = 0.95f;
+	private static final long ANIMATION_TIME_WRAP_TICKS = 24000L;
 	private static final double SAGA_OUTLINE_RANGE_SQR = 96.0 * 96.0;
 	private static final DBSagasEntity.OutlineStyle DEMON_EYE_OUTLINE = new DBSagasEntity.OutlineStyle(0xFF2020, 0x9A0000, 2.5F);
 
@@ -275,7 +278,9 @@ public final class TransformationPostShaderManager {
 
 	private static void applyRuntimeUniforms(PostChain postChain, float partialTicks, Minecraft mc) {
 		if (activeUniformState == null) return;
-		float animationTime = mc.level != null ? ((float) mc.level.getGameTime() + partialTicks) / 20.0f : partialTicks / 20.0f;
+		float animationTime = mc.level != null ? ((float) (mc.level.getGameTime() % ANIMATION_TIME_WRAP_TICKS) + partialTicks) / 20.0f : partialTicks / 20.0f;
+		float outlineRadius = outlineThicknessToBlurRadius(activeUniformState.outlineThickness());
+		float colorMode = activeUniformState.colorMode();
 
 		List<PostPass> passes = ((PostChainAccessor) postChain).dragonminez$getPasses();
 		for (PostPass pass : passes) {
@@ -284,15 +289,29 @@ public final class TransformationPostShaderManager {
 
 			if (UNPACK_PASS_NAME.equals(passName)) {
 				applyUniform(effect, "AnimationTime", animationTime);
+				applyUniform(effect, "ColorChannel", colorMode);
 				continue;
 			}
 
 			if (BLUR_H_PASS_NAME.equals(passName) || BLUR_V_PASS_NAME.equals(passName)) {
-				applyUniform(effect, "BloomRadius", outlineThicknessToBlurRadius(activeUniformState.outlineThickness()));
+				applyUniform(effect, "BloomRadius", outlineRadius);
 				continue;
 			}
 
+			if (OUTER_BLUR_H_PASS_NAME.equals(passName) || OUTER_BLUR_V_PASS_NAME.equals(passName)) {
+				applyUniform(effect, "BloomRadius", colorMode > 0.5f ? outlineRadius : 0.0f);
+				continue;
+			}
+
+			if (COMPOSITE_PASS_NAME.equals(passName)) {
+				applyUniform(effect, "AnimationTime", animationTime);
+				applyUniform(effect, "OutlineRadius", outlineRadius);
+				applyUniform(effect, "FireIntensity", activeUniformState.fireIntensity());
+				applyUniform(effect, "BodyGlow", activeUniformState.bodyGlow());
+			}
+
 			if (COMPOSITE_PASS_NAME.equals(passName) || BLOOM_SOURCE_PASS_NAME.equals(passName)) {
+				applyUniform(effect, "ColorMode", colorMode);
 				applyUniform(effect, "BloomStrength", FIXED_BLOOM_STRENGTH);
 				applyUniform(effect, "GlowStrength", FIXED_GLOW_STRENGTH);
 			}
@@ -395,7 +414,7 @@ public final class TransformationPostShaderManager {
 	}
 
 	private static float outlineThicknessToBlurRadius(float outlineThickness) {
-		return Math.max(2.0f, Math.min(14.0f, outlineThickness * 3.0f));
+		return Math.max(3.0f, Math.min(28.0f, 6.0f + outlineThickness * 3.0f));
 	}
 
 	private static void applyUniform(EffectInstance effect, String uniformName, float value) {
@@ -413,7 +432,7 @@ public final class TransformationPostShaderManager {
 		private ShaderUniformState uniformState;
 	}
 
-	private record ShaderUniformState(float primaryR, float primaryG, float primaryB, float secondaryR, float secondaryG, float secondaryB, float outlineThickness) {
+	private record ShaderUniformState(float primaryR, float primaryG, float primaryB, float secondaryR, float secondaryG, float secondaryB, float outlineThickness, float fireIntensity, float colorMode, float bodyGlow) {
 		private static ShaderUniformState fromConfig(FormConfig.FormData.OutlineShaderConfig config) {
 			float[] primary = ColorUtils.hexToRgb(config.getPrimaryColor());
 			float[] secondary = ColorUtils.hexToRgb(config.getSecondaryColor());
@@ -425,7 +444,10 @@ public final class TransformationPostShaderManager {
 					secondary[0],
 					secondary[1],
 					secondary[2],
-					(float) config.getOutlineThickness()
+					(float) config.getOutlineThickness(),
+					config.getFireIntensity(),
+					config.isGradient() ? 1.0f : 0.0f,
+					config.getBodyGlow()
 			);
 		}
 
@@ -440,7 +462,10 @@ public final class TransformationPostShaderManager {
 					secondary[0],
 					secondary[1],
 					secondary[2],
-					Math.max(0.0f, style.thickness())
+					Math.max(0.0f, style.thickness()),
+					Math.max(0.0f, style.fireIntensity()),
+					0.0f,
+					0.0f
 			);
 		}
 	}

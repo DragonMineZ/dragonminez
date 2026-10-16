@@ -509,6 +509,7 @@ public class DefaultFormsFactory {
         FormConfig.FormData chou_shiyoken = new FormConfig.FormData();
         FormConfig.FormData.OutlineShaderConfig chou_shiyokenOutline = new FormConfig.FormData.OutlineShaderConfig();
         chou_shiyokenOutline.setEnabled(true);
+        chou_shiyokenOutline.setFireIntensity(0.7d);
         chou_shiyokenOutline.setPrimaryColor("#F72D2D");
         chou_shiyokenOutline.setSecondaryColor("#7D0202");
         chou_shiyokenOutline.setOutlineThickness(3.7D);
@@ -869,10 +870,12 @@ public class DefaultFormsFactory {
 
 		FormConfig.FormData ssj4d = new FormConfig.FormData();
         FormConfig.FormData.OutlineShaderConfig ssj4dOutline = new FormConfig.FormData.OutlineShaderConfig();
+        ssj4dOutline.setColorMode(FormConfig.FormData.OutlineShaderConfig.COLOR_MODE_GRADIENT);
         ssj4dOutline.setEnabled(true);
-        ssj4dOutline.setPrimaryColor("#F4FF8A");
-        ssj4dOutline.setSecondaryColor("#8AFFFF");
-        ssj4dOutline.setOutlineThickness(3.7D);
+        ssj4dOutline.setPrimaryColor("#FFFFFF");
+        ssj4dOutline.setSecondaryColor("#FFC81F");
+        ssj4dOutline.setOutlineThickness(1.5D);
+        ssj4dOutline.setFireIntensity(0.2D);
         ssj4d.setOutlineShader(ssj4dOutline);
         ssj4d.setName(SaiyanForms.SUPER_SAIYAN_4);
 		ssj4d.setCustomModel("ssj4d");
@@ -962,7 +965,12 @@ public class DefaultFormsFactory {
 
 		FormConfig.FormData ssgRitual = new FormConfig.FormData();
 		ssgRitual.setName(SaiyanForms.SUPER_SAIYAN_GOD_RITUAL);
-		ssgRitual.setUnlockOnSkillLevel(99);
+        FormConfig.FormData.OutlineShaderConfig ssgRitualOutline = outline("#FFD336", "#FF3636", 2.5D);
+        ssgRitualOutline.setColorMode(FormConfig.FormData.OutlineShaderConfig.COLOR_MODE_GRADIENT);
+        ssgRitualOutline.setBodyGlow(0.6D);
+        ssgRitualOutline.setFireIntensity(1.0D);
+        ssgRitual.setOutlineShader(ssgRitualOutline);
+        ssgRitual.setUnlockOnSkillLevel(99);
 		ssgRitual.setHairType("base");
 		ssgRitual.setHairColor("#D61F45");
 		ssgRitual.setBodyColor2("#D61F45");
@@ -998,9 +1006,12 @@ public class DefaultFormsFactory {
 		FormConfig.FormData ikari = new FormConfig.FormData();
         FormConfig.FormData.OutlineShaderConfig ikariOutline = new FormConfig.FormData.OutlineShaderConfig();
         ikariOutline.setEnabled(true);
-        ikariOutline.setPrimaryColor("#7FFF7D");
-        ikariOutline.setSecondaryColor("#F4FF7D");
-        ikariOutline.setOutlineThickness(3.5D);
+        ikariOutline.setPrimaryColor("#FFEB26");
+        ikariOutline.setSecondaryColor("#33FF40");
+        ikariOutline.setOutlineThickness(1.5D);
+        ikariOutline.setColorMode(FormConfig.FormData.OutlineShaderConfig.COLOR_MODE_GRADIENT);
+        ikariOutline.setBodyGlow(0.6D);
+        ikariOutline.setFireIntensity(0.4D);
         ikari.setOutlineShader(ikariOutline);
 		ikari.setName(SaiyanForms.IKARI);
 		ikari.setUnlockOnSkillLevel(1);
@@ -1213,9 +1224,11 @@ public class DefaultFormsFactory {
 		FormConfig.FormData buffedNamek = new FormConfig.FormData();
         FormConfig.FormData.OutlineShaderConfig buffedNamekOutline = new FormConfig.FormData.OutlineShaderConfig();
         buffedNamekOutline.setEnabled(true);
-        buffedNamekOutline.setPrimaryColor("#9E2F2F");
-        buffedNamekOutline.setSecondaryColor("#470909");
-        buffedNamekOutline.setOutlineThickness(3.5D);
+        buffedNamekOutline.setColorMode(FormConfig.FormData.OutlineShaderConfig.COLOR_MODE_GRADIENT);
+        buffedNamekOutline.setFireIntensity(0.5d);
+        buffedNamekOutline.setPrimaryColor("#942323");
+        buffedNamekOutline.setSecondaryColor("#4F0404");
+        buffedNamekOutline.setOutlineThickness(1.5D);
         buffedNamek.setOutlineShader(buffedNamekOutline);
 		buffedNamek.setName(NamekianForms.BUFFED_NAMEK);
 		buffedNamek.setUnlockOnSkillLevel(3);
@@ -1650,8 +1663,11 @@ public class DefaultFormsFactory {
 		buffed.setIncompatibleWith(List.of(""));
 
 		FormConfig.FormData outOfControl = new FormConfig.FormData();
-		outOfControl.setOutlineShader(outline("#FF2B2B", "#7D0202", 3.5));
-		outOfControl.setName(GlindForms.OUT_OF_CONTROL);
+        FormConfig.FormData.OutlineShaderConfig outofcontroloutline = outline("#FF6161", "#A11042", 1.5);
+        outofcontroloutline.setColorMode(FormConfig.FormData.OutlineShaderConfig.COLOR_MODE_PULSE);
+        outofcontroloutline.setFireIntensity(0.3D);
+        outOfControl.setOutlineShader(outofcontroloutline);
+        outOfControl.setName(GlindForms.OUT_OF_CONTROL);
 		outOfControl.setUnlockOnSkillLevel(2);
 		outOfControl.setSagaRequisite("saiyan_saga:12");
 		outOfControl.setTransformationAnimation("transf.berserker");
@@ -1673,7 +1689,10 @@ public class DefaultFormsFactory {
 		outOfControl.setIncompatibleWith(List.of(""));
 
 		FormConfig.FormData superForm = new FormConfig.FormData();
-		superForm.setOutlineShader(outline("#5AA9FF", "#1238C9", 3.5));
+        FormConfig.FormData.OutlineShaderConfig superformoutline = outline("#B5F6FF", "#61A9FF", 1.5);
+        superformoutline.setColorMode(FormConfig.FormData.OutlineShaderConfig.COLOR_MODE_PULSE);
+        superformoutline.setFireIntensity(0.3D);
+        superForm.setOutlineShader(superformoutline);
 		superForm.setName(GlindForms.SUPER);
 		superForm.setUnlockOnSkillLevel(3);
 		superForm.setSagaRequisite("frieza_saga:10");
@@ -1711,7 +1730,10 @@ public class DefaultFormsFactory {
 		absorption.setAuraColor("#2F6BFF");
 		absorption.setHairType("ssj4");
 		setDefaultMasteryValues(absorption);
-        absorption.setOutlineShader(outline("#FFFFFF", "#FAE0FF", 5.5));
+        FormConfig.FormData.OutlineShaderConfig absoptionoutline = outline("#E0FDFF", "#FFFFFF", 2.5);
+        absoptionoutline.setColorMode(FormConfig.FormData.OutlineShaderConfig.COLOR_MODE_GRADIENT);
+        absoptionoutline.setFireIntensity(0.7D);
+        absorption.setOutlineShader(absoptionoutline);
         absorption.setAura3DStyle(aura3D().waves(2.1f, 7.4f, 1.8f).turbulence(0.65f, 0.55f).colors("", "", "#FFF7FF").secondBorder("#FFF7FF"));
 		absorption.setStackDrainMultiplier(2.0);
 		absorption.setIncompatibleWith(List.of(""));
@@ -1785,8 +1807,11 @@ public class DefaultFormsFactory {
 		transcended.setAllowFreeTransformOnMastery(0.0);
 
 		FormConfig.FormData darkKing = new FormConfig.FormData();
-		darkKing.setOutlineShader(outline("#FF1A1A", "#8A0000", 3.5));
-		darkKing.setName(GlindForms.DARK_KING);
+        FormConfig.FormData.OutlineShaderConfig darkingoutline = outline("#FF4D4D", "#BF1F1F", 1.5);
+        darkingoutline.setColorMode(FormConfig.FormData.OutlineShaderConfig.COLOR_MODE_GRADIENT);
+        darkingoutline.setFireIntensity(0.5D);
+        darkKing.setOutlineShader(darkingoutline);
+        darkKing.setName(GlindForms.DARK_KING);
 		darkKing.setUnlockOnSkillLevel(2);
 		darkKing.setCustomModel("buffedg3");
 		darkKing.setKeepBaseFormHeadBones(true);
@@ -1808,7 +1833,10 @@ public class DefaultFormsFactory {
 		darkKing.setStackDrainMultiplier(2.0);
 
 		FormConfig.FormData timePowerDarkKing = new FormConfig.FormData();
-		timePowerDarkKing.setOutlineShader(outline("#000000", "#000000", 4.5));
+		FormConfig.FormData.OutlineShaderConfig timePowerDarkKingOutline = outline("#262426", "#121212", 2.5);
+		timePowerDarkKingOutline.setColorMode(FormConfig.FormData.OutlineShaderConfig.COLOR_MODE_GRADIENT);
+		timePowerDarkKingOutline.setFireIntensity(1.5D);
+		timePowerDarkKing.setOutlineShader(timePowerDarkKingOutline);
 		timePowerDarkKing.setName(GlindForms.TIME_POWER_DARK_KING);
 		timePowerDarkKing.setUnlockOnSkillLevel(3);
 		timePowerDarkKing.setCustomModel("glinddark");
@@ -1833,7 +1861,9 @@ public class DefaultFormsFactory {
 		timePowerDarkKing.setShareMasteryMultiplier(0.5);
 
 		FormConfig.FormData timePowerRealmOfLight = new FormConfig.FormData();
-		timePowerRealmOfLight.setOutlineShader(outline("#FFFFFF", "#FFF3C4", 3.5));
+		FormConfig.FormData.OutlineShaderConfig timePowerRealmOfLightOutline = outline("#FFFFFF", "#FFF3C4", 3.5);
+		timePowerRealmOfLightOutline.setFireIntensity(1.5D);
+		timePowerRealmOfLight.setOutlineShader(timePowerRealmOfLightOutline);
 		timePowerRealmOfLight.setName(GlindForms.TIME_POWER_REALM_OF_LIGHT);
 		timePowerRealmOfLight.setUnlockOnSkillLevel(3);
 		timePowerRealmOfLight.setCustomModel("");

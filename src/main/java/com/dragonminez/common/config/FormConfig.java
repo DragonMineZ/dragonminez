@@ -711,10 +711,18 @@ public class FormConfig {
 		@Getter
 		@NoArgsConstructor
 		public static class OutlineShaderConfig {
+			public static final float DEFAULT_FIRE_INTENSITY = 0.0f;
+			public static final float MAX_FIRE_INTENSITY = 3.0f;
+			public static final String COLOR_MODE_PULSE = "pulse";
+			public static final String COLOR_MODE_GRADIENT = "gradient";
+
 			private Boolean enabled = false;
 			private String primaryColor = "#7FFFFF";
 			private String secondaryColor = "#7FFFFF";
 			private Double outlineThickness = 1.5;
+			private Double fireIntensity = (double) DEFAULT_FIRE_INTENSITY;
+			private String colorMode = COLOR_MODE_PULSE;
+			private Double bodyGlow = 0.0;
 
 			public boolean isEnabled() {
 				return Boolean.TRUE.equals(enabled);
@@ -730,6 +738,24 @@ public class FormConfig {
 
 			public double getOutlineThickness() {
 				return Math.max(0.0, outlineThickness != null ? outlineThickness : 1.5);
+			}
+
+			public float getFireIntensity() {
+				if (fireIntensity == null || fireIntensity.isNaN()) return DEFAULT_FIRE_INTENSITY;
+				return (float) Math.max(0.0, Math.min(MAX_FIRE_INTENSITY, fireIntensity));
+			}
+
+			public String getColorMode() {
+				return COLOR_MODE_GRADIENT.equalsIgnoreCase(colorMode) ? COLOR_MODE_GRADIENT : COLOR_MODE_PULSE;
+			}
+
+			public boolean isGradient() {
+				return COLOR_MODE_GRADIENT.equals(getColorMode());
+			}
+
+			public float getBodyGlow() {
+				if (bodyGlow == null || bodyGlow.isNaN()) return 0.0f;
+				return (float) Math.max(0.0, Math.min(1.0, bodyGlow));
 			}
 		}
 	}

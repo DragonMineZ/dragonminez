@@ -2,15 +2,17 @@
 
 uniform sampler2D DiffuseSampler;
 uniform sampler2D GlowSampler;
+uniform sampler2D OuterSampler;
 uniform float BloomStrength;
 uniform float GlowStrength;
+uniform float ColorMode;
 
 in vec2 texCoord;
 out vec4 fragColor;
 
 void main() {
 	vec4 coloredMask = texture(DiffuseSampler, texCoord);
-	vec4 blurred = texture(GlowSampler, texCoord);
+	vec4 blurred = ColorMode > 0.5 ? texture(OuterSampler, texCoord) : texture(GlowSampler, texCoord);
 
 	float coverage = clamp(coloredMask.a, 0.0, 1.0);
 	float blurredAlpha = clamp(blurred.a, 0.0, 1.0);

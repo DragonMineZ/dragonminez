@@ -5,6 +5,7 @@ import com.dragonminez.common.combat.clash.BeamClashManager;
 import com.dragonminez.common.combat.clash.StrikeClash;
 import com.dragonminez.common.config.ConfigManager;
 import com.dragonminez.common.config.EntitiesConfig;
+import com.dragonminez.common.config.FormConfig;
 import com.dragonminez.common.init.EntityAttributes;
 import com.dragonminez.common.init.MainDamageTypes;
 import com.dragonminez.common.init.MainEffects;
@@ -2542,7 +2543,11 @@ public abstract class DBSagasEntity extends Monster implements GeoEntity, ITextu
 
     public String getDragonBallTexturePrefix() {return "dballnamekblock";}
 
-    public record OutlineStyle(int primaryColor, int secondaryColor, float thickness) {}
+    public record OutlineStyle(int primaryColor, int secondaryColor, float thickness, float fireIntensity) {
+        public OutlineStyle(int primaryColor, int secondaryColor, float thickness) {
+            this(primaryColor, secondaryColor, thickness, FormConfig.FormData.OutlineShaderConfig.DEFAULT_FIRE_INTENSITY);
+        }
+    }
 
     public record SupervillainPalette(int tint, float tintAlpha, int flameInner, int flameOuter) {}
 }
