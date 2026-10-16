@@ -42,6 +42,7 @@ public class PlayerEffectsRenderHandler {
 	public static void onRenderTick(TickEvent.RenderTickEvent event) {
 		if (event.phase == TickEvent.Phase.START) {
 			AuraRenderer.resetBloomCapture();
+			KiWeaponRenderer.clearBloomBlades();
 			BloomPipeline.resetFrame();
 			PlayerEffectQueue.getAndClearAuras();
 			PlayerEffectQueue.getAndClearSparks();
