@@ -318,12 +318,12 @@ public class SkinGathererProvider {
 					String prefix = "textures/entity/races/" + raceName + "/" + logicKey + genSuffix + "_" + bodyType + "_";
 					String fallbackPrefix = "textures/entity/races/" + raceName + "/" + logicKey + genSuffix + "_0_";
 
-					consumer.accept(DMZSkinLayer.getSafeTexture(getCachedTexture(prefix + "layer1.png"), getCachedTexture(fallbackPrefix + "layer1.png")), b1);
-					consumer.accept(DMZSkinLayer.getSafeTexture(getCachedTexture(prefix + "layer2.png")), b2);
-					consumer.accept(DMZSkinLayer.getSafeTexture(getCachedTexture(prefix + "layer3.png")), b3);
+					acceptWithShadowMask(consumer, DMZSkinLayer.getSafeTexture(getCachedTexture(prefix + "layer1.png"), getCachedTexture(fallbackPrefix + "layer1.png")), b1);
+					acceptWithShadowMask(consumer, DMZSkinLayer.getSafeTexture(getCachedTexture(prefix + "layer2.png")), b2);
+					acceptWithShadowMask(consumer, DMZSkinLayer.getSafeTexture(getCachedTexture(prefix + "layer3.png")), b3);
 				} else {
 					ResourceLocation customTex = getCachedTexture("textures/entity/races/" + raceName + "/" + logicKey + genSuffix + ".png");
-					consumer.accept(DMZSkinLayer.getSafeTexture(customTex), b1);
+					acceptWithShadowMask(consumer, DMZSkinLayer.getSafeTexture(customTex), b1);
 				}
 			}
 		}
@@ -371,7 +371,7 @@ public class SkinGathererProvider {
 			if (DMZSkinLayer.getSafeTexture(slimLayer).equals(slimLayer)) basePath = basePath + "slim_";
 		}
 
-		ResourceLocation shadowLayer = getCachedTexture(basePath + "layer2.png");
+		ResourceLocation shadowLayer = getCachedTexture(basePath + "layer1_shadow.png");
 		boolean shaded = DMZSkinLayer.getSafeTexture(shadowLayer).equals(shadowLayer);
 
 		consumer.accept(DMZSkinLayer.getSafeTexture(getCachedTexture(basePath + "layer1.png"), getCachedTexture(fallbackPath + "layer1.png")), shaded ? ColorUtils.skinBaseTone(bodyColor) : bodyColor);
@@ -399,7 +399,7 @@ public class SkinGathererProvider {
 		ResourceLocation bodyLayer = getCachedTexture(bodyPath + "layer1.png");
 		if (!DMZSkinLayer.getSafeTexture(bodyLayer).equals(bodyLayer)) bodyPath = fallbackPath;
 		consumer.accept(DMZSkinLayer.getSafeTexture(getCachedTexture(bodyPath + "layer1.png")), ColorUtils.skinBaseTone(bodyColor));
-		ResourceLocation bodyShadow = getCachedTexture(bodyPath + "layer2.png");
+		ResourceLocation bodyShadow = getCachedTexture(bodyPath + "layer1_shadow.png");
 		if (DMZSkinLayer.getSafeTexture(bodyShadow).equals(bodyShadow)) emitTranslucentLayer(consumer, bodyShadow, ColorUtils.skinShadowTone(bodyColor));
 		ResourceLocation overlay = DMZSkinLayer.getSafeTexture(getCachedTexture("textures/entity/races/glind/trascended_layer2.png"));
 		emitOverlayLayer(consumer, overlay, ColorUtils.skinBaseTone(bodyColor2));
@@ -441,6 +441,11 @@ public class SkinGathererProvider {
                 return;
             }
         }
+        consumer.accept(layer, color);
+        emitShadowLayer(consumer, layer, color);
+    }
+
+    private void acceptWithShadowMask(BiConsumer<ResourceLocation, float[]> consumer, ResourceLocation layer, float[] color) {
         consumer.accept(layer, color);
         emitShadowLayer(consumer, layer, color);
     }
