@@ -146,7 +146,7 @@ public class InstantTransmissionScreen extends ScaledScreen {
 		int left = guiLeft + 10;
 		int top = guiTop + 29;
 		renderTab(graphics, left, top, 59, tr("gui.dragonminez.transmission.npcs"), !playersTab);
-		if (skillLevel >= 10) renderTab(graphics, left + 61, top, 59, tr("gui.dragonminez.transmission.players"), playersTab);
+		if (skillLevel >= 5) renderTab(graphics, left + 61, top, 59, tr("gui.dragonminez.transmission.players"), playersTab);
 	}
 
 	private void renderTab(GuiGraphics graphics, int x, int y, int width, Component label, boolean selected) {
@@ -224,7 +224,7 @@ public class InstantTransmissionScreen extends ScaledScreen {
 		int tabsLeft = guiLeft + 10;
 		if (uiY >= tabsTop && uiY < tabsTop + 15 && uiX >= tabsLeft && uiX < tabsLeft + 120) {
 			boolean nextPlayersTab = uiX >= tabsLeft + 60;
-			if (nextPlayersTab && skillLevel < 10) return true;
+			if (nextPlayersTab && skillLevel < 5) return true;
 			if (nextPlayersTab != playersTab) {
 				playersTab = nextPlayersTab;
 				clearSelection();
