@@ -1,6 +1,6 @@
 package com.dragonminez.common.init.entities.sagas.helper;
 
-import com.dragonminez.server.events.players.combat.MysticBallCombo;
+import com.dragonminez.server.events.players.combat.StrikeCombos.MysticBallCombo;
 import software.bernie.geckolib.core.animation.RawAnimation;
 
 public class DBSagasAnimations {

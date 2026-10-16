@@ -20,7 +20,7 @@ import com.dragonminez.client.render.util.IrisCompat;
 import com.dragonminez.client.init.entities.renderer.sagas.SaiyanInvaderRenderer;
 import com.dragonminez.client.util.BoneVisibilityHandler;
 import com.dragonminez.client.util.ColorUtils;
-import com.dragonminez.server.events.players.combat.MysticBallCombo;
+import com.dragonminez.server.events.players.combat.StrikeCombos.MysticBallCombo;
 import com.dragonminez.server.events.players.statuseffect.RelicItemsStatusHandler;
 import com.dragonminez.mixin.client.GeoModelAccessor;
 import com.dragonminez.common.config.ConfigManager;

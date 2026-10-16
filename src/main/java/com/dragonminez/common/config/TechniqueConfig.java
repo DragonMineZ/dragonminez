@@ -65,6 +65,7 @@ public class TechniqueConfig {
 			case "oozaru_fist" -> 280;
 			case "super_god_fist", "kaioken_attack", "spirit_breaking_cannon" -> 240;
 			case "mystic_ball" -> 280;
+			case "darkness_eye_beam" -> 300;
 			case "deadly_dance_vegetto" -> 200;
 			case "blue_hurricane" -> 260;
 			case "wolf_fang", "gum_punch" -> 140;

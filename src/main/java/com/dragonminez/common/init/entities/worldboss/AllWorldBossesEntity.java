@@ -35,7 +35,7 @@ import com.dragonminez.common.stats.StatsCapability;
 import com.dragonminez.common.stats.StatsProvider;
 import com.dragonminez.server.events.players.combat.HeldVictim;
 import com.dragonminez.server.events.players.combat.KnockbackHelper;
-import com.dragonminez.server.events.players.combat.MeteorBurstCombo;
+import com.dragonminez.server.events.players.combat.StrikeCombos.MeteorBurstCombo;
 import com.dragonminez.server.events.players.combat.MomentumImpactHandler;
 import com.dragonminez.server.events.players.combat.StrikeAttackHandler;
 import com.dragonminez.server.commands.WorldBossCommand;

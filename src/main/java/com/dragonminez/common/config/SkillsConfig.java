@@ -136,6 +136,7 @@ public class SkillsConfig {
 		strikeSkills.add("combo_meteor");
 		strikeSkills.add("meteor_burst");
 		strikeSkills.add("mystic_ball");
+		strikeSkills.add("darkness_eye_beam");
 
 		skills.put("meteor",             new SkillCosts(List.of(3000)));
 		skills.put("wolf_fang",          new SkillCosts(List.of(3500)));
@@ -156,6 +157,7 @@ public class SkillsConfig {
 		skills.put("combo_meteor", new SkillCosts(List.of(7000)));
 		skills.put("meteor_burst", new SkillCosts(List.of(24000)));
 		skills.put("mystic_ball", new SkillCosts(new ArrayList<>(List.of(11000)), new ArrayList<>(List.of("majin"))));
+		skills.put("darkness_eye_beam", new SkillCosts(new ArrayList<>(List.of(11000)), new ArrayList<>(List.of("namekian"))));
 
 		List<Integer> jumpCosts = new ArrayList<>();
 		jumpCosts.add(300);
@@ -422,6 +424,7 @@ public class SkillsConfig {
 		piccoloSkills.add("ki_barrage");
 		piccoloSkills.add("kienzan");
 		piccoloSkills.add("hellzone_grenade");
+		piccoloSkills.add("darkness_eye_beam");
 		skillOfferings.put("piccolo", piccoloSkills);
 
 		List<String> krillinSkills = new ArrayList<>();

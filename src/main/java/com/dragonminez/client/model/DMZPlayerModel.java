@@ -5,8 +5,9 @@ import com.dragonminez.Reference;
 import com.dragonminez.client.animation.IPlayerAnimatable;
 import com.dragonminez.client.render.util.RenderUtil;
 import com.dragonminez.client.systems.kishare.KiSharePose;
-import com.dragonminez.server.events.players.combat.MeteorBurstCombo;
-import com.dragonminez.server.events.players.combat.MysticBallCombo;
+import com.dragonminez.server.events.players.combat.StrikeCombos.MeteorBurstCombo;
+import com.dragonminez.server.events.players.combat.StrikeCombos.MysticBallCombo;
+import com.dragonminez.server.events.players.combat.StrikeCombos.DarknessEyeBeamCombo;
 import com.dragonminez.client.util.SaiyanTailRules;
 import com.dragonminez.client.util.SkinGathererProvider;
 import com.dragonminez.common.config.ConfigManager;
@@ -323,7 +324,8 @@ public class DMZPlayerModel<T extends AbstractClientPlayer & GeoAnimatable> exte
         boolean actuallyTransforming = StatsProvider.get(StatsCapability.INSTANCE, animatable)
                 .map(data -> data.getStatus().isActionCharging()).orElse(false);
         String playingAnim = animatable instanceof IPlayerAnimatable playing ? playing.dragonminez$getCurrentPlayingAnimation() : "";
-        boolean ownsHead = MysticBallCombo.ANIMATION.equals(playingAnim) || MeteorBurstCombo.ANIMATION.equals(playingAnim);
+        boolean ownsHead = MysticBallCombo.ANIMATION.equals(playingAnim) || MeteorBurstCombo.ANIMATION.equals(playingAnim)
+                || DarknessEyeBeamCombo.ANIMATION.equals(playingAnim);
         boolean skipHead = (transfAnimPlaying && actuallyTransforming) || ownsHead;
 
         float partialTick = animationState.getPartialTick();

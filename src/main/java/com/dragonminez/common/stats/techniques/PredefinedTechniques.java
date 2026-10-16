@@ -28,7 +28,8 @@ public class PredefinedTechniques {
 			"shining_sword_attack",
 			"combo_meteor",
 			"meteor_burst",
-			"mystic_ball"
+			"mystic_ball",
+			"darkness_eye_beam"
 	);
 	public static final List<String> EVASION_IDS = java.util.List.of(
 			"taiyoken",
@@ -91,6 +92,7 @@ public class PredefinedTechniques {
 		registerStrike("skp.combo_meteor", 2.2f, 90);
 		registerStrike("skp.meteor_burst", 2.6f, 201);
 		registerStrike("skp.mystic_ball", 2.4f, 96);
+		registerStrike("skp.darkness_eye_beam", 2.6f, 102);
 	}
 
 	public static boolean isPredefinedTechniqueId(String techniqueId) {

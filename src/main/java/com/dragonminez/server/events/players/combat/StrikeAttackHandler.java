@@ -31,6 +31,9 @@ import com.dragonminez.common.network.S2C.ShockwaveVfxS2C;
 import com.dragonminez.common.network.S2C.StatsSyncS2C;
 import com.dragonminez.common.network.S2C.StrikeRushS2C;
 import com.dragonminez.common.network.S2C.TriggerAnimationS2C;
+import com.dragonminez.server.events.players.combat.StrikeCombos.DarknessEyeBeamCombo;
+import com.dragonminez.server.events.players.combat.StrikeCombos.MeteorBurstCombo;
+import com.dragonminez.server.events.players.combat.StrikeCombos.MysticBallCombo;
 import com.dragonminez.common.racial.RacialStatUtil;
 import com.dragonminez.common.stats.StatsCapability;
 import com.dragonminez.common.stats.character.Cooldowns;
@@ -96,10 +99,12 @@ public class StrikeAttackHandler {
 	private static final String METEOR_BURST_ID = MeteorBurstCombo.TECHNIQUE_ID;
 	private static final double METEOR_BURST_KI_RATIO = 1.5;
 	private static final String MYSTIC_BALL_ID = MysticBallCombo.TECHNIQUE_ID;
-	private static final java.util.Set<String> POSE_DRIVEN_STRIKES = java.util.Set.of(SPIRIT_CANNON_ID, GRAB_ID, "combo_meteor", METEOR_BURST_ID, MYSTIC_BALL_ID);
+	private static final String EYE_BEAM_ID = DarknessEyeBeamCombo.TECHNIQUE_ID;
+	private static final double EYE_BEAM_KI_RATIO = 1.5;
+	private static final java.util.Set<String> POSE_DRIVEN_STRIKES = java.util.Set.of(SPIRIT_CANNON_ID, GRAB_ID, "combo_meteor", METEOR_BURST_ID, MYSTIC_BALL_ID, EYE_BEAM_ID);
 	private static final String SHINING_SWORD_ID = "shining_sword_attack";
 	private static final String COMBO_METEOR_ID = "combo_meteor";
-	private static final java.util.Set<String> NO_ENGAGE_DAMAGE_STRIKES = java.util.Set.of(GRAB_ID, SHINING_SWORD_ID, COMBO_METEOR_ID, METEOR_BURST_ID, MYSTIC_BALL_ID);
+	private static final java.util.Set<String> NO_ENGAGE_DAMAGE_STRIKES = java.util.Set.of(GRAB_ID, SHINING_SWORD_ID, COMBO_METEOR_ID, METEOR_BURST_ID, MYSTIC_BALL_ID, EYE_BEAM_ID);
 	private static final int[] COMBO_METEOR_HIT_TICKS = {5, 8, 13, 18, 22, 26, 30, 38, 43, 47, 51, 55, 58, 65, 69, 72};
 	private static final int COMBO_METEOR_SMASH_TICK = 79;
 	private static final int COMBO_METEOR_FINAL_POSE_TICK = 80;
@@ -228,6 +233,7 @@ public class StrikeAttackHandler {
 	private static final Map<UUID, Boolean> FLINCH_SIDE = new HashMap<>();
 	private static final Map<UUID, MeteorBurstCombo.State> METEOR_BURSTS = new HashMap<>();
 	private static final Map<UUID, MysticBallCombo.State> MYSTIC_BALLS = new HashMap<>();
+	private static final Map<UUID, DarknessEyeBeamCombo.State> EYE_BEAMS = new HashMap<>();
 	private static final java.util.Set<RelativeMovement> RELATIVE_ROTATION = java.util.EnumSet.of(RelativeMovement.Y_ROT, RelativeMovement.X_ROT);
 
 	public static void requestStrike(ServerPlayer player, int preferredTargetId) {
@@ -301,7 +307,7 @@ public class StrikeAttackHandler {
 
 			if (immediateTarget != null && !TARGETLESS_STRIKES.contains(strike.getId()) && StrikeClash.isRushingAt(immediateTarget, player)) {
 				startRush(player, stats, pending, immediateTarget);
-			} else if (immediateTarget != null && METEOR_BURST_ID.equals(strike.getId())) {
+			} else if (immediateTarget != null && (METEOR_BURST_ID.equals(strike.getId()) || EYE_BEAM_ID.equals(strike.getId()))) {
 				startStrike(player, immediateTarget, pending);
 			} else if (immediateTarget != null) {
 				boolean faceTarget = !"dragon_fist".equals(strike.getId());
@@ -384,7 +390,7 @@ public class StrikeAttackHandler {
 	private static boolean isStrikeLockOwned(ServerPlayer player) {
 		UUID id = player.getUUID();
 		if (PENDING.containsKey(id) || ACTIVE.containsKey(id) || SLAM_RINGS.containsKey(id)) return true;
-		if (METEOR_BURSTS.containsKey(id) || MYSTIC_BALLS.containsKey(id)) return true;
+		if (METEOR_BURSTS.containsKey(id) || MYSTIC_BALLS.containsKey(id) || EYE_BEAMS.containsKey(id)) return true;
 		for (ActiveStrike active : ACTIVE.values()) {
 			if (id.equals(active.targetId())) return true;
 		}
@@ -409,6 +415,7 @@ public class StrikeAttackHandler {
 		FLINCH_SIDE.remove(id);
 		releaseMeteorBurst(id);
 		releaseMysticBall(id);
+		releaseEyeBeam(id);
 	}
 
 	@SubscribeEvent
@@ -476,7 +483,7 @@ public class StrikeAttackHandler {
 		if (target != null) {
 			PENDING.remove(player.getUUID());
 			endRushVisuals(player, true);
-			if (!METEOR_BURST_ID.equals(pending.techniqueId())) snapToRushTarget(player, target);
+			if (!METEOR_BURST_ID.equals(pending.techniqueId()) && !EYE_BEAM_ID.equals(pending.techniqueId())) snapToRushTarget(player, target);
 			startStrike(player, target, pending);
 			return;
 		}
@@ -622,6 +629,11 @@ public class StrikeAttackHandler {
 
 		if (MYSTIC_BALL_ID.equals(active.techniqueId())) {
 			processMysticBall(player, active);
+			return;
+		}
+
+		if (EYE_BEAM_ID.equals(active.techniqueId())) {
+			processEyeBeam(player, active);
 			return;
 		}
 
@@ -1614,6 +1626,82 @@ public class StrikeAttackHandler {
 		if (state != null) MysticBallCombo.release(state);
 	}
 
+	private static void processEyeBeam(ServerPlayer player, ActiveStrike active) {
+		int nextTick = active.ticksElapsed() + 1;
+		LivingEntity target = active.targetId() == null ? null : resolveLiving(player, active.targetId());
+
+		boolean stunned = player.hasEffect(MainEffects.STUN.get())
+				|| StatsProvider.get(StatsCapability.INSTANCE, player).map(stats -> stats.getStatus().isKnockedDown()).orElse(false);
+		if (!player.isAlive() || stunned) {
+			endStrike(player, target, active, true);
+			return;
+		}
+
+		player.invulnerableTime = 20;
+		player.fallDistance = 0.0F;
+
+		DarknessEyeBeamCombo.State state = EYE_BEAMS.computeIfAbsent(player.getUUID(), id -> new DarknessEyeBeamCombo.State());
+		if (!DarknessEyeBeamCombo.tick((ServerLevel) player.level(), new PlayerEyeBeam(player, target, active), state, nextTick)) {
+			endStrike(player, target, active, true);
+			return;
+		}
+		if (nextTick >= DarknessEyeBeamCombo.DURATION) {
+			endStrike(player, target, active);
+			return;
+		}
+		ACTIVE.put(player.getUUID(), active.withTicksElapsed(nextTick));
+	}
+
+	private static void releaseEyeBeam(UUID playerId) {
+		DarknessEyeBeamCombo.State state = EYE_BEAMS.remove(playerId);
+		if (state != null) DarknessEyeBeamCombo.release(state);
+	}
+
+	private record PlayerEyeBeam(ServerPlayer player, LivingEntity target, ActiveStrike active) implements DarknessEyeBeamCombo.Performer {
+
+		@Override
+		public LivingEntity self() {
+			return this.player;
+		}
+
+		@Override
+		public void place(Vec3 position, float yaw) {
+			this.player.connection.teleport(position.x, position.y, position.z, yaw, this.player.getXRot());
+			this.player.setYHeadRot(yaw);
+			this.player.setDeltaMovement(Vec3.ZERO);
+			this.player.hurtMarked = true;
+			this.player.fallDistance = 0.0F;
+		}
+
+		@Override
+		public float strikeBudget() {
+			return (float) this.active.totalDamage();
+		}
+
+		@Override
+		public float kiBudget() {
+			double configMultiplier = Math.max(0.0, ConfigManager.getTechniqueConfig().getStrikeConfig(EYE_BEAM_ID).getDamageMultiplier());
+			return StatsProvider.get(StatsCapability.INSTANCE, this.player)
+					.map(stats -> (float) (stats.getKiDamage() * EYE_BEAM_KI_RATIO * configMultiplier)).orElse(0.0F);
+		}
+
+		@Override
+		public void strikeHit(LivingEntity victim, float amount, boolean lethal) {
+			applyStrikeDamage(this.player, victim, amount, EYE_BEAM_ID, lethal);
+			if (lethal) grantKillXpIfNeeded(this.player, victim, EYE_BEAM_ID);
+		}
+
+		@Override
+		public void kiHit(LivingEntity victim, float amount, boolean lethal) {
+			double modifier = StatsProvider.get(StatsCapability.INSTANCE, this.player).map(stats -> stats.getKiAttackDamageModifier()).orElse(1.0);
+			float damage = (float) (amount * modifier);
+			if (!lethal && victim.getHealth() - damage <= 1.0F) damage = Math.max(0.01F, victim.getHealth() - 1.0F);
+			if (damage <= 0.0F) return;
+			victim.hurt(MainDamageTypes.kiblast(this.player.level(), this.player, this.player), damage);
+			if (lethal) grantKillXpIfNeeded(this.player, victim, EYE_BEAM_ID);
+		}
+	}
+
 	private record PlayerMysticBall(ServerPlayer player, LivingEntity target, ActiveStrike active) implements MysticBallCombo.Performer {
 
 		@Override
@@ -2264,6 +2352,7 @@ public class StrikeAttackHandler {
 		FLINCH_SIDE.remove(player.getUUID());
 		releaseMeteorBurst(player.getUUID());
 		releaseMysticBall(player.getUUID());
+		releaseEyeBeam(player.getUUID());
 
 		StatsProvider.get(StatsCapability.INSTANCE, player).ifPresent(stats -> {
 			String cooldownKey = getTechniqueCooldownKey(active.techniqueId());
@@ -2543,6 +2632,7 @@ public class StrikeAttackHandler {
 			case "kaioken_attack" -> 0xFF5A3A;
 			case SPIRIT_CANNON_ID -> SPIRIT_CANNON_COLOR_SECONDARY;
 			case "gum_punch", MYSTIC_BALL_ID -> 0xFF82F3;
+			case EYE_BEAM_ID -> DarknessEyeBeamCombo.COLOR_BORDER;
 			default -> 0xFFF3D6;
 		};
 	}
