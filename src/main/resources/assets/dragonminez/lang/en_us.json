@@ -818,6 +818,7 @@
   "gui.dragonminez.config.dynamicGrowthForVIT": "Stat Growth - Vitality (VIT)",
   "gui.dragonminez.config.dynamicGrowthForPWR": "Stat Growth - Ki Power (PWR)",
   "gui.dragonminez.config.dynamicGrowthForENE": "Stat Growth - Energy (ENE)",
+  "gui.dragonminez.config.dynamicGrowthStatGainNotifications": "Stat Growth - Level Up Notifications",
   "gui.dragonminez.config.on": "ON",
   "gui.dragonminez.config.off": "OFF",
   "gui.dragonminez.config.category.interface": "Interface",

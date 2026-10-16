@@ -93,7 +93,7 @@ public final class QuestFieldSessions {
 			return;
 		}
 
-		if (!session.aliveMobs.isEmpty() || session.lost) {
+		if (session.waveStarted || session.lost) {
 			if (session.lost || session.abandonedBy(player)) {
 				despawnSessionMobs(player.getServer().getLevel(session.dimension), session.aliveMobs);
 				session.reset(gameTime + objective.getWaveDelaySeconds() * 20L);
@@ -160,6 +160,7 @@ public final class QuestFieldSessions {
 			session.aliveMobs.add(entity.getUUID());
 			player.serverLevel().addFreshEntity(entity);
 		}
+		session.waveStarted = !session.aliveMobs.isEmpty();
 	}
 
 	private static void pruneDeadMobs(ServerLevel level, WaveSession session) {
@@ -501,6 +502,7 @@ public final class QuestFieldSessions {
 		long nextWaveGameTime;
 		ResourceKey<Level> dimension = Level.OVERWORLD;
 		BlockPos origin = BlockPos.ZERO;
+		boolean waveStarted = false;
 		boolean lost = false;
 
 		WaveSession(long nextWaveGameTime) {
@@ -509,6 +511,7 @@ public final class QuestFieldSessions {
 
 		void reset(long nextWaveGameTime) {
 			this.aliveMobs.clear();
+			this.waveStarted = false;
 			this.lost = false;
 			this.nextWaveGameTime = nextWaveGameTime;
 		}

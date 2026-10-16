@@ -885,6 +885,12 @@ public class NetworkHandler {
 				.encoder(StatsDeltaS2C::encode)
 				.consumerMainThread(StatsDeltaS2C::handle)
 				.add();
+
+		net.messageBuilder(DynamicGrowthNotificationsC2S.class, id(), NetworkDirection.PLAY_TO_SERVER)
+				.decoder(DynamicGrowthNotificationsC2S::new)
+				.encoder(DynamicGrowthNotificationsC2S::encode)
+				.consumerMainThread(DynamicGrowthNotificationsC2S::handle)
+				.add();
 	}
 
 	public static <MSG> void sendToServer(MSG message) {

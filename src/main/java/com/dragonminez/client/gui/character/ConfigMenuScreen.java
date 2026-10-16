@@ -15,6 +15,7 @@ import com.dragonminez.common.config.ConfigManager;
 import com.dragonminez.common.config.FormConfig;
 import com.dragonminez.common.config.GeneralUserConfig;
 import com.dragonminez.common.init.MainSounds;
+import com.dragonminez.common.network.C2S.DynamicGrowthNotificationsC2S;
 import com.dragonminez.common.network.C2S.DynamicGrowthToggleC2S;
 import com.dragonminez.common.network.C2S.ReserveFirstHotbarSlotC2S;
 import com.dragonminez.common.network.NetworkHandler;
@@ -177,6 +178,10 @@ public class ConfigMenuScreen extends BaseMenuScreen {
 		if (!ConfigManager.getServerConfig().getDynamicGrowth().isEnabled()) return;
 
 		StatsProvider.get(StatsCapability.INSTANCE, this.minecraft.player).ifPresent(data -> {
+			toggle(Category.GAMEPLAY, "config.dynamicGrowthStatGainNotifications", data.getDynamicGrowth().areStatGainNotificationsEnabled(), enabled -> {
+				data.getDynamicGrowth().setStatGainNotificationsEnabled(enabled);
+				NetworkHandler.sendToServer(new DynamicGrowthNotificationsC2S(enabled));
+			});
 			for (DynamicGrowthStat stat : DynamicGrowthStat.values()) {
 				toggle(Category.GAMEPLAY, "config.dynamicGrowthFor" + stat.key(), data.getDynamicGrowth().isGrowthEnabled(stat), enabled -> {
 					data.getDynamicGrowth().setGrowthEnabled(stat, enabled);

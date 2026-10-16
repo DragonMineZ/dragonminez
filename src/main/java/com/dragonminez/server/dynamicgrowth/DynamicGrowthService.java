@@ -151,7 +151,7 @@ public final class DynamicGrowthService {
 
 		growth.resetPracticeXp(stat);
 		grantStatPoint(player, data, stat);
-		notifyStatGain(player, stat, data.getCurrentStatValue(stat.key()));
+		if (growth.areStatGainNotificationsEnabled()) notifyStatGain(player, stat, data.getCurrentStatValue(stat.key()));
 
 		NetworkHandler.sendToTrackingEntityAndSelf(new StatsSyncS2C(player), player);
 	}
