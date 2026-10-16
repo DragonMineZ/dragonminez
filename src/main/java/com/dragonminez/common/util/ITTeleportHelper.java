@@ -2,11 +2,15 @@ package com.dragonminez.common.util;
 
 import com.dragonminez.common.config.ConfigManager;
 import com.dragonminez.common.init.MainEffects;
+import com.dragonminez.common.network.NetworkHandler;
+import com.dragonminez.common.network.S2C.InstantTransmissionVfxS2C;
 import com.dragonminez.common.stats.StatsData;
 import com.dragonminez.common.stats.character.Cooldowns;
 import net.minecraft.core.BlockPos;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.sounds.SoundEvent;
+import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.effect.MobEffectInstance;
 
 /**
@@ -19,6 +23,17 @@ public final class ITTeleportHelper {
 	public static int extraKiCostForDistance(double distance) {
 		if (distance <= 0) return 0;
 		return (int) (distance / 25.0) * 5;
+	}
+
+	public static void departVfx(ServerPlayer player, SoundEvent sound) {
+		NetworkHandler.sendToTrackingEntityAndSelf(new InstantTransmissionVfxS2C(player.getId(), false), player);
+		player.level().playSound(player, player.getX(), player.getY(), player.getZ(), sound, SoundSource.PLAYERS, 1.0F, 1.0F);
+	}
+
+	public static void arriveVfx(ServerPlayer player, SoundEvent sound) {
+		NetworkHandler.sendToTrackingEntityAndSelf(new InstantTransmissionVfxS2C(player.getId(), true), player);
+		player.playNotifySound(sound, SoundSource.PLAYERS, 1.0F, 1.0F);
+		player.level().playSound(player, player.getX(), player.getY(), player.getZ(), sound, SoundSource.PLAYERS, 1.0F, 1.0F);
 	}
 
 	public static void applyTeleportCooldown(ServerPlayer player, StatsData data) {

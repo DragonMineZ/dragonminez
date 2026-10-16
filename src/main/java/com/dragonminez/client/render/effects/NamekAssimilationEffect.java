@@ -181,25 +181,27 @@ public final class NamekAssimilationEffect {
 		if (state == null) return source;
 		float progress = Mth.lerp(partialTick, state.prev, state.progress);
 		if (progress <= 0.001f) return source;
-		return new SketchSource(source, Math.round(progress * 1000.0f));
+		return new SketchSource(source, Math.round(progress * 1000.0f), 0);
 	}
 
-	private record SketchSource(MultiBufferSource delegate, int encodedProgress) implements MultiBufferSource {
+	record SketchSource(MultiBufferSource delegate, int encodedProgress, int mode) implements MultiBufferSource {
 		@Override
 		public VertexConsumer getBuffer(RenderType type) {
 			RenderType sketch = ModRenderTypes.assimilationSketch(type);
 			if (sketch == null) return delegate.getBuffer(type);
-			return new SketchConsumer(delegate.getBuffer(sketch), encodedProgress);
+			return new SketchConsumer(delegate.getBuffer(sketch), encodedProgress, mode);
 		}
 	}
 
-	private static final class SketchConsumer implements VertexConsumer {
+	static final class SketchConsumer implements VertexConsumer {
 		private final VertexConsumer delegate;
 		private final int encodedProgress;
+		private final int mode;
 
-		private SketchConsumer(VertexConsumer delegate, int encodedProgress) {
+		SketchConsumer(VertexConsumer delegate, int encodedProgress, int mode) {
 			this.delegate = delegate;
 			this.encodedProgress = encodedProgress;
+			this.mode = mode;
 		}
 
 		@Override
@@ -222,7 +224,7 @@ public final class NamekAssimilationEffect {
 
 		@Override
 		public VertexConsumer overlayCoords(int u, int v) {
-			delegate.overlayCoords(encodedProgress, 0);
+			delegate.overlayCoords(encodedProgress, mode);
 			return this;
 		}
 

@@ -891,6 +891,12 @@ public class NetworkHandler {
 				.encoder(AssimilationVfxS2C::encode)
 				.consumerMainThread(AssimilationVfxS2C::handle)
 				.add();
+
+		net.messageBuilder(InstantTransmissionVfxS2C.class, id(), NetworkDirection.PLAY_TO_CLIENT)
+				.decoder(InstantTransmissionVfxS2C::new)
+				.encoder(InstantTransmissionVfxS2C::encode)
+				.consumerMainThread(InstantTransmissionVfxS2C::handle)
+				.add();
 	}
 
 	public static <MSG> void sendToServer(MSG message) {

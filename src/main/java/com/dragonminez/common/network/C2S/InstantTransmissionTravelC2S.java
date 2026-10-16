@@ -15,7 +15,6 @@ import net.minecraft.resources.ResourceKey;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
-import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.level.Level;
 import net.minecraftforge.network.NetworkEvent;
 
@@ -103,8 +102,9 @@ public class InstantTransmissionTravelC2S {
 				double dZ = center.getZ() - safePos.getZ();
 				float yaw = (float) (Math.atan2(dZ, dX) * (180D / Math.PI)) - 90.0F;
 
+				ITTeleportHelper.departVfx(player, MainSounds.TP.get());
 				player.teleportTo(targetLevel, safePos.getX() + 0.5, safePos.getY(), safePos.getZ() + 0.5, yaw, player.getXRot());
-				player.playNotifySound(MainSounds.TP.get(), SoundSource.PLAYERS, 1.0F, 1.0F);
+				ITTeleportHelper.arriveVfx(player, MainSounds.TP.get());
 			});
 		});
 		ctx.get().setPacketHandled(true);

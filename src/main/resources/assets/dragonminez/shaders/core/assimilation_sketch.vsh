@@ -20,6 +20,7 @@ out vec4 vertexColor;
 out vec4 lightMapColor;
 out vec2 texCoord0;
 out float progress;
+out float mode;
 out float shade;
 
 void main() {
@@ -29,4 +30,5 @@ void main() {
     lightMapColor = texelFetch(Sampler2, UV2 / 16, 0);
     texCoord0 = UV0;
     progress = clamp(float(UV1.x) / 1000.0, 0.0, 1.0);
+    mode = float(UV1.y);
 }
