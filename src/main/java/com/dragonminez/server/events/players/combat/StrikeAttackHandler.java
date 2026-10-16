@@ -2666,10 +2666,15 @@ public class StrikeAttackHandler {
 
 		if (victim instanceof ServerPlayer victimPlayer) {
 			NetworkHandler.sendToTrackingEntityAndSelf(
+					new TriggerAnimationS2C(victimPlayer.getUUID(), TriggerAnimationS2C.AnimationType.KI_ANIMATION_STOP, 0, -1, ""),
+					victimPlayer
+			);
+			NetworkHandler.sendToTrackingEntityAndSelf(
 					new TriggerAnimationS2C(victimPlayer.getUUID(), TriggerAnimationS2C.AnimationType.KI_ANIMATION, 0, -1, playerAnim),
 					victimPlayer
 			);
 		} else if (victim instanceof DBSagasEntity saga) {
+			saga.stopTriggeredAnimation(DBSagasEntity.HURT_CONTROLLER, sagaAnim);
 			saga.triggerAnim(DBSagasEntity.HURT_CONTROLLER, sagaAnim);
 		} else {
 			return;

@@ -348,6 +348,7 @@ public abstract class DBSagasEntity extends Monster implements GeoEntity, ITextu
     public static final String HURT_ANIM_DOWN = "hurt_down";
     public static final String HURT_ANIM_GRABBED = "grabbed";
     public static final String HURT_ANIM_KO = "knocked_out";
+    public static final String HURT_ANIM_PARRIED = "parried";
 
     @Getter @Setter
     private boolean isAttacking = false;
@@ -1663,6 +1664,7 @@ public abstract class DBSagasEntity extends Monster implements GeoEntity, ITextu
                 .triggerableAnim(HURT_ANIM_DOWN, DBSagasAnimations.ANIM_HURT_DOWN)
                 .triggerableAnim(HURT_ANIM_GRABBED, DBSagasAnimations.ANIM_HURT_GRABBED)
                 .triggerableAnim(HURT_ANIM_KO, DBSagasAnimations.ANIM_HURT_KO)
+                .triggerableAnim(HURT_ANIM_PARRIED, DBSagasAnimations.ANIM_HURT_PARRIED)
                 .receiveTriggeredAnimations());
         controllers.add(new AnimationController<>(this, "tail_controller", 5, DBSagasAnimationHandler::tailPredicate));
         controllers.add(new AnimationController<>(this, "cape_controller", 5, DBSagasAnimationHandler::capePredicate));
@@ -2183,7 +2185,9 @@ public abstract class DBSagasEntity extends Monster implements GeoEntity, ITextu
         float hitYaw = (float) (Mth.atan2(dz, dx) * (180.0D / Math.PI)) - 90.0F;
         boolean fromLeft = Mth.wrapDegrees(hitYaw - this.yBodyRot) < 0.0F;
 
-        this.triggerAnim(HURT_CONTROLLER, fromLeft ? HURT_ANIM_LEFT : HURT_ANIM_RIGHT);
+        String hurtAnim = fromLeft ? HURT_ANIM_LEFT : HURT_ANIM_RIGHT;
+        this.stopTriggeredAnimation(HURT_CONTROLLER, hurtAnim);
+        this.triggerAnim(HURT_CONTROLLER, hurtAnim);
     }
 
     protected boolean hasTransformation() {

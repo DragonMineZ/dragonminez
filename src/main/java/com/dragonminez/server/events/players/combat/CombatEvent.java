@@ -19,6 +19,7 @@ import com.dragonminez.common.network.C2S.SummonPlayerShadowDummyC2S;
 import com.dragonminez.common.network.NetworkHandler;
 import com.dragonminez.common.network.StatsDeltaSync;
 import com.dragonminez.common.network.S2C.StatsSyncS2C;
+import com.dragonminez.common.network.S2C.TriggerAnimationS2C;
 import com.dragonminez.common.network.S2C.TriggerImpactFrameS2C;
 import com.dragonminez.common.quest.PartyManager;
 import com.dragonminez.common.racial.LethalContext;
@@ -61,7 +62,11 @@ import net.minecraft.world.item.enchantment.EnchantmentHelper;
 import net.minecraft.world.phys.EntityHitResult;
 import net.minecraft.world.phys.Vec3;
 import net.minecraftforge.common.MinecraftForge;
+import net.minecraftforge.event.TickEvent;
+import net.minecraftforge.event.entity.EntityLeaveLevelEvent;
 import net.minecraftforge.event.entity.ProjectileImpactEvent;
+import net.minecraftforge.event.entity.living.LivingEvent;
+import net.minecraftforge.event.entity.player.PlayerEvent;
 import net.minecraftforge.event.entity.living.LivingAttackEvent;
 import net.minecraftforge.event.entity.living.LivingDamageEvent;
 import net.minecraftforge.event.entity.living.LivingHealEvent;
@@ -73,7 +78,10 @@ import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
 
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
+import java.util.Set;
+import java.util.UUID;
 
 @Mod.EventBusSubscriber(modid = Reference.MOD_ID, bus = Mod.EventBusSubscriber.Bus.FORGE)
 public class CombatEvent {
@@ -91,6 +99,11 @@ public class CombatEvent {
 	private static final int PARRY_COMBO_STUN_TICKS = 30;
 	private static final int PARRY_STUN_TICKS = 20;
 	private static final int PARRY_STRIKE_STUN_TICKS = 40;
+	private static final String PARRIED_ANIM = "base.parried";
+	private static final int PARRIED_ANIM_TICKS = 29;
+	private static final Map<UUID, Long> PARRIED_ANIM_UNTIL = new HashMap<>();
+	private static final String PARRIED_STUN_ANIM = "base.parried_stun";
+	private static final Set<UUID> PARRIED_STUN_ACTIVE = new HashSet<>();
 
 	private static void maybeForceCombatFly(Player player) {
 		if (!ConfigManager.getCombatConfig().getCombatFlyAutoSwitchOnDamage()) return;
@@ -405,7 +418,7 @@ public class CombatEvent {
 						float currentPoise = victimData.getResources().getCurrentPoise();
 
 						if (currentPoise - poiseDamage <= 0 && !SkillManager.isGuardSafeHit()) {
-							doGuardBreak(victim, victimData);
+							doGuardBreak(victim, victimData, !isStrikeHit(source));
 							cancelActiveTechnique(victim, victimData);
 						} else {
 							victimData.getResources().removePoise((int) poiseDamage);
@@ -446,7 +459,7 @@ public class CombatEvent {
 								}
 
 								if (!SkillManager.isGuardSafeHit() && (currentPoise - poiseDamage <= 0 || currentStamina - blockStaminaCost <= 0)) {
-									doGuardBreak(victim, victimData);
+									doGuardBreak(victim, victimData, !isStrikeHit(source));
 
 									if (victim.level() instanceof ServerLevel serverLevel) {
 										Vec3 look = victim.getLookAngle();
@@ -470,6 +483,7 @@ public class CombatEvent {
 											attackerLiving.setDeltaMovement(attackerLiving.getDeltaMovement().scale(0.5));
 											attackerLiving.addEffect(new MobEffectInstance(MainEffects.STAGGER.get(), 60, 1, false, false, true));
 											attackerLiving.getPersistentData().putLong("dmz_parry_penalty", System.currentTimeMillis() + 4000);
+											if (attackerLiving instanceof ServerPlayer parriedPlayer) playParriedAnimation(parriedPlayer);
 
 											if (attackerLiving instanceof DBSagasEntity saga && saga.isComboing()) {
 												saga.interruptCombo();
@@ -477,6 +491,7 @@ public class CombatEvent {
 											} else if (!(attackerLiving instanceof Player)) {
 												attackerLiving.addEffect(new MobEffectInstance(MainEffects.STUN.get(), PARRY_STUN_TICKS, 0, false, false, true));
 											}
+											if (attackerLiving instanceof DBSagasEntity) playParriedStun(attackerLiving);
 										}
 										if (MainDamageTypes.isKiblastDamage(source)) {
 											divertKiProjectile(source, victim);
@@ -598,10 +613,60 @@ public class CombatEvent {
 		projectile.hurtMarked = true;
 	}
 
+	private static void playParriedAnimation(ServerPlayer player) {
+		PARRIED_ANIM_UNTIL.put(player.getUUID(), player.level().getGameTime() + PARRIED_ANIM_TICKS);
+		NetworkHandler.sendToTrackingEntityAndSelf(new TriggerAnimationS2C(player.getUUID(), TriggerAnimationS2C.AnimationType.KI_ANIMATION, 0, -1, PARRIED_ANIM), player);
+	}
+
+	@SubscribeEvent
+	public static void stopParriedAnimation(TickEvent.PlayerTickEvent event) {
+		if (event.phase != TickEvent.Phase.END || !(event.player instanceof ServerPlayer player)) return;
+		Long until = PARRIED_ANIM_UNTIL.get(player.getUUID());
+		if (until == null || player.level().getGameTime() < until) return;
+		PARRIED_ANIM_UNTIL.remove(player.getUUID());
+		NetworkHandler.sendToTrackingEntityAndSelf(new TriggerAnimationS2C(player.getUUID(), TriggerAnimationS2C.AnimationType.KI_ANIMATION_STOP, 0, -1, ""), player);
+	}
+
+	@SubscribeEvent
+	public static void clearParriedAnimation(PlayerEvent.PlayerLoggedOutEvent event) {
+		PARRIED_ANIM_UNTIL.remove(event.getEntity().getUUID());
+	}
+
+	private static void playParriedStun(LivingEntity entity) {
+		if (entity instanceof ServerPlayer player) {
+			PARRIED_ANIM_UNTIL.remove(player.getUUID());
+			NetworkHandler.sendToTrackingEntityAndSelf(new TriggerAnimationS2C(player.getUUID(), TriggerAnimationS2C.AnimationType.KI_ANIMATION_STOP, 0, -1, ""), player);
+			NetworkHandler.sendToTrackingEntityAndSelf(new TriggerAnimationS2C(player.getUUID(), TriggerAnimationS2C.AnimationType.KI_ANIMATION, 0, -1, PARRIED_STUN_ANIM), player);
+		} else if (entity instanceof DBSagasEntity saga) {
+			saga.stopTriggeredAnimation(DBSagasEntity.HURT_CONTROLLER, DBSagasEntity.HURT_ANIM_PARRIED);
+			saga.triggerAnim(DBSagasEntity.HURT_CONTROLLER, DBSagasEntity.HURT_ANIM_PARRIED);
+		} else {
+			return;
+		}
+		PARRIED_STUN_ACTIVE.add(entity.getUUID());
+	}
+
+	@SubscribeEvent
+	public static void stopParriedStun(LivingEvent.LivingTickEvent event) {
+		LivingEntity entity = event.getEntity();
+		if (entity.level().isClientSide || !PARRIED_STUN_ACTIVE.contains(entity.getUUID()) || entity.hasEffect(MainEffects.STUN.get())) return;
+		PARRIED_STUN_ACTIVE.remove(entity.getUUID());
+		if (entity instanceof ServerPlayer player) {
+			NetworkHandler.sendToTrackingEntityAndSelf(new TriggerAnimationS2C(player.getUUID(), TriggerAnimationS2C.AnimationType.KI_ANIMATION_STOP, 0, -1, ""), player);
+		} else if (entity instanceof DBSagasEntity saga) {
+			saga.stopTriggeredAnimation(DBSagasEntity.HURT_CONTROLLER, DBSagasEntity.HURT_ANIM_PARRIED);
+		}
+	}
+
+	@SubscribeEvent
+	public static void clearParriedStun(EntityLeaveLevelEvent event) {
+		if (!event.getLevel().isClientSide()) PARRIED_STUN_ACTIVE.remove(event.getEntity().getUUID());
+	}
+
 	private static void applyStrikeCounterGuardBreak(Entity sourceEntity) {
 		if (!(sourceEntity instanceof Player attacker)) return;
 		StatsProvider.get(StatsCapability.INSTANCE, attacker).ifPresent(attackerData -> {
-			doGuardBreak(attacker, attackerData);
+			doGuardBreak(attacker, attackerData, false);
 
 			attacker.removeEffect(MainEffects.STUN.get());
 			attacker.addEffect(new MobEffectInstance(MainEffects.STUN.get(), PARRY_STRIKE_STUN_TICKS, 0, false, false, true));
@@ -609,6 +674,7 @@ public class CombatEvent {
 			if (attacker instanceof ServerPlayer serverPlayer) {
 				StrikeAttackHandler.interrupt(serverPlayer);
 				StatsDeltaSync.markDirty(serverPlayer);
+				playParriedStun(serverPlayer);
 			}
 		});
 	}
@@ -621,13 +687,19 @@ public class CombatEvent {
 		for (AbstractKiProjectile p : owned) p.discard();
 	}
 
-	private static void doGuardBreak(Player attacker, StatsData attackerData) {
+	private static boolean isStrikeHit(DamageSource source) {
+		if (MainDamageTypes.isStrikeAttackDamage(source)) return true;
+		return source.getEntity() instanceof DBSagasEntity saga && (saga.isComboing() || saga.isStrikeRushing());
+	}
+
+	private static void doGuardBreak(Player attacker, StatsData attackerData, boolean playStunAnim) {
 		attackerData.getResources().setCurrentPoise(0);
 		attackerData.getResources().setCurrentStamina(0);
 		attackerData.getStatus().setBlocking(false);
 		if (attacker instanceof ServerPlayer serverPlayer) KiSurgeService.breakSurge(serverPlayer, attackerData);
 		int stunDuration = ConfigManager.getCombatConfig().getBlockBreakStunDurationTicks();
 		attacker.addEffect(new MobEffectInstance(MainEffects.STUN.get(), stunDuration, 0, false, false, true));
+		if (playStunAnim) playParriedStun(attacker);
 		int regenCd = ConfigManager.getCombatConfig().getPoiseRegenCooldown();
 		attackerData.getCooldowns().setCooldown(Cooldowns.POISE_CD, regenCd);
 		attacker.addEffect(new MobEffectInstance(MainEffects.POISE_CD.get(), regenCd, 0, false, false, true));

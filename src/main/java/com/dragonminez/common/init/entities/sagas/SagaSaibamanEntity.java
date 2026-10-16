@@ -124,6 +124,7 @@ public class SagaSaibamanEntity extends DBSagasEntity{
                 .triggerableAnim(HURT_ANIM_TOP, DBSagasAnimations.ANIM_HURT_TOP)
                 .triggerableAnim(HURT_ANIM_TOP2, DBSagasAnimations.ANIM_HURT_TOP2)
                 .triggerableAnim(HURT_ANIM_DOWN, DBSagasAnimations.ANIM_HURT_DOWN)
+                .triggerableAnim(HURT_ANIM_PARRIED, DBSagasAnimations.ANIM_HURT_PARRIED)
                 .receiveTriggeredAnimations());
         controllers.add(new AnimationController<>(this, "explode_controller", 0, this::explodePredicate));
     }
