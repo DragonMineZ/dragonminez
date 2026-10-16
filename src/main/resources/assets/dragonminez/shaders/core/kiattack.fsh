@@ -57,11 +57,17 @@ const float SPLAT_RIM       = 0.10;
 const float SPLAT_MID       = 0.34;
 const float SPLAT_HOT       = 0.72;
 
-const float NOVA_VOID_LEVEL = 0.52;
-const float NOVA_VOID_SOFT  = 0.10;
-const float NOVA_RIM_LEVEL  = 0.12;
-const float NOVA_VOID_DARK  = 0.16;
-const float NOVA_VOID_ALPHA = 0.88;
+const float NOVA_RING_CENTER = 0.33;
+const float NOVA_RING_WIDTH  = 0.36;
+const float NOVA_VOID_LEVEL  = 0.58;
+const float NOVA_BLOB_FREQ   = 6.0;
+const float NOVA_BLOB_CUT    = 0.40;
+const float NOVA_BLOB_EDGE   = 0.012;
+const float NOVA_HUE_PUSH    = 2.0;
+const float NOVA_GAP_DARK    = 0.18;
+const float NOVA_VOID_DARK   = 0.05;
+const float NOVA_VOID_ALPHA  = 1.0;
+const float NOVA_MIN_ALPHA   = 0.92;
 
 const float BLOTCH_STEPS = 4.0;
 const float FBM_MAX_INV  = 1.0667;
@@ -151,6 +157,8 @@ void main() {
         return;
     }
 
+    if (novaMode > 0.5 && vInside < 0.5 && dot(vNormal, vViewDir) < 0.0) discard;
+
     vec3 p = vLocalPos;
     float t = time;
 
@@ -228,24 +236,35 @@ void main() {
         col *= mix(1.0, mix(0.74, 1.32, blotchBand), blotchAmt);
     }
 
-    float novaVoid = 0.0;
+    float novaBright = 0.0;
+    float novaDark = 0.0;
+    vec3 novaHue = colorCore;
     if (novaMode > 0.5) {
-        float nt = time * 0.9;
-        float lump = clamp(fbm(p * 3.4 + vec3(0.0, nt, nt * 0.45)) * FBM_MAX_INV, 0.0, 1.0);
-        float fine = fbm2(p * 8.5 + vec3(nt * 1.6, -nt * 1.1, 0.0)) * 1.333;
-        float rg = g + (lump - 0.5) * 0.30 + (fine - 0.5) * 0.10;
-        novaVoid = smoothstep(NOVA_VOID_LEVEL - NOVA_VOID_SOFT, NOVA_VOID_LEVEL + NOVA_VOID_SOFT, rg) * (1.0 - vInside);
-        float blob = smoothstep(0.40, 0.62, lump + (fine - 0.5) * 0.35);
-        vec3 ringCol = mix(colorBorder, colorCore, blob) * mix(0.85, 1.25, blob);
-        ringCol = mix(colorOutline, ringCol, smoothstep(0.0, NOVA_RIM_LEVEL, rg));
-        col = mix(ringCol, colorOutline * NOVA_VOID_DARK, novaVoid);
+        vec3 chroma = colorCore - min(min(colorCore.r, colorCore.g), colorCore.b);
+        float chromaMax = max(max(chroma.r, chroma.g), chroma.b);
+        if (chromaMax > 0.05) novaHue = pow(chroma / chromaMax, vec3(NOVA_HUE_PUSH));
+
+        float nt = time * 0.7;
+        vec3 q = p * NOVA_BLOB_FREQ;
+        vec3 warp = vec3(fbm2(q + vec3(0.0, nt, 0.0)), fbm2(q + vec3(4.1, -nt, 1.7)), 0.0);
+        float n = clamp(fbm(q + warp * 1.6 + vec3(0.0, -nt * 0.6, nt * 0.3)) * FBM_MAX_INV, 0.0, 1.0);
+        float profile = 1.0 - smoothstep(0.0, NOVA_RING_WIDTH, abs(g - NOVA_RING_CENTER));
+        float cut = mix(1.05, NOVA_BLOB_CUT, profile);
+        novaBright = smoothstep(cut - NOVA_BLOB_EDGE, cut + NOVA_BLOB_EDGE, n);
+
+        float hotSpot = smoothstep(cut + 0.12, cut + 0.16, n);
+        vec3 bright = novaHue * mix(0.86, 1.0, hotSpot);
+        float centre = smoothstep(NOVA_VOID_LEVEL - 0.15, NOVA_VOID_LEVEL + 0.10, g);
+        vec3 dark = novaHue * mix(NOVA_GAP_DARK, NOVA_VOID_DARK, centre);
+        col = mix(dark, bright, novaBright);
+        novaDark = (1.0 - novaBright) * centre * (1.0 - vInside);
     }
 
     vec3 finalColor = col;
 
     float edgeCoord = (shapeMode > 0.5 || orbMode > 0.5) ? g : (g + wobOutline + edgeBite);
     float finalAlpha = alphaMult * smoothstep(0.0, EDGE_FADE, edgeCoord) * (1.0 - vInside * 0.5);
-    finalAlpha *= mix(1.0, NOVA_VOID_ALPHA, novaVoid);
+    finalAlpha *= mix(1.0, NOVA_VOID_ALPHA, novaDark);
 
     if (texBlend > 0.0) {
         vec2 animUv = vec2(fract(vUv.x + time * 0.2), fract(vUv.y - time * 0.5));
@@ -265,12 +284,13 @@ void main() {
         bloomA *= 1.0 - vInside * 0.75;
         vec3 bloomCol = mix(finalColor, colorBorder, 0.35);
         if (novaMode > 0.5) {
-            bloomA = (halo * 0.70 + (1.0 - novaVoid) * 0.55) * alphaMult * globalAlpha * (1.0 - vInside * 0.75);
-            bloomCol = mix(colorCore, colorBorder, 0.35);
+            bloomA = (novaBright * 0.45 + halo * 0.08) * alphaMult * globalAlpha * (1.0 - vInside * 0.75);
+            bloomCol = novaHue;
         }
         fragColor = vec4(bloomCol, bloomA * vAlpha);
         return;
     }
 
-    fragColor = vec4(finalColor, finalAlpha * globalAlpha * vAlpha);
+    float shownAlpha = (novaMode > 0.5) ? max(globalAlpha, NOVA_MIN_ALPHA) : globalAlpha;
+    fragColor = vec4(finalColor, finalAlpha * shownAlpha * vAlpha);
 }

@@ -37,6 +37,8 @@ public class KiProjectileRenderer extends EntityRenderer<AbstractKiProjectile> {
     private static final float HALF_SQRT_3 = (float)(Math.sqrt(3.0D) / 2.0D);
     private static final float GIANT_FLAME_GAIN = 1.65F;
     private static final float GIANT_EMBER_SCALE = 1.90F;
+    private static final String COOLER_SUPERNOVA_ID = "supernova_cooler";
+    private static final float COOLER_SUPERNOVA_FLAME_GAIN = 1.2F;
     private static final float[] TRI_BEAM_GLOW_SCALES = {1.0F, 1.14F, 1.3F};
     private static final float[] TRI_BEAM_GLOW_ALPHAS = {1.0F, 0.35F, 0.14F};
     private static final float TRI_BEAM_LIGHTNING_SPEED = 1.5F;
@@ -173,7 +175,11 @@ public class KiProjectileRenderer extends EntityRenderer<AbstractKiProjectile> {
                     break;
                 case 6:
                     applyJitter(stack, ageInTicks, 0.01F);
-                    renderGiantBall(entity, stack, proj, coreColor, borderColor, outlineColor, ageInTicks, scale);
+                    if (COOLER_SUPERNOVA_ID.equals(entity.getTechniqueId())) {
+                        renderCoolerSupernova(stack, proj, coreColor, borderColor, outlineColor, ageInTicks);
+                    } else {
+                        renderGiantBall(entity, stack, proj, coreColor, borderColor, outlineColor, ageInTicks, scale);
+                    }
                     break;
                 case 7:
                     applyJitter(stack, ageInTicks, 0.03F);
@@ -271,6 +277,38 @@ public class KiProjectileRenderer extends EntityRenderer<AbstractKiProjectile> {
         drawKiBall(stack, proj, core, border, outline, age, false, GIANT_FLAME_GAIN);
         KiEmberRenderer.render(stack, proj, core, border, outline, age, 1.0F,
                 KiEmberRenderer.LOCAL_BACK, 1.0F, GIANT_EMBER_SCALE);
+    }
+
+    private void renderCoolerSupernova(PoseStack stack, Matrix4f proj, float[] core, float[] border, float[] outline, float age) {
+        ShaderInstance shader = DMZShaders.ki3dShader;
+        if (shader == null) return;
+
+        stack.scale(0.5F, 0.5F, 0.5F);
+        shader.safeGetUniform("novaMode").set(1.0f);
+        shader.safeGetUniform("flameMode").set(1.0f);
+        shader.safeGetUniform("flameGain").set(COOLER_SUPERNOVA_FLAME_GAIN);
+        drawMesh(KiMeshFactory.getSphereMesh(), stack, proj, core, border, outline, 1.0F, age, true, null);
+        shader.safeGetUniform("novaMode").set(0.0f);
+        shader.safeGetUniform("flameMode").set(0.0f);
+        shader.safeGetUniform("flameGain").set(1.0f);
+
+        float[] hue = novaHue(core);
+        float[] emberBorder = {hue[0] * 0.55F, hue[1] * 0.55F, hue[2] * 0.55F};
+        float[] emberOutline = {hue[0] * 0.2F, hue[1] * 0.2F, hue[2] * 0.2F};
+        KiEmberRenderer.render(stack, proj, hue, emberBorder, emberOutline, age, 1.0F,
+                KiEmberRenderer.LOCAL_BACK, 1.0F, GIANT_EMBER_SCALE);
+    }
+
+    private static float[] novaHue(float[] color) {
+        float min = Math.min(color[0], Math.min(color[1], color[2]));
+        float max = Math.max(color[0], Math.max(color[1], color[2]));
+        if (max - min <= 0.05F) return color;
+        float[] hue = new float[3];
+        for (int i = 0; i < 3; i++) {
+            float c = (color[i] - min) / (max - min);
+            hue[i] = c * c;
+        }
+        return hue;
     }
 
     private void renderSoulPunisherPurify(KiBlastEntity entity, PoseStack stack, Matrix4f proj, MultiBufferSource buffer,
