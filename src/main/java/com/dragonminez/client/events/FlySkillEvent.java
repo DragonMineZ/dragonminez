@@ -276,7 +276,8 @@ public class FlySkillEvent {
 		if (selected == null) return false;
 		return "dimensional_punch".equals(selected.getId()) || "dimensional_sword_attack".equals(selected.getId())
 				|| "meteor_burst".equals(selected.getId()) || "mystic_ball".equals(selected.getId())
-				|| "darkness_eye_beam".equals(selected.getId());
+				|| "darkness_eye_beam".equals(selected.getId()) || "death_chaser".equals(selected.getId())
+				|| "android_combo".equals(selected.getId());
 	}
 
 	public static void toggleFlightFromMenu() {

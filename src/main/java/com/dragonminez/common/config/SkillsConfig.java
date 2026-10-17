@@ -137,6 +137,8 @@ public class SkillsConfig {
 		strikeSkills.add("meteor_burst");
 		strikeSkills.add("mystic_ball");
 		strikeSkills.add("darkness_eye_beam");
+		strikeSkills.add("death_chaser");
+		strikeSkills.add("android_combo");
 
 		skills.put("meteor",             new SkillCosts(List.of(3000)));
 		skills.put("wolf_fang",          new SkillCosts(List.of(3500)));
@@ -158,6 +160,8 @@ public class SkillsConfig {
 		skills.put("meteor_burst", new SkillCosts(List.of(24000)));
 		skills.put("mystic_ball", new SkillCosts(new ArrayList<>(List.of(11000)), new ArrayList<>(List.of("majin"))));
 		skills.put("darkness_eye_beam", new SkillCosts(new ArrayList<>(List.of(11000)), new ArrayList<>(List.of("namekian"))));
+		skills.put("death_chaser", new SkillCosts(List.of(15000)));
+		skills.put("android_combo", new SkillCosts(new ArrayList<>(List.of(14000)), new ArrayList<>(List.of("android"))));
 
 		List<Integer> jumpCosts = new ArrayList<>();
 		jumpCosts.add(300);
@@ -453,6 +457,7 @@ public class SkillsConfig {
 		friezaSkills.add("kienzan_doble");
 		friezaSkills.add("deadly_dance");
 		friezaSkills.add("meteor");
+		friezaSkills.add("death_chaser");
 		skillOfferings.put("frieza", friezaSkills);
 
 		List<String> trunksSkills = new ArrayList<>();
@@ -485,6 +490,7 @@ public class SkillsConfig {
 		cellSkills.add("afterimage");
 		cellSkills.add("deadly_dance");
 		cellSkills.add("meteor");
+		cellSkills.add("android_combo");
 		skillOfferings.put("cell", cellSkills);
 
 		List<String> yamchaSkills = new ArrayList<>();
@@ -519,6 +525,10 @@ public class SkillsConfig {
 	}
 
 	public boolean isSkillAllowedForRace(String skillName, String raceName) {
+		return isSkillAllowedForRace(skillName, raceName, false);
+	}
+
+	public boolean isSkillAllowedForRace(String skillName, String raceName, boolean androidUpgraded) {
 		if (skillName == null || skillName.isEmpty()) return false;
 
 		SkillCosts skillCosts = getSkillCosts(skillName);
@@ -530,6 +540,7 @@ public class SkillsConfig {
 			if (allowedRace == null || allowedRace.isEmpty()) continue;
 			String normalizedAllowed = allowedRace.toLowerCase();
 			if (normalizedAllowed.equals("all") || normalizedAllowed.equals(normalizedRace)) return true;
+			if (androidUpgraded && normalizedAllowed.equals("android")) return true;
 		}
 
 		return false;

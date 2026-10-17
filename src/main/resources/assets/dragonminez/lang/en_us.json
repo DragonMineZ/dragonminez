@@ -1417,6 +1417,7 @@
   "race.dragonminez.namekian.desc": "They are a peaceful yet powerful race, with great regenerative abilities and a natural connection to magic and nature. They are known for their wisdom, energy control, and their ability to fuse with others of their kind, increasing their power.",
   "race.dragonminez.frostdemon": "§5Frost Demon",
   "race.dragonminez.frostdemon.desc": "They are a race of intergalactic conquerors with immense power and boundless cruelty. Their ability to transform and increase their power makes them formidable enemies. Despite their fragile appearance, they are some of the deadliest creatures in the universe.",
+  "race.dragonminez.android": "§7Android",
   "race.dragonminez.bioandroid": "§aBio-Android",
   "race.dragonminez.bioandroid.desc": "They are artificially created beings, combining the DNA of the most powerful races. With the ability to absorb other beings and increase their power to unimaginable levels, these creatures are adaptable and dangerous, designed to be invincible.",
   "race.dragonminez.majin": "§dMajin",
@@ -1836,6 +1837,8 @@
   "technique.dragonminez.meteor_burst": "Meteor Burst",
   "technique.dragonminez.mystic_ball": "Mystic Ball Attack",
   "technique.dragonminez.darkness_eye_beam": "Darkness Eye Beam",
+  "technique.dragonminez.death_chaser": "Death Chaser",
+  "technique.dragonminez.android_combo": "Android Combo",
   "technique.dragonminez.dimensional_sword_attack": "Dimensional Slash",
   "technique.dragonminez.sleep_recovery": "Sleep Recovery",
   "technique.dragonminez.sokidan": "Spirit Ball",
@@ -5181,5 +5184,7 @@
   "death.attack.strike_attack.combo_meteor": "%1$s was pummeled by %2$s's Meteor Combo",
   "death.attack.strike_attack.meteor_burst": "%1$s was crushed by %2$s's Meteor Burst",
   "death.attack.strike_attack.mystic_ball": "%1$s was bounced into the ground by %2$s's Mystic Ball Attack",
-  "death.attack.strike_attack.darkness_eye_beam": "%1$s was burned away by %2$s's Darkness Eye Beam"
+  "death.attack.strike_attack.darkness_eye_beam": "%1$s was burned away by %2$s's Darkness Eye Beam",
+  "death.attack.strike_attack.death_chaser": "%1$s was stomped into the ground by %2$s's Death Chaser",
+  "death.attack.strike_attack.android_combo": "%1$s was blown apart by %2$s's Android Combo"
 }

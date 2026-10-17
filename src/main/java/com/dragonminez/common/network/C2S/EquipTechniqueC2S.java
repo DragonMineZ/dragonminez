@@ -40,7 +40,7 @@ public class EquipTechniqueC2S {
 					boolean lockedSlot = data.getTechniques().isFormLoadoutActive()
 							&& slotIndex < Techniques.FORM_LOADOUT_SIZE;
 					boolean raceLocked = techniqueId != null && !techniqueId.isEmpty()
-							&& !ConfigManager.getSkillsConfig().isSkillAllowedForRace(techniqueId, data.getCharacter().getRaceName());
+							&& !ConfigManager.getSkillsConfig().isSkillAllowedForRace(techniqueId, data.getCharacter().getRaceName(), data.getStatus().isAndroidUpgraded());
 					if (!lockedSlot && !raceLocked) data.getTechniques().equipOrSwapTechnique(slotIndex, techniqueId);
 					NetworkHandler.sendToPlayer(new ProgressionSyncS2C(player), player);
 				});

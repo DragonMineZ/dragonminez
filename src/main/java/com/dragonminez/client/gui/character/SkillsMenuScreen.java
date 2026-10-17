@@ -1368,7 +1368,7 @@ public class SkillsMenuScreen extends BaseMenuScreen {
 
 	private boolean isTechniqueRaceAllowed(String techniqueId) {
 		if (statsData == null || techniqueId == null) return true;
-		return ConfigManager.getSkillsConfig().isSkillAllowedForRace(techniqueId, statsData.getCharacter().getRaceName());
+		return ConfigManager.getSkillsConfig().isSkillAllowedForRace(techniqueId, statsData.getCharacter().getRaceName(), statsData.getStatus().isAndroidUpgraded());
 	}
 
 	private int renderAllowedRaces(GuiGraphics graphics, int panelX, int yOffset) {

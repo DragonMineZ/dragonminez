@@ -182,7 +182,7 @@ public class UpdateSkillC2S {
 		if (data == null || skillName == null || skillName.isEmpty()) return false;
 
 		String raceName = data.getCharacter() != null ? data.getCharacter().getRaceName() : "";
-		return ConfigManager.getSkillsConfig().isSkillAllowedForRace(skillName, raceName);
+		return ConfigManager.getSkillsConfig().isSkillAllowedForRace(skillName, raceName, data.getStatus().isAndroidUpgraded());
 	}
 
 	private void unlockTechniqueIfPresent(com.dragonminez.common.stats.StatsData data, String techId) {

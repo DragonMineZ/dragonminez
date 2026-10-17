@@ -235,7 +235,7 @@ public class MastersSkillsScreen extends BaseMenuScreen {
 
 	private void initPurchaseButton() {
 		if (selectedSkill == null || statsData == null) return;
-		if (!ConfigManager.getSkillsConfig().isSkillAllowedForRace(selectedSkill, getPlayerRaceName())
+		if (!ConfigManager.getSkillsConfig().isSkillAllowedForRace(selectedSkill, getPlayerRaceName(), statsData != null && statsData.getStatus().isAndroidUpgraded())
 				&& !ConfigManager.getSkillsConfig().isTechniqueSkill(selectedSkill)) return;
 
 		Skill skill = statsData.getSkills().getSkill(selectedSkill);
@@ -538,7 +538,7 @@ public class MastersSkillsScreen extends BaseMenuScreen {
 
 	private int renderAllowedRaces(GuiGraphics graphics, int panelX, int yOffset) {
 		SkillsConfig skillsConfig = ConfigManager.getSkillsConfig();
-		int labelColor = skillsConfig.isSkillAllowedForRace(selectedSkill, getPlayerRaceName()) ? 0xDDDDDD : 0xFF5555;
+		int labelColor = skillsConfig.isSkillAllowedForRace(selectedSkill, getPlayerRaceName(), statsData != null && statsData.getStatus().isAndroidUpgraded()) ? 0xDDDDDD : 0xFF5555;
 		TextUtil.drawStringWithBorder(graphics, this.font, tr("gui.dragonminez.technique.races").append(": ").append(skillsConfig.describeAllowedRaces(selectedSkill)), panelX + 15, yOffset, labelColor);
 		return yOffset + 12;
 	}
