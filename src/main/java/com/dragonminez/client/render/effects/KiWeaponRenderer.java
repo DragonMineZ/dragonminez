@@ -3,11 +3,13 @@ package com.dragonminez.client.render.effects;
 import com.dragonminez.Reference;
 import com.dragonminez.client.render.DMZPlayerRenderer;
 import com.dragonminez.client.render.DMZRendererCache;
+import com.dragonminez.client.render.shader.BloomPipeline;
 import com.dragonminez.client.render.shader.DMZShaders;
 import com.dragonminez.client.render.util.PlayerEffectQueue;
 import com.dragonminez.client.render.util.ModRenderTypes;
 import com.dragonminez.common.combat.logic.weapon.KiWeaponHelper;
 import com.dragonminez.common.init.entities.sagas.DBSagasEntity;
+import com.mojang.blaze3d.pipeline.RenderTarget;
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.Tesselator;
@@ -285,9 +287,74 @@ public class KiWeaponRenderer {
 	}
 
 	public static void renderBloomBlades() {
+		drawBloom(BLOOM_WEAPONS);
+	}
+
+	private static final List<Consumer<VertexConsumer>> FIRST_PERSON_BLOOM = new ArrayList<>();
+	private static final float FP_ARM_PIVOT_X = 5.0f / 16.0f;
+	private static final float FP_ARM_PIVOT_Y = 22.0f / 16.0f;
+	private static final float FP_GEO_ARM_X = 6.0f / 16.0f;
+	private static final float FP_GEO_HAND_Y = 12.0f / 16.0f;
+
+	public static void renderFirstPerson(Matrix4f armPose, MultiBufferSource buffer, String type, boolean rightArm, Entity entity, float[] color, float partialTick) {
+		float seed = bladeSeed(entity);
+		float[] c = color.clone();
+		Consumer<VertexConsumer> draw;
+		if (usesShaderBlade(type)) {
+			Matrix4f pose = new Matrix4f(armPose);
+			float cx = (rightArm ? -1.0f : 1.0f) / 16.0f;
+			float handEnd = 10.0f / 16.0f;
+			Vector3f start = new Vector3f(cx, handEnd - BLADE_WRIST_OFFSET - BLADE_ARM_SHIFT, 0.0f);
+			Vector3f end = new Vector3f(cx, handEnd + bladeReach(entity, partialTick) - BLADE_ARM_SHIFT, 0.0f);
+			draw = vc -> renderBlade(pose, vc, start, end, BLADE_HALF_WIDTH, c, seed);
+		} else if (usesShaderScythe(type)) {
+			Matrix4f pose = geoArmPose(armPose, rightArm);
+			float gripY = FP_GEO_HAND_Y + SCYTHE_GRIP_HEIGHT;
+			Vector3f head = new Vector3f(FP_GEO_ARM_X, gripY, -SCYTHE_HEAD_FORWARD);
+			Vector3f butt = new Vector3f(FP_GEO_ARM_X, gripY, -SCYTHE_HEAD_FORWARD + SCYTHE_SHAFT_LENGTH);
+			Vector3f bladeSide = new Vector3f(0.0f, -1.0f, 0.0f);
+			draw = vc -> renderScythe(pose, vc, head, butt, bladeSide, c, seed);
+		} else if (usesShaderClawLance(type)) {
+			Matrix4f pose = geoArmPose(armPose, rightArm).rotateY(CLAW_YAW).rotateX(CLAW_PITCH).translate(0.0f, -0.1f, -1.0f);
+			draw = vc -> renderClawLance(pose, vc, c, seed);
+		} else {
+			return;
+		}
+		draw.accept(buffer.getBuffer(ModRenderTypes.kiBlade()));
+		FIRST_PERSON_BLOOM.add(draw);
+	}
+
+	private static Matrix4f geoArmPose(Matrix4f armPose, boolean rightArm) {
+		return new Matrix4f(armPose).translate(rightArm ? FP_ARM_PIVOT_X : -FP_ARM_PIVOT_X, FP_ARM_PIVOT_Y, 0.0f).scale(rightArm ? -1.0f : 1.0f, -1.0f, 1.0f);
+	}
+
+	public static void renderFirstPersonBloom() {
+		if (FIRST_PERSON_BLOOM.isEmpty()) return;
+		RenderTarget main = Minecraft.getInstance().getMainRenderTarget();
+		if (DMZShaders.kiBladeShader == null || !BloomPipeline.beginRedraw(main)) {
+			FIRST_PERSON_BLOOM.clear();
+			return;
+		}
+		try {
+			RenderSystem.depthMask(false);
+			RenderSystem.enableBlend();
+			RenderSystem.defaultBlendFunc();
+			RenderSystem.disableCull();
+			RenderSystem.enableDepthTest();
+			drawBloom(FIRST_PERSON_BLOOM);
+		} finally {
+			RenderSystem.enableCull();
+			RenderSystem.disableBlend();
+			RenderSystem.depthMask(true);
+			BloomPipeline.endRedraw();
+		}
+		BloomPipeline.resolve(main);
+	}
+
+	private static void drawBloom(List<Consumer<VertexConsumer>> draws) {
 		ShaderInstance shader = DMZShaders.kiBladeShader;
-		if (shader == null || BLOOM_WEAPONS.isEmpty()) {
-			BLOOM_WEAPONS.clear();
+		if (shader == null || draws.isEmpty()) {
+			draws.clear();
 			return;
 		}
 
@@ -299,13 +366,13 @@ public class KiWeaponRenderer {
 		shader.safeGetUniform("bloomMode").set(1.0f);
 		try {
 			VertexConsumer vc = source.getBuffer(ModRenderTypes.kiBlade());
-			for (Consumer<VertexConsumer> draw : BLOOM_WEAPONS) draw.accept(vc);
+			for (Consumer<VertexConsumer> draw : draws) draw.accept(vc);
 			source.endBatch();
 		} finally {
 			shader.safeGetUniform("bloomMode").set(0.0f);
 			modelView.popPose();
 			RenderSystem.applyModelViewMatrix();
-			BLOOM_WEAPONS.clear();
+			draws.clear();
 		}
 	}
 

@@ -134,6 +134,7 @@ public final class BloomPipeline {
 	public static void resolve(RenderTarget main) {
 		if (!pending) return;
 		pending = false;
+		maskCleared = false;
 
 		ShaderInstance composite = DMZShaders.bloomCompositeShader;
 		if (!shadersReady() || mask == null) return;
