@@ -37,6 +37,7 @@ public class DMZShaders {
 	public static ShaderInstance kiBladeShader;
 	public static ShaderInstance solarisSmokeShader;
 	public static ShaderInstance assimilationSketchShader;
+	public static ShaderInstance timeHaloShader;
 
 	@SubscribeEvent
 	public static void onRegisterShaders(RegisterShadersEvent event) throws IOException {
@@ -155,6 +156,11 @@ public class DMZShaders {
 						ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "solaris_smoke"),
 						DefaultVertexFormat.POSITION_COLOR_TEX),
 				shaderInstance -> solarisSmokeShader = shaderInstance);
+
+		event.registerShader(new ShaderInstance(event.getResourceProvider(),
+						ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "time_halo"),
+						DefaultVertexFormat.POSITION_COLOR_TEX),
+				shaderInstance -> timeHaloShader = shaderInstance);
 
 		event.registerShader(new ShaderInstance(event.getResourceProvider(),
 						ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "assimilation_sketch"),

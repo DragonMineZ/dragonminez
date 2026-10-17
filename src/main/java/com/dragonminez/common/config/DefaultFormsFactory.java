@@ -1720,6 +1720,7 @@ public class DefaultFormsFactory {
 		absorption.setUnlockOnSkillLevel(4);
 		absorption.setSagaRequisite("buu_saga:1");
 		absorption.setCustomModel("ssj4gt");
+		absorption.setKeepBaseFormHeadBones(true);
 		absorption.setHideTail(true);
 		absorption.setFurUsesHairColor(true);
 		absorption.setModelScaling(new Float[]{1.1f, 1.1f, 1.1f});
@@ -1841,6 +1842,7 @@ public class DefaultFormsFactory {
 		timePowerDarkKing.setName(GlindForms.TIME_POWER_DARK_KING);
 		timePowerDarkKing.setUnlockOnSkillLevel(3);
 		timePowerDarkKing.setCustomModel("glinddark");
+		timePowerDarkKing.setKeepBaseFormHeadBones(true);
 		timePowerDarkKing.setModelScaling(new Float[]{1.1f, 1.1f, 1.1f});
 		timePowerDarkKing.setStrMultiplier(5.6);
 		timePowerDarkKing.setSkpMultiplier(5.6);
@@ -1868,6 +1870,7 @@ public class DefaultFormsFactory {
 		timePowerRealmOfLight.setName(GlindForms.TIME_POWER_REALM_OF_LIGHT);
 		timePowerRealmOfLight.setUnlockOnSkillLevel(3);
 		timePowerRealmOfLight.setCustomModel("");
+		timePowerRealmOfLight.setKeepBaseFormHeadBones(true);
 		timePowerRealmOfLight.setModelScaling(new Float[]{1.35f, 1.45f, 1.35f});
 		timePowerRealmOfLight.setStrMultiplier(5.6);
 		timePowerRealmOfLight.setSkpMultiplier(5.6);
