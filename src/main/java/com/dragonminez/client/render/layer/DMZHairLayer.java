@@ -19,6 +19,7 @@ import com.dragonminez.common.config.ConfigManager;
 import com.dragonminez.common.config.GeneralUserConfig;
 import com.dragonminez.common.hair.HairColors;
 import com.dragonminez.common.init.MainEffects;
+import com.dragonminez.common.init.MainItems;
 import com.dragonminez.common.stats.StatsCapability;
 import com.dragonminez.common.stats.StatsData;
 import com.dragonminez.common.stats.StatsProvider;
@@ -34,6 +35,7 @@ import net.minecraft.client.renderer.RenderType;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EquipmentSlot;
+import net.minecraft.world.item.ArmorItem;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.phys.Vec3;
 import net.minecraftforge.registries.ForgeRegistries;
@@ -227,7 +229,7 @@ public class DMZHairLayer<T extends AbstractClientPlayer & GeoAnimatable> extend
 			ResourceLocation itemId = ForgeRegistries.ITEMS.getKey(headItem.getItem());
 			if (itemId != null) {
 				List<String> allowedHelmets = ConfigManager.getServerConfig().getGameplay().getHelmetsThatKeepHair();
-				if (!allowedHelmets.contains(itemId.toString())) return false;
+				if (!allowedHelmets.contains(itemId.toString()) && !headItem.is(MainItems.BROLY_Z_ARMOR.get(ArmorItem.Type.HELMET).get())) return false;
 			}
 		}
 		return true;

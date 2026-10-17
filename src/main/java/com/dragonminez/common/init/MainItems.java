@@ -229,7 +229,7 @@ public final class MainItems {
 	// BROLY SUPER
 	public static final Map<ArmorItem.Type, RegistryObject<Item>> BROLY_SUPER_ARMOR = fullArmorNoHelmetSet("broly_super_armor", "broly_dbs");
 	// BROLY Z
-	public static final Map<ArmorItem.Type, RegistryObject<Item>> BROLY_Z_ARMOR = fullArmorNoHelmetSet("broly_z_armor", "broly_dbz");
+	public static final Map<ArmorItem.Type, RegistryObject<Item>> BROLY_Z_ARMOR = fullArmorSet("broly_z_armor", "broly_dbz");
 	// BRIGHTLY'S REGULAR WEAR
 	public static final Map<ArmorItem.Type, RegistryObject<Item>> BRIGHTLYS_REGULAR_WEAR_ARMOR = fullArmorNoHelmetSet("brightlys_regular_wear_armor", "brightlys_regular_wear");
 	public static final Map<ArmorItem.Type, RegistryObject<Item>> CAPSULE_CORP_ARMOR = fullArmorNoHelmetSet("capsule_corp_armor", "capsule_corp");

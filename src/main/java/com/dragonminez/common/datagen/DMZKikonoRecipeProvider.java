@@ -47,7 +47,7 @@ public class DMZKikonoRecipeProvider {
 		buildArmorNoHelmetSet("trunks_z", MainItems.TRUNKS_Z_ARMOR, MainItems.PATTERN_TRUNKS_Z.get());
 		buildArmorNoHelmetSet("trunks_super", MainItems.TRUNKS_SUPER_ARMOR, MainItems.PATTERN_TRUNKS_SUPER.get());
 		buildArmorNoHelmetSet("trunks_kid", MainItems.TRUNKS_KID_ARMOR, MainItems.PATTERN_TRUNKS_KID.get());
-		buildArmorNoHelmetSet("broly_z", MainItems.BROLY_Z_ARMOR, MainItems.PATTERN_BROLY_Z.get());
+		buildFullArmorSet("broly_z", MainItems.BROLY_Z_ARMOR, MainItems.PATTERN_BROLY_Z.get());
 		buildArmorNoHelmetSet("broly_super", MainItems.BROLY_SUPER_ARMOR, MainItems.PATTERN_BROLY_SUPER.get());
 		buildArmorNoHelmetSet("shin", MainItems.SHIN_ARMOR, MainItems.PATTERN_SHIN.get());
 		buildArmorNoHelmetSet("blackgoku", MainItems.BLACKGOKU_ARMOR, MainItems.PATTERN_BLACK.get());
