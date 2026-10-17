@@ -12,6 +12,7 @@ import com.dragonminez.common.stats.StatsData;
 import com.dragonminez.common.stats.StatsProvider;
 import com.dragonminez.common.util.FalseSuperSaiyanHelper;
 import com.dragonminez.common.util.TransformationsHelper;
+import com.dragonminez.server.util.TriggerFormMarker;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundSource;
@@ -91,7 +92,7 @@ public class FalseSuperSaiyanEvents {
 				return;
 			}
 
-			if (active && !FalseSuperSaiyanHelper.meetsBaseRequirements(data)) {
+			if (active && !FalseSuperSaiyanHelper.meetsBaseRequirements(data) && !TriggerFormMarker.isTriggeredForm(player, data)) {
 				end(player, data);
 				return;
 			}

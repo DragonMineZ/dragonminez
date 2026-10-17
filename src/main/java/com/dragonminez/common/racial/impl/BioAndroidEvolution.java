@@ -369,7 +369,7 @@ public class BioAndroidEvolution implements RacialAbility {
 		if (tpGain > 0) data.getResources().addTrainingPoints(tpGain);
 	}
 
-	private static void triggerExplosion(ServerPlayer player, StatsData data, GeneralServerConfig.BioAndroidRacialConfig config) {
+	public static void triggerExplosion(ServerPlayer player, StatsData data, GeneralServerConfig.BioAndroidRacialConfig config) {
 		data.getRacialData().setBioSwell(0f);
 		data.getRacialData().setBioSwellLocked(false);
 		data.getRacialData().setBioChargeTicks(0);
@@ -462,7 +462,7 @@ public class BioAndroidEvolution implements RacialAbility {
 		return data.getRacialData().getCellJrs().size() + slotCooldowns;
 	}
 
-	private static boolean summonCellJr(RacialContext ctx, ServerPlayer player, StatsData data) {
+	public static boolean summonCellJr(RacialContext ctx, ServerPlayer player, StatsData data) {
 		if (!canSummonCellJr(ctx, data)) {
 			player.displayClientMessage(Component.translatable("message.dragonminez.racial.limit_reached"), true);
 			return true;

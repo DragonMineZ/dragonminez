@@ -62,12 +62,16 @@ public final class RacialCapture {
 	}
 
 	public static void finalizeKill(ServerPlayer user, LivingEntity target, double healRatio) {
+		heal(user, healRatio);
+		target.kill();
+		if (target.isDeadOrDying() || target.isRemoved()) QuestEvents.creditQuestKill(user, target);
+	}
+
+	public static void heal(ServerPlayer user, double healRatio) {
 		if (healRatio > 0) {
 			float heal = (float) (user.getMaxHealth() * healRatio);
 			user.heal(heal);
 		}
-		target.kill();
-		if (target.isDeadOrDying() || target.isRemoved()) QuestEvents.creditQuestKill(user, target);
 	}
 
 	public static boolean forcesKnockdown(Entity attacker) {

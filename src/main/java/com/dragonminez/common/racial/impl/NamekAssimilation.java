@@ -30,6 +30,7 @@ import net.minecraft.world.entity.LivingEntity;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 
 public class NamekAssimilation implements RacialAbility {
 
@@ -177,7 +178,28 @@ public class NamekAssimilation implements RacialAbility {
 	public static void applyAssimilation(ServerPlayer player, StatsData data, LivingEntity target) {
 		GeneralServerConfig.NamekianRacialConfig config = ConfigManager.getServerConfig().getRacialSkills().getNamekian();
 
-		double boostMult = config.getAssimilationStatBoost();
+		grantAssimilation(player, data, target.getUUID(), target.getName().getString(), config.getAssimilationStatBoost());
+
+		NetworkHandler.sendToTrackingEntityAndSelf(new AssimilationVfxS2C(target.getId(), player.getId()), target);
+		playAssimilationSound(player);
+		RacialCapture.finalizeKill(player, target, config.getAssimilationHealthRegen());
+		player.displayClientMessage(Component.translatable("message.dragonminez.racial.namek.success"), true);
+		NetworkHandler.sendToTrackingEntityAndSelf(new StatsSyncS2C(player), player);
+	}
+
+	public static void applyVirtualAssimilation(ServerPlayer player, StatsData data, UUID sourceId, String sourceName, double boostMult) {
+		GeneralServerConfig.NamekianRacialConfig config = ConfigManager.getServerConfig().getRacialSkills().getNamekian();
+
+		grantAssimilation(player, data, sourceId, sourceName, boostMult);
+
+		playAssimilationSound(player);
+		RacialCapture.heal(player, config.getAssimilationHealthRegen());
+		player.displayClientMessage(Component.translatable("message.dragonminez.racial.namek.success"), true);
+		NetworkHandler.sendToTrackingEntityAndSelf(new StatsSyncS2C(player), player);
+	}
+
+	private static void grantAssimilation(ServerPlayer player, StatsData data, UUID sourceId, String sourceName, double boostMult) {
+		GeneralServerConfig.NamekianRacialConfig config = ConfigManager.getServerConfig().getRacialSkills().getNamekian();
 		int maxBonus = ConfigManager.getServerConfig().getGameplay().getMaxValue();
 		int slotIndex = data.getRacialData().getAssimilations().size() + 1;
 		String bonusName = "Assimilation_" + slotIndex;
@@ -191,12 +213,10 @@ public class NamekAssimilation implements RacialAbility {
 		}
 		data.getRacialData().addOwnedBonusName(bonusName);
 		data.getRacialData().addAssimilation(new RacialData.AssimilationSlot(
-				bonusName, target.getUUID(), target.getName().getString(), grantedStats, player.level().getGameTime()));
+				bonusName, sourceId, sourceName, grantedStats, player.level().getGameTime()));
+	}
 
-		NetworkHandler.sendToTrackingEntityAndSelf(new AssimilationVfxS2C(target.getId(), player.getId()), target);
+	private static void playAssimilationSound(ServerPlayer player) {
 		player.level().playSound(null, player.getX(), player.getY(), player.getZ(), MainSounds.STACK_FORM.get(), SoundSource.PLAYERS, 1.0F, 1.0F);
-		RacialCapture.finalizeKill(player, target, config.getAssimilationHealthRegen());
-		player.displayClientMessage(Component.translatable("message.dragonminez.racial.namek.success"), true);
-		NetworkHandler.sendToTrackingEntityAndSelf(new StatsSyncS2C(player), player);
 	}
 }

@@ -25,6 +25,7 @@ import net.minecraft.world.entity.Mob;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 
 public class MajinAbsorption implements RacialAbility {
 
@@ -142,14 +143,36 @@ public class MajinAbsorption implements RacialAbility {
 			return;
 		}
 
-		data.getRacialData().setAbsorptionSlotCounter(slotIndex);
-		data.getRacialData().addOwnedBonusName(bonusName);
-		data.getRacialData().addAbsorption(new RacialData.AbsorptionSlot(
-				bonusName, target.getUUID(), target.getName().getString(), grantedStats, player.level().getGameTime()));
+		recordAbsorption(player, data, slotIndex, bonusName, target.getUUID(), target.getName().getString(), grantedStats);
 
 		RacialCapture.finalizeKill(player, target, config.getAbsorptionHealthRegen());
 		player.displayClientMessage(Component.translatable("message.dragonminez.racial.majin.success"), true);
 		NetworkHandler.sendToTrackingEntityAndSelf(new StatsSyncS2C(player), player);
+	}
+
+	public static void applyVirtualAbsorption(ServerPlayer player, StatsData data, UUID sourceId, String sourceName, double sourceMaxHealth, double ratio) {
+		GeneralServerConfig.MajinRacialConfig config = ConfigManager.getServerConfig().getRacialSkills().getMajin();
+		int slotIndex = data.getRacialData().getAbsorptionSlotCounter() + 1;
+		String bonusName = "Absorption_" + slotIndex;
+		int bonus = RacialCapture.cappedAbsorptionBonus(sourceMaxHealth, ratio, data.getConfiguredMaxTotalStats());
+		Map<String, Integer> grantedStats = new HashMap<>();
+		for (String stat : config.getAbsorptionBoosts()) {
+			data.getBonusStats().addBonusSplit(stat, bonusName, "+", bonus, true);
+			grantedStats.put(stat, bonus);
+		}
+
+		recordAbsorption(player, data, slotIndex, bonusName, sourceId, sourceName, grantedStats);
+
+		RacialCapture.heal(player, config.getAbsorptionHealthRegen());
+		player.displayClientMessage(Component.translatable("message.dragonminez.racial.majin.success"), true);
+		NetworkHandler.sendToTrackingEntityAndSelf(new StatsSyncS2C(player), player);
+	}
+
+	private static void recordAbsorption(ServerPlayer player, StatsData data, int slotIndex, String bonusName, UUID sourceId, String sourceName, Map<String, Integer> grantedStats) {
+		data.getRacialData().setAbsorptionSlotCounter(slotIndex);
+		data.getRacialData().addOwnedBonusName(bonusName);
+		data.getRacialData().addAbsorption(new RacialData.AbsorptionSlot(
+				bonusName, sourceId, sourceName, grantedStats, player.level().getGameTime()));
 	}
 
 	public static float applyFoodHealBonus(StatsData data, float healAmount) {

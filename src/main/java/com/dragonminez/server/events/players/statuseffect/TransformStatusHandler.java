@@ -13,6 +13,7 @@ import com.dragonminez.common.stats.techniques.Techniques;
 import com.dragonminez.common.util.lists.SaiyanForms;
 import com.dragonminez.common.stats.extras.ActionMode;
 import com.dragonminez.server.events.players.IStatusEffectHandler;
+import com.dragonminez.server.util.TriggerFormMarker;
 import net.minecraftforge.common.MinecraftForge;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.resources.ResourceLocation;
@@ -67,6 +68,7 @@ public class TransformStatusHandler implements IStatusEffectHandler {
 
     @Override
     public void onPlayerTick(ServerPlayer player, StatsData data) {
+        TriggerFormMarker.reconcile(player, data);
         enforceFormLoadout(player, data);
 
         if (data.getCharacter().getActiveForm() == null || data.getCharacter().getActiveForm().isEmpty() || data.getCharacter().getActiveForm().equals("base")) {

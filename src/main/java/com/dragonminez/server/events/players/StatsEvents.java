@@ -43,6 +43,7 @@ import com.dragonminez.server.util.FusionLogic;
 import com.dragonminez.server.util.GravityLogic;
 import com.dragonminez.server.util.MutantManager;
 import com.dragonminez.server.util.PotionEffectHelper;
+import com.dragonminez.server.util.TriggerFormMarker;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.util.Mth;
@@ -383,7 +384,7 @@ public class StatsEvents {
 
 						if (attackerData.getCharacter().hasActiveForm()) {
 							FormConfig.FormData activeForm = attackerData.getCharacter().getActiveFormData();
-							if (activeForm != null && attackerData.getResources().getPowerRelease() >= 50) {
+							if (activeForm != null && attackerData.getResources().getPowerRelease() >= 50 && !TriggerFormMarker.isTriggeredForm(attacker, attackerData)) {
 								String formGroup = attackerData.getCharacter().getActiveFormGroup();
 								String formName = attackerData.getCharacter().getActiveForm();
 								double bonus = 1.0 + (GravityLogic.getBonusGravity(attacker) * ConfigManager.getServerConfig().getGravity().getMasteryBonusPerGravity());
@@ -393,7 +394,7 @@ public class StatsEvents {
 
 						if (attackerData.getCharacter().hasActiveStackForm()) {
 							FormConfig.FormData activeStackForm = attackerData.getCharacter().getActiveStackFormData();
-							if (activeStackForm != null && attackerData.getResources().getPowerRelease() >= 50) {
+							if (activeStackForm != null && attackerData.getResources().getPowerRelease() >= 50 && !TriggerFormMarker.isTriggeredStack(attacker, attackerData)) {
 								String stackFormGroup = attackerData.getCharacter().getActiveStackFormGroup();
 								String stackForm = attackerData.getCharacter().getActiveStackForm();
 								double bonus = 1.0 + (GravityLogic.getBonusGravity(attacker) * ConfigManager.getServerConfig().getGravity().getMasteryBonusPerGravity());
@@ -415,7 +416,7 @@ public class StatsEvents {
 
 						if (victimData.getCharacter().hasActiveForm()) {
 							FormConfig.FormData activeForm = victimData.getCharacter().getActiveFormData();
-							if (activeForm != null && victimData.getResources().getPowerRelease() >= 50) {
+							if (activeForm != null && victimData.getResources().getPowerRelease() >= 50 && !TriggerFormMarker.isTriggeredForm(victim, victimData)) {
 								String formGroup = victimData.getCharacter().getActiveFormGroup();
 								String formName = victimData.getCharacter().getActiveForm();
 								double bonus = 1.0 + (GravityLogic.getBonusGravity(victim) * ConfigManager.getServerConfig().getGravity().getMasteryBonusPerGravity());
@@ -425,7 +426,7 @@ public class StatsEvents {
 
 						if (victimData.getCharacter().hasActiveStackForm()) {
 							FormConfig.FormData activeStackForm = victimData.getCharacter().getActiveStackFormData();
-							if (activeStackForm != null && victimData.getResources().getPowerRelease() >= 50) {
+							if (activeStackForm != null && victimData.getResources().getPowerRelease() >= 50 && !TriggerFormMarker.isTriggeredStack(victim, victimData)) {
 								String stackFormGroup = victimData.getCharacter().getActiveStackFormGroup();
 								String stackForm = victimData.getCharacter().getActiveStackForm();
 								double bonus = 1.0 + (GravityLogic.getBonusGravity(victim) * ConfigManager.getServerConfig().getGravity().getMasteryBonusPerGravity());

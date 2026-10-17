@@ -53,6 +53,7 @@ import com.dragonminez.server.util.FusionLogic;
 import com.dragonminez.server.util.GravityLogic;
 import com.dragonminez.server.util.GravityStateSync;
 import com.dragonminez.server.util.PotionEffectHelper;
+import com.dragonminez.server.util.TriggerFormMarker;
 import com.dragonminez.server.world.dimension.OtherworldDimension;
 import net.minecraft.core.BlockPos;
 import net.minecraft.network.chat.Component;
@@ -730,7 +731,7 @@ public class TickHandler {
 		else {
 			masterySecondsByPlayer.put(masteryPlayerId, 0);
 
-			if (hasActiveForm && activeForm != null) {
+			if (hasActiveForm && activeForm != null && !TriggerFormMarker.isTriggeredForm(player, data)) {
 				String activeFormName = activeForm.getName().toLowerCase();
 				String activeFormGroup = data.getCharacter().getActiveFormGroup();
 
@@ -746,7 +747,7 @@ public class TickHandler {
 				}
 			}
 
-			if (hasActiveStackForm && activeStackForm != null) {
+			if (hasActiveStackForm && activeStackForm != null && !TriggerFormMarker.isTriggeredStack(player, data)) {
 				String activeFormName = activeStackForm.getName().toLowerCase();
 				String activeFormGroup = data.getCharacter().getActiveStackFormGroup();
 
@@ -1246,7 +1247,8 @@ public class TickHandler {
 
 	private static void handleSingleDurationCost(ServerPlayer player, StatsData data, boolean baseForm) {
 		FormConfig.FormData activeData = baseForm ? data.getCharacter().getActiveFormData() : data.getCharacter().getActiveStackFormData();
-		if (activeData == null || !activeData.hasDurationItemCosts()) {
+		boolean triggered = baseForm ? TriggerFormMarker.isTriggeredForm(player, data) : TriggerFormMarker.isTriggeredStack(player, data);
+		if (activeData == null || !activeData.hasDurationItemCosts() || triggered) {
 			if (baseForm) TransformationItemCostHelper.clearFormDurationSecondsRemaining(player);
 			else TransformationItemCostHelper.clearStackFormDurationSecondsRemaining(player);
 			return;

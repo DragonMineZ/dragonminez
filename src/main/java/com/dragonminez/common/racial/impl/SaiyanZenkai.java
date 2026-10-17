@@ -62,8 +62,15 @@ public class SaiyanZenkai implements RacialAbility {
 		float peakHit = Math.max(racialData.getPeakRawHitWindow(), lc.finalDamage());
 		double hitRatio = peakHit / maxHealth;
 		double potency = Math.max(0.0, Math.min(1.0, hitRatio / config.getMaxBuffHitRatio()));
-		double buffPct = lerp(config.getMinBuffPct(), config.getMaxBuffPct(), potency);
 		boolean isMaxBuff = hitRatio >= config.getMaxBuffHitRatio();
+
+		trigger(player, data, config, potency, isMaxBuff);
+		return true;
+	}
+
+	public static void trigger(ServerPlayer player, StatsData data, GeneralServerConfig.SaiyanRacialConfig config, double potency, boolean isMaxBuff) {
+		RacialData racialData = data.getRacialData();
+		double buffPct = lerp(config.getMinBuffPct(), config.getMaxBuffPct(), potency);
 
 		applyBuff(data, config, buffPct, isMaxBuff, potency, player.level().getGameTime());
 
@@ -80,7 +87,27 @@ public class SaiyanZenkai implements RacialAbility {
 		player.level().playSound(null, player.getX(), player.getY(), player.getZ(), MainSounds.TRANSFORM_ON.get(), SoundSource.PLAYERS, 1.0F, 1.0F);
 		player.addEffect(new MobEffectInstance(MainEffects.SAIYAN_PASSIVE.get(), config.getCooldownSeconds() * 20, 0, false, false, true));
 		NetworkHandler.sendToTrackingEntityAndSelf(new StatsSyncS2C(player), player);
+	}
 
+	public static void applyTemporaryBuff(ServerPlayer player, StatsData data, GeneralServerConfig.SaiyanRacialConfig config, double potency) {
+		removeTemporaryBuff(data, config);
+		double buffPct = lerp(config.getMinBuffPct(), config.getMaxBuffPct(), potency);
+		applyBuff(data, config, buffPct, false, potency, player.level().getGameTime());
+
+		player.displayClientMessage(Component.translatable("message.dragonminez.racial.zenkai.used"), true);
+		player.level().playSound(null, player.getX(), player.getY(), player.getZ(), MainSounds.TRANSFORM_ON.get(), SoundSource.PLAYERS, 1.0F, 1.0F);
+		NetworkHandler.sendToTrackingEntityAndSelf(new StatsSyncS2C(player), player);
+	}
+
+	public static boolean removeTemporaryBuff(StatsData data, GeneralServerConfig.SaiyanRacialConfig config) {
+		RacialData racialData = data.getRacialData();
+		String buffName = racialData.getTempZenkaiBuffName();
+		if (buffName.isEmpty()) return false;
+		for (String stat : config.getBuffStats()) {
+			data.getBonusStats().removeBonusSplit(stat, buffName);
+		}
+		racialData.removeOwnedBonusName(buffName);
+		racialData.setTempZenkaiBuffName("");
 		return true;
 	}
 
@@ -146,12 +173,7 @@ public class SaiyanZenkai implements RacialAbility {
 			if (remaining <= 0) racialData.setPeakRawHitWindow(0f);
 		}
 
-		if (!racialData.getTempZenkaiBuffName().isEmpty() && !data.getCooldowns().hasCooldown(Cooldowns.ZENKAI_TEMP_BUFF)) {
-			for (String stat : config.getBuffStats()) {
-				data.getBonusStats().removeBonusSplit(stat, racialData.getTempZenkaiBuffName());
-			}
-			racialData.removeOwnedBonusName(racialData.getTempZenkaiBuffName());
-			racialData.setTempZenkaiBuffName("");
+		if (!data.getCooldowns().hasCooldown(Cooldowns.ZENKAI_TEMP_BUFF) && removeTemporaryBuff(data, config)) {
 			NetworkHandler.sendToTrackingEntityAndSelf(new StatsSyncS2C(player), player);
 		}
 	}

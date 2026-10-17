@@ -118,7 +118,7 @@ public class HumanAdaptation implements RacialAbility {
 		AndroidBarrier.forceEnd(ctx, false);
 	}
 
-	private static void triggerAdrenaline(ServerPlayer player, StatsData data, GeneralServerConfig.HumanRacialConfig config) {
+	public static void triggerAdrenaline(ServerPlayer player, StatsData data, GeneralServerConfig.HumanRacialConfig config) {
 		data.getCooldowns().setCooldown(Cooldowns.ADRENALINE, config.getAdrenalineCooldownSeconds() * 20);
 		data.getCooldowns().setCooldown(Cooldowns.ADRENALINE_ACTIVE, config.getAdrenalineSeconds() * 20);
 
