@@ -93,7 +93,7 @@ public final class QuestFieldSessions {
 			return;
 		}
 
-		if (!session.aliveMobs.isEmpty() || session.lost) {
+		if (session.waveActive || session.lost) {
 			if (session.lost || session.abandonedBy(player)) {
 				despawnSessionMobs(player.getServer().getLevel(session.dimension), session.aliveMobs);
 				session.reset(gameTime + objective.getWaveDelaySeconds() * 20L);
@@ -117,16 +117,19 @@ public final class QuestFieldSessions {
 		}
 
 		if (gameTime >= session.nextWaveGameTime) {
-			spawnWave(player, questKey, objectiveIndex, objective, session);
-			broadcast(player, questKey, Component.translatable("message.dragonminez.quest.wave_started",
-					progress + 1, required));
+			if (spawnWave(player, questKey, objectiveIndex, objective, session)) {
+				broadcast(player, questKey, Component.translatable("message.dragonminez.quest.wave_started",
+						progress + 1, required));
+			} else {
+				session.nextWaveGameTime = gameTime + objective.getWaveDelaySeconds() * 20L;
+			}
 		}
 	}
 
-	private static void spawnWave(ServerPlayer player, String questKey, int objectiveIndex,
-								  SurviveWavesObjective objective, WaveSession session) {
+	private static boolean spawnWave(ServerPlayer player, String questKey, int objectiveIndex,
+									 SurviveWavesObjective objective, WaveSession session) {
 		EntityType<?> entityType = objective.resolveEntityType();
-		if (entityType == null) return;
+		if (entityType == null) return false;
 		Difficulty waveDifficulty = StatsProvider.get(StatsCapability.INSTANCE, player).resolve()
 				.map(d -> d.getPlayerQuestData().getDifficulty()).orElse(Difficulty.NORMAL);
 
@@ -158,8 +161,10 @@ public final class QuestFieldSessions {
 			}
 
 			session.aliveMobs.add(entity.getUUID());
-			player.serverLevel().addFreshEntity(entity);
+			if (!player.serverLevel().addFreshEntity(entity)) session.aliveMobs.remove(entity.getUUID());
 		}
+		session.waveActive = !session.aliveMobs.isEmpty();
+		return session.waveActive;
 	}
 
 	private static void pruneDeadMobs(ServerLevel level, WaveSession session) {
@@ -502,6 +507,7 @@ public final class QuestFieldSessions {
 		ResourceKey<Level> dimension = Level.OVERWORLD;
 		BlockPos origin = BlockPos.ZERO;
 		boolean lost = false;
+		boolean waveActive = false;
 
 		WaveSession(long nextWaveGameTime) {
 			this.nextWaveGameTime = nextWaveGameTime;
@@ -510,6 +516,7 @@ public final class QuestFieldSessions {
 		void reset(long nextWaveGameTime) {
 			this.aliveMobs.clear();
 			this.lost = false;
+			this.waveActive = false;
 			this.nextWaveGameTime = nextWaveGameTime;
 		}
 
