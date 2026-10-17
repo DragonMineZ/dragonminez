@@ -405,7 +405,8 @@ public class GeneralServerConfig {
 
 		private List<String> helmetsThatKeepHair = new ArrayList<>(Arrays.asList(
 				"dragonminez:invencible_armor_helmet",
-				"dragonminez:invencible_blue_armor_helmet"
+				"dragonminez:invencible_blue_armor_helmet",
+				"dragonminez:broly_z_armor_helmet"
 		));
 
 		private Map<TpSource, List<TpBoost>> tpGainBoosts = defaultTpGainBoosts();
