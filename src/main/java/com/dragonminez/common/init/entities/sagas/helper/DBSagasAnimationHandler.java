@@ -133,6 +133,9 @@ public class DBSagasAnimationHandler {
             if (comboId == 12) return event.setAndContinue(DBSagasAnimations.ANIM_DEADLY_DANCE_VEGETTO);
             if (comboId == 13) return event.setAndContinue(DBSagasAnimations.ANIM_METEOR_BURST);
             if (comboId == 14) return event.setAndContinue(DBSagasAnimations.ANIM_MYSTIC_BALL);
+            if (comboId == 15) return event.setAndContinue(DBSagasAnimations.ANIM_BEAM_SWORD_SLASH);
+            if (comboId == 16) return event.setAndContinue(DBSagasAnimations.ANIM_PERFECT_RUSH);
+            if (comboId == 17) return event.setAndContinue(DBSagasAnimations.ANIM_SPIRIT_BREAKER);
 
         }
 
@@ -164,6 +167,7 @@ public class DBSagasAnimationHandler {
                 case 21: return event.setAndContinue(kiClip(entity, skill, DBSagasAnimations.ANIM_FINALFLASH_CAST, DBSagasAnimations.ANIM_FINALFLASH_FIRE));
                 case 24: return event.setAndContinue(kiClip(entity, skill, DBSagasAnimations.ANIM_KAMEHA_CAST, DBSagasAnimations.ANIM_KAMEHA_FIRE));
                 case 25: return event.setAndContinue(DBSagasAnimations.ANIM_TAIYOKEN);
+                case 37: return event.setAndContinue(DBSagasAnimations.ANIM_GUM_BIND);
                 case 26: return event.setAndContinue(DBSagasAnimations.ANIM_DODONPA_FIRE);
                 case 27: return event.setAndContinue(kiClip(entity, skill, DBSagasAnimations.ANIM_BURNING_ATTACK_CAST, DBSagasAnimations.ANIM_BURNING_ATTACK_FIRE));
                 case 28: return event.setAndContinue(kiClip(entity, skill, DBSagasAnimations.ANIM_SUPERNOVA_COOLER_CAST, DBSagasAnimations.ANIM_SUPERNOVA_COOLER_FIRE));

@@ -81,6 +81,8 @@ public class SkillsConfig {
 		evasionSkills.add("afterimage");
 		evasionSkills.add("sleep_recovery");
 		evasionSkills.add("dimensional_teleport");
+		evasionSkills.add("candy_beam");
+		evasionSkills.add("gum_bind");
 
 		skills.put("ki_barrage", new SkillCosts(List.of(1000)));
 		skills.put("masenko", new SkillCosts(List.of(1500)));
@@ -90,6 +92,8 @@ public class SkillsConfig {
 		skills.put("afterimage", new SkillCosts(List.of(2500)));
 		skills.put("dimensional_teleport", new SkillCosts(List.of(12000)));
 		skills.put("sleep_recovery", new SkillCosts(new ArrayList<>(List.of(3000)), new ArrayList<>(List.of("majin"))));
+		skills.put("candy_beam", new SkillCosts(new ArrayList<>(List.of(5000)), new ArrayList<>(List.of("majin"))));
+		skills.put("gum_bind", new SkillCosts(new ArrayList<>(List.of(9000)), new ArrayList<>(List.of("majin"))));
 		skills.put("death_beam", new SkillCosts(List.of(2500)));
 		skills.put("dodonpa", new SkillCosts(List.of(3000)));
 		skills.put("fake_moon", new SkillCosts(List.of(3000)));
@@ -139,6 +143,9 @@ public class SkillsConfig {
 		strikeSkills.add("darkness_eye_beam");
 		strikeSkills.add("death_chaser");
 		strikeSkills.add("android_combo");
+		strikeSkills.add("beam_sword_slash");
+		strikeSkills.add("perfect_rush");
+		strikeSkills.add("spirit_breaker");
 
 		skills.put("meteor",             new SkillCosts(List.of(3000)));
 		skills.put("wolf_fang",          new SkillCosts(List.of(3500)));
@@ -162,6 +169,9 @@ public class SkillsConfig {
 		skills.put("darkness_eye_beam", new SkillCosts(new ArrayList<>(List.of(11000)), new ArrayList<>(List.of("namekian"))));
 		skills.put("death_chaser", new SkillCosts(List.of(15000)));
 		skills.put("android_combo", new SkillCosts(new ArrayList<>(List.of(14000)), new ArrayList<>(List.of("android"))));
+		skills.put("perfect_rush", new SkillCosts(new ArrayList<>(List.of(15000)), new ArrayList<>(List.of("bioandroid"))));
+		skills.put("spirit_breaker", new SkillCosts(List.of(17000)));
+		skills.put("beam_sword_slash", new SkillCosts(List.of(16000)));
 
 		List<Integer> jumpCosts = new ArrayList<>();
 		jumpCosts.add(300);
@@ -378,6 +388,7 @@ public class SkillsConfig {
 		gokuSkills.add("dragon_fist");
 		gokuSkills.add("super_god_fist");
 		gokuSkills.add("oozaru_fist");
+		gokuSkills.add("beam_sword_slash");
 		skillOfferings.put("goku", gokuSkills);
 
 		List<String> kingKaiSkills = new ArrayList<>();
@@ -399,6 +410,7 @@ public class SkillsConfig {
 		vegetaSkills.add("final_explosion");
 		vegetaSkills.add("fake_moon");
 		vegetaSkills.add("deadly_dance_vegetto");
+		vegetaSkills.add("spirit_breaker");
 		vegetaSkills.add("spirit_breaking_cannon");
 		skillOfferings.put("vegeta", vegetaSkills);
 
@@ -491,6 +503,7 @@ public class SkillsConfig {
 		cellSkills.add("deadly_dance");
 		cellSkills.add("meteor");
 		cellSkills.add("android_combo");
+		cellSkills.add("perfect_rush");
 		skillOfferings.put("cell", cellSkills);
 
 		List<String> yamchaSkills = new ArrayList<>();
@@ -512,6 +525,8 @@ public class SkillsConfig {
 		buuSkills.add("gum_punch");
 		buuSkills.add("mystic_ball");
 		buuSkills.add("sleep_recovery");
+		buuSkills.add("candy_beam");
+		buuSkills.add("gum_bind");
 		skillOfferings.put("buu", buuSkills);
 
 		List<String> defaultSkills = new ArrayList<>();

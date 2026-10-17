@@ -14,9 +14,12 @@ import com.dragonminez.common.init.MainDamageTypes;
 import com.dragonminez.common.stats.techniques.EvasionAttackData;
 import com.dragonminez.server.events.players.combat.EvasionAttackHandler;
 import com.dragonminez.server.events.players.combat.KnockbackHelper;
+import com.dragonminez.server.events.players.combat.StrikeCombos.BeamSwordSlashCombo;
 import com.dragonminez.server.events.players.combat.StrikeCombos.MeteorBurstCombo;
 import com.dragonminez.server.events.players.combat.MomentumImpactHandler;
 import com.dragonminez.server.events.players.combat.StrikeCombos.MysticBallCombo;
+import com.dragonminez.server.events.players.combat.StrikeCombos.PerfectRushCombo;
+import com.dragonminez.server.events.players.combat.StrikeCombos.SpiritBreakerCombo;
 import net.minecraft.commands.arguments.EntityAnchorArgument;
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.server.level.ServerLevel;
@@ -41,6 +44,9 @@ public class ComboManager {
     private static final int SLEEP_Z_INTERVAL_TICKS = 10;
     private static final Map<DBSagasEntity, MeteorBurstCombo.State> METEOR_BURSTS = new WeakHashMap<>();
     private static final Map<DBSagasEntity, MysticBallCombo.State> MYSTIC_BALLS = new WeakHashMap<>();
+    private static final Map<DBSagasEntity, BeamSwordSlashCombo.State> BEAM_SWORDS = new WeakHashMap<>();
+    private static final Map<DBSagasEntity, PerfectRushCombo.State> PERFECT_RUSHES = new WeakHashMap<>();
+    private static final Map<DBSagasEntity, SpiritBreakerCombo.State> SPIRIT_BREAKERS = new WeakHashMap<>();
 
     public enum RushStep { RUSHING, CONNECTED, MISSED }
 
@@ -120,6 +126,9 @@ public class ComboManager {
             case 12 -> handleDeadlyDanceVegetto(user, target, timer);
             case 13 -> handleMeteorBurst(user, target, timer);
             case 14 -> handleMysticBall(user, target, timer);
+            case 15 -> handleBeamSwordSlash(user, target, timer);
+            case 16 -> handlePerfectRush(user, target, timer);
+            case 17 -> handleSpiritBreaker(user, target, timer);
 
         }
     }
@@ -135,6 +144,24 @@ public class ComboManager {
         if (comboId == DBSagasEntity.ComboType.MYSTIC_BALL.getId()) {
             MysticBallCombo.State state = MYSTIC_BALLS.remove(user);
             if (state != null) MysticBallCombo.release(state);
+            if (!user.isFlying()) user.setNoGravity(false);
+            return;
+        }
+        if (comboId == DBSagasEntity.ComboType.SPIRIT_BREAKER.getId()) {
+            SpiritBreakerCombo.State state = SPIRIT_BREAKERS.remove(user);
+            if (state != null) SpiritBreakerCombo.release(state);
+            if (!user.isFlying()) user.setNoGravity(false);
+            return;
+        }
+        if (comboId == DBSagasEntity.ComboType.PERFECT_RUSH.getId()) {
+            PerfectRushCombo.State state = PERFECT_RUSHES.remove(user);
+            if (state != null) PerfectRushCombo.release(state);
+            if (!user.isFlying()) user.setNoGravity(false);
+            return;
+        }
+        if (comboId == DBSagasEntity.ComboType.BEAM_SWORD_SLASH.getId()) {
+            BeamSwordSlashCombo.State state = BEAM_SWORDS.remove(user);
+            if (state != null) BeamSwordSlashCombo.release(state);
             if (!user.isFlying()) user.setNoGravity(false);
             return;
         }
@@ -162,7 +189,10 @@ public class ComboManager {
     public static boolean usesStrikeRush(int comboId) {
         return comboId == DBSagasEntity.ComboType.SPIRIT_BREAKING_CANNON.getId()
                 || comboId == DBSagasEntity.ComboType.METEOR_BURST.getId()
-                || comboId == DBSagasEntity.ComboType.MYSTIC_BALL.getId();
+                || comboId == DBSagasEntity.ComboType.MYSTIC_BALL.getId()
+                || comboId == DBSagasEntity.ComboType.BEAM_SWORD_SLASH.getId()
+                || comboId == DBSagasEntity.ComboType.PERFECT_RUSH.getId()
+                || comboId == DBSagasEntity.ComboType.SPIRIT_BREAKER.getId();
     }
 
     public static void startStrikeRush(DBSagasEntity user) {
@@ -263,6 +293,145 @@ public class ComboManager {
             float damage = amount;
             if (!lethal && victim.getHealth() - damage <= 1.0F) damage = Math.max(0.01F, victim.getHealth() - 1.0F);
             victim.hurt(MainDamageTypes.strikeAttack(this.user.level(), this.user, MysticBallCombo.TECHNIQUE_ID), damage);
+        }
+    }
+
+    private static void handleBeamSwordSlash(DBSagasEntity user, LivingEntity target, int timer) {
+        if (!(user.level() instanceof ServerLevel level)) return;
+
+        user.invulnerableTime = 20;
+        user.setNoGravity(true);
+        user.setDeltaMovement(Vec3.ZERO);
+
+        BeamSwordSlashCombo.State state = BEAM_SWORDS.computeIfAbsent(user, key -> new BeamSwordSlashCombo.State());
+        if (!BeamSwordSlashCombo.tick(level, new SagaBeamSwordSlash(user, target), state, timer) || timer >= BeamSwordSlashCombo.DURATION) {
+            user.stopCombo();
+        }
+    }
+
+    private record SagaBeamSwordSlash(DBSagasEntity user, LivingEntity target) implements BeamSwordSlashCombo.Performer {
+
+        @Override
+        public LivingEntity self() {
+            return this.user;
+        }
+
+        @Override
+        public void place(Vec3 position, float yaw) {
+            this.user.setPos(position.x, position.y, position.z);
+            this.user.setDeltaMovement(Vec3.ZERO);
+            this.user.setYRot(yaw);
+            this.user.setYHeadRot(yaw);
+            this.user.yBodyRot = yaw;
+            this.user.fallDistance = 0.0F;
+        }
+
+        @Override
+        public float strikeBudget() {
+            return comboHitDamage(this.user, DBSagasEntity.ComboType.BEAM_SWORD_SLASH, 1);
+        }
+
+        @Override
+        public int bladeColor() {
+            return this.user.getAuraColor();
+        }
+
+        @Override
+        public float modelScale() {
+            return this.user.getBbHeight() / 1.8F;
+        }
+
+        @Override
+        public void strikeHit(LivingEntity victim, float amount, boolean lethal) {
+            float damage = amount;
+            if (!lethal && victim.getHealth() - damage <= 1.0F) damage = Math.max(0.01F, victim.getHealth() - 1.0F);
+            victim.hurt(MainDamageTypes.strikeAttack(this.user.level(), this.user, BeamSwordSlashCombo.TECHNIQUE_ID), damage);
+        }
+    }
+
+    private static void handleSpiritBreaker(DBSagasEntity user, LivingEntity target, int timer) {
+        if (!(user.level() instanceof ServerLevel level)) return;
+
+        user.invulnerableTime = 20;
+        user.setNoGravity(true);
+        user.setDeltaMovement(Vec3.ZERO);
+
+        SpiritBreakerCombo.State state = SPIRIT_BREAKERS.computeIfAbsent(user, key -> new SpiritBreakerCombo.State());
+        if (!SpiritBreakerCombo.tick(level, new SagaSpiritBreaker(user, target), state, timer) || timer >= SpiritBreakerCombo.DURATION) {
+            user.stopCombo();
+        }
+    }
+
+    private record SagaSpiritBreaker(DBSagasEntity user, LivingEntity target) implements SpiritBreakerCombo.Performer {
+
+        @Override
+        public LivingEntity self() {
+            return this.user;
+        }
+
+        @Override
+        public void place(Vec3 position, float yaw) {
+            this.user.setPos(position.x, position.y, position.z);
+            this.user.setDeltaMovement(Vec3.ZERO);
+            this.user.setYRot(yaw);
+            this.user.setYHeadRot(yaw);
+            this.user.yBodyRot = yaw;
+            this.user.fallDistance = 0.0F;
+        }
+
+        @Override
+        public float strikeBudget() {
+            return comboHitDamage(this.user, DBSagasEntity.ComboType.SPIRIT_BREAKER, 1);
+        }
+
+        @Override
+        public void strikeHit(LivingEntity victim, float amount, boolean lethal) {
+            float damage = amount;
+            if (!lethal && victim.getHealth() - damage <= 1.0F) damage = Math.max(0.01F, victim.getHealth() - 1.0F);
+            victim.hurt(MainDamageTypes.strikeAttack(this.user.level(), this.user, SpiritBreakerCombo.TECHNIQUE_ID), damage);
+        }
+    }
+
+    private static void handlePerfectRush(DBSagasEntity user, LivingEntity target, int timer) {
+        if (!(user.level() instanceof ServerLevel level)) return;
+
+        user.invulnerableTime = 20;
+        user.setNoGravity(true);
+        user.setDeltaMovement(Vec3.ZERO);
+
+        PerfectRushCombo.State state = PERFECT_RUSHES.computeIfAbsent(user, key -> new PerfectRushCombo.State());
+        if (!PerfectRushCombo.tick(level, new SagaPerfectRush(user, target), state, timer) || timer >= PerfectRushCombo.DURATION) {
+            user.stopCombo();
+        }
+    }
+
+    private record SagaPerfectRush(DBSagasEntity user, LivingEntity target) implements PerfectRushCombo.Performer {
+
+        @Override
+        public LivingEntity self() {
+            return this.user;
+        }
+
+        @Override
+        public void place(Vec3 position, float yaw) {
+            this.user.setPos(position.x, position.y, position.z);
+            this.user.setDeltaMovement(Vec3.ZERO);
+            this.user.setYRot(yaw);
+            this.user.setYHeadRot(yaw);
+            this.user.yBodyRot = yaw;
+            this.user.fallDistance = 0.0F;
+        }
+
+        @Override
+        public float strikeBudget() {
+            return comboHitDamage(this.user, DBSagasEntity.ComboType.PERFECT_RUSH, 1);
+        }
+
+        @Override
+        public void strikeHit(LivingEntity victim, float amount, boolean lethal) {
+            float damage = amount;
+            if (!lethal && victim.getHealth() - damage <= 1.0F) damage = Math.max(0.01F, victim.getHealth() - 1.0F);
+            victim.hurt(MainDamageTypes.strikeAttack(this.user.level(), this.user, PerfectRushCombo.TECHNIQUE_ID), damage);
         }
     }
 

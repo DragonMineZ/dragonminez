@@ -4,9 +4,12 @@ import com.dragonminez.Reference;
 import com.dragonminez.common.combat.logic.player.TargetHelper;
 import com.dragonminez.common.combat.util.MultipartTargeting;
 import com.dragonminez.common.init.MainDamageTypes;
+import com.dragonminez.common.init.MainEffects;
 import com.dragonminez.common.init.MainSounds;
+import com.dragonminez.common.init.entities.ki.GumBindEntity;
 import com.dragonminez.common.network.NetworkHandler;
 import com.dragonminez.common.network.S2C.AfterimageVfxS2C;
+import com.dragonminez.common.network.S2C.CandyVfxS2C;
 import com.dragonminez.common.network.S2C.RageScreamVfxS2C;
 import com.dragonminez.common.network.S2C.StatsSyncS2C;
 import com.dragonminez.common.network.S2C.TaiyokenBlindS2C;
@@ -20,6 +23,7 @@ import com.dragonminez.common.stats.techniques.TechniqueData;
 import net.minecraft.ChatFormatting;
 import net.minecraft.network.chat.Component;
 import net.minecraft.core.particles.ParticleTypes;
+import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
@@ -90,6 +94,18 @@ public class EvasionAttackHandler {
 	private static final double[] AFTERIMAGE_HEIGHT_OFFSETS = {0.0, 0.1, 0.5, 1.0, -0.5};
 	private static final double[] AFTERIMAGE_DECOY_HEIGHT_OFFSETS = {0.0, 0.1, 0.6, 1.1, 1.6, -0.5, -1.0};
 
+	public static final String CANDY_BEAM_ID = "candy_beam";
+	public static final String CANDY_BEAM_ANIMATION = "evs.candy_beam";
+	private static final double CANDY_BEAM_RANGE = 5.0;
+	private static final int CANDY_BEAM_FIRE_TICK = 10;
+	private static final int CANDY_BEAM_LIFE = 12;
+	private static final int CANDY_TICKS = 60;
+
+	public static final String GUM_BIND_ID = "gum_bind";
+	public static final String GUM_BIND_ANIMATION = "evs.gum_bind";
+	private static final double GUM_AIM_RANGE = 24.0;
+	private static final int GUM_BIND_FIRE_TICK = 10;
+
 	private static final Set<LivingEntity> BLINDED_MOBS = new HashSet<>();
 	private static final Map<UUID, ActiveEvasion> ACTIVE = new ConcurrentHashMap<>();
 
@@ -101,6 +117,8 @@ public class EvasionAttackHandler {
 		LivingEntity hopTarget;
 		int hopsLeft;
 		int hopDurationTicks;
+		int elapsedTicks;
+		LivingEntity beamTarget;
 
 		ActiveEvasion(String techniqueId, int totalTicks) {
 			this.techniqueId = techniqueId;
@@ -144,6 +162,18 @@ public class EvasionAttackHandler {
 				}
 			}
 
+			LivingEntity beamTarget = null;
+			if (CANDY_BEAM_ID.equals(techniqueId)) {
+				beamTarget = findBeamTarget(player, targetId, CANDY_BEAM_RANGE, false);
+				if (beamTarget == null) {
+					player.displayClientMessage(Component.translatable("message.dragonminez.technique.candy_beam.no_target").withStyle(ChatFormatting.RED), true);
+					return;
+				}
+			} else if (GUM_BIND_ID.equals(techniqueId)) {
+				Entity locked = targetId >= 0 ? TargetHelper.resolveHittable(TargetHelper.getEntityOrPart(player.level(), targetId)) : null;
+				if (isBeamTarget(player, locked, GUM_AIM_RANGE, true)) beamTarget = (LivingEntity) locked;
+			}
+
 			double cost = technique.getCalculatedCost(stats);
 			if (!player.isCreative() && stats.getResources().getCurrentEnergy() < cost) {
 				player.displayClientMessage(Component.translatable("message.dragonminez.technique.no_ki", (int) Math.ceil(cost)).withStyle(ChatFormatting.RED), true);
@@ -172,6 +202,7 @@ public class EvasionAttackHandler {
 			}
 
 			ActiveEvasion active = new ActiveEvasion(techniqueId, lockTicks);
+			active.beamTarget = beamTarget;
 			ACTIVE.put(player.getUUID(), active);
 
 			switch (techniqueId) {
@@ -180,6 +211,8 @@ public class EvasionAttackHandler {
 				case "taiyoken" -> castTaiyoken(player);
 				case "rage_scream" -> castRageScream(player, durationTicks);
 				case "sleep_recovery" -> castSleepRecovery(player);
+				case CANDY_BEAM_ID -> castCandyBeam(player);
+				case GUM_BIND_ID -> castGumBind(player);
 				default -> { }
 			}
 		});
@@ -395,6 +428,96 @@ public class EvasionAttackHandler {
 		if (hasLostTrackOf(event.getEntity(), newTarget)) event.setCanceled(true);
 	}
 
+	private static LivingEntity findBeamTarget(ServerPlayer caster, int targetId, double range, boolean holdable) {
+		Entity locked = targetId >= 0 ? TargetHelper.resolveHittable(TargetHelper.getEntityOrPart(caster.level(), targetId)) : null;
+		if (isBeamTarget(caster, locked, range, holdable)) return (LivingEntity) locked;
+
+		LivingEntity nearest = null;
+		double best = Double.MAX_VALUE;
+		AABB box = caster.getBoundingBox().inflate(range);
+		for (LivingEntity candidate : MultipartTargeting.collectTargets(caster.level(), box)) {
+			if (!isBeamTarget(caster, candidate, range, holdable)) continue;
+			double distance = caster.distanceToSqr(candidate);
+			if (distance < best) {
+				best = distance;
+				nearest = candidate;
+			}
+		}
+		return nearest;
+	}
+
+	private static boolean isBeamTarget(ServerPlayer caster, Entity entity, double range, boolean holdable) {
+		if (!(entity instanceof LivingEntity living) || living == caster || !living.isAlive() || !living.isPickable()) return false;
+		if (living.level() != caster.level() || caster.distanceTo(living) > range) return false;
+		if (living instanceof Player player && (player.isCreative() || player.isSpectator())) return false;
+		if (holdable && !HeldVictim.canHold(caster, living)) return false;
+		if (TargetHelper.getRelation(caster, living) == TargetHelper.Relation.FRIENDLY) return false;
+		return caster.hasLineOfSight(living);
+	}
+
+	private static void castCandyBeam(ServerPlayer caster) {
+		caster.level().playSound(null, caster.getX(), caster.getY(), caster.getZ(),
+				MainSounds.KI_EXPLOSION_CHARGE.get(), SoundSource.PLAYERS, 1.0F, 1.8F);
+	}
+
+	private static void fireCandyBeam(ServerPlayer caster, LivingEntity target) {
+		if (target == null || !target.isAlive() || target.level() != caster.level() || caster.distanceTo(target) > CANDY_BEAM_RANGE + 3.0) return;
+
+		applyCandy(caster, target, CANDY_TICKS, CANDY_BEAM_LIFE);
+		caster.level().playSound(null, caster.getX(), caster.getY(), caster.getZ(),
+				MainSounds.KI_LASER.get(), SoundSource.PLAYERS, 1.4F, 1.4F);
+		caster.level().playSound(null, target.getX(), target.getY(), target.getZ(),
+				SoundEvents.AMETHYST_BLOCK_CHIME, SoundSource.PLAYERS, 2.0F, 1.2F);
+	}
+
+	public static void applyCandy(LivingEntity caster, LivingEntity target, int candyTicks, int boltTicks) {
+		target.addEffect(new MobEffectInstance(MainEffects.CANDY.get(), candyTicks, 0, false, true));
+		CandyVfxS2C packet = new CandyVfxS2C(caster != null ? caster.getId() : -1, target.getId(), candyTicks, boltTicks);
+		NetworkHandler.sendToTrackingEntityAndSelf(packet, caster != null ? caster : target);
+	}
+
+	private static void castGumBind(ServerPlayer caster) {
+		caster.level().playSound(null, caster.getX(), caster.getY(), caster.getZ(),
+				SoundEvents.SLIME_JUMP, SoundSource.PLAYERS, 1.6F, 0.6F);
+	}
+
+	private static void fireGumBind(ServerPlayer caster, LivingEntity aim) {
+		if (!(caster.level() instanceof ServerLevel level)) return;
+
+		int color = StatsProvider.get(StatsCapability.INSTANCE, caster)
+				.map(stats -> packColor(stats.getCharacter().getRgbBodyColor()))
+				.orElse(0xF4A0B6);
+		Vec3 from = GumBindEntity.hand(caster.position(), caster.getYRot(), caster.getBbHeight() / 1.8F);
+		Vec3 point;
+		if (aim != null && aim.isAlive() && aim.level() == level) {
+			point = aim.position().add(0.0, aim.getBbHeight() * 0.55, 0.0);
+		} else {
+			Vec3 eye = caster.getEyePosition();
+			Vec3 end = eye.add(caster.getLookAngle().scale(GUM_AIM_RANGE));
+			BlockHitResult wall = level.clip(new ClipContext(eye, end, ClipContext.Block.COLLIDER, ClipContext.Fluid.NONE, caster));
+			point = wall.getType() == HitResult.Type.MISS ? end : wall.getLocation();
+		}
+		GumBindEntity.Ball.launch(level, caster, color, from, point.subtract(from));
+		caster.level().playSound(null, caster.getX(), caster.getY(), caster.getZ(),
+				SoundEvents.SLIME_ATTACK, SoundSource.PLAYERS, 1.6F, 0.7F);
+	}
+
+	private static int packColor(float[] rgb) {
+		int r = Mth.clamp(Math.round(rgb[0] * 255.0F), 0, 255);
+		int g = Mth.clamp(Math.round(rgb[1] * 255.0F), 0, 255);
+		int b = Mth.clamp(Math.round(rgb[2] * 255.0F), 0, 255);
+		return (r << 16) | (g << 8) | b;
+	}
+
+	@SubscribeEvent
+	public static void onCandyAttack(LivingAttackEvent event) {
+		if (event.getEntity().level().isClientSide()) return;
+		if (event.getSource().getEntity() instanceof LivingEntity attacker && attacker != event.getEntity()
+				&& (attacker.hasEffect(MainEffects.CANDY.get()) || GumBindEntity.isBound(attacker.getUUID()))) {
+			event.setCanceled(true);
+		}
+	}
+
 	private static void castSleepRecovery(ServerPlayer caster) {
 		caster.level().playSound(null, caster.getX(), caster.getY(), caster.getZ(),
 				SoundEvents.FOX_SLEEP, SoundSource.PLAYERS, 1.0F, 0.8F);
@@ -541,6 +664,16 @@ public class EvasionAttackHandler {
 					active.ticksSincePulse = 0;
 					sleepRecoveryPulse(caster);
 				}
+			}
+
+			if (CANDY_BEAM_ID.equals(active.techniqueId)) {
+				active.elapsedTicks++;
+				if (active.elapsedTicks == CANDY_BEAM_FIRE_TICK) fireCandyBeam(caster, active.beamTarget);
+			}
+
+			if (GUM_BIND_ID.equals(active.techniqueId)) {
+				active.elapsedTicks++;
+				if (active.elapsedTicks == GUM_BIND_FIRE_TICK) fireGumBind(caster, active.beamTarget);
 			}
 
 			if ("afterimage".equals(active.techniqueId) && active.hopsLeft > 0) {

@@ -32,7 +32,12 @@ import com.dragonminez.common.network.S2C.StatsSyncS2C;
 import com.dragonminez.common.network.S2C.StrikeRushS2C;
 import com.dragonminez.common.network.S2C.TriggerAnimationS2C;
 import com.dragonminez.server.events.players.combat.StrikeCombos.DarknessEyeBeamCombo;
+import com.dragonminez.common.combat.logic.weapon.KiWeaponHelper;
+import net.minecraft.util.Mth;
 import com.dragonminez.server.events.players.combat.StrikeCombos.AndroidCombo;
+import com.dragonminez.server.events.players.combat.StrikeCombos.BeamSwordSlashCombo;
+import com.dragonminez.server.events.players.combat.StrikeCombos.PerfectRushCombo;
+import com.dragonminez.server.events.players.combat.StrikeCombos.SpiritBreakerCombo;
 import com.dragonminez.server.events.players.combat.StrikeCombos.DeathChaserCombo;
 import com.dragonminez.server.events.players.combat.StrikeCombos.MeteorBurstCombo;
 import com.dragonminez.server.events.players.combat.StrikeCombos.MysticBallCombo;
@@ -106,10 +111,13 @@ public class StrikeAttackHandler {
 	private static final String DEATH_CHASER_ID = DeathChaserCombo.TECHNIQUE_ID;
 	private static final String ANDROID_COMBO_ID = AndroidCombo.TECHNIQUE_ID;
 	private static final double ANDROID_COMBO_KI_RATIO = 1.5;
-	private static final java.util.Set<String> POSE_DRIVEN_STRIKES = java.util.Set.of(SPIRIT_CANNON_ID, GRAB_ID, "combo_meteor", METEOR_BURST_ID, MYSTIC_BALL_ID, EYE_BEAM_ID, DEATH_CHASER_ID, ANDROID_COMBO_ID);
+	private static final String BEAM_SWORD_ID = BeamSwordSlashCombo.TECHNIQUE_ID;
+	private static final String PERFECT_RUSH_ID = PerfectRushCombo.TECHNIQUE_ID;
+	private static final String SPIRIT_BREAKER_ID = SpiritBreakerCombo.TECHNIQUE_ID;
+	private static final java.util.Set<String> POSE_DRIVEN_STRIKES = java.util.Set.of(SPIRIT_CANNON_ID, GRAB_ID, "combo_meteor", METEOR_BURST_ID, MYSTIC_BALL_ID, EYE_BEAM_ID, DEATH_CHASER_ID, ANDROID_COMBO_ID, BEAM_SWORD_ID, PERFECT_RUSH_ID, SPIRIT_BREAKER_ID);
 	private static final String SHINING_SWORD_ID = "shining_sword_attack";
 	private static final String COMBO_METEOR_ID = "combo_meteor";
-	private static final java.util.Set<String> NO_ENGAGE_DAMAGE_STRIKES = java.util.Set.of(GRAB_ID, SHINING_SWORD_ID, COMBO_METEOR_ID, METEOR_BURST_ID, MYSTIC_BALL_ID, EYE_BEAM_ID, DEATH_CHASER_ID, ANDROID_COMBO_ID);
+	private static final java.util.Set<String> NO_ENGAGE_DAMAGE_STRIKES = java.util.Set.of(GRAB_ID, SHINING_SWORD_ID, COMBO_METEOR_ID, METEOR_BURST_ID, MYSTIC_BALL_ID, EYE_BEAM_ID, DEATH_CHASER_ID, ANDROID_COMBO_ID, BEAM_SWORD_ID, PERFECT_RUSH_ID, SPIRIT_BREAKER_ID);
 	private static final int[] COMBO_METEOR_HIT_TICKS = {5, 8, 13, 18, 22, 26, 30, 38, 43, 47, 51, 55, 58, 65, 69, 72};
 	private static final int COMBO_METEOR_SMASH_TICK = 79;
 	private static final int COMBO_METEOR_FINAL_POSE_TICK = 80;
@@ -241,6 +249,9 @@ public class StrikeAttackHandler {
 	private static final Map<UUID, DarknessEyeBeamCombo.State> EYE_BEAMS = new HashMap<>();
 	private static final Map<UUID, DeathChaserCombo.State> DEATH_CHASERS = new HashMap<>();
 	private static final Map<UUID, AndroidCombo.State> ANDROID_COMBOS = new HashMap<>();
+	private static final Map<UUID, BeamSwordSlashCombo.State> BEAM_SWORD_SLASHES = new HashMap<>();
+	private static final Map<UUID, PerfectRushCombo.State> PERFECT_RUSHES = new HashMap<>();
+	private static final Map<UUID, SpiritBreakerCombo.State> SPIRIT_BREAKERS = new HashMap<>();
 	private static final java.util.Set<RelativeMovement> RELATIVE_ROTATION = java.util.EnumSet.of(RelativeMovement.Y_ROT, RelativeMovement.X_ROT);
 
 	public static void requestStrike(ServerPlayer player, int preferredTargetId) {
@@ -315,7 +326,10 @@ public class StrikeAttackHandler {
 			if (immediateTarget != null && !TARGETLESS_STRIKES.contains(strike.getId()) && StrikeClash.isRushingAt(immediateTarget, player)) {
 				startRush(player, stats, pending, immediateTarget);
 			} else if (immediateTarget != null && (METEOR_BURST_ID.equals(strike.getId()) || EYE_BEAM_ID.equals(strike.getId()) || DEATH_CHASER_ID.equals(strike.getId())
-					|| ANDROID_COMBO_ID.equals(strike.getId()))) {
+					|| ANDROID_COMBO_ID.equals(strike.getId())
+					|| BEAM_SWORD_ID.equals(strike.getId())
+					|| PERFECT_RUSH_ID.equals(strike.getId())
+					|| SPIRIT_BREAKER_ID.equals(strike.getId()))) {
 				startStrike(player, immediateTarget, pending);
 			} else if (immediateTarget != null) {
 				boolean faceTarget = !"dragon_fist".equals(strike.getId());
@@ -395,10 +409,11 @@ public class StrikeAttackHandler {
 		setStrikeLocked(player, false);
 	}
 
-	private static boolean isStrikeLockOwned(ServerPlayer player) {
+	public static boolean isStrikeLockOwned(ServerPlayer player) {
 		UUID id = player.getUUID();
+		if (com.dragonminez.common.init.entities.ki.GumBindEntity.isBound(id)) return true;
 		if (PENDING.containsKey(id) || ACTIVE.containsKey(id) || SLAM_RINGS.containsKey(id)) return true;
-		if (METEOR_BURSTS.containsKey(id) || MYSTIC_BALLS.containsKey(id) || EYE_BEAMS.containsKey(id) || DEATH_CHASERS.containsKey(id) || ANDROID_COMBOS.containsKey(id)) return true;
+		if (METEOR_BURSTS.containsKey(id) || MYSTIC_BALLS.containsKey(id) || EYE_BEAMS.containsKey(id) || DEATH_CHASERS.containsKey(id) || ANDROID_COMBOS.containsKey(id) || BEAM_SWORD_SLASHES.containsKey(id) || PERFECT_RUSHES.containsKey(id) || SPIRIT_BREAKERS.containsKey(id)) return true;
 		for (ActiveStrike active : ACTIVE.values()) {
 			if (id.equals(active.targetId())) return true;
 		}
@@ -426,6 +441,9 @@ public class StrikeAttackHandler {
 		releaseEyeBeam(id);
 		releaseDeathChaser(id);
 		releaseAndroidCombo(id);
+		releaseBeamSwordSlash(id);
+		releasePerfectRush(id);
+		releaseSpiritBreaker(id);
 	}
 
 	@SubscribeEvent
@@ -495,7 +513,10 @@ public class StrikeAttackHandler {
 			endRushVisuals(player, true);
 			if (!METEOR_BURST_ID.equals(pending.techniqueId()) && !EYE_BEAM_ID.equals(pending.techniqueId())
 					&& !DEATH_CHASER_ID.equals(pending.techniqueId())
-					&& !ANDROID_COMBO_ID.equals(pending.techniqueId())) snapToRushTarget(player, target);
+					&& !ANDROID_COMBO_ID.equals(pending.techniqueId())
+					&& !BEAM_SWORD_ID.equals(pending.techniqueId())
+					&& !PERFECT_RUSH_ID.equals(pending.techniqueId())
+					&& !SPIRIT_BREAKER_ID.equals(pending.techniqueId())) snapToRushTarget(player, target);
 			startStrike(player, target, pending);
 			return;
 		}
@@ -656,6 +677,21 @@ public class StrikeAttackHandler {
 
 		if (ANDROID_COMBO_ID.equals(active.techniqueId())) {
 			processAndroidCombo(player, active);
+			return;
+		}
+
+		if (BEAM_SWORD_ID.equals(active.techniqueId())) {
+			processBeamSwordSlash(player, active);
+			return;
+		}
+
+		if (PERFECT_RUSH_ID.equals(active.techniqueId())) {
+			processPerfectRush(player, active);
+			return;
+		}
+
+		if (SPIRIT_BREAKER_ID.equals(active.techniqueId())) {
+			processSpiritBreaker(player, active);
 			return;
 		}
 
@@ -1750,6 +1786,124 @@ public class StrikeAttackHandler {
 		ACTIVE.put(player.getUUID(), active.withTicksElapsed(nextTick));
 	}
 
+	private static void processPerfectRush(ServerPlayer player, ActiveStrike active) {
+		int nextTick = active.ticksElapsed() + 1;
+		LivingEntity target = active.targetId() == null ? null : resolveLiving(player, active.targetId());
+
+		boolean stunned = player.hasEffect(MainEffects.STUN.get())
+				|| StatsProvider.get(StatsCapability.INSTANCE, player).map(stats -> stats.getStatus().isKnockedDown()).orElse(false);
+		if (!player.isAlive() || stunned) {
+			endStrike(player, target, active, true);
+			return;
+		}
+
+		player.invulnerableTime = 20;
+		player.fallDistance = 0.0F;
+
+		PerfectRushCombo.State state = PERFECT_RUSHES.computeIfAbsent(player.getUUID(), id -> new PerfectRushCombo.State());
+		if (!PerfectRushCombo.tick((ServerLevel) player.level(), new PlayerPerfectRush(player, target, active), state, nextTick)) {
+			endStrike(player, target, active, true);
+			return;
+		}
+		if (nextTick >= PerfectRushCombo.DURATION) {
+			endStrike(player, target, active);
+			return;
+		}
+		ACTIVE.put(player.getUUID(), active.withTicksElapsed(nextTick));
+	}
+
+	private static void processSpiritBreaker(ServerPlayer player, ActiveStrike active) {
+		int nextTick = active.ticksElapsed() + 1;
+		LivingEntity target = active.targetId() == null ? null : resolveLiving(player, active.targetId());
+
+		boolean stunned = player.hasEffect(MainEffects.STUN.get())
+				|| StatsProvider.get(StatsCapability.INSTANCE, player).map(stats -> stats.getStatus().isKnockedDown()).orElse(false);
+		if (!player.isAlive() || stunned) {
+			endStrike(player, target, active, true);
+			return;
+		}
+
+		player.invulnerableTime = 20;
+		player.fallDistance = 0.0F;
+
+		SpiritBreakerCombo.State state = SPIRIT_BREAKERS.computeIfAbsent(player.getUUID(), id -> new SpiritBreakerCombo.State());
+		if (!SpiritBreakerCombo.tick((ServerLevel) player.level(), new PlayerSpiritBreaker(player, target, active), state, nextTick)) {
+			endStrike(player, target, active, true);
+			return;
+		}
+		if (nextTick >= SpiritBreakerCombo.DURATION) {
+			endStrike(player, target, active);
+			return;
+		}
+		ACTIVE.put(player.getUUID(), active.withTicksElapsed(nextTick));
+	}
+
+	private static void releaseSpiritBreaker(UUID playerId) {
+		SpiritBreakerCombo.State state = SPIRIT_BREAKERS.remove(playerId);
+		if (state != null) SpiritBreakerCombo.release(state);
+	}
+
+	private record PlayerSpiritBreaker(ServerPlayer player, LivingEntity target, ActiveStrike active) implements SpiritBreakerCombo.Performer {
+
+		@Override
+		public LivingEntity self() {
+			return this.player;
+		}
+
+		@Override
+		public void place(Vec3 position, float yaw) {
+			this.player.connection.teleport(position.x, position.y, position.z, yaw, this.player.getXRot());
+			this.player.setYHeadRot(yaw);
+			this.player.setDeltaMovement(Vec3.ZERO);
+			this.player.hurtMarked = true;
+			this.player.fallDistance = 0.0F;
+		}
+
+		@Override
+		public float strikeBudget() {
+			return (float) this.active.totalDamage();
+		}
+
+		@Override
+		public void strikeHit(LivingEntity victim, float amount, boolean lethal) {
+			applyStrikeDamage(this.player, victim, amount, SPIRIT_BREAKER_ID, lethal);
+			if (lethal) grantKillXpIfNeeded(this.player, victim, SPIRIT_BREAKER_ID);
+		}
+	}
+
+	private static void releasePerfectRush(UUID playerId) {
+		PerfectRushCombo.State state = PERFECT_RUSHES.remove(playerId);
+		if (state != null) PerfectRushCombo.release(state);
+	}
+
+	private record PlayerPerfectRush(ServerPlayer player, LivingEntity target, ActiveStrike active) implements PerfectRushCombo.Performer {
+
+		@Override
+		public LivingEntity self() {
+			return this.player;
+		}
+
+		@Override
+		public void place(Vec3 position, float yaw) {
+			this.player.connection.teleport(position.x, position.y, position.z, yaw, this.player.getXRot());
+			this.player.setYHeadRot(yaw);
+			this.player.setDeltaMovement(Vec3.ZERO);
+			this.player.hurtMarked = true;
+			this.player.fallDistance = 0.0F;
+		}
+
+		@Override
+		public float strikeBudget() {
+			return (float) this.active.totalDamage();
+		}
+
+		@Override
+		public void strikeHit(LivingEntity victim, float amount, boolean lethal) {
+			applyStrikeDamage(this.player, victim, amount, PERFECT_RUSH_ID, lethal);
+			if (lethal) grantKillXpIfNeeded(this.player, victim, PERFECT_RUSH_ID);
+		}
+	}
+
 	private static void releaseDeathChaser(UUID playerId) {
 		DeathChaserCombo.State state = DEATH_CHASERS.remove(playerId);
 		if (state != null) DeathChaserCombo.release(state);
@@ -1856,6 +2010,89 @@ public class StrikeAttackHandler {
 			if (damage <= 0.0F) return;
 			victim.hurt(MainDamageTypes.kiblast(this.player.level(), this.player, this.player), damage);
 			if (lethal) grantKillXpIfNeeded(this.player, victim, ANDROID_COMBO_ID);
+		}
+	}
+
+	private static void processBeamSwordSlash(ServerPlayer player, ActiveStrike active) {
+		int nextTick = active.ticksElapsed() + 1;
+		LivingEntity target = active.targetId() == null ? null : resolveLiving(player, active.targetId());
+
+		boolean stunned = player.hasEffect(MainEffects.STUN.get())
+				|| StatsProvider.get(StatsCapability.INSTANCE, player).map(stats -> stats.getStatus().isKnockedDown()).orElse(false);
+		if (!player.isAlive() || stunned) {
+			endStrike(player, target, active, true);
+			return;
+		}
+
+		player.invulnerableTime = 20;
+		player.fallDistance = 0.0F;
+
+		BeamSwordSlashCombo.State state = BEAM_SWORD_SLASHES.computeIfAbsent(player.getUUID(), id -> new BeamSwordSlashCombo.State());
+		if (!BeamSwordSlashCombo.tick((ServerLevel) player.level(), new PlayerBeamSwordSlash(player, target, active), state, nextTick)) {
+			endStrike(player, target, active, true);
+			return;
+		}
+		if (nextTick >= BeamSwordSlashCombo.DURATION) {
+			endStrike(player, target, active);
+			return;
+		}
+		ACTIVE.put(player.getUUID(), active.withTicksElapsed(nextTick));
+	}
+
+	private static void releaseBeamSwordSlash(UUID playerId) {
+		BeamSwordSlashCombo.State state = BEAM_SWORD_SLASHES.remove(playerId);
+		if (state != null) BeamSwordSlashCombo.release(state);
+	}
+
+	private record PlayerBeamSwordSlash(ServerPlayer player, LivingEntity target, ActiveStrike active) implements BeamSwordSlashCombo.Performer {
+
+		@Override
+		public LivingEntity self() {
+			return this.player;
+		}
+
+		@Override
+		public void place(Vec3 position, float yaw) {
+			this.player.connection.teleport(position.x, position.y, position.z, yaw, this.player.getXRot());
+			this.player.setYHeadRot(yaw);
+			this.player.setDeltaMovement(Vec3.ZERO);
+			this.player.hurtMarked = true;
+			this.player.fallDistance = 0.0F;
+		}
+
+		@Override
+		public float strikeBudget() {
+			return (float) this.active.totalDamage();
+		}
+
+		@Override
+		public int bladeColor() {
+			return StatsProvider.get(StatsCapability.INSTANCE, this.player).map(stats -> {
+				var character = stats.getCharacter();
+				float[] kiColor = character.getRgbAuraColor();
+				if (character.hasActiveForm() && character.getActiveFormData() != null) {
+					String formColor = character.getActiveFormData().getAuraColor();
+					if (formColor != null && !formColor.isEmpty()) kiColor = character.getActiveFormData().getRgbAuraColor();
+				}
+				float[] color = KiWeaponHelper.resolveColorForType("blade", kiColor);
+				return ((int) (Mth.clamp(color[0], 0.0F, 1.0F) * 255.0F) << 16)
+						| ((int) (Mth.clamp(color[1], 0.0F, 1.0F) * 255.0F) << 8)
+						| (int) (Mth.clamp(color[2], 0.0F, 1.0F) * 255.0F);
+			}).orElse(0x7FD8FF);
+		}
+
+		@Override
+		public float modelScale() {
+			return StatsProvider.get(StatsCapability.INSTANCE, this.player).map(stats -> {
+				Float[] scaling = stats.getCharacter().getResolvedModelScaling();
+				return scaling != null && scaling.length > 1 && scaling[1] != null ? scaling[1] : 0.9375F;
+			}).orElse(0.9375F);
+		}
+
+		@Override
+		public void strikeHit(LivingEntity victim, float amount, boolean lethal) {
+			applyStrikeDamage(this.player, victim, amount, BEAM_SWORD_ID, lethal);
+			if (lethal) grantKillXpIfNeeded(this.player, victim, BEAM_SWORD_ID);
 		}
 	}
 
@@ -2512,6 +2749,9 @@ public class StrikeAttackHandler {
 		releaseEyeBeam(player.getUUID());
 		releaseDeathChaser(player.getUUID());
 		releaseAndroidCombo(player.getUUID());
+		releaseBeamSwordSlash(player.getUUID());
+		releasePerfectRush(player.getUUID());
+		releaseSpiritBreaker(player.getUUID());
 
 		StatsProvider.get(StatsCapability.INSTANCE, player).ifPresent(stats -> {
 			String cooldownKey = getTechniqueCooldownKey(active.techniqueId());
@@ -2794,6 +3034,8 @@ public class StrikeAttackHandler {
 			case EYE_BEAM_ID -> DarknessEyeBeamCombo.COLOR_BORDER;
 			case DEATH_CHASER_ID -> DeathChaserCombo.COLOR_MAIN;
 			case ANDROID_COMBO_ID -> AndroidCombo.COLOR_MAIN;
+			case PERFECT_RUSH_ID -> PerfectRushCombo.COLOR_MAIN;
+			case SPIRIT_BREAKER_ID -> SpiritBreakerCombo.COLOR_MAIN;
 			default -> 0xFFF3D6;
 		};
 	}

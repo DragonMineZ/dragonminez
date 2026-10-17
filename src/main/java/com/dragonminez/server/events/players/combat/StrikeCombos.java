@@ -9,9 +9,11 @@ import com.dragonminez.common.init.entities.ki.KiLaserEntity;
 import com.dragonminez.common.network.NetworkHandler;
 import com.dragonminez.common.network.S2C.AfterimageVfxS2C;
 import com.dragonminez.common.network.S2C.ImpactBurstVfxS2C;
+import com.dragonminez.common.network.S2C.KiBladeExtendS2C;
 import com.dragonminez.common.network.S2C.KiBurstVfxS2C;
 import com.dragonminez.common.network.S2C.RageScreamVfxS2C;
 import com.dragonminez.common.network.S2C.ShockwaveVfxS2C;
+import com.dragonminez.common.network.S2C.SwordSlashS2C;
 import com.dragonminez.common.network.S2C.TriggerImpactFrameS2C;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.particles.DustParticleOptions;
@@ -2180,6 +2182,1383 @@ public final class StrikeCombos {
 				case 1 -> MainSounds.GOLPE5.get();
 				default -> MainSounds.GOLPE6.get();
 			};
+		}
+
+		private static Vec3 grounded(ServerLevel level, Vec3 at) {
+			double floor = groundHeight(level, at.x, at.z, at.y + 0.5D);
+			if (at.y - floor > MAX_DROP) return at;
+			return new Vec3(at.x, floor, at.z);
+		}
+
+		private static Vec3 clearPoint(ServerLevel level, LivingEntity self, Vec3 from, Vec3 wanted, double margin) {
+			BlockHitResult hit = level.clip(new ClipContext(from, wanted, ClipContext.Block.COLLIDER, ClipContext.Fluid.NONE, self));
+			if (hit.getType() == HitResult.Type.MISS) return wanted;
+			Vec3 dir = wanted.subtract(from);
+			double length = dir.length();
+			if (length < 1.0E-4D) return from;
+			return from.add(dir.scale(Math.max(0.0D, hit.getLocation().distanceTo(from) - margin) / length));
+		}
+
+		private static void playSound(ServerLevel level, Vec3 at, LivingEntity self, SoundEvent sound, float volume, float pitch) {
+			level.playSound(null, at.x, at.y, at.z, sound, self.getSoundSource(), volume, pitch);
+		}
+
+		private static double gap(LivingEntity self, LivingEntity target) {
+			return self.getBbWidth() * 0.5D + target.getBbWidth() * 0.5D + VICTIM_GAP;
+		}
+
+		private static Vec3 facing(float yaw) {
+			return Vec3.directionFromRotation(0.0F, yaw);
+		}
+
+		private static double smooth(double t) {
+			return t * t * (3.0D - 2.0D * t);
+		}
+
+		private static double easeOut(double t) {
+			double inv = 1.0D - t;
+			return 1.0D - inv * inv;
+		}
+
+		private static float yawTowards(Vec3 from, Vec3 to) {
+			double dx = to.x - from.x;
+			double dz = to.z - from.z;
+			if (dx * dx + dz * dz < 1.0E-6D) return 0.0F;
+			return (float) (Mth.atan2(dz, dx) * (180.0D / Math.PI)) - 90.0F;
+		}
+
+		private static double groundHeight(ServerLevel level, double x, double z, double fromY) {
+			BlockPos.MutableBlockPos cursor = new BlockPos.MutableBlockPos();
+			int ix = Mth.floor(x);
+			int iz = Mth.floor(z);
+			int bottom = Math.max(level.getMinBuildHeight(), Mth.floor(fromY) - 64);
+			for (int y = Mth.floor(fromY) + 1; y >= bottom; y--) {
+				cursor.set(ix, y, iz);
+				if (!level.getBlockState(cursor).getCollisionShape(level, cursor).isEmpty()) return y + 1.0D;
+			}
+			return level.getMinBuildHeight();
+		}
+	}
+
+	public static final class BeamSwordSlashCombo {
+
+		public static final String TECHNIQUE_ID = "beam_sword_slash";
+		public static final String ANIMATION = "skp.beam_sword_slash";
+		private static final int LEAD = 4;
+		public static final int DURATION = LEAD + 108;
+		public static final double RANGE = 14.0D;
+
+		private static final int DASH_START = LEAD;
+		private static final int DASH_END = LEAD + 3;
+		private static final int KICK_TICK = LEAD + 4;
+		private static final int KNEE_TICK = LEAD + 8;
+		private static final int PUNCH_TICK = LEAD + 12;
+		private static final int SLIDE_END = LEAD + 16;
+		private static final int LAUNCH_TICK = LEAD + 17;
+		private static final int LAUNCH_END = LEAD + 25;
+		private static final int LEAP_START = LEAD + 19;
+		private static final int AIR_HIT_TICK = LEAD + 25;
+		private static final int AIR_RISE_END = LEAD + 31;
+		private static final int VANISH_TICK = LEAD + 29;
+		private static final int APPEAR_TICK = LEAD + 30;
+		private static final int HAMMER_TICK = LEAD + 32;
+		private static final int SLAM_TICK = LEAD + 37;
+		private static final int HOVER_END = LEAD + 41;
+		private static final int CHARGE_START = LEAD + 40;
+		private static final int SUMMON_TICK = LEAD + 44;
+		private static final int THRUST_TICK = LEAD + 58;
+		private static final int[] SKEWER_TICKS = {LEAD + 60, LEAD + 65, LEAD + 70};
+		private static final int SWEEP_TICK = LEAD + 81;
+		private static final int DROP_START = LEAD + 83;
+		private static final int DROP_END = LEAD + 88;
+		private static final int STAND_TICK = LEAD + 86;
+		private static final int DASH2_START = LEAD + 90;
+		private static final int DASH2_END = LEAD + 94;
+		private static final int SLASH_TICK = LEAD + 99;
+
+		private static final double VICTIM_GAP = 0.35D;
+		private static final double KICK_NUDGE = 0.3D;
+		private static final double KNEE_BUMP = 0.4D;
+		private static final double KNOCK_DISTANCE = 2.0D;
+		private static final double LAUNCH_HEIGHT = 6.0D;
+		private static final double AIR_RISE = 2.5D;
+		private static final double OVER_HEIGHT = 0.8D;
+		private static final double SHOULDER_SIDE = 5.0D / 16.0D;
+		private static final double SHOULDER_UP = 17.5D / 16.0D;
+		private static final double SHOULDER_FORWARD = 13.0D / 16.0D;
+		private static final double THRUST_FORWARD = 0.778D;
+		private static final double THRUST_DOWN = 0.628D;
+		private static final double THRUST_LENGTH = 5.5D;
+		private static final double BLADE_FIST_OFFSET = 0.5D;
+		private static final double BLADE_PIERCE = 0.3D;
+		private static final double LYING_AIM_HEIGHT = 0.4D;
+		private static final double SLASH_REACH_SHARE = 0.8D;
+		private static final double DASH_DISTANCE = 2.5D;
+		private static final double HAND_SIDE = 0.4D;
+		private static final double HAND_UP = 0.75D;
+		private static final double MAX_DROP = 30.0D;
+		private static final double MAX_VICTIM_DISTANCE = 48.0D;
+		private static final double FINAL_PUSH = 1.8D;
+		private static final double FINAL_LIFT = 0.7D;
+		private static final float KICK_SHARE = 0.08F;
+		private static final float KNEE_SHARE = 0.08F;
+		private static final float PUNCH_SHARE = 0.08F;
+		private static final float LAUNCH_SHARE = 0.1F;
+		private static final float AIR_HIT_SHARE = 0.08F;
+		private static final float HAMMER_SHARE = 0.1F;
+		private static final float SKEWER_SHARE = 0.06F;
+		private static final float SWEEP_SHARE = 0.08F;
+		private static final float SLASH_SHARE = 0.22F;
+
+		public interface Performer {
+			LivingEntity self();
+
+			LivingEntity target();
+
+			void place(Vec3 position, float yaw);
+
+			float strikeBudget();
+
+			int bladeColor();
+
+			float modelScale();
+
+			void strikeHit(LivingEntity victim, float amount, boolean lethal);
+		}
+
+		public static final class State {
+			private HeldVictim victim;
+			private LivingEntity self;
+			private float yaw;
+			private Vec3 origin;
+			private Vec3 base;
+			private Vec3 start;
+			private Vec3 held;
+			private Vec3 knock;
+			private Vec3 apex;
+			private Vec3 apex2;
+			private Vec3 airPos;
+			private Vec3 over;
+			private Vec3 ground;
+			private Vec3 hover;
+			private Vec3 land;
+			private Vec3 strikePos;
+			private float scale = 1.0F;
+			private double tipDistance;
+			private boolean bladeSummoned;
+			private boolean finished;
+
+			public LivingEntity victim() {
+				return this.victim != null ? this.victim.entity() : null;
+			}
+		}
+
+		private BeamSwordSlashCombo() {}
+
+		public static boolean tick(ServerLevel level, Performer performer, State state, int tick) {
+			LivingEntity self = performer.self();
+			self.fallDistance = 0.0F;
+			state.self = self;
+
+			if (tick < DASH_START) {
+				LivingEntity target = performer.target();
+				if (!HeldVictim.canTarget(self, target)) return false;
+				if (state.origin == null) state.origin = self.position();
+				state.yaw = yawTowards(self.position(), target.position());
+				performer.place(state.origin, state.yaw);
+				return true;
+			}
+
+			if (tick == DASH_START) {
+				LivingEntity target = performer.target();
+				if (!HeldVictim.canTarget(self, target) || target.level() != level || self.distanceTo(target) > RANGE + 6.0D) return false;
+				if (state.origin == null) state.origin = self.position();
+				state.yaw = yawTowards(self.position(), target.position());
+				state.start = target.position();
+				state.held = state.start;
+				state.base = state.start.subtract(facing(state.yaw).scale(gap(self, target)));
+				if (!level.noCollision(self, self.getBoundingBox().move(state.base.subtract(self.position())))) state.base = self.position();
+				state.victim = HeldVictim.canHold(self, target) ? HeldVictim.capture(target, DURATION + 20) : HeldVictim.root(target);
+				state.scale = Math.max(0.2F, performer.modelScale());
+				NetworkHandler.sendToTrackingEntityAndSelf(new AfterimageVfxS2C(self.getId(), 30, new Vec3[]{self.position()},
+						new float[]{state.yaw}, false), self);
+				playSound(level, self.position(), self, MainSounds.ZANZOKEN.get(), 1.5F, 0.9F);
+			}
+
+			if (state.base == null) return false;
+
+			if (state.finished) {
+				performer.place(state.strikePos, state.yaw);
+				return true;
+			}
+
+			if (state.victim == null || !state.victim.isValid(self, MAX_VICTIM_DISTANCE)) return false;
+
+			LivingEntity victim = state.victim.entity();
+			Vec3 facing = facing(state.yaw);
+			float faceBack = state.yaw + 180.0F;
+
+			if (tick < LAUNCH_TICK) {
+				double dash = smooth(Mth.clamp((tick - DASH_START) / (double) (DASH_END - DASH_START), 0.0D, 1.0D));
+				Vec3 dashed = state.origin.lerp(state.base, dash);
+				if (tick < PUNCH_TICK) {
+					state.held = state.held.lerp(state.start, 0.4D);
+					if (tick == KICK_TICK) {
+						state.held = state.start.add(facing.scale(KICK_NUDGE));
+						hit(level, performer, state, KICK_SHARE, victim.getBoundingBox().getCenter(), facing, 1.8F, MainSounds.GOLPE4.get());
+						state.victim.flinch();
+					}
+					if (tick == KNEE_TICK) {
+						state.held = state.start.add(0.0D, KNEE_BUMP, 0.0D);
+						hit(level, performer, state, KNEE_SHARE, victim.getBoundingBox().getCenter(), new Vec3(0.0D, 1.0D, 0.0D), 2.0F, MainSounds.GOLPE6.get());
+						state.victim.flinch();
+					}
+					performer.place(dashed, state.yaw);
+				} else {
+					if (tick == PUNCH_TICK) {
+						state.knock = grounded(level, clearPoint(level, self, state.start.add(0.0D, 1.0D, 0.0D),
+								state.start.add(facing.scale(KNOCK_DISTANCE)).add(0.0D, 1.0D, 0.0D), victim.getBbWidth() * 0.5D + 0.2D)
+								.subtract(0.0D, 1.0D, 0.0D));
+						hit(level, performer, state, PUNCH_SHARE, victim.getBoundingBox().getCenter(), facing, 2.2F, MainSounds.CRITICO2.get());
+						state.victim.flinch();
+					}
+					double slide = easeOut(Mth.clamp((tick - PUNCH_TICK) / (double) (SLIDE_END - PUNCH_TICK), 0.0D, 1.0D));
+					state.held = state.start.lerp(state.knock, slide);
+					Vec3 follow = state.held.subtract(facing.scale(gap(self, victim)));
+					performer.place(dashed.lerp(follow, slide), state.yaw);
+				}
+				state.victim.hold(state.held, faceBack);
+				return true;
+			}
+
+			if (tick < HAMMER_TICK) {
+				if (tick == LAUNCH_TICK) {
+					state.base = self.position();
+					state.apex = clearAbove(level, victim, state.knock, LAUNCH_HEIGHT);
+					state.apex2 = clearAbove(level, victim, state.knock, LAUNCH_HEIGHT + AIR_RISE);
+					state.airPos = state.apex.subtract(facing.scale(gap(self, victim))).subtract(0.0D, 0.5D, 0.0D);
+					state.over = state.apex2.add(0.0D, victim.getBbHeight() + OVER_HEIGHT, 0.0D).subtract(facing.scale(0.3D));
+					state.ground = grounded(level, state.apex2);
+					state.hover = hoverPoint(state, victim);
+					hit(level, performer, state, LAUNCH_SHARE, victim.getBoundingBox().getCenter(), new Vec3(0.0D, 1.0D, 0.0D), 2.6F, MainSounds.CRITICO1.get());
+					state.victim.launched();
+					NetworkHandler.sendToTrackingEntityAndSelf(new ShockwaveVfxS2C(state.base.x, state.base.y + 0.1D, state.base.z, 4.0F, 0xFFE0A0, 10), self);
+					playSound(level, state.knock, self, MainSounds.EVASION2.get(), 1.5F, 0.7F);
+				}
+				if (tick <= LAUNCH_END) {
+					double lift = easeOut(Mth.clamp((tick - LAUNCH_TICK) / (double) (LAUNCH_END - LAUNCH_TICK), 0.0D, 1.0D));
+					state.held = state.knock.lerp(state.apex, lift);
+				} else {
+					double lift = easeOut(Mth.clamp((tick - AIR_HIT_TICK) / (double) (AIR_RISE_END - AIR_HIT_TICK), 0.0D, 1.0D));
+					state.held = state.apex.lerp(state.apex2, lift);
+				}
+				if (tick == AIR_HIT_TICK) {
+					hit(level, performer, state, AIR_HIT_SHARE, victim.getBoundingBox().getCenter(), new Vec3(0.0D, 1.0D, 0.0D), 2.4F, MainSounds.CRITICO2.get());
+					state.victim.launched();
+				}
+				state.victim.hold(state.held, faceBack);
+
+				if (tick < LEAP_START) {
+					performer.place(state.base, state.yaw);
+				} else if (tick <= AIR_HIT_TICK) {
+					double leap = smooth((tick - LEAP_START) / (double) (AIR_HIT_TICK - LEAP_START));
+					performer.place(state.base.lerp(state.airPos, leap), state.yaw);
+					if (tick == LEAP_START) playSound(level, state.base, self, MainSounds.EVASION1.get(), 1.4F, 1.0F);
+				} else if (tick < APPEAR_TICK) {
+					performer.place(state.airPos, state.yaw);
+				} else {
+					performer.place(state.over, state.yaw);
+				}
+				if (tick == VANISH_TICK) {
+					NetworkHandler.sendToTrackingEntityAndSelf(new AfterimageVfxS2C(self.getId(), 30, new Vec3[]{self.position()},
+							new float[]{state.yaw}, false), self);
+					playSound(level, state.airPos, self, MainSounds.ZANZOKEN.get(), 1.5F, 1.1F);
+				}
+				return true;
+			}
+
+			if (tick < THRUST_TICK) {
+				if (tick == HAMMER_TICK) {
+					hit(level, performer, state, HAMMER_SHARE, victim.getBoundingBox().getCenter(), new Vec3(0.0D, -1.0D, 0.0D), 3.0F, MainSounds.CRITICO1.get());
+					state.victim.knockDown();
+					NetworkHandler.sendToTrackingEntityAndSelf(new TriggerImpactFrameS2C(0.75F, 0.05F, 2, true), self);
+				}
+				double fall = Math.pow(Mth.clamp((tick - HAMMER_TICK) / (double) (SLAM_TICK - HAMMER_TICK), 0.0D, 1.0D), 2.0D);
+				state.held = state.apex2.lerp(state.ground, fall);
+				state.victim.hold(state.held, faceBack);
+				if (tick == SLAM_TICK) groundImpact(level, self, state.ground, 5.0F);
+
+				double drift = smooth(Mth.clamp((tick - HAMMER_TICK) / (double) (HOVER_END - HAMMER_TICK), 0.0D, 1.0D));
+				performer.place(state.over.lerp(state.hover, drift), state.yaw);
+
+				if (tick >= CHARGE_START) charge(level, performer, state, tick);
+				if (tick == SUMMON_TICK) {
+					state.bladeSummoned = true;
+					NetworkHandler.sendToTrackingEntityAndSelf(KiBladeExtendS2C.summon(self.getId(), DURATION - SUMMON_TICK + 2), self);
+					NetworkHandler.sendToTrackingEntityAndSelf(new KiBurstVfxS2C(self.getId(), false, 6.0F), self);
+					playSound(level, state.hover, self, MainSounds.SWORD_OUT.get(), 1.6F, 1.0F);
+				}
+				return true;
+			}
+
+			if (tick < DROP_START) {
+				performer.place(state.hover, state.yaw);
+				state.victim.hold(state.ground, faceBack);
+				Vec3 center = state.ground.add(0.0D, aimHeight(victim), 0.0D);
+				if (tick == THRUST_TICK) {
+					double reach = shoulder(state.hover, state.yaw, state.scale).distanceTo(center) / state.scale - BLADE_FIST_OFFSET + BLADE_PIERCE;
+					state.tipDistance = (reach + BLADE_FIST_OFFSET) * state.scale;
+					NetworkHandler.sendToTrackingEntityAndSelf(KiBladeExtendS2C.extend(self.getId(), (float) reach, DURATION - THRUST_TICK + 2), self);
+					NetworkHandler.sendToTrackingEntityAndSelf(new TriggerImpactFrameS2C(0.75F, 0.05F, 2, true), self);
+					playSound(level, state.hover, self, MainSounds.KI_BEAM_FIRE.get(), 2.0F, 1.4F);
+				}
+				for (int skewer : SKEWER_TICKS) {
+					if (skewer == tick) hit(level, performer, state, SKEWER_SHARE, center, new Vec3(0.0D, -1.0D, 0.0D), 2.0F, MainSounds.GOLPE6.get());
+				}
+				if (tick == SWEEP_TICK) {
+					hit(level, performer, state, SWEEP_SHARE, center, new Vec3(0.0D, 1.0D, 0.0D), 3.0F, MainSounds.SWORD_SLASH.get());
+					NetworkHandler.sendToTrackingEntityAndSelf(new KiBurstVfxS2C(self.getId(), false, 8.0F), self);
+				}
+				return true;
+			}
+
+			if (tick < SLASH_TICK) {
+				if (tick == DROP_START) {
+					double slashReach = state.tipDistance * SLASH_REACH_SHARE;
+					Vec3 wanted = state.ground.subtract(facing.scale(slashReach + DASH_DISTANCE));
+					state.land = grounded(level, wanted);
+					if (Math.abs(state.land.y - state.ground.y) > 3.0D) state.land = new Vec3(wanted.x, state.ground.y, wanted.z);
+					Vec3 strikeWanted = state.ground.subtract(facing.scale(Math.max(gap(self, victim), slashReach)));
+					state.strikePos = new Vec3(strikeWanted.x, state.land.y, strikeWanted.z);
+					playSound(level, state.hover, self, MainSounds.EVASION1.get(), 1.2F, 1.2F);
+				}
+				if (tick == STAND_TICK) state.victim.flinch();
+				state.victim.hold(state.ground, faceBack);
+				if (tick <= DROP_END) {
+					double drop = Math.pow((tick - DROP_START) / (double) (DROP_END - DROP_START), 2.0D);
+					performer.place(state.hover.lerp(state.land, drop), state.yaw);
+					if (tick == DROP_END) level.sendParticles(MainParticles.DUST.get(), state.land.x, state.land.y + 0.1D, state.land.z, 14, 0.5D, 0.1D, 0.5D, 0.04D);
+				} else if (tick < DASH2_START) {
+					performer.place(state.land, state.yaw);
+				} else {
+					double dash = smooth(Mth.clamp((tick - DASH2_START) / (double) (DASH2_END - DASH2_START), 0.0D, 1.0D));
+					performer.place(state.land.lerp(state.strikePos, dash), state.yaw);
+					if (tick == DASH2_START) {
+						NetworkHandler.sendToTrackingEntityAndSelf(new AfterimageVfxS2C(self.getId(), 30, new Vec3[]{self.position()},
+								new float[]{state.yaw}, false), self);
+						playSound(level, state.land, self, MainSounds.ZANZOKEN.get(), 1.5F, 1.1F);
+					}
+				}
+				return true;
+			}
+
+			performer.place(state.strikePos, state.yaw);
+			finish(level, performer, state);
+			return true;
+		}
+
+		public static void release(State state) {
+			if (state.bladeSummoned && state.self != null) {
+				NetworkHandler.sendToTrackingEntityAndSelf(KiBladeExtendS2C.summon(state.self.getId(), 0), state.self);
+			}
+			if (state.victim != null) {
+				state.victim.release();
+				state.victim = null;
+			}
+			state.origin = null;
+			state.base = null;
+			state.ground = null;
+			state.hover = null;
+			state.land = null;
+			state.strikePos = null;
+			state.bladeSummoned = false;
+			state.finished = false;
+		}
+
+		private static void charge(ServerLevel level, Performer performer, State state, int tick) {
+			if ((tick - CHARGE_START) % 2 != 0) return;
+			LivingEntity self = performer.self();
+			Vec3 right = facing(state.yaw + 90.0F);
+			Vec3 hand = state.hover.add(right.scale(HAND_SIDE * state.scale)).add(0.0D, HAND_UP * state.scale, 0.0D).subtract(facing(state.yaw).scale(0.2D));
+			int color = performer.bladeColor();
+			float r = ((color >> 16) & 0xFF) / 255.0F;
+			float g = ((color >> 8) & 0xFF) / 255.0F;
+			float b = (color & 0xFF) / 255.0F;
+			level.sendParticles(new DustParticleOptions(new Vector3f(r, g, b), 1.3F), hand.x, hand.y, hand.z, 6, 0.25D, 0.25D, 0.25D, 0.0D);
+			level.sendParticles(ParticleTypes.ELECTRIC_SPARK, hand.x, hand.y, hand.z, 3, 0.2D, 0.2D, 0.2D, 0.1D);
+			if ((tick - CHARGE_START) % 20 == 0) playSound(level, hand, self, MainSounds.KI_CHARGE_LOOP.get(), 1.3F, 1.3F);
+		}
+
+		private static Vec3 shoulder(Vec3 feet, float yaw, float scale) {
+			Vec3 facing = facing(yaw);
+			Vec3 right = facing(yaw + 90.0F);
+			return feet.add(right.scale(SHOULDER_SIDE * scale)).add(0.0D, SHOULDER_UP * scale, 0.0D).add(facing.scale(SHOULDER_FORWARD * scale));
+		}
+
+		private static double aimHeight(LivingEntity victim) {
+			boolean lying = victim instanceof net.minecraft.world.entity.player.Player || victim instanceof com.dragonminez.common.init.entities.sagas.DBSagasEntity;
+			return lying ? Math.min(LYING_AIM_HEIGHT, victim.getBbHeight() * 0.5D) : victim.getBbHeight() * 0.5D;
+		}
+
+		private static Vec3 hoverPoint(State state, LivingEntity victim) {
+			Vec3 facing = facing(state.yaw);
+			Vec3 right = facing(state.yaw + 90.0F);
+			Vec3 center = state.ground.add(0.0D, aimHeight(victim), 0.0D);
+			Vec3 shoulder = center.subtract(facing.scale(THRUST_FORWARD * THRUST_LENGTH)).add(0.0D, THRUST_DOWN * THRUST_LENGTH, 0.0D);
+			return shoulder.subtract(right.scale(SHOULDER_SIDE * state.scale)).subtract(0.0D, SHOULDER_UP * state.scale, 0.0D)
+					.subtract(facing.scale(SHOULDER_FORWARD * state.scale));
+		}
+
+		private static void hit(ServerLevel level, Performer performer, State state, float share, Vec3 at, Vec3 direction, float burst, SoundEvent sound) {
+			LivingEntity self = performer.self();
+			LivingEntity target = state.victim.entity();
+			target.invulnerableTime = 0;
+			performer.strikeHit(target, performer.strikeBudget() * share, false);
+			NetworkHandler.sendToTrackingEntityAndSelf(new ImpactBurstVfxS2C(at, direction, burst,
+					0xFFFFFF, state.bladeSummoned ? performer.bladeColor() : 0xFFD27F, true, 8 + (int) (burst * 2.0F)), self);
+			playSound(level, at, self, sound, 1.8F, 0.85F + self.getRandom().nextFloat() * 0.2F);
+		}
+
+		private static void finish(ServerLevel level, Performer performer, State state) {
+			LivingEntity self = performer.self();
+			LivingEntity victim = state.victim.entity();
+			Vec3 center = victim.getBoundingBox().getCenter();
+			Vec3 facing = facing(state.yaw);
+			state.finished = true;
+
+			victim.invulnerableTime = 0;
+			performer.strikeHit(victim, performer.strikeBudget() * SLASH_SHARE, true);
+			Vec3 from = center.subtract(facing.scale(0.8D));
+			NetworkHandler.sendToTrackingEntityAndSelf(new SwordSlashS2C(from.x, from.y, from.z, (float) facing.x, (float) facing.y, (float) facing.z,
+					0.45F, 0.0F, 3.6F, performer.bladeColor(), 0xFFFFFF, 10), self);
+			NetworkHandler.sendToTrackingEntityAndSelf(new ImpactBurstVfxS2C(center, facing, 4.0F, 0xFFFFFF, performer.bladeColor(), true, 18), self);
+			NetworkHandler.sendToTrackingEntityAndSelf(new TriggerImpactFrameS2C(0.85F, 0.05F, 3, false), self);
+			NetworkHandler.sendToTrackingEntityAndSelf(new KiBurstVfxS2C(self.getId(), true, 10.0F), self);
+			playSound(level, center, self, MainSounds.CRITICO1.get(), 3.0F, 0.8F);
+			playSound(level, center, self, MainSounds.SWORD_SLASH.get(), 2.0F, 0.7F);
+
+			HeldVictim held = state.victim;
+			state.victim = null;
+			held.release();
+			if (victim.isAlive()) KnockbackHelper.apply(victim, facing.scale(FINAL_PUSH).add(0.0D, FINAL_LIFT, 0.0D));
+		}
+
+		private static void groundImpact(ServerLevel level, LivingEntity self, Vec3 at, float scale) {
+			level.sendParticles(MainParticles.ROCK.get(), at.x, at.y + 0.2D, at.z, 30, scale * 0.3D, 0.3D, scale * 0.3D, 0.25D);
+			NetworkHandler.sendToTrackingEntityAndSelf(new ShockwaveVfxS2C(at.x, at.y + 0.2D, at.z, scale, 0xFFE0A0, 12), self);
+			playSound(level, at, self, MainSounds.KNOCKBACK_CHARACTER.get(), 2.0F, 0.7F);
+		}
+
+		private static Vec3 grounded(ServerLevel level, Vec3 at) {
+			double floor = groundHeight(level, at.x, at.z, at.y + 0.5D);
+			if (at.y - floor > MAX_DROP) return at;
+			return new Vec3(at.x, floor, at.z);
+		}
+
+		private static Vec3 clearAbove(ServerLevel level, LivingEntity victim, Vec3 from, double height) {
+			for (double h = height; h > 0.0D; h -= 0.5D) {
+				if (level.noCollision(victim, victim.getBoundingBox().move(from.add(0.0D, h, 0.0D).subtract(victim.position())))) {
+					return from.add(0.0D, h, 0.0D);
+				}
+			}
+			return from;
+		}
+
+		private static Vec3 clearPoint(ServerLevel level, LivingEntity self, Vec3 from, Vec3 wanted, double margin) {
+			BlockHitResult hit = level.clip(new ClipContext(from, wanted, ClipContext.Block.COLLIDER, ClipContext.Fluid.NONE, self));
+			if (hit.getType() == HitResult.Type.MISS) return wanted;
+			Vec3 dir = wanted.subtract(from);
+			double length = dir.length();
+			if (length < 1.0E-4D) return from;
+			return from.add(dir.scale(Math.max(0.0D, hit.getLocation().distanceTo(from) - margin) / length));
+		}
+
+		private static void playSound(ServerLevel level, Vec3 at, LivingEntity self, SoundEvent sound, float volume, float pitch) {
+			level.playSound(null, at.x, at.y, at.z, sound, self.getSoundSource(), volume, pitch);
+		}
+
+		private static double gap(LivingEntity self, LivingEntity target) {
+			return self.getBbWidth() * 0.5D + target.getBbWidth() * 0.5D + VICTIM_GAP;
+		}
+
+		private static Vec3 facing(float yaw) {
+			return Vec3.directionFromRotation(0.0F, yaw);
+		}
+
+		private static double smooth(double t) {
+			return t * t * (3.0D - 2.0D * t);
+		}
+
+		private static double easeOut(double t) {
+			double inv = 1.0D - t;
+			return 1.0D - inv * inv;
+		}
+
+		private static float yawTowards(Vec3 from, Vec3 to) {
+			double dx = to.x - from.x;
+			double dz = to.z - from.z;
+			if (dx * dx + dz * dz < 1.0E-6D) return 0.0F;
+			return (float) (Mth.atan2(dz, dx) * (180.0D / Math.PI)) - 90.0F;
+		}
+
+		private static double groundHeight(ServerLevel level, double x, double z, double fromY) {
+			BlockPos.MutableBlockPos cursor = new BlockPos.MutableBlockPos();
+			int ix = Mth.floor(x);
+			int iz = Mth.floor(z);
+			int bottom = Math.max(level.getMinBuildHeight(), Mth.floor(fromY) - 64);
+			for (int y = Mth.floor(fromY) + 1; y >= bottom; y--) {
+				cursor.set(ix, y, iz);
+				if (!level.getBlockState(cursor).getCollisionShape(level, cursor).isEmpty()) return y + 1.0D;
+			}
+			return level.getMinBuildHeight();
+		}
+	}
+
+	public static final class PerfectRushCombo {
+
+		public static final String TECHNIQUE_ID = "perfect_rush";
+		public static final String ANIMATION = "skp.perfect_rush";
+		private static final int LEAD = 4;
+		public static final int DURATION = LEAD + 88;
+		public static final double RANGE = 14.0D;
+		public static final int COLOR_MAIN = 0xFFC93C;
+		public static final int COLOR_DARK = 0xFF8A00;
+		public static final int COLOR_SPARK = 0x7FC8FF;
+
+		private static final int POWER_TICK = LEAD + 1;
+		private static final int DASH_START = LEAD + 4;
+		private static final int DASH_END = LEAD + 8;
+		private static final int HOOK_TICK = LEAD + 9;
+		private static final int BACKHAND_TICK = LEAD + 12;
+		private static final int ELBOW_TICK = LEAD + 15;
+		private static final int KNEE_TICK = LEAD + 18;
+		private static final int LAUNCH_END = LEAD + 28;
+		private static final int LEAP_TICK = LEAD + 30;
+		private static final int APPEAR_TICK = LEAD + 33;
+		private static final int JAB_TICK = LEAD + 38;
+		private static final int STRAIGHT_TICK = LEAD + 41;
+		private static final int SECOND_RISE_END = LEAD + 49;
+		private static final int DASH_UP_TICK = LEAD + 49;
+		private static final int APPEAR_ABOVE_TICK = LEAD + 51;
+		private static final int HAMMER_TICK = LEAD + 62;
+		private static final int CRASH_TICK = LEAD + 68;
+		private static final int DESCEND_START = LEAD + 70;
+		private static final int DESCEND_END = LEAD + 78;
+
+		private static final double VICTIM_GAP = 0.3D;
+		private static final double HIT_NUDGE = 0.15D;
+		private static final double ELBOW_BUMP = 0.3D;
+		private static final double KNEE_BUMP = 0.5D;
+		private static final double LAUNCH_HEIGHT = 6.0D;
+		private static final double SECOND_RISE = 4.0D;
+		private static final double AIR_DROP = 0.3D;
+		private static final double OVER_HEIGHT = 0.8D;
+		private static final double LAND_BACK = 1.2D;
+		private static final double MAX_DROP = 30.0D;
+		private static final double MAX_VICTIM_DISTANCE = 48.0D;
+		private static final float HOOK_SHARE = 0.1F;
+		private static final float BACKHAND_SHARE = 0.1F;
+		private static final float ELBOW_SHARE = 0.1F;
+		private static final float KNEE_SHARE = 0.12F;
+		private static final float JAB_SHARE = 0.12F;
+		private static final float STRAIGHT_SHARE = 0.14F;
+		private static final float HAMMER_SHARE = 0.14F;
+		private static final float CRASH_SHARE = 0.18F;
+
+		public interface Performer {
+			LivingEntity self();
+
+			LivingEntity target();
+
+			void place(Vec3 position, float yaw);
+
+			float strikeBudget();
+
+			void strikeHit(LivingEntity victim, float amount, boolean lethal);
+		}
+
+		public static final class State {
+			private HeldVictim victim;
+			private float yaw;
+			private Vec3 origin;
+			private Vec3 base;
+			private Vec3 start;
+			private Vec3 held;
+			private Vec3 apex;
+			private Vec3 apex2;
+			private Vec3 air;
+			private Vec3 over;
+			private Vec3 ground;
+			private Vec3 land;
+			private boolean crashed;
+
+			public LivingEntity victim() {
+				return this.victim != null ? this.victim.entity() : null;
+			}
+		}
+
+		private PerfectRushCombo() {}
+
+		public static boolean tick(ServerLevel level, Performer performer, State state, int tick) {
+			LivingEntity self = performer.self();
+			self.fallDistance = 0.0F;
+
+			if (tick < DASH_START) {
+				LivingEntity target = performer.target();
+				if (!HeldVictim.canTarget(self, target)) return false;
+				if (state.origin == null) state.origin = self.position();
+				state.yaw = yawTowards(self.position(), target.position());
+				performer.place(state.origin, state.yaw);
+				if (tick == POWER_TICK) {
+					NetworkHandler.sendToTrackingEntityAndSelf(new KiBurstVfxS2C(self.getId(), true, 8.0F), self);
+					NetworkHandler.sendToTrackingEntityAndSelf(new ShockwaveVfxS2C(self.getX(), self.getY() + 0.1D, self.getZ(), 3.5F, COLOR_MAIN, 10), self);
+					playSound(level, self.position(), self, MainSounds.AURA_START.get(), 1.4F, 1.1F);
+				}
+				return true;
+			}
+
+			if (tick == DASH_START) {
+				LivingEntity target = performer.target();
+				if (!HeldVictim.canTarget(self, target) || target.level() != level || self.distanceTo(target) > RANGE + 6.0D) return false;
+				if (state.origin == null) state.origin = self.position();
+				state.yaw = yawTowards(self.position(), target.position());
+				state.start = target.position();
+				state.held = state.start;
+				state.base = state.start.subtract(facing(state.yaw).scale(gap(self, target)));
+				if (!level.noCollision(self, self.getBoundingBox().move(state.base.subtract(self.position())))) state.base = self.position();
+				state.victim = HeldVictim.canHold(self, target) ? HeldVictim.capture(target, DURATION + 20) : HeldVictim.root(target);
+				NetworkHandler.sendToTrackingEntityAndSelf(new AfterimageVfxS2C(self.getId(), 30, new Vec3[]{self.position()},
+						new float[]{state.yaw}, false), self);
+				NetworkHandler.sendToTrackingEntityAndSelf(new KiBurstVfxS2C(self.getId(), false, 6.0F), self);
+				playSound(level, self.position(), self, MainSounds.ZANZOKEN.get(), 1.5F, 0.9F);
+			}
+
+			if (state.base == null) return false;
+
+			if (state.crashed) {
+				if (state.victim != null) {
+					if (state.victim.entity().isAlive()) {
+						state.victim.hold(state.ground, state.yaw + 180.0F);
+					} else {
+						state.victim.release();
+						state.victim = null;
+					}
+				}
+				descend(level, performer, state, tick);
+				return true;
+			}
+
+			if (state.victim == null || !state.victim.isValid(self, MAX_VICTIM_DISTANCE)) return false;
+
+			LivingEntity victim = state.victim.entity();
+			Vec3 facing = facing(state.yaw);
+			Vec3 right = facing(state.yaw + 90.0F);
+			float faceBack = state.yaw + 180.0F;
+
+			if (tick < KNEE_TICK) {
+				double dash = smooth(Mth.clamp((tick - DASH_START) / (double) (DASH_END - DASH_START), 0.0D, 1.0D));
+				Vec3 dashed = state.origin.lerp(state.base, dash);
+				performer.place(dashed, state.yaw);
+				state.held = state.held.lerp(state.start, 0.4D);
+				if (tick == HOOK_TICK) {
+					state.held = state.start.add(right.scale(-HIT_NUDGE));
+					strike(level, performer, state, HOOK_SHARE, 2.0F, MainSounds.GOLPE4.get(), facing);
+					arc(level, self, victim, facing, 0.0F);
+					state.victim.flinch();
+				}
+				if (tick == BACKHAND_TICK) {
+					state.held = state.start.add(right.scale(HIT_NUDGE)).add(0.0D, -0.1D, 0.0D);
+					strike(level, performer, state, BACKHAND_SHARE, 2.0F, MainSounds.GOLPE5.get(), facing);
+					arc(level, self, victim, facing, 150.0F);
+					state.victim.flinch();
+				}
+				if (tick == ELBOW_TICK) {
+					state.held = state.start.add(0.0D, ELBOW_BUMP, 0.0D);
+					strike(level, performer, state, ELBOW_SHARE, 2.2F, MainSounds.GOLPE6.get(), new Vec3(0.0D, 1.0D, 0.0D));
+					arc(level, self, victim, facing, 80.0F);
+					state.victim.flinch();
+				}
+				state.victim.hold(state.held, faceBack);
+				return true;
+			}
+
+			if (tick < JAB_TICK) {
+				if (tick == KNEE_TICK) {
+					state.apex = clearAbove(level, victim, state.start, LAUNCH_HEIGHT);
+					state.apex2 = clearAbove(level, victim, state.start, LAUNCH_HEIGHT + SECOND_RISE);
+					if (state.apex2.y < state.apex.y) state.apex2 = state.apex;
+					state.air = state.apex.subtract(facing.scale(gap(self, victim))).subtract(0.0D, AIR_DROP, 0.0D);
+					strike(level, performer, state, KNEE_SHARE, 2.6F, MainSounds.CRITICO1.get(), new Vec3(0.0D, 1.0D, 0.0D));
+					state.victim.launched();
+					NetworkHandler.sendToTrackingEntityAndSelf(new ShockwaveVfxS2C(state.base.x, state.base.y + 0.1D, state.base.z, 4.0F, COLOR_MAIN, 10), self);
+					NetworkHandler.sendToTrackingEntityAndSelf(new TriggerImpactFrameS2C(0.6F, 0.05F, 2, false), self);
+					playSound(level, state.start, self, MainSounds.EVASION2.get(), 1.5F, 0.7F);
+				}
+				double lift = easeOut(Mth.clamp((tick - KNEE_TICK) / (double) (LAUNCH_END - KNEE_TICK), 0.0D, 1.0D));
+				state.held = state.start.add(0.0D, KNEE_BUMP, 0.0D).lerp(state.apex, lift);
+				state.victim.hold(state.held, faceBack);
+
+				if (tick < LEAP_TICK) {
+					performer.place(state.base, state.yaw);
+				} else {
+					if (tick == LEAP_TICK) {
+						NetworkHandler.sendToTrackingEntityAndSelf(new AfterimageVfxS2C(self.getId(), 30, new Vec3[]{self.position()},
+								new float[]{state.yaw}, false), self);
+						level.sendParticles(new DustParticleOptions(rgb(COLOR_SPARK), 1.4F), state.base.x, state.base.y + 0.6D, state.base.z,
+								40, 0.7D, 0.4D, 0.7D, 0.2D);
+						level.sendParticles(ParticleTypes.ELECTRIC_SPARK, state.base.x, state.base.y + 0.6D, state.base.z, 20, 0.6D, 0.4D, 0.6D, 0.3D);
+						level.sendParticles(MainParticles.DUST.get(), state.base.x, state.base.y + 0.1D, state.base.z, 14, 0.5D, 0.1D, 0.5D, 0.05D);
+						playSound(level, state.base, self, MainSounds.ZANZOKEN.get(), 1.5F, 1.2F);
+					}
+					double rise = smooth(Mth.clamp((tick - LEAP_TICK) / (double) (APPEAR_TICK - LEAP_TICK), 0.0D, 1.0D));
+					performer.place(state.base.lerp(state.air, rise), state.yaw);
+				}
+				return true;
+			}
+
+			if (tick < HAMMER_TICK) {
+				if (tick == JAB_TICK) {
+					strike(level, performer, state, JAB_SHARE, 2.4F, MainSounds.CRITICO2.get(), facing);
+					arc(level, self, victim, facing, 20.0F);
+					state.victim.flinch();
+				}
+				if (tick == STRAIGHT_TICK) {
+					strike(level, performer, state, STRAIGHT_SHARE, 2.8F, MainSounds.CRITICO1.get(), new Vec3(facing.x, 1.0D, facing.z));
+					arc(level, self, victim, facing, -30.0F);
+					state.victim.launched();
+					NetworkHandler.sendToTrackingEntityAndSelf(new TriggerImpactFrameS2C(0.65F, 0.05F, 2, false), self);
+					playSound(level, state.apex, self, MainSounds.EVASION2.get(), 1.5F, 0.8F);
+				}
+				if (tick < STRAIGHT_TICK) {
+					state.held = state.apex;
+				} else {
+					double rise = easeOut(Mth.clamp((tick - STRAIGHT_TICK) / (double) (SECOND_RISE_END - STRAIGHT_TICK), 0.0D, 1.0D));
+					state.held = state.apex.lerp(state.apex2, rise);
+				}
+				state.victim.hold(state.held, faceBack);
+
+				if (tick == DASH_UP_TICK) {
+					state.over = state.apex2.add(0.0D, victim.getBbHeight() + OVER_HEIGHT, 0.0D).subtract(facing.scale(0.4D));
+					NetworkHandler.sendToTrackingEntityAndSelf(new AfterimageVfxS2C(self.getId(), 30, new Vec3[]{self.position()},
+							new float[]{state.yaw}, false), self);
+					level.sendParticles(new DustParticleOptions(rgb(COLOR_SPARK), 1.4F), self.getX(), self.getY() + 1.0D, self.getZ(),
+							24, 0.5D, 0.6D, 0.5D, 0.2D);
+					playSound(level, self.position(), self, MainSounds.ZANZOKEN.get(), 1.5F, 1.0F);
+				}
+				if (tick < DASH_UP_TICK) {
+					performer.place(state.air, state.yaw);
+				} else if (tick < APPEAR_ABOVE_TICK) {
+					double rise = smooth((tick - DASH_UP_TICK) / (double) (APPEAR_ABOVE_TICK - DASH_UP_TICK));
+					performer.place(state.air.lerp(state.over, rise), state.yaw);
+				} else {
+					performer.place(state.over, state.yaw);
+					if ((tick - APPEAR_ABOVE_TICK) % 3 == 0) charge(level, self);
+				}
+				return true;
+			}
+
+			if (tick < CRASH_TICK) {
+				if (tick == HAMMER_TICK) {
+					state.ground = grounded(level, state.held);
+					strike(level, performer, state, HAMMER_SHARE, 3.2F, MainSounds.CRITICO1.get(), new Vec3(0.0D, -1.0D, 0.0D));
+					arc(level, self, victim, new Vec3(facing.x, -1.0D, facing.z), 90.0F);
+					state.victim.knockDown();
+					NetworkHandler.sendToTrackingEntityAndSelf(new TriggerImpactFrameS2C(0.8F, 0.05F, 3, true), self);
+					NetworkHandler.sendToTrackingEntityAndSelf(new KiBurstVfxS2C(self.getId(), false, 8.0F), self);
+				}
+				double fall = Math.pow(Mth.clamp((tick - HAMMER_TICK) / (double) (CRASH_TICK - HAMMER_TICK), 0.0D, 1.0D), 2.0D);
+				state.held = state.apex2.lerp(state.ground, fall);
+				state.victim.hold(state.held, faceBack);
+				performer.place(state.over, state.yaw);
+				return true;
+			}
+
+			performer.place(state.over, state.yaw);
+			crash(level, performer, state);
+			return true;
+		}
+
+		public static void release(State state) {
+			if (state.victim != null) {
+				state.victim.release();
+				state.victim = null;
+			}
+			state.origin = null;
+			state.base = null;
+			state.apex = null;
+			state.apex2 = null;
+			state.air = null;
+			state.over = null;
+			state.ground = null;
+			state.land = null;
+			state.crashed = false;
+		}
+
+		private static void strike(ServerLevel level, Performer performer, State state, float share, float burst, SoundEvent sound, Vec3 direction) {
+			LivingEntity self = performer.self();
+			LivingEntity target = state.victim.entity();
+			target.invulnerableTime = 0;
+			performer.strikeHit(target, performer.strikeBudget() * share, false);
+
+			Vec3 center = target.getBoundingBox().getCenter();
+			NetworkHandler.sendToTrackingEntityAndSelf(new ImpactBurstVfxS2C(center, direction, burst,
+					0xFFFFFF, COLOR_MAIN, true, 8 + (int) (burst * 2.0F)), self);
+			playSound(level, center, self, sound, 1.8F, 0.85F + self.getRandom().nextFloat() * 0.2F);
+		}
+
+		private static void arc(ServerLevel level, LivingEntity self, LivingEntity victim, Vec3 direction, float roll) {
+			Vec3 center = victim.getBoundingBox().getCenter();
+			Vec3 dir = direction.normalize();
+			Vec3 from = center.subtract(dir.scale(0.6D));
+			NetworkHandler.sendToTrackingEntityAndSelf(new SwordSlashS2C(from.x, from.y, from.z, (float) dir.x, (float) dir.y, (float) dir.z,
+					0.5F, roll, 1.6F, COLOR_MAIN, 0xFFFFFF, 8), self);
+		}
+
+		private static void charge(ServerLevel level, LivingEntity self) {
+			level.sendParticles(ParticleTypes.ELECTRIC_SPARK, self.getX(), self.getY() + self.getBbHeight() * 0.6D, self.getZ(),
+					4, 0.4D, 0.5D, 0.4D, 0.15D);
+			level.sendParticles(new DustParticleOptions(rgb(COLOR_MAIN), 1.2F), self.getX(), self.getY() + self.getBbHeight() * 0.6D, self.getZ(),
+					4, 0.4D, 0.5D, 0.4D, 0.0D);
+		}
+
+		private static void crash(ServerLevel level, Performer performer, State state) {
+			LivingEntity self = performer.self();
+			LivingEntity victim = state.victim.entity();
+			state.crashed = true;
+			state.victim.hold(state.ground, state.yaw + 180.0F);
+			victim.invulnerableTime = 0;
+			performer.strikeHit(victim, performer.strikeBudget() * CRASH_SHARE, true);
+			state.victim.knockOut();
+
+			NetworkHandler.sendToTrackingEntityAndSelf(new ImpactBurstVfxS2C(state.ground, new Vec3(0.0D, -1.0D, 0.0D), 5.5F,
+					COLOR_MAIN, COLOR_DARK, false, 18), self);
+			NetworkHandler.sendToTrackingEntityAndSelf(new TriggerImpactFrameS2C(0.85F, 0.05F, 3, false), self);
+			groundImpact(level, self, state.ground, 8.0F);
+			playSound(level, state.ground, self, MainSounds.CRITICO1.get(), 3.0F, 0.7F);
+			playSound(level, state.ground, self, MainSounds.ANCHOR_SLAM.get(), 2.5F, 0.8F);
+
+			if (!victim.isAlive()) {
+				state.victim.release();
+				state.victim = null;
+			}
+		}
+
+		private static void descend(ServerLevel level, Performer performer, State state, int tick) {
+			LivingEntity self = performer.self();
+			if (state.land == null) {
+				Vec3 wanted = state.ground.subtract(facing(state.yaw).scale(gap(self, self) + LAND_BACK));
+				state.land = grounded(level, wanted);
+				if (Math.abs(state.land.y - state.ground.y) > 3.0D) state.land = new Vec3(wanted.x, state.ground.y, wanted.z);
+			}
+			if (tick < DESCEND_START) {
+				performer.place(state.over, state.yaw);
+				return;
+			}
+			double u = Mth.clamp((tick - DESCEND_START) / (double) (DESCEND_END - DESCEND_START), 0.0D, 1.0D);
+			performer.place(state.over.lerp(state.land, u * u), state.yaw);
+			if (tick == DESCEND_START) playSound(level, state.over, self, MainSounds.EVASION1.get(), 1.2F, 0.9F);
+			if (tick == DESCEND_END) {
+				level.sendParticles(MainParticles.DUST.get(), state.land.x, state.land.y + 0.1D, state.land.z, 14, 0.5D, 0.1D, 0.5D, 0.04D);
+				playSound(level, state.land, self, MainSounds.KNOCKBACK_CHARACTER.get(), 0.9F, 1.2F);
+			}
+		}
+
+		private static void groundImpact(ServerLevel level, LivingEntity self, Vec3 at, float scale) {
+			level.sendParticles(MainParticles.ROCK.get(), at.x, at.y + 0.2D, at.z, 50, scale * 0.3D, 0.3D, scale * 0.3D, 0.3D);
+			level.sendParticles(MainParticles.DUST.get(), at.x, at.y + 0.2D, at.z, 60, scale * 0.35D, 0.3D, scale * 0.35D, 0.1D);
+			NetworkHandler.sendToTrackingEntityAndSelf(new ShockwaveVfxS2C(at.x, at.y + 0.2D, at.z, scale, COLOR_MAIN, 14), self);
+			playSound(level, at, self, MainSounds.KNOCKBACK_CHARACTER.get(), 2.0F, 0.7F);
+		}
+
+		private static Vector3f rgb(int color) {
+			return new Vector3f(((color >> 16) & 0xFF) / 255.0F, ((color >> 8) & 0xFF) / 255.0F, (color & 0xFF) / 255.0F);
+		}
+
+		private static Vec3 grounded(ServerLevel level, Vec3 at) {
+			double floor = groundHeight(level, at.x, at.z, at.y + 0.5D);
+			if (at.y - floor > MAX_DROP) return at;
+			return new Vec3(at.x, floor, at.z);
+		}
+
+		private static Vec3 clearAbove(ServerLevel level, LivingEntity victim, Vec3 from, double height) {
+			for (double h = height; h > 0.0D; h -= 0.5D) {
+				if (level.noCollision(victim, victim.getBoundingBox().move(from.add(0.0D, h, 0.0D).subtract(victim.position())))) {
+					return from.add(0.0D, h, 0.0D);
+				}
+			}
+			return from;
+		}
+
+		private static void playSound(ServerLevel level, Vec3 at, LivingEntity self, SoundEvent sound, float volume, float pitch) {
+			level.playSound(null, at.x, at.y, at.z, sound, self.getSoundSource(), volume, pitch);
+		}
+
+		private static double gap(LivingEntity self, LivingEntity target) {
+			return self.getBbWidth() * 0.5D + target.getBbWidth() * 0.5D + VICTIM_GAP;
+		}
+
+		private static Vec3 facing(float yaw) {
+			return Vec3.directionFromRotation(0.0F, yaw);
+		}
+
+		private static double smooth(double t) {
+			return t * t * (3.0D - 2.0D * t);
+		}
+
+		private static double easeOut(double t) {
+			double inv = 1.0D - t;
+			return 1.0D - inv * inv;
+		}
+
+		private static float yawTowards(Vec3 from, Vec3 to) {
+			double dx = to.x - from.x;
+			double dz = to.z - from.z;
+			if (dx * dx + dz * dz < 1.0E-6D) return 0.0F;
+			return (float) (Mth.atan2(dz, dx) * (180.0D / Math.PI)) - 90.0F;
+		}
+
+		private static double groundHeight(ServerLevel level, double x, double z, double fromY) {
+			BlockPos.MutableBlockPos cursor = new BlockPos.MutableBlockPos();
+			int ix = Mth.floor(x);
+			int iz = Mth.floor(z);
+			int bottom = Math.max(level.getMinBuildHeight(), Mth.floor(fromY) - 64);
+			for (int y = Mth.floor(fromY) + 1; y >= bottom; y--) {
+				cursor.set(ix, y, iz);
+				if (!level.getBlockState(cursor).getCollisionShape(level, cursor).isEmpty()) return y + 1.0D;
+			}
+			return level.getMinBuildHeight();
+		}
+	}
+
+	public static final class SpiritBreakerCombo {
+
+		public static final String TECHNIQUE_ID = "spirit_breaker";
+		public static final String ANIMATION = "skp.spirit_breaker";
+		private static final int LEAD = 4;
+		public static final int DURATION = LEAD + 144;
+		public static final double RANGE = 14.0D;
+		public static final int COLOR_MAIN = 0xFFD23C;
+		public static final int COLOR_DARK = 0xFF8C1A;
+
+		private static final int DASH_START = LEAD + 2;
+		private static final int DASH_END = LEAD + 5;
+		private static final int GUT_TICK = LEAD + 6;
+		private static final int UPPERCUT_TICK = LEAD + 26;
+		private static final int LAUNCH_END = LEAD + 35;
+		private static final int POWER_TICK = LEAD + 32;
+		private static final int VANISH_TICK = LEAD + 38;
+		private static final int APPEAR_TICK = LEAD + 40;
+		private static final int[] FLURRY_TICKS = {LEAD + 41, LEAD + 45, LEAD + 49, LEAD + 53};
+		private static final int FLASH_TICK = LEAD + 48;
+		private static final int BIG_PUNCH_TICK = LEAD + 57;
+		private static final int BLOWN_END = LEAD + 67;
+		private static final int RAGE_TICK = LEAD + 64;
+		private static final int RAM_START = LEAD + 70;
+		private static final int RAM_TICK = LEAD + 73;
+		private static final int SLAM_TICK = LEAD + 82;
+		private static final int HOP_END = LEAD + 88;
+		private static final int JUMP_START = LEAD + 104;
+		private static final int JUMP_END = LEAD + 111;
+		private static final int FLAME_START = LEAD + 112;
+		private static final int FLIP_START = LEAD + 119;
+		private static final int AXE_TICK = LEAD + 127;
+		private static final int STEP_START = LEAD + 132;
+		private static final int STEP_END = LEAD + 136;
+
+		private static final double VICTIM_GAP = 0.3D;
+		private static final double GUT_PUSH = 0.25D;
+		private static final double LAUNCH_HEIGHT = 5.0D;
+		private static final double LAUNCH_DISTANCE = 3.0D;
+		private static final double AIR_DROP = 0.3D;
+		private static final double FLURRY_PUSH = 0.6D;
+		private static final double BLOWN_DISTANCE = 6.0D;
+		private static final double BLOWN_RISE = 1.0D;
+		private static final double RIDE_HEIGHT = 0.5D;
+		private static final double STAND_BACK = 0.8D;
+		private static final double HOP_ARC = 1.2D;
+		private static final double AXE_HEIGHT = 3.5D;
+		private static final double HEEL_HEIGHT = 0.2D;
+		private static final double MAX_DROP = 30.0D;
+		private static final double MAX_VICTIM_DISTANCE = 48.0D;
+		private static final float GUT_SHARE = 0.08F;
+		private static final float UPPERCUT_SHARE = 0.08F;
+		private static final float FLURRY_SHARE = 0.06F;
+		private static final float BIG_PUNCH_SHARE = 0.08F;
+		private static final float RAM_SHARE = 0.1F;
+		private static final float SLAM_SHARE = 0.12F;
+		private static final float AXE_SHARE = 0.3F;
+
+		public interface Performer {
+			LivingEntity self();
+
+			LivingEntity target();
+
+			void place(Vec3 position, float yaw);
+
+			float strikeBudget();
+
+			void strikeHit(LivingEntity victim, float amount, boolean lethal);
+		}
+
+		public static final class State {
+			private HeldVictim victim;
+			private float yaw;
+			private Vec3 origin;
+			private Vec3 base;
+			private Vec3 start;
+			private Vec3 held;
+			private Vec3 apex;
+			private Vec3 flurry;
+			private Vec3 far;
+			private Vec3 brace;
+			private Vec3 ram;
+			private Vec3 ground;
+			private Vec3 ride;
+			private Vec3 stand;
+			private Vec3 axeAir;
+			private Vec3 heel;
+			private Vec3 rest;
+			private boolean finished;
+
+			public LivingEntity victim() {
+				return this.victim != null ? this.victim.entity() : null;
+			}
+		}
+
+		private SpiritBreakerCombo() {}
+
+		public static boolean tick(ServerLevel level, Performer performer, State state, int tick) {
+			LivingEntity self = performer.self();
+			self.fallDistance = 0.0F;
+
+			if (tick < DASH_START) {
+				LivingEntity target = performer.target();
+				if (!HeldVictim.canTarget(self, target)) return false;
+				if (state.origin == null) state.origin = self.position();
+				state.yaw = yawTowards(self.position(), target.position());
+				performer.place(state.origin, state.yaw);
+				return true;
+			}
+
+			if (tick == DASH_START) {
+				LivingEntity target = performer.target();
+				if (!HeldVictim.canTarget(self, target) || target.level() != level || self.distanceTo(target) > RANGE + 6.0D) return false;
+				if (state.origin == null) state.origin = self.position();
+				state.yaw = yawTowards(self.position(), target.position());
+				state.start = target.position();
+				state.held = state.start;
+				state.base = state.start.subtract(facing(state.yaw).scale(gap(self, target)));
+				if (!level.noCollision(self, self.getBoundingBox().move(state.base.subtract(self.position())))) state.base = self.position();
+				state.victim = HeldVictim.canHold(self, target) ? HeldVictim.capture(target, DURATION + 20) : HeldVictim.root(target);
+				NetworkHandler.sendToTrackingEntityAndSelf(new AfterimageVfxS2C(self.getId(), 30, new Vec3[]{self.position()},
+						new float[]{state.yaw}, false), self);
+				playSound(level, self.position(), self, MainSounds.ZANZOKEN.get(), 1.5F, 0.9F);
+			}
+
+			if (state.base == null) return false;
+
+			if (state.finished) {
+				if (state.victim != null) {
+					if (state.victim.entity().isAlive()) {
+						state.victim.hold(state.ground, state.yaw + 180.0F);
+					} else {
+						state.victim.release();
+						state.victim = null;
+					}
+				}
+				stepBack(level, performer, state, tick);
+				return true;
+			}
+
+			if (state.victim == null || !state.victim.isValid(self, MAX_VICTIM_DISTANCE)) return false;
+
+			LivingEntity victim = state.victim.entity();
+			Vec3 facing = facing(state.yaw);
+			float faceBack = state.yaw + 180.0F;
+
+			if (tick < UPPERCUT_TICK) {
+				double dash = smooth(Mth.clamp((tick - DASH_START) / (double) (DASH_END - DASH_START), 0.0D, 1.0D));
+				performer.place(state.origin.lerp(state.base, dash), state.yaw);
+				if (tick < GUT_TICK) state.held = state.held.lerp(state.start, 0.4D);
+				if (tick == GUT_TICK) {
+					state.held = state.start.add(facing.scale(GUT_PUSH));
+					strike(level, performer, state, GUT_SHARE, 2.8F, MainSounds.CRITICO2.get(), facing);
+					state.victim.flinch();
+					NetworkHandler.sendToTrackingEntityAndSelf(new TriggerImpactFrameS2C(0.8F, 0.05F, 6, true), self);
+					NetworkHandler.sendToTrackingEntityAndSelf(new ShockwaveVfxS2C(state.held.x, state.held.y + victim.getBbHeight() * 0.5D, state.held.z,
+							2.5F, COLOR_MAIN, 8), self);
+				}
+				state.victim.hold(state.held, faceBack);
+				return true;
+			}
+
+			if (tick < APPEAR_TICK) {
+				if (tick == UPPERCUT_TICK) {
+					Vec3 lifted = state.held.add(0.0D, 1.0D, 0.0D);
+					state.apex = clearPoint(level, self, lifted, state.held.add(facing.scale(LAUNCH_DISTANCE)).add(0.0D, LAUNCH_HEIGHT, 0.0D),
+							victim.getBbWidth() * 0.5D + 0.2D);
+					strike(level, performer, state, UPPERCUT_SHARE, 2.6F, MainSounds.CRITICO1.get(), new Vec3(0.0D, 1.0D, 0.0D));
+					state.victim.launched();
+					NetworkHandler.sendToTrackingEntityAndSelf(new ShockwaveVfxS2C(state.held.x, state.held.y + 1.0D, state.held.z, 3.5F, 0xFFFFFF, 10), self);
+					playSound(level, state.held, self, MainSounds.EVASION2.get(), 1.5F, 0.7F);
+				}
+				double lift = easeOut(Mth.clamp((tick - UPPERCUT_TICK) / (double) (LAUNCH_END - UPPERCUT_TICK), 0.0D, 1.0D));
+				Vec3 launchFrom = state.start.add(facing.scale(GUT_PUSH));
+				state.victim.hold(launchFrom.lerp(state.apex, lift), faceBack);
+				if (tick == POWER_TICK) {
+					NetworkHandler.sendToTrackingEntityAndSelf(new KiBurstVfxS2C(self.getId(), true, 10.0F), self);
+					NetworkHandler.sendToTrackingEntityAndSelf(new ShockwaveVfxS2C(state.base.x, state.base.y + 0.1D, state.base.z, 4.5F, COLOR_MAIN, 12), self);
+					playSound(level, state.base, self, MainSounds.AURA_START.get(), 1.6F, 0.8F);
+				}
+				if (tick >= POWER_TICK && tick < VANISH_TICK) sparks(level, self, 0.6D);
+				if (tick == VANISH_TICK) {
+					state.held = state.apex;
+					NetworkHandler.sendToTrackingEntityAndSelf(new AfterimageVfxS2C(self.getId(), 30, new Vec3[]{self.position()},
+							new float[]{state.yaw}, false), self);
+					level.sendParticles(ParticleTypes.ELECTRIC_SPARK, state.base.x, state.base.y + 1.0D, state.base.z, 20, 0.5D, 0.6D, 0.5D, 0.3D);
+					playSound(level, state.base, self, MainSounds.ZANZOKEN.get(), 1.5F, 1.2F);
+				}
+				if (tick < VANISH_TICK) {
+					performer.place(state.base, state.yaw);
+				} else {
+					double rise = smooth((tick - VANISH_TICK) / (double) (APPEAR_TICK - VANISH_TICK));
+					performer.place(state.base.lerp(airBehind(state.apex, facing, self, victim), rise), state.yaw);
+				}
+				return true;
+			}
+
+			if (tick < RAM_START) {
+				if (tick == APPEAR_TICK) state.flurry = state.apex;
+				for (int i = 0; i < FLURRY_TICKS.length; i++) {
+					if (FLURRY_TICKS[i] != tick) continue;
+					Vec3 pushed = clearPoint(level, self, state.flurry, state.flurry.add(facing.scale(FLURRY_PUSH)), victim.getBbWidth() * 0.5D + 0.2D);
+					state.flurry = pushed;
+					Vec3 direction = i % 2 == 0 ? facing.add(0.0D, 0.3D, 0.0D) : facing;
+					strike(level, performer, state, FLURRY_SHARE, 2.2F, i % 2 == 0 ? MainSounds.GOLPE4.get() : MainSounds.GOLPE5.get(), direction);
+					state.victim.flinch();
+				}
+				if (tick == FLASH_TICK) NetworkHandler.sendToTrackingEntityAndSelf(new TriggerImpactFrameS2C(0.6F, 0.05F, 2, false), self);
+
+				if (tick < BIG_PUNCH_TICK) {
+					state.held = state.held.lerp(state.flurry, 0.5D);
+					state.victim.hold(state.held, faceBack);
+					performer.place(airBehind(state.held, facing, self, victim), state.yaw);
+					return true;
+				}
+
+				if (tick == BIG_PUNCH_TICK) {
+					state.brace = self.position();
+					state.far = clearPoint(level, self, state.flurry, state.flurry.add(facing.scale(BLOWN_DISTANCE)).add(0.0D, BLOWN_RISE, 0.0D),
+							victim.getBbWidth() * 0.5D + 0.3D);
+					strike(level, performer, state, BIG_PUNCH_SHARE, 3.2F, MainSounds.CRITICO1.get(), facing);
+					state.victim.launched();
+					NetworkHandler.sendToTrackingEntityAndSelf(new TriggerImpactFrameS2C(0.75F, 0.05F, 3, false), self);
+					NetworkHandler.sendToTrackingEntityAndSelf(new ShockwaveVfxS2C(state.flurry.x, state.flurry.y + 1.0D, state.flurry.z, 4.0F, COLOR_MAIN, 10), self);
+				}
+				double blown = easeOut(Mth.clamp((tick - BIG_PUNCH_TICK) / (double) (BLOWN_END - BIG_PUNCH_TICK), 0.0D, 1.0D));
+				state.held = state.flurry.lerp(state.far, blown);
+				state.victim.hold(state.held, faceBack);
+				performer.place(state.brace, state.yaw);
+				if (tick == RAGE_TICK) {
+					NetworkHandler.sendToTrackingEntityAndSelf(new KiBurstVfxS2C(self.getId(), true, 9.0F), self);
+					playSound(level, state.brace, self, MainSounds.KI_CHARGE_LOOP.get(), 1.5F, 1.4F);
+				}
+				if (tick >= RAGE_TICK) sparks(level, self, 0.8D);
+				return true;
+			}
+
+			if (tick < SLAM_TICK) {
+				if (tick == RAM_START) {
+					state.ram = state.far.subtract(facing.scale(gap(self, victim))).add(0.0D, RIDE_HEIGHT, 0.0D);
+					state.ground = grounded(level, state.far);
+					NetworkHandler.sendToTrackingEntityAndSelf(new AfterimageVfxS2C(self.getId(), 30, new Vec3[]{self.position()},
+							new float[]{state.yaw}, false), self);
+					NetworkHandler.sendToTrackingEntityAndSelf(new KiBurstVfxS2C(self.getId(), false, 7.0F), self);
+					playSound(level, state.brace, self, MainSounds.ZANZOKEN.get(), 1.5F, 0.8F);
+				}
+				if (tick <= RAM_TICK) {
+					double dash = smooth((tick - RAM_START) / (double) (RAM_TICK - RAM_START));
+					performer.place(state.brace.lerp(state.ram, dash), state.yaw);
+					state.victim.hold(state.far, faceBack);
+					if (tick == RAM_TICK) {
+						strike(level, performer, state, RAM_SHARE, 3.6F, MainSounds.CRITICO2.get(), new Vec3(facing.x, -0.6D, facing.z));
+						state.victim.knockDown();
+						NetworkHandler.sendToTrackingEntityAndSelf(new TriggerImpactFrameS2C(0.85F, 0.05F, 3, true), self);
+						NetworkHandler.sendToTrackingEntityAndSelf(new ImpactBurstVfxS2C(state.far.add(0.0D, 1.0D, 0.0D), facing, 5.0F,
+								0xFFFFFF, COLOR_MAIN, false, 14), self);
+					}
+					return true;
+				}
+				double fall = Math.pow((tick - RAM_TICK) / (double) (SLAM_TICK - RAM_TICK), 2.0D);
+				state.held = state.far.lerp(state.ground, fall);
+				state.victim.hold(state.held, faceBack);
+				state.ride = state.held.add(0.0D, RIDE_HEIGHT, 0.0D).subtract(facing.scale(0.3D));
+				performer.place(state.ride, state.yaw);
+				return true;
+			}
+
+			if (tick == SLAM_TICK) {
+				state.victim.hold(state.ground, faceBack);
+				strike(level, performer, state, SLAM_SHARE, 3.4F, MainSounds.ANCHOR_SLAM.get(), new Vec3(0.0D, -1.0D, 0.0D));
+				state.victim.knockDown();
+				groundImpact(level, self, state.ground, 6.0F);
+				NetworkHandler.sendToTrackingEntityAndSelf(new TriggerImpactFrameS2C(0.75F, 0.05F, 2, false), self);
+				Vec3 wanted = state.ground.subtract(facing.scale(gap(self, victim) + STAND_BACK));
+				state.stand = grounded(level, wanted);
+				if (Math.abs(state.stand.y - state.ground.y) > 3.0D) state.stand = new Vec3(wanted.x, state.ground.y, wanted.z);
+				state.axeAir = state.ground.subtract(facing.scale(gap(self, victim) * 0.8D)).add(0.0D, AXE_HEIGHT, 0.0D);
+				state.heel = state.ground.subtract(facing.scale(gap(self, victim) * 0.6D)).add(0.0D, HEEL_HEIGHT, 0.0D);
+				performer.place(state.ride, state.yaw);
+				return true;
+			}
+
+			state.victim.hold(state.ground, faceBack);
+
+			if (tick <= HOP_END) {
+				double u = (tick - SLAM_TICK) / (double) (HOP_END - SLAM_TICK);
+				performer.place(state.ride.lerp(state.stand, u).add(0.0D, Math.sin(u * Math.PI) * HOP_ARC, 0.0D), state.yaw);
+				if (tick == HOP_END) level.sendParticles(MainParticles.DUST.get(), state.stand.x, state.stand.y + 0.1D, state.stand.z, 10, 0.4D, 0.1D, 0.4D, 0.03D);
+				return true;
+			}
+
+			if (tick < JUMP_START) {
+				performer.place(state.stand, state.yaw);
+				return true;
+			}
+
+			if (tick <= JUMP_END) {
+				double u = smooth((tick - JUMP_START) / (double) (JUMP_END - JUMP_START));
+				performer.place(state.stand.lerp(state.axeAir, u), state.yaw);
+				if (tick == JUMP_START) playSound(level, state.stand, self, MainSounds.EVASION1.get(), 1.3F, 1.0F);
+				return true;
+			}
+
+			if (tick < FLIP_START) {
+				performer.place(state.axeAir, state.yaw);
+				if (tick >= FLAME_START && (tick - FLAME_START) % 2 == 0) flames(level, self);
+				if (tick == FLAME_START) {
+					NetworkHandler.sendToTrackingEntityAndSelf(new KiBurstVfxS2C(self.getId(), true, 8.0F), self);
+					playSound(level, state.axeAir, self, MainSounds.AURA_START.get(), 1.5F, 1.0F);
+				}
+				return true;
+			}
+
+			if (tick < AXE_TICK) {
+				double u = Math.pow((tick - FLIP_START) / (double) (AXE_TICK - FLIP_START), 2.0D);
+				performer.place(state.axeAir.lerp(state.heel, u), state.yaw);
+				if (tick == FLIP_START || tick == FLIP_START + 4) {
+					Vec3 center = self.position().add(0.0D, self.getBbHeight() * 0.5D, 0.0D);
+					NetworkHandler.sendToTrackingEntityAndSelf(new SwordSlashS2C(center.x, center.y, center.z, (float) facing.x, 0.0F, (float) facing.z,
+							0.6F, 90.0F, 1.8F, COLOR_MAIN, 0xFFFFFF, 8), self);
+				}
+				if (tick == FLIP_START) playSound(level, state.axeAir, self, MainSounds.EVASION2.get(), 1.6F, 0.6F);
+				if (tick == AXE_TICK - 2) playSound(level, state.axeAir, self, MainSounds.KI_EXPLOSION_CHARGE.get(), 1.4F, 1.4F);
+				return true;
+			}
+
+			performer.place(state.heel, state.yaw);
+			axe(level, performer, state);
+			return true;
+		}
+
+		public static void release(State state) {
+			if (state.victim != null) {
+				state.victim.release();
+				state.victim = null;
+			}
+			state.origin = null;
+			state.base = null;
+			state.apex = null;
+			state.flurry = null;
+			state.far = null;
+			state.brace = null;
+			state.ram = null;
+			state.ground = null;
+			state.ride = null;
+			state.stand = null;
+			state.axeAir = null;
+			state.heel = null;
+			state.rest = null;
+			state.finished = false;
+		}
+
+		private static Vec3 airBehind(Vec3 victimPos, Vec3 facing, LivingEntity self, LivingEntity victim) {
+			return victimPos.subtract(facing.scale(gap(self, victim))).subtract(0.0D, AIR_DROP, 0.0D);
+		}
+
+		private static void strike(ServerLevel level, Performer performer, State state, float share, float burst, SoundEvent sound, Vec3 direction) {
+			LivingEntity self = performer.self();
+			LivingEntity target = state.victim.entity();
+			target.invulnerableTime = 0;
+			performer.strikeHit(target, performer.strikeBudget() * share, false);
+
+			Vec3 center = target.getBoundingBox().getCenter();
+			NetworkHandler.sendToTrackingEntityAndSelf(new ImpactBurstVfxS2C(center, direction, burst,
+					0xFFFFFF, COLOR_MAIN, true, 8 + (int) (burst * 2.0F)), self);
+			playSound(level, center, self, sound, 1.8F, 0.85F + self.getRandom().nextFloat() * 0.2F);
+		}
+
+		private static void axe(ServerLevel level, Performer performer, State state) {
+			LivingEntity self = performer.self();
+			LivingEntity victim = state.victim.entity();
+			state.finished = true;
+			victim.invulnerableTime = 0;
+			performer.strikeHit(victim, performer.strikeBudget() * AXE_SHARE, true);
+			state.victim.knockOut();
+
+			Vec3 at = state.ground;
+			NetworkHandler.sendToTrackingEntityAndSelf(new ImpactBurstVfxS2C(at.add(0.0D, 0.5D, 0.0D), new Vec3(0.0D, -1.0D, 0.0D), 7.5F,
+					COLOR_MAIN, COLOR_DARK, false, 20), self);
+			NetworkHandler.sendToTrackingEntityAndSelf(new TriggerImpactFrameS2C(0.9F, 0.05F, 5, true), self);
+			NetworkHandler.sendToTrackingEntityAndSelf(new KiBurstVfxS2C(self.getId(), true, 14.0F), self);
+			NetworkHandler.sendToTrackingEntityAndSelf(new ShockwaveVfxS2C(at.x, at.y + 0.3D, at.z, 13.0F, 0xFFFFFF, 18), self);
+			KiExplosionVisualEntity visual = new KiExplosionVisualEntity(MainEntities.KI_EXPLOSION_VISUAL.get(), level);
+			visual.setupExplosion(COLOR_MAIN, COLOR_DARK, COLOR_DARK, 5.5F);
+			visual.moveTo(at.x, at.y + 0.3D, at.z, 0.0F, 0.0F);
+			level.addFreshEntity(visual);
+			groundImpact(level, self, at, 9.0F);
+			playSound(level, at, self, MainSounds.CRITICO1.get(), 3.0F, 0.7F);
+			playSound(level, at, self, MainSounds.KI_EXPLOSION_IMPACT.get(), 2.5F, 0.9F);
+			playSound(level, at, self, MainSounds.ANCHOR_SLAM.get(), 3.0F, 0.6F);
+
+			if (!victim.isAlive()) {
+				state.victim.release();
+				state.victim = null;
+			}
+		}
+
+		private static void stepBack(ServerLevel level, Performer performer, State state, int tick) {
+			LivingEntity self = performer.self();
+			if (state.rest == null) {
+				Vec3 wanted = state.ground.subtract(facing(state.yaw).scale(self.getBbWidth() + VICTIM_GAP + 0.4D));
+				state.rest = grounded(level, wanted);
+				if (Math.abs(state.rest.y - state.ground.y) > 3.0D) state.rest = new Vec3(wanted.x, state.ground.y, wanted.z);
+			}
+			if (tick < STEP_START) {
+				performer.place(state.heel, state.yaw);
+				return;
+			}
+			double u = Mth.clamp((tick - STEP_START) / (double) (STEP_END - STEP_START), 0.0D, 1.0D);
+			performer.place(state.heel.lerp(state.rest, u).add(0.0D, Math.sin(u * Math.PI) * 0.6D, 0.0D), state.yaw);
+		}
+
+		private static void sparks(ServerLevel level, LivingEntity self, double spread) {
+			level.sendParticles(ParticleTypes.ELECTRIC_SPARK, self.getX(), self.getY() + self.getBbHeight() * 0.6D, self.getZ(),
+					3, spread * 0.5D, spread, spread * 0.5D, 0.15D);
+		}
+
+		private static void flames(ServerLevel level, LivingEntity self) {
+			level.sendParticles(ParticleTypes.FLAME, self.getX(), self.getY() + self.getBbHeight() * 0.5D, self.getZ(),
+					5, 0.35D, 0.6D, 0.35D, 0.02D);
+			level.sendParticles(ParticleTypes.ELECTRIC_SPARK, self.getX(), self.getY() + self.getBbHeight() * 0.6D, self.getZ(),
+					2, 0.3D, 0.5D, 0.3D, 0.1D);
+		}
+
+		private static void groundImpact(ServerLevel level, LivingEntity self, Vec3 at, float scale) {
+			level.sendParticles(MainParticles.ROCK.get(), at.x, at.y + 0.2D, at.z, 50, scale * 0.3D, 0.3D, scale * 0.3D, 0.3D);
+			level.sendParticles(MainParticles.DUST.get(), at.x, at.y + 0.2D, at.z, 60, scale * 0.35D, 0.3D, scale * 0.35D, 0.1D);
+			NetworkHandler.sendToTrackingEntityAndSelf(new ShockwaveVfxS2C(at.x, at.y + 0.2D, at.z, scale, COLOR_MAIN, 14), self);
+			playSound(level, at, self, MainSounds.KNOCKBACK_CHARACTER.get(), 2.0F, 0.7F);
 		}
 
 		private static Vec3 grounded(ServerLevel level, Vec3 at) {

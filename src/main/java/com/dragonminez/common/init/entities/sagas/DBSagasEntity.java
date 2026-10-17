@@ -159,7 +159,8 @@ public abstract class DBSagasEntity extends Monster implements GeoEntity, ITextu
         SOUL_PUNISHER(33, SkillRole.RANGED_TRAVEL, Tier.STRONG, 0xFFFFFF, 0xFFFFFF, 0xFFFFFF),
         KI_MEDIUM_BALL(34, SkillRole.RANGED_TRAVEL, Tier.MEDIUM, 0xFFF1C2, 0xFFB52E, 0xC46A00),
         OOZARU_FIST(35, SkillRole.AOE_BURST, Tier.STRONG),
-        OOZARU_SLAM(36, SkillRole.AOE_BURST, Tier.STRONG);
+        OOZARU_SLAM(36, SkillRole.AOE_BURST, Tier.STRONG),
+        GUM_BIND(37, SkillRole.ZONING, Tier.MEDIUM);
 
         private final int id;
         private final SkillRole role;
@@ -196,7 +197,8 @@ public abstract class DBSagasEntity extends Monster implements GeoEntity, ITextu
         METEOR_COMBINATION(3, Tier.STRONG), ANDROID_ABSORPTION(4, Tier.STRONG),
         GUM_PUNCH(5, Tier.MEDIUM), GUM_EXPAND(6, Tier.WEAK), SLEEP_RECOVERY(7, Tier.WEAK),
         RAPID_KICKS(8, Tier.WEAK), SPIRIT_BREAKING_CANNON(9, Tier.STRONG), SUPER_GOD_FIST(11, Tier.STRONG),
-        DEADLY_DANCE_VEGETTO(12, Tier.STRONG), METEOR_BURST(13, Tier.STRONG), MYSTIC_BALL(14, Tier.STRONG);
+        DEADLY_DANCE_VEGETTO(12, Tier.STRONG), METEOR_BURST(13, Tier.STRONG), MYSTIC_BALL(14, Tier.STRONG),
+        BEAM_SWORD_SLASH(15, Tier.STRONG), PERFECT_RUSH(16, Tier.STRONG), SPIRIT_BREAKER(17, Tier.STRONG);
 
         private final int id;
         private final Tier tier;
@@ -350,6 +352,7 @@ public abstract class DBSagasEntity extends Monster implements GeoEntity, ITextu
     public static final String HURT_ANIM_GRABBED = "grabbed";
     public static final String HURT_ANIM_KO = "knocked_out";
     public static final String HURT_ANIM_PARRIED = "parried";
+    public static final String HURT_ANIM_GUM_BOUND = "gum_bound";
 
     @Getter @Setter
     private boolean isAttacking = false;
@@ -1146,7 +1149,7 @@ public abstract class DBSagasEntity extends Monster implements GeoEntity, ITextu
 
                     if (this.castTimer == 1) {
                         if (skill != 7 && skill != 13 && skill != 22 && skill != 23 && skill != 25 && skill != 31 && skill != 32
-                                && skill != 35 && skill != 36) {
+                                && skill != 35 && skill != 36 && skill != 37) {
                             executeSkillEffect(skill);
                         }
                     }
@@ -1179,6 +1182,10 @@ public abstract class DBSagasEntity extends Monster implements GeoEntity, ITextu
 
                     if (skill == 25 && this.castTimer == SkillManager.TAIYOKEN_FLASH_TICK) {
                         SkillManager.castTaiyoken(this);
+                    }
+
+                    if (skill == 37 && this.castTimer == SkillManager.GUM_BIND_FIRE_TICK) {
+                        SkillManager.castGumBind(this, this.getTarget());
                     }
 
                     if (skill == 13) {
@@ -1666,6 +1673,7 @@ public abstract class DBSagasEntity extends Monster implements GeoEntity, ITextu
                 .triggerableAnim(HURT_ANIM_GRABBED, DBSagasAnimations.ANIM_HURT_GRABBED)
                 .triggerableAnim(HURT_ANIM_KO, DBSagasAnimations.ANIM_HURT_KO)
                 .triggerableAnim(HURT_ANIM_PARRIED, DBSagasAnimations.ANIM_HURT_PARRIED)
+                .triggerableAnim(HURT_ANIM_GUM_BOUND, DBSagasAnimations.ANIM_GUM_BOUND)
                 .receiveTriggeredAnimations());
         controllers.add(new AnimationController<>(this, "tail_controller", 5, DBSagasAnimationHandler::tailPredicate));
         controllers.add(new AnimationController<>(this, "cape_controller", 5, DBSagasAnimationHandler::capePredicate));
@@ -2173,6 +2181,7 @@ public abstract class DBSagasEntity extends Monster implements GeoEntity, ITextu
     }
 
     protected void playHurtAnimation(DamageSource pSource) {
+        if (com.dragonminez.common.init.entities.ki.GumBindEntity.isBound(this.getUUID())) return;
         if (this.getHealth() <= 0.0F || this.isDeadOrDying()) return;
         if (this.isInSleepPose() || this.getBossAbility() >= 0) return;
         if (this.isCasting() || this.isComboing() || this.isTransforming()

@@ -897,6 +897,24 @@ public class NetworkHandler {
 				.encoder(InstantTransmissionVfxS2C::encode)
 				.consumerMainThread(InstantTransmissionVfxS2C::handle)
 				.add();
+
+		net.messageBuilder(CandyVfxS2C.class, id(), NetworkDirection.PLAY_TO_CLIENT)
+				.decoder(CandyVfxS2C::new)
+				.encoder(CandyVfxS2C::encode)
+				.consumerMainThread(CandyVfxS2C::handle)
+				.add();
+
+		net.messageBuilder(KiBladeExtendS2C.class, id(), NetworkDirection.PLAY_TO_CLIENT)
+				.decoder(KiBladeExtendS2C::new)
+				.encoder(KiBladeExtendS2C::encode)
+				.consumerMainThread(KiBladeExtendS2C::handle)
+				.add();
+
+		net.messageBuilder(GumStruggleC2S.class, id(), NetworkDirection.PLAY_TO_SERVER)
+				.decoder(GumStruggleC2S::new)
+				.encoder(GumStruggleC2S::encode)
+				.consumerMainThread(GumStruggleC2S::handle)
+				.add();
 	}
 
 	public static <MSG> void sendToServer(MSG message) {

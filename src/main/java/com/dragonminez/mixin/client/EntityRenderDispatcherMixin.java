@@ -1,6 +1,7 @@
 package com.dragonminez.mixin.client;
 
 import com.dragonminez.client.render.DMZRendererCache;
+import com.dragonminez.client.render.effects.CandyEffect;
 import com.dragonminez.client.render.effects.InstantTransmissionEffect;
 import com.dragonminez.client.render.effects.NamekAssimilationEffect;
 import com.mojang.blaze3d.vertex.PoseStack;
@@ -30,6 +31,10 @@ public abstract class EntityRenderDispatcherMixin {
 	@Inject(method = "render(Lnet/minecraft/world/entity/Entity;DDDFFLcom/mojang/blaze3d/vertex/PoseStack;Lnet/minecraft/client/renderer/MultiBufferSource;I)V", at = @At("HEAD"), cancellable = true)
 	private void dmz$assimilationRender(Entity entity, double x, double y, double z, float yaw, float partialTick, PoseStack poseStack, MultiBufferSource buffer, int packedLight, CallbackInfo ci) {
 		if (dmz$assimilationReentry) return;
+		if (CandyEffect.renderInstead(entity, x, y, z, partialTick, poseStack, buffer, packedLight)) {
+			ci.cancel();
+			return;
+		}
 		MultiBufferSource wrapped = NamekAssimilationEffect.wrap(entity, buffer, partialTick);
 		if (wrapped == buffer) wrapped = InstantTransmissionEffect.wrap(entity, buffer, partialTick);
 		if (wrapped == buffer) return;

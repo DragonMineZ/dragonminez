@@ -61,6 +61,7 @@ public class DBSagasRenderer<T extends DBSagasEntity> extends GeoEntityRenderer<
         this.addRenderLayer(new SagaSupervillainLayer<>(this));
         this.addRenderLayer(new SagaHaloLayer<>(this));
         this.addRenderLayer(new SagaDragonBallLayer<>(this));
+        this.addRenderLayer(new com.dragonminez.client.render.effects.KiWeaponRenderer.SagaBladeLayer<>(this));
     }
 
     @Override
@@ -418,6 +419,7 @@ public class DBSagasRenderer<T extends DBSagasEntity> extends GeoEntityRenderer<
     }
 
     private static boolean isFlightPose(DBSagasEntity entity) {
+        if (com.dragonminez.common.init.entities.ki.GumBindEntity.isClientBound(entity)) return false;
         return entity.isStrikeRushing() || (entity.isFlying() && entity.isFlyingFast());
     }
 

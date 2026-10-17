@@ -1,5 +1,6 @@
 package com.dragonminez.client.render.layer;
 
+import com.dragonminez.client.render.effects.CandyEffect;
 import com.dragonminez.client.render.hair.HairEditSession;
 import com.dragonminez.client.render.hair.HairStyleResolver;
 import com.dragonminez.client.render.hair.SaiyanTailMeshBuilder;
@@ -107,7 +108,7 @@ public class DMZSkinLayer<T extends AbstractClientPlayer & GeoAnimatable> extend
 			return;
 		}
 
-		if (player.hasEffect(MainEffects.CANDY.get())) return;
+		if (CandyEffect.isCandy(player)) return;
 
 		var statsCap = StatsProvider.get(StatsCapability.INSTANCE, player);
 		var stats = statsCap.orElse(new StatsData(player));

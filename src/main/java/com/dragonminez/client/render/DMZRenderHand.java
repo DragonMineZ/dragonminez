@@ -165,8 +165,9 @@ public class DMZRenderHand extends LivingEntityRenderer<AbstractClientPlayer, Pl
 	}
 
 	private void renderKiWeapon(PoseStack ps, MultiBufferSource buffer, int light, AbstractClientPlayer player, StatsData stats, HumanoidArm arm) {
-		if (!stats.getSkills().isSkillActive("kimanipulation")) return;
-		String type = stats.getStatus().getKiWeaponType();
+		boolean forcedBlade = KiWeaponRenderer.forcesBlade(player);
+		if (!forcedBlade && !stats.getSkills().isSkillActive("kimanipulation")) return;
+		String type = forcedBlade ? "blade" : stats.getStatus().getKiWeaponType();
 		if (type == null || type.equalsIgnoreCase("none")) return;
 		float[] color = KiWeaponHelper.resolveColorForType(type, getKiColor(stats));
 		String lower = type.toLowerCase();
@@ -177,7 +178,7 @@ public class DMZRenderHand extends LivingEntityRenderer<AbstractClientPlayer, Pl
 			float cx = (arm == HumanoidArm.RIGHT ? -1.0F : 1.0F) / 16.0F;
 			float handEnd = 10.0F / 16.0F;
 			Vector3f start = new Vector3f(cx, handEnd - KiWeaponRenderer.BLADE_WRIST_OFFSET - KiWeaponRenderer.BLADE_ARM_SHIFT, 0.0F);
-			Vector3f end = new Vector3f(cx, handEnd + KiWeaponRenderer.BLADE_REACH - KiWeaponRenderer.BLADE_ARM_SHIFT, 0.0F);
+			Vector3f end = new Vector3f(cx, handEnd + KiWeaponRenderer.bladeReach(player, Minecraft.getInstance().getFrameTime()) - KiWeaponRenderer.BLADE_ARM_SHIFT, 0.0F);
 			KiWeaponRenderer.renderBlade(ps.last().pose(), buffer.getBuffer(ModRenderTypes.kiBlade()), start, end, KiWeaponRenderer.BLADE_HALF_WIDTH, color, KiWeaponRenderer.bladeSeed(player));
 			ps.popPose();
 			return;

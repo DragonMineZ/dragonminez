@@ -1,6 +1,7 @@
 package com.dragonminez.client.init.entities.model.sagas;
 
 import com.dragonminez.Reference;
+import com.dragonminez.common.init.entities.ki.GumBindEntity;
 import com.dragonminez.common.init.entities.sagas.DBSagasEntity;
 import net.minecraft.client.Minecraft;
 import net.minecraft.resources.ResourceLocation;
@@ -93,7 +94,7 @@ public class DBSagaModel<T extends DBSagasEntity> extends GeoModel<T> {
     public void setCustomAnimations(T animatable, long instanceId, AnimationState<T> animationState) {
         CoreGeoBone head = getAnimationProcessor().getBone("head");
 
-        if (head != null) {
+        if (head != null && !GumBindEntity.isClientBound(animatable)) {
             EntityModelData entityData = animationState.getData(DataTickets.ENTITY_MODEL_DATA);
 
             head.setRotX(entityData.headPitch() * Mth.DEG_TO_RAD);

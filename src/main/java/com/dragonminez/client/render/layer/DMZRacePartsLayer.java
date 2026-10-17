@@ -1,5 +1,6 @@
 package com.dragonminez.client.render.layer;
 
+import com.dragonminez.client.render.effects.CandyEffect;
 import com.dragonminez.client.render.DMZRendererCache;
 import com.dragonminez.Reference;
 import com.dragonminez.client.render.HeadPortraitRenderer;
@@ -112,7 +113,7 @@ public class DMZRacePartsLayer<T extends AbstractClientPlayer & GeoAnimatable> e
 		String anchor = playerBone.getName();
 		boolean isLimb = "right_arm".equals(anchor) || "left_arm".equals(anchor)
 				|| "right_leg".equals(anchor) || "left_leg".equals(anchor);
-		if (animatable.hasEffect(MainEffects.CANDY.get())) return;
+		if (CandyEffect.isCandy(animatable)) return;
 
 		renderOriginBones(poseStack, animatable, playerBone, isLimb, renderType, bufferSource, partialTick, packedLight, packedOverlay);
 		if (!"head".equals(anchor) && !"body".equals(anchor) && !isLimb) return;

@@ -23,4 +23,6 @@ public interface IPlayerAnimatable {
 	void dragonminez$stopKiAnimation();
 
 	String dragonminez$getCurrentPlayingAnimation();
+
+	String dragonminez$getCurrentKiAnimation();
 }

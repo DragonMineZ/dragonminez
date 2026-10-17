@@ -894,6 +894,11 @@ public abstract class PlayerGeoAnimatableMixin implements GeoAnimatable, IPlayer
 	}
 
 	@Override
+	public String dragonminez$getCurrentKiAnimation() {
+		return this.dragonminez$currentKiAnim != null ? this.dragonminez$currentKiAnim : "";
+	}
+
+	@Override
 	public String dragonminez$getCurrentPlayingAnimation() {
 		long instanceId = ((AbstractClientPlayer) (Object) this).getId();
 		var manager = this.geoCache.getManagerForId(instanceId);

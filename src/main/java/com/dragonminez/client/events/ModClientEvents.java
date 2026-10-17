@@ -289,6 +289,8 @@ public class ModClientEvents {
         event.registerEntityRenderer(MainEntities.SP_DRAGON_FIST.get(), SPDragonFistRenderer::new);
         event.registerEntityRenderer(MainEntities.SP_OZARU_FIST.get(), SPOzaruFistRenderer::new);
         event.registerEntityRenderer(MainEntities.SP_MAJIN_CANDY.get(), SPMajinCandyRenderer::new);
+        event.registerEntityRenderer(MainEntities.GUM_BIND.get(), GumBindRenderer::new);
+        event.registerEntityRenderer(MainEntities.GUM_BALL.get(), GumBindRenderer.BallRenderer::new);
         event.registerEntityRenderer(MainEntities.KI_LASER.get(), KiLaserRenderer::new);
         event.registerEntityRenderer(MainEntities.KI_WAVE.get(), KiWaveRenderer::new);
         event.registerEntityRenderer(MainEntities.MAJIN_SKILL.get(), MajinSkillRenderer::new);

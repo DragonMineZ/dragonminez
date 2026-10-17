@@ -279,7 +279,7 @@ public class SkillManager {
         float mult = type != null ? type.getTier().getDamageMultiplier() : DBSagasEntity.Tier.MEDIUM.getDamageMultiplier();
 
         return switch (id) {
-            case 6, 25 -> 0.0F;                         // Ki Barrier / Taiyoken: no damage
+            case 6, 25, 37 -> 0.0F;                       // Ki Barrier / Taiyoken: no damage
             case 7, 12, 19, 22, 23, 35, 36 -> meleeDmg * mult;  // Oozaru Roar / Blue Hurricane / Majin Candy / Wolf Fang / Dragon Fist / Oozaru Fist / Oozaru Slam: melee-scaled
             case 13 -> kiDmg * mult / 3.0F;             // Triple Laser: 3 instances (ticks 10/20/30)
             case 10, 20, 29, 30 -> kiDmg * mult / VOLLEY_HIT_DIVISOR; // Ki Volley / Air Volley / Assault Rain / Blaster Meteor: random spray, per-bullet
@@ -329,6 +329,7 @@ public class SkillManager {
             case 23 -> DRAGON_FIST_WINDUP + DRAGON_FIST_RUSH_TICKS + 2;
             case 7 -> ROAR_DURATION;
             case 25 -> TAIYOKEN_DURATION;
+            case 37 -> GUM_BIND_DURATION;
             case 15, 28 -> 60;
             case 29 -> ASSAULT_RAIN_CAST_TICKS + ASSAULT_RAIN_FIRE_TICKS + KiBlastEntity.ASSAULT_RAIN_DELAY;
             case 30 -> BLASTER_METEOR_CAST_TICKS + BLASTER_METEOR_FIRE_TICKS;
@@ -479,6 +480,9 @@ public class SkillManager {
     public static final int ROAR_DURATION = 60;
     public static final int TAIYOKEN_DURATION = 40;
     public static final int TAIYOKEN_FLASH_TICK = 8;
+    public static final int GUM_BIND_DURATION = 26;
+    public static final int GUM_BIND_FIRE_TICK = 10;
+    private static final int GUM_BIND_COLOR = 0xF4A0B6;
     private static final int ROAR_PULSE_INTERVAL = 5;
     private static final double ROAR_BASE_RANGE = 5.0D;
     private static final double ROAR_MIN_RANGE = 8.0D;
@@ -529,6 +533,17 @@ public class SkillManager {
         user.level().playSound(null, user.getX(), user.getY(), user.getZ(),
                 MainSounds.KI_EXPLOSION_CHARGE.get(), net.minecraft.sounds.SoundSource.HOSTILE, 1.2F, 1.6F);
         EvasionAttackHandler.applyTaiyokenBlind(user);
+    }
+
+    public static void castGumBind(DBSagasEntity user, LivingEntity target) {
+        if (!(user.level() instanceof ServerLevel level)) return;
+        Vec3 from = GumBindEntity.hand(user.position(), user.getYRot(), user.getBbHeight() / 1.8F);
+        Vec3 aim = target != null && target.isAlive() && target.level() == level
+                ? target.position().add(0.0D, target.getBbHeight() * 0.55D, 0.0D)
+                : from.add(user.getLookAngle().scale(8.0D));
+        GumBindEntity.Ball.launch(level, user, GUM_BIND_COLOR, from, aim.subtract(from));
+        level.playSound(null, user.getX(), user.getY(), user.getZ(), net.minecraft.sounds.SoundEvents.SLIME_ATTACK,
+                net.minecraft.sounds.SoundSource.HOSTILE, 1.6F, 0.7F);
     }
 
     public static final int DIM_PUNCH_DURATION = 70;

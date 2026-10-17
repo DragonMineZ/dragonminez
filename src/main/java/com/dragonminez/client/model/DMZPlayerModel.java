@@ -1,5 +1,6 @@
 package com.dragonminez.client.model;
 
+import com.dragonminez.client.render.effects.CandyEffect;
 import com.dragonminez.client.render.DMZRendererCache;
 import com.dragonminez.Reference;
 import com.dragonminez.client.animation.IPlayerAnimatable;
@@ -8,8 +9,13 @@ import com.dragonminez.client.systems.kishare.KiSharePose;
 import com.dragonminez.server.events.players.combat.StrikeCombos.MeteorBurstCombo;
 import com.dragonminez.server.events.players.combat.StrikeCombos.MysticBallCombo;
 import com.dragonminez.server.events.players.combat.StrikeCombos.DarknessEyeBeamCombo;
+import com.dragonminez.common.init.entities.ki.GumBindEntity;
+import com.dragonminez.server.events.players.combat.EvasionAttackHandler;
 import com.dragonminez.server.events.players.combat.StrikeCombos.AndroidCombo;
+import com.dragonminez.server.events.players.combat.StrikeCombos.BeamSwordSlashCombo;
 import com.dragonminez.server.events.players.combat.StrikeCombos.DeathChaserCombo;
+import com.dragonminez.server.events.players.combat.StrikeCombos.PerfectRushCombo;
+import com.dragonminez.server.events.players.combat.StrikeCombos.SpiritBreakerCombo;
 import com.dragonminez.client.util.SaiyanTailRules;
 import com.dragonminez.client.util.SkinGathererProvider;
 import com.dragonminez.common.config.ConfigManager;
@@ -117,7 +123,7 @@ public class DMZPlayerModel<T extends AbstractClientPlayer & GeoAnimatable> exte
 
     @Override
     public ResourceLocation getModelResource(T player) {
-        if (player.hasEffect(MainEffects.CANDY.get())) {
+        if (CandyEffect.isCandy(player)) {
             return CANDY_MODEL;
         }
 
@@ -301,7 +307,7 @@ public class DMZPlayerModel<T extends AbstractClientPlayer & GeoAnimatable> exte
 
     @Override
     public ResourceLocation getTextureResource(T t) {
-        if (t.hasEffect(MainEffects.CANDY.get())) {
+        if (CandyEffect.isCandy(t)) {
             return CANDY_TEXTURE;
         }
         return textureLocation;
@@ -319,6 +325,15 @@ public class DMZPlayerModel<T extends AbstractClientPlayer & GeoAnimatable> exte
         return ANIM_FALLBACKS;
     }
 
+    private static boolean clipOwnsHead(String anim) {
+        return MysticBallCombo.ANIMATION.equals(anim) || MeteorBurstCombo.ANIMATION.equals(anim)
+                || DarknessEyeBeamCombo.ANIMATION.equals(anim) || DeathChaserCombo.ANIMATION.equals(anim)
+                || AndroidCombo.ANIMATION.equals(anim)
+                || EvasionAttackHandler.CANDY_BEAM_ANIMATION.equals(anim)
+                || EvasionAttackHandler.GUM_BIND_ANIMATION.equals(anim) || GumBindEntity.BOUND_ANIMATION.equals(anim)
+                || BeamSwordSlashCombo.ANIMATION.equals(anim) || PerfectRushCombo.ANIMATION.equals(anim) || SpiritBreakerCombo.ANIMATION.equals(anim);
+    }
+
     @Override
     public void setCustomAnimations(T animatable, long instanceId, AnimationState<T> animationState) {
         super.setCustomAnimations(animatable, instanceId, animationState);
@@ -326,9 +341,8 @@ public class DMZPlayerModel<T extends AbstractClientPlayer & GeoAnimatable> exte
         boolean actuallyTransforming = StatsProvider.get(StatsCapability.INSTANCE, animatable)
                 .map(data -> data.getStatus().isActionCharging()).orElse(false);
         String playingAnim = animatable instanceof IPlayerAnimatable playing ? playing.dragonminez$getCurrentPlayingAnimation() : "";
-        boolean ownsHead = MysticBallCombo.ANIMATION.equals(playingAnim) || MeteorBurstCombo.ANIMATION.equals(playingAnim)
-                || DarknessEyeBeamCombo.ANIMATION.equals(playingAnim) || DeathChaserCombo.ANIMATION.equals(playingAnim)
-                || AndroidCombo.ANIMATION.equals(playingAnim);
+        String kiAnim = animatable instanceof IPlayerAnimatable playing ? playing.dragonminez$getCurrentKiAnimation() : "";
+        boolean ownsHead = clipOwnsHead(playingAnim) || clipOwnsHead(kiAnim);
         boolean skipHead = (transfAnimPlaying && actuallyTransforming) || ownsHead;
 
         float partialTick = animationState.getPartialTick();

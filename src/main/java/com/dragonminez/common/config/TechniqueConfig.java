@@ -55,6 +55,8 @@ public class TechniqueConfig {
 			case "sleep_recovery" -> 1200;
 			case "rage_scream" -> 80;
 			case "afterimage" -> 200;
+			case "candy_beam" -> 600;
+			case "gum_bind" -> 900;
 			default -> 80;
 		};
 	}
@@ -67,7 +69,10 @@ public class TechniqueConfig {
 			case "mystic_ball" -> 280;
 			case "darkness_eye_beam" -> 300;
 			case "death_chaser" -> 260;
+			case "perfect_rush" -> 280;
+			case "spirit_breaker" -> 320;
 			case "android_combo" -> 280;
+			case "beam_sword_slash" -> 300;
 			case "deadly_dance_vegetto" -> 200;
 			case "blue_hurricane" -> 260;
 			case "wolf_fang", "gum_punch" -> 140;
@@ -137,7 +142,10 @@ public class TechniqueConfig {
 	public EvasionAttackConfig getEvasionConfig(String evasionId) {
 		if (evasionId == null || evasionId.isEmpty()) return EvasionAttackConfig.defaults();
 		EvasionAttackConfig config = evasionAttacks.get(evasionId.toLowerCase());
-		return config != null ? config : EvasionAttackConfig.defaults();
+		if (config != null) return config;
+		EvasionAttackConfig fallback = EvasionAttackConfig.defaults();
+		fallback.setCooldownTicks(defaultEvasionCooldownTicks(evasionId.toLowerCase()));
+		return fallback;
 	}
 
 	@Getter

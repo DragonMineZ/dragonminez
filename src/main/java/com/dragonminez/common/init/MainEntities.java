@@ -2192,6 +2192,24 @@ public class MainEntities {
                     .updateInterval(1)
                     .build("sp_majin_candy"));
 
+    public static final RegistryObject<EntityType<GumBindEntity>> GUM_BIND = ENTITY_TYPES.register("gum_bind",
+            () -> EntityType.Builder.<GumBindEntity>of(GumBindEntity::new, MobCategory.MISC)
+                    .sized(0.8F, 1.9F)
+                    .clientTrackingRange(10)
+                    .updateInterval(1)
+                    .fireImmune()
+                    .noSave()
+                    .build("gum_bind"));
+
+    public static final RegistryObject<EntityType<GumBindEntity.Ball>> GUM_BALL = ENTITY_TYPES.register("gum_ball",
+            () -> EntityType.Builder.<GumBindEntity.Ball>of(GumBindEntity.Ball::new, MobCategory.MISC)
+                    .sized(0.4F, 0.4F)
+                    .clientTrackingRange(8)
+                    .updateInterval(1)
+                    .fireImmune()
+                    .noSave()
+                    .build("gum_ball"));
+
     // Single generic entity type for ALL data-driven quest NPCs
     public static final RegistryObject<EntityType<QuestNPCEntity>> QUEST_NPC =
             ENTITY_TYPES.register("quest_npc",

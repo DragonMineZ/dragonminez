@@ -6,6 +6,8 @@ import com.dragonminez.client.render.DMZRendererCache;
 import com.dragonminez.client.render.shader.DMZShaders;
 import com.dragonminez.client.render.util.PlayerEffectQueue;
 import com.dragonminez.client.render.util.ModRenderTypes;
+import com.dragonminez.common.combat.logic.weapon.KiWeaponHelper;
+import com.dragonminez.common.init.entities.sagas.DBSagasEntity;
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.Tesselator;
@@ -17,6 +19,8 @@ import net.minecraft.client.renderer.RenderType;
 import net.minecraft.client.renderer.ShaderInstance;
 import net.minecraft.client.renderer.texture.OverlayTexture;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.util.Mth;
+import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.HumanoidArm;
 import net.minecraft.world.entity.player.Player;
 import org.joml.Matrix4f;
@@ -26,9 +30,13 @@ import software.bernie.geckolib.cache.object.GeoBone;
 import software.bernie.geckolib.cache.object.GeoCube;
 import software.bernie.geckolib.cache.object.GeoQuad;
 import software.bernie.geckolib.cache.object.GeoVertex;
+import software.bernie.geckolib.renderer.GeoRenderer;
+import software.bernie.geckolib.renderer.layer.GeoRenderLayer;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.function.Consumer;
 
 public class KiWeaponRenderer {
@@ -78,8 +86,53 @@ public class KiWeaponRenderer {
 		return "kiweapon_" + type.toLowerCase();
 	}
 
+	private record EntityBladeEntry(Entity entity, BakedGeoModel model, Matrix4f pose, float[] color, float partialTick) {}
+
+	private static final List<EntityBladeEntry> ENTITY_BLADES = new ArrayList<>();
+
+	public static void queueEntityBlade(Entity entity, BakedGeoModel model, PoseStack poseStack, float[] color, float partialTick) {
+		ENTITY_BLADES.add(new EntityBladeEntry(entity, model, new Matrix4f(poseStack.last().pose()), color, partialTick));
+	}
+
+	private static void processEntityBlades(MultiBufferSource.BufferSource buffers) {
+		if (ENTITY_BLADES.isEmpty()) return;
+		if (DMZShaders.kiBladeShader != null) {
+			for (EntityBladeEntry entry : ENTITY_BLADES) {
+				float[] anchor = boneAnchor(entry.model(), "right_arm");
+				if (anchor == null) continue;
+				Vector3f start = new Vector3f(anchor[0], anchor[1] + BLADE_WRIST_OFFSET + BLADE_ARM_SHIFT, anchor[2]);
+				Vector3f end = new Vector3f(anchor[0], anchor[1] - bladeReach(entry.entity(), entry.partialTick()) + BLADE_ARM_SHIFT, anchor[2]);
+				float seed = bladeSeed(entry.entity());
+				float[] color = entry.color().clone();
+				renderBlade(entry.pose(), buffers.getBuffer(ModRenderTypes.kiBlade()), start, end, BLADE_HALF_WIDTH, color, seed);
+				Matrix4f pose = new Matrix4f(entry.pose());
+				BLOOM_WEAPONS.add(vc -> renderBlade(pose, vc, start, end, BLADE_HALF_WIDTH, color, seed));
+			}
+		}
+		ENTITY_BLADES.clear();
+	}
+
+	public static class SagaBladeLayer<T extends DBSagasEntity> extends GeoRenderLayer<T> {
+
+		public SagaBladeLayer(GeoRenderer<T> renderer) {
+			super(renderer);
+		}
+
+		@Override
+		public void renderForBone(PoseStack poseStack, T animatable, GeoBone bone, RenderType renderType, MultiBufferSource bufferSource,
+								  VertexConsumer buffer, float partialTick, int packedLight, int packedOverlay) {
+			if (!"right_arm".equals(bone.getName()) || animatable.isInvisible() || !forcesBlade(animatable)) return;
+			BakedGeoModel model = getGeoModel().getBakedModel(getGeoModel().getModelResource(animatable));
+			if (model == null) return;
+			int aura = animatable.getAuraColor();
+			float[] rgb = {((aura >> 16) & 0xFF) / 255.0f, ((aura >> 8) & 0xFF) / 255.0f, (aura & 0xFF) / 255.0f};
+			queueEntityBlade(animatable, model, poseStack, KiWeaponHelper.resolveColorForType("blade", rgb), partialTick);
+		}
+	}
+
 	@SuppressWarnings({"rawtypes", "unchecked"})
 	public static void processWeapons(MultiBufferSource.BufferSource buffers, PoseStack poseStack) {
+		processEntityBlades(buffers);
 		var weapons = PlayerEffectQueue.getAndClearWeapons();
 		if (weapons == null || weapons.isEmpty()) return;
 
@@ -157,7 +210,7 @@ public class KiWeaponRenderer {
 		float[] anchor = armAnchor(entry);
 		if (anchor == null) return;
 		Vector3f start = new Vector3f(anchor[0], anchor[1] + BLADE_WRIST_OFFSET + BLADE_ARM_SHIFT, anchor[2]);
-		Vector3f end = new Vector3f(anchor[0], anchor[1] - BLADE_REACH + BLADE_ARM_SHIFT, anchor[2]);
+		Vector3f end = new Vector3f(anchor[0], anchor[1] - bladeReach(entry.player(), entry.partialTick()) + BLADE_ARM_SHIFT, anchor[2]);
 		float seed = bladeSeed(entry.player());
 		float[] color = entry.color().clone();
 		renderBlade(entry.poseMatrix(), buffers.getBuffer(ModRenderTypes.kiBlade()), start, end, BLADE_HALF_WIDTH, color, seed);
@@ -193,11 +246,18 @@ public class KiWeaponRenderer {
 
 	private static float[] armAnchor(PlayerEffectQueue.WeaponRenderEntry entry) {
 		String boneName = entry.player().getMainArm() == HumanoidArm.RIGHT ? "right_arm" : "left_arm";
-		GeoBone arm = entry.playerModel().getBone(boneName).orElse(null);
-		if (arm == null || arm.getCubes().isEmpty()) return null;
+		return boneAnchor(entry.playerModel(), boneName);
+	}
+
+	private static float[] boneAnchor(BakedGeoModel model, String boneName) {
+		GeoBone arm = model.getBone(boneName).orElse(null);
+		if (arm == null) return null;
+		List<GeoCube> cubes = new ArrayList<>(arm.getCubes());
+		if (cubes.isEmpty()) arm.getChildBones().forEach(child -> cubes.addAll(child.getCubes()));
+		if (cubes.isEmpty()) return null;
 
 		float minX = Float.MAX_VALUE, maxX = -Float.MAX_VALUE, minY = Float.MAX_VALUE, minZ = Float.MAX_VALUE, maxZ = -Float.MAX_VALUE;
-		for (GeoCube cube : arm.getCubes()) {
+		for (GeoCube cube : cubes) {
 			for (GeoQuad quad : cube.quads()) {
 				if (quad == null) continue;
 				for (GeoVertex vertex : quad.vertices()) {
@@ -310,7 +370,62 @@ public class KiWeaponRenderer {
 		bladeVertex(vc, pose, x, y, z, color, seed, uOffset + s, t);
 	}
 
-	public static float bladeSeed(Player player) {
+	private static final Map<Integer, long[]> BLADE_SUMMONS = new HashMap<>();
+	private static final Map<Integer, float[]> BLADE_EXTENSIONS = new HashMap<>();
+	private static final float BLADE_SUMMON_TICKS = 6.0f;
+	private static final float BLADE_GROW_TICKS = 2.0f;
+	private static final float BLADE_SHRINK_TICKS = 3.0f;
+
+	public static void summonBlade(int entityId, int ticks) {
+		Minecraft mc = Minecraft.getInstance();
+		if (mc.level == null) return;
+		if (ticks <= 0) {
+			BLADE_SUMMONS.remove(entityId);
+			BLADE_EXTENSIONS.remove(entityId);
+			return;
+		}
+		BLADE_SUMMONS.put(entityId, new long[]{mc.level.getGameTime(), ticks});
+	}
+
+	public static boolean forcesBlade(Entity entity) {
+		long[] summon = BLADE_SUMMONS.get(entity.getId());
+		if (summon == null) return false;
+		long age = entity.level().getGameTime() - summon[0];
+		if (age < 0L || age > summon[1]) {
+			BLADE_SUMMONS.remove(entity.getId());
+			return false;
+		}
+		return true;
+	}
+
+	public static void extendBlade(int entityId, float length, int ticks) {
+		Minecraft mc = Minecraft.getInstance();
+		if (mc.level == null) return;
+		BLADE_EXTENSIONS.put(entityId, new float[]{length, mc.level.getGameTime(), ticks});
+	}
+
+	public static float bladeReach(Entity player, float partialTick) {
+		float reach = BLADE_REACH;
+		float[] extension = BLADE_EXTENSIONS.get(player.getId());
+		if (extension != null) {
+			float age = player.level().getGameTime() - extension[1] + partialTick;
+			if (age > extension[2] || age < 0.0f) {
+				BLADE_EXTENSIONS.remove(player.getId());
+			} else {
+				float grow = Mth.clamp(age / BLADE_GROW_TICKS, 0.0f, 1.0f);
+				float shrink = Mth.clamp((extension[2] - age) / BLADE_SHRINK_TICKS, 0.0f, 1.0f);
+				reach = Mth.lerp(Math.min(grow, shrink), BLADE_REACH, Math.max(BLADE_REACH, extension[0]));
+			}
+		}
+		long[] summon = BLADE_SUMMONS.get(player.getId());
+		if (summon != null) {
+			float age = player.level().getGameTime() - summon[0] + partialTick;
+			reach *= Mth.clamp(age / BLADE_SUMMON_TICKS, 0.05f, 1.0f);
+		}
+		return reach;
+	}
+
+	public static float bladeSeed(Entity player) {
 		return (player.getId() * 0.618034f) % 1.0f;
 	}
 

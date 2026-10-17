@@ -31,14 +31,19 @@ public class PredefinedTechniques {
 			"mystic_ball",
 			"darkness_eye_beam",
 			"death_chaser",
-			"android_combo"
+			"android_combo",
+			"beam_sword_slash",
+			"perfect_rush",
+			"spirit_breaker"
 	);
 	public static final List<String> EVASION_IDS = java.util.List.of(
 			"taiyoken",
 			"rage_scream",
 			"afterimage",
 			"sleep_recovery",
-			"dimensional_teleport"
+			"dimensional_teleport",
+			"candy_beam",
+			"gum_bind"
 	);
 
 	public void init() {
@@ -75,6 +80,8 @@ public class PredefinedTechniques {
 		registerEvasion("afterimage", 0.00F, 60, 200, false);
 		registerEvasion("sleep_recovery", 0.00F, EvasionAttackData.SLEEP_RECOVERY_MAX_TICKS, 1200, false);
 		registerEvasion("dimensional_teleport", 0.00F, 30, 320, false);
+		registerEvasion("candy_beam", 0.00F, 28, 600, false);
+		registerEvasion("gum_bind", 0.00F, 26, 900, false);
 		registerStrike("skp.meteor", 1.25f, 40);
 		registerStrike("skp.dragon_fist", 2.5f, 50);
 		registerStrike("skp.deadly_dance_vegetto", 1.5f, 40);
@@ -97,6 +104,9 @@ public class PredefinedTechniques {
 		registerStrike("skp.darkness_eye_beam", 2.6f, 102);
 		registerStrike("skp.death_chaser", 2.4f, 72);
 		registerStrike("skp.android_combo", 2.4f, 82);
+		registerStrike("skp.beam_sword_slash", 2.6f, 112);
+		registerStrike("skp.perfect_rush", 2.5f, 92);
+		registerStrike("skp.spirit_breaker", 2.8f, 148);
 	}
 
 	public static boolean isPredefinedTechniqueId(String techniqueId) {

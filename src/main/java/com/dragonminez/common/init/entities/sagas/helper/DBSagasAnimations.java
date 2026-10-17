@@ -1,6 +1,9 @@
 package com.dragonminez.common.init.entities.sagas.helper;
 
+import com.dragonminez.server.events.players.combat.StrikeCombos.BeamSwordSlashCombo;
 import com.dragonminez.server.events.players.combat.StrikeCombos.MysticBallCombo;
+import com.dragonminez.server.events.players.combat.StrikeCombos.PerfectRushCombo;
+import com.dragonminez.server.events.players.combat.StrikeCombos.SpiritBreakerCombo;
 import software.bernie.geckolib.core.animation.RawAnimation;
 
 public class DBSagasAnimations {
@@ -72,6 +75,10 @@ public class DBSagasAnimations {
     public static final RawAnimation ANIM_KILL_DRIVER_FIRE = RawAnimation.begin().thenPlayAndHold("ki.kill_driver_fire");
     public static final RawAnimation ANIM_METEOR_BURST = RawAnimation.begin().thenPlayAndHold("skp.meteor_burst");
     public static final RawAnimation ANIM_MYSTIC_BALL = RawAnimation.begin().thenPlayAndHold(MysticBallCombo.ANIMATION);
+    public static final RawAnimation ANIM_BEAM_SWORD_SLASH = RawAnimation.begin().thenPlayAndHold(BeamSwordSlashCombo.ANIMATION);
+    public static final RawAnimation ANIM_PERFECT_RUSH = RawAnimation.begin().thenPlayAndHold(PerfectRushCombo.ANIMATION);
+    public static final RawAnimation ANIM_SPIRIT_BREAKER = RawAnimation.begin().thenPlayAndHold(SpiritBreakerCombo.ANIMATION);
+    public static final RawAnimation ANIM_GUM_BIND = RawAnimation.begin().thenPlay("evs.gum_bind");
     public static final RawAnimation ANIM_BOSS_GRAB = RawAnimation.begin().thenPlayAndHold("skp.grab");
     public static final RawAnimation ANIM_TAMAGAMI_SLEEP = RawAnimation.begin().thenLoop("tamagami.sleep");
     public static final RawAnimation ANIM_TAMAGAMI_RAISE = RawAnimation.begin().thenPlayAndHold("ki.kienzan_cast");
@@ -106,6 +113,7 @@ public class DBSagasAnimations {
     public static final RawAnimation ANIM_HURT_KO = RawAnimation.begin().thenPlayAndHold("base.faint_horizontal");
     public static final RawAnimation ANIM_HURT_PARRIED = RawAnimation.begin().thenPlayAndHold("base.parried_stun");
     public static final RawAnimation ANIM_STUNNED = RawAnimation.begin().thenLoop("base.stunned");
+    public static final RawAnimation ANIM_GUM_BOUND = RawAnimation.begin().thenLoop("evs.gum_bound");
     public static final RawAnimation ANIM_KIWAVE = RawAnimation.begin().thenPlay("ki_finalflash");
     public static final RawAnimation ANIM_KIATTACK = RawAnimation.begin().thenPlay("kiattack");
     public static final RawAnimation ANIM_KIBALL = RawAnimation.begin().thenPlay("ki_ball");

@@ -473,7 +473,7 @@ public class SagaDaimaEntity {
             this.setKiBlastSpeed(1.8F);
             this.setDBZStyle(0);
             this.setEvade(true, 35);
-            this.setAllowedCombos(120, ComboType.AIR, ComboType.KI_CHARGE_ATTACK, ComboType.METEOR_COMBINATION, ComboType.BASIC, ComboType.DEADLY_DANCE_VEGETTO);
+            this.setAllowedCombos(120, ComboType.AIR, ComboType.KI_CHARGE_ATTACK, ComboType.METEOR_COMBINATION, ComboType.BASIC, ComboType.DEADLY_DANCE_VEGETTO, ComboType.SPIRIT_BREAKER);
             this.addKiSkill(KiSkillType.KI_VOLLEY, 180, 1.6F, SSJ_AURA, SSJ_AURA);
             this.addKiSkill(KiSkillType.GALICK_GUN, 280, 2.2F);
             this.addKiSkill(KiSkillType.BIG_BANG, 260, 2.2F);

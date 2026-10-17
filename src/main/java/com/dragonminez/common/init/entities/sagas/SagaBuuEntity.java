@@ -23,6 +23,7 @@ public class SagaBuuEntity {
             this.addKiSkill(KiSkillType.KI_SMALL, 40, 1.5F, 0xFF82F3, 0xFF1AEC);
             this.addKiSkill(KiSkillType.KI_VOLLEY, 120, 1.0F, 0xFF82F3, 0xFF1AEC);
             this.addKiSkill(KiSkillType.MAJIN_CANDY, 200, 1.0F, 0xFF82F3, 0xFF1AEC);
+            this.addKiSkill(KiSkillType.GUM_BIND, 300, 1.0F, 0xFF82F3, 0xFF1AEC);
 
             this.setEvade(true, 60);
             this.setWildSense(true, 100);
