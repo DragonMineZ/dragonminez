@@ -670,7 +670,7 @@ public class KiLaserEntity extends AbstractKiProjectile{
             if (!this.shouldDamage(target)) continue;
             if (target.is(this.getOwner())) continue;
             if (chainShot && this.chainHitIds.contains(target.getId())) continue;
-            if (target.invulnerableTime > 0 && !chainShot) continue;
+            if (target.invulnerableTime > 0 && !chainShot && !this.isBreakthroughTarget(target)) continue;
 
             float hitPrecision = this.getSize() / 3.0F;
             boolean beamHit = false;
@@ -687,7 +687,7 @@ public class KiLaserEntity extends AbstractKiProjectile{
                     this.chainHitIds.add(target.getId());
                     target.invulnerableTime = 0;
                 }
-                boolean wasHit = this.applyDamageOrHeal(target, this.getDamagePerHit());
+                boolean wasHit = this.applyBeamHit(target);
 
                 if (wasHit) {
                     this.onSuccessfulHit(target);

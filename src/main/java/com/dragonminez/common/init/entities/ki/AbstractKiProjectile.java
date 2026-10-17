@@ -43,7 +43,9 @@ import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.HitResult;
 import net.minecraft.world.phys.Vec3;
 
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.UUID;
 
 public abstract class AbstractKiProjectile extends Projectile {
@@ -142,6 +144,9 @@ public abstract class AbstractKiProjectile extends Projectile {
     private transient float clashLockedLength = -1.0F; // -1 = not clash-locked
     @Getter
     private transient UUID clashOpponentId = null;
+    private transient int clashFrozenWindow = -1;
+    private transient UUID breakthroughTargetId = null;
+    private final transient Set<UUID> beamHitTargets = new HashSet<>();
 
     private transient int strikeStunTicks = 0;
     private transient UUID strikeStunExcludeId = null;
@@ -167,6 +172,7 @@ public abstract class AbstractKiProjectile extends Projectile {
     public abstract int getMaxHits();
 
     protected int firingWindowTicks() {
+        if (this.clashFrozenWindow > 0) return this.clashFrozenWindow;
         int fireTick = this.getFireTick();
         int window = fireTick >= 0 ? this.getMaxLife() - fireTick : this.getMaxLife();
         return Math.max(1, window);
@@ -203,6 +209,7 @@ public abstract class AbstractKiProjectile extends Projectile {
 
     /** Locks this beam to a fixed length at the clash point. Length < 0 means unlocked. */
     public void setClashLock(float lockedLength, java.util.UUID opponentId) {
+        if (this.clashFrozenWindow < 0) this.clashFrozenWindow = this.firingWindowTicks();
         this.clashLockedLength = lockedLength;
         this.clashOpponentId = opponentId;
     }
@@ -220,7 +227,34 @@ public abstract class AbstractKiProjectile extends Projectile {
         return this.getKiDamage() / Math.max(1.0F, (float)this.getMaxHits());
     }
 
+    public void setBreakthroughTarget(UUID targetId) {
+        this.breakthroughTargetId = targetId;
+    }
+
+    protected boolean isBreakthroughTarget(Entity target) {
+        return this.breakthroughTargetId != null && TargetHelper.resolveHittable(target).getUUID().equals(this.breakthroughTargetId);
+    }
+
+    protected boolean applyBeamHit(LivingEntity target) {
+        Entity hittable = TargetHelper.resolveHittable(target);
+        boolean breakthrough = this.isBreakthroughTarget(target);
+        float amount = this.getDamagePerHit();
+        if (breakthrough) {
+            hittable.invulnerableTime = 0;
+            amount = this.getKiDamage();
+        } else if (!this.isHeal() && !this.beamHitTargets.contains(hittable.getUUID())) {
+            amount = Math.max(amount, this.getKiDamage() * BEAM_FIRST_HIT_SHARE);
+        }
+        boolean hit = this.applyDamageOrHeal(target, amount);
+        if (hit) {
+            this.beamHitTargets.add(hittable.getUUID());
+            if (breakthrough) this.breakthroughTargetId = null;
+        }
+        return hit;
+    }
+
     public static final int CONTINUOUS_HIT_INTERVAL = 20;
+    private static final float BEAM_FIRST_HIT_SHARE = 0.75F;
 
     private static final float BARRAGE_XP_HIT_WEIGHT = 0.34f;
 

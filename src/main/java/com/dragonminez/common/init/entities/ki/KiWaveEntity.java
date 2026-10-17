@@ -832,7 +832,7 @@ public class KiWaveEntity extends AbstractKiProjectile {
         for (LivingEntity target : targets) {
             if (!this.shouldDamage(target)) continue;
             if (target.is(this.getOwner())) continue;
-            if (target.invulnerableTime > 0) continue;
+            if (target.invulnerableTime > 0 && !this.isBreakthroughTarget(target)) continue;
 
             float hitPrecision = (float) cilindroRadio;
             boolean intersects = false;
@@ -845,7 +845,7 @@ public class KiWaveEntity extends AbstractKiProjectile {
             }
 
             if (intersects) {
-                boolean wasHit = this.applyDamageOrHeal(target, this.getDamagePerHit());
+                boolean wasHit = this.applyBeamHit(target);
 
                 if (wasHit) {
                     this.onSuccessfulHit(target);
