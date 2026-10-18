@@ -116,6 +116,13 @@ public class StrikeAttackData extends TechniqueData {
 		if (this.durationTicks <= 0) this.durationTicks = 60;
 		this.castTime = tag.getInt("CastTime");
 		this.cooldown = tag.getInt("Cooldown");
+
+		StrikeAttackData template = PredefinedTechniques.STRIKE_REGISTRY.get(this.id);
+		if (template != null && template != this) {
+			this.damageMultiplier = template.damageMultiplier + Math.max(0, this.damageLevel) * 0.075f;
+			this.animationId = template.animationId;
+			this.durationTicks = template.durationTicks;
+		}
 	}
 
 	@Override

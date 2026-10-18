@@ -251,6 +251,7 @@ public class KiTechniqueHandler {
 		private static final float HEALTH_COST_RATIO = 0.10F;
 		private static final float MIN_HEALTH = 1.0F;
 		private static final float FOLLOW_UP_MIN_HEALTH_RATIO = 0.20F;
+		private static final int MAX_FOLLOW_UPS = 3;
 
 		private static final Map<UUID, FollowUp> FOLLOW_UPS = new ConcurrentHashMap<>();
 
@@ -269,8 +270,9 @@ public class KiTechniqueHandler {
 			final String techniqueId;
 			final int expiresTick;
 			final int nextShotTick;
+			final int shotsFired;
 
-			FollowUp(KiBlastEntity shot, int maxLife, int now) {
+			FollowUp(KiBlastEntity shot, int maxLife, int now, int shotsFired) {
 				this.damage = shot.getKiDamage();
 				this.speed = shot.getKiSpeed();
 				this.size = shot.getSize();
@@ -283,6 +285,7 @@ public class KiTechniqueHandler {
 				this.techniqueId = shot.getTechniqueId();
 				this.expiresTick = now + FOLLOW_UP_WINDOW_TICKS;
 				this.nextShotTick = now + FOLLOW_UP_MIN_INTERVAL_TICKS;
+				this.shotsFired = shotsFired;
 			}
 		}
 
@@ -298,8 +301,11 @@ public class KiTechniqueHandler {
 			MinecraftServer server = player.getServer();
 			if (server == null) return;
 
-			if (canAffordFollowUp(player)) {
-				FOLLOW_UPS.put(player.getUUID(), new FollowUp(shot, maxLife, server.getTickCount()));
+			int now = server.getTickCount();
+			FollowUp previous = FOLLOW_UPS.get(player.getUUID());
+			int shotsFired = previous != null && now <= previous.expiresTick ? previous.shotsFired + 1 : 0;
+			if (shotsFired < MAX_FOLLOW_UPS && canAffordFollowUp(player)) {
+				FOLLOW_UPS.put(player.getUUID(), new FollowUp(shot, maxLife, now, shotsFired));
 				NetworkHandler.sendToPlayer(new TriBeamPackets.FollowUpWindowS2C(FOLLOW_UP_WINDOW_TICKS), player);
 			} else {
 				close(player);

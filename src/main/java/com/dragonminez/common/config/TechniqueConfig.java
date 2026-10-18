@@ -49,6 +49,18 @@ public class TechniqueConfig {
 		}
 	}
 
+	public boolean addMissingDefaults() {
+		TechniqueConfig defaults = new TechniqueConfig();
+		boolean changed = false;
+		for (Map.Entry<String, TechniqueTypeConfig> entry : defaults.kiAttacks.entrySet())
+			changed |= kiAttacks.putIfAbsent(entry.getKey(), entry.getValue()) == null;
+		for (Map.Entry<String, StrikeAttackConfig> entry : defaults.strikeAttacks.entrySet())
+			changed |= strikeAttacks.putIfAbsent(entry.getKey(), entry.getValue()) == null;
+		for (Map.Entry<String, EvasionAttackConfig> entry : defaults.evasionAttacks.entrySet())
+			changed |= evasionAttacks.putIfAbsent(entry.getKey(), entry.getValue()) == null;
+		return changed;
+	}
+
 	private static int defaultEvasionCooldownTicks(String evasionId) {
 		return switch (evasionId) {
 			case "taiyoken" -> 900;
@@ -63,20 +75,24 @@ public class TechniqueConfig {
 
 	private static int defaultStrikeCooldownTicks(String strikeId) {
 		return switch (strikeId) {
-			case "dragon_fist" -> 320;
-			case "oozaru_fist" -> 280;
-			case "super_god_fist", "kaioken_attack", "spirit_breaking_cannon" -> 240;
-			case "mystic_ball" -> 280;
-			case "darkness_eye_beam" -> 300;
-			case "death_chaser" -> 260;
-			case "perfect_rush" -> 280;
-			case "spirit_breaker" -> 320;
-			case "android_combo" -> 280;
-			case "beam_sword_slash" -> 300;
+			case "meteor", "deadly_dance" -> 160;
+			case "wolf_fang" -> 140;
+			case "kaioken_attack" -> 180;
 			case "deadly_dance_vegetto" -> 200;
-			case "blue_hurricane" -> 260;
-			case "wolf_fang", "gum_punch" -> 140;
-			case "oozaru_slam" -> 120;
+			case "oozaru_fist" -> 280;
+			case "super_god_fist" -> 300;
+			case "dragon_fist" -> 320;
+			case "oozaru_slam" -> 180;
+			case "grab" -> 210;
+			case "gum_punch", "blue_hurricane" -> 260;
+			case "combo_meteor" -> 290;
+			case "shining_sword_attack", "mystic_ball", "death_chaser" -> 320;
+			case "spirit_breaking_cannon", "perfect_rush" -> 330;
+			case "dimensional_punch" -> 340;
+			case "beam_sword_slash" -> 350;
+			case "spirit_breaker" -> 370;
+			case "dimensional_sword_attack", "android_combo" -> 380;
+			case "darkness_eye_beam" -> 410;
 			case "meteor_burst" -> 600;
 			default -> 160;
 		};

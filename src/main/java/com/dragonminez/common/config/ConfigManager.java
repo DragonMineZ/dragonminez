@@ -708,7 +708,16 @@ public class ConfigManager {
 		trainingConfig = loadAndValidate(CONFIG_DIR.resolve("training.json"), TrainingConfig.class, TrainingConfig::new, TrainingConfig::getConfigVersion, TrainingConfig::setConfigVersion, TrainingConfig.CURRENT_VERSION, null);
 		skillsConfig = loadAndValidate(CONFIG_DIR.resolve("skills.json"), SkillsConfig.class, SkillsConfig::new, SkillsConfig::getConfigVersion, SkillsConfig::setConfigVersion, SkillsConfig.CURRENT_VERSION, "skills.json");
 		techniqueConfig = loadAndValidate(CONFIG_DIR.resolve("techniques.json"), TechniqueConfig.class, TechniqueConfig::new, TechniqueConfig::getConfigVersion, TechniqueConfig::setConfigVersion, TechniqueConfig.CURRENT_VERSION, null);
+		if (skillsConfig.addMissingDefaults()) saveWithAddedDefaults(CONFIG_DIR.resolve("skills.json"), skillsConfig);
+		if (techniqueConfig.addMissingDefaults()) saveWithAddedDefaults(CONFIG_DIR.resolve("techniques.json"), techniqueConfig);
 		entitiesConfig = loadAndValidate(CONFIG_DIR.resolve("entities.json"), EntitiesConfig.class, ConfigManager::createDefaultEntitiesConfig, EntitiesConfig::getConfigVersion, EntitiesConfig::setConfigVersion, EntitiesConfig.CURRENT_VERSION, null);
+	}
+
+	private static void saveWithAddedDefaults(Path path, Object config) {
+		LogUtil.warn(Env.COMMON, "Added missing default entries to {}", path.getFileName());
+		try { LOADER.saveConfig(path, config); } catch (Exception e) {
+			LogUtil.error(Env.COMMON, "Failed to save {} after adding missing defaults: {}", path.getFileName(), e.getMessage());
+		}
 	}
 
 	private static void createOrLoadRace(String raceName, boolean isDefault) throws IOException {
@@ -1485,8 +1494,10 @@ public class ConfigManager {
 			trainingConfig = LOADER.loadConfig(path, TrainingConfig.class);
 		} else if (configFilePath.equals("skills")) {
 			skillsConfig = LOADER.loadConfig(path, SkillsConfig.class);
+			if (skillsConfig.addMissingDefaults()) saveWithAddedDefaults(path, skillsConfig);
 		} else if (configFilePath.equals("techniques")) {
 			techniqueConfig = LOADER.loadConfig(path, TechniqueConfig.class);
+			if (techniqueConfig.addMissingDefaults()) saveWithAddedDefaults(path, techniqueConfig);
 		} else if (configFilePath.equals("entities")) {
 			entitiesConfig = LOADER.loadConfig(path, EntitiesConfig.class);
 		} else if (configFilePath.startsWith("races/")) {

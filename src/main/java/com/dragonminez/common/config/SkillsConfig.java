@@ -561,6 +561,35 @@ public class SkillsConfig {
 		return false;
 	}
 
+	public boolean addMissingDefaults() {
+		SkillsConfig defaults = new SkillsConfig();
+		boolean changed = addMissing(kiSkills, defaults.kiSkills);
+		changed |= addMissing(strikeSkills, defaults.strikeSkills);
+		changed |= addMissing(evasionSkills, defaults.evasionSkills);
+		for (Map.Entry<String, SkillCosts> entry : defaults.skills.entrySet()) {
+			String id = entry.getKey();
+			if (skills.containsKey(id)) continue;
+			skills.put(id, entry.getValue());
+			changed = true;
+			for (Map.Entry<String, List<String>> offering : defaults.skillOfferings.entrySet()) {
+				if (!offering.getValue().contains(id)) continue;
+				List<String> offered = skillOfferings.computeIfAbsent(offering.getKey(), key -> new ArrayList<>());
+				if (!offered.contains(id)) offered.add(id);
+			}
+		}
+		return changed;
+	}
+
+	private static boolean addMissing(List<String> target, List<String> defaults) {
+		boolean changed = false;
+		for (String id : defaults) {
+			if (target.contains(id)) continue;
+			target.add(id);
+			changed = true;
+		}
+		return changed;
+	}
+
 	public boolean isTechniqueSkill(String skillName) {
 		if (skillName == null) return false;
 		String id = skillName.toLowerCase(Locale.ROOT);

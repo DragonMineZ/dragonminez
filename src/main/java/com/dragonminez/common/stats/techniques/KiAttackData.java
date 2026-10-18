@@ -614,6 +614,15 @@ public class KiAttackData extends TechniqueData {
 		this.speedLevel = tag.getInt("SpeedLevel");
 		this.sizeLevel = tag.getInt("SizeLevel");
 
+		KiAttackData template = PredefinedTechniques.REGISTRY.get(this.id);
+		if (template != null && template != this) {
+			this.damageMultiplier = template.getDamageMultiplier() + Math.max(0, this.damageLevel) * 0.05f;
+			this.size = template.getSize() + Math.max(0, this.sizeLevel) * 0.1f;
+			this.speed = template.getSpeed() + Math.max(0, this.speedLevel) * 0.05f;
+			this.armorPenetration = template.getArmorPenetration() + Math.max(0, this.armorPenLevel);
+			this.cooldown = template.getCooldown();
+		}
+
 		try { this.secondaryEffectType = SecondaryEffectType.valueOf(tag.getString("SecondaryEffectType")); }
 		catch (Exception e) { this.secondaryEffectType = SecondaryEffectType.NONE; }
 		String affected = tag.getString("AffectedStat");

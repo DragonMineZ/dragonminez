@@ -107,10 +107,10 @@ public class StrikeAttackHandler {
 	private static final double METEOR_BURST_KI_RATIO = 1.5;
 	private static final String MYSTIC_BALL_ID = MysticBallCombo.TECHNIQUE_ID;
 	private static final String EYE_BEAM_ID = DarknessEyeBeamCombo.TECHNIQUE_ID;
-	private static final double EYE_BEAM_KI_RATIO = 1.5;
+	private static final double EYE_BEAM_KI_RATIO = 0.5;
 	private static final String DEATH_CHASER_ID = DeathChaserCombo.TECHNIQUE_ID;
 	private static final String ANDROID_COMBO_ID = AndroidCombo.TECHNIQUE_ID;
-	private static final double ANDROID_COMBO_KI_RATIO = 1.5;
+	private static final double ANDROID_COMBO_KI_RATIO = 0.5;
 	private static final String BEAM_SWORD_ID = BeamSwordSlashCombo.TECHNIQUE_ID;
 	private static final String PERFECT_RUSH_ID = PerfectRushCombo.TECHNIQUE_ID;
 	private static final String SPIRIT_BREAKER_ID = SpiritBreakerCombo.TECHNIQUE_ID;
