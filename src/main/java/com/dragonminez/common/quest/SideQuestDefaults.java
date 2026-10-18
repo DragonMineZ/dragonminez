@@ -872,11 +872,11 @@ final class SideQuestDefaults {
 				"collection", false, "bulma", "bulma",
 				prereqs("AND", condSaga("frieza_saga", 4)),
 				new JsonObject[]{
-						objItem("dragonminez:kikono_shard", 16),
-						objItem("minecraft:diamond", 8),
+						objDeliver("dragonminez:kikono_shard", 16, "bulma"),
+						objDeliver("minecraft:diamond", 4, "bulma"),
 						objTalkTo("bulma")
 				},
-				new JsonObject[]{ rewAttributes(13), rewItem("minecraft:diamond_sword", 1) }));
+				new JsonObject[]{ rewAttributes(13), rewItem("dragonminez:vehicle_engine", 1) }));
 
 		writeQuestFile(dir, "gohan_dragon_balls_namek.json", sidequest(
 				"gohan_dragon_balls_namek", "dmz.sidequest.gohan_namek_db.name", "dmz.sidequest.gohan_namek_db.desc",
@@ -1170,14 +1170,20 @@ final class SideQuestDefaults {
 		writeQuestFile(dir, "bulma_capsule_development.json", sidequest(
 				"bulma_capsule_development", "dmz.sidequest.bulma_capsule_development.name", "dmz.sidequest.bulma_capsule_development.desc",
 				"collection", true, "bulma", "bulma", prereqs("AND", condSaga("saiyan_saga", 1)),
-				new JsonObject[]{ objItem("minecraft:diamond", 4), objItem("minecraft:redstone", 8), objTalkTo("bulma") },
-				new JsonObject[]{ rewAttributes(4) }));
+				new JsonObject[]{ objDeliver("minecraft:iron_ingot", 16, "bulma"), objDeliver("minecraft:redstone", 16, "bulma"), objDeliver("minecraft:piston", 2, "bulma"), objTalkTo("bulma") },
+				new JsonObject[]{ rewAttributes(4), rewItem("dragonminez:vehicle_engine", 1) }));
 
 		writeQuestFile(dir, "bulma_rare_mineral_survey.json", sidequest(
 				"bulma_rare_mineral_survey", "dmz.sidequest.bulma_rare_mineral_survey.name", "dmz.sidequest.bulma_rare_mineral_survey.desc",
 				"collection", true, "bulma", "bulma", prereqs("AND", condSaga("saiyan_saga", 8)),
-				new JsonObject[]{ objItem("minecraft:amethyst_shard", 8), objItem("minecraft:copper_ingot", 12), objTalkTo("bulma") },
-				new JsonObject[]{ rewAttributes(3) }));
+				new JsonObject[]{ objDeliver("minecraft:iron_ingot", 12, "bulma"), objDeliver("minecraft:copper_ingot", 12, "bulma"), objDeliver("minecraft:amethyst_shard", 4, "bulma"), objTalkTo("bulma") },
+				new JsonObject[]{ rewAttributes(3), rewItem("dragonminez:vehicle_plating", 2) }));
+
+		writeQuestFile(dir, "bulma_vehicle_upholstery.json", sidequest(
+				"bulma_vehicle_upholstery", "dmz.sidequest.bulma_vehicle_upholstery.name", "dmz.sidequest.bulma_vehicle_upholstery.desc",
+				"collection", true, "bulma", "bulma", prereqs("AND", condSaga("saiyan_saga", 3)),
+				new JsonObject[]{ objDeliver("minecraft:leather", 8, "bulma"), objDeliver("minecraft:cyan_wool", 4, "bulma"), objDeliver("minecraft:iron_ingot", 4, "bulma"), objTalkTo("bulma") },
+				new JsonObject[]{ rewAttributes(3), rewItem("dragonminez:vehicle_seat", 2) }));
 
 		writeQuestFile(dir, "bulma_weapon_analysis.json", sidequest(
 				"bulma_weapon_analysis", "dmz.sidequest.bulma_weapon_analysis.name", "dmz.sidequest.bulma_weapon_analysis.desc",
@@ -1188,8 +1194,8 @@ final class SideQuestDefaults {
 		writeQuestFile(dir, "bulma_flight_stabilizer.json", sidequest(
 				"bulma_flight_stabilizer", "dmz.sidequest.bulma_flight_stabilizer.name", "dmz.sidequest.bulma_flight_stabilizer.desc",
 				"collection", true, "bulma", "bulma", prereqs("AND", condSaga("saiyan_saga", 9)),
-				new JsonObject[]{ objItem("minecraft:feather", 16), objItem("minecraft:redstone", 12), objItem("minecraft:gold_ingot", 4), objTalkTo("bulma") },
-				new JsonObject[]{ rewAttributes(3) }));
+				new JsonObject[]{ objDeliver("minecraft:feather", 16, "bulma"), objDeliver("minecraft:iron_ingot", 8, "bulma"), objDeliver("minecraft:gold_ingot", 4, "bulma"), objTalkTo("bulma") },
+				new JsonObject[]{ rewAttributes(3), rewItem("dragonminez:vehicle_propeller", 1) }));
 
 		writeQuestFile(dir, "bulma_saiyan_biology_sample.json", sidequest(
 				"bulma_saiyan_biology_sample", "dmz.sidequest.bulma_saiyan_biology_sample.name", "dmz.sidequest.bulma_saiyan_biology_sample.desc",

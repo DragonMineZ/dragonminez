@@ -1,6 +1,7 @@
 package com.dragonminez.common.init;
 
 import com.dragonminez.Reference;
+import com.dragonminez.common.init.particles.VehicleSmokeOptions;
 import com.mojang.serialization.Codec;
 import net.minecraft.core.particles.BlockParticleOption;
 import net.minecraft.core.particles.ParticleType;
@@ -55,6 +56,14 @@ public class MainParticles {
             PARTICLE_TYPES.register("divine_particle", () -> new SimpleParticleType(true));
     public static final RegistryObject<SimpleParticleType> STARDUST =
             PARTICLE_TYPES.register("stardust", () -> new SimpleParticleType(true));
+    @SuppressWarnings("deprecation")
+    public static final RegistryObject<ParticleType<VehicleSmokeOptions>> VEHICLE_SMOKE =
+            PARTICLE_TYPES.register("vehicle_smoke", () -> new ParticleType<VehicleSmokeOptions>(false, VehicleSmokeOptions.DESERIALIZER) {
+                @Override
+                public Codec<VehicleSmokeOptions> codec() {
+                    return VehicleSmokeOptions.CODEC;
+                }
+            });
     public static final RegistryObject<SimpleParticleType> SLEEP_Z =
             PARTICLE_TYPES.register("sleep_z", () -> new SimpleParticleType(true));
     @SuppressWarnings("deprecation")

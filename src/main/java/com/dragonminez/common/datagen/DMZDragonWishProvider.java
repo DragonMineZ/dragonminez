@@ -26,6 +26,7 @@ public class DMZDragonWishProvider implements DataProvider {
 			List<Wish> wishes = switch (dragon.getId()) {
 				case "shenron" -> DefaultWishes.shenron();
 				case "porunga" -> DefaultWishes.porunga();
+				case "porunga_daima" -> DefaultWishes.porungaDaima();
 				default -> List.of();
 			};
 			if (dragon.getBallSetId() != null) {

@@ -429,6 +429,24 @@ public class MainEntities {
                     () -> EntityType.Builder.of(BlackNimbusEntity::new, MobCategory.CREATURE)
                             .sized(2.0f, 1.3f)
                             .build(ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "black_nimbus").toString()));
+    public static final RegistryObject<EntityType<CarEntity>> CAR =
+            ENTITY_TYPES.register("car",
+                    () -> EntityType.Builder.of(CarEntity::new, MobCategory.MISC)
+                            .sized(2.4f, 1.3f)
+                            .clientTrackingRange(10)
+                            .build(ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "car").toString()));
+    public static final RegistryObject<EntityType<CC576Entity>> CC576 =
+            ENTITY_TYPES.register("cc576",
+                    () -> EntityType.Builder.of(CC576Entity::new, MobCategory.MISC)
+                            .sized(4.5f, 4.0f)
+                            .clientTrackingRange(10)
+                            .build(ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "cc576").toString()));
+    public static final RegistryObject<EntityType<FriezaCapsuleEntity>> FRIEZA_CAPSULE =
+            ENTITY_TYPES.register("frieza_capsule",
+                    () -> EntityType.Builder.of(FriezaCapsuleEntity::new, MobCategory.MISC)
+                            .sized(1.5f, 1.6f)
+                            .clientTrackingRange(10)
+                            .build(ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "frieza_capsule").toString()));
     public static final RegistryObject<EntityType<RobotEntity>> ROBOT_XENOVERSE =
             ENTITY_TYPES.register("robotxv",
                     () -> EntityType.Builder.of(RobotEntity::new, MobCategory.CREATURE)

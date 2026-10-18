@@ -16,7 +16,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * The stock wish lists for Shenron and Porunga.
+ * The stock wish lists for Shenron, Porunga and Porunga (Daima).
  *
  * <p>Read by both {@code WishManager}, which seeds a new world's
  * {@code <world>/dragonminez/wishes/*.json}, and {@code DMZDragonWishProvider}, which
@@ -67,6 +67,8 @@ public final class DefaultWishes {
 		wishes.add(new AttributesWish("wish.porunga.attributes.name", "wish.porunga.attributes.desc", 75));
 		wishes.add(new ItemListWish("wish.porunga.bravesword.name", "wish.porunga.bravesword.desc",
 				MainItems.BRAVE_SWORD));
+		wishes.add(new ItemListWish("wish.porunga.frieza_capsule.name", "wish.porunga.frieza_capsule.desc",
+				MainItems.FRIEZA_CAPSULE_ITEM));
 
 		wishes.add(new PassiveResetWish("wish.porunga.racialskillreset.name", "wish.porunga.racialskillreset.desc"));
 		wishes.add(new ReCustomizeWish("wish.porunga.customization.name", "wish.porunga.customization.desc"));
@@ -96,5 +98,9 @@ public final class DefaultWishes {
 				pothalaGreen));
 
 		return wishes;
+	}
+
+	public static List<Wish> porungaDaima() {
+		return porunga();
 	}
 }

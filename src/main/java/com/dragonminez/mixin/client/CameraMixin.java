@@ -21,6 +21,7 @@ import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.Unique;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
+import org.spongepowered.asm.mixin.injection.ModifyArg;
 import org.spongepowered.asm.mixin.injection.Redirect;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
@@ -35,6 +36,8 @@ public abstract class CameraMixin implements RollCamera {
 	@Shadow protected abstract void setRotation(float yRot, float xRot);
 
 	@Shadow protected abstract void move(double x, double y, double z);
+
+	@Shadow private Entity entity;
 
 	@Unique private float dragonminez$roll = 0F;
 
@@ -100,6 +103,11 @@ public abstract class CameraMixin implements RollCamera {
 
 			DMZCameraBuffer.setFirstPersonShift(appliedShift);
 		}
+	}
+
+	@ModifyArg(method = "setup", at = @At(value = "INVOKE", target = "Lnet/minecraft/client/Camera;getMaxZoom(D)D"))
+	private double dragonminez$vehicleZoom(double distance) {
+		return distance + OverShoulderCamera.vehicleCameraExtra(this.entity);
 	}
 
 	@Redirect(

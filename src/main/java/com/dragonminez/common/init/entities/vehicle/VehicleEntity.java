@@ -1,6 +1,7 @@
 package com.dragonminez.common.init.entities.vehicle;
 
 import com.dragonminez.common.init.entities.vehicle.VehicleProperties.Mobility;
+import com.dragonminez.common.init.particles.VehicleSmokeOptions;
 import com.dragonminez.common.network.C2S.VehicleFlightModeC2S;
 import com.dragonminez.common.network.NetworkHandler;
 import net.minecraft.core.BlockPos;
@@ -10,6 +11,8 @@ import net.minecraft.network.syncher.EntityDataAccessor;
 import net.minecraft.network.syncher.EntityDataSerializers;
 import net.minecraft.network.syncher.SynchedEntityData;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.sounds.SoundEvent;
+import net.minecraft.sounds.SoundSource;
 import net.minecraft.util.Mth;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
@@ -19,9 +22,11 @@ import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.Mob;
 import net.minecraft.world.entity.MoverType;
+import net.minecraft.world.entity.Pose;
 import net.minecraft.world.entity.ai.attributes.AttributeSupplier;
 import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.entity.vehicle.DismountHelper;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
@@ -29,13 +34,21 @@ import net.minecraft.world.level.material.FlowingFluid;
 import net.minecraft.world.level.material.FluidState;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
+import org.jetbrains.annotations.Nullable;
 import software.bernie.geckolib.animatable.GeoEntity;
 import software.bernie.geckolib.core.animatable.instance.AnimatableInstanceCache;
 import software.bernie.geckolib.core.animatable.instance.SingletonAnimatableInstanceCache;
 
+import java.util.Arrays;
+import java.util.List;
+import java.util.function.Supplier;
+
 public abstract class VehicleEntity extends Mob implements GeoEntity {
 
 	private static final EntityDataAccessor<Boolean> FLIGHT_MODE = SynchedEntityData.defineId(VehicleEntity.class, EntityDataSerializers.BOOLEAN);
+	private static final EntityDataAccessor<CompoundTag> SEAT_OCCUPANTS = SynchedEntityData.defineId(VehicleEntity.class, EntityDataSerializers.COMPOUND_TAG);
+	private static final String SEATS_KEY = "Seats";
+	private static final int EMPTY_SEAT = -1;
 	private static final String FLIGHT_MODE_TAG = "VehicleFlightMode";
 
 	private static final double GRAVITY = 0.08D;
@@ -50,6 +63,14 @@ public abstract class VehicleEntity extends Mob implements GeoEntity {
 	private static final double MAX_HORIZONTAL_SPEED = 9.0D;
 	private static final int DOUBLE_TAP_TICKS = 6;
 	private static final int LIFTOFF_TICKS = 5;
+	private static final double SMOKE_SPACING = 0.35D;
+	private static final int MAX_SMOKE_STEPS = 8;
+	private static final float FULL_BANK_YAW_RATE = 12.0F;
+	private static final float TILT_SMOOTHING = 0.18F;
+	private static final float HOVER_BLEND_SPEED = 0.08F;
+	private static final double CULL_MARGIN = 0.75D;
+	private static final double DISMOUNT_GAP = 0.3D;
+	private static final int[] DISMOUNT_HEIGHTS = {0, 1, -1, 2, -2};
 
 	private final VehicleProperties properties;
 	private final AnimatableInstanceCache geoCache = new SingletonAnimatableInstanceCache(this);
@@ -64,6 +85,17 @@ public abstract class VehicleEntity extends Mob implements GeoEntity {
 	private int liftoffTicks;
 	private int boostTicks;
 	private double boostStrength;
+
+	private double clientSpeed;
+	private float tiltRoll;
+	private float tiltRollO;
+	private float tiltPitch;
+	private float tiltPitchO;
+	private float lastYaw;
+	private boolean hasLastYaw;
+	private float hoverBlend;
+	private float hoverBlendO;
+	private double[] cullExtents;
 
 	protected VehicleEntity(EntityType<? extends VehicleEntity> type, Level level, VehicleProperties properties) {
 		super(type, level);
@@ -89,6 +121,12 @@ public abstract class VehicleEntity extends Mob implements GeoEntity {
 	protected void onBoostStart() {
 	}
 
+	protected void onFlightModeChanged(boolean flying) {
+	}
+
+	protected void tickVisuals(double speed) {
+	}
+
 	public VehicleProperties getProperties() {
 		return properties;
 	}
@@ -101,6 +139,57 @@ public abstract class VehicleEntity extends Mob implements GeoEntity {
 		};
 	}
 
+	public double getClientSpeed() {
+		return clientSpeed;
+	}
+
+	public float getSpeedFactor() {
+		return (float) Mth.clamp(clientSpeed / Math.max(properties.topSpeed(), 1.0E-3D), 0.0D, 1.0D);
+	}
+
+	public float getTiltRoll(float partialTick) {
+		return Mth.lerp(partialTick, tiltRollO, tiltRoll);
+	}
+
+	public float getTiltPitch(float partialTick) {
+		return Mth.lerp(partialTick, tiltPitchO, tiltPitch);
+	}
+
+	public float getHoverOffset(float partialTick) {
+		if (properties.hoverBob() == 0.0F) return 0.0F;
+		float blend = Mth.lerp(partialTick, hoverBlendO, hoverBlend);
+		return Mth.sin((this.tickCount + partialTick) * 0.12F) * properties.hoverBob() * blend;
+	}
+
+	public Vec3 applyVisualTransform(Vec3 local, float partialTick) {
+		float roll = getTiltRoll(partialTick) * Mth.DEG_TO_RAD;
+		float pitch = getTiltPitch(partialTick) * Mth.DEG_TO_RAD;
+		double pivot = properties.tilt().pivotHeight();
+		double side = local.x;
+		double up = local.y - pivot;
+		double forward = local.z;
+		if (roll != 0.0F) {
+			double cos = Mth.cos(roll);
+			double sin = Mth.sin(roll);
+			double rolledSide = side * cos - up * sin;
+			up = side * sin + up * cos;
+			side = rolledSide;
+		}
+		if (pitch != 0.0F) {
+			double cos = Mth.cos(pitch);
+			double sin = Mth.sin(pitch);
+			double pitchedUp = up * cos - forward * sin;
+			forward = up * sin + forward * cos;
+			up = pitchedUp;
+		}
+		return new Vec3(side, up + pivot + getHoverOffset(partialTick), forward);
+	}
+
+	public Vec3 localToWorld(Vec3 local) {
+		Vec3 horizontal = new Vec3(local.x, 0.0D, local.z).yRot(-this.getYRot() * Mth.DEG_TO_RAD);
+		return new Vec3(this.getX() + horizontal.x, this.getY() + local.y, this.getZ() + horizontal.z);
+	}
+
 	public void setDriverInput(boolean ascend, boolean descend, boolean boost) {
 		this.inputAscend = ascend;
 		this.inputDescend = descend;
@@ -109,14 +198,17 @@ public abstract class VehicleEntity extends Mob implements GeoEntity {
 
 	public void receiveDriverFlightMode(ServerPlayer driver, boolean flying) {
 		if (properties.mobility() != Mobility.HYBRID || this.getControllingPassenger() != driver) return;
+		boolean changed = this.flightMode != flying;
 		this.flightMode = flying;
 		this.entityData.set(FLIGHT_MODE, flying);
+		if (changed) onFlightModeChanged(flying);
 	}
 
 	@Override
 	protected void defineSynchedData() {
 		super.defineSynchedData();
 		this.entityData.define(FLIGHT_MODE, false);
+		this.entityData.define(SEAT_OCCUPANTS, new CompoundTag());
 	}
 
 	@Override
@@ -136,7 +228,16 @@ public abstract class VehicleEntity extends Mob implements GeoEntity {
 	@Override
 	public void readAdditionalSaveData(CompoundTag tag) {
 		super.readAdditionalSaveData(tag);
-		if (properties.mobility() == Mobility.HYBRID) setFlightMode(tag.getBoolean(FLIGHT_MODE_TAG));
+		if (properties.mobility() == Mobility.HYBRID) {
+			this.flightMode = tag.getBoolean(FLIGHT_MODE_TAG);
+			this.entityData.set(FLIGHT_MODE, this.flightMode);
+		}
+	}
+
+	@Override
+	public void tick() {
+		super.tick();
+		if (this.level().isClientSide) tickClientEffects();
 	}
 
 	@Override
@@ -217,14 +318,23 @@ public abstract class VehicleEntity extends Mob implements GeoEntity {
 	}
 
 	private Vec3 horizontalMotion(Player driver) {
-		Vec3 input = new Vec3(driver.xxa, 0.0D, driver.zza);
-		Vec3 motion = Vec3.ZERO;
+		double forwardInput = driver.zza;
+		Vec3 input = new Vec3(properties.strafe() ? driver.xxa : 0.0D, 0.0D, forwardInput);
+		Vec3 target = Vec3.ZERO;
 		if (input.lengthSqr() > 1.0E-7D) {
 			double speed = properties.speed();
 			if (properties.canSprint() && driver.isSprinting()) speed *= properties.sprintMultiplier();
-			motion = input.normalize().scale(speed).yRot(-this.getYRot() * Mth.DEG_TO_RAD);
+			if (forwardInput < 0.0D) speed *= properties.reverseMultiplier();
+			target = input.normalize().scale(speed).yRot(-this.getYRot() * Mth.DEG_TO_RAD);
 		}
-		if (this.boostStrength > 0.0D) motion = motion.add(forward().scale(this.boostStrength));
+		if (this.boostStrength > 0.0D) target = target.add(forward().scale(this.boostStrength));
+		Vec3 motion = target;
+		double acceleration = properties.acceleration();
+		if (acceleration < 1.0D) {
+			Vec3 current = this.getDeltaMovement();
+			motion = new Vec3(Mth.lerp(acceleration, current.x, target.x), 0.0D, Mth.lerp(acceleration, current.z, target.z));
+			if (target.lengthSqr() == 0.0D && motion.horizontalDistanceSqr() < 1.0E-5D) motion = Vec3.ZERO;
+		}
 		double length = motion.horizontalDistance();
 		return length > MAX_HORIZONTAL_SPEED ? motion.scale(MAX_HORIZONTAL_SPEED / length) : motion;
 	}
@@ -265,8 +375,12 @@ public abstract class VehicleEntity extends Mob implements GeoEntity {
 	private void setFlightMode(boolean flying) {
 		if (properties.mobility() != Mobility.HYBRID || this.flightMode == flying) return;
 		this.flightMode = flying;
-		if (this.level().isClientSide) NetworkHandler.sendToServer(new VehicleFlightModeC2S(flying));
-		else this.entityData.set(FLIGHT_MODE, flying);
+		if (this.level().isClientSide) {
+			NetworkHandler.sendToServer(new VehicleFlightModeC2S(flying));
+		} else {
+			this.entityData.set(FLIGHT_MODE, flying);
+			onFlightModeChanged(flying);
+		}
 	}
 
 	private double fluidSupport(double vertical) {
@@ -312,8 +426,79 @@ public abstract class VehicleEntity extends Mob implements GeoEntity {
 		return this.level().getBlockState(below).getFriction(this.level(), below, this) * 0.91D;
 	}
 
-	private Vec3 forward() {
+	protected Vec3 forward() {
 		return new Vec3(0.0D, 0.0D, 1.0D).yRot(-this.getYRot() * Mth.DEG_TO_RAD);
+	}
+
+	private void tickClientEffects() {
+		double dx = this.getX() - this.xo;
+		double dy = this.getY() - this.yo;
+		double dz = this.getZ() - this.zo;
+		this.clientSpeed = Math.sqrt(dx * dx + dy * dy + dz * dz);
+		tickTilt(dx, dy, dz);
+		this.hoverBlendO = this.hoverBlend;
+		this.hoverBlend = Mth.approach(this.hoverBlend, isFlightMode() ? 1.0F : 0.0F, HOVER_BLEND_SPEED);
+		if (this.getControllingPassenger() != null) {
+			for (VehicleProperties.Exhaust exhaust : properties.exhausts()) emitSmoke(exhaust, dx, dy, dz);
+		}
+		tickVisuals(this.clientSpeed);
+	}
+
+	private void tickTilt(double dx, double dy, double dz) {
+		this.tiltRollO = this.tiltRoll;
+		this.tiltPitchO = this.tiltPitch;
+		VehicleProperties.Tilt tilt = properties.tilt();
+		if (tilt.isNone()) return;
+		float yawRate = this.hasLastYaw ? Mth.wrapDegrees(this.getYRot() - this.lastYaw) : 0.0F;
+		this.lastYaw = this.getYRot();
+		this.hasLastYaw = true;
+
+		float targetRoll = 0.0F;
+		float targetPitch = 0.0F;
+		if (isFlightMode() && this.getControllingPassenger() != null) {
+			double top = Math.max(properties.topSpeed(), 1.0E-3D);
+			Vec3 forward = forward();
+			float speedFactor = (float) Mth.clamp(Math.sqrt(dx * dx + dz * dz) / top, 0.0D, 1.0D);
+			float forwardFactor = (float) Mth.clamp((dx * forward.x + dz * forward.z) / top, -1.0D, 1.0D);
+			float climbFactor = (float) Mth.clamp(dy / Math.max(properties.verticalSpeed(), 1.0E-3D), -1.0D, 1.0D);
+			targetRoll = Mth.clamp(yawRate / FULL_BANK_YAW_RATE, -1.0F, 1.0F) * tilt.bank() * Math.min(1.0F, speedFactor * 2.0F);
+			targetPitch = forwardFactor * tilt.lean() - climbFactor * tilt.climb();
+		}
+		this.tiltRoll += (targetRoll - this.tiltRoll) * TILT_SMOOTHING;
+		this.tiltPitch += (targetPitch - this.tiltPitch) * TILT_SMOOTHING;
+	}
+
+	private void emitSmoke(VehicleProperties.Exhaust exhaust, double dx, double dy, double dz) {
+		VehicleProperties.Smoke smoke = exhaust.smoke();
+		float intensity = smoothstep(smoke.minSpeed(), smoke.fullSpeed(), this.clientSpeed);
+		if (intensity <= 0.0F) return;
+		Vec3 now = localToWorld(applyVisualTransform(exhaust.position(), 1.0F));
+		Vec3 before = now.subtract(dx, dy, dz);
+		int steps = Mth.clamp(Mth.ceil(now.distanceTo(before) / SMOKE_SPACING), 1, MAX_SMOKE_STEPS);
+		float expected = smoke.density() * intensity;
+		float size = smoke.size() * (0.7F + 0.6F * intensity);
+		float alpha = smoke.alpha() * (0.55F + 0.45F * intensity);
+		int lifetime = Math.round(smoke.lifetime() * (0.75F + 0.5F * intensity));
+		for (int step = 0; step < steps; step++) {
+			int count = Mth.floor(expected) + (this.random.nextFloat() < expected - Mth.floor(expected) ? 1 : 0);
+			for (int i = 0; i < count; i++) {
+				double t = (step + this.random.nextDouble()) / steps;
+				double spread = size * 0.15D;
+				this.level().addParticle(
+						new VehicleSmokeOptions(size * (0.85F + 0.3F * this.random.nextFloat()), smoke.shade(), alpha, lifetime),
+						Mth.lerp(t, before.x, now.x) + (this.random.nextDouble() - 0.5D) * spread,
+						Mth.lerp(t, before.y, now.y) + (this.random.nextDouble() - 0.5D) * spread,
+						Mth.lerp(t, before.z, now.z) + (this.random.nextDouble() - 0.5D) * spread,
+						-dx * 0.12D + (this.random.nextDouble() - 0.5D) * 0.02D,
+						-dy * 0.12D + 0.01D,
+						-dz * 0.12D + (this.random.nextDouble() - 0.5D) * 0.02D);
+			}
+		}
+	}
+
+	protected static float smoothstep(double edge0, double edge1, double value) {
+		double t = Mth.clamp((value - edge0) / Math.max(edge1 - edge0, 1.0E-6D), 0.0D, 1.0D);
+		return (float) (t * t * (3.0D - 2.0D * t));
 	}
 
 	protected void spawnBoostBurst(ParticleOptions particle, int color) {
@@ -334,13 +519,101 @@ public abstract class VehicleEntity extends Mob implements GeoEntity {
 	}
 
 	@Override
+	public AABB getBoundingBoxForCulling() {
+		AABB box = super.getBoundingBoxForCulling();
+		VehicleModelBones.Extents extents = properties.extents();
+		if (extents == null) return box;
+		if (this.cullExtents == null) {
+			double radius = 0.0D;
+			double minY = Double.MAX_VALUE;
+			double maxY = -Double.MAX_VALUE;
+			for (int corner = 0; corner < 8; corner++) {
+				Vec3 local = properties.modelToLocal(
+						(corner & 1) != 0 ? extents.max().x : extents.min().x,
+						(corner & 2) != 0 ? extents.max().y : extents.min().y,
+						(corner & 4) != 0 ? extents.max().z : extents.min().z);
+				radius = Math.max(radius, Math.sqrt(local.x * local.x + local.z * local.z));
+				minY = Math.min(minY, local.y);
+				maxY = Math.max(maxY, local.y);
+			}
+			this.cullExtents = new double[]{radius + CULL_MARGIN, minY - CULL_MARGIN, maxY + CULL_MARGIN};
+		}
+		return box.minmax(new AABB(
+				this.getX() - this.cullExtents[0], this.getY() + this.cullExtents[1], this.getZ() - this.cullExtents[0],
+				this.getX() + this.cullExtents[0], this.getY() + this.cullExtents[2], this.getZ() + this.cullExtents[0]));
+	}
+
+	@Override
 	public boolean canSprint() {
 		return properties.canSprint();
 	}
 
 	@Override
 	public LivingEntity getControllingPassenger() {
-		return this.getFirstPassenger() instanceof Player player ? player : null;
+		int driverId = resolveSeats()[0];
+		if (driverId == EMPTY_SEAT) return null;
+		for (Entity passenger : this.getPassengers()) {
+			if (passenger.getId() == driverId) return passenger instanceof Player player ? player : null;
+		}
+		return null;
+	}
+
+	public int getSeatIndex(Entity passenger) {
+		return indexOf(resolveSeats(), passenger.getId());
+	}
+
+	public boolean isSeatFree(int seat) {
+		return seat >= 0 && seat < properties.seatCount() && resolveSeats()[seat] == EMPTY_SEAT;
+	}
+
+	public boolean moveToSeat(Player player, int seat) {
+		if (this.level().isClientSide || !this.hasPassenger(player) || !isSeatFree(seat)) return false;
+		int[] seats = resolveSeats();
+		int current = indexOf(seats, player.getId());
+		if (current >= 0) seats[current] = EMPTY_SEAT;
+		seats[seat] = player.getId();
+		storeSeats(seats);
+		if (current == 0 || seat == 0) resetDriverState();
+		return true;
+	}
+
+	private int[] resolveSeats() {
+		int count = properties.seatCount();
+		int[] seats = new int[count];
+		Arrays.fill(seats, EMPTY_SEAT);
+		List<Entity> passengers = this.getPassengers();
+		int[] stored = this.entityData.get(SEAT_OCCUPANTS).getIntArray(SEATS_KEY);
+		for (int i = 0; i < Math.min(stored.length, count); i++) {
+			int id = stored[i];
+			if (id != EMPTY_SEAT && indexOf(seats, id) < 0 && hasPassengerId(passengers, id)) seats[i] = id;
+		}
+		for (Entity passenger : passengers) {
+			if (indexOf(seats, passenger.getId()) >= 0) continue;
+			int free = indexOf(seats, EMPTY_SEAT);
+			if (free < 0) break;
+			seats[free] = passenger.getId();
+		}
+		return seats;
+	}
+
+	private void storeSeats(int[] seats) {
+		CompoundTag tag = new CompoundTag();
+		tag.putIntArray(SEATS_KEY, seats);
+		this.entityData.set(SEAT_OCCUPANTS, tag);
+	}
+
+	private static boolean hasPassengerId(List<Entity> passengers, int id) {
+		for (Entity passenger : passengers) {
+			if (passenger.getId() == id) return true;
+		}
+		return false;
+	}
+
+	private static int indexOf(int[] values, int value) {
+		for (int i = 0; i < values.length; i++) {
+			if (values[i] == value) return i;
+		}
+		return -1;
 	}
 
 	@Override
@@ -356,23 +629,84 @@ public abstract class VehicleEntity extends Mob implements GeoEntity {
 	@Override
 	protected void positionRider(Entity passenger, MoveFunction callback) {
 		if (!this.hasPassenger(passenger)) return;
-		int index = Mth.clamp(this.getPassengers().indexOf(passenger), 0, properties.seatCount() - 1);
+		int index = Mth.clamp(getSeatIndex(passenger), 0, properties.seatCount() - 1);
 		Vec3 seat = properties.seats().get(index);
+		if (this.level().isClientSide) seat = applyVisualTransform(seat, 1.0F);
 		Vec3 offset = new Vec3(seat.x, 0.0D, seat.z).yRot(-this.getYRot() * Mth.DEG_TO_RAD);
 		callback.accept(passenger, this.getX() + offset.x, this.getY() + seat.y + passenger.getMyRidingOffset(), this.getZ() + offset.z);
 		if (passenger instanceof LivingEntity living) living.yBodyRot = this.getYRot();
 	}
 
 	@Override
+	public Vec3 getDismountLocationForPassenger(LivingEntity passenger) {
+		if (!properties.dismountBeside()) return super.getDismountLocationForPassenger(passenger);
+		Vec3 forward = forward();
+		Vec3 left = new Vec3(forward.z, 0.0D, -forward.x);
+		double relX = passenger.getX() - this.getX();
+		double relZ = passenger.getZ() - this.getZ();
+		double halfWidth = this.getBbWidth() * 0.5D;
+		double along = Mth.clamp(relX * forward.x + relZ * forward.z, -halfWidth, halfWidth);
+		double sideSign = relX * left.x + relZ * left.z >= 0.0D ? 1.0D : -1.0D;
+		double reach = halfWidth + passenger.getBbWidth() * 0.5D + DISMOUNT_GAP;
+		Vec3[] candidates = {
+				left.scale(sideSign * reach).add(forward.scale(along)),
+				left.scale(-sideSign * reach).add(forward.scale(along)),
+				forward.scale(-reach),
+				forward.scale(reach)
+		};
+		for (Vec3 candidate : candidates) {
+			Vec3 spot = findDismountSpot(passenger, this.getX() + candidate.x, this.getZ() + candidate.z);
+			if (spot != null) return spot;
+		}
+		return super.getDismountLocationForPassenger(passenger);
+	}
+
+	@Nullable
+	private Vec3 findDismountSpot(LivingEntity passenger, double x, double z) {
+		for (int dy : DISMOUNT_HEIGHTS) {
+			BlockPos pos = BlockPos.containing(x, this.getY() + dy, z);
+			double floor = this.level().getBlockFloorHeight(pos);
+			if (!DismountHelper.isBlockFloorValid(floor)) continue;
+			Vec3 spot = new Vec3(x, pos.getY() + floor, z);
+			for (Pose pose : passenger.getDismountPoses()) {
+				if (DismountHelper.canDismountTo(this.level(), spot, passenger, pose)) {
+					passenger.setPose(pose);
+					return spot;
+				}
+			}
+		}
+		Vec3 midair = new Vec3(x, this.getY(), z);
+		return DismountHelper.canDismountTo(this.level(), midair, passenger, Pose.STANDING) ? midair : null;
+	}
+
+	@Override
+	protected void addPassenger(Entity passenger) {
+		super.addPassenger(passenger);
+		if (!this.level().isClientSide) storeSeats(resolveSeats());
+		playBoardSound();
+	}
+
+	@Override
 	protected void removePassenger(Entity passenger) {
 		boolean wasDriver = passenger == this.getControllingPassenger();
 		super.removePassenger(passenger);
-		if (!wasDriver) return;
+		if (!this.level().isClientSide) storeSeats(resolveSeats());
+		playBoardSound();
+		if (wasDriver) resetDriverState();
+	}
+
+	private void resetDriverState() {
 		this.inputAscend = this.inputDescend = this.inputBoost = false;
 		this.lastAscend = this.lastBoost = false;
 		this.liftoffTicks = 0;
 		this.boostTicks = 0;
 		this.boostStrength = 0.0D;
+	}
+
+	private void playBoardSound() {
+		Supplier<SoundEvent> sound = properties.boardSound();
+		if (sound == null || this.level().isClientSide || !this.isAlive()) return;
+		this.level().playSound(null, this.getX(), this.getY(), this.getZ(), sound.get(), SoundSource.NEUTRAL, 0.7F, 0.9F + this.random.nextFloat() * 0.2F);
 	}
 
 	@Override

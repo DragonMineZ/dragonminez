@@ -9,6 +9,7 @@ import com.dragonminez.common.combat.logic.player.TargetHelper;
 import com.dragonminez.common.combat.util.Minecraft_DMZ;
 import com.dragonminez.common.config.ConfigManager;
 import com.dragonminez.common.config.GeneralUserConfig;
+import com.dragonminez.common.init.entities.vehicle.VehicleEntity;
 import lombok.Getter;
 import lombok.Setter;
 import net.minecraft.client.Camera;
@@ -336,6 +337,10 @@ public final class OverShoulderCamera {
 		cameraPitch = Mth.clamp(cameraPitch + (pitch - cameraPitch) * amount, -90.0F, 90.0F);
 	}
 
+	public static double vehicleCameraExtra(Entity entity) {
+		return entity != null && entity.getVehicle() instanceof VehicleEntity vehicle ? vehicle.getProperties().cameraDistance() : 0.0D;
+	}
+
 	public static Vec3 computeMove(Camera camera, BlockGetter level, Entity entity, boolean thirdPersonReverse,
 	                               double vanillaForward, double vanillaUp, double vanillaLeft, float partialTick, float roll) {
 		if (!isActive(entity, thirdPersonReverse)) {
@@ -352,7 +357,7 @@ public final class OverShoulderCamera {
 
 		GeneralUserConfig config = ConfigManager.getUserConfig();
 		double ease = config.getOverShoulderSmoothing();
-		double targetBack = config.getOverShoulderBack();
+		double targetBack = config.getOverShoulderBack() + vehicleCameraExtra(entity);
 		double targetUp = config.getOverShoulderUp();
 		double targetRight = config.getOverShoulderSide() * (config.getOverShoulderLeft() ? -1.0 : 1.0);
 

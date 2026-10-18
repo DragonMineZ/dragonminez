@@ -13,6 +13,10 @@ import com.dragonminez.common.init.item.consumables.*;
 import com.dragonminez.common.init.item.farming.*;
 import com.dragonminez.common.init.item.entities.BlackNimbusItem;
 import com.dragonminez.common.init.item.entities.FlyingNimbusItem;
+import com.dragonminez.common.init.item.entities.VehicleItem;
+import com.dragonminez.common.init.entities.CarEntity;
+import com.dragonminez.common.init.entities.CC576Entity;
+import com.dragonminez.common.init.entities.FriezaCapsuleEntity;
 import com.dragonminez.common.init.item.entities.PunchMachineItem;
 import com.dragonminez.common.init.item.entities.SaiyanShipItem;
 import com.dragonminez.common.init.item.tools.ToolTiers;
@@ -429,6 +433,22 @@ public final class MainItems {
 	public static final RegistryObject<Item> NUBE_ITEM = ITEM_REGISTER.register("flying_nimbus", FlyingNimbusItem::new);
 	public static final RegistryObject<Item> NUBE_NEGRA_ITEM = ITEM_REGISTER.register("black_nimbus", BlackNimbusItem::new);
 	public static final RegistryObject<Item> NAVE_SAIYAN_ITEM = ITEM_REGISTER.register("saiyan_ship", SaiyanShipItem::new);
+	public static final RegistryObject<Item> VEHICLE_ENGINE = ITEM_REGISTER.register("vehicle_engine",
+			() -> new Item(new Item.Properties().stacksTo(16)));
+	public static final RegistryObject<Item> VEHICLE_PROPELLER = ITEM_REGISTER.register("vehicle_propeller",
+			() -> new Item(new Item.Properties().stacksTo(16)));
+	public static final RegistryObject<Item> VEHICLE_SEAT = ITEM_REGISTER.register("vehicle_seat",
+			() -> new Item(new Item.Properties().stacksTo(16)));
+	public static final RegistryObject<Item> VEHICLE_PLATING = ITEM_REGISTER.register("vehicle_plating",
+			() -> new Item(new Item.Properties().stacksTo(32)));
+	public static final RegistryObject<Item> CAR_RED_ITEM = ITEM_REGISTER.register("car_red",
+			() -> new VehicleItem(level -> CarEntity.create(level, CarEntity.Color.RED)));
+	public static final RegistryObject<Item> CAR_YELLOW_ITEM = ITEM_REGISTER.register("car_yellow",
+			() -> new VehicleItem(level -> CarEntity.create(level, CarEntity.Color.YELLOW)));
+	public static final RegistryObject<Item> CC576_ITEM = ITEM_REGISTER.register("cc576",
+			() -> new VehicleItem(level -> new CC576Entity(MainEntities.CC576.get(), level)));
+	public static final RegistryObject<Item> FRIEZA_CAPSULE_ITEM = ITEM_REGISTER.register("frieza_capsule",
+			() -> new VehicleItem(level -> new FriezaCapsuleEntity(MainEntities.FRIEZA_CAPSULE.get(), level)));
 	public static final RegistryObject<Item> PUNCH_MACHINE_ITEM = ITEM_REGISTER.register("punch_machine_item", PunchMachineItem::new);
 
 	//MUSIC DISCS

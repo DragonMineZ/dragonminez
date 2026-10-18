@@ -19,11 +19,15 @@ import com.dragonminez.client.init.blocks.renderer.PatternStationBlockRenderer;
 import com.dragonminez.client.init.entities.model.ki.*;
 import com.dragonminez.client.init.entities.model.sagas.DBSagaModel;
 import com.dragonminez.client.init.entities.renderer.*;
+import com.dragonminez.client.init.entities.renderer.bioandroid.CellJrRenderer;
 import com.dragonminez.client.init.entities.renderer.ki.*;
 import com.dragonminez.client.init.entities.renderer.rr.RedRibbonRenderer;
 import com.dragonminez.client.init.entities.renderer.rr.RedRibbonSoldierRenderer;
 import com.dragonminez.client.init.entities.renderer.rr.RobotRRRenderer;
 import com.dragonminez.client.init.entities.renderer.sagas.*;
+import com.dragonminez.client.init.entities.renderer.vehicle.CC576Renderer;
+import com.dragonminez.client.init.entities.renderer.vehicle.CarRenderer;
+import com.dragonminez.client.init.entities.renderer.vehicle.FriezaCapsuleRenderer;
 import com.dragonminez.client.util.ArmorTextureResolver;
 import com.dragonminez.client.util.KeyBinds;
 import com.dragonminez.client.util.SkinCacheManager;
@@ -275,9 +279,12 @@ public class ModClientEvents {
         event.registerEntityRenderer(MainEntities.SPACE_POD.get(), SpacePodRenderer::new);
         event.registerEntityRenderer(MainEntities.FLYING_NIMBUS.get(), FlyingNimbusRenderer::new);
         event.registerEntityRenderer(MainEntities.BLACK_NIMBUS.get(), BlackNimbusRenderer::new);
+        event.registerEntityRenderer(MainEntities.CAR.get(), CarRenderer::new);
+        event.registerEntityRenderer(MainEntities.CC576.get(), CC576Renderer::new);
+        event.registerEntityRenderer(MainEntities.FRIEZA_CAPSULE.get(), FriezaCapsuleRenderer::new);
         event.registerEntityRenderer(MainEntities.ROBOT_XENOVERSE.get(), RedRibbonRenderer::new);
         event.registerEntityRenderer(MainEntities.PUNCH_MACHINE.get(), PunchMachineRenderer::new);
-        event.registerEntityRenderer(MainEntities.BIO_CELL_JR.get(), com.dragonminez.client.init.entities.renderer.bioandroid.CellJrRenderer::new);
+        event.registerEntityRenderer(MainEntities.BIO_CELL_JR.get(), CellJrRenderer::new);
 
 		for (var entity : MainEntities.getDragonWishEntities().values()) {
 			event.registerEntityRenderer(entity.get(), DragonDBRenderer::new);
@@ -336,8 +343,9 @@ public class ModClientEvents {
         event.registerSpriteSet(MainParticles.ROCK.get(), RockParticle.Provider::new);
         event.registerSpriteSet(MainParticles.DIVINE.get(), DivineParticle.Provider::new);
         event.registerSpriteSet(MainParticles.STARDUST.get(), StardustParticle.Provider::new);
-        event.registerSpriteSet(MainParticles.SLEEP_Z.get(), com.dragonminez.common.init.particles.SleepZParticle.Provider::new);
-        event.registerSpecial(MainParticles.FLYING_BLOCK.get(), new com.dragonminez.common.init.particles.FlyingBlockParticle.Provider());
+        event.registerSpriteSet(MainParticles.SLEEP_Z.get(), SleepZParticle.Provider::new);
+        event.registerSpecial(MainParticles.FLYING_BLOCK.get(), new FlyingBlockParticle.Provider());
+        event.registerSpriteSet(MainParticles.VEHICLE_SMOKE.get(), VehicleSmokeParticle.Provider::new);
 
     }
 

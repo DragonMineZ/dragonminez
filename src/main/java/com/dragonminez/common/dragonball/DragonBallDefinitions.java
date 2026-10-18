@@ -50,7 +50,7 @@ public final class DragonBallDefinitions {
 		registerBootstrapRadar(new DragonRadarDefinition("fused_radar", "fused_dball_radar", Set.of(Level.OVERWORLD.location(), NamekDimension.NAMEK_KEY.location()), "earth", "item.dragonminez.fused_dball_radar.tooltip", new int[]{150, 300, 600}, null, "earth_radar", "Bi-Dimensional Radar"));
 		registerBootstrapDragon(new DragonDefinition("shenron", "shenron", 3.0f, 17.0f, Set.of(Level.OVERWORLD.location()), "earth", "shenron", 1, "shenron"));
 		registerBootstrapDragon(new DragonDefinition("porunga", "porunga", 4.0f, 20.0f, Set.of(NamekDimension.NAMEK_KEY.location()), "namek", "porunga", 3, "porunga"));
-		registerBootstrapDragon(new DragonDefinition("porunga_daima", "porunga_daima", 4.0f, 20.0f, Set.of(DemonRealmDimension.DEMON_REALM_KEY.location()), "demon", "porunga", 3, "porunga_daima"));
+		registerBootstrapDragon(new DragonDefinition("porunga_daima", "porunga_daima", 4.0f, 20.0f, Set.of(DemonRealmDimension.DEMON_REALM_KEY.location()), "demon", "porunga_daima", 3, "porunga_daima"));
 
 		loadExternalBootstrapDefinitions();
 		resetRuntimeDefinitions();

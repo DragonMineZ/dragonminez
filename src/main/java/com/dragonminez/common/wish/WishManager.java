@@ -57,6 +57,9 @@ public class WishManager {
 				if (!filenames.contains("porunga.json")) {
 					createDefaultPorungaWishes(wishDir);
 				}
+				if (!filenames.contains("porunga_daima.json")) {
+					writeDefaultWishes(wishDir, "porunga_daima", DefaultWishes.porungaDaima());
+				}
 			}
 
 			try (var stream = Files.list(wishDir)) {

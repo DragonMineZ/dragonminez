@@ -915,6 +915,12 @@ public class NetworkHandler {
 				.encoder(GumStruggleC2S::encode)
 				.consumerMainThread(GumStruggleC2S::handle)
 				.add();
+
+		net.messageBuilder(VehicleSeatC2S.class, id(), NetworkDirection.PLAY_TO_SERVER)
+				.decoder(VehicleSeatC2S::new)
+				.encoder(VehicleSeatC2S::encode)
+				.consumerMainThread(VehicleSeatC2S::handle)
+				.add();
 	}
 
 	public static <MSG> void sendToServer(MSG message) {

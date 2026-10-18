@@ -55,6 +55,14 @@ public class DMZItemModelProvider extends ItemModelProvider {
 		simpleItem(MainItems.NUBE_ITEM);
 		simpleItem(MainItems.NUBE_NEGRA_ITEM);
 		simpleItem(MainItems.NAVE_SAIYAN_ITEM);
+		simpleItem(MainItems.VEHICLE_ENGINE);
+		simpleItem(MainItems.VEHICLE_PROPELLER);
+		simpleItem(MainItems.VEHICLE_SEAT);
+		simpleItem(MainItems.VEHICLE_PLATING);
+//		simpleItem(MainItems.CAR_RED_ITEM);
+//		simpleItem(MainItems.CAR_YELLOW_ITEM);
+//		simpleItem(MainItems.CC576_ITEM);
+//		simpleItem(MainItems.FRIEZA_CAPSULE_ITEM);
 		simpleItem(MainItems.SENZU_BEAN);
 		simpleItem(MainItems.SENZU_BEAN_BLUE);
 		simpleItem(MainItems.SENZU_BEAN_RED);

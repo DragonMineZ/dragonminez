@@ -12,6 +12,7 @@ import com.dragonminez.client.systems.kisense.KiSenseScan;
 import com.dragonminez.client.systems.kisense.KiSenseState;
 import com.dragonminez.client.util.ColorUtils;
 import com.dragonminez.client.util.KeyBinds;
+import com.dragonminez.common.init.entities.vehicle.VehicleEntity;
 import com.dragonminez.common.init.MainParticles;
 import com.dragonminez.common.init.particles.AuraParticle;
 import com.dragonminez.common.init.particles.DivineParticle;
@@ -478,7 +479,7 @@ public class ClientStatsEvents {
 
 		if (activeChargeSlot < 0) {
 			resetChargeSession();
-			boolean firingRestricted = TechniqueDispatcher.isMovementRestrictedKiAttack(player, data);
+			boolean firingRestricted = TechniqueDispatcher.isMovementRestrictedKiAttack(player, data) || player.getVehicle() instanceof VehicleEntity;
 
 			for (int i = 0; i < TECHNIQUE_VISIBLE_SLOTS; i++) {
 				boolean pressed = downNow[i] && !wasSlotKeyDown[i];

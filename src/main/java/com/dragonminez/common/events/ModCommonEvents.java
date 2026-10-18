@@ -138,6 +138,9 @@ public class ModCommonEvents {
         event.put(MainEntities.SPACE_POD.get(), VehicleEntity.createAttributes());
         event.put(MainEntities.FLYING_NIMBUS.get(), VehicleEntity.createAttributes());
         event.put(MainEntities.BLACK_NIMBUS.get(), VehicleEntity.createAttributes());
+        event.put(MainEntities.CAR.get(), VehicleEntity.createAttributes());
+        event.put(MainEntities.CC576.get(), VehicleEntity.createAttributes());
+        event.put(MainEntities.FRIEZA_CAPSULE.get(), VehicleEntity.createAttributes());
         event.put(MainEntities.ROBOT_XENOVERSE.get(), RobotEntity.createAttributes().build());
         event.put(MainEntities.PUNCH_MACHINE.get(), PunchMachineEntity.createAttributes().build());
         event.put(MainEntities.MAJIN_SKILL.get(), MajinSkillEntity.createAttributes().build());

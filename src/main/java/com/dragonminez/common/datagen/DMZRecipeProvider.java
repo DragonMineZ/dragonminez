@@ -398,6 +398,81 @@ public class DMZRecipeProvider extends RecipeProvider implements IConditionBuild
 				.unlockedBy(getHasName(MainItems.T2_RADAR_CPU.get()), has(MainItems.T2_RADAR_CPU.get()))
 				.group(Reference.MOD_ID).save(pWriter);
 
+		ShapedRecipeBuilder.shaped(RecipeCategory.MISC, MainItems.VEHICLE_ENGINE.get(), 1)
+				.pattern("IPI")
+				.pattern("RFR")
+				.pattern("III")
+				.define('I', Items.IRON_INGOT)
+				.define('P', Items.PISTON)
+				.define('R', Items.REDSTONE)
+				.define('F', Items.BLAST_FURNACE)
+				.unlockedBy(getHasName(Items.PISTON), has(Items.PISTON))
+				.group(Reference.MOD_ID).save(pWriter);
+
+		ShapedRecipeBuilder.shaped(RecipeCategory.MISC, MainItems.VEHICLE_PROPELLER.get(), 1)
+				.pattern(" I ")
+				.pattern("ICI")
+				.pattern(" I ")
+				.define('I', Items.IRON_INGOT)
+				.define('C', Items.COPPER_BLOCK)
+				.unlockedBy(getHasName(Items.COPPER_BLOCK), has(Items.COPPER_BLOCK))
+				.group(Reference.MOD_ID).save(pWriter);
+
+		ShapedRecipeBuilder.shaped(RecipeCategory.MISC, MainItems.VEHICLE_SEAT.get(), 1)
+				.pattern("L  ")
+				.pattern("LWW")
+				.pattern("I I")
+				.define('L', Items.LEATHER)
+				.define('W', Items.CYAN_WOOL)
+				.define('I', Items.IRON_INGOT)
+				.unlockedBy(getHasName(Items.LEATHER), has(Items.LEATHER))
+				.group(Reference.MOD_ID).save(pWriter);
+
+		ShapedRecipeBuilder.shaped(RecipeCategory.MISC, MainItems.VEHICLE_PLATING.get(), 2)
+				.pattern("III")
+				.pattern("ICI")
+				.pattern("III")
+				.define('I', Items.IRON_INGOT)
+				.define('C', Items.COPPER_INGOT)
+				.unlockedBy(getHasName(Items.IRON_INGOT), has(Items.IRON_INGOT))
+				.group(Reference.MOD_ID).save(pWriter);
+
+		ShapedRecipeBuilder.shaped(RecipeCategory.TRANSPORTATION, MainItems.CAR_RED_ITEM.get(), 1)
+				.pattern("PDP")
+				.pattern("SES")
+				.pattern("W W")
+				.define('P', MainItems.VEHICLE_PLATING.get())
+				.define('D', Items.RED_DYE)
+				.define('S', MainItems.VEHICLE_SEAT.get())
+				.define('E', MainItems.VEHICLE_ENGINE.get())
+				.define('W', Items.BLACK_WOOL)
+				.unlockedBy(getHasName(MainItems.VEHICLE_ENGINE.get()), has(MainItems.VEHICLE_ENGINE.get()))
+				.group(Reference.MOD_ID).save(pWriter);
+
+		ShapedRecipeBuilder.shaped(RecipeCategory.TRANSPORTATION, MainItems.CAR_YELLOW_ITEM.get(), 1)
+				.pattern("PDP")
+				.pattern("SES")
+				.pattern("W W")
+				.define('P', MainItems.VEHICLE_PLATING.get())
+				.define('D', Items.YELLOW_DYE)
+				.define('S', MainItems.VEHICLE_SEAT.get())
+				.define('E', MainItems.VEHICLE_ENGINE.get())
+				.define('W', Items.BLACK_WOOL)
+				.unlockedBy(getHasName(MainItems.VEHICLE_ENGINE.get()), has(MainItems.VEHICLE_ENGINE.get()))
+				.group(Reference.MOD_ID).save(pWriter);
+
+		ShapedRecipeBuilder.shaped(RecipeCategory.TRANSPORTATION, MainItems.CC576_ITEM.get(), 1)
+				.pattern("HGH")
+				.pattern("SES")
+				.pattern("PEP")
+				.define('H', MainItems.VEHICLE_PROPELLER.get())
+				.define('G', Items.GLASS)
+				.define('S', MainItems.VEHICLE_SEAT.get())
+				.define('E', MainItems.VEHICLE_ENGINE.get())
+				.define('P', MainItems.VEHICLE_PLATING.get())
+				.unlockedBy(getHasName(MainItems.VEHICLE_PROPELLER.get()), has(MainItems.VEHICLE_PROPELLER.get()))
+				.group(Reference.MOD_ID).save(pWriter);
+
 
 		ShapedRecipeBuilder.shaped(RecipeCategory.REDSTONE, MainItems.T2_RADAR_CHIP.get(), 1)
 				.pattern("ROR")

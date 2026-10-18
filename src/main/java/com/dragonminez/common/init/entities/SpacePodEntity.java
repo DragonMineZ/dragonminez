@@ -20,10 +20,17 @@ import software.bernie.geckolib.core.object.PlayState;
 
 public class SpacePodEntity extends VehicleEntity {
 
+    private static final VehicleProperties.Smoke WISP = new VehicleProperties.Smoke(0.14F, 0.85F, 0.28F, 14, 0.3F, 0.25D, 1.08D);
+
     private static final VehicleProperties PROPERTIES = VehicleProperties.builder(VehicleProperties.Mobility.FLYING)
             .speed(1.08D)
             .verticalSpeed(0.35D)
-            .seat(0.0D, 0.4D, 0.0D)
+            .model("spacepod", 1.1F)
+            .seatBones(1)
+            .fallbackSeat(0.0D, 10.9D, -1.0D)
+            .exhaust(WISP, 0.0D, 10.0D, 18.0D)
+            .tilt(8.0F, 5.0F, 0.0F, 1.0D)
+            .engine(MainSounds.VEHICLE_SPACEPOD_ENGINE, 0.12F, 0.5F, 0.8F, 1.25F)
             .build();
 
     private static final EntityDataAccessor<Boolean> IS_OPEN = SynchedEntityData.defineId(SpacePodEntity.class, EntityDataSerializers.BOOLEAN);

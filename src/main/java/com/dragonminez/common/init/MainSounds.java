@@ -68,6 +68,13 @@ public final class MainSounds {
 
 	public static final RegistryObject<SoundEvent> NAVE_OPEN = registerSoundEvent("ship_open");
 	public static final RegistryObject<SoundEvent> NAVE_LANDING_OPEN = registerSoundEvent("ship_landing_open");
+	public static final RegistryObject<SoundEvent> VEHICLE_CAR_ENGINE = registerSoundEvent("vehicle.car.engine");
+	public static final RegistryObject<SoundEvent> VEHICLE_CC576_ENGINE = registerSoundEvent("vehicle.cc576.engine");
+	public static final RegistryObject<SoundEvent> VEHICLE_SPACEPOD_ENGINE = registerSoundEvent("vehicle.spacepod.engine");
+	public static final RegistryObject<SoundEvent> VEHICLE_FRIEZA_CAPSULE_ENGINE = registerSoundEvent("vehicle.frieza_capsule.engine");
+	public static final RegistryObject<SoundEvent> VEHICLE_FRIEZA_CAPSULE_TAKEOFF = registerSoundEvent("vehicle.frieza_capsule.takeoff");
+	public static final RegistryObject<SoundEvent> VEHICLE_FRIEZA_CAPSULE_LAND = registerSoundEvent("vehicle.frieza_capsule.land");
+	public static final RegistryObject<SoundEvent> VEHICLE_DOOR = registerSoundEvent("vehicle.door");
 
 	public static final RegistryObject<SoundEvent> FROG1 = registerSoundEvent("frogsound1");
 	public static final RegistryObject<SoundEvent> FROG2 = registerSoundEvent("frogsound2");
