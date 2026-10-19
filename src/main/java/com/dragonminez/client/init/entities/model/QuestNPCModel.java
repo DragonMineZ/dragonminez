@@ -35,6 +35,7 @@ public class QuestNPCModel extends GeoModel<QuestNPCEntity> {
 			Map.entry("yamcha", saga("saga_yamcha", "saga_yamcha")),
 			Map.entry("tien", saga("saga_goku", "saga_tien_early")),
 			Map.entry("chiaotzu", saga("saga_chaoz", "saga_chaoz")),
+			Map.entry("mr_satan", saga("saga_mr_satan", "saga_mr_satan")),
 			Map.entry("piccolo", saga("saga_piccolo", "saga_piccolo")),
 			Map.entry("gohan", saga("saga_gohan_mid", "saga_gohan_mid_base")),
 			Map.entry("vegeta", saga("saga_vegeta", "saga_vegeta")),

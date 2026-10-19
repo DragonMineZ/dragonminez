@@ -20,11 +20,16 @@ import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.damagesource.DamageTypes;
+import net.minecraft.world.DifficultyInstance;
 import net.minecraft.world.entity.EntityType;
+import net.minecraft.world.entity.MobSpawnType;
 import net.minecraft.world.entity.PathfinderMob;
+import net.minecraft.world.entity.SpawnGroupData;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.Level;
+import net.minecraft.world.level.ServerLevelAccessor;
 import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 import software.bernie.geckolib.core.animation.AnimatableManager;
 import software.bernie.geckolib.core.animation.AnimationController;
 import software.bernie.geckolib.core.object.PlayState;
@@ -77,6 +82,15 @@ public class QuestNPCEntity extends MastersEntity {
 
 	public boolean hasHome() {
 		return this.hasHome;
+	}
+
+	@Override
+	public SpawnGroupData finalizeSpawn(ServerLevelAccessor level, DifficultyInstance difficulty, MobSpawnType reason,
+										@Nullable SpawnGroupData spawnData, @Nullable CompoundTag dataTag) {
+		if (reason == MobSpawnType.STRUCTURE && this.hasHome) {
+			this.setHomePosition(this.getX(), this.getZ());
+		}
+		return super.finalizeSpawn(level, difficulty, reason, spawnData, dataTag);
 	}
 
 	@Override

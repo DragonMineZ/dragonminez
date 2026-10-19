@@ -52,6 +52,7 @@ final class SideQuestDefaults {
 		createFriezaCategory(sideQuestDir);
 		createAndroidCategory(sideQuestDir);
 		createBuuCategory(sideQuestDir);
+		createBudokaiCategory(sideQuestDir);
 	}
 
 	// ---- Helpers ----
@@ -1792,6 +1793,87 @@ final class SideQuestDefaults {
 				new JsonObject[]{
 						objSkill("kisense", 1),
 						objTalkTo("oldkai")
+				},
+				new JsonObject[]{ rewAttributes(20) }));
+	}
+
+	// ========================================================================================
+	// World Martial Arts Tournament Side-Quests
+	// ========================================================================================
+
+	private static void createBudokaiCategory(Path baseDir) {
+		Path dir = baseDir.resolve("budokai");
+
+		writeQuestFile(dir, "chiaotzu_psychic_sparring.json", sidequest(
+				"chiaotzu_psychic_sparring", "dmz.sidequest.chiaotzu_psychic_sparring.name", "dmz.sidequest.chiaotzu_psychic_sparring.desc",
+				"training", false, "chiaotzu", "chiaotzu",
+				prereqs("AND", condSaga("classic_saga", 33)),
+				new JsonObject[]{
+						objQuestSpar("dragonminez:saga_chaoz", 1300, 60, 80),
+						objTalkTo("chiaotzu")
+				},
+				new JsonObject[]{ rewAttributes(6) }));
+
+		writeQuestFile(dir, "chiaotzu_gift_for_tien.json", sidequest(
+				"chiaotzu_gift_for_tien", "dmz.sidequest.chiaotzu_gift_for_tien.name", "dmz.sidequest.chiaotzu_gift_for_tien.desc",
+				"collection", false, "chiaotzu", "chiaotzu",
+				prereqs("AND", condQuest("chiaotzu_psychic_sparring")),
+				new JsonObject[]{
+						objDeliver("minecraft:cooked_salmon", 10, "tien"),
+						objDeliver("minecraft:bread", 10, "tien"),
+						objTalkTo("chiaotzu")
+				},
+				new JsonObject[]{ rewAttributes(3), rewItem("dragonminez:senzu_bean", 1) }));
+
+		writeQuestFile(dir, "chiaotzu_crane_school_shadow.json", sidequest(
+				"chiaotzu_crane_school_shadow", "dmz.sidequest.chiaotzu_crane_school_shadow.name", "dmz.sidequest.chiaotzu_crane_school_shadow.desc",
+				"combat", false, "chiaotzu", "chiaotzu",
+				prereqs("AND", condSaga("classic_saga", 47), condQuest("chiaotzu_psychic_sparring")),
+				new JsonObject[]{
+						objQuestKill("dragonminez:saga_tao_pai_pai_cyborg", 1, 1900, 95, 100),
+						objTalkTo("chiaotzu")
+				},
+				new JsonObject[]{ rewAttributes(10) }));
+
+		writeQuestFile(dir, "mr_satan_autographs.json", sidequest(
+				"mr_satan_autographs", "dmz.sidequest.mr_satan_autographs.name", "dmz.sidequest.mr_satan_autographs.desc",
+				"collection", false, "mr_satan", "mr_satan",
+				prereqs("AND", condSaga("android_saga", 15)),
+				new JsonObject[]{
+						objDeliver("minecraft:paper", 32, "mr_satan"),
+						objDeliver("minecraft:ink_sac", 8, "mr_satan"),
+						objTalkTo("mr_satan")
+				},
+				new JsonObject[]{ rewAttributes(8) }));
+
+		writeQuestFile(dir, "mr_satan_cell_jr_cleanup.json", sidequest(
+				"mr_satan_cell_jr_cleanup", "dmz.sidequest.mr_satan_cell_jr_cleanup.name", "dmz.sidequest.mr_satan_cell_jr_cleanup.desc",
+				"combat", false, "mr_satan", "mr_satan",
+				prereqs("AND", condSaga("android_saga", 15), condQuest("mr_satan_autographs")),
+				new JsonObject[]{
+						objQuestKill("dragonminez:saga_cell_jr", 3, 108360, 1200, 1080),
+						objTalkTo("mr_satan")
+				},
+				new JsonObject[]{ rewAttributes(30) }));
+
+		writeQuestFile(dir, "mr_satan_peace_offering.json", sidequest(
+				"mr_satan_peace_offering", "dmz.sidequest.mr_satan_peace_offering.name", "dmz.sidequest.mr_satan_peace_offering.desc",
+				"collection", false, "mr_satan", "mr_satan",
+				prereqs("AND", condSaga("buu_saga", 33)),
+				new JsonObject[]{
+						objDeliver("minecraft:cake", 3, "buu"),
+						objDeliver("minecraft:cookie", 16, "buu"),
+						objTalkTo("mr_satan")
+				},
+				new JsonObject[]{ rewAttributes(12), rewItem("dragonminez:senzu_bean", 2) }));
+
+		writeQuestFile(dir, "mr_satan_train_the_champ.json", sidequest(
+				"mr_satan_train_the_champ", "dmz.sidequest.mr_satan_train_the_champ.name", "dmz.sidequest.mr_satan_train_the_champ.desc",
+				"training", false, "mr_satan", "mr_satan",
+				prereqs("AND", condSaga("buu_saga", 37), condQuest("mr_satan_peace_offering")),
+				new JsonObject[]{
+						objQuestSpar("dragonminez:saga_mr_satan", 90000, 3800, 1400),
+						objTalkTo("mr_satan")
 				},
 				new JsonObject[]{ rewAttributes(20) }));
 	}

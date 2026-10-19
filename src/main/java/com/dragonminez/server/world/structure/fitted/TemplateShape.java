@@ -140,6 +140,10 @@ public final class TemplateShape {
 		return low < 0 || local.getY() < low;
 	}
 
+	int lowest(int column) {
+		return column >= 0 && column < this.lowest.length ? this.lowest[column] : -1;
+	}
+
 	BlockState baseState(int column) {
 		return column >= 0 && column < this.base.length ? this.base[column] : null;
 	}

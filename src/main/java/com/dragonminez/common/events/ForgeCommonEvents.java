@@ -158,6 +158,7 @@ public class ForgeCommonEvents {
 					&& villager.getVillagerData().getProfession().equals(MainVillagers.CAPSULE_CORP_ASSISTANT.get())) {
 				int level = villager.getVillagerData().getLevel();
 				if (level >= 3) BABA_PALACE_MAP.ensureOffered(serverLevel, villager);
+				if (level >= 3) BUDOKAI_TENKAICHI_MAP.ensureOffered(serverLevel, villager);
 				if (level >= 5) BUU_HOUSE_MAP.ensureOffered(serverLevel, villager);
 			}
 			CapsuleCorpMapTrade.refreshStaleMapOffers(serverLevel, merchant);
@@ -171,6 +172,8 @@ public class ForgeCommonEvents {
 			"dragonminez.baba_palace", new ItemStack(Items.GLASS_BOTTLE, 6));
 	private static final CapsuleCorpMapTrade BUU_HOUSE_MAP = mapTrade(DMZStructures.BUU_HOUSE,
 			"dragonminez.buu_house", new ItemStack(Items.CAKE, 1));
+	private static final CapsuleCorpMapTrade BUDOKAI_TENKAICHI_MAP = mapTrade(DMZStructures.BUDOKAI_TENKAICHI,
+			"dragonminez.budokai_tenkaichi", new ItemStack(Items.GOLD_INGOT, 4));
 	private static final float MEDI_SHELL_DAMAGE_TAKEN = 0.7F;
 
 	private static ItemStack emptyMap() {

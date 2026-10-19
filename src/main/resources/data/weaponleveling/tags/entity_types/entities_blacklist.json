@@ -98,6 +98,10 @@
       "required": false
     },
     {
+      "id": "dragonminez:master_tien",
+      "required": false
+    },
+    {
       "id": "dragonminez:master_beerus",
       "required": false
     },

@@ -12,6 +12,7 @@ import com.dragonminez.server.world.structure.BossStructures.GomahCradleStructur
 import com.dragonminez.server.world.structure.BossStructures.NamekRuinsStructure;
 import com.dragonminez.server.world.structure.BossStructures.TreeOfMightStructure;
 import com.dragonminez.server.world.structure.fitted.FittedTemplateStructure;
+import com.dragonminez.server.world.structure.fitted.IncrementalFittedTemplateStructure;
 import com.dragonminez.server.world.structure.fitted.TerrainFit;
 import net.minecraft.core.HolderGetter;
 import net.minecraft.core.HolderSet;
@@ -50,7 +51,12 @@ public class DMZStructures {
 			SAIYAN_CRATER = createKey("saiyan_crater"), NAMEK_RUINS = createKey("namek_ruins"),
 			GETE_STAR = createKey("gete_star"), DEMON_VILLAGE = createKey("demon_village"),
 			GOMAH_CAMP = createKey("gomah_camp"), BUU_HOUSE = createKey("buu_house"),
-			GOMAH_CRADLE = createKey("gomah_cradle"), RED_RIBBON_BASE = createKey("red_ribbon_base");
+			GOMAH_CRADLE = createKey("gomah_cradle"), RED_RIBBON_BASE = createKey("red_ribbon_base"),
+			BUDOKAI_TENKAICHI = createKey("budokai_tenkaichi");
+
+	private static final TerrainFit BUDOKAI_TENKAICHI_FIT = new TerrainFit(23, 2, 16, 1.0F, 64, 24, true);
+	private static final float BUDOKAI_TENKAICHI_MIN_WATER = 0.98F;
+	private static final int BUDOKAI_TENKAICHI_SAMPLE_STEP = 16;
 
 	public static void bootstrap(BootstapContext<Structure> context) {
 		HolderGetter<Biome> biomes = context.lookup(Registries.BIOME);
@@ -77,6 +83,11 @@ public class DMZStructures {
 		fitted(context, RED_RIBBON_BASE, HolderSet.direct(biomes.getOrThrow(Biomes.PLAINS), biomes.getOrThrow(Biomes.SUNFLOWER_PLAINS),
 						biomes.getOrThrow(Biomes.SAVANNA)), "red_ribbon_base", TerrainFit.terrain(0, 12, 1.0F, 64, 48), Optional.empty(),
 				RED_RIBBON_BASE_MAX_DEVIATION);
+
+		context.register(BUDOKAI_TENKAICHI, new IncrementalFittedTemplateStructure(
+				new Structure.StructureSettings(budokaiOceans(biomes), Map.of(), GenerationStep.Decoration.TOP_LAYER_MODIFICATION, TerrainAdjustment.NONE),
+				ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "budokai_tenkaichi"), BUDOKAI_TENKAICHI_FIT,
+				Optional.of(Rotation.NONE), BUDOKAI_TENKAICHI_MIN_WATER, BUDOKAI_TENKAICHI_SAMPLE_STEP));
 
 		context.register(GERO_LAB, new JigsawStructure(
 				new Structure.StructureSettings(
@@ -192,6 +203,12 @@ public class DMZStructures {
 		context.register(key, new FittedTemplateStructure(
 				new Structure.StructureSettings(biomes, Map.of(), GenerationStep.Decoration.TOP_LAYER_MODIFICATION, TerrainAdjustment.NONE),
 				ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, template), fit, rotation, maxDeviation));
+	}
+
+	public static HolderSet<Biome> budokaiOceans(HolderGetter<Biome> biomes) {
+		return HolderSet.direct(biomes.getOrThrow(Biomes.OCEAN), biomes.getOrThrow(Biomes.DEEP_OCEAN),
+				biomes.getOrThrow(Biomes.LUKEWARM_OCEAN), biomes.getOrThrow(Biomes.DEEP_LUKEWARM_OCEAN),
+				biomes.getOrThrow(Biomes.WARM_OCEAN), biomes.getOrThrow(Biomes.COLD_OCEAN), biomes.getOrThrow(Biomes.DEEP_COLD_OCEAN));
 	}
 
 	private static ResourceKey<Structure> createKey(String name) {

@@ -6,11 +6,13 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.tags.BlockTags;
+import net.minecraft.tags.FluidTags;
 import net.minecraft.util.Mth;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.level.ChunkPos;
 import net.minecraft.world.level.StructureManager;
 import net.minecraft.world.level.WorldGenLevel;
+import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.Mirror;
 import net.minecraft.world.level.block.Rotation;
@@ -26,6 +28,7 @@ import javax.annotation.Nullable;
 
 public class TerrainFitPiece extends StructurePiece {
 	private static final BlockState AIR = Blocks.AIR.defaultBlockState();
+	private static final int PLACE_FLAGS = Block.UPDATE_CLIENTS | Block.UPDATE_KNOWN_SHAPE;
 
 	private final ResourceLocation template;
 	private final BlockPos origin;
@@ -88,6 +91,7 @@ public class TerrainFitPiece extends StructurePiece {
 	@Override
 	public void postProcess(WorldGenLevel level, StructureManager structureManager, ChunkGenerator generator,
 							RandomSource random, BoundingBox box, ChunkPos chunkPos, BlockPos pivot) {
+		if (box.minY() > this.boundingBox.minY() || box.maxY() < this.boundingBox.minY()) return;
 		StructureTemplate structureTemplate = level.getLevel().getStructureManager().getOrCreate(this.template);
 		TemplateShape shape = TemplateShape.of(structureTemplate);
 		if (shape.sizeX() <= 0 || shape.sizeZ() <= 0) return;
@@ -118,11 +122,28 @@ public class TerrainFitPiece extends StructurePiece {
 		int support = this.origin.getY() + field.support(column);
 		float distance = field.distance(cell);
 		int target = this.target(profile.top(), support, field.fills(column), distance, x, z);
+		int ceiling = this.origin.getY() + shape.lowest(column) - 1;
 		if (target > profile.top()) {
-			BlockState material = this.templateFoundation && distance <= 0.0F ? this.baseMaterial(shape, column) : null;
-			this.fill(level, cursor, x, z, profile, target, material);
+			if (distance <= 0.0F) target = Math.min(target, ceiling);
+			if (target > profile.top()) {
+				BlockState material = this.templateFoundation && distance <= 0.0F ? this.baseMaterial(shape, column) : null;
+				this.fill(level, cursor, x, z, profile, target, material);
+			}
 		} else if (target < profile.top()) {
 			this.carve(level, cursor, x, z, profile, target);
+		}
+		if (distance <= 0.0F && field.fills(column) && this.foundation > 0) {
+			BlockState material = this.templateFoundation ? this.baseMaterial(shape, column) : null;
+			this.drainBelow(level, cursor, x, z, ceiling, material != null ? material : profile.deep());
+		}
+	}
+
+	private void drainBelow(WorldGenLevel level, BlockPos.MutableBlockPos cursor, int x, int z, int ceiling, BlockState material) {
+		int floor = Math.max(level.getMinBuildHeight(), ceiling - this.foundation);
+		for (int y = ceiling; y > floor; y--) {
+			BlockState state = level.getBlockState(cursor.set(x, y, z));
+			if (!state.getFluidState().is(FluidTags.WATER)) return;
+			level.setBlock(cursor, material, PLACE_FLAGS);
 		}
 	}
 
@@ -160,10 +181,10 @@ public class TerrainFitPiece extends StructurePiece {
 		for (int y = start; y <= target; y++) {
 			BlockState state = material != null ? material
 					: y == target ? surface : target - y <= 3 ? profile.under() : profile.deep();
-			level.setBlock(cursor.set(x, y, z), state, 2);
+			level.setBlock(cursor.set(x, y, z), state, PLACE_FLAGS);
 		}
 		if (material == null && skin && start == profile.top() + 1) {
-			level.setBlock(cursor.set(x, profile.top(), z), profile.under(), 2);
+			level.setBlock(cursor.set(x, profile.top(), z), profile.under(), PLACE_FLAGS);
 		}
 	}
 
@@ -171,15 +192,15 @@ public class TerrainFitPiece extends StructurePiece {
 		int end = Math.min(profile.scanTop(), target + this.carve);
 		for (int y = target + 1; y <= end; y++) {
 			cursor.set(x, y, z);
-			if (!level.getBlockState(cursor).isAir()) level.setBlock(cursor, AIR, 2);
+			if (!level.getBlockState(cursor).isAir()) level.setBlock(cursor, AIR, PLACE_FLAGS);
 		}
 		if (target <= profile.fluidTop()) return;
 		BlockState current = level.getBlockState(cursor.set(x, target, z));
-		if (isGround(current) && current != profile.surface()) level.setBlock(cursor, profile.surface(), 2);
+		if (isGround(current) && current != profile.surface()) level.setBlock(cursor, profile.surface(), PLACE_FLAGS);
 		if (profile.surface().is(profile.under().getBlock())) return;
 		for (int y = target - 1; y >= target - 3; y--) {
 			current = level.getBlockState(cursor.set(x, y, z));
-			if (isGround(current)) level.setBlock(cursor, profile.under(), 2);
+			if (isGround(current)) level.setBlock(cursor, profile.under(), PLACE_FLAGS);
 		}
 	}
 

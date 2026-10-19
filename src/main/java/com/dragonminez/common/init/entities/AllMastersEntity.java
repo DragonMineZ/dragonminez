@@ -107,6 +107,14 @@ public class AllMastersEntity {
         }
     }
 
+    public static class MasterTien extends MastersEntity {
+        public MasterTien(EntityType<? extends PathfinderMob> pEntityType, Level pLevel) {
+            super(pEntityType, pLevel);
+            this.setPersistenceRequired();
+            this.masterName = "tien";
+        }
+    }
+
     public static class MasterDendeEntity extends MastersEntity {
         public MasterDendeEntity(EntityType<? extends PathfinderMob> pEntityType, Level pLevel) {
             super(pEntityType, pLevel);
@@ -245,6 +253,14 @@ public class AllMastersEntity {
             super(pEntityType, pLevel);
             this.setPersistenceRequired();
             this.masterName = "otherworld_announcer";
+        }
+    }
+
+    public static class WorldTournamentAnnouncerEntity extends MastersEntity {
+        public WorldTournamentAnnouncerEntity(EntityType<? extends PathfinderMob> pEntityType, Level pLevel) {
+            super(pEntityType, pLevel);
+            this.setPersistenceRequired();
+            this.masterName = "world_tournament_announcer";
         }
     }
 

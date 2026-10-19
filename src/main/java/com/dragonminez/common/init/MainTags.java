@@ -44,6 +44,7 @@ public class MainTags {
 		public static final TagKey<EntityType<?>> NPC_KINGPICCOLO = create("npc_kingpiccolo");
 		public static final TagKey<EntityType<?>> NPC_BABAFIGHTERS = create("npc_babafighters");
 		public static final TagKey<EntityType<?>> NPC_WORLDTOURNAMENT = create("npc_worldtournament");
+		public static final TagKey<EntityType<?>> NPC_BUDOKAI = create("npc_budokai");
 		public static final TagKey<EntityType<?>> NPC_ZFIGHTERS = create("npc_zfighters");
 		public static final TagKey<EntityType<?>> NPC_COOLERFORCE = create("npc_coolerforce");
 		public static final TagKey<EntityType<?>> NPC_BOJACKCREW = create("npc_bojackcrew");

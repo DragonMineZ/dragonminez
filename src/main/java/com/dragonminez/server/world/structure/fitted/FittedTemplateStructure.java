@@ -29,8 +29,8 @@ public class FittedTemplateStructure extends Structure {
 	public static final Codec<FittedTemplateStructure> CODEC = RecordCodecBuilder.create(instance -> instance.group(
 			settingsCodec(instance),
 			ResourceLocation.CODEC.fieldOf("template").forGetter(FittedTemplateStructure::template),
-			TerrainFit.CODEC.optionalFieldOf("terrain_fit", TerrainFit.NONE).forGetter(structure -> structure.fit),
-			Rotation.CODEC.optionalFieldOf("rotation").forGetter(structure -> structure.fixedRotation),
+			TerrainFit.CODEC.optionalFieldOf("terrain_fit", TerrainFit.NONE).forGetter(FittedTemplateStructure::fit),
+			Rotation.CODEC.optionalFieldOf("rotation").forGetter(FittedTemplateStructure::fixedRotation),
 			Codec.floatRange(0.0F, 64.0F).optionalFieldOf("max_deviation", 0.0F).forGetter(structure -> structure.maxDeviation)
 	).apply(instance, FittedTemplateStructure::new));
 
@@ -55,6 +55,31 @@ public class FittedTemplateStructure extends Structure {
 
 	public ResourceLocation template() {
 		return this.template;
+	}
+
+	TerrainFit fit() {
+		return this.fit;
+	}
+
+	Optional<Rotation> fixedRotation() {
+		return this.fixedRotation;
+	}
+
+	public float minWater() {
+		return 0.0F;
+	}
+
+	protected int referenceReach() {
+		return REFERENCE_REACH;
+	}
+
+	protected int estimateCoarseness() {
+		return 4;
+	}
+
+	protected int sampleStep(TemplateShape shape) {
+		int min = Math.min(shape.sizeX(), shape.sizeZ());
+		return min >= 40 ? 8 : min >= 16 ? 4 : 2;
 	}
 
 	@Override
@@ -99,7 +124,7 @@ public class FittedTemplateStructure extends Structure {
 	}
 
 	public Optional<SitePlan> estimate(StructureTemplateManager templates, HeightSampler sampler, ChunkPos chunk) {
-		return this.plan(templates, sampler, chunk, new Rotation[]{this.fixedRotation.orElse(Rotation.NONE)}, 4);
+		return this.plan(templates, sampler, chunk, new Rotation[]{this.fixedRotation.orElse(Rotation.NONE)}, this.estimateCoarseness());
 	}
 
 	private Optional<SitePlan> plan(StructureTemplateManager templates, HeightSampler sampler, ChunkPos chunk,
@@ -110,7 +135,7 @@ public class FittedTemplateStructure extends Structure {
 
 		TemplateShape shape = TemplateShape.of(structureTemplate);
 		int ground = this.fit.resolveGroundLevel(shape);
-		int[][] samples = samplePoints(shape, ground, coarseness);
+		int[][] samples = samplePoints(shape, ground, this.sampleStep(shape) * coarseness);
 
 		SitePlan best = null;
 		for (Rotation rotation : rotations) {
@@ -161,16 +186,14 @@ public class FittedTemplateStructure extends Structure {
 		BlockPos origin = new BlockPos(originX, groundY - ground, originZ);
 		BoundingBox box = structureTemplate.getBoundingBox(settings, origin);
 		int reach = Math.max(Math.max(centerX - box.minX(), box.maxX() - centerX), Math.max(centerZ - box.minZ(), box.maxZ() - centerZ));
-		int skirt = Math.max(0, Math.min(this.fit.skirt(), REFERENCE_REACH - reach));
+		int skirt = Math.max(0, Math.min(this.fit.skirt(), this.referenceReach() - reach));
 		return new SitePlan(rotation, origin, new BlockPos(centerX, groundY, centerZ), box, ground, skirt,
 				deviation, wet / (float) count, xs, zs, tops);
 	}
 
-	private static int[][] samplePoints(TemplateShape shape, int ground, int coarseness) {
+	private static int[][] samplePoints(TemplateShape shape, int ground, int step) {
 		int sx = shape.sizeX();
 		int sz = shape.sizeZ();
-		int min = Math.min(sx, sz);
-		int step = (min >= 40 ? 8 : min >= 16 ? 4 : 2) * coarseness;
 		List<int[]> points = new ArrayList<>();
 		for (int z = step / 2; z < sz; z += step) {
 			for (int x = step / 2; x < sx; x += step) {

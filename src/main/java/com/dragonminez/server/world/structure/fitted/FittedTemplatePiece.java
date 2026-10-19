@@ -19,6 +19,7 @@ import net.minecraft.world.level.ChunkPos;
 import net.minecraft.world.level.ServerLevelAccessor;
 import net.minecraft.world.level.StructureManager;
 import net.minecraft.world.level.WorldGenLevel;
+import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Mirror;
 import net.minecraft.world.level.block.Rotation;
 import net.minecraft.world.level.chunk.ChunkAccess;
@@ -95,7 +96,7 @@ public class FittedTemplatePiece extends TemplateStructurePiece {
 			StructureTemplate clipped = new StructureTemplate();
 			((StructureTemplateAccessor) clipped).getPalettes().add(StructureTemplatePaletteInvoker.dragonminez$create(blocks));
 			((StructureTemplateAccessor) clipped).setSize(this.template.getSize());
-			clipped.placeInWorld(level, this.templatePosition, pivot, settings, random, 2);
+			clipped.placeInWorld(level, this.templatePosition, pivot, settings, random, Block.UPDATE_CLIENTS | Block.UPDATE_KNOWN_SHAPE);
 		}
 		this.placeEntities(level, box);
 	}

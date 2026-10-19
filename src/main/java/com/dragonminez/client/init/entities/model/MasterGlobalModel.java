@@ -24,7 +24,8 @@ public class MasterGlobalModel<T extends MastersEntity> extends GeoModel<T> {
     private static final Map<String, Boolean> ANIM_CACHE = new HashMap<>();
 
     private static final Map<String, String> ASSET_ALIASES = Map.of(
-            "master_uranai_earth", "master_uranai"
+            "master_uranai_earth", "master_uranai",
+            "saga_world_tournament_announcer", "master_world_tournament_announcer"
     );
 
     private static String assetName(MastersEntity animatable) {

@@ -142,6 +142,7 @@ public final class NpcAlignmentRules {
 		addRule(npcs, "toribot", TargetHelper.Relation.NEUTRAL, null, null, null, null);
 		addRule(npcs, "grandkai", TargetHelper.Relation.NEUTRAL, null, null, null, null);
 		addRule(npcs, "otherworld_announcer", TargetHelper.Relation.NEUTRAL, null, null, null, null);
+		addRule(npcs, "world_tournament_announcer", TargetHelper.Relation.NEUTRAL, null, null, null, null);
 		addRule(npcs, "bulma", TargetHelper.Relation.FRIENDLY, 41, null, 25, null);
 		addRule(npcs, "krillin", TargetHelper.Relation.FRIENDLY, 41, null, 25, null);
 		addRule(npcs, "yamcha", TargetHelper.Relation.FRIENDLY, 41, null, 25, null);
@@ -153,6 +154,7 @@ public final class NpcAlignmentRules {
 		addRule(npcs, "videl", TargetHelper.Relation.FRIENDLY, 41, null, 25, null);
 		addRule(npcs, "namek_elder", TargetHelper.Relation.FRIENDLY, 61, null, 25, null);
 		addRule(npcs, "shin", TargetHelper.Relation.FRIENDLY, 41, null, 25, null);
+		addRule(npcs, "mr_satan", TargetHelper.Relation.FRIENDLY, null, null, null, null);
 		addRule(npcs, "piccolo", TargetHelper.Relation.NEUTRAL, 41, null, 20, null);
 		addRule(npcs, "vegeta", TargetHelper.Relation.NEUTRAL, null, null, null, null);
 		root.add("npcs", npcs);

@@ -515,6 +515,14 @@ public class SkillsConfig {
 		yamchaSkills.add("ki_barrage");
 		skillOfferings.put("yamcha", yamchaSkills);
 
+		List<String> tienSkills = new ArrayList<>();
+		tienSkills.add("kicontrol");
+		tienSkills.add("taiyoken");
+		tienSkills.add("dodonpa");
+		tienSkills.add("kikoho");
+		tienSkills.add("neo_kikoho");
+		skillOfferings.put("tien", tienSkills);
+
 		List<String> babaEarthSkills = new ArrayList<>();
 		babaEarthSkills.add("kicontrol");
 		babaEarthSkills.add("meditation");
@@ -576,6 +584,11 @@ public class SkillsConfig {
 				List<String> offered = skillOfferings.computeIfAbsent(offering.getKey(), key -> new ArrayList<>());
 				if (!offered.contains(id)) offered.add(id);
 			}
+		}
+		for (Map.Entry<String, List<String>> offering : defaults.skillOfferings.entrySet()) {
+			if (skillOfferings.containsKey(offering.getKey())) continue;
+			skillOfferings.put(offering.getKey(), new ArrayList<>(offering.getValue()));
+			changed = true;
 		}
 		return changed;
 	}

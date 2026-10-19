@@ -52,7 +52,7 @@ import java.util.Set;
 @OnlyIn(Dist.CLIENT)
 final class NpcDialogueContent {
 	private static final Set<String> TEXT_MASTERS = Set.of("karin", "guru", "dende", "enma", "baba", "popo", "gero",
-			"toribot", "babidi", "grandkai", "otherworld_announcer");
+			"toribot", "babidi", "grandkai", "otherworld_announcer", "world_tournament_announcer");
 	private static final String HELL_OGRE = "hell_ogre";
 	private static final String LINES = "gui.dragonminez.lines.";
 	private static final String STAGE = "dialogue.dragonminez.story.sidequest.";

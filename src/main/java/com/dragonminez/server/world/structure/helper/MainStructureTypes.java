@@ -12,6 +12,7 @@ import com.dragonminez.server.world.structure.BossStructures.TreeOfMightPiece;
 import com.dragonminez.server.world.structure.BossStructures.TreeOfMightStructure;
 import com.dragonminez.server.world.structure.fitted.FittedTemplatePiece;
 import com.dragonminez.server.world.structure.fitted.FittedTemplateStructure;
+import com.dragonminez.server.world.structure.fitted.IncrementalFittedTemplateStructure;
 import com.dragonminez.server.world.structure.fitted.TerrainFitPiece;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.world.level.levelgen.structure.StructureType;
@@ -30,6 +31,8 @@ public class MainStructureTypes {
 			STRUCTURE_TYPES.register("tall_jigsaw", () -> () -> TallJigsawStructure.CODEC);
 	public static final RegistryObject<StructureType<FittedTemplateStructure>> FITTED_TEMPLATE =
 			STRUCTURE_TYPES.register("fitted_template", () -> () -> FittedTemplateStructure.CODEC);
+	public static final RegistryObject<StructureType<IncrementalFittedTemplateStructure>> INCREMENTAL_FITTED_TEMPLATE =
+			STRUCTURE_TYPES.register("incremental_fitted_template", () -> () -> IncrementalFittedTemplateStructure.CODEC);
 	public static final RegistryObject<StructureType<TreeOfMightStructure>> TREE_OF_MIGHT =
 			STRUCTURE_TYPES.register("tree_of_might", () -> () -> TreeOfMightStructure.CODEC);
 

@@ -41,7 +41,8 @@ public class DMZStructureSets {
 			SAIYAN_CRATER = createKey("saiyan_crater"), GETE_STAR = createKey("gete_star"),
 			DEMON_VILLAGE = createKey("demon_village"),
 			GOMAH_CAMP = createKey("gomah_camp"), BUU_HOUSE = createKey("buu_house"),
-			GOMAH_CRADLE = createKey("gomah_cradle"), RED_RIBBON_BASE = createKey("red_ribbon_base");
+			GOMAH_CRADLE = createKey("gomah_cradle"), RED_RIBBON_BASE = createKey("red_ribbon_base"),
+			BUDOKAI_TENKAICHI = createKey("budokai_tenkaichi");
 
 	public static void bootstrap(BootstapContext<StructureSet> context) {
 		HolderGetter<Structure> structures = context.lookup(Registries.STRUCTURE);
@@ -53,6 +54,8 @@ public class DMZStructureSets {
 				87654321, biomes.getOrThrow(BiomeTags.IS_OCEAN));
 		unique(context, BABA_PALACE, structures.getOrThrow(DMZStructures.BABA_PALACE),
 				31415926, biomes.getOrThrow(BiomeTags.IS_OCEAN));
+		unique(context, BUDOKAI_TENKAICHI, structures.getOrThrow(DMZStructures.BUDOKAI_TENKAICHI),
+				BUDOKAI_TENKAICHI_SALT, DMZStructures.budokaiOceans(biomes));
 
 		context.register(TIMECHAMBER, new StructureSet(
 				structures.getOrThrow(DMZStructures.TIMECHAMBER),
@@ -177,6 +180,7 @@ public class DMZStructureSets {
 	}
 
 	private static final int GOMAH_CRADLE_SALT = 59173046;
+	private static final int BUDOKAI_TENKAICHI_SALT = 62830185;
 
 	public static final int TREE_OF_MIGHT_SALT = 28475016;
 	public static final int GETE_STAR_SALT = 61937482;

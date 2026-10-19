@@ -36,7 +36,8 @@ public final class QuestStructureHints {
 			Reference.MOD_ID + ":timechamber", Pair.of(DMZStructures.TIMECHAMBER, HTCDimension.HTC_KEY),
 			Reference.MOD_ID + ":kamilookout", Pair.of(DMZStructures.KAMILOOKOUT, Level.OVERWORLD),
 			Reference.MOD_ID + ":gero_lab", Pair.of(DMZStructures.GERO_LAB, Level.OVERWORLD),
-			Reference.MOD_ID + ":babidi", Pair.of(DMZStructures.BABIDI, Level.OVERWORLD)
+			Reference.MOD_ID + ":babidi", Pair.of(DMZStructures.BABIDI, Level.OVERWORLD),
+			Reference.MOD_ID + ":budokai_tenkaichi", Pair.of(DMZStructures.BUDOKAI_TENKAICHI, Level.OVERWORLD)
 	);
 
 	private static final Map<String, QuestPrerequisites.StructureHint> CACHE = new ConcurrentHashMap<>();

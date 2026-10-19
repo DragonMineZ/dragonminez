@@ -27,6 +27,7 @@ import net.minecraft.world.level.chunk.ChunkGeneratorStructureState;
 import net.minecraft.world.level.levelgen.Heightmap;
 import net.minecraft.world.level.levelgen.RandomState;
 import net.minecraft.world.level.levelgen.structure.Structure;
+import net.minecraft.world.level.levelgen.structure.BuiltinStructureSets;
 import net.minecraft.world.level.levelgen.structure.StructureSet;
 import net.minecraft.world.level.levelgen.structure.placement.ConcentricRingsStructurePlacement;
 import net.minecraft.world.level.levelgen.structure.placement.StructurePlacement;
@@ -581,7 +582,8 @@ public final class StructureSpawnPlanner {
 				HolderSet<Biome> validBiomes = placement.getValidBiomes();
 				boolean sea = validBiomes.size() > 0 && validBiomes.stream().allMatch(biome -> biome.is(BiomeTags.IS_OCEAN));
 				HolderSet<Biome> wanted = relaxed ? fitted.biomes() : validBiomes;
-				result.put(placement.placementSalt(), new Probe(wanted, fittedEvaluator(fitted, wanted, sea, cache, templates)));
+				List<Holder<StructureSet>> blockers = sea && fitted instanceof IncrementalStructure ? monumentSets(state) : List.of();
+				result.put(placement.placementSalt(), new Probe(wanted, fittedEvaluator(fitted, wanted, sea, cache, templates, state, blockers)));
 			} else if (!relaxed) {
 				result.put(placement.placementSalt(), new Probe(placement.getValidBiomes(), null));
 			}
@@ -589,8 +591,28 @@ public final class StructureSpawnPlanner {
 		return result;
 	}
 
+	private static List<Holder<StructureSet>> monumentSets(ChunkGeneratorStructureState state) {
+		List<Holder<StructureSet>> result = new ArrayList<>();
+		for (Holder<StructureSet> holder : state.possibleStructureSets()) {
+			if (holder.is(BuiltinStructureSets.OCEAN_MONUMENTS)) result.add(holder);
+		}
+		return result;
+	}
+
+	private static boolean blockedBy(ChunkGeneratorStructureState state, List<Holder<StructureSet>> blockers,
+	                                 ChunkPos candidate, SitePlan site) {
+		if (blockers.isEmpty()) return false;
+		int half = Math.max(site.templateBox().getXSpan(), site.templateBox().getZSpan()) / 2 + site.skirt();
+		int radius = Math.floorDiv(half + 15, 16) + 1;
+		for (Holder<StructureSet> blocker : blockers) {
+			if (state.hasStructureChunkInRange(blocker, candidate.x, candidate.z, radius)) return true;
+		}
+		return false;
+	}
+
 	private static SiteEvaluator fittedEvaluator(FittedTemplateStructure structure, HolderSet<Biome> validBiomes, boolean sea,
-	                                             SampleCache cache, StructureTemplateManager templates) {
+	                                             SampleCache cache, StructureTemplateManager templates,
+	                                             ChunkGeneratorStructureState state, List<Holder<StructureSet>> blockers) {
 		HolderSet<Biome> structureBiomes = structure.biomes();
 		HeightSampler sampler = cache.heights();
 		return candidate -> {
@@ -613,7 +635,8 @@ public final class StructureSpawnPlanner {
 			}
 			float coverage = inside / (float) Math.max(1, xs.length);
 			if (coverage < MIN_BIOME_COVERAGE) return -1;
-			if (sea ? site.water() < MIN_SEA_WATER : site.water() > MAX_LAND_WATER) return -1;
+			if (sea ? site.water() < Math.max(MIN_SEA_WATER, structure.minWater()) : site.water() > MAX_LAND_WATER) return -1;
+			if (blockedBy(state, blockers, candidate, site)) return -1;
 			double cost = site.deviation() * (sea ? 1.5D : 6.0D);
 			return (int) Math.round(cost + (1.0F - coverage) * 40.0F);
 		};

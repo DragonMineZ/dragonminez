@@ -40,7 +40,7 @@ import java.util.concurrent.ConcurrentLinkedQueue;
 public final class StructureRepairManager {
 	private static final int CHECK_INTERVAL_TICKS = 100;
 	private static final int MAX_RELOCATIONS = 2;
-	private static final int COMPLETION_RANGE = 14;
+	public static final int COMPLETION_RANGE = 14;
 	private static final int SLICE_HEIGHT = 48;
 	private static final long SLICE_BUDGET_NANOS = 1_500_000L;
 	private static final int MAX_CHECKS_PER_TICK = 64;
@@ -76,7 +76,10 @@ public final class StructureRepairManager {
 		if (!ConfigManager.getServerConfig().getWorldGen().getGenerateCustomStructures()) return;
 
 		resumeForced(level);
-		if (materializer != null && materializer.isFor(level)) materializer.sweepForced(level);
+		if (materializer != null && materializer.isFor(level)) {
+			materializer.sweepForced(level);
+			materializer.sweepIncremental(level);
+		}
 
 		Map<Integer, ChunkPos> nearSpawn = nearSpawnPositions(level);
 		Map<Integer, ChunkPos> positions = new HashMap<>(StructureSpawnPlanner.publishedPositions(level));
@@ -156,7 +159,9 @@ public final class StructureRepairManager {
 			if (Math.abs(origin.x - pos.x) > COMPLETION_RANGE || Math.abs(origin.z - pos.z) > COMPLETION_RANGE) continue;
 			if (materializer == null) materializer = materializer(level);
 			if (!materializer.isIncremental(level, entry.getKey())) continue;
-			materializer.enqueueCheck(pos, entry.getKey());
+			for (int dx = -1; dx <= 1; dx++) {
+				for (int dz = -1; dz <= 1; dz++) materializer.enqueueCheck(new ChunkPos(pos.x + dx, pos.z + dz), entry.getKey());
+			}
 		}
 	}
 
@@ -431,6 +436,12 @@ public final class StructureRepairManager {
 			else sweep(level, placement);
 		}
 
+		void sweepIncremental(ServerLevel level) {
+			for (Map.Entry<Integer, StructureStart> entry : this.starts.entrySet()) {
+				enqueueLoaded(level, entry.getKey(), entry.getValue().getBoundingBox());
+			}
+		}
+
 		void sweepForced(ServerLevel level) {
 			for (ForcedPlacement placement : this.forced.values()) sweep(level, placement);
 		}
@@ -518,6 +529,7 @@ public final class StructureRepairManager {
 				BoundingBox box = start.getBoundingBox();
 				if (!box.intersects(pos.getMinBlockX(), pos.getMinBlockZ(), pos.getMaxBlockX(), pos.getMaxBlockZ())) continue;
 				if (chunk.getInhabitedTime() > INHABITED_LIMIT) continue;
+				if (!neighboursLoaded(level, pos)) continue;
 				schedule(pos, structure, start, box, origin);
 			}
 		}
@@ -592,7 +604,7 @@ public final class StructureRepairManager {
 				long key = work.pos.toLong();
 				if (this.active.get(key) != work) continue;
 				LevelChunk chunk = level.getChunkSource().getChunkNow(work.pos.x, work.pos.z);
-				if (chunk == null || (work.forced != null && !neighboursLoaded(level, work.pos))) {
+				if (chunk == null || !neighboursLoaded(level, work.pos)) {
 					this.active.remove(key);
 					continue;
 				}

@@ -62,8 +62,9 @@ public class MainEntities {
         return List.of(
                 MASTER_KARIN, MASTER_GOKU, MASTER_KAIOSAMA, MASTER_ROSHI, MASTER_URANAI, MASTER_ENMA, MASTER_DENDE,
                 MASTER_GERO, MASTER_POPO, MASTER_GURU, MASTER_TORIBOT, MASTER_PICCOLO, MASTER_GOHAN, MASTER_BABIDI,
-                MASTER_OLDKAI, MASTER_CELL, MASTER_VEGETA, MASTER_FRIEZA, MASTER_TRUNKS, MASTER_YAMCHA, MASTER_KRILLIN,
-                MASTER_BEERUS, MASTER_WHIS, MASTER_URANAI_EARTH, MASTER_GRANDKAI, MASTER_OTHERWORLD_ANNOUNCER
+                MASTER_OLDKAI, MASTER_CELL, MASTER_VEGETA, MASTER_FRIEZA, MASTER_TRUNKS, MASTER_YAMCHA, MASTER_KRILLIN, MASTER_TIEN,
+                MASTER_BEERUS, MASTER_WHIS, MASTER_URANAI_EARTH, MASTER_GRANDKAI, MASTER_OTHERWORLD_ANNOUNCER,
+                WORLD_TOURNAMENT_ANNOUNCER
         );
     }
 
@@ -72,7 +73,7 @@ public class MainEntities {
                 //SAGA CLASICO
                 SAGA_KID_GOKU, SAGA_KID_KRILLIN, SAGA_OOLONG, SAGA_OOLONG_TRANSFORMED, SAGA_GIRAN, SAGA_NAM,
                 SAGA_JACKIE_CHUN, SAGA_JACKIE_CHUN_FP, SAGA_COLONEL_SILVER, SAGA_GENERAL_BLUE,
-                SAGA_WORLD_TOURNAMENT_ANNOUNCER, SAGA_NINJA_MURASAKI, SAGA_SERGEANT_METALLIC, SAGA_A8,
+                SAGA_NINJA_MURASAKI, SAGA_SERGEANT_METALLIC, SAGA_A8,
                 SAGA_TAO_PAI_PAI, SAGA_TAO_PAI_PAI_CYBORG, SAGA_GENERAL_RED, SAGA_GENERAL_BLACK_ROBOT, SAGA_MUMMY, SAGA_INVISIBLE_MAN, SAGA_AKKUMAN, SAGA_DRACULA, SAGA_MASKED_WARRIOR, SAGA_YOUNG_YAMCHA, SAGA_YOUNG_TIEN, SAGA_GOKU_T23, SAGA_YAMCHA_T23, SAGA_TIEN_T23,
                 SAGA_YAJIROBE, SAGA_CHICHI, SAGA_TAMBOURINE, SAGA_DRUM, SAGA_PICCOLO_DAIMAO_OLD, SAGA_PICCOLO_DAIMAO_YOUNG,
                 SAGA_MAJUNIA, SAGA_MAJUNIA_GIANT,
@@ -290,6 +291,11 @@ public class MainEntities {
                     () -> EntityType.Builder.of(AllMastersEntity.MasterKrillin::new, MobCategory.CREATURE)
                             .sized(0.6f, 1.6f)
                             .build(ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "master_krillin").toString()));
+    public static final RegistryObject<EntityType<AllMastersEntity.MasterTien>> MASTER_TIEN =
+            ENTITY_TYPES.register("master_tien",
+                    () -> EntityType.Builder.of(AllMastersEntity.MasterTien::new, MobCategory.CREATURE)
+                            .sized(0.8f, 2.0f)
+                            .build(ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "master_tien").toString()));
     public static final RegistryObject<EntityType<AllMastersEntity.MasterBeerus>> MASTER_BEERUS =
             ENTITY_TYPES.register("master_beerus",
                     () -> EntityType.Builder.of(AllMastersEntity.MasterBeerus::new, MobCategory.CREATURE)
@@ -310,6 +316,11 @@ public class MainEntities {
                     () -> EntityType.Builder.of(AllMastersEntity.MasterOtherworldAnnouncerEntity::new, MobCategory.CREATURE)
                             .sized(0.8f, 2.0f)
                             .build(ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "master_otherworld_announcer").toString()));
+    public static final RegistryObject<EntityType<AllMastersEntity.WorldTournamentAnnouncerEntity>> WORLD_TOURNAMENT_ANNOUNCER =
+            ENTITY_TYPES.register("saga_world_tournament_announcer",
+                    () -> EntityType.Builder.of(AllMastersEntity.WorldTournamentAnnouncerEntity::new, MobCategory.CREATURE)
+                            .sized(0.6f, 1.9f)
+                            .build(ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "saga_world_tournament_announcer").toString()));
 
     public static final RegistryObject<EntityType<Dino1Entity>> DINOSAUR1 =
             ENTITY_TYPES.register("dino1",
@@ -676,11 +687,6 @@ public class MainEntities {
                     () -> EntityType.Builder.of(SagaRedRibbonEntities.NinjaMurasakiEntity::new, MobCategory.MONSTER)
                             .sized(0.6f, 2.0f)
                             .build(ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "saga_ninja_murasaki").toString()));
-    public static final RegistryObject<EntityType<SagaZFightersEntity.BasicNPCEntity>> SAGA_WORLD_TOURNAMENT_ANNOUNCER =
-            ENTITY_TYPES.register("saga_world_tournament_announcer",
-                    () -> EntityType.Builder.of(SagaZFightersEntity.BasicNPCEntity::new, MobCategory.MONSTER)
-                            .sized(0.6f, 1.9f)
-                            .build(ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "saga_world_tournament_announcer").toString()));
     /* SAGA SAIYAN */
     public static final RegistryObject<EntityType<SagaGokuEntity.SagaGokuEarlyEntity>> SAGA_GOKU_EARLY =
             ENTITY_TYPES.register("saga_goku_early",

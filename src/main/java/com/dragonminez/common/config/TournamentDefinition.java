@@ -20,7 +20,8 @@ public class TournamentDefinition {
 	public static final Map<String, String> HOST_NPCS = Map.of(
 			"baba_earth", "baba",
 			"cell", "cell",
-			"otherworld_announcer", "otherworld"
+			"otherworld_announcer", "otherworld",
+			"world_tournament_announcer", "budokai"
 	);
 
 	public static final int CONTENDER_COUNT = 1;
@@ -201,6 +202,8 @@ public class TournamentDefinition {
 		public static final String CELL_POOL = "#dragonminez:z_fighters_cell";
 		public static final String OTHERWORLD = "otherworld";
 		public static final String BUU_POOL = "#dragonminez:npc_buusaga";
+		public static final String BUDOKAI = "budokai";
+		public static final String BUDOKAI_POOL = "#dragonminez:npc_budokai";
 
 		private Defaults() {}
 
@@ -209,7 +212,58 @@ public class TournamentDefinition {
 			defaults.put(BABA, baba());
 			defaults.put(CELL, cell());
 			defaults.put(OTHERWORLD, otherworld());
+			defaults.put(BUDOKAI, budokai());
 			return defaults;
+		}
+
+		private static TournamentDefinition budokai() {
+			TournamentDefinition def = new TournamentDefinition();
+			def.setConfigVersion(CURRENT_VERSION);
+			def.setDisplayName("tournament.dragonminez.budokai");
+			def.setEnabled(true);
+			def.setDifficultyStars(4);
+			def.setFormat(TournamentDefinition.Format.BRACKET);
+			def.setQualifierSlots(8);
+			def.setLethal(false);
+			def.setReentryCooldownSeconds(75 * 60);
+			def.setMatchTimeoutSeconds(420);
+			def.setNextRoundSeconds(30);
+			def.setRulesAcceptSeconds(60);
+			def.setReturnSeconds(15);
+			def.setArrivalSeconds(60);
+
+			TournamentDefinition.RingOffset ring = new TournamentDefinition.RingOffset();
+			ring.setX(86);
+			ring.setY(27);
+			ring.setZ(258);
+			ring.setRadius(8);
+			def.setRing(ring);
+
+			def.setSemifinalist(fighter("dragonminez:saga_gohan_end_base",
+					462000.0D, 19200.0D, 17400.0D, 3, 1.0D));
+			def.setFinalist(fighter("dragonminez:saga_vegeta_majin",
+					640000.0D, 26700.0D, 24300.0D, 3, 1.0D));
+			def.setChampion(fighter("dragonminez:saga_mr_satan",
+					96000.0D, 4200.0D, 1500.0D, 2, 1.0D));
+
+			def.setContenders(List.of(
+					fighter(BUDOKAI_POOL, 147000.0D, 6100.0D, 5500.0D, 2, 1.08D),
+					fighter(BUDOKAI_POOL, 168000.0D, 7000.0D, 6300.0D, 2, 1.08D),
+					fighter(BUDOKAI_POOL, 189000.0D, 7900.0D, 7100.0D, 2, 1.08D),
+					fighter(BUDOKAI_POOL, 213500.0D, 8900.0D, 8000.0D, 2, 1.08D),
+					fighter(BUDOKAI_POOL, 245000.0D, 10200.0D, 9200.0D, 3, 1.08D),
+					fighter(BUDOKAI_POOL, 280000.0D, 11700.0D, 10500.0D, 3, 1.08D),
+					fighter(BUDOKAI_POOL, 315000.0D, 13100.0D, 11800.0D, 3, 1.08D),
+					fighter(BUDOKAI_POOL, 350000.0D, 14600.0D, 13100.0D, 3, 1.08D),
+					fighter(BUDOKAI_POOL, 392000.0D, 16300.0D, 14700.0D, 3, 1.08D)
+			));
+
+			TournamentDefinition.Rewards rewards = new TournamentDefinition.Rewards();
+			rewards.setTrainingPoints(1800000);
+			rewards.setAlignment(5);
+			def.setRewards(rewards);
+
+			return def;
 		}
 
 		private static TournamentDefinition cell() {
