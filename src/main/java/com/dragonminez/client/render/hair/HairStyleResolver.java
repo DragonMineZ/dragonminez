@@ -21,6 +21,7 @@ import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.function.Function;
 
 public final class HairStyleResolver {
 	private static final float MILLIS_PER_TICK = 50.0f;
@@ -163,13 +164,14 @@ public final class HairStyleResolver {
 	private static LookHair lookHair(Player player, Character character, FormTransition.Look look, boolean oozaru) {
 		StyleChoice style = new StyleChoice(style(player, character, HairStyleSlot.BASE), HairStyleSlot.BASE);
 		float[] rgb = character.getRgbRenderHairColor();
+		Function<FormConfig.FormData, float[]> hairRgb = HelmetHairColor.hair(player);
 		if (look.hasForm()) {
 			style = styleForForm(player, character, look.formGroup(), look.form());
-			rgb = rgbForForm(character, look.formGroup(), look.form());
+			rgb = rgbForForm(character, look.formGroup(), look.form(), hairRgb);
 		}
 		if (look.hasStack()) {
 			style = styleForStackForm(player, character, look.stackGroup(), look.stack(), style);
-			rgb = rgbForStackForm(look.stackGroup(), look.stack(), rgb);
+			rgb = rgbForStackForm(look.stackGroup(), look.stack(), rgb, hairRgb);
 		}
 		if (oozaru) rgb = look.overlay(character.getRgbBodyColor2(), FormConfig.FormData::getRgbBodyColor2);
 		boolean force = oozaru || hasColorOverride(look.formData()) || hasColorOverride(look.stackData());
@@ -234,20 +236,22 @@ public final class HairStyleResolver {
 		return formData != null && Boolean.TRUE.equals(formData.hasHairColorOverride());
 	}
 
-	private static float[] rgbForForm(Character character, String group, String formName) {
+	private static float[] rgbForForm(Character character, String group, String formName, Function<FormConfig.FormData, float[]> hairRgb) {
 		FormConfig config = ConfigManager.getFormGroup(character.getRaceName(), group);
 		if (config != null) {
 			FormConfig.FormData formData = config.getForm(formName);
-			if (formData != null && formData.getRgbHairColor() != null) return formData.getRgbHairColor();
+			float[] rgb = formData != null ? hairRgb.apply(formData) : null;
+			if (rgb != null) return rgb;
 		}
 		return character.getRgbRenderHairColor();
 	}
 
-	private static float[] rgbForStackForm(String group, String formName, float[] fallback) {
+	private static float[] rgbForStackForm(String group, String formName, float[] fallback, Function<FormConfig.FormData, float[]> hairRgb) {
 		FormConfig config = ConfigManager.getStackFormGroup(group);
 		if (config != null) {
 			FormConfig.FormData formData = config.getForm(formName);
-			if (formData != null && formData.getRgbHairColor() != null) return formData.getRgbHairColor();
+			float[] rgb = formData != null ? hairRgb.apply(formData) : null;
+			if (rgb != null) return rgb;
 		}
 		return fallback;
 	}

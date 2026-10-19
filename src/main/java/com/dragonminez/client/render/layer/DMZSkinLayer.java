@@ -3,6 +3,7 @@ package com.dragonminez.client.render.layer;
 import com.dragonminez.client.render.effects.CandyEffect;
 import com.dragonminez.client.render.hair.HairEditSession;
 import com.dragonminez.client.render.hair.HairStyleResolver;
+import com.dragonminez.client.render.hair.HelmetHairColor;
 import com.dragonminez.client.render.hair.SaiyanTailMeshBuilder;
 import com.dragonminez.common.hair.CustomHair;
 import com.dragonminez.common.hair.HairStyleSlot;
@@ -257,7 +258,7 @@ public class DMZSkinLayer<T extends AbstractClientPlayer & GeoAnimatable> extend
 			if (character.getActiveStackFormData().hasDefinedHairType() && HairStyleSlot.byHairType(character.getActiveStackFormData().getHairType()) == null) return;
 		}
 
-		float[] finalTint = FormVisualTransition.color(stats, character.getRgbRenderHairColor(), FormConfig.FormData::getRgbHairColor);
+		float[] finalTint = FormVisualTransition.color(stats, character.getRgbRenderHairColor(), HelmetHairColor.hair(stats));
 
 		float[] publishedHair = HairStyleResolver.getPublishedBaseColor(player.getId(), player.level().getGameTime());
 		final float[] hairTint = publishedHair != null ? publishedHair : applyColorTint(finalTint, stats);
@@ -345,7 +346,7 @@ public class DMZSkinLayer<T extends AbstractClientPlayer & GeoAnimatable> extend
 		float[] eye2 = FormVisualTransition.color(stats, character.getRgbEye2Color(), FormConfig.FormData::getRgbEye2Color);
 		float[] skin = FormVisualTransition.color(stats, character.getRgbBodyColor(), FormConfig.FormData::getRgbBodyColor1);
 		float[] b2 = FormVisualTransition.color(stats, character.getRgbBodyColor2(), FormConfig.FormData::getRgbBodyColor2);
-		float[] hair = FormVisualTransition.color(stats, character.getRgbHairColor(), FormConfig.FormData::getRgbHairColor);
+		float[] hair = FormVisualTransition.color(stats, character.getRgbHairColor(), HelmetHairColor.hair(stats));
 
 		skin = applyColorTint(skin, stats);
 		hair = applyColorTint(hair, stats);
@@ -656,7 +657,7 @@ public class DMZSkinLayer<T extends AbstractClientPlayer & GeoAnimatable> extend
 	}
 
 	private float[] resolveSkinHairColor(StatsData stats) {
-		return FormVisualTransition.color(stats, stats.getCharacter().getRgbRenderHairColor(), FormConfig.FormData::getRgbHairColor);
+		return FormVisualTransition.color(stats, stats.getCharacter().getRgbRenderHairColor(), HelmetHairColor.hair(stats));
 	}
 
 	private void renderSkinPixelEyes(BakedGeoModel model, PoseStack poseStack, T animatable, MultiBufferSource bufferSource, AbstractClientPlayer player, StatsData stats, float pt, int pl, int po, float alpha) {
@@ -664,7 +665,7 @@ public class DMZSkinLayer<T extends AbstractClientPlayer & GeoAnimatable> extend
 		SkinPixels pixels = character.getSkinPixels();
 		if (!pixels.hasEyeMarks()) return;
 		PixelPaint iris = resolvePixelPaint(stats, FormConfig.FormData::getRgbEye1Color);
-		PixelPaint brow = resolvePixelPaint(stats, FormConfig.FormData::getRgbHairColor);
+		PixelPaint brow = resolvePixelPaint(stats, HelmetHairColor.hair(stats));
 		if (iris == null && brow == null) return;
 		ResourceLocation scleraMask = iris != null ? SkinPixelTextures.eyeMask(player, pixels, SkinPixels.MARK_SCLERA) : null;
 		ResourceLocation irisMask = iris != null ? SkinPixelTextures.eyeMask(player, pixels, SkinPixels.MARK_IRIS) : null;
@@ -770,7 +771,7 @@ public class DMZSkinLayer<T extends AbstractClientPlayer & GeoAnimatable> extend
 		if (usesSlimSsj4Model(player, character)) key = key + "slim";
 		boolean hairFur = furUsesHairColor(current) || (charge != null && furUsesHairColor(charge.look())) || (revert != null && furUsesHairColor(revert.look()));
 		float[] color = hairFur
-				? FormVisualTransition.color(stats, character.getRgbHairColor(), FormConfig.FormData::getRgbHairColor)
+				? FormVisualTransition.color(stats, character.getRgbHairColor(), HelmetHairColor.hair(stats))
 				: FormVisualTransition.color(stats, character.getRgbBodyColor2(), FormConfig.FormData::getRgbBodyColor2);
 		return new Ssj4Overlay(key, color, target);
 	}
