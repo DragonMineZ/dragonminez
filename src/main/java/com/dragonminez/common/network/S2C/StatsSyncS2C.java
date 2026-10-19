@@ -3,6 +3,8 @@ package com.dragonminez.common.network.S2C;
 import com.dragonminez.common.network.ClientPacketHandler;
 import com.dragonminez.common.network.NetworkHandler;
 import com.dragonminez.common.network.PacketRateLimiter;
+import com.dragonminez.common.network.StatsDeltaSync;
+import com.dragonminez.common.network.StatsGroupsPacket;
 import com.dragonminez.common.stats.StatsCapability;
 import com.dragonminez.common.stats.StatsProvider;
 import com.dragonminez.common.stats.character.SkinPixels;
@@ -16,7 +18,7 @@ import net.minecraftforge.network.NetworkEvent;
 
 import java.util.function.Supplier;
 
-public class StatsSyncS2C {
+public class StatsSyncS2C implements StatsGroupsPacket {
 
     private static final long REQUESTED_SYNC_MIN_INTERVAL_TICKS = 2L;
     private static final String QUEST_DATA_KEY = "PlayerQuestData";
@@ -36,13 +38,26 @@ public class StatsSyncS2C {
     }
 
     public static void sendRequested(ServerPlayer player) {
-        if (!PacketRateLimiter.allow(player.getUUID(), "requested_stats_sync", player.level().getGameTime(), REQUESTED_SYNC_MIN_INTERVAL_TICKS)) return;
+        if (!PacketRateLimiter.allow(player.getUUID(), "requested_stats_sync", player.level().getGameTime(), REQUESTED_SYNC_MIN_INTERVAL_TICKS)) {
+            StatsDeltaSync.reset(player);
+            return;
+        }
         NetworkHandler.sendToTrackingEntityAndSelf(new StatsSyncS2C(player), player);
     }
 
     public StatsSyncS2C(int playerId, CompoundTag nbt) {
         this.playerId = playerId;
         this.nbt = nbt;
+    }
+
+    @Override
+    public int playerId() {
+        return this.playerId;
+    }
+
+    @Override
+    public CompoundTag groups() {
+        return this.nbt;
     }
 
     public StatsSyncS2C forTrackers() {

@@ -2,6 +2,7 @@ package com.dragonminez.client.render.effects;
 
 import com.dragonminez.Reference;
 import com.dragonminez.client.events.FlySkillEvent;
+import com.dragonminez.client.render.HelmetFormLook;
 import com.dragonminez.client.render.shader.DMZShaders;
 import com.dragonminez.client.render.util.AuraMeshFactory;
 import com.dragonminez.client.render.util.IrisCompat;
@@ -642,28 +643,30 @@ public class AuraRenderer {
 
 		if (character.hasActiveForm() && character.getActiveFormData() != null) {
 			var fd = character.getActiveFormData();
-			if (fd.getAuraColor() != null && !fd.getAuraColor().isEmpty()) {
-				normalHex = fd.getAuraColor();
-				normalColor = fd.getRgbAuraColor();
+			String formHex = HelmetFormLook.auraColor(player, fd);
+			if (formHex != null && !formHex.isEmpty()) {
+				normalHex = formHex;
+				normalColor = HelmetFormLook.rgbAuraColor(player, fd);
 			}
 			String formType = formAuraType(fd, use3D);
 			if (formType != null && !formType.isEmpty()) normalType = formType;
 			normalLayerId = fd.getAuraLayer() != null ? fd.getAuraLayer() : 0;
-			normalStyle = fd.getAura3DStyle();
+			normalStyle = HelmetFormLook.aura3DStyle(player, fd);
 		}
 
 		AuraLayer chargeLayer = null;
 		if (chargingNormal && nextForm != null) {
-			String targetHex = nextForm.getAuraColor() != null && !nextForm.getAuraColor().isEmpty() ? nextForm.getAuraColor() : normalHex;
+			String nextHex = HelmetFormLook.auraColor(player, nextForm);
+			String targetHex = nextHex != null && !nextHex.isEmpty() ? nextHex : normalHex;
 			int targetLayer = nextForm.getAuraLayer() != null ? nextForm.getAuraLayer() : normalLayerId;
 			if (targetLayer == normalLayerId) {
 				normalColor = interpolateColor(normalHex, targetHex, chargeProgress);
-				normalChargeStyle = nextForm.getAura3DStyle();
+				normalChargeStyle = HelmetFormLook.aura3DStyle(player, nextForm);
 			} else {
 				String nextType = formAuraType(nextForm, use3D);
 				String targetType = nextType != null && !nextType.isEmpty() ? nextType : normalType;
 				chargeLayer = new AuraLayer(targetType, targetLayer, ColorUtils.hexToRgb(targetHex), chargeProgress);
-				if (use3D) chargeLayer.style = AuraStyle.resolve(nextForm.getAura3DStyle(), chargeLayer.color);
+				if (use3D) chargeLayer.style = AuraStyle.resolve(HelmetFormLook.aura3DStyle(player, nextForm), chargeLayer.color);
 			}
 		}
 

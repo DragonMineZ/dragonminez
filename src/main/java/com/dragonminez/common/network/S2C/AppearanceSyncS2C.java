@@ -1,6 +1,7 @@
 package com.dragonminez.common.network.S2C;
 
 import com.dragonminez.common.network.ClientPacketHandler;
+import com.dragonminez.common.network.StatsGroupsPacket;
 import com.dragonminez.common.stats.StatsCapability;
 import com.dragonminez.common.stats.StatsProvider;
 import com.dragonminez.common.stats.character.SkinPixels;
@@ -13,7 +14,7 @@ import net.minecraftforge.network.NetworkEvent;
 
 import java.util.function.Supplier;
 
-public class AppearanceSyncS2C {
+public class AppearanceSyncS2C implements StatsGroupsPacket {
 	private final int playerId;
 	private final CompoundTag nbt;
 
@@ -30,6 +31,16 @@ public class AppearanceSyncS2C {
 	public AppearanceSyncS2C(int playerId, CompoundTag nbt) {
 		this.playerId = playerId;
 		this.nbt = nbt;
+	}
+
+	@Override
+	public int playerId() {
+		return this.playerId;
+	}
+
+	@Override
+	public CompoundTag groups() {
+		return this.nbt;
 	}
 
 	public static void encode(AppearanceSyncS2C msg, FriendlyByteBuf buf) {

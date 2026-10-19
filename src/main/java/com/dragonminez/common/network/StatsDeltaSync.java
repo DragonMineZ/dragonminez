@@ -3,11 +3,13 @@ package com.dragonminez.common.network;
 import com.dragonminez.Reference;
 import com.dragonminez.common.network.S2C.StatsDeltaS2C;
 import com.dragonminez.common.network.S2C.StatsSyncS2C;
+import com.dragonminez.common.network.S2C.TechniqueChargeSyncS2C;
 import com.dragonminez.common.stats.FusedData;
 import com.dragonminez.common.stats.StatsCapability;
 import com.dragonminez.common.stats.StatsData;
 import com.dragonminez.common.stats.StatsProvider;
 import com.dragonminez.common.stats.character.SkinPixels;
+import com.dragonminez.common.stats.techniques.Techniques;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.ListTag;
 import net.minecraft.nbt.StringTag;
@@ -28,6 +30,7 @@ import java.util.UUID;
 @Mod.EventBusSubscriber(modid = Reference.MOD_ID)
 public final class StatsDeltaSync {
 	public static final String TECHNIQUES = "Techniques";
+	public static final String RACIAL_DATA = "RacialData";
 
 	private static final String CHARACTER = "Character";
 	private static final String SKILLS = "Skills";
@@ -60,6 +63,42 @@ public final class StatsDeltaSync {
 		DIRTY.remove(playerId);
 	}
 
+	public static void invalidate(ServerPlayer player, String... groups) {
+		Baseline baseline = BASELINES.get(player.getUUID());
+		if (baseline == null) return;
+		for (String group : groups) baseline.tag.remove(group);
+	}
+
+	public static void onSent(ServerPlayer player, Object message, boolean withTrackers) {
+		if (message instanceof StatsGroupsPacket packet && packet.playerId() == player.getId()) syncGroups(player, packet.groups(), withTrackers);
+		else if (message instanceof TechniqueChargeSyncS2C charge && charge.playerId() == player.getId()) syncCharge(player, charge, withTrackers);
+	}
+
+	private static void syncGroups(ServerPlayer player, CompoundTag groups, boolean withTrackers) {
+		Baseline baseline = BASELINES.get(player.getUUID());
+		if (baseline == null) return;
+		for (String key : groups.getAllKeys()) {
+			Tag sent = groups.get(key);
+			if (sent.equals(baseline.tag.get(key))) continue;
+			if (withTrackers) baseline.tag.put(key, sent.copy());
+			else baseline.tag.remove(key);
+		}
+	}
+
+	private static void syncCharge(ServerPlayer player, TechniqueChargeSyncS2C charge, boolean withTrackers) {
+		Baseline baseline = BASELINES.get(player.getUUID());
+		if (baseline == null || !baseline.tag.contains(TECHNIQUES, Tag.TAG_COMPOUND)) return;
+		CompoundTag techniques = baseline.tag.getCompound(TECHNIQUES);
+		if (techniques.getFloat(Techniques.CHARGE_PERCENT_KEY) == charge.percent()
+				&& techniques.getBoolean(Techniques.CHARGING_KEY) == charge.charging()) return;
+		if (!withTrackers) {
+			baseline.tag.remove(TECHNIQUES);
+			return;
+		}
+		techniques.putFloat(Techniques.CHARGE_PERCENT_KEY, charge.percent());
+		techniques.putBoolean(Techniques.CHARGING_KEY, charge.charging());
+	}
+
 	public static StatsSyncS2C trackerSnapshot(ServerPlayer player) {
 		return StatsProvider.get(StatsCapability.INSTANCE, player)
 				.map(data -> new StatsSyncS2C(player.getId(), snapshot(data)).forTrackers())
@@ -81,6 +120,7 @@ public final class StatsDeltaSync {
 		StatsData data = StatsProvider.get(StatsCapability.INSTANCE, player).orElse(null);
 		if (data == null) return;
 		CompoundTag now = snapshot(data);
+		BASELINES.remove(player.getUUID());
 		NetworkHandler.sendToTrackingEntityAndSelf(new StatsSyncS2C(player.getId(), now), player);
 		BASELINES.put(player.getUUID(), new Baseline(now.copy()));
 	}

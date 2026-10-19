@@ -1,5 +1,6 @@
 package com.dragonminez.common.network.C2S;
 
+import com.dragonminez.common.config.ConfigManager;
 import com.dragonminez.common.stats.StatsCapability;
 import com.dragonminez.common.stats.StatsProvider;
 import com.dragonminez.common.network.NetworkHandler;
@@ -39,7 +40,8 @@ public class UpgradeTechniqueC2S {
 			if (player != null) {
 				StatsProvider.get(StatsCapability.INSTANCE, player).ifPresent(data -> {
 					TechniqueData tech = data.getTechniques().getUnlockedTechniques().get(techniqueId);
-					if (tech != null) {
+					boolean raceLocked = !ConfigManager.getSkillsConfig().isSkillAllowedForRace(techniqueId, data.getCharacter().getRaceName(), data.getStatus().isAndroidUpgraded());
+					if (tech != null && !raceLocked) {
 						int cost = tech instanceof KiAttackData ki ? ki.getUpgradeXpCost(statType)
 								: tech instanceof StrikeAttackData st ? st.getUpgradeXpCost(statType)
 								: tech instanceof EvasionAttackData ev ? ev.getUpgradeXpCost(statType) : 100;

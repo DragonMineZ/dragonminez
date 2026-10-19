@@ -2,7 +2,7 @@ package com.dragonminez.client.util;
 
 import com.dragonminez.Reference;
 import com.dragonminez.client.render.layer.DMZSkinLayer;
-import com.dragonminez.client.render.hair.HelmetHairColor;
+import com.dragonminez.client.render.HelmetFormLook;
 import com.dragonminez.common.config.ConfigManager;
 import com.dragonminez.common.config.FormConfig;
 import com.dragonminez.common.config.RaceCharacterConfig;
@@ -226,9 +226,9 @@ public class SkinGathererProvider {
 		var character = stats.getCharacter();
 		return new float[][]{
 				FormVisualTransition.color(stats, character.getRgbBodyColor(), FormConfig.FormData::getRgbBodyColor1),
-				FormVisualTransition.color(stats, character.getRgbBodyColor2(), HelmetHairColor.bodyColor2(stats)),
+				FormVisualTransition.color(stats, character.getRgbBodyColor2(), FormConfig.FormData::getRgbBodyColor2),
 				FormVisualTransition.color(stats, character.getRgbBodyColor3(), FormConfig.FormData::getRgbBodyColor3),
-				FormVisualTransition.color(stats, character.getRgbHairColor(), HelmetHairColor.hair(stats))
+				FormVisualTransition.color(stats, character.getRgbHairColor(), HelmetFormLook.hair(stats))
 		};
 	}
 

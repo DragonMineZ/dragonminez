@@ -564,7 +564,7 @@ public class SkillsMenuScreen extends BaseMenuScreen {
 		int rightPanelY = centerY - 105;
 
 		int btnX = rightPanelX + 115;
-		int yOffset = rightPanelY + 80;
+		int yOffset = rightPanelY + 92;
 
 		if (tech instanceof KiAttackData) {
 			if (shouldShowTechniqueUpgradeButton(tech, "damage")) {
@@ -626,6 +626,7 @@ public class SkillsMenuScreen extends BaseMenuScreen {
 	}
 
 	private boolean shouldShowTechniqueUpgradeButton(TechniqueData tech, String statName) {
+		if (!isTechniqueRaceAllowed(selectedSkill)) return false;
 		if (!hasEnoughTechniqueXpForUpgrade(tech, statName)) return false;
 		if (tech instanceof KiAttackData kiAttackData) return kiAttackData.canUpgradeStat(statName);
 		if (tech instanceof EvasionAttackData evasionAttackData) return evasionAttackData.canUpgradeStat(statName);

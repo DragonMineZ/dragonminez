@@ -5,7 +5,7 @@ import com.dragonminez.client.render.DMZRendererCache;
 import com.dragonminez.Reference;
 import com.dragonminez.client.render.HeadPortraitRenderer;
 import com.dragonminez.client.render.hair.SaiyanTailMeshBuilder;
-import com.dragonminez.client.render.hair.HelmetHairColor;
+import com.dragonminez.client.render.HelmetFormLook;
 import com.dragonminez.client.render.firstperson.dto.FirstPersonManager;
 import com.dragonminez.client.render.effects.SolarisSmokeRenderer;
 import com.dragonminez.client.render.effects.TimeHaloRenderer;
@@ -207,7 +207,7 @@ public class DMZRacePartsLayer<T extends AbstractClientPlayer & GeoAnimatable> e
 		float formTintIntensity = tintForm != null ? (float) tintForm.getTintIntensity() : 0.0f;
 		float[] topAuraColor = getTopAuraColor(stats);
 
-		float[] accessoryColor = FormVisualTransition.color(stats, character.getRgbHairColor(), HelmetHairColor.hair(stats));
+		float[] accessoryColor = FormVisualTransition.color(stats, character.getRgbHairColor(), HelmetFormLook.hair(stats));
 
 		if (anchor.equals("head")) {
 			boolean extraHeadBonesEnabled = character.areExtraHeadBonesEnabled();
@@ -455,7 +455,7 @@ public class DMZRacePartsLayer<T extends AbstractClientPlayer & GeoAnimatable> e
 		float[] baseTail = character.getBodyColor2() != null && !character.getBodyColor2().isEmpty()
 				? character.getRgbBodyColor2()
 				: ColorUtils.hexToRgb("#572117");
-		return FormVisualTransition.color(stats, baseTail, HelmetHairColor.bodyColor2(stats));
+		return FormVisualTransition.color(stats, baseTail, FormConfig.FormData::getRgbBodyColor2);
 	}
 
 	private float[] tintedShadow(float[] color, float[] formTintColor, float formTintIntensity, float[] auraColor, float tintProgress) {
@@ -476,9 +476,8 @@ public class DMZRacePartsLayer<T extends AbstractClientPlayer & GeoAnimatable> e
 		var character = stats.getCharacter();
 		float[] color = character.getRgbAuraColor();
 
-		if (character.hasActiveForm() && character.getActiveFormData() != null && character.getActiveFormData().getAuraColor() != null && !character.getActiveFormData().getAuraColor().isEmpty()) {
-			color = character.getActiveFormData().getRgbAuraColor();
-		}
+		float[] formColor = character.hasActiveForm() ? HelmetFormLook.rgbAuraColor(stats.getPlayer(), character.getActiveFormData()) : null;
+		if (formColor != null) color = formColor;
 
 		if (character.hasActiveStackForm() && character.getActiveStackFormData() != null && character.getActiveStackFormData().getAuraColor() != null && !character.getActiveStackFormData().getAuraColor().isEmpty()) {
 			color = character.getActiveStackFormData().getRgbAuraColor();

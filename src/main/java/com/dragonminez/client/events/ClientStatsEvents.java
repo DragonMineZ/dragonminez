@@ -4,6 +4,7 @@ import com.dragonminez.Reference;
 import com.dragonminez.client.clash.ClientBeamClashState;
 import com.dragonminez.client.flight.FlightSoundInstance;
 import com.dragonminez.client.gui.hud.ScouterHUD;
+import com.dragonminez.client.render.HelmetFormLook;
 import com.dragonminez.client.systems.BioSwellRenderState;
 import com.dragonminez.client.systems.FormVisualTransition;
 import com.dragonminez.client.systems.kishare.KiShareInput;
@@ -194,7 +195,7 @@ public class ClientStatsEvents {
 				if (!BetaWhitelist.isAllowed(player.getGameProfile().getName())) continue;
 
 				if (characterHasAuraColor(stats.getCharacter())) {
-					int particleColor = getAuraColor(stats.getCharacter());
+					int particleColor = getAuraColor(player, stats.getCharacter());
 					spawnCalmAuraParticle(player, totalScale, particleColor);
 				}
 
@@ -228,6 +229,8 @@ public class ClientStatsEvents {
 			Character character = data.getCharacter();
 
 			boolean isStunned = data.getStatus().isStunned() || data.getStatus().isSharingKi();
+			if (KeyBinds.KI_CHARGE.isDown() && !KeyBinds.isPhysicallyDown(KeyBinds.KI_CHARGE)) KeyBinds.KI_CHARGE.setDown(false);
+			if (KeyBinds.ACTION_KEY.isDown() && !KeyBinds.isPhysicallyDown(KeyBinds.ACTION_KEY)) KeyBinds.ACTION_KEY.setDown(false);
 			boolean isKiChargeKeyPressed = KeyBinds.KI_CHARGE.isDown() && !isStunned;
 			boolean isDescendKeyPressed = KeyBinds.SECOND_FUNCTION_KEY.isDown() && !isStunned;
 			boolean isActionKeyPressed = KeyBinds.ACTION_KEY.isDown() && !isStunned;
@@ -745,12 +748,12 @@ public class ClientStatsEvents {
 		return character.getAuraColor() != null;
 	}
 
-	private static int getAuraColor(Character character) {
+	private static int getAuraColor(Player player, Character character) {
 		String hex = character.getAuraColor();
 		if (character.hasActiveStackForm() && character.getActiveStackFormData() != null && character.getActiveStackFormData().getAuraColor() != null) {
 			hex = character.getActiveStackFormData().getAuraColor();
 		} else if (character.hasActiveForm() && character.getActiveFormData() != null && character.getActiveFormData().getAuraColor() != null) {
-			hex = character.getActiveFormData().getAuraColor();
+			hex = HelmetFormLook.auraColor(player, character.getActiveFormData());
 		}
 		return ColorUtils.hexToInt(hex != null ? hex : "#FFFFFF");
 	}

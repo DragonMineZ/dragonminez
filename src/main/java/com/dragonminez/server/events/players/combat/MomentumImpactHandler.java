@@ -55,7 +55,9 @@ public class MomentumImpactHandler {
 			Vec3 momentumDirection,
 			int burstColor1,
 			int burstColor2,
-			float burstScale
+			float burstScale,
+			UUID attackerId,
+			String techniqueId
 	) {}
 
 	@SubscribeEvent
@@ -143,6 +145,11 @@ public class MomentumImpactHandler {
 				NetworkHandler.sendToTrackingEntityAndSelf(new ImpactBurstVfxS2C(burstPos, new Vec3(0.0, 1.0, 0.0),
 						impact.burstScale(), impact.burstColor1(), impact.burstColor2(), false, IMPACT_BURST_TICKS), living);
 			}
+
+			if (impact.attackerId() != null && impact.extraDamage() > 0.0F
+					&& serverLevel.getPlayerByUUID(impact.attackerId()) instanceof ServerPlayer attacker) {
+				StrikeAttackHandler.applyCollisionImpactDamage(attacker, living, impact.extraDamage(), impact.techniqueId());
+			}
 		}
 	}
 
@@ -159,9 +166,24 @@ public class MomentumImpactHandler {
 
 	public static void registerCollisionImpact(LivingEntity victim, CollisionImpactType type, float extraDamage, Vec3 momentumDir,
 			int burstColor1, int burstColor2, float burstScale) {
+		putImpact(victim, type, extraDamage, momentumDir, burstColor1, burstColor2, burstScale, null, null);
+	}
+
+	public static void registerStrikeCollisionImpact(ServerPlayer attacker, String techniqueId, LivingEntity victim,
+			CollisionImpactType type, float damage, Vec3 momentumDir) {
+		registerStrikeCollisionImpact(attacker, techniqueId, victim, type, damage, momentumDir, 0, 0, 0.0F);
+	}
+
+	public static void registerStrikeCollisionImpact(ServerPlayer attacker, String techniqueId, LivingEntity victim,
+			CollisionImpactType type, float damage, Vec3 momentumDir, int burstColor1, int burstColor2, float burstScale) {
+		putImpact(victim, type, damage, momentumDir, burstColor1, burstColor2, burstScale, attacker.getUUID(), techniqueId);
+	}
+
+	private static void putImpact(LivingEntity victim, CollisionImpactType type, float extraDamage, Vec3 momentumDir,
+			int burstColor1, int burstColor2, float burstScale, UUID attackerId, String techniqueId) {
 		long expiryMs = System.currentTimeMillis() + 1200L;
 		COLLISION_IMPACTS.put(victim.getUUID(), new CollisionImpactContext(type, expiryMs, victim.getY(), extraDamage, momentumDir,
-				burstColor1, burstColor2, burstScale));
+				burstColor1, burstColor2, burstScale, attackerId, techniqueId));
 	}
 
 	private static void createCrater(ServerLevel level, BlockPos center, double radius, LivingEntity source) {

@@ -14,6 +14,8 @@ import java.util.Set;
 public class Techniques {
 	public static final int SLOT_COUNT = 8;
 	public static final int MAX_UNLOCKED_TECHNIQUES = 256;
+	public static final String CHARGE_PERCENT_KEY = "TechniqueChargePercent";
+	public static final String CHARGING_KEY = "TechniqueCharging";
 
 	@Getter
 	private final Map<String, TechniqueData> unlockedTechniques = new HashMap<>();
@@ -295,8 +297,8 @@ public class Techniques {
 		CompoundTag tag = new CompoundTag();
 		tag.putInt("SelectedSlot", selectedSlot);
 		tag.putString("ChargingTechniqueId", chargingTechniqueId);
-		tag.putFloat("TechniqueChargePercent", techniqueChargePercent);
-		tag.putBoolean("TechniqueCharging", techniqueCharging);
+		tag.putFloat(CHARGE_PERCENT_KEY, techniqueChargePercent);
+		tag.putBoolean(CHARGING_KEY, techniqueCharging);
 		tag.putBoolean("ChargeHolding", chargeHolding);
 
 		CompoundTag slotsTag = new CompoundTag();
@@ -330,8 +332,8 @@ public class Techniques {
 	public void load(CompoundTag tag) {
 		this.selectedSlot = tag.getInt("SelectedSlot");
 		this.chargingTechniqueId = tag.getString("ChargingTechniqueId");
-		this.techniqueChargePercent = Math.max(0.0f, Math.min(200.0f, tag.getFloat("TechniqueChargePercent")));
-		this.techniqueCharging = tag.getBoolean("TechniqueCharging");
+		this.techniqueChargePercent = Math.max(0.0f, Math.min(200.0f, tag.getFloat(CHARGE_PERCENT_KEY)));
+		this.techniqueCharging = tag.getBoolean(CHARGING_KEY);
 		this.chargeHolding = tag.getBoolean("ChargeHolding");
 
 		CompoundTag slotsTag = tag.getCompound("EquippedSlots");

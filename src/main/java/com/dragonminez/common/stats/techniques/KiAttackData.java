@@ -741,10 +741,11 @@ public class KiAttackData extends TechniqueData {
 	}
 
 	private static final float LARGE_OVERLOAD_KI_FACTOR = 2.0f;
+	private static final float LARGE_OVERLOAD_KI_MAX = 3.0f;
 
 	private static float largeOverloadKiMultiplier(KiType type, float damage) {
 		if (!isLargeDamageTier(type) || damage <= 2.0f) return 1.0f;
-		return 1.0f + (damage - 2.0f) * LARGE_OVERLOAD_KI_FACTOR;
+		return Math.min(LARGE_OVERLOAD_KI_MAX, 1.0f + (damage - 2.0f) * LARGE_OVERLOAD_KI_FACTOR);
 	}
 
 	public static float getDefaultSizeForType(KiType type) {

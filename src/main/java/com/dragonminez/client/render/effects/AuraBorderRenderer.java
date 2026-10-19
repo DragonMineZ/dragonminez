@@ -1,5 +1,6 @@
 package com.dragonminez.client.render.effects;
 
+import com.dragonminez.client.render.HelmetFormLook;
 import com.dragonminez.client.render.shader.BloomPipeline;
 import com.dragonminez.client.render.shader.DMZShaders;
 import com.dragonminez.client.render.shader.TransformationMaskBufferSource;
@@ -85,7 +86,7 @@ public final class AuraBorderRenderer {
 	public static float[] playerColor(Player player, StatsData stats) {
 		if (stats == null || player.isSpectator() || player.isInvisible()) return null;
 		if (!stats.getStatus().isSurgeActive()) return null;
-		return ColorUtils.hexToRgb(stats.getCharacter().getActiveAuraColor());
+		return ColorUtils.hexToRgb(HelmetFormLook.activeAuraColor(stats));
 	}
 
 	public static void beginCapture() {

@@ -2,6 +2,8 @@ package com.dragonminez.common.network.C2S;
 
 import com.dragonminez.common.combat.logic.player.MeleeWindupTracker;
 import com.dragonminez.common.init.MainEffects;
+import com.dragonminez.common.network.PacketRateLimiter;
+import com.dragonminez.common.network.StatsDeltaSync;
 import com.dragonminez.common.stats.StatsCapability;
 import com.dragonminez.common.stats.StatsProvider;
 import com.dragonminez.server.events.players.KiSurgeService;
@@ -19,6 +21,9 @@ public class UpdateStatC2S {
 
 	private static final String BLOCK_END_TIME_TAG = "dmz_block_end_time";
 	private static final long BLOCK_REACTIVATION_DELAY_MS = 250L;
+	private static final String STATUS_GROUP = "Status";
+	private static final String STATUS_RESYNC_KEY = "status_resync";
+	private static final long STATUS_RESYNC_INTERVAL_TICKS = 5L;
 
 	private final StatAction statusKey;
     private final boolean value;
@@ -52,6 +57,7 @@ public class UpdateStatC2S {
                       if (msg.statusKey == StatAction.CHARGE_KI && data.getStatus().isChargingKi()) data.getStatus().setChargingKi(false);
                       if (msg.statusKey == StatAction.DESCEND && data.getStatus().isDescending()) data.getStatus().setDescending(false);
                       if (msg.statusKey == StatAction.ACTION_CHARGE && data.getStatus().isActionCharging()) data.getStatus().setActionCharging(false);
+                      if (msg.value) resyncStaleStatus(player);
                       return;
                     }
 
@@ -59,9 +65,11 @@ public class UpdateStatC2S {
 					case CHARGE_KI:
 						if (msg.value && KiSurgeService.isChargeLocked(player)) break;
                         if (data.getStatus().isChargingKi() != msg.value) data.getStatus().setChargingKi(msg.value);
+                        else resyncStaleStatus(player);
                         break;
 					case DESCEND:
 						if (data.getStatus().isDescending() != msg.value) data.getStatus().setDescending(msg.value);
+                        else resyncStaleStatus(player);
                         break;
 					case ACTION_CHARGE:
 						if (data.getStatus().isActionCharging() != msg.value) data.getStatus().setActionCharging(msg.value);
@@ -71,7 +79,10 @@ public class UpdateStatC2S {
 						if (msg.value) {
 							MeleeWindupTracker.cancel(player);
 							if (data.getStatus().isBlocking()) break;
-							if (now - player.getPersistentData().getLong(BLOCK_END_TIME_TAG) < BLOCK_REACTIVATION_DELAY_MS) break;
+							if (now - player.getPersistentData().getLong(BLOCK_END_TIME_TAG) < BLOCK_REACTIVATION_DELAY_MS) {
+								resyncStaleStatus(player);
+								break;
+							}
 							data.getStatus().setBlocking(true);
 							data.getStatus().setLastBlockTime(now);
 						} else if (data.getStatus().isBlocking()) {
@@ -84,5 +95,11 @@ public class UpdateStatC2S {
         });
         ctx.get().setPacketHandled(true);
     }
+
+	private static void resyncStaleStatus(ServerPlayer player) {
+		if (PacketRateLimiter.allow(player.getUUID(), STATUS_RESYNC_KEY, player.level().getGameTime(), STATUS_RESYNC_INTERVAL_TICKS))
+			StatsDeltaSync.markDirty(player, STATUS_GROUP);
+		else StatsDeltaSync.invalidate(player, STATUS_GROUP);
+	}
 }
 

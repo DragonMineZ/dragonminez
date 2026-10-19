@@ -84,8 +84,8 @@ public class PredefinedTechniques {
 		registerEvasion("gum_bind", 0.00F, 26, 900, false);
 		registerStrike("skp.meteor", 1.25f, 40);
 		registerStrike("skp.dragon_fist", 2.5f, 50);
-		registerStrike("skp.deadly_dance_vegetto", 1.5f, 40);
-		registerStrike("skp.deadly_dance", 1.25f, 40);
+		registerStrike("skp.deadly_dance_vegetto", 1.5f, 30);
+		registerStrike("skp.deadly_dance", 1.25f, 30);
 		registerStrike("skp.kaioken_attack", 1.75f, 45);
 		registerStrike("skp.wolf_fang", 1.25f, 35);
 		registerStrike("skp.oozaru_fist", 2.25f, 35);

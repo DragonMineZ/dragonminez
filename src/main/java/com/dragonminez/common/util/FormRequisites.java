@@ -3,6 +3,7 @@ package com.dragonminez.common.util;
 import com.dragonminez.common.config.ConfigManager;
 import com.dragonminez.common.config.FormConfig;
 import com.dragonminez.common.quest.PlayerQuestData;
+import com.dragonminez.common.quest.Quest;
 import com.dragonminez.common.quest.QuestRegistry;
 import com.dragonminez.common.quest.Saga;
 import com.dragonminez.common.stats.StatsData;
@@ -94,7 +95,9 @@ public final class FormRequisites {
 	private static Component sagaQuestReference(String sagaId, int questId, boolean clientSide) {
 		Saga saga = findSaga(sagaId, clientSide);
 		Component sagaName = saga != null && saga.getName() != null ? Component.translatable(saga.getName()) : Component.literal(sagaId);
-		return Component.translatable("gui.dragonminez.skills.quest_ref", sagaName, questId);
+		Quest quest = saga != null ? saga.getQuestById(questId) : null;
+		int questNumber = quest != null ? saga.getQuests().indexOf(quest) + 1 : questId;
+		return Component.translatable("gui.dragonminez.skills.quest_ref", sagaName, questNumber);
 	}
 
 	private static List<FormConfig.FormData> formsAtSkillLevel(StatsData data, String skillName, int targetLevel) {

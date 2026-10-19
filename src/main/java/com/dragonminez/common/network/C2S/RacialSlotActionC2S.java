@@ -3,6 +3,7 @@ package com.dragonminez.common.network.C2S;
 import com.dragonminez.common.network.NetworkHandler;
 import com.dragonminez.common.network.PacketRateLimiter;
 import com.dragonminez.common.network.S2C.RacialDataSyncS2C;
+import com.dragonminez.common.network.StatsDeltaSync;
 import com.dragonminez.common.racial.RacialData;
 import com.dragonminez.common.racial.impl.MajinAbsorption;
 import com.dragonminez.common.stats.StatsCapability;
@@ -45,6 +46,7 @@ public class RacialSlotActionC2S {
 		context.enqueueWork(() -> {
 			ServerPlayer player = context.getSender();
 			if (player == null) return;
+			StatsDeltaSync.invalidate(player, StatsDeltaSync.RACIAL_DATA);
 			if (!PacketRateLimiter.allow(player.getUUID(), "racial_slot_action", player.level().getGameTime(), 20L)) return;
 
 			StatsProvider.get(StatsCapability.INSTANCE, player).ifPresent(data -> {

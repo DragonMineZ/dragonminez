@@ -30,6 +30,7 @@ import com.dragonminez.common.racial.impl.MajinAbsorption;
 import com.dragonminez.common.stats.*;
 import com.dragonminez.common.racial.impl.BioAndroidEvolution;
 import com.dragonminez.common.stats.character.Cooldowns;
+import com.dragonminez.common.stats.character.Status;
 import com.dragonminez.common.stats.extras.ActionMode;
 import com.dragonminez.common.stats.techniques.KiAttackData;
 import com.dragonminez.common.stats.techniques.TechniqueData;
@@ -361,7 +362,8 @@ public class TickHandler {
 			KiSurgeService.tick(serverPlayer, data);
 
 			boolean auraFromActions = isChargingKi || (data.getStatus().isActionCharging() && (data.getStatus().getSelectedAction() == ActionMode.FORM || data.getStatus().getSelectedAction() == ActionMode.STACK));
-			if (data.getSkills().isSkillActive("fly") && serverPlayer.isSprinting() && !serverPlayer.onGround()) {
+			if (data.getSkills().isSkillActive("fly") && serverPlayer.isSprinting() && !serverPlayer.onGround()
+					&& data.getStatus().getFlightMode() != Status.FLIGHT_COMBAT) {
 				flySprintAuraTicks.put(playerId, FLY_SPRINT_AURA_LINGER_TICKS);
 			} else {
 				int linger = flySprintAuraTicks.getOrDefault(playerId, 0) - 1;

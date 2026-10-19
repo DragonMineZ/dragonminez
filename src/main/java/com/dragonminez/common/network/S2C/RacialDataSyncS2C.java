@@ -1,5 +1,6 @@
 package com.dragonminez.common.network.S2C;
 
+import com.dragonminez.common.network.StatsGroupsPacket;
 import com.dragonminez.common.stats.StatsCapability;
 import com.dragonminez.common.stats.StatsProvider;
 import net.minecraft.client.Minecraft;
@@ -13,7 +14,7 @@ import net.minecraftforge.network.NetworkEvent;
 
 import java.util.function.Supplier;
 
-public class RacialDataSyncS2C {
+public class RacialDataSyncS2C implements StatsGroupsPacket {
 	private final int playerId;
 	private final CompoundTag nbt;
 
@@ -26,6 +27,16 @@ public class RacialDataSyncS2C {
 	public RacialDataSyncS2C(int playerId, CompoundTag nbt) {
 		this.playerId = playerId;
 		this.nbt = nbt;
+	}
+
+	@Override
+	public int playerId() {
+		return this.playerId;
+	}
+
+	@Override
+	public CompoundTag groups() {
+		return this.nbt;
 	}
 
 	public static void encode(RacialDataSyncS2C msg, FriendlyByteBuf buf) {

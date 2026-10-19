@@ -428,6 +428,7 @@ public class StrikeAttackHandler {
 		HeldVictim.forget(id);
 		STRIKE_ANCHOR_PART.remove(id);
 		SLAM_RINGS.remove(id);
+		DIM_PUNCH_MARKS.remove(id);
 		ActiveStrike active = ACTIVE.remove(id);
 		if (active != null && event.getEntity() instanceof ServerPlayer attacker) {
 			clearVictimStrikeLock(attacker, null, active.targetId());
@@ -900,7 +901,7 @@ public class StrikeAttackHandler {
 				MomentumImpactHandler.CollisionImpactType impactType = target.onGround() || pushDir.y < -0.5
 						? MomentumImpactHandler.CollisionImpactType.GROUND
 						: MomentumImpactHandler.CollisionImpactType.WALL;
-				MomentumImpactHandler.registerCollisionImpact(target, impactType, (float) (active.totalDamage() * IMPACT_DAMAGE_RATIO), pushDir);
+				MomentumImpactHandler.registerStrikeCollisionImpact(player, active.techniqueId(), target, impactType, (float) (active.totalDamage() * IMPACT_DAMAGE_RATIO), pushDir);
 
 				endStrike(player, target, active);
 				return;
@@ -952,7 +953,7 @@ public class StrikeAttackHandler {
 					MomentumImpactHandler.CollisionImpactType impactType = victim.onGround()
 							? MomentumImpactHandler.CollisionImpactType.GROUND
 							: MomentumImpactHandler.CollisionImpactType.WALL;
-					MomentumImpactHandler.registerCollisionImpact(victim, impactType, (float) (active.totalDamage() * IMPACT_DAMAGE_RATIO), pushDir);
+					MomentumImpactHandler.registerStrikeCollisionImpact(player, active.techniqueId(), victim, impactType, (float) (active.totalDamage() * IMPACT_DAMAGE_RATIO), pushDir);
 				}
 			}
 
@@ -1043,7 +1044,7 @@ public class StrikeAttackHandler {
 					MomentumImpactHandler.CollisionImpactType impactType = victim.onGround() || pushDir.y < -0.5
 							? MomentumImpactHandler.CollisionImpactType.GROUND
 							: MomentumImpactHandler.CollisionImpactType.WALL;
-					MomentumImpactHandler.registerCollisionImpact(victim, impactType, (float) (active.totalDamage() * IMPACT_DAMAGE_RATIO), pushDir);
+					MomentumImpactHandler.registerStrikeCollisionImpact(player, active.techniqueId(), victim, impactType, (float) (active.totalDamage() * IMPACT_DAMAGE_RATIO), pushDir);
 
 					playVictimHurtPose(player, victim, GOD_FIST_HURT_ANIM, DBSagasEntity.HURT_ANIM_GODFIST);
 				}
@@ -1105,7 +1106,7 @@ public class StrikeAttackHandler {
 
 			int nextTick = active.ticksElapsed() + 1;
 
-			if (nextTick % active.hitIntervalTicks() == 0 && nextTick < 30) {
+			if (nextTick % active.hitIntervalTicks() == 0 && nextTick < active.durationTicks()) {
 				LivingEntity victim = strikeVictim(player, target);
 				if (victim != null) {
 					applyStrikeDamage(player, victim, strikeHitDamage(player, target, victim, active.perHitDamage()), active.techniqueId(), false);
@@ -1125,7 +1126,7 @@ public class StrikeAttackHandler {
 				);
 			}
 
-			if (nextTick >= 30) {
+			if (nextTick >= active.durationTicks()) {
 				LivingEntity victim = strikeVictim(player, target);
 				if (victim != null) {
 					applyStrikeDamage(player, victim, strikeHitDamage(player, target, victim, active.finalDamage()), active.techniqueId(), true);
@@ -1155,7 +1156,7 @@ public class StrikeAttackHandler {
 
 					playStrikeKnockbackAnimation(victim);
 
-					MomentumImpactHandler.registerCollisionImpact(victim, MomentumImpactHandler.CollisionImpactType.GROUND, (float) (active.totalDamage() * IMPACT_DAMAGE_RATIO), new Vec3(0, 1, 0));
+					MomentumImpactHandler.registerStrikeCollisionImpact(player, active.techniqueId(), victim, MomentumImpactHandler.CollisionImpactType.GROUND, (float) (active.totalDamage() * IMPACT_DAMAGE_RATIO), new Vec3(0, 1, 0));
 				}
 
 				endStrike(player, target, active);
@@ -1218,7 +1219,7 @@ public class StrikeAttackHandler {
 				grantKillXpIfNeeded(player, target, active.techniqueId());
 				playVictimHurtPose(player, target, HURT_DOWN_ANIM, DBSagasEntity.HURT_ANIM_DOWN);
 				KnockbackHelper.apply(target, new Vec3(0.0, -SPIRIT_CANNON_SLAM_POWER, 0.0));
-				MomentumImpactHandler.registerCollisionImpact(target, MomentumImpactHandler.CollisionImpactType.GROUND,
+				MomentumImpactHandler.registerStrikeCollisionImpact(player, active.techniqueId(), target, MomentumImpactHandler.CollisionImpactType.GROUND,
 						(float) (active.totalDamage() * IMPACT_DAMAGE_RATIO), new Vec3(0.0, -1.0, 0.0),
 						SPIRIT_CANNON_COLOR_PRIMARY, SPIRIT_CANNON_COLOR_SECONDARY, SPIRIT_CANNON_GROUND_BURST_SCALE);
 				freezeEntity(player);
@@ -1414,7 +1415,7 @@ public class StrikeAttackHandler {
 							SHOCKWAVE_FINAL_SCALE, shockwaveColor(active.techniqueId()), SHOCKWAVE_FINAL_TICKS), player);
 				}
 
-				if (victim != null) applyKnockback(player, victim, active.totalDamage());
+				if (victim != null) applyKnockback(player, victim, active.totalDamage(), active.techniqueId());
 				endStrike(player, target, active);
 				return;
 			}
@@ -1438,7 +1439,7 @@ public class StrikeAttackHandler {
 		if (nextTick >= active.durationTicks()) {
 			applyStrikeDamage(player, target, active.finalDamage(), active.techniqueId(), true);
 			grantKillXpIfNeeded(player, target, active.techniqueId());
-			applyKnockback(player, target, active.totalDamage());
+			applyKnockback(player, target, active.totalDamage(), active.techniqueId());
 			endStrike(player, target, active);
 			return;
 		}
@@ -1618,7 +1619,7 @@ public class StrikeAttackHandler {
 
 		if (!target.isAlive()) return;
 		KnockbackHelper.apply(target, new Vec3(forward.x * COMBO_METEOR_SMASH_FORWARD, -COMBO_METEOR_SMASH_SPEED, forward.z * COMBO_METEOR_SMASH_FORWARD));
-		MomentumImpactHandler.registerCollisionImpact(target, MomentumImpactHandler.CollisionImpactType.GROUND,
+		MomentumImpactHandler.registerStrikeCollisionImpact(player, COMBO_METEOR_ID, target, MomentumImpactHandler.CollisionImpactType.GROUND,
 				(float) (active.totalDamage() * IMPACT_DAMAGE_RATIO), new Vec3(0.0, -1.0, 0.0));
 	}
 
@@ -2255,7 +2256,7 @@ public class StrikeAttackHandler {
 		setStrikeLocked(target, false);
 		KnockbackHelper.apply(target, new Vec3(dir.x * SHINING_SWORD_BLAST_KNOCKBACK, 0.4, dir.z * SHINING_SWORD_BLAST_KNOCKBACK));
 		playStrikeKnockbackAnimation(target);
-		MomentumImpactHandler.registerCollisionImpact(target, MomentumImpactHandler.CollisionImpactType.WALL,
+		MomentumImpactHandler.registerStrikeCollisionImpact(player, SHINING_SWORD_ID, target, MomentumImpactHandler.CollisionImpactType.WALL,
 				(float) (active.totalDamage() * IMPACT_DAMAGE_RATIO), dir);
 	}
 
@@ -2308,7 +2309,7 @@ public class StrikeAttackHandler {
 
 		if (!target.isAlive()) return;
 		KnockbackHelper.apply(target, new Vec3(dir.x * GRAB_THROW_FORCE, GRAB_THROW_LIFT, dir.z * GRAB_THROW_FORCE));
-		MomentumImpactHandler.registerCollisionImpact(target, MomentumImpactHandler.CollisionImpactType.WALL,
+		MomentumImpactHandler.registerStrikeCollisionImpact(player, GRAB_ID, target, MomentumImpactHandler.CollisionImpactType.WALL,
 				(float) (active.totalDamage() * IMPACT_DAMAGE_RATIO), dir);
 	}
 
@@ -2429,7 +2430,7 @@ public class StrikeAttackHandler {
 				mark.x, fistY, mark.z, fistYaw, fistPitch, punchIndex == 1, openTicks), player);
 	}
 
-	private static void fireDimensionalPunch(ServerPlayer player, ActiveStrike active) {
+	private static void fireDimensionalPunch(ServerPlayer player, ActiveStrike active, boolean finalHit) {
 		if (!(player.level() instanceof ServerLevel serverLevel)) return;
 
 		Vec3 mark = DIM_PUNCH_MARKS.get(player.getUUID());
@@ -2445,7 +2446,8 @@ public class StrikeAttackHandler {
 			double dz = victim.getZ() - mark.z;
 			if (Math.sqrt(dx * dx + dz * dz) > DIM_PUNCH_RADIUS) continue;
 
-			applyStrikeDamage(player, victim, active.perHitDamage(), active.techniqueId(), false);
+			applyStrikeDamage(player, victim, active.perHitDamage(), active.techniqueId(), finalHit);
+			if (finalHit) grantKillXpIfNeeded(player, victim, active.techniqueId());
 		}
 
 		Vec3 center = mark.add(0.0, 1.0, 0.0);
@@ -2503,9 +2505,9 @@ public class StrikeAttackHandler {
 			if (tick != DIM_PUNCH_MARK_TICKS[i] || target == null) continue;
 			markDimensionalPortal(player, target, i);
 		}
-		for (int hit : DIM_PUNCH_HIT_TICKS) {
-			if (tick != hit) continue;
-			fireDimensionalPunch(player, active);
+		for (int i = 0; i < DIM_PUNCH_HIT_TICKS.length; i++) {
+			if (tick != DIM_PUNCH_HIT_TICKS[i]) continue;
+			fireDimensionalPunch(player, active, i == DIM_PUNCH_HIT_TICKS.length - 1);
 		}
 
 		if (tick + 1 >= active.durationTicks()) {
@@ -2579,12 +2581,14 @@ public class StrikeAttackHandler {
 
 		double damage = active.perHitDamage();
 		String techniqueId = active.techniqueId();
+		boolean finalCut = index == DIM_SLASH_TICKS.length - 1;
 
 		com.dragonminez.common.combat.util.SwordSlashManager.launch(serverLevel, player, origin, aim,
 				com.dragonminez.common.combat.util.SwordSlashManager.rollFor(index), DIM_SLASH_SCALE, DIM_SLASH_COLOR, DIM_SLASH_CORE_COLOR,
 				DIM_SLASH_SPEED, DIM_SLASH_RANGE, DIM_SLASH_HIT_RADIUS, DIM_SLASH_TERRAIN_CUT, victim -> {
 					if ((victim.isAlliedTo(player) && !TargetHelper.isTournamentRival(player, victim)) || !TargetHelper.canAttack(player, victim, DIM_SLASH_RANGE + 8.0)) return false;
-					applyStrikeDamage(player, victim, damage, techniqueId, false);
+					applyStrikeDamage(player, victim, damage, techniqueId, finalCut);
+					if (finalCut) grantKillXpIfNeeded(player, victim, techniqueId);
 					return true;
 				});
 
@@ -2738,6 +2742,7 @@ public class StrikeAttackHandler {
 		ACTIVE.remove(player.getUUID());
 		STRIKE_ANCHOR_PART.remove(player.getUUID());
 		SLAM_RINGS.remove(player.getUUID());
+		DIM_PUNCH_MARKS.remove(player.getUUID());
 		setStrikeLocked(player, false);
 		clearVictimStrikeLock(player, target, active.targetId());
 		stopStrikeAnimation(player);
@@ -3051,7 +3056,14 @@ public class StrikeAttackHandler {
 		});
 	}
 
-	private static void applyKnockback(ServerPlayer player, LivingEntity target, double totalDamage) {
+	static void applyCollisionImpactDamage(ServerPlayer player, LivingEntity victim, float damage, String techniqueId) {
+		if (!victim.isAlive() || damage <= 0.0F) return;
+		victim.invulnerableTime = 0;
+		victim.hurt(MainDamageTypes.strikeAttack(player.level(), player, techniqueId), damage);
+		grantKillXpIfNeeded(player, victim, techniqueId);
+	}
+
+	private static void applyKnockback(ServerPlayer player, LivingEntity target, double totalDamage, String techniqueId) {
 		Vec3 dir = target.position().subtract(player.position()).normalize();
 		if (dir.lengthSqr() < 1.0E-6) dir = player.getLookAngle();
 		KnockbackHelper.apply(target, dir.scale(KNOCKBACK_FORCE));
@@ -3060,7 +3072,7 @@ public class StrikeAttackHandler {
 		MomentumImpactHandler.CollisionImpactType impactType = target.onGround() || dir.y < -0.5
 				? MomentumImpactHandler.CollisionImpactType.GROUND
 				: MomentumImpactHandler.CollisionImpactType.WALL;
-		MomentumImpactHandler.registerCollisionImpact(target, impactType, (float) (totalDamage * IMPACT_DAMAGE_RATIO), dir);
+		MomentumImpactHandler.registerStrikeCollisionImpact(player, techniqueId, target, impactType, (float) (totalDamage * IMPACT_DAMAGE_RATIO), dir);
 	}
 
 	private static int deadlyDanceSecondaryColor(boolean vegetto) {

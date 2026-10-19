@@ -1,5 +1,6 @@
 package com.dragonminez.client.render.hair;
 
+import com.dragonminez.client.render.HelmetFormLook;
 import com.dragonminez.client.render.layer.AuraTintTracker;
 import com.dragonminez.client.render.layer.DMZSkinLayer;
 import com.dragonminez.client.systems.FormVisualTransition;
@@ -121,7 +122,7 @@ public final class HairStyleResolver {
 			applyFormTint(rgbFrom, formTint, formTintIntensity);
 			if (rgbTo != rgbFrom) applyFormTint(rgbTo, formTint, formTintIntensity);
 		} else if (auraTint > 0.0f) {
-			float[] auraRgb = resolveAuraRgb(character);
+			float[] auraRgb = resolveAuraRgb(player, character);
 			applyAuraTint(rgbFrom, auraRgb, AURA_TINT_INTENSITY * auraTint);
 			if (rgbTo != rgbFrom) applyAuraTint(rgbTo, auraRgb, AURA_TINT_INTENSITY * auraTint);
 		}
@@ -164,7 +165,7 @@ public final class HairStyleResolver {
 	private static LookHair lookHair(Player player, Character character, FormTransition.Look look, boolean oozaru) {
 		StyleChoice style = new StyleChoice(style(player, character, HairStyleSlot.BASE), HairStyleSlot.BASE);
 		float[] rgb = character.getRgbRenderHairColor();
-		Function<FormConfig.FormData, float[]> hairRgb = HelmetHairColor.hair(player);
+		Function<FormConfig.FormData, float[]> hairRgb = HelmetFormLook.hair(player);
 		if (look.hasForm()) {
 			style = styleForForm(player, character, look.formGroup(), look.form());
 			rgb = rgbForForm(character, look.formGroup(), look.form(), hairRgb);
@@ -174,7 +175,7 @@ public final class HairStyleResolver {
 			rgb = rgbForStackForm(look.stackGroup(), look.stack(), rgb, hairRgb);
 		}
 		if (oozaru) rgb = look.overlay(character.getRgbBodyColor2(), FormConfig.FormData::getRgbBodyColor2);
-		boolean force = oozaru || hasColorOverride(look.formData()) || hasColorOverride(look.stackData());
+		boolean force = oozaru || hasColorOverride(look.formData(), hairRgb) || hasColorOverride(look.stackData(), hairRgb);
 		return new LookHair(style, rgb, force);
 	}
 
@@ -232,8 +233,8 @@ public final class HairStyleResolver {
 		return Boolean.TRUE.equals(formData.hasCustomModel()) && formData.getCustomModel().toLowerCase().startsWith("oozaru");
 	}
 
-	private static boolean hasColorOverride(FormConfig.FormData formData) {
-		return formData != null && Boolean.TRUE.equals(formData.hasHairColorOverride());
+	private static boolean hasColorOverride(FormConfig.FormData formData, Function<FormConfig.FormData, float[]> hairRgb) {
+		return formData != null && hairRgb.apply(formData) != null;
 	}
 
 	private static float[] rgbForForm(Character character, String group, String formName, Function<FormConfig.FormData, float[]> hairRgb) {
@@ -256,11 +257,12 @@ public final class HairStyleResolver {
 		return fallback;
 	}
 
-	private static float[] resolveAuraRgb(Character character) {
+	private static float[] resolveAuraRgb(Player player, Character character) {
 		float[] auraRgb = character.getRgbAuraColor();
 		FormConfig.FormData activeForm = character.hasActiveForm() ? character.getActiveFormData() : null;
 		FormConfig.FormData activeStackForm = character.hasActiveStackForm() ? character.getActiveStackFormData() : null;
-		if (activeForm != null && activeForm.getRgbAuraColor() != null) auraRgb = activeForm.getRgbAuraColor();
+		float[] formAura = HelmetFormLook.rgbAuraColor(player, activeForm);
+		if (formAura != null) auraRgb = formAura;
 		if (activeStackForm != null && activeStackForm.getRgbAuraColor() != null) auraRgb = activeStackForm.getRgbAuraColor();
 		return auraRgb;
 	}

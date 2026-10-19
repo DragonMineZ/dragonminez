@@ -585,6 +585,11 @@ public abstract class PlayerGeoAnimatableMixin implements GeoAnimatable, IPlayer
 			return PlayState.CONTINUE;
 		}
 
+		if (dragonminez$attackAnimTicks > 0) {
+			dragonminez$miningAnimTicks = 0;
+			return PlayState.STOP;
+		}
+
 		if (hasMiningSwing && isUsingTool(player) && !isPlacingBlock(player) && !isBlocking(player)) {
 			if (ctl.getAnimationState() == AnimationController.State.STOPPED) {
 				if (isMainHandTool(player)) {

@@ -928,6 +928,11 @@ public class NetworkHandler {
 	}
 
 	public static <MSG> void sendToPlayer(MSG message, ServerPlayer player) {
+		sendToSelf(message, player);
+		StatsDeltaSync.onSent(player, message, false);
+	}
+
+	private static <MSG> void sendToSelf(MSG message, ServerPlayer player) {
 		INSTANCE.send(PacketDistributor.PLAYER.with(() -> player), message);
 	}
 
@@ -941,10 +946,13 @@ public class NetworkHandler {
 					: message instanceof ProgressionSyncS2C progression ? progression.forTrackers()
 					: message instanceof StatsDeltaS2C delta ? delta.forTrackers() : null;
 			if (trackerCopy != null) {
-				sendToPlayer(message, player);
+				sendToSelf(message, player);
 				sendToTrackingEntity(trackerCopy, player);
-				return;
+			} else {
+				INSTANCE.send(PacketDistributor.TRACKING_ENTITY_AND_SELF.with(() -> player), message);
 			}
+			StatsDeltaSync.onSent(player, message, true);
+			return;
 		}
 		INSTANCE.send(PacketDistributor.TRACKING_ENTITY_AND_SELF.with(() -> entity), message);
 	}

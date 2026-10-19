@@ -59,6 +59,7 @@ public abstract class MinecraftMixin implements Minecraft_DMZ {
 
 	@Unique private static final int BLOCK_MINE_ATTACK_GRACE = 5;
 	@Unique private int lastBlockMineTick = -100;
+	@Unique private boolean miningHold = false;
 
 	@Unique private static final double BLOCK_MINE_TARGET_BIAS = 0.25D;
 
@@ -79,7 +80,10 @@ public abstract class MinecraftMixin implements Minecraft_DMZ {
 		var hand = PlayerAttackHelper.getCurrentAttack(player, comboCount);
 
 		if (hand == null || !PlayerAttackHelper.canAttack(player)) return;
-		if (!shouldUseCombatAttack(hand)) return;
+		if (!shouldUseCombatAttack(hand)) {
+			miningHold = true;
+			return;
+		}
 
 		cir.cancel();
 		cir.setReturnValue(false);
@@ -147,12 +151,16 @@ public abstract class MinecraftMixin implements Minecraft_DMZ {
 		boolean canUseCombat = hand != null && PlayerAttackHelper.canAttack(player) && shouldUseCombatAttack(hand);
 
 		if (!canUseCombat) {
-			if (hitResult != null && hitResult.getType() == HitResult.Type.BLOCK) lastBlockMineTick = player.tickCount;
+			if (hitResult != null && hitResult.getType() == HitResult.Type.BLOCK) {
+				lastBlockMineTick = player.tickCount;
+				miningHold = true;
+			}
 			return;
 		}
 		ci.cancel();
 
 		if (player.tickCount - lastBlockMineTick <= BLOCK_MINE_ATTACK_GRACE) return;
+		if (miningHold && !hasTargetsForAttack(hand)) return;
 
 		float cooldownProgress = player.getAttackStrengthScale(0.5F);
 		if (cooldownProgress >= 1.0F && !isAttacking && !isAwaitingUpswing) this.startAttack();
@@ -162,6 +170,7 @@ public abstract class MinecraftMixin implements Minecraft_DMZ {
 	private void dragonminez$tick(CallbackInfo info) {
 		if (itemUseCooldown > 0) itemUseCooldown--;
 		lastAttacked++;
+		if (!((Minecraft) (Object) this).options.keyAttack.isDown()) miningHold = false;
 
 		if (player == null) return;
 
