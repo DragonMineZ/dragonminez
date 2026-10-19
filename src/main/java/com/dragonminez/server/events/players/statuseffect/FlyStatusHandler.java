@@ -14,6 +14,8 @@ import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.util.Mth;
 import net.minecraft.world.effect.MobEffectInstance;
+import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.player.Player;
 
 public class FlyStatusHandler implements IStatusEffectHandler {
     @Override
@@ -30,6 +32,8 @@ public class FlyStatusHandler implements IStatusEffectHandler {
     @Override
     public void onPlayerTick(ServerPlayer serverPlayer, StatsData data) {
         restoreLockedFlightMode(serverPlayer, data);
+
+        if (data.getSkills().isSkillActive("fly") && isRidingMount(serverPlayer)) disableFlight(serverPlayer, data);
 
         if (data.getSkills().isSkillActive("fly") && !serverPlayer.isCreative() && !serverPlayer.isSpectator()) {
             serverPlayer.resetFallDistance();
@@ -89,14 +93,23 @@ public class FlyStatusHandler implements IStatusEffectHandler {
         if (currentEnergy >= energyCost) {
             data.getResources().removeEnergy(energyCost);
         } else {
-            data.getSkills().setSkillActive("fly", false);
-            if (!player.isCreative() && !player.isSpectator()) {
-                player.getAbilities().mayfly = false;
-                player.getAbilities().flying = false;
-                player.onUpdateAbilities();
-            }
-            NetworkHandler.sendToTrackingEntityAndSelf(new ProgressionSyncS2C(player), player);
+            disableFlight(player, data);
         }
+    }
+
+    public static boolean isRidingMount(Player player) {
+        Entity vehicle = player.getVehicle();
+        return vehicle != null && !(vehicle instanceof Player);
+    }
+
+    private static void disableFlight(ServerPlayer player, StatsData data) {
+        data.getSkills().setSkillActive("fly", false);
+        if (!player.isCreative() && !player.isSpectator()) {
+            player.getAbilities().mayfly = false;
+            player.getAbilities().flying = false;
+            player.onUpdateAbilities();
+        }
+        NetworkHandler.sendToTrackingEntityAndSelf(new ProgressionSyncS2C(player), player);
     }
 
     private static float getFlyCostMultiplier(int flyLevel) {
