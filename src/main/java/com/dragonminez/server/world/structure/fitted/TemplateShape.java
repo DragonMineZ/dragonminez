@@ -7,6 +7,7 @@ import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.levelgen.structure.templatesystem.StructureTemplate;
 
+import javax.annotation.Nullable;
 import java.util.Arrays;
 import java.util.BitSet;
 import java.util.Collections;
@@ -19,20 +20,26 @@ public final class TemplateShape {
 	private static final Map<StructureTemplate, TemplateShape> CACHE = Collections.synchronizedMap(new WeakHashMap<>());
 
 	private final int sizeX;
+	private final int sizeY;
 	private final int sizeZ;
 	private final short[] lowest;
 	private final short[] runTop;
 	private final BlockState[] base;
 	private final int autoGroundLevel;
+	@Nullable
+	private final BitSet occupied;
 	private final Map<Long, SkirtField> fields = new ConcurrentHashMap<>();
 
-	private TemplateShape(int sizeX, int sizeZ, short[] lowest, short[] runTop, BlockState[] base, int autoGroundLevel) {
+	private TemplateShape(int sizeX, int sizeY, int sizeZ, short[] lowest, short[] runTop, BlockState[] base, int autoGroundLevel,
+						  @Nullable BitSet occupied) {
 		this.sizeX = sizeX;
+		this.sizeY = sizeY;
 		this.sizeZ = sizeZ;
 		this.lowest = lowest;
 		this.runTop = runTop;
 		this.base = base;
 		this.autoGroundLevel = autoGroundLevel;
+		this.occupied = occupied;
 	}
 
 	public static TemplateShape of(StructureTemplate template) {
@@ -53,15 +60,19 @@ public final class TemplateShape {
 		Arrays.fill(lowest, (short) -1);
 		BlockState[] base = new BlockState[columns];
 		BitSet solid = new BitSet(Math.max(1, columns * sy));
+		BitSet occupied = new BitSet(Math.max(1, columns * sy));
+		boolean airless = true;
 
 		List<StructureTemplate.Palette> palettes = ((StructureTemplateAccessor) template).getPalettes();
 		if (!palettes.isEmpty()) {
 			for (StructureTemplate.StructureBlockInfo info : palettes.get(0).blocks()) {
-				BlockState state = info.state();
-				if (state.isAir() || state.is(Blocks.STRUCTURE_VOID)) continue;
 				BlockPos pos = info.pos();
 				if (pos.getX() < 0 || pos.getX() >= sx || pos.getY() < 0 || pos.getY() >= sy || pos.getZ() < 0 || pos.getZ() >= sz) continue;
 				int column = pos.getX() + pos.getZ() * sx;
+				occupied.set(column * sy + pos.getY());
+				BlockState state = info.state();
+				if (state.isAir()) airless = false;
+				if (state.isAir() || state.is(Blocks.STRUCTURE_VOID)) continue;
 				if (lowest[column] < 0 || pos.getY() < lowest[column]) {
 					lowest[column] = (short) pos.getY();
 					base[column] = state;
@@ -95,7 +106,8 @@ public final class TemplateShape {
 			}
 			auto = best > sy / 2 ? 0 : best;
 		}
-		return new TemplateShape(sx, sz, lowest, runTop, base, auto);
+		boolean gaps = airless && occupied.cardinality() < columns * sy;
+		return new TemplateShape(sx, sy, sz, lowest, runTop, base, auto, gaps ? occupied : null);
 	}
 
 	public int sizeX() {
@@ -142,6 +154,20 @@ public final class TemplateShape {
 
 	int lowest(int column) {
 		return column >= 0 && column < this.lowest.length ? this.lowest[column] : -1;
+	}
+
+	int lowestAt(int x, int z) {
+		return this.lowest(this.index(x, z));
+	}
+
+	boolean hasGaps() {
+		return this.occupied != null;
+	}
+
+	boolean isGap(int x, int y, int z) {
+		if (this.occupied == null || y < 0 || y >= this.sizeY) return false;
+		int index = this.index(x, z);
+		return index >= 0 && !this.occupied.get(index * this.sizeY + y);
 	}
 
 	BlockState baseState(int column) {

@@ -20,8 +20,11 @@ import net.minecraft.world.level.ServerLevelAccessor;
 import net.minecraft.world.level.StructureManager;
 import net.minecraft.world.level.WorldGenLevel;
 import net.minecraft.world.level.block.Block;
+import net.minecraft.world.level.block.Blocks;
+import net.minecraft.world.level.block.LeavesBlock;
 import net.minecraft.world.level.block.Mirror;
 import net.minecraft.world.level.block.Rotation;
+import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.chunk.ChunkAccess;
 import net.minecraft.world.level.chunk.ChunkGenerator;
 import net.minecraft.world.level.chunk.ProtoChunk;
@@ -44,6 +47,9 @@ import java.util.Optional;
 public class FittedTemplatePiece extends TemplateStructurePiece {
 	public static final String ENTITY_KEY_TAG = "dmz_structure_entity";
 	private static final double TWIN_RADIUS = 4.0D;
+	private static final int GAP_MARGIN = 8;
+	private static final int PLACE_FLAGS = Block.UPDATE_CLIENTS | Block.UPDATE_KNOWN_SHAPE;
+	private static final BlockState AIR = Blocks.AIR.defaultBlockState();
 
 	private final Rotation rotation;
 
@@ -96,9 +102,45 @@ public class FittedTemplatePiece extends TemplateStructurePiece {
 			StructureTemplate clipped = new StructureTemplate();
 			((StructureTemplateAccessor) clipped).getPalettes().add(StructureTemplatePaletteInvoker.dragonminez$create(blocks));
 			((StructureTemplateAccessor) clipped).setSize(this.template.getSize());
-			clipped.placeInWorld(level, this.templatePosition, pivot, settings, random, Block.UPDATE_CLIENTS | Block.UPDATE_KNOWN_SHAPE);
+			clipped.placeInWorld(level, this.templatePosition, pivot, settings, random, PLACE_FLAGS);
 		}
+		this.clearGaps(level, generator, box);
 		this.placeEntities(level, box);
+	}
+
+	private void clearGaps(WorldGenLevel level, ChunkGenerator generator, BoundingBox box) {
+		TemplateShape shape = TemplateShape.of(this.template);
+		if (!shape.hasGaps()) return;
+		boolean live = level instanceof ServerLevel;
+		int minX = Math.max(box.minX() - GAP_MARGIN, this.boundingBox.minX());
+		int maxX = Math.min(box.maxX() + GAP_MARGIN, this.boundingBox.maxX());
+		int minZ = Math.max(box.minZ() - GAP_MARGIN, this.boundingBox.minZ());
+		int maxZ = Math.min(box.maxZ() + GAP_MARGIN, this.boundingBox.maxZ());
+		int minY = Math.max(Math.max(box.minY(), this.boundingBox.minY()), generator.getSeaLevel());
+		int maxY = Math.min(box.maxY(), this.boundingBox.maxY());
+		if (minX > maxX || minZ > maxZ || minY > maxY) return;
+		Rotation inverse = inverse(this.rotation);
+		BlockPos.MutableBlockPos cursor = new BlockPos.MutableBlockPos();
+		for (int x = minX; x <= maxX; x++) {
+			for (int z = minZ; z <= maxZ; z++) {
+				BlockPos local = StructureTemplate.transform(new BlockPos(x - this.templatePosition.getX(), 0, z - this.templatePosition.getZ()),
+						Mirror.NONE, inverse, BlockPos.ZERO);
+				int lowest = shape.lowestAt(local.getX(), local.getZ());
+				if (lowest < 0) continue;
+				boolean neighbour = x < box.minX() || x > box.maxX() || z < box.minZ() || z > box.maxZ();
+				for (int y = Math.max(minY, this.templatePosition.getY() + lowest); y <= maxY; y++) {
+					if (!shape.isGap(local.getX(), y - this.templatePosition.getY(), local.getZ())) continue;
+					BlockState state = level.getBlockState(cursor.set(x, y, z));
+					if (state.isAir()) continue;
+					if (live && neighbour && !isNaturalLeaves(state)) continue;
+					level.setBlock(cursor, AIR, PLACE_FLAGS);
+				}
+			}
+		}
+	}
+
+	private static boolean isNaturalLeaves(BlockState state) {
+		return state.hasProperty(LeavesBlock.PERSISTENT) && !state.getValue(LeavesBlock.PERSISTENT);
 	}
 
 	private List<StructureTemplate.StructureBlockInfo> blocksWithin(StructurePlaceSettings settings, BoundingBox box) {
