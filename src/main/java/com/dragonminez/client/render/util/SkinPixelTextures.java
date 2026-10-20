@@ -26,7 +26,13 @@ public final class SkinPixelTextures {
 	private static final int LAYER_IRIS = 2;
 	private static final int LAYER_HAIR = 3;
 	private static final int LAYER_TATTOO = 4;
-	private static final String[] LAYER_NAMES = {"brow", "sclera", "iris", "hair", "tattoo"};
+	private static final int LAYER_IRIS_2 = 5;
+	private static final String[] LAYER_NAMES = {"brow", "sclera", "iris", "hair", "tattoo", "iris2"};
+	private static final int BOTH_EYES = 0;
+	private static final int FIRST_EYE = 1;
+	private static final int SECOND_EYE = 2;
+	private static final int HEAD_ROW_WIDTH = 32;
+	private static final int FACE_SPLIT = 12;
 	private static final float MAX_SHADE_DEPTH = 0.55f;
 	private static final long EVICT_AFTER_TICKS = 1200L;
 	private static final long SWEEP_INTERVAL_TICKS = 200L;
@@ -54,10 +60,13 @@ public final class SkinPixelTextures {
 		int layer = switch (marker) {
 			case SkinPixels.MARK_BROW -> LAYER_BROW;
 			case SkinPixels.MARK_SCLERA -> LAYER_SCLERA;
-			case SkinPixels.MARK_IRIS -> LAYER_IRIS;
 			default -> -1;
 		};
 		return layer < 0 ? null : layerLocation(player, pixels, layer);
+	}
+
+	public static ResourceLocation irisMask(AbstractClientPlayer player, SkinPixels pixels, boolean secondEye) {
+		return layerLocation(player, pixels, secondEye ? LAYER_IRIS_2 : LAYER_IRIS);
 	}
 
 	public static ResourceLocation hairMask(AbstractClientPlayer player, SkinPixels pixels) {
@@ -96,18 +105,19 @@ public final class SkinPixelTextures {
 		NativeImage skinImage = pixels.hasEyeMarks() || pixels.hasHairMarks() ? download(skin, SkinPixels.SKIN_SIZE) : null;
 		try {
 			byte[] eyeMarks = pixels.getEyeMarks();
-			updateMask(entry, manager, LAYER_BROW, eyeMarks, SkinPixels.MARK_BROW, skinImage);
-			updateMask(entry, manager, LAYER_SCLERA, eyeMarks, SkinPixels.MARK_SCLERA, skinImage);
-			updateMask(entry, manager, LAYER_IRIS, eyeMarks, SkinPixels.MARK_IRIS, skinImage);
-			updateMask(entry, manager, LAYER_HAIR, pixels.getHairMarks(), SkinPixels.MARK_HAIR, skinImage);
+			updateMask(entry, manager, LAYER_BROW, eyeMarks, SkinPixels.MARK_BROW, skinImage, BOTH_EYES);
+			updateMask(entry, manager, LAYER_SCLERA, eyeMarks, SkinPixels.MARK_SCLERA, skinImage, BOTH_EYES);
+			updateMask(entry, manager, LAYER_IRIS, eyeMarks, SkinPixels.MARK_IRIS, skinImage, FIRST_EYE);
+			updateMask(entry, manager, LAYER_IRIS_2, eyeMarks, SkinPixels.MARK_IRIS, skinImage, SECOND_EYE);
+			updateMask(entry, manager, LAYER_HAIR, pixels.getHairMarks(), SkinPixels.MARK_HAIR, skinImage, BOTH_EYES);
 			updateTattoo(entry, manager, pixels);
 		} finally {
 			if (skinImage != null) skinImage.close();
 		}
 	}
 
-	private static void updateMask(Entry entry, TextureManager manager, int layer, byte[] marks, byte marker, NativeImage skinImage) {
-		if (marks == null || !contains(marks, marker)) {
+	private static void updateMask(Entry entry, TextureManager manager, int layer, byte[] marks, byte marker, NativeImage skinImage, int eye) {
+		if (marks == null || !contains(marks, marker, eye)) {
 			release(entry, manager, layer);
 			return;
 		}
@@ -133,7 +143,7 @@ public final class SkinPixelTextures {
 		for (int y = 0; y < size; y++) {
 			for (int x = 0; x < size; x++) {
 				int value = 0;
-				if (marks[y * size + x] == marker) {
+				if (marks[y * size + x] == marker && onEye(x, eye)) {
 					if (skinImage == null) {
 						value = 255;
 					} else {
@@ -207,6 +217,10 @@ public final class SkinPixelTextures {
 		}
 	}
 
+	public static NativeImage download(ResourceLocation location) {
+		return download(location, 0);
+	}
+
 	public static NativeImage download(ResourceLocation location, int expectedSize) {
 		if (location == null || !RenderSystem.isOnRenderThread()) return null;
 		try {
@@ -214,7 +228,7 @@ public final class SkinPixelTextures {
 			RenderSystem.bindTexture(texture.getId());
 			int width = GlStateManager._getTexLevelParameter(GL11.GL_TEXTURE_2D, 0, GL11.GL_TEXTURE_WIDTH);
 			int height = GlStateManager._getTexLevelParameter(GL11.GL_TEXTURE_2D, 0, GL11.GL_TEXTURE_HEIGHT);
-			if (width != expectedSize || height != expectedSize) return null;
+			if (width <= 0 || height <= 0 || expectedSize > 0 && (width != expectedSize || height != expectedSize)) return null;
 			NativeImage image = new NativeImage(NativeImage.Format.RGBA, width, height, false);
 			image.downloadTexture(0, false);
 			return image;
@@ -223,9 +237,16 @@ public final class SkinPixelTextures {
 		}
 	}
 
-	private static boolean contains(byte[] marks, byte marker) {
-		for (byte mark : marks) if (mark == marker) return true;
+	private static boolean contains(byte[] marks, byte marker, int eye) {
+		for (int i = 0; i < marks.length; i++) {
+			if (marks[i] == marker && onEye(i % SkinPixels.SKIN_SIZE, eye)) return true;
+		}
 		return false;
+	}
+
+	private static boolean onEye(int x, int eye) {
+		if (eye == BOTH_EYES) return true;
+		return (x % HEAD_ROW_WIDTH < FACE_SPLIT ? FIRST_EYE : SECOND_EYE) == eye;
 	}
 
 	private static int alpha(int abgr) {

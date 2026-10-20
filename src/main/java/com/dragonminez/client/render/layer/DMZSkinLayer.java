@@ -49,7 +49,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.function.Function;
 
 public class DMZSkinLayer<T extends AbstractClientPlayer & GeoAnimatable> extends GeoRenderLayer<T> {
 	public static boolean PREVIEW_MODE = false;
@@ -619,40 +618,18 @@ public class DMZSkinLayer<T extends AbstractClientPlayer & GeoAnimatable> extend
 		renderLayerWholeModel(model, poseStack, bufferSource, animatable, type, rgb[0], rgb[1], rgb[2], 1.0f, pt, pl, po, overlay.alpha(), false);
 	}
 
-	private record PixelPaint(float[] rgb, float alpha) {}
-
-	private PixelPaint resolvePixelPaint(StatsData stats, Function<FormConfig.FormData, float[]> rgb) {
-		PixelPaint paint = pixelPaint(FormTransition.Look.current(stats.getCharacter()).overlay(null, rgb));
-		FormTransition.Charge charge = FormVisualTransition.charge(stats);
-		if (charge != null) paint = blendPixelPaint(paint, pixelPaint(charge.look().overlay(null, rgb)), charge.factor());
-		FormTransition.Revert revert = FormVisualTransition.revert(stats);
-		if (revert != null) paint = blendPixelPaint(paint, pixelPaint(revert.look().overlay(null, rgb)), revert.factor());
-		return paint;
-	}
-
-	private static PixelPaint pixelPaint(float[] rgb) {
-		return rgb != null ? new PixelPaint(rgb, 1.0f) : null;
-	}
-
-	private static PixelPaint blendPixelPaint(PixelPaint from, PixelPaint to, float factor) {
-		if (from == null && to == null) return null;
-		if (from == null) return factor > 0.001f ? new PixelPaint(to.rgb(), to.alpha() * factor) : null;
-		if (to == null) {
-			float alpha = from.alpha() * (1.0f - factor);
-			return alpha > 0.001f ? new PixelPaint(from.rgb(), alpha) : null;
-		}
-		return new PixelPaint(lerpColor(factor, from.rgb(), to.rgb()), Mth.lerp(factor, from.alpha(), to.alpha()));
-	}
-
 	private void renderSkinPixelHair(BakedGeoModel model, PoseStack poseStack, T animatable, MultiBufferSource bufferSource, AbstractClientPlayer player, StatsData stats, float pt, int pl, int po, float alpha) {
 		var character = stats.getCharacter();
 		SkinPixels pixels = character.getSkinPixels();
 		if (!pixels.hasHairMarks() || !character.hasVisibleHair() || !SkinGathererProvider.rendersPlayerSkin(character)) return;
 		ResourceLocation mask = SkinPixelTextures.hairMask(player, pixels);
 		if (mask == null) return;
+		renderMaskLayer(model, poseStack, animatable, bufferSource, mask, skinPixelHairTint(player, stats), pt, pl, po, alpha);
+	}
+
+	private float[] skinPixelHairTint(AbstractClientPlayer player, StatsData stats) {
 		float[] published = SkinPaintContext.active() ? null : HairStyleResolver.getPublishedBaseColor(player.getId(), player.level().getGameTime());
-		float[] tint = published != null ? published : applyColorTint(resolveSkinHairColor(stats), stats);
-		renderMaskLayer(model, poseStack, animatable, bufferSource, mask, tint, pt, pl, po, alpha);
+		return published != null ? published : applyColorTint(resolveSkinHairColor(stats), stats);
 	}
 
 	private float[] resolveSkinHairColor(StatsData stats) {
@@ -663,13 +640,14 @@ public class DMZSkinLayer<T extends AbstractClientPlayer & GeoAnimatable> extend
 		var character = stats.getCharacter();
 		SkinPixels pixels = character.getSkinPixels();
 		if (!pixels.hasEyeMarks()) return;
-		PixelPaint iris = resolvePixelPaint(stats, FormConfig.FormData::getRgbEye1Color);
-		PixelPaint brow = resolvePixelPaint(stats, HelmetFormLook.hair(stats));
-		if (iris == null && brow == null) return;
-		ResourceLocation scleraMask = iris != null ? SkinPixelTextures.eyeMask(player, pixels, SkinPixels.MARK_SCLERA) : null;
-		ResourceLocation irisMask = iris != null ? SkinPixelTextures.eyeMask(player, pixels, SkinPixels.MARK_IRIS) : null;
-		ResourceLocation browMask = brow != null ? SkinPixelTextures.eyeMask(player, pixels, SkinPixels.MARK_BROW) : null;
-		if (scleraMask == null && irisMask == null && browMask == null) return;
+		ResourceLocation scleraMask = SkinPixelTextures.eyeMask(player, pixels, SkinPixels.MARK_SCLERA);
+		ResourceLocation irisMask = SkinPixelTextures.irisMask(player, pixels, false);
+		ResourceLocation iris2Mask = SkinPixelTextures.irisMask(player, pixels, true);
+		ResourceLocation browMask = SkinPixelTextures.eyeMask(player, pixels, SkinPixels.MARK_BROW);
+		if (scleraMask == null && irisMask == null && iris2Mask == null && browMask == null) return;
+		float[] iris = applyColorTint(FormVisualTransition.color(stats, character.getRgbEye1Color(), FormConfig.FormData::getRgbEye1Color), stats);
+		float[] iris2 = applyColorTint(FormVisualTransition.color(stats, character.getRgbEye2Color(), FormConfig.FormData::getRgbEye2Color), stats);
+		float[] brow = skinPixelHairTint(player, stats);
 
 		model.getBone("head").ifPresent(headBone -> {
 			BoneRenderState saved = BoneRenderState.capture(headBone);
@@ -682,9 +660,10 @@ public class DMZSkinLayer<T extends AbstractClientPlayer & GeoAnimatable> extend
 
 			List<GeoBone> hiddenBones = hideAllTopLevelAndKeepHead(model, headBone);
 			try {
-				if (scleraMask != null) renderMaskLayer(model, poseStack, animatable, bufferSource, scleraMask, applyColorTint(scleraColor(character), stats), pt, pl, po, alpha * iris.alpha());
-				if (irisMask != null) renderMaskLayer(model, poseStack, animatable, bufferSource, irisMask, applyColorTint(iris.rgb(), stats), pt, pl, po, alpha * iris.alpha());
-				if (browMask != null) renderMaskLayer(model, poseStack, animatable, bufferSource, browMask, applyColorTint(brow.rgb(), stats), pt, pl, po, alpha * brow.alpha());
+				if (scleraMask != null) renderMaskLayer(model, poseStack, animatable, bufferSource, scleraMask, applyColorTint(scleraColor(character), stats), pt, pl, po, alpha);
+				if (irisMask != null) renderMaskLayer(model, poseStack, animatable, bufferSource, irisMask, iris, pt, pl, po, alpha);
+				if (iris2Mask != null) renderMaskLayer(model, poseStack, animatable, bufferSource, iris2Mask, iris2, pt, pl, po, alpha);
+				if (browMask != null) renderMaskLayer(model, poseStack, animatable, bufferSource, browMask, brow, pt, pl, po, alpha);
 			} finally {
 				restoreHiddenBones(hiddenBones);
 				saved.restore();

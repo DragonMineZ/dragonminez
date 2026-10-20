@@ -67,7 +67,7 @@ import java.util.Set;
 public class PixelEditorScreen extends ScaledScreen {
 	public enum Mode { EYES, HAIR, TATTOO }
 
-	private enum TopButton { UNDO, REDO, CLEAR, LAYER, HAIR, ERASER, SAVE, CANCEL }
+	private enum TopButton { UNDO, REDO, CLEAR, LAYER, HAIR, ERASER, BUCKET, SAVE, CANCEL }
 
 	private enum Tool { BRUSH, AXIS_LINE }
 
@@ -153,6 +153,7 @@ public class PixelEditorScreen extends ScaledScreen {
 	private static final int VIEW_BACKGROUND = 0xFF15191E;
 	private static final int[] EYE_MARK_COLORS = {0, 0xE08A2E, 0x6EDCFF, 0xE84FE0};
 	private static final int HAIR_MARK_COLOR = 0x5BE04F;
+	private static final int SECOND_IRIS_MARK_COLOR = 0x7A6BFF;
 	private static final float[] WHITE_RGB = {1.0f, 1.0f, 1.0f};
 	private static final float MARK_ALPHA = 0.85f;
 	private static final int FRAME_OUTER = 0xFFFFFFFF;
@@ -175,6 +176,9 @@ public class PixelEditorScreen extends ScaledScreen {
 	private boolean overlayLayer;
 	private boolean showHair;
 	private boolean eraser;
+	private boolean bucket;
+	private int[] referenceColors;
+	private int referenceRes;
 	private int viewX0;
 	private int viewY0;
 	private int viewX1;
@@ -754,6 +758,142 @@ public class PixelEditorScreen extends ScaledScreen {
 		anchorY = y;
 	}
 
+	private void fillSameColor(int x, int y) {
+		lastClickMillis = 0L;
+		lastClickBefore = null;
+		List<Integer> cells = sameColorCells(x, y);
+		if (cells.isEmpty()) return;
+		PixelEditHistory.Snapshot before = snapshot();
+		erasing = eraser || hasAltDown();
+		int res = resolution();
+		for (int cell : cells) paintTexel(cell % res, cell / res);
+		if (differsFrom(before)) history.record(before);
+		anchorX = x;
+		anchorY = y;
+	}
+
+	private List<Integer> sameColorCells(int x, int y) {
+		if (!canPaint(x, y)) return List.of();
+		int[] reference = referenceColors();
+		if (reference == null) return List.of();
+		int res = resolution();
+		byte[] tattoo = mode == Mode.TATTOO ? pixels.tattooForEdit(res) : null;
+		byte[] marks = mode == Mode.TATTOO ? null : marks();
+		int origin = y * res + x;
+		int target = colorAt(reference, tattoo, origin);
+		if (target == 0) return List.of();
+		boolean[] visible = visibleTexels(res);
+		byte mark = marker();
+		List<Integer> cells = new ArrayList<>();
+		for (int i = 0; i < res * res; i++) {
+			if (!visible[i] && i != origin) continue;
+			if (colorAt(reference, tattoo, i) != target) continue;
+			if (marks != null && marks[i] != SkinPixels.MARK_NONE && marks[i] != mark) continue;
+			if (canPaint(i % res, i / res)) cells.add(i);
+		}
+		return cells;
+	}
+
+	private static int colorAt(int[] reference, byte[] tattoo, int index) {
+		if (tattoo != null && tattoo[index * 4 + 3] != 0) {
+			return 0xFF000000 | ((tattoo[index * 4 + 2] & 0xFF) << 16) | ((tattoo[index * 4 + 1] & 0xFF) << 8) | (tattoo[index * 4] & 0xFF);
+		}
+		return reference[index];
+	}
+
+	private int[] referenceColors() {
+		int res = resolution();
+		if (referenceColors != null && referenceRes == res) return referenceColors;
+		LocalPlayer player = Minecraft.getInstance().player;
+		if (player == null) return null;
+		ReferenceSink sink = new ReferenceSink(res);
+		StatsProvider.get(StatsCapability.INSTANCE, player).ifPresent(stats -> SkinGathererProvider.INSTANCE.gatherBodyLayers(player, stats, 0.0f, sink));
+		referenceColors = sink.colors();
+		referenceRes = res;
+		return referenceColors;
+	}
+
+	private static boolean[] visibleTexels(int res) {
+		boolean[] visible = new boolean[res * res];
+		for (GeoBone bone : SkinPaintContext.pickedBones()) {
+			for (GeoCube cube : bone.getCubes()) {
+				for (GeoQuad quad : cube.quads()) {
+					if (quad == null) continue;
+					float[] uv = uvBounds(quad);
+					int x0 = Mth.clamp(Math.round(uv[0] * res), 0, res);
+					int y0 = Mth.clamp(Math.round(uv[1] * res), 0, res);
+					int x1 = Mth.clamp(Math.round(uv[2] * res), 0, res);
+					int y1 = Mth.clamp(Math.round(uv[3] * res), 0, res);
+					if (x1 <= x0) continue;
+					for (int y = y0; y < y1; y++) Arrays.fill(visible, y * res + x0, y * res + x1, true);
+				}
+			}
+		}
+		return visible;
+	}
+
+	private static final class ReferenceSink implements SkinGathererProvider.BodyLayerSink {
+		private final int res;
+		private final float[] rgba;
+
+		private ReferenceSink(int res) {
+			this.res = res;
+			this.rgba = new float[res * res * 4];
+		}
+
+		@Override
+		public void base(ResourceLocation texture, float[] color) {
+			blend(texture, color, 1.0f);
+		}
+
+		@Override
+		public void fading(String layerId, ResourceLocation texture, float[] color, float targetAlpha) {
+			blend(texture, color, targetAlpha);
+		}
+
+		@Override
+		public void saiyanTail(float[] color) {
+		}
+
+		private void blend(ResourceLocation texture, float[] color, float layerAlpha) {
+			if (layerAlpha <= 0.0f) return;
+			NativeImage image = SkinPixelTextures.download(texture);
+			if (image == null) return;
+			float[] tint = color != null ? color : WHITE_RGB;
+			try {
+				int width = image.getWidth();
+				int height = image.getHeight();
+				for (int y = 0; y < res; y++) {
+					for (int x = 0; x < res; x++) {
+						int abgr = image.getPixelRGBA(x * width / res, y * height / res);
+						float alpha = (abgr >>> 24) / 255.0f * layerAlpha;
+						if (alpha <= 0.0f) continue;
+						int i = (y * res + x) * 4;
+						rgba[i] = Mth.lerp(alpha, rgba[i], (abgr & 0xFF) / 255.0f * tint[0]);
+						rgba[i + 1] = Mth.lerp(alpha, rgba[i + 1], ((abgr >> 8) & 0xFF) / 255.0f * tint[1]);
+						rgba[i + 2] = Mth.lerp(alpha, rgba[i + 2], ((abgr >> 16) & 0xFF) / 255.0f * tint[2]);
+						rgba[i + 3] = alpha + rgba[i + 3] * (1.0f - alpha);
+					}
+				}
+			} finally {
+				image.close();
+			}
+		}
+
+		private int[] colors() {
+			int[] out = new int[res * res];
+			for (int i = 0; i < out.length; i++) {
+				if (rgba[i * 4 + 3] < 0.5f) continue;
+				out[i] = 0xFF000000 | (channel(rgba[i * 4 + 2]) << 16) | (channel(rgba[i * 4 + 1]) << 8) | channel(rgba[i * 4]);
+			}
+			return out;
+		}
+
+		private static int channel(float value) {
+			return Mth.clamp(Math.round(value * 255.0f), 0, 255);
+		}
+	}
+
 	private List<int[]> boneFaceAt(int x, int y) {
 		int res = resolution();
 		float u = (x + 0.5f) / res;
@@ -965,6 +1105,15 @@ public class PixelEditorScreen extends ScaledScreen {
 		HairEditorSounds.toggle(eraser);
 	}
 
+	private void toggleBucket() {
+		bucket = !bucket;
+		referenceColors = null;
+		anchorX = -1;
+		anchorY = -1;
+		lastClickBefore = null;
+		HairEditorSounds.toggle(bucket);
+	}
+
 	private void applyView(ViewPreset preset) {
 		yaw = preset.yaw;
 		pitch = preset.pitch;
@@ -1069,6 +1218,7 @@ public class PixelEditorScreen extends ScaledScreen {
 		super.render(graphics, uiMouseX, uiMouseY, partialTick);
 		if (mode == Mode.TATTOO) renderColorExtras(graphics, uiMouseX, uiMouseY);
 		if (!confirmClose) renderPartTooltip(graphics, uiMouseX, uiMouseY);
+		if (!confirmClose) renderBucketTooltip(graphics, uiMouseX, uiMouseY);
 		graphics.pose().popPose();
 
 		if (confirmClose) renderConfirmClose(graphics, uiMouseX, uiMouseY);
@@ -1095,7 +1245,8 @@ public class PixelEditorScreen extends ScaledScreen {
 		x += 4;
 		if (layered) x = placeTopButton(TopButton.LAYER, x, 52);
 		x = placeTopButton(TopButton.HAIR, x, 36);
-		placeTopButton(TopButton.ERASER, x, 46);
+		x = placeTopButton(TopButton.ERASER, x, 46);
+		placeTopButton(TopButton.BUCKET, x, 30);
 		int right = getUiWidth() - MARGIN;
 		topBar.add(new Placement(TopButton.CANCEL, right - 48, 48));
 		topBar.add(new Placement(TopButton.SAVE, right - 48 - 3 - 48, 48));
@@ -1111,6 +1262,7 @@ public class PixelEditorScreen extends ScaledScreen {
 				case LAYER -> overlayLayer;
 				case HAIR -> showHair;
 				case ERASER -> eraser;
+				case BUCKET -> bucket;
 				default -> false;
 			};
 			HairEditorUi.button(graphics, this.font, topButtonLabel(placement.button()), placement.x(), TOP_BAR_Y, placement.width(), TOP_BAR_HEIGHT, hovered, active, enabled);
@@ -1130,6 +1282,7 @@ public class PixelEditorScreen extends ScaledScreen {
 			case LAYER -> tr("gui.dragonminez.pixel_editor.overlay");
 			case HAIR -> tr("gui.dragonminez.pixel_editor.hair");
 			case ERASER -> tr("gui.dragonminez.pixel_editor.eraser");
+			case BUCKET -> tr("gui.dragonminez.pixel_editor.bucket");
 			case SAVE -> tr("gui.dragonminez.pixel_editor.save");
 			case CANCEL -> tr("gui.dragonminez.pixel_editor.cancel");
 		};
@@ -1164,7 +1317,8 @@ public class PixelEditorScreen extends ScaledScreen {
 			if (mode == Mode.EYES) {
 				cursorY = legendRow(graphics, textX, cursorY, SkinPixels.MARK_BROW, "gui.dragonminez.pixel_editor.legend.brow");
 				cursorY = legendRow(graphics, textX, cursorY, SkinPixels.MARK_SCLERA, "gui.dragonminez.pixel_editor.legend.sclera");
-				legendRow(graphics, textX, cursorY, SkinPixels.MARK_IRIS, "gui.dragonminez.pixel_editor.legend.iris");
+				cursorY = legendRow(graphics, textX, cursorY, SkinPixels.MARK_IRIS, "gui.dragonminez.pixel_editor.legend.iris");
+				legendRow(graphics, textX, cursorY, SkinPixels.MARK_IRIS, SECOND_IRIS_MARK_COLOR, "gui.dragonminez.pixel_editor.legend.iris2");
 			} else {
 				legendRow(graphics, textX, cursorY, SkinPixels.MARK_HAIR, "gui.dragonminez.pixel_editor.legend.hair");
 			}
@@ -1263,9 +1417,22 @@ public class PixelEditorScreen extends ScaledScreen {
 				HairEditorUi.HOVER_TEXT);
 	}
 
+	private void renderBucketTooltip(GuiGraphics graphics, int mouseX, int mouseY) {
+		if (painting || orbiting || panning) return;
+		for (Placement placement : topBar) {
+			if (placement.button() != TopButton.BUCKET || !HairEditorUi.inside(mouseX, mouseY, placement.x(), TOP_BAR_Y, placement.width(), TOP_BAR_HEIGHT)) continue;
+			TextUtil.renderAdvancedTooltip(graphics, this.font, mouseX, mouseY, getUiWidth(), getUiHeight(),
+					tr("gui.dragonminez.pixel_editor.bucket"), List.of(tr("gui.dragonminez.pixel_editor.bucket.desc")), null, HairEditorUi.HOVER_TEXT);
+		}
+	}
+
 	private int legendRow(GuiGraphics graphics, int x, int y, byte mark, String key) {
+		return legendRow(graphics, x, y, mark, markerColor(mark), key);
+	}
+
+	private int legendRow(GuiGraphics graphics, int x, int y, byte mark, int color, String key) {
 		boolean current = mode == Mode.HAIR || mark == marker();
-		graphics.fill(x, y, x + 8, y + 8, 0xFF000000 | markerColor(mark));
+		graphics.fill(x, y, x + 8, y + 8, 0xFF000000 | color);
 		HairEditorUi.outline(graphics, x - 1, y - 1, 10, 10, current ? 0xFFFFFFFF : HairEditorUi.DIVIDER);
 		TextUtil.drawStringWithBorder(graphics, this.font, tr(key), x + 13, y, current ? HairEditorUi.TEXT : HairEditorUi.MUTED);
 		return y + 12;
@@ -1375,6 +1542,15 @@ public class PixelEditorScreen extends ScaledScreen {
 		NativeImage image = highlightTexture.getPixels();
 		if (image == null) return;
 
+		int res = resolution();
+		List<Integer> cells = new ArrayList<>();
+		if (hoverValid && !confirmClose) {
+			if (bucket) cells.addAll(sameColorCells(hoverX, hoverY));
+			else if (!painting && shiftDown() && anchorX >= 0 && anchorY >= 0) collectLine(cells, anchorX, anchorY, hoverX, hoverY, res);
+			cells.add(hoverY * res + hoverX);
+		}
+		if (res == highlightCellRes && cells.equals(highlightCells)) return;
+
 		int dirtyX0 = HIGHLIGHT_RES;
 		int dirtyY0 = HIGHLIGHT_RES;
 		int dirtyX1 = 0;
@@ -1390,22 +1566,18 @@ public class PixelEditorScreen extends ScaledScreen {
 		}
 		highlightCells.clear();
 
-		int res = resolution();
 		highlightCellRes = res;
 		highlightFactor = Math.max(1, HIGHLIGHT_RES / res);
-		if (hoverValid && !confirmClose) {
-			if (!painting && shiftDown() && anchorX >= 0 && anchorY >= 0) collectLine(anchorX, anchorY, hoverX, hoverY, res);
-			highlightCells.add(hoverY * res + hoverX);
-			for (int cell : highlightCells) {
-				int bx = (cell % res) * highlightFactor;
-				int by = (cell / res) * highlightFactor;
-				drawFrame(image, bx, by, highlightFactor);
-				dirtyX0 = Math.min(dirtyX0, bx);
-				dirtyY0 = Math.min(dirtyY0, by);
-				dirtyX1 = Math.max(dirtyX1, bx + highlightFactor);
-				dirtyY1 = Math.max(dirtyY1, by + highlightFactor);
-			}
+		for (int cell : cells) {
+			int bx = (cell % res) * highlightFactor;
+			int by = (cell / res) * highlightFactor;
+			drawFrame(image, bx, by, highlightFactor);
+			dirtyX0 = Math.min(dirtyX0, bx);
+			dirtyY0 = Math.min(dirtyY0, by);
+			dirtyX1 = Math.max(dirtyX1, bx + highlightFactor);
+			dirtyY1 = Math.max(dirtyY1, by + highlightFactor);
 		}
+		highlightCells.addAll(cells);
 		if (dirtyX1 > dirtyX0 && dirtyY1 > dirtyY0) {
 			highlightTexture.bind();
 			image.upload(0, dirtyX0, dirtyY0, dirtyX0, dirtyY0, dirtyX1 - dirtyX0, dirtyY1 - dirtyY0, false, false);
@@ -1434,7 +1606,7 @@ public class PixelEditorScreen extends ScaledScreen {
 		}
 	}
 
-	private void collectLine(int x0, int y0, int x1, int y1, int res) {
+	private void collectLine(List<Integer> cells, int x0, int y0, int x1, int y1, int res) {
 		int dx = Math.abs(x1 - x0);
 		int dy = -Math.abs(y1 - y0);
 		int sx = x0 < x1 ? 1 : -1;
@@ -1443,7 +1615,7 @@ public class PixelEditorScreen extends ScaledScreen {
 		int x = x0;
 		int y = y0;
 		while (true) {
-			if (canPaint(x, y)) highlightCells.add(y * res + x);
+			if (canPaint(x, y)) cells.add(y * res + x);
 			if (x == x1 && y == y1) break;
 			int e2 = 2 * err;
 			if (e2 >= dy) {
@@ -1461,9 +1633,14 @@ public class PixelEditorScreen extends ScaledScreen {
 		List<SkinPaintContext.Overlay> overlays = new ArrayList<>();
 		if (mode == Mode.TATTOO || !formPreview.current().isBase()) return overlays;
 		if (mode == Mode.EYES) {
-			for (byte mark = SkinPixels.MARK_BROW; mark <= SkinPixels.MARK_IRIS; mark++) {
+			for (byte mark = SkinPixels.MARK_BROW; mark < SkinPixels.MARK_IRIS; mark++) {
 				ResourceLocation mask = SkinPixelTextures.eyeMask(player, pixels, mark);
 				if (mask != null) overlays.add(new SkinPaintContext.Overlay(mask, rgb(markerColor(mark)), MARK_ALPHA));
+			}
+			for (boolean secondEye : new boolean[]{false, true}) {
+				ResourceLocation mask = SkinPixelTextures.irisMask(player, pixels, secondEye);
+				int color = secondEye ? SECOND_IRIS_MARK_COLOR : markerColor(SkinPixels.MARK_IRIS);
+				if (mask != null) overlays.add(new SkinPaintContext.Overlay(mask, rgb(color), MARK_ALPHA));
 			}
 		} else {
 			ResourceLocation mask = SkinPixelTextures.hairMask(player, pixels);
@@ -1590,6 +1767,7 @@ public class PixelEditorScreen extends ScaledScreen {
 				case LAYER -> toggleLayer();
 				case HAIR -> toggleHair();
 				case ERASER -> toggleEraser();
+				case BUCKET -> toggleBucket();
 				case SAVE -> save();
 				case CANCEL -> requestClose();
 			}
@@ -1625,6 +1803,10 @@ public class PixelEditorScreen extends ScaledScreen {
 		pressHoverY = hoverY;
 		if (button == 0) {
 			if (hoverValid && !hasControlDown()) {
+				if (bucket) {
+					fillSameColor(hoverX, hoverY);
+					return true;
+				}
 				if (!shiftDown() && isDoubleClick(uiX, uiY)) {
 					fillBoneFace(hoverX, hoverY);
 					return true;
