@@ -255,6 +255,11 @@ public class ClientPacketHandler {
 		} else com.dragonminez.client.events.FlySkillEvent.setRemoteStrikeRush(playerId, ticks);
 	}
 
+	public static void handleStrikeCinematic(boolean active, int attackerId, int victimId) {
+		if (active) com.dragonminez.client.render.camera.StrikeCinematicCamera.start(attackerId, victimId);
+		else com.dragonminez.client.render.camera.StrikeCinematicCamera.stop(attackerId);
+	}
+
 	public static void handleStrikeClashHold(boolean active, double x, double y, double z, float yaw) {
 		if (active) com.dragonminez.client.events.FlySkillEvent.holdStrikeClash(new Vec3(x, y, z), yaw);
 		else com.dragonminez.client.events.FlySkillEvent.releaseStrikeClash();

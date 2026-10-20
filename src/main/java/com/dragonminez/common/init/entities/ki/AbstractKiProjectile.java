@@ -9,6 +9,7 @@ import com.dragonminez.common.init.MainDamageTypes;
 import com.dragonminez.common.init.MainEffects;
 import com.dragonminez.common.init.MainGameRules;
 import com.dragonminez.common.init.block.custom.DragonBallBlock;
+import com.dragonminez.common.init.entities.MastersEntity;
 import com.dragonminez.common.network.NetworkHandler;
 import com.dragonminez.common.network.S2C.TriggerAnimationS2C;
 import com.dragonminez.common.passives.ClassPassives;
@@ -295,6 +296,7 @@ public abstract class AbstractKiProjectile extends Projectile {
      * does not drift ahead from entity push/physics while it is held.
      */
     protected void holdTargetAtCaster(Entity target, Vec3 desiredFeet) {
+        if (target instanceof MastersEntity) return;
         Vec3 delta = new Vec3(
                 desiredFeet.x - target.getX(),
                 desiredFeet.y - target.getY(),

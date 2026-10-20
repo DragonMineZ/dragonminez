@@ -236,6 +236,11 @@ public class StrikeAttackHandler {
 	private static final int BLUE_HURRICANE_CAST_TICKS = 15;
 	private static final java.util.Set<String> TARGETLESS_STRIKES = java.util.Set.of(
 			"dragon_fist", "deadly_dance", "deadly_dance_vegetto", "super_god_fist", "wolf_fang", "gum_punch");
+	private static final java.util.Set<String> CINEMATIC_STRIKES = java.util.Set.of(
+			"meteor", "dragon_fist", "deadly_dance", "deadly_dance_vegetto", "kaioken_attack", "wolf_fang",
+			"oozaru_fist", "super_god_fist", SPIRIT_CANNON_ID, GRAB_ID, SHINING_SWORD_ID, COMBO_METEOR_ID,
+			METEOR_BURST_ID, MYSTIC_BALL_ID, EYE_BEAM_ID, DEATH_CHASER_ID, ANDROID_COMBO_ID, BEAM_SWORD_ID,
+			PERFECT_RUSH_ID, SPIRIT_BREAKER_ID);
 
 	private static final Map<UUID, PendingStrike> PENDING = new HashMap<>();
 	private static final Map<UUID, ActiveStrike> ACTIVE = new HashMap<>();
@@ -333,6 +338,7 @@ public class StrikeAttackHandler {
 				startStrike(player, immediateTarget, pending);
 			} else if (immediateTarget != null) {
 				boolean faceTarget = !"dragon_fist".equals(strike.getId());
+				startStrikeCinematic(player, immediateTarget, strike.getId());
 				PartEntity<?> hitPart = nearestPartInSight(player, coneRange);
 					if (hitPart != null && hitPart.getParent() == immediateTarget) {
 						teleportToPartFront(player, hitPart, immediateTarget, faceTarget);
@@ -512,6 +518,7 @@ public class StrikeAttackHandler {
 		if (target != null) {
 			PENDING.remove(player.getUUID());
 			endRushVisuals(player, true);
+			startStrikeCinematic(player, target, pending.techniqueId());
 			if (!METEOR_BURST_ID.equals(pending.techniqueId()) && !EYE_BEAM_ID.equals(pending.techniqueId())
 					&& !DEATH_CHASER_ID.equals(pending.techniqueId())
 					&& !ANDROID_COMBO_ID.equals(pending.techniqueId())
@@ -1454,6 +1461,7 @@ public class StrikeAttackHandler {
 				failPending(player, pending);
 				return;
 			}
+			startStrikeCinematic(player, target, pending.techniqueId());
 
 			double totalDamage = stats.getStrikeDamage() * strike.getDamageMultiplier() * Math.max(0.0,
 					ConfigManager.getTechniqueConfig().getStrikeConfig(strike.getId()).getDamageMultiplier());
@@ -1508,6 +1516,11 @@ public class StrikeAttackHandler {
 			}
 			playStrikeAnimation(player, pending.animationId());
 		});
+	}
+
+	private static void startStrikeCinematic(ServerPlayer player, LivingEntity target, String techniqueId) {
+		if (target == null || !CINEMATIC_STRIKES.contains(techniqueId)) StrikeCinematics.stop(player);
+		else StrikeCinematics.startStrike(player, target);
 	}
 
 	private static void processGrab(ServerPlayer player, LivingEntity target, ActiveStrike active) {
@@ -2740,6 +2753,7 @@ public class StrikeAttackHandler {
 
 	private static void endStrike(ServerPlayer player, LivingEntity target, ActiveStrike active, boolean interrupted) {
 		ACTIVE.remove(player.getUUID());
+		StrikeCinematics.stop(player);
 		STRIKE_ANCHOR_PART.remove(player.getUUID());
 		SLAM_RINGS.remove(player.getUUID());
 		DIM_PUNCH_MARKS.remove(player.getUUID());
@@ -2771,6 +2785,7 @@ public class StrikeAttackHandler {
 
 	private static void failPending(ServerPlayer player, PendingStrike pending) {
 		PENDING.remove(player.getUUID());
+		StrikeCinematics.stop(player);
 		STRIKE_ANCHOR_PART.remove(player.getUUID());
 		endRushVisuals(player, false);
 		StatsProvider.get(StatsCapability.INSTANCE, player).ifPresent(stats -> {

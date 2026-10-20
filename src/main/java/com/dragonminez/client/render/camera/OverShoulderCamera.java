@@ -59,6 +59,8 @@ public final class OverShoulderCamera {
 	private static final double CROSSHAIR_DEPTH_IN_RATE = 18.0;
 	private static final double CROSSHAIR_DEPTH_OUT_RATE = 9.0;
 	private static final double CROSSHAIR_CENTRE_RATE = 14.0;
+	private static final double STEER_NEAR_BLEND = 0.75;
+	private static final double STEER_NEAR_VERTICAL = 1.0;
 
 	private static double curBack;
 	private static double curUp;
@@ -119,7 +121,7 @@ public final class OverShoulderCamera {
 		if (mc.getCameraEntity() != player || mc.options.getCameraType() != CameraType.THIRD_PERSON_BACK) return false;
 		if (!isActive(player, false)) return false;
 		if (player.isPassenger() || player.isSpectator()) return false;
-		if (BeamClashCinematicCamera.isActive()) return false;
+		if (BeamClashCinematicCamera.isActive() || StrikeCinematicCamera.isActive()) return false;
 		return !FlySkillEvent.getInstance().isFlyingFast(player);
 	}
 
@@ -327,14 +329,19 @@ public final class OverShoulderCamera {
 	}
 
 	public static void steerToward(LocalPlayer player, Vec3 target, float partialTick, float amount) {
-		Vec3 direction = target.subtract(cameraPosition(player.getEyePosition(partialTick)));
+		Vec3 eye = player.getEyePosition(partialTick);
+		Vec3 direction = target.subtract(cameraPosition(eye));
 		double horizontal = Math.sqrt(direction.x * direction.x + direction.z * direction.z);
 		if (direction.lengthSqr() < 1.0E-4) return;
 
+		double reach = Math.sqrt((target.x - eye.x) * (target.x - eye.x) + (target.z - eye.z) * (target.z - eye.z));
+		float yawFollow = (float) Mth.clamp((reach - Math.abs(appliedMove.z)) / STEER_NEAR_BLEND, 0.0, 1.0);
+		float pitchFollow = Math.max(yawFollow, (float) Mth.clamp((Math.abs(target.y - eye.y) - STEER_NEAR_VERTICAL) / STEER_NEAR_BLEND, 0.0, 1.0));
+
 		float yaw = (float) (Mth.atan2(direction.z, direction.x) * Mth.RAD_TO_DEG) - 90.0F;
 		float pitch = (float) -(Mth.atan2(direction.y, horizontal) * Mth.RAD_TO_DEG);
-		cameraYaw += Mth.wrapDegrees(yaw - cameraYaw) * amount;
-		cameraPitch = Mth.clamp(cameraPitch + (pitch - cameraPitch) * amount, -90.0F, 90.0F);
+		cameraYaw += Mth.wrapDegrees(yaw - cameraYaw) * amount * yawFollow;
+		cameraPitch = Mth.clamp(cameraPitch + (pitch - cameraPitch) * amount * pitchFollow, -90.0F, 90.0F);
 	}
 
 	public static double vehicleCameraExtra(Entity entity) {

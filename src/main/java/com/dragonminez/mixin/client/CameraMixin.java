@@ -4,6 +4,7 @@ import com.dragonminez.client.clash.BeamClashCinematicCamera;
 import com.dragonminez.client.flight.FlightOrientationHandler;
 import com.dragonminez.client.flight.RollCamera;
 import com.dragonminez.client.render.camera.OverShoulderCamera;
+import com.dragonminez.client.render.camera.StrikeCinematicCamera;
 import com.dragonminez.client.render.camera.TechniquePreviewCamera;
 import com.dragonminez.client.render.firstperson.dto.DMZCameraBuffer;
 import com.dragonminez.client.render.firstperson.dto.FirstPersonManager;
@@ -33,6 +34,12 @@ public abstract class CameraMixin implements RollCamera {
 	@Shadow
 	public abstract Vec3 getPosition();
 
+	@Shadow
+	public abstract float getYRot();
+
+	@Shadow
+	public abstract float getXRot();
+
 	@Shadow protected abstract void setRotation(float yRot, float xRot);
 
 	@Shadow protected abstract void move(double x, double y, double z);
@@ -57,6 +64,17 @@ public abstract class CameraMixin implements RollCamera {
 			if (shot != null) {
 				this.setPosition(shot.pos());
 				this.setRotation(shot.yaw(), shot.pitch());
+				return;
+			}
+		}
+
+		if (entity instanceof LocalPlayer strikePlayer && StrikeCinematicCamera.isActive()) {
+			StrikeCinematicCamera.Shot shot = StrikeCinematicCamera.computeShot(level, strikePlayer, partialTick,
+					this.getPosition(), this.getYRot(), this.getXRot());
+			if (shot != null) {
+				this.setPosition(shot.pos());
+				this.setRotation(shot.yaw(), shot.pitch());
+				this.dragonminez$roll = 0F;
 				return;
 			}
 		}

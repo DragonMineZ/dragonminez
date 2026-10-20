@@ -2,6 +2,7 @@ package com.dragonminez.client.events;
 
 import com.dragonminez.Reference;
 import com.dragonminez.client.render.camera.OverShoulderCamera;
+import com.dragonminez.client.render.camera.StrikeCinematicCamera;
 import com.dragonminez.client.systems.kisense.KiSenseScan;
 import com.dragonminez.client.systems.taiyoken.TaiyokenBlindState;
 import com.dragonminez.common.init.MainSounds;
@@ -42,12 +43,14 @@ public class LockOnEvent {
 	private static final double NEAR_FOLLOW_BLEND = 1.0;
 	@Getter
 	private static LivingEntity lockedTarget = null;
+	private static LivingEntity suspendedTarget = null;
 	private static int scanTickCounter = 0;
 
 	public static void toggleLock() {
 		Minecraft mc = Minecraft.getInstance();
 		Player player = mc.player;
 		if (player == null) return;
+		if (StrikeCinematicCamera.isFilming()) return;
 
 		if (TaiyokenBlindState.isActive()) {
 			unlock();
@@ -77,6 +80,37 @@ public class LockOnEvent {
 
 	public static void unlock() {
 		lockedTarget = null;
+		suspendedTarget = null;
+	}
+
+	public static void suspend() {
+		if (lockedTarget != null) suspendedTarget = lockedTarget;
+		lockedTarget = null;
+	}
+
+	public static void resume() {
+		LivingEntity target = suspendedTarget;
+		suspendedTarget = null;
+		Minecraft mc = Minecraft.getInstance();
+		Player player = mc.player;
+		if (target == null || player == null || lockedTarget != null || target.level() != mc.level) return;
+		if (TaiyokenBlindState.isActive()) return;
+		StatsProvider.get(StatsCapability.INSTANCE, player).ifPresent(data -> {
+			if (isLockValid(player, target, data)) lockedTarget = target;
+		});
+	}
+
+	private static boolean isLockValid(Player player, LivingEntity target, StatsData data) {
+		if (!target.isAlive()) return false;
+		int level = data.getSkills().getSkillLevel("kisense");
+		if (level <= 0 || data.getSkills().getSkill("kisense") == null) return false;
+
+		double maxRange = 15.0 + 5.0 * level;
+		if (data.getStatus().isAndroidUpgraded()) maxRange += 25.0;
+		if (player.distanceTo(target) > maxRange) return false;
+
+		if (!KiSenseScan.canTarget(target, data)) return false;
+		return player.hasLineOfSight(target) || data.getStatus().isAndroidUpgraded();
 	}
 
 	@SubscribeEvent
@@ -106,27 +140,7 @@ public class LockOnEvent {
 			}
 
 			StatsProvider.get(StatsCapability.INSTANCE, player).ifPresent(data -> {
-				int level = data.getSkills().getSkillLevel("kisense");
-
-				if (level <= 0 || data.getSkills().getSkill("kisense") == null) {
-					unlock();
-					return;
-				}
-
-				double maxRange = 15.0 + 5.0 * level;
-				if (data.getStatus().isAndroidUpgraded()) maxRange += 25.0;
-
-				if (player.distanceTo(lockedTarget) > maxRange) {
-					unlock();
-					return;
-				}
-
-				if (!KiSenseScan.canTarget(lockedTarget, data)) {
-					unlock();
-					return;
-				}
-
-				if (!player.hasLineOfSight(lockedTarget) && !data.getStatus().isAndroidUpgraded()) unlock();
+				if (!isLockValid(player, lockedTarget, data)) unlock();
 			});
 		}
 	}

@@ -921,6 +921,12 @@ public class NetworkHandler {
 				.encoder(VehicleSeatC2S::encode)
 				.consumerMainThread(VehicleSeatC2S::handle)
 				.add();
+
+		net.messageBuilder(StrikeCinematicS2C.class, id(), NetworkDirection.PLAY_TO_CLIENT)
+				.decoder(StrikeCinematicS2C::new)
+				.encoder(StrikeCinematicS2C::encode)
+				.consumerMainThread(StrikeCinematicS2C::handle)
+				.add();
 	}
 
 	public static <MSG> void sendToServer(MSG message) {

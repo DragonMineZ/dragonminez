@@ -3,6 +3,7 @@ package com.dragonminez.mixin.client;
 import com.dragonminez.client.events.FlySkillEvent;
 import com.dragonminez.client.flight.FlightOrientationHandler;
 import com.dragonminez.client.render.camera.OverShoulderCamera;
+import com.dragonminez.client.render.camera.StrikeCinematicCamera;
 import com.dragonminez.common.stats.techniques.TechniqueDispatcher;
 import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.util.Mth;
@@ -39,6 +40,10 @@ public class EntityMouseHandlerMixin {
 	@Inject(method = "turn", at = @At("HEAD"), cancellable = true)
 	private void dragonminez$onTurn(double yawDelta, double pitchDelta, CallbackInfo ci) {
 		if (dragonminez$turning || !((Object) this instanceof LocalPlayer player)) return;
+		if (StrikeCinematicCamera.isFilming()) {
+			ci.cancel();
+			return;
+		}
 
 		boolean steering = TechniqueDispatcher.isFiringSteerableKiAttack(player);
 		double yaw = yawDelta;

@@ -38,6 +38,7 @@ import com.dragonminez.server.events.players.combat.KnockbackHelper;
 import com.dragonminez.server.events.players.combat.StrikeCombos.MeteorBurstCombo;
 import com.dragonminez.server.events.players.combat.MomentumImpactHandler;
 import com.dragonminez.server.events.players.combat.StrikeAttackHandler;
+import com.dragonminez.server.events.players.combat.StrikeCinematics;
 import com.dragonminez.server.commands.WorldBossCommand;
 import com.dragonminez.server.world.structure.BossStructures.GeteStarShape;
 import com.dragonminez.server.world.structure.BossStructures.GomahCradleShape;
@@ -1270,6 +1271,7 @@ public class AllWorldBossesEntity {
                 }
                 this.faceLocked();
                 this.grabVictim = HeldVictim.capture(target, GRAB_DURATION + 10);
+                StrikeCinematics.startBossAbility(this, target, ABILITY_GRAB);
                 level.playSound(null, target.getX(), target.getY(), target.getZ(), MainSounds.GOLPE2.get(), SoundSource.HOSTILE, 1.0F, 0.8F);
             }
 
@@ -1380,6 +1382,7 @@ public class AllWorldBossesEntity {
         private void tickMeteorBurst(ServerLevel level, int tick) {
             this.setNoGravity(true);
             this.setDeltaMovement(Vec3.ZERO);
+            if (tick == 1) StrikeCinematics.startBossAbility(this, this.getTarget(), ABILITY_METEOR_BURST);
             if (!MeteorBurstCombo.tick(level, this.meteorPerformer, this.meteorState, tick)) this.stopBossAbility();
         }
 
@@ -6699,6 +6702,7 @@ public class AllWorldBossesEntity {
 
             this.grabVictim = HeldVictim.capture(caught, GRAB_HOLD_MAX + 10);
             this.grabVictim.grabbed();
+            StrikeCinematics.startBossAbility(this, caught, ABILITY_DEMON_GRAB);
             this.grabStart = tick;
             level.playSound(null, caught.getX(), caught.getY(), caught.getZ(), SoundEvents.RAVAGER_ROAR, SoundSource.HOSTILE, 3.0F, 0.7F);
         }
@@ -6726,6 +6730,7 @@ public class AllWorldBossesEntity {
             LivingEntity victim = this.grabVictim.entity();
             this.grabVictim.release();
             this.grabVictim = null;
+            StrikeCinematics.stop(this);
             if (victim instanceof ServerPlayer player) {
                 player.connection.send(new ClientboundClearTitlesPacket(true));
                 if (escaped) KnockbackHelper.apply(player, new Vec3(0.0D, 0.6D, 0.0D));

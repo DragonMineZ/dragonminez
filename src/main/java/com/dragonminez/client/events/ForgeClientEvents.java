@@ -289,6 +289,7 @@ public class ForgeClientEvents {
 		FlySkillEvent.releaseStrikeClash();
 		com.dragonminez.client.render.shader.ClientGravityState.reset();
 		LockOnEvent.unlock();
+		com.dragonminez.client.render.camera.StrikeCinematicCamera.reset();
 		DMZRendererCache.clear();
 		TextureCounter.clearCache();
 		pendingCharacterCreationReopen = false;

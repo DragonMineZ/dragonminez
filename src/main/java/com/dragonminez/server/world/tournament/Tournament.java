@@ -1495,6 +1495,7 @@ public final class Tournament {
 
 			for (LivingEntity entity : level.getEntitiesOfClass(LivingEntity.class, box)) {
 				if (entity == fighter || entity.getUUID().equals(match.opponentId())) continue;
+				if (entity instanceof MastersEntity) continue;
 				if (entity instanceof ServerPlayer other && other.isSpectator()) continue;
 				if (ACTIVE.containsKey(entity.getUUID()) || ownerOf(entity) != null) continue;
 

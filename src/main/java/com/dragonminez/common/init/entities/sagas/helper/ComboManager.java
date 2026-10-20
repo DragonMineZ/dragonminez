@@ -20,6 +20,7 @@ import com.dragonminez.server.events.players.combat.MomentumImpactHandler;
 import com.dragonminez.server.events.players.combat.StrikeCombos.MysticBallCombo;
 import com.dragonminez.server.events.players.combat.StrikeCombos.PerfectRushCombo;
 import com.dragonminez.server.events.players.combat.StrikeCombos.SpiritBreakerCombo;
+import com.dragonminez.server.events.players.combat.StrikeCinematics;
 import net.minecraft.commands.arguments.EntityAnchorArgument;
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.server.level.ServerLevel;
@@ -37,6 +38,7 @@ import net.minecraft.world.phys.Vec3;
 import net.minecraftforge.entity.PartEntity;
 
 import java.util.Map;
+import java.util.Set;
 import java.util.WeakHashMap;
 
 public class ComboManager {
@@ -49,6 +51,12 @@ public class ComboManager {
     private static final Map<DBSagasEntity, SpiritBreakerCombo.State> SPIRIT_BREAKERS = new WeakHashMap<>();
 
     public enum RushStep { RUSHING, CONNECTED, MISSED }
+
+    private static final Set<Integer> CINEMATIC_COMBOS = Set.of(
+            DBSagasEntity.ComboType.SPIRIT_BREAKING_CANNON.getId(), DBSagasEntity.ComboType.SUPER_GOD_FIST.getId(),
+            DBSagasEntity.ComboType.DEADLY_DANCE_VEGETTO.getId(), DBSagasEntity.ComboType.METEOR_BURST.getId(),
+            DBSagasEntity.ComboType.MYSTIC_BALL.getId(), DBSagasEntity.ComboType.BEAM_SWORD_SLASH.getId(),
+            DBSagasEntity.ComboType.PERFECT_RUSH.getId(), DBSagasEntity.ComboType.SPIRIT_BREAKER.getId());
 
     public static final int STRIKE_RUSH_TICKS = 40;
     public static final double STRIKE_RUSH_RANGE = 24.0D;
@@ -110,6 +118,7 @@ public class ComboManager {
 
         user.getNavigation().stop();
         user.lookAt(target, 360, 360);
+        if (timer == 1 && CINEMATIC_COMBOS.contains(comboId)) StrikeCinematics.startCombo(user, target, comboId);
 
         switch (comboId) {
             case 0 -> handleBasicCombo(user, target, timer);
@@ -135,6 +144,7 @@ public class ComboManager {
 
     public static void onComboStopped(DBSagasEntity user, int comboId, LivingEntity target) {
         if (user.level().isClientSide) return;
+        StrikeCinematics.stop(user);
         if (comboId == DBSagasEntity.ComboType.METEOR_BURST.getId()) {
             MeteorBurstCombo.State state = METEOR_BURSTS.remove(user);
             if (state != null) MeteorBurstCombo.release(state);
