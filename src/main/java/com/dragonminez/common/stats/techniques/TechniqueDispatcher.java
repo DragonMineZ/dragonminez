@@ -524,6 +524,7 @@ public class TechniqueDispatcher {
         List<AbstractKiProjectile> projectiles = player.level().getEntitiesOfClass(AbstractKiProjectile.class, player.getBoundingBox().inflate(32.0D));
         for (AbstractKiProjectile ki : projectiles) {
             if (ki.getOwner() == null || !ki.getOwner().getUUID().equals(player.getUUID())) continue;
+            if (ki instanceof KiBarrierEntity barrier && barrier.isDecorative()) continue;
             if (isProjectileRestrictedType(ki.getKiType(), movementRestriction)) return true;
             // Lock the caster's position while actively firing a *technique* attack that is still anchored
             // to them (continuous beams, on-body area/barrier, and the launch instant of thrown attacks).

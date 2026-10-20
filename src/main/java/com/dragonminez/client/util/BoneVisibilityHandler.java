@@ -1,5 +1,6 @@
 package com.dragonminez.client.util;
 
+import com.dragonminez.client.render.compat.CosmeticArmorCompat;
 import com.dragonminez.client.render.layer.DMZCustomArmorLayer;
 import com.dragonminez.common.config.ConfigManager;
 import com.dragonminez.common.config.RaceCharacterConfig;
@@ -62,10 +63,10 @@ public class BoneVisibilityHandler {
 		setBonesHidden(model, isSpectator, "body", "right_arm", "left_arm", "right_leg", "left_leg");
 		model.getBone("head").ifPresent(head -> head.setHidden(false));
 
-		ItemStack chestStack = player.getItemBySlot(EquipmentSlot.CHEST);
+		ItemStack chestStack = CosmeticArmorCompat.getVisibleStack(player, EquipmentSlot.CHEST);
 		boolean hasChestplate = !chestStack.isEmpty();
 		boolean isCape = hasChestplate && (chestStack.getItem() instanceof DbzArmorCapeItem);
-		ItemStack legsStack = player.getItemBySlot(EquipmentSlot.LEGS);
+		ItemStack legsStack = CosmeticArmorCompat.getVisibleStack(player, EquipmentSlot.LEGS);
 		boolean hasLeggings = !legsStack.isEmpty();
 
 		boolean isStandardBody = (isSaiyan || isHuman) && (bodyType == 0 || bodyType == 1);
@@ -158,7 +159,7 @@ public class BoneVisibilityHandler {
 	}
 
 	public static boolean hasModerfokinArmor(AbstractClientPlayer player) {
-		final ItemStack stack = player.getItemBySlot(EquipmentSlot.CHEST);
+		final ItemStack stack = CosmeticArmorCompat.getVisibleStack(player, EquipmentSlot.CHEST);
 		if (stack.isEmpty() || !(stack.getItem() instanceof ArmorItem)) return false;
 		return stack.getItem() instanceof DbzArmorTextured;
 	}

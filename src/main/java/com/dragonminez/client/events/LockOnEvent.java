@@ -39,6 +39,7 @@ import java.util.Optional;
 @Mod.EventBusSubscriber(modid = Reference.MOD_ID, value = Dist.CLIENT)
 public class LockOnEvent {
 	private static final ResourceLocation LOCK_ICON = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "textures/gui/lock_on.png");
+	private static final double NEAR_FOLLOW_BLEND = 1.0;
 	@Getter
 	private static LivingEntity lockedTarget = null;
 	private static int scanTickCounter = 0;
@@ -164,8 +165,13 @@ public class LockOnEvent {
 
 		float smoothFactor = 0.15F;
 
-		float newYaw = rotlerp(player.getYRot(), targetYaw, smoothFactor);
-		float newPitch = rotlerp(player.getXRot(), targetPitch, smoothFactor);
+		double nearHorizontal = (player.getBbWidth() + lockedTarget.getBbWidth()) * 0.5;
+		double nearVertical = (player.getBbHeight() + lockedTarget.getBbHeight()) * 0.5;
+		float yawFollow = (float) Mth.clamp((dist - nearHorizontal * 0.5) / NEAR_FOLLOW_BLEND, 0.0, 1.0);
+		float pitchFollow = Math.max(yawFollow, (float) Mth.clamp((Math.abs(dY) - nearVertical) / NEAR_FOLLOW_BLEND, 0.0, 1.0));
+
+		float newYaw = rotlerp(player.getYRot(), targetYaw, smoothFactor * yawFollow);
+		float newPitch = rotlerp(player.getXRot(), targetPitch, smoothFactor * pitchFollow);
 
 		player.setYRot(newYaw);
 		player.setXRot(newPitch);
