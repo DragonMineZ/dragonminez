@@ -247,6 +247,10 @@ public class ModClientEvents {
             event.registerEntityRenderer((EntityType) sagaEntity.get(), context -> new DBSagasRenderer(context));
         }
 
+        for (var clone : MainEntities.getEvilClones()) {
+            event.registerEntityRenderer((EntityType) clone.get(), context -> new DBSagasRenderer(context));
+        }
+
         event.registerEntityRenderer(MainEntities.SAGA_SAIYAN_SOLDIER.get(), context -> new SaiyanInvaderRenderer<>(context, 0.4F));
         event.registerEntityRenderer(MainEntities.SAGA_SAIYAN_ELITE.get(), context -> new SaiyanInvaderRenderer<>(context, 0.4F));
         event.registerEntityRenderer(MainEntities.SAGA_SAIYAN_OOZARU.get(), context -> new SaiyanInvaderRenderer<>(context, 2.0F));

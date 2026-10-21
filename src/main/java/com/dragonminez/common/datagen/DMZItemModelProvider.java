@@ -136,6 +136,11 @@ public class DMZItemModelProvider extends ItemModelProvider {
 		withExistingParent(MainItems.SOLDIER01_SE.getId().getPath(), mcLoc("item/template_spawn_egg"));
 		withExistingParent(MainItems.SOLDIER02_SE.getId().getPath(), mcLoc("item/template_spawn_egg"));
 		withExistingParent(MainItems.SOLDIER03_SE.getId().getPath(), mcLoc("item/template_spawn_egg"));
+		withExistingParent(MainItems.EVIL_CLONE_GOKU_SE.getId().getPath(), mcLoc("item/template_spawn_egg"));
+		withExistingParent(MainItems.EVIL_CLONE_VEGETA_SE.getId().getPath(), mcLoc("item/template_spawn_egg"));
+		withExistingParent(MainItems.EVIL_CLONE_PICCOLO_SE.getId().getPath(), mcLoc("item/template_spawn_egg"));
+		withExistingParent(MainItems.EVIL_CLONE_NAPPA_SE.getId().getPath(), mcLoc("item/template_spawn_egg"));
+		withExistingParent(MainItems.EVIL_CLONE_KRILLIN_SE.getId().getPath(), mcLoc("item/template_spawn_egg"));
 		withExistingParent(MainItems.NWARRIOR_SE.getId().getPath(), mcLoc("item/template_spawn_egg"));
 		withExistingParent(MainItems.DEMON_VILLAGER_SE.getId().getPath(), mcLoc("item/template_spawn_egg"));
 		withExistingParent(MainItems.TIME_PATROLLER_SE.getId().getPath(), mcLoc("item/template_spawn_egg"));

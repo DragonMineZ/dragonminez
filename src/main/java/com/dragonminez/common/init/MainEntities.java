@@ -58,6 +58,10 @@ public class MainEntities {
         );
     }
 
+    public static List<RegistryObject<? extends EntityType<? extends Mob>>> getEvilClones() {
+        return List.of(EVIL_CLONE_GOKU, EVIL_CLONE_VEGETA, EVIL_CLONE_PICCOLO, EVIL_CLONE_NAPPA, EVIL_CLONE_KRILLIN);
+    }
+
     public static List<RegistryObject<? extends EntityType<?>>> getMasterEntities() {
         return List.of(
                 MASTER_KARIN, MASTER_GOKU, MASTER_KAIOSAMA, MASTER_ROSHI, MASTER_URANAI, MASTER_ENMA, MASTER_DENDE,
@@ -2241,6 +2245,36 @@ public class MainEntities {
                             .sized(0.8f, 2.0f)
                             .build(ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "quest_npc").toString()));
 
+    /*
+    EVIL CLONES
+    */
+
+    public static final RegistryObject<EntityType<EvilCloneEntity.Goku>> EVIL_CLONE_GOKU =
+            ENTITY_TYPES.register("evil_clone_goku",
+                    () -> EntityType.Builder.of(EvilCloneEntity.Goku::new, WILD_ENEMY)
+                            .sized(0.6f, 1.8f)
+                            .build(ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "evil_clone_goku").toString()));
+    public static final RegistryObject<EntityType<EvilCloneEntity.Vegeta>> EVIL_CLONE_VEGETA =
+            ENTITY_TYPES.register("evil_clone_vegeta",
+                    () -> EntityType.Builder.of(EvilCloneEntity.Vegeta::new, WILD_ENEMY)
+                            .sized(0.6f, 1.8f)
+                            .build(ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "evil_clone_vegeta").toString()));
+    public static final RegistryObject<EntityType<EvilCloneEntity.Piccolo>> EVIL_CLONE_PICCOLO =
+            ENTITY_TYPES.register("evil_clone_piccolo",
+                    () -> EntityType.Builder.of(EvilCloneEntity.Piccolo::new, WILD_ENEMY)
+                            .sized(0.6f, 1.8f)
+                            .build(ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "evil_clone_piccolo").toString()));
+    public static final RegistryObject<EntityType<EvilCloneEntity.Nappa>> EVIL_CLONE_NAPPA =
+            ENTITY_TYPES.register("evil_clone_nappa",
+                    () -> EntityType.Builder.of(EvilCloneEntity.Nappa::new, WILD_ENEMY)
+                            .sized(1.3f, 2.8f)
+                            .build(ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "evil_clone_nappa").toString()));
+    public static final RegistryObject<EntityType<EvilCloneEntity.Krillin>> EVIL_CLONE_KRILLIN =
+            ENTITY_TYPES.register("evil_clone_krillin",
+                    () -> EntityType.Builder.of(EvilCloneEntity.Krillin::new, WILD_ENEMY)
+                            .sized(0.6f, 1.6f)
+                            .build(ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "evil_clone_krillin").toString()));
+
     public static void register(IEventBus eventBus) {
         ENTITY_TYPES.register(eventBus);
     }
@@ -2260,6 +2294,13 @@ public class MainEntities {
 
         for (RegistryObject<? extends EntityType<? extends Mob>> wE : getWildEnemies()) {
             registerWildSpawn(event, wE.get());
+        }
+
+        for (RegistryObject<? extends EntityType<? extends Mob>> clone : getEvilClones()) {
+            event.register(clone.get(), SpawnPlacements.Type.ON_GROUND,
+                    Heightmap.Types.MOTION_BLOCKING_NO_LEAVES,
+                    EvilCloneEntity::canSpawnAtNight,
+                    SpawnPlacementRegisterEvent.Operation.REPLACE);
         }
 
         event.register(WILD_GIRAN.get(), SpawnPlacements.Type.ON_GROUND,

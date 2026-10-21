@@ -103,6 +103,7 @@ public class ModCommonEvents {
         event.put(MainEntities.SAGA_SAIYAN_SOLDIER.get(), DBSagasEntity.createAttributes().build());
         event.put(MainEntities.SAGA_SAIYAN_ELITE.get(), DBSagasEntity.createAttributes().build());
         event.put(MainEntities.SAGA_SAIYAN_OOZARU.get(), SagaSaiyanInvadersEntity.Oozaru.createAttributes().build());
+        for (var clone : MainEntities.getEvilClones()) event.put((EntityType<? extends LivingEntity>) clone.get(), EvilCloneEntity.createAttributes().build());
 
 
         AttributeSupplier defaultSagaAttributes = DBSagasEntity.createAttributes().build();

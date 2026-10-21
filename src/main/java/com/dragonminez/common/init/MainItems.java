@@ -645,6 +645,16 @@ public final class MainItems {
 			new ForgeSpawnEggItem(MainEntities.SAGA_SAIBAMAN6, 0xb3acb5, 0x242321, new Item.Properties()));
 	public static final RegistryObject<Item> BIOMAN_SE = ITEM_REGISTER.register("bioman_spawn_egg", () ->
 			new ForgeSpawnEggItem(MainEntities.SAGA_BIOMAN, 0x78D4D4, 0x3E5294, new Item.Properties()));
+	public static final RegistryObject<Item> EVIL_CLONE_GOKU_SE = ITEM_REGISTER.register("evil_clone_goku_spawn_egg", () ->
+			new ForgeSpawnEggItem(MainEntities.EVIL_CLONE_GOKU, 0x2E2E33, 0xF7F0B8, new Item.Properties()));
+	public static final RegistryObject<Item> EVIL_CLONE_VEGETA_SE = ITEM_REGISTER.register("evil_clone_vegeta_spawn_egg", () ->
+			new ForgeSpawnEggItem(MainEntities.EVIL_CLONE_VEGETA, 0x2E2E33, 0x8C8C92, new Item.Properties()));
+	public static final RegistryObject<Item> EVIL_CLONE_PICCOLO_SE = ITEM_REGISTER.register("evil_clone_piccolo_spawn_egg", () ->
+			new ForgeSpawnEggItem(MainEntities.EVIL_CLONE_PICCOLO, 0x2E2E33, 0x80B240, new Item.Properties()));
+	public static final RegistryObject<Item> EVIL_CLONE_NAPPA_SE = ITEM_REGISTER.register("evil_clone_nappa_spawn_egg", () ->
+			new ForgeSpawnEggItem(MainEntities.EVIL_CLONE_NAPPA, 0x2E2E33, 0xC8C3B8, new Item.Properties()));
+	public static final RegistryObject<Item> EVIL_CLONE_KRILLIN_SE = ITEM_REGISTER.register("evil_clone_krillin_spawn_egg", () ->
+			new ForgeSpawnEggItem(MainEntities.EVIL_CLONE_KRILLIN, 0x2E2E33, 0xF0D0B8, new Item.Properties()));
 	public static final RegistryObject<Item> REDRIBBONSOLDIER_SE = ITEM_REGISTER.register("redribbon_soldier_spawn_egg", () ->
 			new ForgeSpawnEggItem(MainEntities.RED_RIBBON_SOLDIER, 0xe6975e, 0xe63c29, new Item.Properties()));
 	public static final RegistryObject<Item> REDRIBBONROBOT1_SE = ITEM_REGISTER.register("redribbon_robot1_spawn_egg", () ->
