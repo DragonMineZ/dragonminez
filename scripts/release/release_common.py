@@ -84,7 +84,6 @@ def build_manifest(
                 "forge_version": gradle_properties["forge_version"],
                 "commit_sha": commit_sha,
                 "artifact_name": artifact.name,
-                "artifact_sha256": sha256_file(artifact),
                 "targets": ["modrinth", "curseforge"],
                 "workflow_run_url": f"{server_url}/{repository}/actions/runs/{run_id}",
             },
