@@ -1,11 +1,14 @@
 package com.dragonminez.common.network.C2S;
 
 import com.dragonminez.common.network.NetworkHandler;
+import com.dragonminez.common.network.PacketRateLimiter;
 import com.dragonminez.common.network.S2C.ProgressionSyncS2C;
 import com.dragonminez.common.network.S2C.TechniqueImportResultS2C;
 import com.dragonminez.common.stats.StatsCapability;
 import com.dragonminez.common.stats.StatsProvider;
 import com.dragonminez.common.stats.techniques.KiAttackData;
+import com.dragonminez.common.stats.techniques.Techniques;
+import net.minecraft.network.chat.Component;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraftforge.network.NetworkEvent;
@@ -32,6 +35,7 @@ public class ImportTechniqueC2S {
 		context.enqueueWork(() -> {
 			ServerPlayer player = context.getSender();
 			if (player == null) return;
+			if (!PacketRateLimiter.allow(player.getUUID(), "import_technique", player.level().getGameTime(), 20)) return;
 
 			KiAttackData imported = KiAttackData.importFromCode(code);
 			if (imported == null) {
@@ -42,7 +46,15 @@ public class ImportTechniqueC2S {
 			imported.calculateDerivedValues();
 			int tpCost = Math.max(0, Math.round(imported.getTpCost()));
 			StatsProvider.get(StatsCapability.INSTANCE, player).ifPresent(data -> {
-				if (data.getResources().getTrainingPoints() < tpCost) {
+				if (data.getStatus().isFused() || data.getStatus().getFusionPartnerUUID() != null) {
+					player.displayClientMessage(Component.translatable("message.dragonminez.fusion.action_blocked"), true);
+					return;
+				}
+				if (data.getTechniques().getUnlockedTechniques().size() >= Techniques.MAX_UNLOCKED_TECHNIQUES) {
+					NetworkHandler.sendToPlayer(new TechniqueImportResultS2C(TechniqueImportResultS2C.Status.INVALID, 0), player);
+					return;
+				}
+				if (data.getResources().getTrainingPointsExact() < tpCost) {
 					NetworkHandler.sendToPlayer(new TechniqueImportResultS2C(TechniqueImportResultS2C.Status.NOT_ENOUGH_TP, tpCost), player);
 					return;
 				}

@@ -43,7 +43,8 @@ public class DBSagasPart extends PartEntity<DBSagasEntity> {
 
     @Override
     public EntityDimensions getDimensions(Pose pPose) {
-        return this.size;
+        float scale = this.owner.getHitboxScale();
+        return scale == 1.0F ? this.size : this.size.scale(scale);
     }
 
     @Override

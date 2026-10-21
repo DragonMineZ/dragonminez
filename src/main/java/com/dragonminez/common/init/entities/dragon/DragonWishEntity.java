@@ -6,13 +6,16 @@ import com.dragonminez.common.dragonball.DragonBallDefinitions;
 import com.dragonminez.common.dragonball.DragonDefinition;
 import com.dragonminez.common.init.MainSounds;
 import com.dragonminez.server.events.DragonBallsHandler;
+import com.dragonminez.server.world.data.DragonBallSavedData;
 import net.minecraft.client.Minecraft;
+import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.syncher.EntityDataAccessor;
 import net.minecraft.network.syncher.EntityDataSerializers;
 import net.minecraft.network.syncher.SynchedEntityData;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.util.Mth;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.damagesource.DamageSource;
@@ -42,8 +45,10 @@ public class DragonWishEntity extends Mob implements GeoEntity {
 	private static final EntityDataAccessor<String> OWNER_NAME = SynchedEntityData.defineId(DragonWishEntity.class, EntityDataSerializers.STRING);
 	private static final EntityDataAccessor<Boolean> GRANTED_WISH = SynchedEntityData.defineId(DragonWishEntity.class, EntityDataSerializers.BOOLEAN);
 	private static final EntityDataAccessor<String> DRAGON_DEFINITION_ID = SynchedEntityData.defineId(DragonWishEntity.class, EntityDataSerializers.STRING);
+	private static final EntityDataAccessor<Integer> DESPAWN_FADE = SynchedEntityData.defineId(DragonWishEntity.class, EntityDataSerializers.INT);
+	public static final int FADE_TICKS = 50;
 
-	private long invokingTime;
+	private long summonExpiresAt;
 	private int despawnDelay = 20 * 5;
 	private final AnimatableInstanceCache cache = new SingletonAnimatableInstanceCache(this);
 	private final String defaultDragonDefinitionId;
@@ -51,6 +56,7 @@ public class DragonWishEntity extends Mob implements GeoEntity {
 	public DragonWishEntity(EntityType<? extends Mob> entityType, Level level, String dragonDefinitionId) {
 		super(entityType, level);
 		this.defaultDragonDefinitionId = dragonDefinitionId;
+		this.noCulling = true;
 	}
 
 	public static AttributeSupplier.Builder createAttributes() {
@@ -66,6 +72,7 @@ public class DragonWishEntity extends Mob implements GeoEntity {
 		this.entityData.define(OWNER_NAME, "");
 		this.entityData.define(GRANTED_WISH, false);
 		this.entityData.define(DRAGON_DEFINITION_ID, defaultDragonDefinitionId == null ? "" : defaultDragonDefinitionId);
+		this.entityData.define(DESPAWN_FADE, -1);
 	}
 
 	@Override
@@ -78,8 +85,64 @@ public class DragonWishEntity extends Mob implements GeoEntity {
 	@Override
 	public void tick() {
 		super.tick();
-		if (hasGrantedWish()) despawnDelay--;
-		if (despawnDelay <= 0) this.discard();
+		if (this.level() instanceof ServerLevel serverLevel && !this.isRemoved() && this.tickCount % 20 == 0) checkSummon(serverLevel);
+		if (this.level().isClientSide) {
+			if (isFading()) spawnFadeParticles();
+			return;
+		}
+		if (hasGrantedWish() && despawnDelay-- <= FADE_TICKS) beginDespawn();
+		int fade = this.entityData.get(DESPAWN_FADE);
+		if (fade < 0) return;
+		if (fade <= 0) this.discard();
+		else this.entityData.set(DESPAWN_FADE, fade - 1);
+	}
+
+	public void beginDespawn() {
+		if (this.entityData.get(DESPAWN_FADE) >= 0) return;
+		this.entityData.set(DESPAWN_FADE, FADE_TICKS);
+		if (this.level() instanceof ServerLevel serverLevel) DragonBallsHandler.refreshDragonSky(serverLevel);
+	}
+
+	public boolean isFading() {
+		return this.entityData.get(DESPAWN_FADE) >= 0;
+	}
+
+	public float getFadeProgress(float partialTick) {
+		int fade = this.entityData.get(DESPAWN_FADE);
+		if (fade < 0) return 0.0F;
+		return Mth.clamp((FADE_TICKS - fade + partialTick) / FADE_TICKS, 0.0F, 1.0F);
+	}
+
+	private void spawnFadeParticles() {
+		float progress = getFadeProgress(0.0F);
+		int count = 2 + (int) (progress * 6);
+		for (int i = 0; i < count; i++) {
+			double x = this.getX() + (this.random.nextDouble() - 0.5D) * this.getBbWidth() * 1.5D;
+			double y = this.getY() + this.random.nextDouble() * this.getBbHeight() * 1.5D;
+			double z = this.getZ() + (this.random.nextDouble() - 0.5D) * this.getBbWidth() * 1.5D;
+			this.level().addParticle(ParticleTypes.END_ROD, x, y, z, 0.0D, 0.04D + this.random.nextDouble() * 0.08D, 0.0D);
+		}
+	}
+
+	private void checkSummon(ServerLevel serverLevel) {
+		DragonBallSavedData data = DragonBallSavedData.get(serverLevel);
+		DragonBallSavedData.Summon summon = data.getSummon(this.getUUID());
+		if (summon == null) {
+			if (this.summonExpiresAt > 0) {
+				beginDespawn();
+				return;
+			}
+			DragonDefinition definition = getDragonDefinition();
+			this.summonExpiresAt = serverLevel.getGameTime() + DragonBallsHandler.DRAGON_WAIT_TICKS;
+			DragonBallsHandler.registerSummon(serverLevel, this, definition == null ? null : definition.getBallSetId());
+			return;
+		}
+		if (!hasGrantedWish() && serverLevel.getGameTime() >= summon.expiresAt()) beginDespawn();
+	}
+
+	@Override
+	public boolean requiresCustomPersistence() {
+		return true;
 	}
 
 	@OnlyIn(Dist.CLIENT)
@@ -88,16 +151,19 @@ public class DragonWishEntity extends Mob implements GeoEntity {
 		DragonDefinition definition = getDragonDefinition();
 		if (definition != null && this.level().isClientSide && this.getOwnerName().equals(player.getName().getString())) {
 			if (!this.hasGrantedWish() && Minecraft.getInstance().player != null && Minecraft.getInstance().player.equals(player)) {
-				Minecraft.getInstance().setScreen(new WishesScreen(definition.getWishScreenId(), definition.getWishCount()));
+				Minecraft.getInstance().setScreen(new WishesScreen(this.getId(), definition.getWishScreenId(), definition.getWishCount()));
 				Minecraft.getInstance().player.playSound(MainSounds.UI_MENU_SWITCH.get());
 			}
 		}
 		return super.mobInteract(player, hand);
 	}
 
+	private boolean despawnHandled = false;
+
 	@Override
 	public void remove(@NonNull RemovalReason reason) {
-		if (!this.level().isClientSide && reason == RemovalReason.DISCARDED) {
+		if (!this.level().isClientSide && reason.shouldDestroy() && !this.despawnHandled) {
+			this.despawnHandled = true;
 			onDespawn();
 		}
 		super.remove(reason);
@@ -106,12 +172,16 @@ public class DragonWishEntity extends Mob implements GeoEntity {
 	private void onDespawn() {
 		DragonDefinition definition = getDragonDefinition();
 		if (!this.level().isClientSide && this.level() instanceof ServerLevel serverLevel) {
-			serverLevel.setWeatherParameters(6000, 0, false, false);
-			serverLevel.setDayTime(this.getInvokingTime());
+			DragonBallSavedData.Summon summon = DragonBallSavedData.get(serverLevel).removeSummon(this.getUUID());
+			DragonBallsHandler.refreshDragonSky(serverLevel);
+			if (summon == null && this.summonExpiresAt > 0) return;
 
-			if (definition != null && ConfigManager.getServerConfig().getWorldGen().getGenerateDragonBalls()) {
-				if (definition.getBallSetId() != null && !definition.getBallSetId().isBlank()) {
-					DragonBallsHandler.scatterDragonBalls(serverLevel, definition.getBallSetId());
+			serverLevel.setWeatherParameters(6000, 0, false, false);
+
+			String ballSetId = definition != null ? definition.getBallSetId() : summon != null ? summon.setId() : null;
+			if (ConfigManager.getServerConfig().getWorldGen().getGenerateDragonBalls()) {
+				if (ballSetId != null && !ballSetId.isBlank()) {
+					DragonBallsHandler.scatterDragonBalls(serverLevel, ballSetId);
 				}
 				ServerPlayer owner = serverLevel.getServer().getPlayerList().getPlayerByName(this.getOwnerName());
 				if (owner != null) {
@@ -158,10 +228,24 @@ public class DragonWishEntity extends Mob implements GeoEntity {
 	public String getOwnerName() { return this.entityData.get(OWNER_NAME); }
 	public void setGrantedWish(boolean granted) { this.entityData.set(GRANTED_WISH, granted); }
 	public boolean hasGrantedWish() { return this.entityData.get(GRANTED_WISH); }
-	public void setInvokingTime(long time) { this.invokingTime = time; }
-	public long getInvokingTime() { return this.invokingTime; }
+	public void setSummonExpiresAt(long time) { this.summonExpiresAt = time; }
+	public long getSummonExpiresAt() { return this.summonExpiresAt; }
 	public void setDragonDefinitionId(String id) { this.entityData.set(DRAGON_DEFINITION_ID, id); }
 	public String getDragonDefinitionId() { return this.entityData.get(DRAGON_DEFINITION_ID); }
+
+	public float getRenderScale() {
+		return switch (getDragonDefinitionId()) {
+			case "shenron", "porunga" -> 3.5F;
+			case "porunga_daima" -> 7.0F;
+			default -> 1.5F;
+		};
+	}
+
+	@Override
+	public boolean shouldRenderAtSqrDistance(double distance) {
+		double range = 128.0D * getRenderScale();
+		return distance < range * range;
+	}
 
 	public DragonDefinition getDragonDefinition() {
 		String definitionId = getDragonDefinitionId();
@@ -175,8 +259,9 @@ public class DragonWishEntity extends Mob implements GeoEntity {
 	@Override
 	public void addAdditionalSaveData(CompoundTag compound) {
 		super.addAdditionalSaveData(compound);
-		compound.putLong("InvokingTime", this.invokingTime);
+		compound.putLong("SummonExpiresAt", this.summonExpiresAt);
 		compound.putInt("DespawnDelay", this.despawnDelay);
+		compound.putInt("DespawnFade", this.entityData.get(DESPAWN_FADE));
 		compound.putString("OwnerName", this.getOwnerName());
 		compound.putBoolean("GrantedWish", this.hasGrantedWish());
 		compound.putString("DragonDefinitionId", this.getDragonDefinitionId());
@@ -185,8 +270,9 @@ public class DragonWishEntity extends Mob implements GeoEntity {
 	@Override
 	public void readAdditionalSaveData(CompoundTag compound) {
 		super.readAdditionalSaveData(compound);
-		if (compound.contains("InvokingTime")) this.invokingTime = compound.getLong("InvokingTime");
+		if (compound.contains("SummonExpiresAt")) this.summonExpiresAt = compound.getLong("SummonExpiresAt");
 		if (compound.contains("DespawnDelay")) this.despawnDelay = compound.getInt("DespawnDelay");
+		if (compound.contains("DespawnFade")) this.entityData.set(DESPAWN_FADE, compound.getInt("DespawnFade"));
 		if (compound.contains("OwnerName")) this.setOwnerName(compound.getString("OwnerName"));
 		if (compound.contains("GrantedWish")) this.setGrantedWish(compound.getBoolean("GrantedWish"));
 		if (compound.contains("DragonDefinitionId")) this.setDragonDefinitionId(compound.getString("DragonDefinitionId"));

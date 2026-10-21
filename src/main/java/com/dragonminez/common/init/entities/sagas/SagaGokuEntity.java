@@ -1,14 +1,62 @@
 package com.dragonminez.common.init.entities.sagas;
 
 import com.dragonminez.common.init.MainEntities;
+import com.dragonminez.common.init.MainItems;
 import com.dragonminez.common.init.entities.IBattlePower;
 import net.minecraft.world.entity.EntityType;
+import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.entity.monster.Monster;
+import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 import net.minecraftforge.registries.ForgeRegistries;
 
 public class SagaGokuEntity{
+
+    //KID GOKU
+    public static class SagaKidGokuEntity extends DBSagasEntity {
+
+        public SagaKidGokuEntity(EntityType<? extends Monster> pEntityType, Level pLevel) {
+            super(pEntityType, pLevel);
+
+            this.setCanFly(false);
+            this.setKiBlastSpeed(1.0F);
+            this.setEvade(true, 300);
+            this.setDBZStyle(7);
+            this.addKiSkill(KiSkillType.KAMEHAMEHA, 350, 0.5F);
+            this.setisKid(true);
+            this.setItemSlot(EquipmentSlot.MAINHAND, new ItemStack(MainItems.POWER_POLE.get()));
+            this.setDropChance(EquipmentSlot.MAINHAND, 0.0F);
+
+        }
+        @Override
+        public String getGeckolibModelName() {
+            return "saga_kid_goku";
+        }
+
+    }
+
+    public static class SagaGokuT23Entity extends DBSagasEntity {
+
+        public SagaGokuT23Entity(EntityType<? extends Monster> pEntityType, Level pLevel) {
+            super(pEntityType, pLevel);
+
+            this.setCanFly(false);
+            this.setAuraColor(0xFFFFFF);
+            this.setDBZStyle(0);
+            this.setEvade(true, 120);
+            this.setKiBlastSpeed(1.2F);
+            this.setAllowedCombos(300, ComboType.AIR);
+
+            this.addKiSkill(KiSkillType.KAMEHAMEHA, 250, 1.2F);
+        }
+
+        @Override
+        public String getGeckolibModelName() {
+            return "saga_goku";
+        }
+
+    }
 
     // GOKU EARLY
     public static class SagaGokuEarlyEntity extends DBSagasEntity {
@@ -20,6 +68,7 @@ public class SagaGokuEntity{
 
             if (entityName != null && entityName.contains("noweights")) {
                 this.getAttribute(Attributes.MOVEMENT_SPEED).setBaseValue(0.35D);
+                this.setDefaultMovementSpeed(0.35D);
                 this.setCanFly(false);
                 this.setEvade(true, 100);
                 this.setAuraColor(0xFFFFFF);
@@ -28,6 +77,7 @@ public class SagaGokuEntity{
                 }
             } else {
                 this.getAttribute(Attributes.MOVEMENT_SPEED).setBaseValue(0.25D);
+                this.setDefaultMovementSpeed(0.25D);
                 this.setCanFly(true);
                 this.setAllowedCombos(200, ComboType.KI_CHARGE_ATTACK);
                 this.setWildSense(true, 200);
@@ -137,7 +187,7 @@ public class SagaGokuEntity{
             this.setKiBlastSpeed(1.4F);
             this.setDBZStyle(0);
             this.setEvade(true, 40);
-            this.setAllowedCombos(200, ComboType.KI_CHARGE_ATTACK, ComboType.AIR);
+            this.setAllowedCombos(200, ComboType.KI_CHARGE_ATTACK, ComboType.AIR, ComboType.SUPER_GOD_FIST);
             this.addKiSkill(KiSkillType.KAMEHAMEHA, 200, 1.5F);
             this.addKiSkill(KiSkillType.KI_SMALL, 50, 1.5F, 0x75FFFF, 0x75FFFF);
 
@@ -183,7 +233,7 @@ public class SagaGokuEntity{
             this.addKiSkill(KiSkillType.KI_VOLLEY, 200, 1.5F, 0xFFE657, 0xFFE657);
 
             this.setWildSense(true, 150);
-            this.setZanzoken(true, 300);
+            this.setZanzoken(3, 300);
 
         }
 
@@ -224,7 +274,7 @@ public class SagaGokuEntity{
             this.addKiSkill(KiSkillType.KI_VOLLEY, 200, 1.5F, 0xFFE657, 0xFFE657);
 
             this.setWildSense(true, 150);
-            this.setZanzoken(true, 300);
+            this.setZanzoken(3, 300);
 
         }
 
@@ -262,11 +312,12 @@ public class SagaGokuEntity{
             this.setEvade(true, 40);
             this.setAllowedCombos(200, ComboType.KI_CHARGE_ATTACK, ComboType.AIR, ComboType.METEOR_COMBINATION, ComboType.BASIC);
             this.addKiSkill(KiSkillType.KAMEHAMEHA, 200, 3.0F);
+            this.addKiSkill(KiSkillType.DRAGON_FIST, 600);
             this.addKiSkill(KiSkillType.KI_SMALL, 60, 1.5F, 0xFFE657, 0xFFE657);
             this.addKiSkill(KiSkillType.KI_VOLLEY, 200, 1.5F, 0xFFE657, 0xFFE657);
 
             this.setWildSense(true, 70);
-            this.setZanzoken(true, 200);
+            this.setZanzoken(3, 200);
 
         }
 

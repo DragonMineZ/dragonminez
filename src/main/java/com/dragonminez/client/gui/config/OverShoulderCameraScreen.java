@@ -3,6 +3,7 @@ package com.dragonminez.client.gui.config;
 import com.dragonminez.Reference;
 import com.dragonminez.client.gui.buttons.AxisSlider;
 import com.dragonminez.client.gui.buttons.TexturedTextButton;
+import com.dragonminez.client.gui.character.util.ScaledScreen;
 import com.dragonminez.client.render.camera.OverShoulderCamera;
 import com.dragonminez.client.util.TextUtil;
 import com.dragonminez.common.config.ConfigManager;
@@ -20,9 +21,8 @@ import net.minecraftforge.api.distmarker.OnlyIn;
 import java.util.function.Consumer;
 
 @OnlyIn(Dist.CLIENT)
-public class OverShoulderCameraScreen extends Screen {
+public class OverShoulderCameraScreen extends ScaledScreen {
 
-	private static final ResourceLocation DMZ_FONT = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "smooth");
 	private static final ResourceLocation MENU_BIG = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "textures/gui/menu/menubig.png");
 	private static final ResourceLocation BUTTONS_TEXTURE = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "textures/gui/buttons/characterbuttons.png");
 
@@ -56,12 +56,12 @@ public class OverShoulderCameraScreen extends Screen {
 		super.init();
 
 		if (this.minecraft != null) {
-			this.previousCameraType = this.minecraft.options.getCameraType();
+			if (this.previousCameraType == null) this.previousCameraType = this.minecraft.options.getCameraType();
 			this.minecraft.options.setCameraType(CameraType.THIRD_PERSON_BACK);
 		}
 		OverShoulderCamera.setPreviewOverride(true);
 
-		this.panelY = (this.height - PANEL_H) / 2;
+		this.panelY = (getUiHeight() - PANEL_H) / 2;
 		this.targetPanelX = computeTargetPanelX();
 		this.panelX = this.targetPanelX;
 
@@ -118,41 +118,51 @@ public class OverShoulderCameraScreen extends Screen {
 
 	private int computeTargetPanelX() {
 		boolean left = ConfigManager.getUserConfig().getOverShoulderLeft();
-		return left ? MARGIN : this.width - PANEL_W - MARGIN;
+		return left ? MARGIN : getUiWidth() - PANEL_W - MARGIN;
 	}
 
 	private void layoutWidgets() {
-		int px = Math.round(this.panelX);
-		int buttonX = px + (PANEL_W - BUTTON_W) / 2;
-		int sliderX = px + (PANEL_W - SLIDER_W) / 2;
+		int buttonX = (PANEL_W - BUTTON_W) / 2;
+		int sliderX = (PANEL_W - SLIDER_W) / 2;
 
-		this.modeButton.setPosition(buttonX, this.panelY + 40);
-		this.sideButton.setPosition(buttonX, this.panelY + 64);
-		this.backSlider.setPosition(sliderX, this.panelY + 102);
-		this.upSlider.setPosition(sliderX, this.panelY + 130);
-		this.sideSlider.setPosition(sliderX, this.panelY + 158);
-		this.smoothingSlider.setPosition(sliderX, this.panelY + 186);
+		this.modeButton.setY(this.panelY + 40);
+		this.sideButton.setY(this.panelY + 64);
+		this.backSlider.setY(this.panelY + 102);
+		this.upSlider.setY(this.panelY + 130);
+		this.sideSlider.setY(this.panelY + 158);
+		this.smoothingSlider.setY(this.panelY + 186);
+
+		slideX(this.modeButton, buttonX, this.panelX);
+		slideX(this.sideButton, buttonX, this.panelX);
+		slideX(this.backSlider, sliderX, this.panelX);
+		slideX(this.upSlider, sliderX, this.panelX);
+		slideX(this.sideSlider, sliderX, this.panelX);
+		slideX(this.smoothingSlider, sliderX, this.panelX);
 	}
 
 	@Override
 	public void render(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
-		this.panelX += (this.targetPanelX - this.panelX) * 0.25f;
-		if (Math.abs(this.targetPanelX - this.panelX) < 0.5f) this.panelX = this.targetPanelX;
+		beginUiScale(graphics);
+		this.panelX += (this.targetPanelX - this.panelX) * frameEase(0.06f);
+		if (Math.abs(this.targetPanelX - this.panelX) < 0.05f) this.panelX = this.targetPanelX;
 		layoutWidgets();
 
-		int px = Math.round(this.panelX);
-		graphics.blit(MENU_BIG, px, this.panelY, 0, 0, PANEL_W, PANEL_H, 256, 256);
-		graphics.blit(MENU_BIG, px + 17, this.panelY + 10, 142, 22, 107, 21, 256, 256);
+		graphics.pose().pushPose();
+		graphics.pose().translate(this.panelX, 0.0f, 0.0f);
+		blit(graphics, MENU_BIG, 0, this.panelY, 0, 0, PANEL_W, PANEL_H);
+		blit(graphics, MENU_BIG, 17, this.panelY + 10, 142, 22, 107, 21);
 
 		TextUtil.drawCenteredStringWithBorder(graphics, this.font, tr("gui.dragonminez.overShoulder.title"),
-				px + PANEL_W / 2, this.panelY + 15, 0xFFFFD700);
+				PANEL_W / 2, this.panelY + 15, 0xFFFFD700);
 
-		drawSliderLabel(graphics, "gui.dragonminez.overShoulder.distance", backSlider.getValue(), px, backSlider.getY());
-		drawSliderLabel(graphics, "gui.dragonminez.overShoulder.height", upSlider.getValue(), px, upSlider.getY());
-		drawSliderLabel(graphics, "gui.dragonminez.overShoulder.side", sideSlider.getValue(), px, sideSlider.getY());
-		drawSliderLabel(graphics, "gui.dragonminez.overShoulder.smoothing", smoothingSlider.getValue(), px, smoothingSlider.getY());
+		drawSliderLabel(graphics, "gui.dragonminez.overShoulder.distance", backSlider.getValue(), 0, backSlider.getY());
+		drawSliderLabel(graphics, "gui.dragonminez.overShoulder.height", upSlider.getValue(), 0, upSlider.getY());
+		drawSliderLabel(graphics, "gui.dragonminez.overShoulder.side", sideSlider.getValue(), 0, sideSlider.getY());
+		drawSliderLabel(graphics, "gui.dragonminez.overShoulder.smoothing", smoothingSlider.getValue(), 0, smoothingSlider.getY());
+		graphics.pose().popPose();
 
-		super.render(graphics, mouseX, mouseY, partialTick);
+		super.render(graphics, (int) Math.round(toUiX(mouseX)), (int) Math.round(toUiY(mouseY)), partialTick);
+		endUiScale(graphics);
 	}
 
 	private void drawSliderLabel(GuiGraphics graphics, String key, float value, int px, int sliderY) {
@@ -174,14 +184,6 @@ public class OverShoulderCameraScreen extends Screen {
 
 	private MutableComponent sideLabel(boolean left) {
 		return tr(left ? "gui.dragonminez.overShoulder.side.left" : "gui.dragonminez.overShoulder.side.right");
-	}
-
-	private MutableComponent tr(String key, Object... args) {
-		return Component.translatable(key, args).withStyle(Style.EMPTY.withFont(DMZ_FONT));
-	}
-
-	private MutableComponent txt(String text) {
-		return Component.literal(text).withStyle(Style.EMPTY.withFont(DMZ_FONT));
 	}
 
 	@Override

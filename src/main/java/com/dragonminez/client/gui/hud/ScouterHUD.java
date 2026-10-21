@@ -3,10 +3,14 @@ package com.dragonminez.client.gui.hud;
 import com.dragonminez.Env;
 import com.dragonminez.LogUtil;
 import com.dragonminez.Reference;
+import com.dragonminez.client.gui.hud.layout.HudElement;
+import com.dragonminez.client.gui.hud.layout.HudLayout;
 import com.dragonminez.common.config.ConfigManager;
 import com.dragonminez.common.init.MainItems;
+import com.dragonminez.common.init.MainSounds;
 import com.dragonminez.common.init.entities.IBattlePower;
 import com.dragonminez.common.quest.QuestUnlocks;
+import com.dragonminez.common.racial.impl.GlindDivinity;
 import com.dragonminez.common.network.C2S.DamageCurioC2S;
 import com.dragonminez.common.network.NetworkHandler;
 import com.dragonminez.common.stats.*;
@@ -14,7 +18,9 @@ import com.dragonminez.common.util.CuriosUtil;
 import com.mojang.blaze3d.systems.RenderSystem;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.resources.sounds.SimpleSoundInstance;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.sounds.SoundEvent;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.util.Mth;
 import net.minecraft.world.entity.Entity;
@@ -22,9 +28,10 @@ import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.level.ClipContext;
 import net.minecraft.world.phys.AABB;
-import net.minecraft.world.phys.EntityHitResult;
 import net.minecraft.world.phys.HitResult;
+import net.minecraft.world.phys.Vec3;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.client.gui.overlay.IGuiOverlay;
 import net.minecraftforge.event.TickEvent;
@@ -33,6 +40,8 @@ import net.minecraftforge.fml.common.Mod;
 import top.theillusivec4.curios.api.CuriosApi;
 
 import java.util.List;
+import java.util.Locale;
+import java.util.Optional;
 
 @Mod.EventBusSubscriber(modid = Reference.MOD_ID, value = Dist.CLIENT)
 public class ScouterHUD {
@@ -41,16 +50,36 @@ public class ScouterHUD {
 	private static final ResourceLocation SCOUTER_BLUE = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "textures/gui/scouter/scouter_blue.png");
 	private static final ResourceLocation SCOUTER_PURPLE = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "textures/gui/scouter/scouter_purple.png");
 
+	private static final float FRAME_WIDTH = 70.0f;
+	private static final float FRAME_HEIGHT = 41.0f;
+	private static final float GLASS_ALPHA = 0.65f;
+	private static final float HIDDEN_PREVIEW_ALPHA = 0.35f;
+	private static final float CENTER_X = 41.0f;
+	private static final float CENTER_Y = 19.0f;
+	private static final float RETICLE_SIZE = 18.0f;
+	private static final float ARROW_SIZE = 5.0f;
+	private static final float ARROW_GAP = 2.0f;
+	private static final float NUMBERS_RIGHT = 36.0f;
+	private static final float NUMBERS_Y = 30.0f;
+	private static final int MAX_NUMBER_CHARS = 5;
+	private static final float GLYPH_SPACING = 1.0f;
+	private static final double PREVIEW_BP = 12300.0;
+
 	private static boolean isRenderingInfo = false;
+	private static boolean mirrored = false;
+	private static float drawAlpha = 1.0f;
 
 	private static int scanTimer = 0;
 	private static int strongestEntityID = -1;
 	private static double cachedBP = 0;
+	private static int lockedTargetID = -1;
 	private static final double SCAN_RANGE = 50.0;
+	private static final double READ_RANGE = 20.0;
+	private static final double AIM_TOLERANCE = 0.5;
 	private static final int BP_LIMIT = 150000000;
 
 	private static ItemStack getScouterStack(Player player) {
-		return CuriosUtil.getFirstStack(player, "head_tech");
+		return CuriosUtil.getFirstStackForItem(player, "head_tech", "scouter");
 	}
 
 	@SubscribeEvent
@@ -60,7 +89,7 @@ public class ScouterHUD {
 		if (mc.player == null || mc.level == null) return;
 
 		ItemStack scouterStack = getScouterStack(mc.player);
-		if (scouterStack.isEmpty() || !scouterStack.getDescriptionId().contains("scouter")) {
+		if (scouterStack.isEmpty()) {
 			isRenderingInfo = false;
 			return;
 		}
@@ -78,7 +107,7 @@ public class ScouterHUD {
 
 		AABB searchBox = player.getBoundingBox().inflate(SCAN_RANGE);
 		List<LivingEntity> entities = player.level().getEntitiesOfClass(LivingEntity.class, searchBox,
-				e -> e != player && e.isAlive());
+				e -> e != player && e.isAlive() && !GlindDivinity.isHiddenFrom(e, player));
 
 		LivingEntity newStrongest = null;
 		double maxFoundBP = thresholdBP;
@@ -98,6 +127,7 @@ public class ScouterHUD {
 		}
 
 		if (newStrongest != null) {
+			if (newStrongest.getId() != strongestEntityID) playSound(MainSounds.PIP_MENU.get(), 1.2f);
 			strongestEntityID = newStrongest.getId();
 			cachedBP = maxFoundBP;
 		} else if (!cachedIsAlive) {
@@ -108,7 +138,7 @@ public class ScouterHUD {
 
 	/** Bulma's Anti-Ki Cloak: a worn cloak hides the wearer's BP from scouters. */
 	private static boolean isCloaked(Player target) {
-		return CuriosUtil.getFirstStack(target, "head_tech").getItem() == MainItems.ANTI_KI_CLOAK.get();
+		return CuriosUtil.getFirstStackForItem(target, "head_tech", "anti_ki_cloak").getItem() == MainItems.ANTI_KI_CLOAK.get();
 	}
 
 	private static double getEntityBP(LivingEntity entity) {
@@ -126,61 +156,104 @@ public class ScouterHUD {
 	}
 
 	public static final IGuiOverlay HUD_SCOUTER = (forgeGui, guiGraphics, partialTicks, width, height) -> {
+		if (!HudLayout.isPreview()) render(guiGraphics, partialTicks, width, height);
+	};
+
+	public static void render(GuiGraphics guiGraphics, float partialTicks, int width, int height) {
 		Minecraft mc = Minecraft.getInstance();
 		if (mc.options.renderDebug || mc.player == null) return;
-		if (ConfigManager.getUserConfig().getAlternativeHud()) return;
+		if (HudStyle.current() == HudStyle.COMPACT) return;
+
+		boolean preview = HudLayout.isPreview();
+		HudLayout.Box box = HudLayout.resolve(HudElement.SCOUTER, width, height);
+		if (!box.visible() && !preview) return;
 
 		ItemStack scouterStack = getScouterStack(mc.player);
-		if (scouterStack.isEmpty() || !scouterStack.getItem().getDescriptionId().contains("scouter")) return;
+		if (scouterStack.isEmpty() && !preview) return;
 
 		Item currentItem = scouterStack.getItem();
 		ResourceLocation currentTexture = currentItem == MainItems.BLUE_SCOUTER.get() ? SCOUTER_BLUE :
 				currentItem == MainItems.RED_SCOUTER.get() ? SCOUTER_RED :
 				currentItem == MainItems.PURPLE_SCOUTER.get() ? SCOUTER_PURPLE : SCOUTER_GREEN;
 
+		mirrored = box.mirrored();
+		drawAlpha = box.visible() ? 1.0f : HIDDEN_PREVIEW_ALPHA;
 		guiGraphics.pose().pushPose();
-		guiGraphics.pose().translate(0, height / 2.0f, 0);
-		guiGraphics.pose().scale(2.5f, 2.5f, 1.0f);
-
-		renderScouterFrame(guiGraphics, currentTexture);
-
-		if (isRenderingInfo) {
-			HitResult hit = mc.hitResult;
-			LivingEntity focusedEntity = null;
-
-			if (hit != null && hit.getType() == HitResult.Type.ENTITY) {
-				if (((EntityHitResult) hit).getEntity() instanceof LivingEntity living) focusedEntity = living;
+		guiGraphics.pose().translate(box.x(), box.y(), 0.0f);
+		guiGraphics.pose().scale(box.scale(), box.scale(), 1.0f);
+		try {
+			renderScouterFrame(guiGraphics, currentTexture);
+			if (preview) {
+				renderCustomNumbers(guiGraphics, currentTexture, formatBP(PREVIEW_BP));
+				renderEntityInfo(guiGraphics, currentTexture, true, true);
+			} else if (isRenderingInfo) {
+				renderInfo(guiGraphics, mc, currentTexture, partialTicks);
 			}
+		} finally {
+			RenderSystem.setShaderColor(1.0F, 1.0F, 1.0F, 1.0F);
+			guiGraphics.pose().popPose();
+		}
+	}
 
-			double distToFocus = (focusedEntity != null) ? mc.player.distanceTo(focusedEntity) : Double.MAX_VALUE;
+	private static void renderInfo(GuiGraphics guiGraphics, Minecraft mc, ResourceLocation currentTexture, float partialTicks) {
+		LivingEntity focusedEntity = pickTarget(mc, partialTicks);
 
-			if (focusedEntity != null && distToFocus <= 20) {
-				double bp = getEntityBP(focusedEntity);
+		double distToFocus = (focusedEntity != null) ? mc.player.distanceTo(focusedEntity) : Double.MAX_VALUE;
 
-				if (bp > BP_LIMIT) {
-					damageScouter(mc.player);
-					guiGraphics.pose().popPose();
-					return;
-				}
-
-					if (QuestUnlocks.isCompleted(mc.player, QuestUnlocks.SCOUTER_CALIBRATION))
-						renderCustomNumbers(guiGraphics, currentTexture, formatBP(bp));
-				renderEntityInfo(guiGraphics, currentTexture, QuestUnlocks.isCompleted(mc.player, QuestUnlocks.SCOUTER_BIOSCAN), focusedEntity instanceof Player);
-
-			} else if (focusedEntity != null && distToFocus > 20 && distToFocus <= 50) {
-				renderDirectionIcon(guiGraphics, currentTexture, mc.player, focusedEntity, true);
-				renderEntityInfo(guiGraphics, currentTexture, false, focusedEntity instanceof Player);
-			} else {
-				Entity strongest = mc.player.level().getEntity(strongestEntityID);
-				if (strongest instanceof LivingEntity livingStrongest && livingStrongest.isAlive()) {
-					if (mc.player.distanceTo(livingStrongest) <= SCAN_RANGE) {
-						renderDirectionIcon(guiGraphics, currentTexture, mc.player, livingStrongest, false);
-					}
+		if (focusedEntity != null && distToFocus <= READ_RANGE) {
+			if (focusedEntity.getId() != lockedTargetID) {
+				lockedTargetID = focusedEntity.getId();
+				playSound(MainSounds.LOCKON.get(), 1.0f);
+			}
+			double bp = getEntityBP(focusedEntity);
+			if (bp > BP_LIMIT) {
+				damageScouter(mc.player);
+				return;
+			}
+			renderCustomNumbers(guiGraphics, currentTexture, formatBP(bp));
+			renderEntityInfo(guiGraphics, currentTexture, QuestUnlocks.isCompleted(mc.player, QuestUnlocks.SCOUTER_BIOSCAN), focusedEntity instanceof Player);
+			return;
+		}
+		lockedTargetID = -1;
+		if (focusedEntity != null && distToFocus <= SCAN_RANGE) {
+			renderDirectionIcon(guiGraphics, currentTexture, mc.player, focusedEntity);
+			renderEntityInfo(guiGraphics, currentTexture, false, focusedEntity instanceof Player);
+		} else {
+			Entity strongest = mc.player.level().getEntity(strongestEntityID);
+			if (strongest instanceof LivingEntity livingStrongest && livingStrongest.isAlive()) {
+				if (mc.player.distanceTo(livingStrongest) <= SCAN_RANGE) {
+					renderDirectionIcon(guiGraphics, currentTexture, mc.player, livingStrongest);
 				}
 			}
 		}
-		guiGraphics.pose().popPose();
-	};
+	}
+
+	private static LivingEntity pickTarget(Minecraft mc, float partialTicks) {
+		Entity camera = mc.getCameraEntity();
+		if (camera == null || mc.level == null) return null;
+
+		Vec3 eye = camera.getEyePosition(partialTicks);
+		Vec3 look = camera.getViewVector(partialTicks);
+		Vec3 end = eye.add(look.scale(SCAN_RANGE));
+		HitResult block = mc.level.clip(new ClipContext(eye, end, ClipContext.Block.COLLIDER, ClipContext.Fluid.NONE, camera));
+		if (block.getType() != HitResult.Type.MISS) end = block.getLocation();
+
+		AABB area = new AABB(eye, end).inflate(AIM_TOLERANCE + 1.0);
+		LivingEntity best = null;
+		double bestDist = Double.MAX_VALUE;
+		for (LivingEntity living : mc.level.getEntitiesOfClass(LivingEntity.class, area,
+				e -> e != camera && e != mc.player && e.isAlive() && !e.isSpectator() && !GlindDivinity.isHiddenFrom(e, mc.player))) {
+			AABB bounds = living.getBoundingBox().inflate(Math.max(AIM_TOLERANCE, living.getPickRadius()));
+			Optional<Vec3> crossing = bounds.contains(eye) ? Optional.of(eye) : bounds.clip(eye, end);
+			if (crossing.isEmpty()) continue;
+			double dist = eye.distanceToSqr(crossing.get());
+			if (dist < bestDist) {
+				bestDist = dist;
+				best = living;
+			}
+		}
+		return best;
+	}
 
 	private static void damageScouter(Player player) {
 		setRenderingInfo(false);
@@ -202,26 +275,27 @@ public class ScouterHUD {
 		});
 	}
 
+	private static void part(GuiGraphics gui, ResourceLocation texture, float x, float y, float u, float v, float width, float height, float scale, boolean flip) {
+		float drawnWidth = width * scale;
+		float drawX = mirrored ? FRAME_WIDTH - x - drawnWidth : x;
+		if (mirrored && flip) HudRender.blit(gui, texture, drawX, y, u + width, v, drawnWidth, height * scale, -width, height, 128, 128);
+		else HudRender.blit(gui, texture, drawX, y, u, v, drawnWidth, height * scale, width, height, 128, 128);
+	}
+
 	private static void renderScouterFrame(GuiGraphics gui, ResourceLocation texture) {
-		RenderSystem.setShaderColor(1.0F, 1.0F, 1.0F, 1.0F);
-		gui.blit(texture, 0, -20, 0, 15, 7, 41, 128, 128);
-		RenderSystem.enableBlend();
-		RenderSystem.defaultBlendFunc();
-		RenderSystem.setShaderColor(1.0F, 1.0F, 1.0F, 0.65F);
-		gui.blit(texture, 7, -20, 7, 15, 63, 41, 128, 128);
-		RenderSystem.setShaderColor(1.0F, 1.0F, 1.0F, 1.0F);
-		RenderSystem.disableBlend();
+		RenderSystem.setShaderColor(1.0F, 1.0F, 1.0F, drawAlpha);
+		part(gui, texture, 0, 0, 0, 15, 7, FRAME_HEIGHT, 1.0f, true);
+		RenderSystem.setShaderColor(1.0F, 1.0F, 1.0F, GLASS_ALPHA * drawAlpha);
+		part(gui, texture, 7, 0, 7, 15, 63, FRAME_HEIGHT, 1.0f, true);
+		RenderSystem.setShaderColor(1.0F, 1.0F, 1.0F, drawAlpha);
 	}
 
 	private static void renderCustomNumbers(GuiGraphics gui, ResourceLocation texture, String text) {
-		int charWidth = 3;
-		int spacing = 1;
-		int currentTextWidth = (text.length() * charWidth) + ((text.length() - 1) * spacing);
-		int maxPossibleWidth = (4 * charWidth) + (3 * spacing);
-		int centerOffset = (maxPossibleWidth - currentTextWidth) / 2;
-
-		int startX = 10 + centerOffset;
-		int startY = -4;
+		if (text.length() > MAX_NUMBER_CHARS) text = text.substring(0, MAX_NUMBER_CHARS);
+		float textWidth = -GLYPH_SPACING;
+		for (int i = 0; i < text.length(); i++) textWidth += glyphWidth(text.charAt(i)) + GLYPH_SPACING;
+		float blockX = NUMBERS_RIGHT - textWidth;
+		float cursor = mirrored ? FRAME_WIDTH - blockX - textWidth : blockX;
 
 		for (int i = 0; i < text.length(); i++) {
 			char c = text.charAt(i);
@@ -240,61 +314,68 @@ public class ScouterHUD {
 				case '9' -> { u = 18; v = 68; }
 				case 'k' -> { u = 22; v = 64; }
 				case 'm' -> { u = 22; v = 68; }
-				case '.' -> { u = 26; v = 64; }
+				case '.' -> { u = 27; v = 64; }
 			}
-			gui.blit(texture, startX + (i * (charWidth + 1)), startY, u, v, charWidth, 3, 128, 128);
+			int width = glyphWidth(c);
+			HudRender.blit(gui, texture, cursor, NUMBERS_Y, u, v, width, 3, 128, 128);
+			cursor += width + GLYPH_SPACING;
 		}
 	}
 
-	private static void renderDirectionIcon(GuiGraphics gui, ResourceLocation texture, Player player, LivingEntity target, boolean isCircleMode) {
+	private static int glyphWidth(char c) {
+		return c == '.' ? 1 : 3;
+	}
+
+	private static void renderDirectionIcon(GuiGraphics gui, ResourceLocation texture, Player player, LivingEntity target) {
 		double dx = target.getX() - player.getX();
 		double dz = target.getZ() - player.getZ();
 		double angleToTarget = Math.toDegrees(Math.atan2(dz, dx)) - 90;
 		double diff = -Mth.wrapDegrees(angleToTarget - player.getYRot());
-		int dir = 0;
+		int dir = (int) Math.floor(((-diff % 360 + 360 + 22.5) % 360) / 45.0) % 8;
 
-		if (diff >= -22.5 && diff < 22.5) dir = 0;
-		else if (diff >= -67.5 && diff < -22.5) dir = 1;
-		else if (diff >= -112.5 && diff < -67.5) dir = 2;
-		else if (diff >= -157.5 && diff < -112.5) dir = 3;
-		else if (diff >= 157.5 || diff < -157.5) dir = 4;
-		else if (diff >= 112.5 && diff < 157.5) dir = 5;
-		else if (diff >= 67.5 && diff < 112.5) dir = 6;
-		else if (diff >= 22.5 && diff < 67.5) dir = 7;
+		boolean up = dir == 7 || dir == 0 || dir == 1;
+		boolean right = dir >= 1 && dir <= 3;
+		boolean down = dir >= 3 && dir <= 5;
+		boolean left = dir >= 5 && dir <= 7;
 
-		switch (dir) {
-			case 0 -> gui.blit(texture, 40, -16, 26, 75, 5, 5, 128, 128);
-			case 1 -> { gui.blit(texture, 40, -16, 26, 75, 5, 5, 128, 128); gui.blit(texture, 50, -8, 14, 75, 5, 5, 128, 128); }
-			case 2 -> gui.blit(texture, 50, -8, 14, 75, 5, 5, 128, 128);
-			case 3 -> { gui.blit(texture, 50, -8, 14, 75, 5, 5, 128, 128); gui.blit(texture, 40, 0, 34, 75, 5, 5, 128, 128); }
-			case 4 -> gui.blit(texture, 40, 0, 34, 75, 5, 5, 128, 128);
-			case 5 -> { gui.blit(texture, 40, 0, 34, 75, 5, 5, 128, 128); gui.blit(texture, 30, -8, 19, 75, 5, 5, 128, 128); }
-			case 6 -> gui.blit(texture, 30, -8, 19, 75, 5, 5, 128, 128);
-			case 7 -> { gui.blit(texture, 40, -16, 26, 75, 5, 5, 128, 128); gui.blit(texture, 30, -8, 19, 75, 5, 5, 128, 128); }
-		}
+		float centerX = mirrored ? FRAME_WIDTH - CENTER_X : CENTER_X;
+		float reach = RETICLE_SIZE / 2.0f + ARROW_GAP;
+		float half = ARROW_SIZE / 2.0f;
+		if (up) HudRender.blit(gui, texture, centerX - half, CENTER_Y - reach - ARROW_SIZE, 26, 75, ARROW_SIZE, ARROW_SIZE, 128, 128);
+		if (right) HudRender.blit(gui, texture, centerX + reach, CENTER_Y - half, 14, 75, ARROW_SIZE, ARROW_SIZE, 128, 128);
+		if (down) HudRender.blit(gui, texture, centerX - half, CENTER_Y + reach, 34, 75, ARROW_SIZE, ARROW_SIZE, 128, 128);
+		if (left) HudRender.blit(gui, texture, centerX - reach - ARROW_SIZE, CENTER_Y - half, 19, 75, ARROW_SIZE, ARROW_SIZE, 128, 128);
 	}
 
 	private static void renderEntityInfo(GuiGraphics gui, ResourceLocation texture, boolean extraInfo, boolean isPlayer) {
-		gui.pose().pushPose();
-		gui.pose().translate(40, -30, 0);
-		gui.pose().scale(2.0f, 2.0f, 1.0f);
-		gui.blit(texture, 0, 0, 2, 73, 9, 9, 128, 128);
-		gui.pose().popPose();
+		part(gui, texture, CENTER_X - RETICLE_SIZE / 2.0f, CENTER_Y - RETICLE_SIZE / 2.0f, 2, 73, 9, 9, 2.0f, false);
 
 		if (!extraInfo) return;
 
-		gui.blit(texture, 50, -10, 4, 88, 12, 5, 128, 128);
+		part(gui, texture, 49, 6, 4, 88, 12, 5, 1.0f, true);
 		int uX = isPlayer ? 3 : 20;
 		int w = isPlayer ? 14 : 11;
-		gui.blit(texture, 53, -15, uX, 98, w, 5, 128, 128);
+		part(gui, texture, 52, 9, uX, 98, w, 5, 1.0f, false);
 	}
 
 	private static String formatBP(double bp) {
-		if (bp < 10000) return String.valueOf(bp);
-		if (bp < 1000000) return String.format("%.1fk", bp / 1000.0f).replace(",", ".");
-		return String.format("%.1fm", bp / 1000000.0f).replace(",", ".");
+		if (bp < 10000) return String.valueOf((long) bp);
+		if (bp < 99950) return String.format(Locale.ROOT, "%.1fk", bp / 1000.0);
+		if (bp < 1000000) return (long) (bp / 1000.0) + "k";
+		if (bp < 99950000) return String.format(Locale.ROOT, "%.1fm", bp / 1000000.0);
+		return (long) (bp / 1000000.0) + "m";
 	}
 
-	public static void setRenderingInfo(boolean render) { isRenderingInfo = render; }
+	private static void playSound(SoundEvent sound, float pitch) {
+		Minecraft.getInstance().getSoundManager().play(SimpleSoundInstance.forUI(sound, pitch, 0.6f));
+	}
+
+	public static void setRenderingInfo(boolean render) {
+		if (render == isRenderingInfo) return;
+		isRenderingInfo = render;
+		lockedTargetID = -1;
+		scanTimer = 20;
+		playSound(render ? MainSounds.SWITCH_ON.get() : MainSounds.SWITCH_OFF.get(), 1.0f);
+	}
 	public static boolean isRenderingInfo() { return isRenderingInfo; }
 }

@@ -2,31 +2,39 @@ package com.dragonminez.common.init.entities.sagas;
 
 import com.dragonminez.client.util.ColorUtils;
 import com.dragonminez.common.combat.clash.BeamClashManager;
+import com.dragonminez.common.combat.clash.StrikeClash;
 import com.dragonminez.common.config.ConfigManager;
 import com.dragonminez.common.config.EntitiesConfig;
+import com.dragonminez.common.config.FormConfig;
 import com.dragonminez.common.init.EntityAttributes;
 import com.dragonminez.common.init.MainDamageTypes;
 import com.dragonminez.common.init.MainEffects;
 import com.dragonminez.common.init.entities.ITextureVariant;
 import com.dragonminez.common.init.MainParticles;
+import com.dragonminez.common.network.S2C.AfterimageVfxS2C;
+import com.dragonminez.common.network.NetworkHandler;
 import com.dragonminez.common.init.MainSounds;
-import com.dragonminez.common.init.entities.goals.SagasUseSkillGoal;
+import com.dragonminez.common.init.entities.ai.AiProfile;
+import com.dragonminez.common.init.entities.ai.AiTier;
+import com.dragonminez.common.init.entities.ai.EnemyBrain;
 import com.dragonminez.common.init.entities.ki.*;
-import com.dragonminez.common.init.entities.sagas.ai.SagasCombatBrain;
-import com.dragonminez.common.init.entities.sagas.ai.CombatContext;
 import com.dragonminez.common.init.entities.sagas.helper.ComboManager;
 import com.dragonminez.common.init.entities.sagas.helper.DBSagasAnimationHandler;
+import com.dragonminez.common.init.entities.sagas.helper.DBSagasAnimations;
 import com.dragonminez.common.init.entities.sagas.helper.SkillManager;
 import com.dragonminez.common.quest.QuestService;
 import com.dragonminez.common.stats.StatsCapability;
 import com.dragonminez.common.stats.StatsData;
 import com.dragonminez.common.stats.StatsProvider;
 import com.dragonminez.common.stats.techniques.TechniqueDispatcher;
+import it.unimi.dsi.fastutil.ints.IntOpenHashSet;
 import lombok.Getter;
 import lombok.Setter;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.nbt.CompoundTag;
+import net.minecraft.nbt.ListTag;
+import net.minecraft.nbt.Tag;
 import net.minecraft.network.syncher.EntityDataAccessor;
 import net.minecraft.network.syncher.EntityDataSerializers;
 import net.minecraft.network.syncher.SynchedEntityData;
@@ -47,6 +55,7 @@ import net.minecraft.world.entity.animal.IronGolem;
 import net.minecraft.world.entity.monster.Monster;
 import net.minecraft.world.entity.npc.Villager;
 import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.LevelAccessor;
 import net.minecraft.world.level.LightLayer;
@@ -64,20 +73,13 @@ import software.bernie.geckolib.core.animatable.instance.AnimatableInstanceCache
 import software.bernie.geckolib.core.animatable.instance.SingletonAnimatableInstanceCache;
 import software.bernie.geckolib.core.animation.AnimatableManager;
 import software.bernie.geckolib.core.animation.AnimationController;
+import software.bernie.geckolib.core.animation.RawAnimation;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
-import java.util.UUID;
+import java.util.function.Function;
 
 public abstract class DBSagasEntity extends Monster implements GeoEntity, ITextureVariant {
-
-    public enum AiTier {
-        SIMPLE,
-        TACTICAL,
-        ADVANCED
-    }
 
     public enum LocomotionMode {
         IDLE,
@@ -94,7 +96,8 @@ public abstract class DBSagasEntity extends Monster implements GeoEntity, ITextu
         PROJECTILE_FAST,
         ZONING,
         DEFENSIVE,
-        AOE_BURST
+        AOE_BURST,
+        BLIND
     }
 
     /**
@@ -121,9 +124,9 @@ public abstract class DBSagasEntity extends Monster implements GeoEntity, ITextu
 
     @Getter
     public enum KiSkillType {
-        KAMEHAMEHA(1, SkillRole.RANGED_TRAVEL, Tier.MEDIUM),
-        GALICK_GUN(2, SkillRole.RANGED_TRAVEL, Tier.MEDIUM),
-        MAKANKOSAPPO(3, SkillRole.HITSCAN, Tier.MEDIUM),
+        KAMEHAMEHA(1, SkillRole.RANGED_TRAVEL, Tier.MEDIUM, 0xEDF4FF, 0x29D8FF, 0x0077FF),
+        GALICK_GUN(2, SkillRole.RANGED_TRAVEL, Tier.MEDIUM, 0xFAE5FF, 0xA63EF0, 0x7106BD),
+        MAKANKOSAPPO(3, SkillRole.HITSCAN, Tier.MEDIUM, 0xFFE657, 0xF5A627, 0x8B17CF),
         KI_LASER(4, SkillRole.HITSCAN, Tier.WEAK),
         KI_EXPLOSION(5, SkillRole.AOE_BURST, Tier.MEDIUM),
         KI_BARRIER(6, SkillRole.DEFENSIVE, Tier.WEAK),
@@ -136,17 +139,44 @@ public abstract class DBSagasEntity extends Monster implements GeoEntity, ITextu
         TRIPLE_LASER(13, SkillRole.HITSCAN, Tier.MEDIUM),
         KIENZAN(14, SkillRole.HITSCAN, Tier.MEDIUM),
         DEATH_BALL(15, SkillRole.GUARD_BREAK, Tier.STRONG),
-        MASENKO(16, SkillRole.RANGED_TRAVEL, Tier.MEDIUM),
-        BIG_BANG(17, SkillRole.GUARD_BREAK, Tier.STRONG),
-        FINAL_FLASH(18, SkillRole.RANGED_TRAVEL, Tier.STRONG),
+        MASENKO(16, SkillRole.RANGED_TRAVEL, Tier.MEDIUM, 0xFFFC85, 0xFCE062, 0xFFFFFF),
+        BIG_BANG(17, SkillRole.GUARD_BREAK, Tier.STRONG, 0xE3FFFF, 0xE3FFFF, 0x889999),
+        FINAL_FLASH(18, SkillRole.RANGED_TRAVEL, Tier.STRONG, 0xFFFCD6, 0xFFEB52, 0xF5C020),
         MAJIN_CANDY(19, SkillRole.ZONING, Tier.STRONG),
         KI_AIR_VOLLEY(20, SkillRole.ZONING, Tier.WEAK),
-        DOUBLE_SUNDAY(21, SkillRole.RANGED_TRAVEL, Tier.STRONG);
+        DOUBLE_SUNDAY(21, SkillRole.RANGED_TRAVEL, Tier.STRONG),
+        WOLF_FANG(22, SkillRole.GUARD_BREAK, Tier.MEDIUM),
+        DRAGON_FIST(23, SkillRole.GUARD_BREAK, Tier.STRONG, 0xFFD700, 0xFF8C00, -1),
+        KAMEHAMEHA_X10(24, SkillRole.RANGED_TRAVEL, Tier.MEDIUM, 0xFFE3E3, 0xFF2A2A, 0xB00020),
+        TAIYOKEN(25, SkillRole.BLIND, Tier.WEAK),
+        DODONPA(26, SkillRole.HITSCAN, Tier.WEAK, 0xFFEB7A, 0xFFE657, -1),
+        BURNING_ATTACK(27, SkillRole.RANGED_TRAVEL, Tier.MEDIUM, 0xFFF3D0, 0xFF7A1A, 0xC43A00),
+        SUPERNOVA_COOLER(28, SkillRole.GUARD_BREAK, Tier.STRONG, 0xFF3866, 0xA3143A, 0x4A0316),
+        ASSAULT_RAIN(29, SkillRole.ZONING, Tier.STRONG, 0xFFB8F4, 0x8A2BE2, 0xFF38D4),
+        BLASTER_METEOR(30, SkillRole.ZONING, Tier.STRONG, 0x9DFF8A, 0x3DF54A, 0x0FBF1B),
+        DIMENSIONAL_PUNCH(31, SkillRole.ZONING, Tier.STRONG, 0xC451FF, 0xC451FF, -1),
+        DESTRUCTION_BALLS(32, SkillRole.RANGED_TRAVEL, Tier.STRONG, 0xC77DFF, 0x5A189A, 0x0B0014),
+        SOUL_PUNISHER(33, SkillRole.RANGED_TRAVEL, Tier.STRONG, 0xFFFFFF, 0xFFFFFF, 0xFFFFFF),
+        KI_MEDIUM_BALL(34, SkillRole.RANGED_TRAVEL, Tier.MEDIUM, 0xFFF1C2, 0xFFB52E, 0xC46A00),
+        OOZARU_FIST(35, SkillRole.AOE_BURST, Tier.STRONG),
+        OOZARU_SLAM(36, SkillRole.AOE_BURST, Tier.STRONG),
+        GUM_BIND(37, SkillRole.ZONING, Tier.MEDIUM);
 
         private final int id;
         private final SkillRole role;
         private final Tier tier;
-        KiSkillType(int id, SkillRole role, Tier tier) { this.id = id; this.role = role; this.tier = tier; }
+        // Signature palette, mirroring PredefinedTechniques so an NPC Kamehameha looks like a
+        // player one. Outline -1 means "derive it from the border".
+        private final int colorMain;
+        private final int colorBorder;
+        private final int colorOutline;
+
+        KiSkillType(int id, SkillRole role, Tier tier) { this(id, role, tier, 0xFFFFFF, 0xFFFFFF, -1); }
+
+        KiSkillType(int id, SkillRole role, Tier tier, int colorMain, int colorBorder, int colorOutline) {
+            this.id = id; this.role = role; this.tier = tier;
+            this.colorMain = colorMain; this.colorBorder = colorBorder; this.colorOutline = colorOutline;
+        }
 
         public static KiSkillType fromId(int id) {
             for (KiSkillType type : values()) {
@@ -166,7 +196,9 @@ public abstract class DBSagasEntity extends Monster implements GeoEntity, ITextu
         BASIC(0, Tier.MEDIUM), AIR(1, Tier.MEDIUM), KI_CHARGE_ATTACK(2, Tier.STRONG),
         METEOR_COMBINATION(3, Tier.STRONG), ANDROID_ABSORPTION(4, Tier.STRONG),
         GUM_PUNCH(5, Tier.MEDIUM), GUM_EXPAND(6, Tier.WEAK), SLEEP_RECOVERY(7, Tier.WEAK),
-        RAPID_KICKS(8, Tier.WEAK);
+        RAPID_KICKS(8, Tier.WEAK), SPIRIT_BREAKING_CANNON(9, Tier.STRONG), SUPER_GOD_FIST(11, Tier.STRONG),
+        DEADLY_DANCE_VEGETTO(12, Tier.STRONG), METEOR_BURST(13, Tier.STRONG), MYSTIC_BALL(14, Tier.STRONG),
+        BEAM_SWORD_SLASH(15, Tier.STRONG), PERFECT_RUSH(16, Tier.STRONG), SPIRIT_BREAKER(17, Tier.STRONG);
 
         private final int id;
         private final Tier tier;
@@ -193,10 +225,13 @@ public abstract class DBSagasEntity extends Monster implements GeoEntity, ITextu
     private static final EntityDataAccessor<Integer> SKILL_TYPE = SynchedEntityData.defineId(DBSagasEntity.class, EntityDataSerializers.INT);
     private static final EntityDataAccessor<Integer> AURA_COLOR = SynchedEntityData.defineId(DBSagasEntity.class, EntityDataSerializers.INT);
     private static final EntityDataAccessor<String> AURA_TYPE = SynchedEntityData.defineId(DBSagasEntity.class, EntityDataSerializers.STRING);
+    private static final EntityDataAccessor<String> AURA_TYPE_3D = SynchedEntityData.defineId(DBSagasEntity.class, EntityDataSerializers.STRING);
 
     private static final EntityDataAccessor<Boolean> IS_EVADING = SynchedEntityData.defineId(DBSagasEntity.class, EntityDataSerializers.BOOLEAN);
     private static final EntityDataAccessor<Boolean> IS_COMBOING = SynchedEntityData.defineId(DBSagasEntity.class, EntityDataSerializers.BOOLEAN);
     private static final EntityDataAccessor<Integer> CURRENT_COMBO_ID = SynchedEntityData.defineId(DBSagasEntity.class, EntityDataSerializers.INT);
+    private static final EntityDataAccessor<Boolean> IS_STRIKE_RUSHING = SynchedEntityData.defineId(DBSagasEntity.class, EntityDataSerializers.BOOLEAN);
+    private static final EntityDataAccessor<Boolean> IS_STRIKE_CLASHING = SynchedEntityData.defineId(DBSagasEntity.class, EntityDataSerializers.BOOLEAN);
 
     private static final EntityDataAccessor<Integer> BATTLE_POWER = SynchedEntityData.defineId(DBSagasEntity.class, EntityDataSerializers.INT);
     private static final EntityDataAccessor<Boolean> TRANSFORMING = SynchedEntityData.defineId(DBSagasEntity.class, EntityDataSerializers.BOOLEAN);
@@ -205,6 +240,8 @@ public abstract class DBSagasEntity extends Monster implements GeoEntity, ITextu
     private static final EntityDataAccessor<Boolean> IS_LIGHTNING = SynchedEntityData.defineId(DBSagasEntity.class, EntityDataSerializers.BOOLEAN);
     private static final EntityDataAccessor<Integer> LIGHTNING_COLOR = SynchedEntityData.defineId(DBSagasEntity.class, EntityDataSerializers.INT);
     private static final EntityDataAccessor<Integer> TEXTURE_VARIANT = SynchedEntityData.defineId(DBSagasEntity.class, EntityDataSerializers.INT);
+    private static final EntityDataAccessor<Boolean> IS_SUPERVILLAIN = SynchedEntityData.defineId(DBSagasEntity.class, EntityDataSerializers.BOOLEAN);
+    private static final EntityDataAccessor<Boolean> IS_CHARACTER_ALIVE = SynchedEntityData.defineId(DBSagasEntity.class, EntityDataSerializers.BOOLEAN);
 
     private static final EntityDataAccessor<Integer> DBZ_STYLE = SynchedEntityData.defineId(DBSagasEntity.class, EntityDataSerializers.INT);
     private static final EntityDataAccessor<Boolean> IS_ZANZOKEN = SynchedEntityData.defineId(DBSagasEntity.class, EntityDataSerializers.BOOLEAN);
@@ -214,12 +251,11 @@ public abstract class DBSagasEntity extends Monster implements GeoEntity, ITextu
 
     private static final EntityDataAccessor<Integer> LOCOMOTION_MODE = SynchedEntityData.defineId(DBSagasEntity.class, EntityDataSerializers.INT);
 
+    private static final EntityDataAccessor<Boolean> IS_STUNNED = SynchedEntityData.defineId(DBSagasEntity.class, EntityDataSerializers.BOOLEAN);
+
     private static final int SKILL_GRACE_TICKS = 80;
 
     public static final float SKILL_COOLDOWN_MULTIPLIER = 2.0F;
-    private static final int POST_CAST_LOCKOUT = 100;
-    private static final int GLOBAL_ACTION_LOCKOUT = 60;
-    private static final float CAST_COMMIT_CHANCE = 0.5F;
     private int postCastCooldown = 0;
     private int globalActionCooldown = 0;
     private int knockbackLockTicks = 0;
@@ -230,6 +266,7 @@ public abstract class DBSagasEntity extends Monster implements GeoEntity, ITextu
     private static final double KI_HIT_FLY_SLOW_FACTOR = 0.2D;
 
     protected int castTimer = 0;
+    @Getter private int clientCastTicks = 0;
     protected int transformTick = 0;
     private int chargeSoundTimer = 0;
     private static final int AURA_LIGHT_LEVEL = 12;
@@ -247,6 +284,10 @@ public abstract class DBSagasEntity extends Monster implements GeoEntity, ITextu
     @Getter @Setter private int zanzokenCooldownMax = 0;
     @Getter @Setter private int currentZanzokenCooldown = 0;
     @Getter @Setter private int zanzokenTicks = 0;
+    @Getter private int zanzokenTier = ZANZOKEN_TIER_NONE;
+    private int zanzokenHopsLeft = 0;
+    private int zanzokenAfterimagesLeft = 0;
+    private int zanzokenDurationTicks = 0;
 
     private boolean canUseWildSense = false;
     private int wildSenseCooldownMax = 0;
@@ -256,6 +297,7 @@ public abstract class DBSagasEntity extends Monster implements GeoEntity, ITextu
     private int comboCooldownMax = 0;
     private int currentComboCooldown = 0;
     public int comboTimer = 0;
+    private int strikeRushTicks = 0;
     private LivingEntity comboTarget = null;
     private int activeComboId = -1;
     private int[] allowedCombos = new int[0];
@@ -264,22 +306,35 @@ public abstract class DBSagasEntity extends Monster implements GeoEntity, ITextu
     @Getter @Setter protected double defaultAttackSpeed = 4.0D;
 
     @Setter
-    @Getter private AiTier aiTier = AiTier.SIMPLE;
+    @Getter private AiTier aiTier = AiTier.NOVICE;
+    private final EnemyBrain combatBrain = new EnemyBrain(this);
 
     public void setAiTierById(int id) {
-        AiTier[] values = AiTier.values();
-        int index = id - 1;
-        if (index >= 0 && index < values.length) this.aiTier = values[index];
+        this.aiTier = AiTier.fromId(id);
     }
 
     public int getAiTierId() {
-        return this.aiTier.ordinal() + 1;
+        return this.aiTier.getId();
     }
 
-    private static final int DECISION_INTERVAL = 6;
-    private int decisionCooldown = 0;
+    public AiProfile getAiProfile() {
+        return this.aiTier.profile();
+    }
+
+    public EnemyBrain getCombatBrain() {
+        return this.combatBrain;
+    }
 
     private boolean meleeAllowed = true;
+
+    private enum Maneuver { NONE, STRAFE, KITE, FLANK }
+    private Maneuver maneuver = Maneuver.NONE;
+    private int maneuverTicks = 0;
+    private int maneuverDir = 1;
+    private Vec3 maneuverPoint = null;
+    private static final double SIDESTEP_SPEED = 1.1D;
+    private static final double DASH_AWAY_SPEED = 1.6D;
+    private static final int SIDESTEP_STATE_TICKS = 10;
 
     private int currentDashCooldown = 0;
     private int dashTicks = 0;
@@ -287,7 +342,17 @@ public abstract class DBSagasEntity extends Monster implements GeoEntity, ITextu
     private static final int DASH_COOLDOWN = 80;
     private static final double DASH_SPEED_MULTIPLIER = 2.6D;
 
-    private boolean wasTargetCasting = false;
+    public static final String HURT_CONTROLLER = "hurt_controller";
+    public static final String HURT_ANIM_LEFT = "hurt_left";
+    public static final String HURT_ANIM_RIGHT = "hurt_right";
+    public static final String HURT_ANIM_GODFIST = "hurt_godfist";
+    public static final String HURT_ANIM_TOP = "hurt_top";
+    public static final String HURT_ANIM_TOP2 = "hurt_top2";
+    public static final String HURT_ANIM_DOWN = "hurt_down";
+    public static final String HURT_ANIM_GRABBED = "grabbed";
+    public static final String HURT_ANIM_KO = "knocked_out";
+    public static final String HURT_ANIM_PARRIED = "parried";
+    public static final String HURT_ANIM_GUM_BOUND = "gum_bound";
 
     @Getter @Setter
     private boolean isAttacking = false;
@@ -320,7 +385,7 @@ public abstract class DBSagasEntity extends Monster implements GeoEntity, ITextu
             KiSkillType type = KiSkillType.fromId(id);
             float tierFactor = type != null ? type.getTier().getCooldownFactor() : 1.0F;
             this.cooldownMax = Math.max(1, Math.round(cooldown * SKILL_COOLDOWN_MULTIPLIER * tierFactor));
-            this.currentCooldown = 0;
+            this.currentCooldown = (id == 23 || id == 25) ? this.cooldownMax / 2 : 0;
             this.size = size;
             this.colorMain = colorMain;
             this.colorBorder = colorBorder;
@@ -332,8 +397,12 @@ public abstract class DBSagasEntity extends Monster implements GeoEntity, ITextu
     private final AnimatableInstanceCache geoCache = new SingletonAnimatableInstanceCache(this);
 
     private PartEntity<?>[] hitboxParts;
-    private static final UUID GLOBAL_GATE_KEY = new UUID(0L, 0L);
-    private final Map<UUID, Long> partHitGate = new HashMap<>();
+    private static final int NO_ATTACKER_GATE_ID = Integer.MIN_VALUE;
+    private long partGateTick = Long.MIN_VALUE;
+    private final IntOpenHashSet partGateAttackers = new IntOpenHashSet();
+
+    private static Function<DBSagasEntity, float[]> renderExtentsProvider = entity -> null;
+    private float[] renderExtents;
 
     protected DBSagasEntity(EntityType<? extends Monster> pEntityType, Level pLevel) {
         super(pEntityType, pLevel);
@@ -354,6 +423,76 @@ public abstract class DBSagasEntity extends Monster implements GeoEntity, ITextu
 
     protected EntityDimensions getCoreDimensions() {
         return null;
+    }
+
+    public float getHitboxScale() {
+        return 1.0F;
+    }
+
+    public float getVisualHeight() {
+        float height = this.getBbHeight();
+        if (this.hitboxParts == null) return height;
+        float scale = this.getHitboxScale();
+        for (PartEntity<?> generic : this.hitboxParts) {
+            if (generic instanceof DBSagasPart part) height = Math.max(height, part.yOffset * scale + part.getBbHeight() / 2.0F);
+        }
+        return height;
+    }
+
+    protected void refreshHitboxes() {
+        this.refreshDimensions();
+        if (this.hitboxParts != null) {
+            for (PartEntity<?> part : this.hitboxParts) part.refreshDimensions();
+        }
+    }
+
+    @Override
+    public void onSyncedDataUpdated(EntityDataAccessor<?> pKey) {
+        super.onSyncedDataUpdated(pKey);
+        if (SCALE_VAL.equals(pKey) && this.hitboxParts != null) this.refreshHitboxes();
+    }
+
+    public boolean questSpawnsOneAtATime() {
+        return false;
+    }
+
+    private static final double GIANT_RENDER_RANGE = 512.0D;
+
+    @Override
+    public boolean shouldRenderAtSqrDistance(double distance) {
+        if (!this.hasHitboxParts() && this.getScale() <= 2.0F) return super.shouldRenderAtSqrDistance(distance);
+        double range = GIANT_RENDER_RANGE * getViewScale();
+        return distance < range * range;
+    }
+
+    public static void setRenderExtentsProvider(Function<DBSagasEntity, float[]> provider) {
+        renderExtentsProvider = provider;
+    }
+
+    private void refreshRenderExtents() {
+        this.renderExtents = renderExtentsProvider.apply(this);
+        this.noCulling = this.renderExtents == null;
+    }
+
+    @Override
+    public AABB getBoundingBoxForCulling() {
+        float[] extents = this.renderExtents;
+        if (this.hitboxParts == null || extents == null) return super.getBoundingBoxForCulling();
+
+        float hitboxScale = this.getHitboxScale();
+        double radius = this.getBbWidth() * 0.5D;
+        for (PartEntity<?> generic : this.hitboxParts) {
+            if (generic instanceof DBSagasPart part) {
+                radius = Math.max(radius, Math.hypot(part.forwardOffset, part.sideOffset) * hitboxScale + part.getBbWidth() * 0.5D);
+            }
+        }
+
+        float scale = this.getScale();
+        radius = Math.max(radius, extents[0] * scale);
+        double top = Math.max(this.getVisualHeight(), extents[1] * scale);
+        double bottom = Math.min(0.0D, extents[2] * scale);
+        return new AABB(this.getX() - radius, this.getY() + bottom, this.getZ() - radius,
+                this.getX() + radius, this.getY() + top, this.getZ() + radius);
     }
 
     @Override
@@ -385,17 +524,34 @@ public abstract class DBSagasEntity extends Monster implements GeoEntity, ITextu
         return super.getDimensions(pPose);
     }
 
+    @Override
+    protected float getStandingEyeHeight(Pose pPose, EntityDimensions pDimensions) {
+        if (this.hitboxParts != null) {
+            for (PartEntity<?> generic : this.hitboxParts) {
+                if (generic instanceof DBSagasPart part && "head".equals(part.partName)) return part.yOffset * this.getHitboxScale();
+            }
+        }
+        return super.getStandingEyeHeight(pPose, pDimensions);
+    }
+
+    @Override
+    public boolean isInWall() {
+        if (this.hitboxParts != null) return false;
+        return super.isInWall();
+    }
+
     private void positionHitboxParts() {
         if (this.hitboxParts == null) return;
 
         Vec3 forward = Vec3.directionFromRotation(0.0F, this.yBodyRot);
         Vec3 side = new Vec3(-forward.z, 0.0, forward.x);
+        float scale = this.getHitboxScale();
 
         for (PartEntity<?> generic : this.hitboxParts) {
             if (!(generic instanceof DBSagasPart part)) continue;
-            double cx = this.getX() + forward.x * part.forwardOffset + side.x * part.sideOffset;
-            double cz = this.getZ() + forward.z * part.forwardOffset + side.z * part.sideOffset;
-            double cy = this.getY() + part.yOffset - part.getBbHeight() / 2.0;
+            double cx = this.getX() + (forward.x * part.forwardOffset + side.x * part.sideOffset) * scale;
+            double cz = this.getZ() + (forward.z * part.forwardOffset + side.z * part.sideOffset) * scale;
+            double cy = this.getY() + part.yOffset * scale - part.getBbHeight() / 2.0;
 
             double prevX = part.getX(), prevY = part.getY(), prevZ = part.getZ();
             part.setPos(cx, cy, cz);
@@ -403,23 +559,18 @@ public abstract class DBSagasEntity extends Monster implements GeoEntity, ITextu
             part.yo = part.yOld = prevY;
             part.zo = part.zOld = prevZ;
         }
-
-        if (!this.partHitGate.isEmpty()) {
-            long now = this.level().getGameTime();
-            this.partHitGate.values().removeIf(tick -> tick < now);
-        }
     }
 
     public boolean receivePartDamage(DamageSource pSource, float pAmount, DBSagasPart part) {
         if (this.isInvulnerableTo(pSource)) return false;
 
         long now = this.level().getGameTime();
+        if (now != this.partGateTick) {
+            this.partGateTick = now;
+            this.partGateAttackers.clear();
+        }
         Entity attacker = pSource.getEntity();
-        UUID key = attacker != null ? attacker.getUUID() : GLOBAL_GATE_KEY;
-
-        Long last = this.partHitGate.get(key);
-        if (last != null && last == now) return false;
-        this.partHitGate.put(key, now);
+        if (!this.partGateAttackers.add(attacker != null ? attacker.getId() : NO_ATTACKER_GATE_ID)) return false;
 
         return this.hurt(pSource, pAmount);
     }
@@ -445,26 +596,127 @@ public abstract class DBSagasEntity extends Monster implements GeoEntity, ITextu
         this.entityData.set(IS_ZANZOKEN, active);
     }
 
+    public static final int ZANZOKEN_TIER_NONE = 0;
+    public static final int ZANZOKEN_TIER_BASIC = 1;
+    public static final int ZANZOKEN_TIER_MEDIUM = 2;
+    public static final int ZANZOKEN_TIER_ADVANCED = 3;
+    private static final int[] ZANZOKEN_HOPS = {0, 2, 4, 6};
+    private static final int[] ZANZOKEN_AFTERIMAGES = {0, 1, 3, 5};
+    private static final int ZANZOKEN_HOP_INTERVAL = 5;
+    private static final int ZANZOKEN_RECOVERY_TICKS = 5;
+    private static final int ZANZOKEN_DIMENSIONAL_TICKS = 40;
+    private static final int ZANZOKEN_AFTERIMAGE_TICKS = 60;
+    private static final double ZANZOKEN_HOP_MIN_DISTANCE = 4.0D;
+    private static final double ZANZOKEN_HOP_DISTANCE_SPREAD = 2.0D;
+
     private boolean isSafeTeleportLocation(double targetX, double targetY, double targetZ) {
         AABB targetBox = this.getBoundingBox().move(targetX - this.getX(), targetY - this.getY(), targetZ - this.getZ());
         return this.level().noCollision(this, targetBox);
     }
 
+    private int blasterMeteorCastTicks = SkillManager.BLASTER_METEOR_CAST_TICKS;
+
+    public void setBlasterMeteorCastTicks(int ticks) {
+        this.blasterMeteorCastTicks = Math.max(1, ticks);
+    }
+
+    public int getBlasterMeteorCastTicks() {
+        return this.blasterMeteorCastTicks;
+    }
+
+    private boolean dimensionalZanzoken = false;
+
+    public void setDimensionalZanzoken(boolean active, int cooldown) {
+        this.setZanzoken(active ? ZANZOKEN_TIER_BASIC : ZANZOKEN_TIER_NONE, cooldown);
+        this.dimensionalZanzoken = active;
+    }
+
+    public boolean usesDimensionalZanzoken() {
+        return this.dimensionalZanzoken;
+    }
+
+    private boolean executeDimensionalWarp() {
+        LivingEntity target = this.getTarget();
+        if (target == null) return false;
+
+        Vec3 center = target.position();
+        Vec3 forward = Vec3.directionFromRotation(0.0F, target.getYRot());
+        double gap = target.getBbWidth() * 0.5D + this.getBbWidth() * 0.5D + 0.6D;
+        Vec3 destination = null;
+
+        search:
+        for (double scale : new double[]{1.0D, 0.7D, 1.4D}) {
+            Vec3 base = center.subtract(forward.scale(gap * scale));
+            for (double height : new double[]{0.0D, 0.5D, 1.0D, -0.5D}) {
+                Vec3 candidate = base.add(0.0D, height, 0.0D);
+                if (this.level().noCollision(this, this.getBoundingBox().move(candidate.subtract(this.position())))) {
+                    destination = candidate;
+                    break search;
+                }
+            }
+        }
+        if (destination == null) return false;
+
+        Vec3 from = this.position();
+        this.playSound(MainSounds.ZANZOKEN.get(), 1.0F, 0.85F);
+        this.teleportTo(destination.x, destination.y, destination.z);
+        this.lookAt(target, 360.0F, 360.0F);
+
+        if (!this.level().isClientSide) {
+            NetworkHandler.sendToTrackingEntity(new com.dragonminez.common.network.S2C.DimensionalShatterS2C(-1,
+                    from.x, from.y, from.z, this.getBbWidth(), this.getBbHeight(), false), this);
+            NetworkHandler.sendToTrackingEntity(new com.dragonminez.common.network.S2C.DimensionalShatterS2C(this.getId(),
+                    destination.x, destination.y, destination.z, this.getBbWidth(), this.getBbHeight(), true), this);
+        }
+        return true;
+    }
+
     public void performZanzoken() {
+        int tier = this.zanzokenTier > ZANZOKEN_TIER_NONE ? this.zanzokenTier : ZANZOKEN_TIER_BASIC;
+        int hops = this.dimensionalZanzoken ? 1 : ZANZOKEN_HOPS[tier];
+
         this.setZanzokenState(true);
         this.zanzokenTicks = 0;
         this.currentZanzokenCooldown = this.zanzokenCooldownMax;
-        executeZanzokenJump();
+        this.zanzokenHopsLeft = hops;
+        this.zanzokenAfterimagesLeft = this.dimensionalZanzoken ? 0 : ZANZOKEN_AFTERIMAGES[tier];
+        this.zanzokenDurationTicks = this.dimensionalZanzoken
+                ? ZANZOKEN_DIMENSIONAL_TICKS
+                : (hops - 1) * ZANZOKEN_HOP_INTERVAL + ZANZOKEN_RECOVERY_TICKS;
+        this.zanzokenHop();
     }
 
-    private void executeZanzokenJump() {
+    private void zanzokenHop() {
+        this.zanzokenHopsLeft--;
+        this.executeZanzokenJump();
+    }
+
+    private void tickZanzoken() {
+        this.zanzokenTicks++;
+        if (this.zanzokenHopsLeft > 0 && this.zanzokenTicks % ZANZOKEN_HOP_INTERVAL == 0) {
+            this.zanzokenHop();
+        }
+        if (this.zanzokenTicks >= this.zanzokenDurationTicks) {
+            this.setZanzokenState(false);
+            this.zanzokenTicks = 0;
+            this.zanzokenHopsLeft = 0;
+            this.zanzokenAfterimagesLeft = 0;
+        }
+    }
+
+    protected void executeZanzokenJump() {
+        if (this.dimensionalZanzoken && this.executeDimensionalWarp()) return;
+
         this.playSound(MainSounds.ZANZOKEN.get(), 1.0F, 1.0F);
         boolean teleported = false;
+        Vec3 afterimagePos = this.position();
+        float afterimageYaw = this.yBodyRot;
 
         if (this.getTarget() != null) {
+            double minDistance = this.getTarget().getBbWidth() * 0.5D + ZANZOKEN_HOP_MIN_DISTANCE;
             for (int i = 0; i < 10; i++) {
                 double angle = this.random.nextDouble() * Math.PI * 2.0D;
-                double distance = 4.0D + this.random.nextDouble() * 2.0D;
+                double distance = minDistance + this.random.nextDouble() * ZANZOKEN_HOP_DISTANCE_SPREAD;
                 double newX = this.getTarget().getX() + Math.cos(angle) * distance;
                 double newZ = this.getTarget().getZ() + Math.sin(angle) * distance;
                 double newY = this.getTarget().getY();
@@ -486,6 +738,11 @@ public abstract class DBSagasEntity extends Monster implements GeoEntity, ITextu
 
             if (teleported) {
                 this.lookAt(this.getTarget(), 360, 360);
+                if (!this.level().isClientSide && this.zanzokenAfterimagesLeft > 0) {
+                    this.zanzokenAfterimagesLeft--;
+                    NetworkHandler.sendToTrackingEntity(new AfterimageVfxS2C(this.getId(), ZANZOKEN_AFTERIMAGE_TICKS,
+                            new Vec3[]{afterimagePos}, new float[]{afterimageYaw}, false), this);
+                }
             }
         }
 
@@ -506,8 +763,18 @@ public abstract class DBSagasEntity extends Monster implements GeoEntity, ITextu
     }
     public void setFlyingFast(boolean flyingFast) { this.entityData.set(IS_FLYING_FAST, flyingFast); }
     public boolean isFlyingFast() { return this.entityData.get(IS_FLYING_FAST); }
+
+    public int getMotionTrailColor() {
+        return -1;
+    }
+
+    public boolean isMotionTrailActive() {
+        return false;
+    }
     public String getAuraType() {return this.entityData.get(AURA_TYPE);}
     public void setAuraType(String type) {this.entityData.set(AURA_TYPE, type);}
+    public String getAuraType3D() {return this.entityData.get(AURA_TYPE_3D);}
+    public void setAuraType3D(String type) {this.entityData.set(AURA_TYPE_3D, type);}
     public float getScale() {
         if (this.isKid()) {
             return 0.7F;
@@ -565,8 +832,9 @@ public abstract class DBSagasEntity extends Monster implements GeoEntity, ITextu
         this.currentWildSenseCooldown = cooldown;
     }
 
-    public void setZanzoken(boolean active, int cooldown) {
-        this.canUseZanzoken = active;
+    public void setZanzoken(int tier, int cooldown) {
+        this.zanzokenTier = Mth.clamp(tier, ZANZOKEN_TIER_NONE, ZANZOKEN_TIER_ADVANCED);
+        this.canUseZanzoken = this.zanzokenTier > ZANZOKEN_TIER_NONE;
         this.zanzokenCooldownMax = cooldown;
         this.currentZanzokenCooldown = cooldown;
     }
@@ -580,7 +848,10 @@ public abstract class DBSagasEntity extends Monster implements GeoEntity, ITextu
     }
 
     public void addKiSkill(KiSkillType type, int cooldown, float size) {
-        this.addKiSkill(type, cooldown, size, 0xFFFFFF, 0xFFFFFF);
+        int outline = type.getColorOutline() >= 0
+                ? type.getColorOutline()
+                : ColorUtils.darkenColor(type.getColorBorder(), 0.6f);
+        this.addKiSkill(type, cooldown, size, type.getColorMain(), type.getColorBorder(), outline);
     }
 
     public void addKiSkill(KiSkillType type, int cooldown) {
@@ -610,7 +881,7 @@ public abstract class DBSagasEntity extends Monster implements GeoEntity, ITextu
     }
 
     public boolean isDashReady() {
-        return this.aiTier != AiTier.SIMPLE && this.currentDashCooldown <= 0 && this.dashTicks <= 0;
+        return this.currentDashCooldown <= 0 && this.dashTicks <= 0;
     }
 
     public void setLocomotionMode(LocomotionMode mode) {
@@ -677,16 +948,22 @@ public abstract class DBSagasEntity extends Monster implements GeoEntity, ITextu
             }
         });
 
-        this.goalSelector.addGoal(2, new SagasUseSkillGoal(this));
         this.goalSelector.addGoal(3, new MeleeAttackGoal(this, 1.8D, false) {
             @Override
             public boolean canUse() {
-                return DBSagasEntity.this.isMeleeAllowed() && !DBSagasEntity.this.isStunned() && super.canUse();
+                return DBSagasEntity.this.isMeleeAllowed() && !DBSagasEntity.this.isStunned() && (this.targetInReach() || super.canUse());
             }
 
             @Override
             public boolean canContinueToUse() {
-                return DBSagasEntity.this.isMeleeAllowed() && !DBSagasEntity.this.isStunned() && super.canContinueToUse();
+                return DBSagasEntity.this.isMeleeAllowed() && !DBSagasEntity.this.isStunned() && (this.targetInReach() || super.canContinueToUse());
+            }
+
+            private boolean targetInReach() {
+                LivingEntity target = DBSagasEntity.this.getTarget();
+                if (target == null || !target.isAlive() || !DBSagasEntity.this.hasGiantBody()) return false;
+                if (target instanceof Player player && (player.isSpectator() || player.isCreative())) return false;
+                return DBSagasEntity.this.meleeDistanceSqr(target) <= this.getAttackReachSqr(target);
             }
 
             @Override
@@ -775,9 +1052,15 @@ public abstract class DBSagasEntity extends Monster implements GeoEntity, ITextu
 
         if (this.hitboxParts != null) {
             this.positionHitboxParts();
+            if (this.level().isClientSide) this.refreshRenderExtents();
+        }
+
+        if (this.level().isClientSide) {
+            this.clientCastTicks = this.isCasting() ? this.clientCastTicks + 1 : 0;
         }
 
         if (!this.level().isClientSide) {
+            this.entityData.set(IS_STUNNED, this.isAlive() && this.isStunned());
 
             if (!this.isAlive()) {
                 if (this.isCasting()) this.stopCasting();
@@ -791,9 +1074,17 @@ public abstract class DBSagasEntity extends Monster implements GeoEntity, ITextu
                 this.getNavigation().stop();
             }
 
+            if (this.combatFrozen) {
+                if (this.isCasting()) this.stopCasting();
+                if (this.isComboing()) this.stopCombo();
+                this.getNavigation().stop();
+                this.setDeltaMovement(0.0D, this.getDeltaMovement().y, 0.0D);
+                if (this.getTarget() != null) this.lookAt(this.getTarget(), 30.0F, 30.0F);
+            }
+
             if (this.kiHitSlowTicks > 0) this.kiHitSlowTicks--;
 
-            this.handleCommonCombatMovement(this.getTarget(), this.isCasting() || this.isComboing() || this.isTransforming() || this.isStunned());
+            this.handleCommonCombatMovement(this.getTarget(), this.isCasting() || this.isComboing() || this.isTransforming() || this.isStunned() || this.isStrikeClashing());
 
             if (this.tickCount % AURA_LIGHT_INTERVAL == 0) updateAuraLight();
 
@@ -830,62 +1121,71 @@ public abstract class DBSagasEntity extends Monster implements GeoEntity, ITextu
                 }
 
                 if (this.isZanzoken()) {
-                    this.zanzokenTicks++;
-                    if (this.zanzokenTicks % 5 == 0) {
-                        executeZanzokenJump();
-                    }
-                    if (this.zanzokenTicks >= 40) {
-                        this.setZanzokenState(false);
-                        this.zanzokenTicks = 0;
-                    }
+                    this.tickZanzoken();
                 }
 
                 if (this.isCasting()) {
                     this.castTimer++;
 
-                    this.getNavigation().stop();
-                    this.setDeltaMovement(0, 0, 0);
-
-                    if (this.getTarget() != null) {
-                        this.lookAt(this.getTarget(), 360, 360);
-                    }
-
                     int skill = this.getSkillType();
+                    boolean dragonRush = skill == 23 && this.castTimer > SkillManager.DRAGON_FIST_WINDUP;
+
+                    this.getNavigation().stop();
+                    if (!dragonRush) this.setDeltaMovement(0, 0, 0);
+
+                    if (this.getTarget() != null && !dragonRush) {
+                        this.combatBrain.aimDuringCast(this.getTarget(), skill);
+                    }
 
                     if (skill == 20) {
                         this.setDeltaMovement(0, 0.15D, 0);
-                    } else {
+                    } else if (!dragonRush) {
                         this.setDeltaMovement(0, this.getDeltaMovement().y, 0);
                     }
 
-                    if (skill == 7 && this.level() instanceof ServerLevel serverLevel) {
-                        if (this.castTimer > 5 && this.castTimer < 30) {
-                            for (int i = 0; i < 25; i++) {
-                                double distance = 3.0D + this.random.nextDouble() * 2.0D;
-                                double angle = this.random.nextDouble() * Math.PI * 2.0D;
-                                double heightOffset = (this.random.nextDouble() - 0.5D) * this.getBbHeight();
-
-                                double spawnX = this.getX() + Math.cos(angle) * distance;
-                                double spawnY = this.getY() + (this.getBbHeight() / 2.0) + heightOffset;
-                                double spawnZ = this.getZ() + Math.sin(angle) * distance;
-
-                                double velX = (this.getX() - spawnX) * 0.15D;
-                                double velY = ((this.getY() + this.getBbHeight() * 0.8) - spawnY) * 0.15D;
-                                double velZ = (this.getZ() - spawnZ) * 0.15D;
-
-                                serverLevel.sendParticles(ParticleTypes.CLOUD, spawnX, spawnY, spawnZ, 0, velX, velY, velZ, 1.0D);
-                            }
-                        }
+                    if (skill == 7) {
+                        SkillManager.tickRoar(this, this.castTimer);
                     }
 
                     if (this.castTimer == 1) {
-                        if (skill != 7 && skill != 13) {
+                        if (skill != 7 && skill != 13 && skill != 22 && skill != 23 && skill != 25 && skill != 31 && skill != 32
+                                && skill != 35 && skill != 36 && skill != 37) {
                             executeSkillEffect(skill);
                         }
                     }
 
-                    if (skill == 7 && this.castTimer == 30) {
+                    if (skill == 35) {
+                        SkillManager.tickOozaruFist(this, this.getTarget(), this.castTimer);
+                    }
+
+                    if (skill == 36) {
+                        SkillManager.tickOozaruSlam(this, this.castTimer);
+                    }
+
+                    if (skill == 23 && this.castTimer == SkillManager.DRAGON_FIST_WINDUP) {
                         executeSkillEffect(skill);
+                    }
+
+                    // Wolf Fang is a melee rush, not a one-shot projectile: it needs its own
+                    // per-tick beat (engage, jabs, final blow) like the player-side strike attack.
+                    if (skill == 22) {
+                        SkillManager.tickWolfFang(this, this.getTarget(), this.castTimer);
+                    }
+
+                    if (skill == 31) {
+                        SkillManager.tickDimensionalPunch(this, this.getTarget(), this.castTimer);
+                    }
+
+                    if (skill == 32) {
+                        SkillManager.tickDestructionBalls(this, this.getTarget(), this.castTimer);
+                    }
+
+                    if (skill == 25 && this.castTimer == SkillManager.TAIYOKEN_FLASH_TICK) {
+                        SkillManager.castTaiyoken(this);
+                    }
+
+                    if (skill == 37 && this.castTimer == SkillManager.GUM_BIND_FIRE_TICK) {
+                        SkillManager.castGumBind(this, this.getTarget());
                     }
 
                     if (skill == 13) {
@@ -894,24 +1194,10 @@ public abstract class DBSagasEntity extends Monster implements GeoEntity, ITextu
                         }
                     }
 
-                    int maxCastDuration = SkillManager.getCastDuration(skill);
+                    int maxCastDuration = SkillManager.getCastDuration(this, skill);
 
                     if (this.castTimer >= maxCastDuration) {
                         this.stopCasting();
-                    }
-                }
-
-                if (this.aiTier == AiTier.SIMPLE && this.canUseWildSense && this.currentWildSenseCooldown <= 0 && this.getTarget() != null && !this.isCasting() && !this.isComboing() && !clashing) {
-                    this.performTeleport(this.getTarget());
-                    this.currentWildSenseCooldown = this.wildSenseCooldownMax;
-                }
-
-                if (this.hurtTime > 0 && !this.isCasting() && !this.isComboing() && !this.isZanzoken()) {
-                    if (this.canUseZanzoken && this.currentZanzokenCooldown <= 0 && !this.isZanzoken()) {
-                        this.performZanzoken();
-                    }
-                    else if (this.canEvade && this.currentEvadeTimer <= 0 && !this.isEvading()) {
-                        this.performEvasion();
                     }
                 }
 
@@ -923,33 +1209,17 @@ public abstract class DBSagasEntity extends Monster implements GeoEntity, ITextu
                     }
                 }
 
-                this.tickDodgeReaction();
-
-                if (this.comboEnabled) {
-                    if (this.isComboing()) {
+                if (this.comboEnabled && this.isComboing()) {
+                    if (this.isStrikeRushing()) {
+                        this.tickStrikeRush();
+                    } else {
                         this.comboTimer++;
                         handleComboLogic();
-                    } else if (this.aiTier == AiTier.SIMPLE && this.currentComboCooldown <= 0 && this.globalActionCooldown <= 0 && !this.isCasting() && this.getTarget() != null && !clashing && !this.isStunned()) {
-                        if (this.distanceTo(this.getTarget()) < 6.0D) {
-                            this.startComboAuto();
-                        }
                     }
                 }
 
-                if (this.aiTier != AiTier.SIMPLE) {
-                    LivingEntity decisionTarget = this.getTarget();
-                    if (decisionTarget == null || !decisionTarget.isAlive()) {
-                        if (!this.meleeAllowed) this.meleeAllowed = true;
-                        this.setLocomotionMode(LocomotionMode.WALK);
-                    } else {
-                        if (this.decisionCooldown > 0) this.decisionCooldown--;
-                        if (this.decisionCooldown <= 0 && !this.isCasting() && !this.isComboing()
-                                && !this.isZanzoken() && !this.isEvading() && !clashing && !this.isStunned()) {
-                            this.decisionCooldown = DECISION_INTERVAL;
-                            this.runBrainDecision();
-                        }
-                    }
-                }
+                this.tickManeuver();
+                this.combatBrain.tick();
             }
 
             if (this.isTransforming()) {
@@ -999,92 +1269,307 @@ public abstract class DBSagasEntity extends Monster implements GeoEntity, ITextu
         ComboManager.handleCombo(this, this.comboTarget, comboId, this.comboTimer);
     }
 
-    private void tickDodgeReaction() {
-        if (this.aiTier != AiTier.ADVANCED || !this.canUseZanzoken) return;
-        if (this.isCasting() || this.isComboing() || this.isZanzoken() || this.isTransforming()) return;
-
-        if (!(this.getTarget() instanceof ServerPlayer sp)) {
-            this.wasTargetCasting = false;
-            return;
-        }
-
-        StatsData data = StatsProvider.get(StatsCapability.INSTANCE, sp).resolve().orElse(null);
-        if (data == null) {
-            this.wasTargetCasting = false;
-            return;
-        }
-
-        boolean nowCasting = data.getTechniques().isTechniqueCharging();
-        boolean firing = TechniqueDispatcher.isFiringKiAttack(sp);
-        float chargePct = data.getTechniques().getTechniqueChargePercent();
-
-        if (this.wasTargetCasting && !nowCasting && firing && this.currentZanzokenCooldown <= 0) {
-            float chance = 0.35F + Math.min(0.45F, (chargePct / 200.0F) * 0.5F);
-            if (this.random.nextFloat() < chance) {
-                this.performZanzoken();
-            }
-        }
-
-        this.wasTargetCasting = nowCasting;
+    private void tickStrikeRush() {
+        if (StrikeClash.tryStart(this)) return;
+        ComboManager.RushStep step = ComboManager.tickStrikeRush(this, this.comboTarget, this.strikeRushTicks--);
+        if (step == ComboManager.RushStep.MISSED) this.stopCombo();
+        else if (step == ComboManager.RushStep.CONNECTED) this.endStrikeRush();
     }
 
-    private void runBrainDecision() {
-        LivingEntity target = this.getTarget();
-        if (target == null) return;
+    private void endStrikeRush() {
+        this.entityData.set(IS_STRIKE_RUSHING, false);
+        this.strikeRushTicks = 0;
+        if (!this.isFlying()) this.setNoGravity(false);
+    }
 
-        CombatContext ctx = CombatContext.snapshot(this, target);
-        SagasCombatBrain.Intent intent = SagasCombatBrain.decide(ctx);
+    public boolean isStrikeRushing() {return this.entityData.get(IS_STRIKE_RUSHING);}
 
-        switch (intent.type) {
-            case CAST -> {
-                if (this.random.nextFloat() < CAST_COMMIT_CHANCE) {
-                    this.startSkill(intent.skill);
-                } else {
-                    this.meleeAllowed = true;
-                    this.setLocomotionMode(LocomotionMode.RUN);
-                    if (this.dashTicks <= 0) this.getAttribute(Attributes.MOVEMENT_SPEED).setBaseValue(this.defaultMovementSpeed);
+    public boolean isStrikeClashing() {return this.entityData.get(IS_STRIKE_CLASHING);}
+
+    public LivingEntity getStrikeRushTarget() {
+        return this.isStrikeRushing() ? this.comboTarget : null;
+    }
+
+    public void beginStrikeClash() {
+        this.stopCombo();
+        this.entityData.set(IS_STRIKE_CLASHING, true);
+        this.getNavigation().stop();
+        this.setNoGravity(true);
+        this.setDeltaMovement(Vec3.ZERO);
+    }
+
+    public void endStrikeClash(Boolean won) {
+        this.entityData.set(IS_STRIKE_CLASHING, false);
+        if (!this.isFlying()) this.setNoGravity(false);
+        if (Boolean.TRUE.equals(won)) {
+            this.currentComboCooldown = 0;
+            this.globalActionCooldown = 0;
+        } else if (Boolean.FALSE.equals(won)) {
+            this.currentComboCooldown = this.comboCooldownMax;
+        }
+    }
+
+    public void setMeleeAllowed(boolean allowed) {
+        this.meleeAllowed = allowed;
+    }
+
+    public void restoreMovementSpeed() {
+        if (this.dashTicks <= 0) this.getAttribute(Attributes.MOVEMENT_SPEED).setBaseValue(this.defaultMovementSpeed);
+    }
+
+    public double getMeleeReach() {
+        return 4.5D + this.getBbWidth() * 0.5D;
+    }
+
+    public boolean hasGiantBody() {
+        return this.getScale() > 2.0F || this.hasHitboxParts();
+    }
+
+    public boolean zanzokensOnAnyHit() {
+        return false;
+    }
+
+    public double meleeDistanceSqr(LivingEntity target) {
+        double dx = target.getX() - this.getX();
+        double dz = target.getZ() - this.getZ();
+        double dy = target.getY() - this.getY();
+        if (this.hasGiantBody()) {
+            double bottom = this.getBoundingBox().minY;
+            double top = this.getBoundingBox().maxY;
+            if (this.hitboxParts != null) {
+                for (PartEntity<?> part : this.hitboxParts) {
+                    bottom = Math.min(bottom, part.getBoundingBox().minY);
+                    top = Math.max(top, part.getBoundingBox().maxY);
                 }
             }
-            case COMBO -> {
-                if (this.comboEnabled && this.currentComboCooldown <= 0) this.startCombo(intent.comboId);
+            if (target.getY() > top) dy = target.getY() - top;
+            else if (target.getBoundingBox().maxY < bottom) dy = bottom - target.getBoundingBox().maxY;
+            else dy = 0.0D;
+        }
+        return dx * dx + dy * dy + dz * dz;
+    }
+
+    @Override
+    public double getPerceivedTargetDistanceSquareForMeleeAttack(LivingEntity target) {
+        return this.meleeDistanceSqr(target);
+    }
+
+    public boolean isTournamentBound() {
+        return this.getPersistentData().contains("dmz_tournament_match");
+    }
+
+    public boolean isBlindedByTaiyoken() {
+        return this.getPersistentData().getLong("dmz_taiyoken_blind_until") > this.level().getGameTime();
+    }
+
+    public boolean brainCanTarget(LivingEntity candidate) {
+        return true;
+    }
+
+    protected boolean brainMovementAllowed() {
+        return true;
+    }
+
+    public void scaleZanzokenCooldown(float multiplier) {
+        if (multiplier <= 0.0F) return;
+        this.currentZanzokenCooldown = Math.max(1, Math.round(this.currentZanzokenCooldown * multiplier));
+    }
+
+    public void refundSkillCooldowns(float fraction) {
+        if (fraction <= 0.0F) return;
+        for (KiSkill skill : this.skillPool) {
+            if (skill.currentCooldown > 0) {
+                skill.currentCooldown = Math.max(0, skill.currentCooldown - Math.round(skill.cooldownMax * fraction));
             }
-            case TELEPORT -> this.performProactiveTeleport(target);
-            case APPROACH -> this.applyApproach(intent.locomotion, target);
-            case MELEE -> {
-                this.meleeAllowed = true;
-                this.setLocomotionMode(LocomotionMode.RUN);
-                if (this.dashTicks <= 0) this.getAttribute(Attributes.MOVEMENT_SPEED).setBaseValue(this.defaultMovementSpeed);
-            }
-            default -> {}
         }
     }
 
-    public boolean hasSkillReady() {
-        if (this.isInSkillGracePeriod()) {
+    public boolean startSkillReactive(KiSkill skill) {
+        if (skill == null || this.isCasting() || this.isComboing()) return false;
+        int savedGlobal = this.globalActionCooldown;
+        int savedPost = this.postCastCooldown;
+        this.globalActionCooldown = 0;
+        this.postCastCooldown = 0;
+        this.startSkill(skill);
+        if (!this.isCasting()) {
+            this.globalActionCooldown = savedGlobal;
+            this.postCastCooldown = savedPost;
             return false;
         }
+        return true;
+    }
 
-        if (this.postCastCooldown > 0 || this.globalActionCooldown > 0) {
-            return false;
+    public boolean isManeuvering() {
+        return this.maneuver != Maneuver.NONE && this.maneuverTicks > 0;
+    }
+
+    public void cancelManeuver() {
+        this.maneuver = Maneuver.NONE;
+        this.maneuverTicks = 0;
+        this.maneuverPoint = null;
+        this.meleeAllowed = true;
+    }
+
+    public void beginStrafe(int ticks, int dir) {
+        if (!this.brainMovementAllowed()) return;
+        this.maneuver = Maneuver.STRAFE;
+        this.maneuverTicks = ticks;
+        this.maneuverDir = dir >= 0 ? 1 : -1;
+        this.meleeAllowed = false;
+        this.getNavigation().stop();
+        this.setLocomotionMode(LocomotionMode.WALK);
+        this.restoreMovementSpeed();
+    }
+
+    public void beginKite(int ticks) {
+        if (!this.brainMovementAllowed()) return;
+        this.maneuver = Maneuver.KITE;
+        this.maneuverTicks = ticks;
+        this.meleeAllowed = false;
+        this.setLocomotionMode(LocomotionMode.RUN);
+        this.restoreMovementSpeed();
+    }
+
+    public void beginFlank(Vec3 point, int ticks) {
+        if (!this.brainMovementAllowed() || point == null) return;
+        this.maneuver = Maneuver.FLANK;
+        this.maneuverTicks = ticks;
+        this.maneuverPoint = point;
+        this.meleeAllowed = false;
+        this.setLocomotionMode(LocomotionMode.RUN);
+        this.restoreMovementSpeed();
+    }
+
+    private void tickManeuver() {
+        if (this.maneuver == Maneuver.NONE) return;
+        LivingEntity target = this.getTarget();
+        if (--this.maneuverTicks <= 0 || target == null || !target.isAlive() || this.isCasting() || this.isComboing()
+                || this.isZanzoken() || this.isStunned() || this.combatFrozen || !this.brainMovementAllowed()) {
+            this.cancelManeuver();
+            return;
         }
+        if (this.isFlying()) return;
 
-        if (this.isComboing() || this.isZanzoken()) {
-            return false;
+        switch (this.maneuver) {
+            case STRAFE -> {
+                this.rotateBodyToTarget(target);
+                double d = this.distanceTo(target);
+                float forward = 0.0F;
+                if (d > this.getMeleeReach() + 2.5D) forward = 0.45F;
+                else if (d < 2.0D) forward = -0.3F;
+                this.getMoveControl().strafe(forward, this.maneuverDir * 0.55F);
+            }
+            case KITE -> {
+                Vec3 away = new Vec3(this.getX() - target.getX(), 0.0D, this.getZ() - target.getZ());
+                if (away.lengthSqr() < 1.0E-4D) away = this.getLookAngle().reverse();
+                away = away.normalize();
+                if (this.tickCount % 5 == 0 || this.getNavigation().isDone()) {
+                    Vec3 goal = this.position().add(away.scale(6.0D));
+                    this.getNavigation().moveTo(goal.x, goal.y, goal.z, 1.15D);
+                }
+                this.getLookControl().setLookAt(target, 30.0F, 30.0F);
+                if (this.distanceTo(target) > EnemyBrain.MID_RANGE) this.cancelManeuver();
+            }
+            case FLANK -> {
+                if (this.maneuverPoint == null) {
+                    this.cancelManeuver();
+                    return;
+                }
+                if (this.tickCount % 5 == 0 || this.getNavigation().isDone()) {
+                    this.getNavigation().moveTo(this.maneuverPoint.x, this.maneuverPoint.y, this.maneuverPoint.z, 1.2D);
+                }
+                this.getLookControl().setLookAt(target, 30.0F, 30.0F);
+                if (this.distanceToSqr(this.maneuverPoint) < 2.25D || this.distanceTo(target) <= this.getMeleeReach()) {
+                    this.cancelManeuver();
+                }
+            }
+            default -> this.cancelManeuver();
         }
+    }
 
-        if (BeamClashManager.isClashing(this.getUUID())) {
-            return false;
+    private boolean moveManeuverInAir(LivingEntity target) {
+        if (this.maneuver == Maneuver.NONE || this.maneuverTicks <= 0) return false;
+        double flyspeed = this.getFlySpeed();
+        Vec3 toTarget = new Vec3(target.getX() - this.getX(), 0.0D, target.getZ() - this.getZ());
+        if (toTarget.lengthSqr() < 1.0E-4D) toTarget = this.getLookAngle();
+        toTarget = toTarget.normalize();
+        double dy = (target.getY() + 1.0D) - this.getY();
+        double vy = Mth.clamp(dy * 0.15D, -flyspeed, flyspeed);
+        Vec3 motion;
+        switch (this.maneuver) {
+            case STRAFE -> {
+                Vec3 side = new Vec3(-toTarget.z, 0.0D, toTarget.x).scale(this.maneuverDir);
+                double d = this.distanceTo(target);
+                Vec3 radial = d > this.getMeleeReach() + 2.5D ? toTarget.scale(0.5D) : (d < 2.0D ? toTarget.scale(-0.4D) : Vec3.ZERO);
+                motion = side.add(radial).normalize().scale(flyspeed * 0.8D);
+            }
+            case KITE -> motion = toTarget.scale(-flyspeed * 0.9D);
+            case FLANK -> {
+                if (this.maneuverPoint == null) return false;
+                Vec3 toPoint = new Vec3(this.maneuverPoint.x - this.getX(), 0.0D, this.maneuverPoint.z - this.getZ());
+                if (toPoint.lengthSqr() < 2.25D) {
+                    this.cancelManeuver();
+                    return false;
+                }
+                motion = toPoint.normalize().scale(flyspeed);
+            }
+            default -> {
+                return false;
+            }
         }
+        this.setDeltaMovement(motion.x, vy, motion.z);
+        this.rotateBodyToTarget(target);
+        return true;
+    }
 
-        if (this.getTarget() == null || this.distanceTo(this.getTarget()) <= 4.0D) {
-            return false;
+    public boolean isBackstepReady() {
+        return this.canEvade && this.currentEvadeTimer <= 0 && !this.isEvading();
+    }
+
+    public void performSidestep(Vec3 approachDir) {
+        if (this.isEvading() || this.isZanzoken() || this.combatFrozen) return;
+        Vec3 dir = approachDir != null ? new Vec3(approachDir.x, 0.0D, approachDir.z) : Vec3.ZERO;
+        if (dir.lengthSqr() < 1.0E-4D) dir = new Vec3(this.getLookAngle().x, 0.0D, this.getLookAngle().z);
+        if (dir.lengthSqr() < 1.0E-4D) dir = new Vec3(1.0D, 0.0D, 0.0D);
+        dir = dir.normalize();
+        Vec3 left = new Vec3(-dir.z, 0.0D, dir.x);
+        Vec3 right = left.reverse();
+        boolean leftFree = this.level().noCollision(this, this.getBoundingBox().move(left.scale(2.0D)));
+        boolean rightFree = this.level().noCollision(this, this.getBoundingBox().move(right.scale(2.0D)));
+        Vec3 side;
+        if (leftFree && rightFree) side = this.random.nextBoolean() ? left : right;
+        else if (leftFree) side = left;
+        else if (rightFree) side = right;
+        else side = dir.reverse();
+
+        this.getNavigation().stop();
+        double vy = this.isFlying() ? 0.15D : (this.onGround() ? 0.25D : 0.05D);
+        this.setDeltaMovement(side.scale(SIDESTEP_SPEED).add(0.0D, vy, 0.0D));
+        this.hurtMarked = true;
+        this.setEvading(true);
+        this.evasionStateTicks = 12 - SIDESTEP_STATE_TICKS;
+        this.playSound(MainSounds.TP.get(), 0.8F, 1.4F);
+        if (this.level() instanceof ServerLevel serverLevel) {
+            serverLevel.sendParticles(ParticleTypes.CLOUD, this.getX(), this.getY() + 0.2, this.getZ(), 6, 0.2, 0.05, 0.2, 0.02);
         }
+    }
 
-        for (KiSkill skill : skillPool) {
-            if (skill.currentCooldown <= 0) return true;
+    public void performDashAway(Vec3 approachDir) {
+        if (this.isEvading() || this.isZanzoken() || this.combatFrozen) return;
+        Vec3 dir = approachDir != null ? new Vec3(approachDir.x, 0.0D, approachDir.z) : Vec3.ZERO;
+        if (dir.lengthSqr() < 1.0E-4D) dir = new Vec3(this.getLookAngle().x, 0.0D, this.getLookAngle().z);
+        if (dir.lengthSqr() < 1.0E-4D) dir = new Vec3(1.0D, 0.0D, 0.0D);
+        dir = dir.normalize();
+        this.getNavigation().stop();
+        this.setDeltaMovement(dir.scale(DASH_AWAY_SPEED).add(0.0D, this.onGround() ? 0.3D : 0.1D, 0.0D));
+        this.hurtMarked = true;
+        this.setEvading(true);
+        this.evasionStateTicks = 0;
+        this.currentDashCooldown = Math.max(this.currentDashCooldown, DASH_COOLDOWN / 2);
+        this.playSound(MainSounds.TP.get(), 1.0F, 1.2F);
+        if (this.level() instanceof ServerLevel serverLevel) {
+            serverLevel.sendParticles(ParticleTypes.CLOUD, this.getX(), this.getY() + 0.2, this.getZ(), 8, 0.3, 0.05, 0.3, 0.03);
         }
-
-        return false;
     }
 
     public void startSkill(KiSkill skill) {
@@ -1098,15 +1583,6 @@ public abstract class DBSagasEntity extends Monster implements GeoEntity, ITextu
         this.startCasting(skill.id);
 
         skill.currentCooldown = skill.cooldownMax;
-    }
-
-    public void startFirstAvailableSkill() {
-        for (KiSkill skill : this.skillPool) {
-            if (skill.currentCooldown <= 0) {
-                this.startSkill(skill);
-                return;
-            }
-        }
     }
 
     private void updateAuraLight() {
@@ -1176,6 +1652,7 @@ public abstract class DBSagasEntity extends Monster implements GeoEntity, ITextu
     public void remove(RemovalReason reason) {
         if (!this.level().isClientSide && this.level() instanceof ServerLevel serverLevel) {
             removeAuraLight(serverLevel);
+            if (this.isComboing() && !this.isStrikeRushing()) ComboManager.onComboStopped(this, this.getComboId(), this.comboTarget);
         }
         super.remove(reason);
     }
@@ -1186,13 +1663,34 @@ public abstract class DBSagasEntity extends Monster implements GeoEntity, ITextu
         controllers.add(new AnimationController<>(this, "skill_controller", 5, DBSagasAnimationHandler::skillPredicate));
         controllers.add(new AnimationController<>(this, "evasion_controller", 5, DBSagasAnimationHandler::evasionPredicate));
         controllers.add(new AnimationController<>(this, "attack_controller", 0, DBSagasAnimationHandler::attackPredicate));
+        controllers.add(new AnimationController<>(this, HURT_CONTROLLER, 0, DBSagasAnimationHandler::hurtPredicate)
+                .triggerableAnim(HURT_ANIM_LEFT, DBSagasAnimations.ANIM_HURT_LEFT)
+                .triggerableAnim(HURT_ANIM_RIGHT, DBSagasAnimations.ANIM_HURT_RIGHT)
+                .triggerableAnim(HURT_ANIM_GODFIST, DBSagasAnimations.ANIM_HURT_GODFIST)
+                .triggerableAnim(HURT_ANIM_TOP, DBSagasAnimations.ANIM_HURT_TOP)
+                .triggerableAnim(HURT_ANIM_TOP2, DBSagasAnimations.ANIM_HURT_TOP2)
+                .triggerableAnim(HURT_ANIM_DOWN, DBSagasAnimations.ANIM_HURT_DOWN)
+                .triggerableAnim(HURT_ANIM_GRABBED, DBSagasAnimations.ANIM_HURT_GRABBED)
+                .triggerableAnim(HURT_ANIM_KO, DBSagasAnimations.ANIM_HURT_KO)
+                .triggerableAnim(HURT_ANIM_PARRIED, DBSagasAnimations.ANIM_HURT_PARRIED)
+                .triggerableAnim(HURT_ANIM_GUM_BOUND, DBSagasAnimations.ANIM_GUM_BOUND)
+                .receiveTriggeredAnimations());
         controllers.add(new AnimationController<>(this, "tail_controller", 5, DBSagasAnimationHandler::tailPredicate));
         controllers.add(new AnimationController<>(this, "cape_controller", 5, DBSagasAnimationHandler::capePredicate));
     }
 
     @Override
     public void travel(Vec3 pTravelVector) {
-        if (this.isCasting() || this.isComboing() || this.isTransforming() || this.isZanzoken() || this.isStunned()) {
+        if (this.isStrikeClashing()) {
+            this.setDeltaMovement(Vec3.ZERO);
+            return;
+        }
+        boolean acting = this.isCasting() || this.isComboing() || this.isTransforming() || this.isZanzoken();
+        if (!acting && this.isStunned() && this.knockbackLockTicks > 0) {
+            super.travel(Vec3.ZERO);
+            return;
+        }
+        if (acting || this.isStunned()) {
             this.setDeltaMovement(0, this.getDeltaMovement().y, 0);
             super.travel(Vec3.ZERO);
             return;
@@ -1216,6 +1714,7 @@ public abstract class DBSagasEntity extends Monster implements GeoEntity, ITextu
 
     public void setCasting(boolean casting) {this.entityData.set(IS_CASTING, casting);}
     public boolean isCasting() {return this.entityData.get(IS_CASTING);}
+    public int getCastTimer() {return this.castTimer;}
 
     public void setFlying(boolean flying) {this.entityData.set(IS_FLYING, flying);}
     public boolean isFlying() {return this.entityData.get(IS_FLYING);}
@@ -1253,16 +1752,60 @@ public abstract class DBSagasEntity extends Monster implements GeoEntity, ITextu
     public int getTextureVariant() {return this.entityData.get(TEXTURE_VARIANT);}
     public void setTextureVariant(int variant) {this.entityData.set(TEXTURE_VARIANT, variant);}
 
+    public boolean isSupervillain() {return this.entityData.get(IS_SUPERVILLAIN);}
+    public void setSupervillain(boolean supervillain) {this.entityData.set(IS_SUPERVILLAIN, supervillain);}
+
+    public boolean isCharacterAlive() {return this.entityData.get(IS_CHARACTER_ALIVE);}
+    public void setCharacterAlive(boolean alive) {this.entityData.set(IS_CHARACTER_ALIVE, alive);}
+
+    private java.util.Set<java.util.UUID> raidTargets = null;
+    public void setRaidTargets(java.util.Set<java.util.UUID> targets) {this.raidTargets = targets;}
+
+    public static final String RAID_ID_TAG = "dmz_raid_id";
+    public static final String RAID_REPLACES_TAG = "dmz_raid_replaces";
+    public static final String RAID_SUPERVILLAIN_SOURCE_TAG = "dmz_pending_raid";
+
+    public boolean isValidRaidTarget(Entity entity) {
+        return this.raidTargets == null || (entity != null && this.raidTargets.contains(entity.getUUID()));
+    }
+    /**
+     * Held still without losing its target: used for the countdown before a tournament bout, where
+     * the fighter must already be locked onto its challenger but must not act until the bell.
+     *
+     * <p>Distinct from {@link #raidDormant}, which clears the target and refuses new ones, and from
+     * {@code setNoAi}, which only stops goals and navigation — the skills, teleport and evasion in
+     * {@link #tick()} run outside the goal system and would still fire.
+     */
+    private boolean combatFrozen = false;
+    public boolean isCombatFrozen() {return this.combatFrozen;}
+    public void setCombatFrozen(boolean frozen) {
+        this.combatFrozen = frozen;
+        if (frozen) {
+            if (this.isCasting()) this.stopCasting();
+            if (this.isComboing()) this.stopCombo();
+            this.getNavigation().stop();
+        }
+    }
+
+    private boolean raidDormant = false;
+    public boolean isRaidDormant() {return this.raidDormant;}
+    public void setRaidDormant(boolean dormant) {
+        this.raidDormant = dormant;
+        if (dormant) super.setTarget(null);
+    }
+
     public int getComboId() {
         return this.entityData.get(CURRENT_COMBO_ID);
     }
 
     public void stopCombo() {
+        if (this.isStrikeRushing()) this.endStrikeRush();
+        else ComboManager.onComboStopped(this, this.getComboId(), this.comboTarget);
         this.setComboing(false);
         this.entityData.set(CURRENT_COMBO_ID, -1);
         this.comboTimer = 0;
         this.comboTarget = null;
-        this.globalActionCooldown = GLOBAL_ACTION_LOCKOUT;
+        this.globalActionCooldown = this.getAiProfile().globalActionLockout;
 
         if (this.isCharge()) {
             this.setKiCharge(false);
@@ -1276,9 +1819,11 @@ public abstract class DBSagasEntity extends Monster implements GeoEntity, ITextu
 
     public void startCombo(int comboId) {
         if (this.isInSkillGracePeriod()) return;
+        if (this.combatFrozen) return;
         if (this.isStunned()) return;
         if (this.globalActionCooldown > 0) return;
         if (this.getTarget() == null) return;
+        if (BeamClashManager.isClashing(this.getUUID())) return;
 
         int resolved = comboId;
         if (resolved < 0) {
@@ -1291,11 +1836,18 @@ public abstract class DBSagasEntity extends Monster implements GeoEntity, ITextu
             }
         }
 
+        this.cancelManeuver();
         this.comboTarget = this.getTarget();
         this.setComboing(true);
         this.entityData.set(CURRENT_COMBO_ID, resolved);
         this.comboTimer = 0;
+        if (!this.level().isClientSide && ComboManager.usesStrikeRush(resolved)) {
+            this.entityData.set(IS_STRIKE_RUSHING, true);
+            this.strikeRushTicks = ComboManager.STRIKE_RUSH_TICKS;
+            ComboManager.startStrikeRush(this);
+        }
         this.currentComboCooldown = Math.round(this.comboCooldownMax * ComboType.tierOf(resolved).getCooldownFactor());
+        if (!this.level().isClientSide) this.combatBrain.onComboStarted(resolved);
     }
 
     public void startComboAuto() {
@@ -1314,7 +1866,9 @@ public abstract class DBSagasEntity extends Monster implements GeoEntity, ITextu
         return this.getHealth() <= this.getMaxHealth() / 2.0F;
     }
 
-    private void performEvasion() {
+    public void performBackstep() {
+        if (this.isEvading() || this.isZanzoken() || this.combatFrozen) return;
+        this.getNavigation().stop();
         this.setEvading(true);
         this.evasionStateTicks = 0;
         this.currentEvadeTimer = this.evadeCooldownMax;
@@ -1337,6 +1891,7 @@ public abstract class DBSagasEntity extends Monster implements GeoEntity, ITextu
 
     public void performTeleport(LivingEntity target) {
         if (this.isInSkillGracePeriod()) return;
+        if (this.combatFrozen) return;
         Vec3 targetLook = target.getLookAngle().normalize();
 
         double distanceBehind = 1.5D;
@@ -1362,9 +1917,12 @@ public abstract class DBSagasEntity extends Monster implements GeoEntity, ITextu
         pCompound.putFloat("KiBlastDamage", this.getKiBlastDamage());
         pCompound.putFloat("KiBlastSpeed", this.getKiBlastSpeed());
         pCompound.putString("AuraType", this.getAuraType());
+        pCompound.putString("AuraType3D", this.getAuraType3D());
         pCompound.putInt("DBZStyle", this.getDBZStyle());
         pCompound.putBoolean("isKid", this.isKid());
         pCompound.putInt("TextureVariant", this.getTextureVariant());
+        pCompound.putBoolean("Supervillain", this.isSupervillain());
+        pCompound.putBoolean("isCharacterAlive", this.isCharacterAlive());
         pCompound.putBoolean("TransformationDisabled", this.transformationDisabled);
         pCompound.putBoolean("CanUseZanzoken", this.canUseZanzoken);
         pCompound.putInt("ZanzokenCooldownMax", this.zanzokenCooldownMax);
@@ -1385,17 +1943,54 @@ public abstract class DBSagasEntity extends Monster implements GeoEntity, ITextu
     }
 
     @Override
+    public void setItemSlot(EquipmentSlot pSlot, ItemStack pStack) {
+        super.setItemSlot(pSlot, pSlot.getType() == EquipmentSlot.Type.HAND ? visualOnly(pStack) : pStack);
+    }
+
+    private static ItemStack visualOnly(ItemStack stack) {
+        if (stack.isEmpty()) return stack;
+        CompoundTag tag = stack.getTag();
+        if (tag != null && tag.contains("AttributeModifiers", Tag.TAG_LIST)
+                && tag.getList("AttributeModifiers", Tag.TAG_COMPOUND).isEmpty()) return stack;
+        ItemStack visual = stack.copy();
+        visual.getOrCreateTag().put("AttributeModifiers", new ListTag());
+        return visual;
+    }
+
+    @Override
+    protected void dropCustomDeathLoot(DamageSource pSource, int pLooting, boolean pRecentlyHit) {
+        for (EquipmentSlot slot : EquipmentSlot.values()) {
+            if (slot.getType() != EquipmentSlot.Type.HAND) continue;
+            CompoundTag tag = this.getItemBySlot(slot).getTag();
+            if (tag == null) continue;
+            tag.remove("AttributeModifiers");
+            if (tag.isEmpty()) this.getItemBySlot(slot).setTag(null);
+        }
+        super.dropCustomDeathLoot(pSource, pLooting, pRecentlyHit);
+    }
+
+    @Override
     public void readAdditionalSaveData(CompoundTag pCompound) {
         super.readAdditionalSaveData(pCompound);
+        for (EquipmentSlot slot : EquipmentSlot.values()) {
+            if (slot.getType() == EquipmentSlot.Type.HAND) this.setItemSlot(slot, this.getItemBySlot(slot));
+        }
         if (pCompound.contains("FlySpeed")) this.setFlySpeed(pCompound.getDouble("FlySpeed"));
         if (pCompound.contains("KiBlastDamage")) this.setKiBlastDamage(pCompound.getFloat("KiBlastDamage"));
         if (pCompound.contains("KiBlastSpeed")) this.setKiBlastSpeed(pCompound.getFloat("KiBlastSpeed"));
         if (pCompound.contains("AuraType")) this.setAuraType(pCompound.getString("AuraType"));
+        if (pCompound.contains("AuraType3D")) this.setAuraType3D(pCompound.getString("AuraType3D"));
         if (pCompound.contains("DBZStyle")) this.setDBZStyle(pCompound.getInt("DBZStyle"));
         if (pCompound.contains("isKid")) this.setisKid(pCompound.getBoolean("isKid"));
         if (pCompound.contains("CanFly") && pCompound.getBoolean("CanFly") && this.getFlySpeed() <= 0.0D) this.setFlySpeed(0.35D);
         if (pCompound.contains("TextureVariant")) {
             this.setTextureVariant(pCompound.getInt("TextureVariant"));
+        }
+        if (pCompound.contains("Supervillain")) {
+            this.setSupervillain(pCompound.getBoolean("Supervillain"));
+        }
+        if (pCompound.contains("isCharacterAlive")) {
+            this.setCharacterAlive(pCompound.getBoolean("isCharacterAlive"));
         }
         if (pCompound.contains("TransformationDisabled")) {
             this.transformationDisabled = pCompound.getBoolean("TransformationDisabled");
@@ -1431,6 +2026,7 @@ public abstract class DBSagasEntity extends Monster implements GeoEntity, ITextu
         this.entityData.define(BATTLE_POWER, 20);
         this.entityData.define(AURA_COLOR, 0xFFFFFF);
         this.entityData.define(AURA_TYPE, "kakarot");
+        this.entityData.define(AURA_TYPE_3D, "smooth");
         this.entityData.define(TRANSFORMING, false);
         this.entityData.define(KI_CHARGE, false);
         this.entityData.define(IS_LIGHTNING, false);
@@ -1438,20 +2034,54 @@ public abstract class DBSagasEntity extends Monster implements GeoEntity, ITextu
         this.entityData.define(IS_EVADING, false);
         this.entityData.define(IS_COMBOING, false);
         this.entityData.define(CURRENT_COMBO_ID, -1);
+        this.entityData.define(IS_STRIKE_RUSHING, false);
+        this.entityData.define(IS_STRIKE_CLASHING, false);
         this.entityData.define(DBZ_STYLE, 0);
         this.entityData.define(TEXTURE_VARIANT, 0);
+        this.entityData.define(IS_SUPERVILLAIN, false);
+        this.entityData.define(IS_CHARACTER_ALIVE, true);
         this.entityData.define(IS_ZANZOKEN, false);
         this.entityData.define(IS_KID, false);
         this.entityData.define(SCALE_VAL, 1.0F);
         this.entityData.define(LOCOMOTION_MODE, LocomotionMode.IDLE.ordinal());
+        this.entityData.define(IS_STUNNED, false);
     }
 
     public boolean isMeleeAllowed() {
-        return this.aiTier == AiTier.SIMPLE || this.meleeAllowed;
+        return this.meleeAllowed;
     }
 
     public boolean isStunned() {
+        if (this.level().isClientSide) return this.entityData.get(IS_STUNNED);
         return this.hasEffect(MainEffects.STUN.get());
+    }
+
+    public boolean isBossAsleep() {
+        return false;
+    }
+
+    public boolean isInSleepPose() {
+        return this.isBossAsleep();
+    }
+
+    public int getBossAbility() {
+        return -1;
+    }
+
+    public int getBossAbilityTicks() {
+        return 0;
+    }
+
+    public RawAnimation getSleepAnimation() {
+        return DBSagasAnimations.ANIM_BOSS_SLEEP;
+    }
+
+    public double getAttackAnimationSpeed() {
+        return 1.0D;
+    }
+
+    public boolean usesFullVolleyPalette() {
+        return false;
     }
 
     public String getQuestTeam() {
@@ -1481,7 +2111,14 @@ public abstract class DBSagasEntity extends Monster implements GeoEntity, ITextu
     @Override
     public void setTarget(LivingEntity pTarget) {
         if (pTarget != null && this.isQuestTeammate(pTarget)) return;
+        if (pTarget instanceof Player downedPlayer && StatsProvider.get(StatsCapability.INSTANCE, downedPlayer)
+                .map(data -> data.getStatus().isKnockedDown()).orElse(false)) return;
         if (pTarget != null && this.getPersistentData().getLong("dmz_taiyoken_blind_until") > this.level().getGameTime()) return;
+        // Raid mobs answer to the raid's participants and nobody else.
+        if (pTarget != null && !this.isValidRaidTarget(pTarget)) return;
+        // A raid boss stands its ground until its escort is dead. Being attacked wakes it (see hurt()),
+        // so walking up and hitting it is still a valid way to pull it early.
+        if (pTarget != null && this.raidDormant) return;
         super.setTarget(pTarget);
     }
 
@@ -1509,9 +2146,8 @@ public abstract class DBSagasEntity extends Monster implements GeoEntity, ITextu
 
         if (actuallyHurt && !this.level().isClientSide) {
 
-            if (pSource.is(MainDamageTypes.KIBLAST)) {
-                // While being struck by a ki technique (e.g. a kamehameha beam) the enemy
-                // should be pushed/slowed instead of continuing to cruise at full flight speed.
+            if (pSource.is(MainDamageTypes.KIBLAST)
+                    && !(pSource.getDirectEntity() instanceof AbstractKiProjectile smallKi && smallKi.getKiType() == AbstractKiProjectile.KiType.SMALL_BALL)) {
                 this.kiHitSlowTicks = KI_HIT_SLOW_TICKS;
             }
 
@@ -1530,13 +2166,38 @@ public abstract class DBSagasEntity extends Monster implements GeoEntity, ITextu
             if (attacker instanceof LivingEntity livingAttacker) {
                 boolean isUntouchablePlayer = livingAttacker instanceof Player player && (player.isCreative() || player.isSpectator());
 
-                if (!this.isCasting() && !this.isComboing() && !isUntouchablePlayer) {
+                if (!this.isCasting() && !this.isComboing() && !isUntouchablePlayer
+                        && this.isValidRaidTarget(livingAttacker)) {
+                    this.raidDormant = false;
                     if (this.getTarget() != livingAttacker) this.setTarget(livingAttacker);
                 }
             }
+
+            this.combatBrain.onHurt(pSource, pAmount);
+            this.playHurtAnimation(pSource);
         }
 
         return actuallyHurt;
+    }
+
+    protected void playHurtAnimation(DamageSource pSource) {
+        if (com.dragonminez.common.init.entities.ki.GumBindEntity.isBound(this.getUUID())) return;
+        if (this.getHealth() <= 0.0F || this.isDeadOrDying()) return;
+        if (this.isInSleepPose() || this.getBossAbility() >= 0) return;
+        if (this.isCasting() || this.isComboing() || this.isTransforming()
+                || this.isEvading() || this.isZanzoken()) return;
+
+        Entity from = pSource.getDirectEntity() != null ? pSource.getDirectEntity() : pSource.getEntity();
+        if (from == null) return;
+
+        double dx = from.getX() - this.getX();
+        double dz = from.getZ() - this.getZ();
+        float hitYaw = (float) (Mth.atan2(dz, dx) * (180.0D / Math.PI)) - 90.0F;
+        boolean fromLeft = Mth.wrapDegrees(hitYaw - this.yBodyRot) < 0.0F;
+
+        String hurtAnim = fromLeft ? HURT_ANIM_LEFT : HURT_ANIM_RIGHT;
+        this.stopTriggeredAnimation(HURT_CONTROLLER, hurtAnim);
+        this.triggerAnim(HURT_CONTROLLER, hurtAnim);
     }
 
     protected boolean hasTransformation() {
@@ -1554,10 +2215,6 @@ public abstract class DBSagasEntity extends Monster implements GeoEntity, ITextu
             "dmz_quest_tf_trigger"
     };
 
-    /**
-     * Fraction of max health (0..1) at which this enemy triggers its transformation.
-     * Resolves a per-quest override first, then the global config default, then 0.5.
-     */
     private double resolveTransformTriggerFraction() {
         if (this.getPersistentData().contains("dmz_quest_tf_trigger")) {
             return Mth.clamp(this.getPersistentData().getDouble("dmz_quest_tf_trigger"), 0.0D, 1.0D);
@@ -1583,7 +2240,11 @@ public abstract class DBSagasEntity extends Monster implements GeoEntity, ITextu
         if (this.isTransforming()) return false;
         if (this.isCasting() || this.isComboing()) return false;
         if (this.isStunned()) return false;
-        return super.doHurtTarget(pEntity);
+        // Frozen for a countdown: no landing the first hit before the bell.
+        if (this.combatFrozen) return false;
+        boolean hit = super.doHurtTarget(pEntity);
+        if (!this.level().isClientSide) this.combatBrain.onMeleeResult(hit);
+        return hit;
     }
 
     protected void handleCommonCombatMovement(LivingEntity target, boolean isActionActive) {
@@ -1646,6 +2307,7 @@ public abstract class DBSagasEntity extends Monster implements GeoEntity, ITextu
 
     public void moveTowardsTargetInAir(LivingEntity target) {
         if (this.isCasting() || this.isComboing() || this.isEvading() || this.isZanzoken() || this.isStunned()) return;
+        if (this.moveManeuverInAir(target)) return;
         double flyspeed = this.getFlySpeed();
 
         double distance = this.distanceTo(target);
@@ -1683,9 +2345,11 @@ public abstract class DBSagasEntity extends Monster implements GeoEntity, ITextu
 
     public void startCasting(int type) {
         if (this.isInSkillGracePeriod()) return;
+        if (this.combatFrozen) return;
         if (this.isStunned()) return;
         if (this.globalActionCooldown > 0) return;
         if (BeamClashManager.isClashing(this.getUUID())) return;
+        this.cancelManeuver();
         this.setCasting(true);
         this.setSkillType(type);
         this.castTimer = 0;
@@ -1693,14 +2357,16 @@ public abstract class DBSagasEntity extends Monster implements GeoEntity, ITextu
         this.getAttribute(Attributes.MOVEMENT_SPEED).setBaseValue(0.0D);
         this.getNavigation().stop();
         this.setDeltaMovement(0, 0, 0);
+        if (!this.level().isClientSide) this.combatBrain.onCastStarted(type);
     }
 
     public void stopCasting() {
         this.setCasting(false);
         this.castTimer = 0;
         this.setSkillType(0);
-        this.postCastCooldown = POST_CAST_LOCKOUT;
-        this.globalActionCooldown = GLOBAL_ACTION_LOCKOUT;
+        AiProfile profile = this.getAiProfile();
+        this.postCastCooldown = profile.postCastLockout;
+        this.globalActionCooldown = profile.globalActionLockout;
 
         this.getAttribute(Attributes.MOVEMENT_SPEED).setBaseValue(this.defaultMovementSpeed);
     }
@@ -1787,6 +2453,8 @@ public abstract class DBSagasEntity extends Monster implements GeoEntity, ITextu
             }
 
             newEntity.setAiTier(this.getAiTier());
+            newEntity.getCombatBrain().inherit(this.combatBrain);
+            newEntity.setCharacterAlive(this.isCharacterAlive());
             newEntity.getPersistentData().putBoolean("dmz_stats_configured", true);
 
 			if (this.getPersistentData().contains("dmz_difficulty")) {
@@ -1819,6 +2487,18 @@ public abstract class DBSagasEntity extends Monster implements GeoEntity, ITextu
 			if (this.transformationDisabled || pd.getBoolean("dmz_quest_no_transform")) {
 				newEntity.setTransformationDisabled(true);
 				newEntity.getPersistentData().putBoolean("dmz_quest_no_transform", true);
+			}
+
+			if (pd.contains(RAID_ID_TAG)) {
+				newEntity.getPersistentData().putString(RAID_ID_TAG, pd.getString(RAID_ID_TAG));
+				newEntity.getPersistentData().putUUID(RAID_REPLACES_TAG, this.getUUID());
+				newEntity.setRaidTargets(this.raidTargets);
+				newEntity.setRaidDormant(this.raidDormant);
+			}
+			if (pd.contains(RAID_SUPERVILLAIN_SOURCE_TAG)) {
+				newEntity.getPersistentData().putString(RAID_SUPERVILLAIN_SOURCE_TAG,
+						pd.getString(RAID_SUPERVILLAIN_SOURCE_TAG));
+				newEntity.setSupervillain(this.isSupervillain());
 			}
 
 			level.addFreshEntity(newEntity);
@@ -1857,4 +2537,26 @@ public abstract class DBSagasEntity extends Monster implements GeoEntity, ITextu
         this.playSound(MainSounds.KI_CHARGE_LOOP.get(), 1.0F, 1.2F);}
 
     public String getGeckolibModelName() {return ForgeRegistries.ENTITY_TYPES.getKey(this.getType()).getPath();}
+
+    public String getGeckolibTextureName() {return ForgeRegistries.ENTITY_TYPES.getKey(this.getType()).getPath();}
+
+    public boolean usesRandomTextureVariant() {return false;}
+
+    public OutlineStyle getOutlineStyle() {return null;}
+
+    public boolean showsSupervillainAura() {return this.isSupervillain();}
+
+    public SupervillainPalette getSupervillainPalette() {return null;}
+
+    public int getNamekDragonBallStars() {return 0;}
+
+    public String getDragonBallTexturePrefix() {return "dballnamekblock";}
+
+    public record OutlineStyle(int primaryColor, int secondaryColor, float thickness, float fireIntensity) {
+        public OutlineStyle(int primaryColor, int secondaryColor, float thickness) {
+            this(primaryColor, secondaryColor, thickness, FormConfig.FormData.OutlineShaderConfig.DEFAULT_FIRE_INTENSITY);
+        }
+    }
+
+    public record SupervillainPalette(int tint, float tintAlpha, int flameInner, int flameOuter) {}
 }

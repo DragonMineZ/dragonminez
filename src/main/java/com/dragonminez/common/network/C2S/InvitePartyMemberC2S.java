@@ -1,9 +1,9 @@
 package com.dragonminez.common.network.C2S;
 
+import com.dragonminez.common.quest.PartyFeedback;
 import com.dragonminez.common.quest.PartyManager;
-import net.minecraft.ChatFormatting;
+import com.dragonminez.server.commands.DMZPermissions;
 import net.minecraft.network.FriendlyByteBuf;
-import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraftforge.network.NetworkEvent;
 
@@ -14,7 +14,7 @@ import java.util.function.Supplier;
 
 public class InvitePartyMemberC2S {
     private static final Map<UUID, Long> LAST_INVITE_TICK = new ConcurrentHashMap<>();
-    private static final long INVITE_COOLDOWN_TICKS = 60L;
+    private static final long INVITE_COOLDOWN_TICKS = 10L;
 
     private final UUID targetPlayerId;
 
@@ -30,40 +30,34 @@ public class InvitePartyMemberC2S {
         buffer.writeUUID(targetPlayerId);
     }
 
+    public static boolean tryConsumeCooldown(ServerPlayer inviter) {
+        long now = inviter.level().getGameTime();
+        Long lastInvite = LAST_INVITE_TICK.get(inviter.getUUID());
+        if (lastInvite != null && now >= lastInvite && now - lastInvite < INVITE_COOLDOWN_TICKS) return false;
+        LAST_INVITE_TICK.put(inviter.getUUID(), now);
+        return true;
+    }
+
+    public static void clear(UUID playerId) {
+        LAST_INVITE_TICK.remove(playerId);
+    }
+
     public void handle(Supplier<NetworkEvent.Context> contextSupplier) {
         NetworkEvent.Context context = contextSupplier.get();
         context.enqueueWork(() -> {
             ServerPlayer inviter = context.getSender();
             if (inviter == null) return;
-
-            long now = inviter.level().getGameTime();
-            Long lastInvite = LAST_INVITE_TICK.get(inviter.getUUID());
-            if (lastInvite != null && now - lastInvite < INVITE_COOLDOWN_TICKS) return;
-            LAST_INVITE_TICK.put(inviter.getUUID(), now);
+            if (!DMZPermissions.hasPermission(inviter.createCommandSourceStack(), DMZPermissions.PARTY_USE)) return;
+            if (!tryConsumeCooldown(inviter)) return;
 
             ServerPlayer invitee = inviter.getServer().getPlayerList().getPlayer(targetPlayerId);
-            if (invitee == null) return;
-
-            if (invitee.getUUID().equals(inviter.getUUID())) {
-                inviter.sendSystemMessage(Component.translatable("quest.dmz.party.invite.self"));
+            if (invitee == null) {
+                PartyFeedback.inviteeOffline(inviter);
                 return;
             }
 
             PartyManager.InviteRequestResult result = PartyManager.requestInvite(inviter, invitee);
-            switch (result) {
-                case INVITED -> inviter.sendSystemMessage(
-                        Component.translatable("quest.dmz.party.invite.sent", invitee.getGameProfile().getName()));
-                case ALREADY_IN_PARTY -> inviter.sendSystemMessage(
-                        Component.translatable("quest.dmz.party.invite.same_party"));
-                case NO_PERMISSION -> inviter.sendSystemMessage(
-                        Component.translatable("quest.dmz.party.invite.leader_only"));
-                case LEVEL_GAP -> inviter.sendSystemMessage(
-                        Component.translatable("quest.dmz.party.invite.level_gap"));
-                case PARTY_FULL -> inviter.sendSystemMessage(
-                        Component.translatable("quest.dmz.party.invite.party_full"));
-                default -> {
-                }
-            }
+            PartyFeedback.inviteRequest(inviter, invitee, result);
         });
         context.setPacketHandled(true);
     }

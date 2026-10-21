@@ -1,5 +1,6 @@
 package com.dragonminez.common.stats.character;
 
+import com.dragonminez.common.config.ConfigManager;
 import com.dragonminez.common.events.DMZEvent;
 import com.dragonminez.common.stats.StatsData;
 import com.dragonminez.server.dynamicgrowth.DynamicGrowthService;
@@ -16,11 +17,14 @@ public class Resources {
     private float currentEnergy;
     private float currentStamina;
     private float currentPoise;
+    private float surgeCharge;
+    private float rage;
     private int release;
     private int releaseLimit;
+    private int flightSpeedLimit;
     private int actionCharge;
     private int alignment;
-    private float trainingPoints;
+    private double trainingPoints;
     private int pendingAttributePoints;
     private int racialSkillCount;
     private Player player;
@@ -30,8 +34,11 @@ public class Resources {
         this.currentEnergy = 0;
         this.currentStamina = 0;
         this.currentPoise = 0;
+        this.surgeCharge = 0;
+        this.rage = 0;
         this.release = 5;
         this.releaseLimit = 0;
+        this.flightSpeedLimit = 100;
         this.actionCharge = 0;
         this.alignment = 100;
         this.trainingPoints = 0;
@@ -43,19 +50,18 @@ public class Resources {
         this.currentEnergy = 0;
         this.currentStamina = 0;
         this.currentPoise = 0;
+        this.surgeCharge = 0;
+        this.rage = 0;
         this.release = 5;
         this.releaseLimit = 0;
+        this.flightSpeedLimit = 100;
         this.actionCharge = 0;
         this.alignment = 100;
         this.racialSkillCount = 0;
     }
 
     private static float roundToQuarter(float value) {
-        return Math.round(value * 4.0f) / 4.0f;
-    }
-
-    private static float truncateToInt(float value) {
-        return (float) Math.floor(value);
+        return (float) (Math.round(value * 4.0) / 4.0);
     }
 
     public int getPowerRelease() { return release; }
@@ -72,6 +78,22 @@ public class Resources {
 
     public void setCurrentPoise(float poise) {
         this.currentPoise = roundToQuarter(Math.min(Math.max(0, poise), statsData.getMaxPoise()));
+    }
+
+    public void setSurgeCharge(float surgeCharge) {
+        this.surgeCharge = Math.min(100.0f, Math.max(0.0f, surgeCharge));
+    }
+
+    public boolean isSurgeFull() {
+        return surgeCharge >= 100.0f;
+    }
+
+    public void setRage(float rage) {
+        this.rage = Float.isFinite(rage) ? Math.min(100.0f, Math.max(0.0f, rage)) : 0.0f;
+    }
+
+    public boolean isRageFull() {
+        return rage >= 100.0f;
     }
 
     public void setPowerRelease(int release) {
@@ -94,9 +116,21 @@ public class Resources {
         this.alignment = Math.max(0, Math.min(100, alignment));
     }
 
+    public float getTrainingPoints() {
+        return (float) Math.min(trainingPoints, Float.MAX_VALUE);
+    }
+
+    public double getTrainingPointsExact() {
+        return trainingPoints;
+    }
+
     public void setTrainingPoints(float points) {
-        float clamped = Math.max(0, Math.min(Float.MAX_VALUE - 1, points));
-        this.trainingPoints = truncateToInt(clamped);
+        setTrainingPointsExact(points);
+    }
+
+    public void setTrainingPointsExact(double points) {
+        if (Double.isNaN(points)) return;
+        this.trainingPoints = Math.floor(Math.max(0.0, Math.min(Double.MAX_VALUE, points)));
     }
 
     public void setPendingAttributePoints(int points) {
@@ -120,26 +154,66 @@ public class Resources {
         addTrainingPoints(amount, true);
     }
     public void addTrainingPoints(float amount, boolean shareWithParty) {
+        addTrainingPoints(amount, shareWithParty, false);
+    }
+
+    public void addBoostedTrainingPoints(double amount) {
+        addTrainingPoints(amount, true, true);
+    }
+
+    public void addTrainingPoints(double amount, boolean shareWithParty, boolean preBoosted) {
         if (amount <= 0 || player == null) {
-            setTrainingPoints(trainingPoints + amount);
+            setTrainingPointsExact(trainingPoints + amount);
             return;
         }
 
-        float oldValue = this.trainingPoints;
-        DMZEvent.TPGainEvent event = new DMZEvent.TPGainEvent(player, (int) oldValue, (int) amount, shareWithParty);
+        double oldValue = this.trainingPoints;
+        if (amount >= Integer.MAX_VALUE) {
+            setTrainingPointsExact(oldValue + amount);
+            return;
+        }
+        DMZEvent.TPGainEvent event = new DMZEvent.TPGainEvent(player, (int) Math.min(oldValue, Integer.MAX_VALUE), (int) amount, shareWithParty, preBoosted);
 
         if (!MinecraftForge.EVENT_BUS.post(event)) {
-            setTrainingPoints(oldValue + event.getTpGain());
+            setTrainingPointsExact(oldValue + event.getTpGain());
         }
     }
 
     public void addRacialSkillCount(int amount) { setRacialSkillCount(racialSkillCount + amount); }
 
     public void removeEnergy(float amount) {
-        float before = currentEnergy;
-        setCurrentEnergy(currentEnergy - amount);
-        awardDynamicGrowthEnergy(before - currentEnergy);
+        removeEnergy(amount, true);
     }
+
+    public void removeEnergy(float amount, boolean drainsSurge) {
+        boolean taxed = drainsSurge && amount > 0 && isSurgeTaxActive();
+        float requested = taxed
+                ? (float) (amount * ConfigManager.getCombatConfig().getSurgeKiCostMultiplier())
+                : amount;
+
+        float before = currentEnergy;
+        setCurrentEnergy(currentEnergy - requested);
+        float spent = before - currentEnergy;
+
+        awardDynamicGrowthEnergy(spent);
+        if (drainsSurge && spent > 0) drainSurgeFromKiSpent(spent);
+    }
+
+    private boolean isSurgeTaxActive() {
+        return statsData != null && statsData.getStatus().isSurgeActive();
+    }
+
+    private void drainSurgeFromKiSpent(float spent) {
+        if (surgeCharge <= 0 || statsData == null) return;
+        if (!(player instanceof ServerPlayer)) return;
+
+        float maxEnergy = statsData.getMaxEnergy();
+        if (maxEnergy <= 0) return;
+
+        double factor = ConfigManager.getCombatConfig().getSurgeDrainPerKiFraction();
+        setSurgeCharge(surgeCharge - (float) ((spent / maxEnergy) * 100.0 * factor));
+    }
+
     public void removeStamina(float amount) {
         float before = currentStamina;
         setCurrentStamina(currentStamina - amount);
@@ -159,18 +233,22 @@ public class Resources {
     }
     public void removePoise(float amount) { setCurrentPoise(currentPoise - amount); }
     public void removeAlignment(int amount) { setAlignment(alignment - amount); }
-    public void removeTrainingPoints(float amount) { setTrainingPoints(trainingPoints - amount); }
+    public void removeTrainingPoints(float amount) { setTrainingPointsExact(trainingPoints - amount); }
 
     public CompoundTag save() {
         CompoundTag tag = new CompoundTag();
         tag.putFloat("CurrentEnergy", currentEnergy);
         tag.putFloat("CurrentStamina", currentStamina);
         tag.putFloat("CurrentPoise", currentPoise);
+        tag.putFloat("SurgeCharge", surgeCharge);
+        tag.putFloat("Rage", rage);
         tag.putInt("Release", release);
         tag.putInt("ReleaseLimit", releaseLimit);
+        tag.putInt("FlightSpeed", flightSpeedLimit);
         tag.putInt("FormRelease", actionCharge);
         tag.putInt("Alignment", alignment);
-        tag.putFloat("TrainingPointsF", trainingPoints);
+        tag.putDouble("TrainingPointsD", trainingPoints);
+        tag.putFloat("TrainingPointsF", (float) trainingPoints);
         tag.putInt("PendingAttributePoints", pendingAttributePoints);
         tag.putInt("ZenkaiCount", racialSkillCount);
         return tag;
@@ -186,12 +264,17 @@ public class Resources {
         if (tag.contains("CurrentPoise", 5)) this.currentPoise = tag.getFloat("CurrentPoise");
         else this.currentPoise = tag.getInt("CurrentPoise");
 
+        this.surgeCharge = tag.getFloat("SurgeCharge");
+        setRage(tag.getFloat("Rage"));
+
         this.release = tag.getInt("Release");
         this.releaseLimit = tag.getInt("ReleaseLimit");
+        this.flightSpeedLimit = tag.getInt("FlightSpeed");
         this.actionCharge = tag.getInt("FormRelease");
         this.alignment = tag.getInt("Alignment");
 
-        if (tag.contains("TrainingPointsF", 5)) this.trainingPoints = tag.getFloat("TrainingPointsF");
+        if (tag.contains("TrainingPointsD", 6)) this.trainingPoints = tag.getDouble("TrainingPointsD");
+        else if (tag.contains("TrainingPointsF", 5)) this.trainingPoints = tag.getFloat("TrainingPointsF");
         else this.trainingPoints = tag.getInt("TrainingPoints");
 
         this.pendingAttributePoints = tag.getInt("PendingAttributePoints");
@@ -203,8 +286,11 @@ public class Resources {
         this.currentEnergy = other.currentEnergy;
         this.currentStamina = other.currentStamina;
         this.currentPoise = other.currentPoise;
+        this.surgeCharge = other.surgeCharge;
+        this.rage = other.rage;
         this.release = other.release;
         this.releaseLimit = other.releaseLimit;
+        this.flightSpeedLimit = other.flightSpeedLimit;
         this.actionCharge = other.actionCharge;
         this.alignment = other.alignment;
         this.trainingPoints = other.trainingPoints;

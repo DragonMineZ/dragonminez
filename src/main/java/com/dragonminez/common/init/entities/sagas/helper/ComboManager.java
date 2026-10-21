@@ -1,32 +1,114 @@
 package com.dragonminez.common.init.entities.sagas.helper;
 
-import com.dragonminez.common.init.MainEffects;
+import com.dragonminez.common.init.MainParticles;
 import com.dragonminez.common.init.MainSounds;
 import com.dragonminez.common.init.entities.ki.KiWaveEntity;
 import com.dragonminez.common.init.entities.sagas.DBSagasEntity;
+import com.dragonminez.common.network.NetworkHandler;
+import com.dragonminez.common.network.S2C.ImpactBurstVfxS2C;
+import com.dragonminez.common.network.S2C.ShockwaveVfxS2C;
+import com.dragonminez.common.network.S2C.TriggerAnimationS2C;
 import com.dragonminez.common.stats.StatsCapability;
 import com.dragonminez.common.stats.StatsProvider;
+import com.dragonminez.common.init.MainDamageTypes;
+import com.dragonminez.common.stats.techniques.EvasionAttackData;
+import com.dragonminez.server.events.players.combat.EvasionAttackHandler;
+import com.dragonminez.server.events.players.combat.KnockbackHelper;
+import com.dragonminez.server.events.players.combat.StrikeCombos.BeamSwordSlashCombo;
+import com.dragonminez.server.events.players.combat.StrikeCombos.MeteorBurstCombo;
+import com.dragonminez.server.events.players.combat.MomentumImpactHandler;
+import com.dragonminez.server.events.players.combat.StrikeCombos.MysticBallCombo;
+import com.dragonminez.server.events.players.combat.StrikeCombos.PerfectRushCombo;
+import com.dragonminez.server.events.players.combat.StrikeCombos.SpiritBreakerCombo;
+import com.dragonminez.server.events.players.combat.StrikeCinematics;
+import net.minecraft.commands.arguments.EntityAnchorArgument;
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.sounds.SoundEvent;
+import net.minecraft.sounds.SoundEvents;
+import net.minecraft.util.Mth;
+import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.InteractionHand;
-import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.entity.MoverType;
 import net.minecraft.world.entity.ai.attributes.Attributes;
-import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
+import net.minecraftforge.entity.PartEntity;
+
+import java.util.Map;
+import java.util.Set;
+import java.util.WeakHashMap;
 
 public class ComboManager {
 
-    private static boolean isComboBlocked(DBSagasEntity user, LivingEntity target) {
-        if (!(target instanceof Player player)) return false;
-        var data = StatsProvider.get(StatsCapability.INSTANCE, player).resolve().orElse(null);
-        if (data == null) return false;
-        if (!data.getStatus().isBlocking() || data.getStatus().isStunEffect()) return false;
+    private static final int SLEEP_Z_INTERVAL_TICKS = 10;
+    private static final Map<DBSagasEntity, MeteorBurstCombo.State> METEOR_BURSTS = new WeakHashMap<>();
+    private static final Map<DBSagasEntity, MysticBallCombo.State> MYSTIC_BALLS = new WeakHashMap<>();
+    private static final Map<DBSagasEntity, BeamSwordSlashCombo.State> BEAM_SWORDS = new WeakHashMap<>();
+    private static final Map<DBSagasEntity, PerfectRushCombo.State> PERFECT_RUSHES = new WeakHashMap<>();
+    private static final Map<DBSagasEntity, SpiritBreakerCombo.State> SPIRIT_BREAKERS = new WeakHashMap<>();
 
-        Vec3 directionToUser = user.position().subtract(player.position()).normalize();
-        return player.getLookAngle().dot(directionToUser) > 0.0;
-    }
+    public enum RushStep { RUSHING, CONNECTED, MISSED }
+
+    private static final Set<Integer> CINEMATIC_COMBOS = Set.of(
+            DBSagasEntity.ComboType.SPIRIT_BREAKING_CANNON.getId(), DBSagasEntity.ComboType.SUPER_GOD_FIST.getId(),
+            DBSagasEntity.ComboType.DEADLY_DANCE_VEGETTO.getId(), DBSagasEntity.ComboType.METEOR_BURST.getId(),
+            DBSagasEntity.ComboType.MYSTIC_BALL.getId(), DBSagasEntity.ComboType.BEAM_SWORD_SLASH.getId(),
+            DBSagasEntity.ComboType.PERFECT_RUSH.getId(), DBSagasEntity.ComboType.SPIRIT_BREAKER.getId());
+
+    public static final int STRIKE_RUSH_TICKS = 40;
+    public static final double STRIKE_RUSH_RANGE = 24.0D;
+    private static final double STRIKE_RUSH_SPEED = 1.3D;
+    private static final double STRIKE_RUSH_CONNECT_RANGE = 1.8D;
+    private static final double STRIKE_RUSH_HOLD_DISTANCE = 0.8D;
+    private static final double STRIKE_RUSH_SNAP_GAP = 0.7D;
+
+    private static final int SPIRIT_CANNON_KNEE_TICK = 6;
+    private static final int SPIRIT_CANNON_UPPERCUT_TICK = 13;
+    private static final int SPIRIT_CANNON_LAUNCH_TICK = 24;
+    private static final int SPIRIT_CANNON_ELBOW_TICK = 40;
+    private static final int SPIRIT_CANNON_END_TICK = 47;
+    private static final int SPIRIT_CANNON_LIFT_TICKS = 12;
+    private static final double SPIRIT_CANNON_LIFT_SPEED = 0.45D;
+    private static final double SPIRIT_CANNON_CASTER_LIFT_BONUS = 0.15D;
+    private static final double SPIRIT_CANNON_SLAM_POWER = 2.8D;
+    private static final float SPIRIT_CANNON_FINAL_HIT_RATIO = 0.35F;
+    private static final float SPIRIT_CANNON_IMPACT_DAMAGE_RATIO = 0.20F;
+    private static final int SPIRIT_CANNON_COLOR_PRIMARY = 0xF3E4FF;
+    private static final int SPIRIT_CANNON_COLOR_SECONDARY = 0xA63EF0;
+    private static final int SPIRIT_CANNON_BURST_TICKS = 14;
+    private static final float SPIRIT_CANNON_HIT_BURST_SCALE = 3.2F;
+    private static final float SPIRIT_CANNON_LAUNCH_BURST_SCALE = 4.0F;
+    private static final float SPIRIT_CANNON_ELBOW_BURST_SCALE = 5.0F;
+    private static final float SPIRIT_CANNON_GROUND_BURST_SCALE = 6.0F;
+    private static final int GOD_FIST_DASH_END_TICK = 12;
+    private static final int GOD_FIST_IMPACT_TICK = 14;
+    private static final int GOD_FIST_END_TICK = 35;
+    private static final double GOD_FIST_DASH_SPEED = 1.5D;
+    private static final double GOD_FIST_KNOCKBACK = 4.0D;
+    private static final float GOD_FIST_IMPACT_DAMAGE_RATIO = 0.20F;
+    private static final int GOD_FIST_COLOR_PRIMARY = 0xFFD23A;
+    private static final int GOD_FIST_COLOR_SECONDARY = 0xFF4A12;
+    private static final int GOD_FIST_SHOCKWAVE_COLOR = 0xF5C527;
+    private static final float GOD_FIST_BURST_SCALE = 5.5F;
+    private static final int GOD_FIST_BURST_TICKS = 18;
+    private static final int DEADLY_DANCE_DASH_END_TICK = 8;
+    private static final int DEADLY_DANCE_HIT_INTERVAL = 10;
+    private static final int DEADLY_DANCE_FINAL_TICK = DEADLY_DANCE_DASH_END_TICK + 30;
+    private static final int DEADLY_DANCE_END_TICK = 40;
+    private static final double DEADLY_DANCE_DASH_SPEED = 1.5D;
+    private static final double DEADLY_DANCE_REACH = 1.5D;
+    private static final double DEADLY_DANCE_ADVANCE_SPEED = 0.25D;
+    private static final float DEADLY_DANCE_FINAL_HIT_RATIO = 0.35F;
+    private static final float DEADLY_DANCE_IMPACT_DAMAGE_RATIO = 0.20F;
+    private static final int DEADLY_DANCE_COLOR_PRIMARY = 0xFFE23A;
+    private static final int DEADLY_DANCE_VEGETTO_COLOR_SECONDARY = 0x2FA8FF;
+    private static final float DEADLY_DANCE_HIT_BURST_SCALE = 1.7F;
+    private static final int DEADLY_DANCE_HIT_BURST_TICKS = 7;
+    private static final float DEADLY_DANCE_FINAL_BURST_SCALE = 4.8F;
+    private static final int DEADLY_DANCE_FINAL_BURST_TICKS = 16;
 
     public static void handleCombo(DBSagasEntity user, LivingEntity target, int comboId, int timer) {
         if (target == null || !target.isAlive() || !user.isAlive() || user.isTransforming()) {
@@ -36,6 +118,7 @@ public class ComboManager {
 
         user.getNavigation().stop();
         user.lookAt(target, 360, 360);
+        if (timer == 1 && CINEMATIC_COMBOS.contains(comboId)) StrikeCinematics.startCombo(user, target, comboId);
 
         switch (comboId) {
             case 0 -> handleBasicCombo(user, target, timer);
@@ -47,8 +130,609 @@ public class ComboManager {
             case 6 -> handleGumExpand(user, target, timer);
             case 7 -> handleSleepRecovery(user, timer);
             case 8 -> handleRapidKicks(user, target, timer);
+            case 9 -> handleSpiritBreakingCannon(user, target, timer);
+            case 11 -> handleSuperGodFist(user, target, timer);
+            case 12 -> handleDeadlyDanceVegetto(user, target, timer);
+            case 13 -> handleMeteorBurst(user, target, timer);
+            case 14 -> handleMysticBall(user, target, timer);
+            case 15 -> handleBeamSwordSlash(user, target, timer);
+            case 16 -> handlePerfectRush(user, target, timer);
+            case 17 -> handleSpiritBreaker(user, target, timer);
 
         }
+    }
+
+    public static void onComboStopped(DBSagasEntity user, int comboId, LivingEntity target) {
+        if (user.level().isClientSide) return;
+        StrikeCinematics.stop(user);
+        if (comboId == DBSagasEntity.ComboType.METEOR_BURST.getId()) {
+            MeteorBurstCombo.State state = METEOR_BURSTS.remove(user);
+            if (state != null) MeteorBurstCombo.release(state);
+            if (!user.isFlying()) user.setNoGravity(false);
+            return;
+        }
+        if (comboId == DBSagasEntity.ComboType.MYSTIC_BALL.getId()) {
+            MysticBallCombo.State state = MYSTIC_BALLS.remove(user);
+            if (state != null) MysticBallCombo.release(state);
+            if (!user.isFlying()) user.setNoGravity(false);
+            return;
+        }
+        if (comboId == DBSagasEntity.ComboType.SPIRIT_BREAKER.getId()) {
+            SpiritBreakerCombo.State state = SPIRIT_BREAKERS.remove(user);
+            if (state != null) SpiritBreakerCombo.release(state);
+            if (!user.isFlying()) user.setNoGravity(false);
+            return;
+        }
+        if (comboId == DBSagasEntity.ComboType.PERFECT_RUSH.getId()) {
+            PerfectRushCombo.State state = PERFECT_RUSHES.remove(user);
+            if (state != null) PerfectRushCombo.release(state);
+            if (!user.isFlying()) user.setNoGravity(false);
+            return;
+        }
+        if (comboId == DBSagasEntity.ComboType.BEAM_SWORD_SLASH.getId()) {
+            BeamSwordSlashCombo.State state = BEAM_SWORDS.remove(user);
+            if (state != null) BeamSwordSlashCombo.release(state);
+            if (!user.isFlying()) user.setNoGravity(false);
+            return;
+        }
+        boolean spiritCannon = comboId == DBSagasEntity.ComboType.SPIRIT_BREAKING_CANNON.getId();
+        boolean godFist = comboId == DBSagasEntity.ComboType.SUPER_GOD_FIST.getId();
+        if (!spiritCannon && !godFist) return;
+
+        if (spiritCannon && !user.isFlying()) user.setNoGravity(false);
+        if (target == null) return;
+
+        if (target instanceof ServerPlayer victim) {
+            NetworkHandler.sendToTrackingEntityAndSelf(new TriggerAnimationS2C(victim.getUUID(),
+                    TriggerAnimationS2C.AnimationType.KI_ANIMATION_STOP, 0, -1, ""), victim);
+        } else if (target instanceof DBSagasEntity saga) {
+            if (godFist) {
+                saga.stopTriggeredAnimation(DBSagasEntity.HURT_CONTROLLER, DBSagasEntity.HURT_ANIM_GODFIST);
+                return;
+            }
+            saga.stopTriggeredAnimation(DBSagasEntity.HURT_CONTROLLER, DBSagasEntity.HURT_ANIM_TOP2);
+            saga.stopTriggeredAnimation(DBSagasEntity.HURT_CONTROLLER, DBSagasEntity.HURT_ANIM_TOP);
+            saga.stopTriggeredAnimation(DBSagasEntity.HURT_CONTROLLER, DBSagasEntity.HURT_ANIM_DOWN);
+        }
+    }
+
+    public static boolean usesStrikeRush(int comboId) {
+        return comboId == DBSagasEntity.ComboType.SPIRIT_BREAKING_CANNON.getId()
+                || comboId == DBSagasEntity.ComboType.METEOR_BURST.getId()
+                || comboId == DBSagasEntity.ComboType.MYSTIC_BALL.getId()
+                || comboId == DBSagasEntity.ComboType.BEAM_SWORD_SLASH.getId()
+                || comboId == DBSagasEntity.ComboType.PERFECT_RUSH.getId()
+                || comboId == DBSagasEntity.ComboType.SPIRIT_BREAKER.getId();
+    }
+
+    public static void startStrikeRush(DBSagasEntity user) {
+        user.getNavigation().stop();
+        user.setNoGravity(true);
+        user.setDeltaMovement(Vec3.ZERO);
+        user.playSound(MainSounds.TRANSFORM_ON.get(), 0.7F, 1.2F);
+    }
+
+    public static RushStep tickStrikeRush(DBSagasEntity user, LivingEntity target, int ticksLeft) {
+        if (ticksLeft <= 0 || target == null || !target.isAlive() || !user.isAlive() || user.isTransforming()
+                || target.level() != user.level()) {
+            return RushStep.MISSED;
+        }
+
+        user.getNavigation().stop();
+        user.fallDistance = 0.0F;
+        faceTowards(user, target);
+
+        Vec3 from = user.getBoundingBox().getCenter();
+        double gap = rushGap(from, target);
+        if (gap <= STRIKE_RUSH_CONNECT_RANGE) {
+            if (user.getComboId() != DBSagasEntity.ComboType.METEOR_BURST.getId()) snapToRushTarget(user, target);
+            user.setDeltaMovement(Vec3.ZERO);
+            return RushStep.CONNECTED;
+        }
+
+        Vec3 dir = target.getBoundingBox().getCenter().subtract(from);
+        if (dir.lengthSqr() > 1.0E-6D) {
+            double step = Math.min(STRIKE_RUSH_SPEED, Math.max(0.1D, gap - STRIKE_RUSH_HOLD_DISTANCE));
+            user.move(MoverType.SELF, dir.normalize().scale(step));
+        }
+        user.setDeltaMovement(Vec3.ZERO);
+        return RushStep.RUSHING;
+    }
+
+    private static double rushGap(Vec3 from, LivingEntity target) {
+        double best = distanceToBox(from, target.getBoundingBox());
+        if (target.isMultipartEntity() && target.getParts() != null) {
+            for (PartEntity<?> part : target.getParts()) best = Math.min(best, distanceToBox(from, part.getBoundingBox()));
+        }
+        return best;
+    }
+
+    private static double distanceToBox(Vec3 point, AABB box) {
+        double dx = Math.max(0.0D, Math.max(box.minX - point.x, point.x - box.maxX));
+        double dy = Math.max(0.0D, Math.max(box.minY - point.y, point.y - box.maxY));
+        double dz = Math.max(0.0D, Math.max(box.minZ - point.z, point.z - box.maxZ));
+        return Math.sqrt(dx * dx + dy * dy + dz * dz);
+    }
+
+    private static void snapToRushTarget(DBSagasEntity user, LivingEntity target) {
+        Vec3 approach = new Vec3(target.getX() - user.getX(), 0.0D, target.getZ() - user.getZ());
+        if (approach.lengthSqr() < 1.0E-6D) approach = Vec3.directionFromRotation(0.0F, user.getYRot());
+        approach = approach.normalize();
+        double distance = target.getBbWidth() * 0.5D + user.getBbWidth() * 0.5D + STRIKE_RUSH_SNAP_GAP;
+        Vec3 snap = new Vec3(target.getX() - approach.x * distance, target.getY(), target.getZ() - approach.z * distance);
+        if (user.level().noCollision(user, user.getBoundingBox().move(snap.subtract(user.position())))) {
+            user.teleportTo(snap.x, snap.y, snap.z);
+        }
+        faceTowards(user, target);
+    }
+
+    private static void handleMysticBall(DBSagasEntity user, LivingEntity target, int timer) {
+        if (!(user.level() instanceof ServerLevel level)) return;
+
+        user.invulnerableTime = 20;
+        user.setNoGravity(true);
+        user.setDeltaMovement(Vec3.ZERO);
+
+        MysticBallCombo.State state = MYSTIC_BALLS.computeIfAbsent(user, key -> new MysticBallCombo.State());
+        if (!MysticBallCombo.tick(level, new SagaMysticBall(user, target), state, timer) || timer >= MysticBallCombo.DURATION) {
+            user.stopCombo();
+        }
+    }
+
+    private record SagaMysticBall(DBSagasEntity user, LivingEntity target) implements MysticBallCombo.Performer {
+
+        @Override
+        public LivingEntity self() {
+            return this.user;
+        }
+
+        @Override
+        public void place(Vec3 feet) {
+            this.user.setPos(feet.x, feet.y, feet.z);
+            this.user.setDeltaMovement(Vec3.ZERO);
+            this.user.fallDistance = 0.0F;
+        }
+
+        @Override
+        public float strikeBudget() {
+            return comboHitDamage(this.user, DBSagasEntity.ComboType.MYSTIC_BALL, 1);
+        }
+
+        @Override
+        public void strikeHit(LivingEntity victim, float amount, boolean lethal) {
+            float damage = amount;
+            if (!lethal && victim.getHealth() - damage <= 1.0F) damage = Math.max(0.01F, victim.getHealth() - 1.0F);
+            victim.hurt(MainDamageTypes.strikeAttack(this.user.level(), this.user, MysticBallCombo.TECHNIQUE_ID), damage);
+        }
+    }
+
+    private static void handleBeamSwordSlash(DBSagasEntity user, LivingEntity target, int timer) {
+        if (!(user.level() instanceof ServerLevel level)) return;
+
+        user.invulnerableTime = 20;
+        user.setNoGravity(true);
+        user.setDeltaMovement(Vec3.ZERO);
+
+        BeamSwordSlashCombo.State state = BEAM_SWORDS.computeIfAbsent(user, key -> new BeamSwordSlashCombo.State());
+        if (!BeamSwordSlashCombo.tick(level, new SagaBeamSwordSlash(user, target), state, timer) || timer >= BeamSwordSlashCombo.DURATION) {
+            user.stopCombo();
+        }
+    }
+
+    private record SagaBeamSwordSlash(DBSagasEntity user, LivingEntity target) implements BeamSwordSlashCombo.Performer {
+
+        @Override
+        public LivingEntity self() {
+            return this.user;
+        }
+
+        @Override
+        public void place(Vec3 position, float yaw) {
+            this.user.setPos(position.x, position.y, position.z);
+            this.user.setDeltaMovement(Vec3.ZERO);
+            this.user.setYRot(yaw);
+            this.user.setYHeadRot(yaw);
+            this.user.yBodyRot = yaw;
+            this.user.fallDistance = 0.0F;
+        }
+
+        @Override
+        public float strikeBudget() {
+            return comboHitDamage(this.user, DBSagasEntity.ComboType.BEAM_SWORD_SLASH, 1);
+        }
+
+        @Override
+        public int bladeColor() {
+            return this.user.getAuraColor();
+        }
+
+        @Override
+        public float modelScale() {
+            return this.user.getBbHeight() / 1.8F;
+        }
+
+        @Override
+        public void strikeHit(LivingEntity victim, float amount, boolean lethal) {
+            float damage = amount;
+            if (!lethal && victim.getHealth() - damage <= 1.0F) damage = Math.max(0.01F, victim.getHealth() - 1.0F);
+            victim.hurt(MainDamageTypes.strikeAttack(this.user.level(), this.user, BeamSwordSlashCombo.TECHNIQUE_ID), damage);
+        }
+    }
+
+    private static void handleSpiritBreaker(DBSagasEntity user, LivingEntity target, int timer) {
+        if (!(user.level() instanceof ServerLevel level)) return;
+
+        user.invulnerableTime = 20;
+        user.setNoGravity(true);
+        user.setDeltaMovement(Vec3.ZERO);
+
+        SpiritBreakerCombo.State state = SPIRIT_BREAKERS.computeIfAbsent(user, key -> new SpiritBreakerCombo.State());
+        if (!SpiritBreakerCombo.tick(level, new SagaSpiritBreaker(user, target), state, timer) || timer >= SpiritBreakerCombo.DURATION) {
+            user.stopCombo();
+        }
+    }
+
+    private record SagaSpiritBreaker(DBSagasEntity user, LivingEntity target) implements SpiritBreakerCombo.Performer {
+
+        @Override
+        public LivingEntity self() {
+            return this.user;
+        }
+
+        @Override
+        public void place(Vec3 position, float yaw) {
+            this.user.setPos(position.x, position.y, position.z);
+            this.user.setDeltaMovement(Vec3.ZERO);
+            this.user.setYRot(yaw);
+            this.user.setYHeadRot(yaw);
+            this.user.yBodyRot = yaw;
+            this.user.fallDistance = 0.0F;
+        }
+
+        @Override
+        public float strikeBudget() {
+            return comboHitDamage(this.user, DBSagasEntity.ComboType.SPIRIT_BREAKER, 1);
+        }
+
+        @Override
+        public void strikeHit(LivingEntity victim, float amount, boolean lethal) {
+            float damage = amount;
+            if (!lethal && victim.getHealth() - damage <= 1.0F) damage = Math.max(0.01F, victim.getHealth() - 1.0F);
+            victim.hurt(MainDamageTypes.strikeAttack(this.user.level(), this.user, SpiritBreakerCombo.TECHNIQUE_ID), damage);
+        }
+    }
+
+    private static void handlePerfectRush(DBSagasEntity user, LivingEntity target, int timer) {
+        if (!(user.level() instanceof ServerLevel level)) return;
+
+        user.invulnerableTime = 20;
+        user.setNoGravity(true);
+        user.setDeltaMovement(Vec3.ZERO);
+
+        PerfectRushCombo.State state = PERFECT_RUSHES.computeIfAbsent(user, key -> new PerfectRushCombo.State());
+        if (!PerfectRushCombo.tick(level, new SagaPerfectRush(user, target), state, timer) || timer >= PerfectRushCombo.DURATION) {
+            user.stopCombo();
+        }
+    }
+
+    private record SagaPerfectRush(DBSagasEntity user, LivingEntity target) implements PerfectRushCombo.Performer {
+
+        @Override
+        public LivingEntity self() {
+            return this.user;
+        }
+
+        @Override
+        public void place(Vec3 position, float yaw) {
+            this.user.setPos(position.x, position.y, position.z);
+            this.user.setDeltaMovement(Vec3.ZERO);
+            this.user.setYRot(yaw);
+            this.user.setYHeadRot(yaw);
+            this.user.yBodyRot = yaw;
+            this.user.fallDistance = 0.0F;
+        }
+
+        @Override
+        public float strikeBudget() {
+            return comboHitDamage(this.user, DBSagasEntity.ComboType.PERFECT_RUSH, 1);
+        }
+
+        @Override
+        public void strikeHit(LivingEntity victim, float amount, boolean lethal) {
+            float damage = amount;
+            if (!lethal && victim.getHealth() - damage <= 1.0F) damage = Math.max(0.01F, victim.getHealth() - 1.0F);
+            victim.hurt(MainDamageTypes.strikeAttack(this.user.level(), this.user, PerfectRushCombo.TECHNIQUE_ID), damage);
+        }
+    }
+
+    private static void handleMeteorBurst(DBSagasEntity user, LivingEntity target, int timer) {
+        if (!(user.level() instanceof ServerLevel level)) return;
+
+        user.invulnerableTime = 20;
+        user.setNoGravity(true);
+        user.setDeltaMovement(Vec3.ZERO);
+
+        MeteorBurstCombo.State state = METEOR_BURSTS.computeIfAbsent(user, key -> new MeteorBurstCombo.State());
+        if (!MeteorBurstCombo.tick(level, new SagaMeteorBurst(user, target), state, timer) || timer >= MeteorBurstCombo.DURATION) {
+            user.stopCombo();
+        }
+    }
+
+    private record SagaMeteorBurst(DBSagasEntity user, LivingEntity target) implements MeteorBurstCombo.Performer {
+
+        @Override
+        public LivingEntity self() {
+            return this.user;
+        }
+
+        @Override
+        public void place(Vec3 position, float yaw) {
+            this.user.setPos(position.x, position.y, position.z);
+            this.user.setDeltaMovement(Vec3.ZERO);
+            this.user.setYRot(yaw);
+            this.user.setYHeadRot(yaw);
+            this.user.yBodyRot = yaw;
+            this.user.fallDistance = 0.0F;
+        }
+
+        @Override
+        public boolean isInterrupted() {
+            return this.user.isStunned();
+        }
+
+        @Override
+        public float strikeBudget() {
+            return comboHitDamage(this.user, DBSagasEntity.ComboType.METEOR_BURST, 1);
+        }
+
+        @Override
+        public float kiBudget() {
+            return this.user.getKiBlastDamage() * DBSagasEntity.ComboType.METEOR_BURST.getTier().getDamageMultiplier();
+        }
+
+        @Override
+        public void strikeHit(LivingEntity victim, float amount, boolean lethal) {
+            float damage = amount;
+            if (!lethal && victim.getHealth() - damage <= 1.0F) damage = Math.max(0.01F, victim.getHealth() - 1.0F);
+            victim.hurt(MainDamageTypes.strikeAttack(this.user.level(), this.user, MeteorBurstCombo.TECHNIQUE_ID), damage);
+        }
+
+        @Override
+        public void kiHit(LivingEntity victim, float amount, boolean lethal) {
+            float damage = amount;
+            if (!lethal && victim.getHealth() - damage <= 1.0F) damage = Math.max(0.01F, victim.getHealth() - 1.0F);
+            victim.hurt(MainDamageTypes.kiblast(this.user.level(), this.user, this.user), damage);
+        }
+
+        @Override
+        public boolean canHitArea(LivingEntity entity) {
+            return !entity.isAlliedTo(this.user) && !(entity instanceof DBSagasEntity);
+        }
+    }
+
+    private static void handleSuperGodFist(DBSagasEntity user, LivingEntity target, int timer) {
+        if (user.level().isClientSide) return;
+
+        user.invulnerableTime = 20;
+        if (timer < GOD_FIST_IMPACT_TICK) faceTowards(target, user);
+
+        if (timer <= GOD_FIST_DASH_END_TICK) {
+            target.invulnerableTime = 20;
+            if (user.distanceTo(target) > 1.5D) {
+                Vec3 dir = target.position().subtract(user.position()).normalize();
+                Vec3 step = new Vec3(dir.x * GOD_FIST_DASH_SPEED, 0.0D, dir.z * GOD_FIST_DASH_SPEED);
+                user.move(MoverType.SELF, step);
+                spawnSuperGodFistTrail(user, step);
+            }
+            freeze(target);
+        } else if (timer < GOD_FIST_IMPACT_TICK) {
+            target.invulnerableTime = 20;
+            freeze(target);
+        } else if (timer == GOD_FIST_IMPACT_TICK) {
+            float damage = comboHitDamage(user, DBSagasEntity.ComboType.SUPER_GOD_FIST, 1);
+            Vec3 impactPos = new Vec3(target.getX(), target.getY() + target.getBbHeight() * 0.5D, target.getZ());
+
+            float sizeFactor = Math.max(1.0F, target.getBbHeight() / 1.8F);
+            Vec3 waveCenter = new Vec3(target.getX(), target.getY() + target.getBbHeight() * 0.6D, target.getZ());
+            Vec3 toAttacker = new Vec3(user.getX() - target.getX(), 0.0D, user.getZ() - target.getZ());
+            if (toAttacker.lengthSqr() > 1.0E-4D) waveCenter = waveCenter.add(toAttacker.normalize().scale(target.getBbWidth() * 0.5D));
+            NetworkHandler.sendToTrackingEntity(new ShockwaveVfxS2C(waveCenter.x, waveCenter.y, waveCenter.z,
+                    4.5F * sizeFactor, GOD_FIST_SHOCKWAVE_COLOR, 13), user);
+
+            target.invulnerableTime = 0;
+            target.hurt(user.damageSources().mobAttack(user), damage);
+
+            user.level().playSound(null, impactPos.x, impactPos.y, impactPos.z, MainSounds.CRITICO2.get(), SoundSource.HOSTILE, 2.5F, 0.7F);
+            NetworkHandler.sendToTrackingEntity(new ImpactBurstVfxS2C(impactPos, user.getLookAngle(), GOD_FIST_BURST_SCALE,
+                    GOD_FIST_COLOR_PRIMARY, GOD_FIST_COLOR_SECONDARY, false, GOD_FIST_BURST_TICKS), user);
+
+            Vec3 pushDir = user.getLookAngle().normalize();
+            KnockbackHelper.apply(target, new Vec3(pushDir.x * GOD_FIST_KNOCKBACK, 0.6D, pushDir.z * GOD_FIST_KNOCKBACK));
+            MomentumImpactHandler.CollisionImpactType impactType = target.onGround() || pushDir.y < -0.5D
+                    ? MomentumImpactHandler.CollisionImpactType.GROUND
+                    : MomentumImpactHandler.CollisionImpactType.WALL;
+            MomentumImpactHandler.registerCollisionImpact(target, impactType, damage * GOD_FIST_IMPACT_DAMAGE_RATIO, pushDir);
+            playVictimHurtPose(target, "base.hurt_supergodfist", DBSagasEntity.HURT_ANIM_GODFIST);
+        }
+
+        user.setDeltaMovement(0.0D, user.getDeltaMovement().y, 0.0D);
+
+        if (timer >= GOD_FIST_END_TICK) user.stopCombo();
+    }
+
+    private static void handleDeadlyDanceVegetto(DBSagasEntity user, LivingEntity target, int timer) {
+        if (user.level().isClientSide) return;
+
+        float total = comboHitDamage(user, DBSagasEntity.ComboType.DEADLY_DANCE_VEGETTO, 1);
+        int hitCount = (DEADLY_DANCE_FINAL_TICK - DEADLY_DANCE_DASH_END_TICK) / DEADLY_DANCE_HIT_INTERVAL - 1;
+        float hitDamage = total * (1.0F - DEADLY_DANCE_FINAL_HIT_RATIO) / Math.max(1, hitCount);
+
+        user.invulnerableTime = 20;
+        if (timer <= DEADLY_DANCE_FINAL_TICK) faceTowards(target, user);
+
+        if (timer <= DEADLY_DANCE_DASH_END_TICK) {
+            target.invulnerableTime = 20;
+            if (user.distanceTo(target) > DEADLY_DANCE_REACH) {
+                Vec3 dir = target.position().subtract(user.position()).normalize();
+                user.move(MoverType.SELF, new Vec3(dir.x * DEADLY_DANCE_DASH_SPEED, 0.0D, dir.z * DEADLY_DANCE_DASH_SPEED));
+            }
+            freeze(target);
+        } else if (timer < DEADLY_DANCE_FINAL_TICK) {
+            target.invulnerableTime = 20;
+            Vec3 look = Vec3.directionFromRotation(0.0F, user.getYRot()).normalize();
+            Vec3 advance = new Vec3(look.x * DEADLY_DANCE_ADVANCE_SPEED, 0.0D, look.z * DEADLY_DANCE_ADVANCE_SPEED);
+            Vec3 pinned = user.position().add(advance).add(look.x * DEADLY_DANCE_REACH, 0.0D, look.z * DEADLY_DANCE_REACH);
+            Vec3 shift = pinned.subtract(target.position());
+
+            if (!user.horizontalCollision && user.level().noCollision(target, target.getBoundingBox().move(shift))) {
+                user.move(MoverType.SELF, advance);
+                target.setPos(pinned.x, pinned.y, pinned.z);
+            }
+            freeze(target);
+
+            int danceTick = timer - DEADLY_DANCE_DASH_END_TICK;
+            if (danceTick % DEADLY_DANCE_HIT_INTERVAL == 0) {
+                deadlyDanceHit(user, target, hitDamage, 0.6D, DEADLY_DANCE_HIT_BURST_SCALE, DEADLY_DANCE_HIT_BURST_TICKS,
+                        look, MainSounds.GOLPE1.get(), 1.0F, 0.8F + user.getRandom().nextFloat() * 0.4F);
+            }
+        } else if (timer == DEADLY_DANCE_FINAL_TICK) {
+            Vec3 look = Vec3.directionFromRotation(0.0F, user.getYRot()).normalize();
+            float finalDamage = total * DEADLY_DANCE_FINAL_HIT_RATIO;
+            deadlyDanceHit(user, target, finalDamage, 0.5D, DEADLY_DANCE_FINAL_BURST_SCALE, DEADLY_DANCE_FINAL_BURST_TICKS,
+                    new Vec3(look.x * 0.35D, 1.0D, look.z * 0.35D), MainSounds.CRITICO2.get(), 2.0F, 1.0F);
+
+            KnockbackHelper.apply(target, new Vec3(look.x * 0.5D, 1.5D, look.z * 0.5D));
+            MomentumImpactHandler.registerCollisionImpact(target, MomentumImpactHandler.CollisionImpactType.GROUND,
+                    total * DEADLY_DANCE_IMPACT_DAMAGE_RATIO, new Vec3(0.0D, 1.0D, 0.0D));
+        }
+
+        user.setDeltaMovement(0.0D, user.getDeltaMovement().y, 0.0D);
+
+        if (timer >= DEADLY_DANCE_END_TICK) user.stopCombo();
+    }
+
+    private static void deadlyDanceHit(DBSagasEntity user, LivingEntity target, float damage, double heightRatio, float burstScale,
+                                       int burstTicks, Vec3 burstDir, SoundEvent sound, float volume, float pitch) {
+        target.invulnerableTime = 0;
+        target.hurt(user.damageSources().mobAttack(user), damage);
+
+        Vec3 impactPos = new Vec3(target.getX(), target.getY() + target.getBbHeight() * heightRatio, target.getZ());
+        user.level().playSound(null, impactPos.x, impactPos.y, impactPos.z, sound, SoundSource.HOSTILE, volume, pitch);
+        NetworkHandler.sendToTrackingEntity(new ImpactBurstVfxS2C(impactPos, burstDir, burstScale,
+                DEADLY_DANCE_COLOR_PRIMARY, DEADLY_DANCE_VEGETTO_COLOR_SECONDARY, true, burstTicks), user);
+    }
+
+    private static void spawnSuperGodFistTrail(DBSagasEntity user, Vec3 motion) {
+        if (!(user.level() instanceof ServerLevel level)) return;
+        Vec3 center = user.position().add(0.0D, user.getBbHeight() * 0.5D, 0.0D);
+        for (int i = 0; i < 4; i++) {
+            Vec3 point = center.subtract(motion.scale(i / 4.0D));
+            level.sendParticles(MainParticles.SPARKS.get(), point.x, point.y, point.z, 0, 0.96D, 0.77D, 0.15D, 1.0D);
+        }
+        level.sendParticles(ParticleTypes.END_ROD, center.x, center.y, center.z, 2, 0.15D, 0.3D, 0.15D, 0.0D);
+    }
+
+    private static void handleSpiritBreakingCannon(DBSagasEntity user, LivingEntity target, int timer) {
+        if (user.level().isClientSide) return;
+
+        float total = comboHitDamage(user, DBSagasEntity.ComboType.SPIRIT_BREAKING_CANNON, 1);
+        float hitDamage = total * (1.0F - SPIRIT_CANNON_FINAL_HIT_RATIO) / 3.0F;
+
+        user.invulnerableTime = 20;
+        user.fallDistance = 0.0F;
+
+        if (timer <= SPIRIT_CANNON_LAUNCH_TICK) faceTowards(target, user);
+
+        if (timer < SPIRIT_CANNON_KNEE_TICK) {
+            target.invulnerableTime = 20;
+            if (user.distanceTo(target) > 1.6D) {
+                Vec3 dir = target.position().subtract(user.position()).normalize();
+                user.move(MoverType.SELF, new Vec3(dir.x * 1.4D, 0.0D, dir.z * 1.4D));
+            }
+            freeze(target);
+        } else if (timer == SPIRIT_CANNON_KNEE_TICK) {
+            spiritCannonHit(user, target, hitDamage, false, 0.45D, SPIRIT_CANNON_HIT_BURST_SCALE, MainSounds.GOLPE4.get(), 1.0F);
+            playVictimHurtPose(target, "base.hurt_top2", DBSagasEntity.HURT_ANIM_TOP2);
+            freeze(target);
+        } else if (timer == SPIRIT_CANNON_UPPERCUT_TICK) {
+            spiritCannonHit(user, target, hitDamage, false, 0.8D, SPIRIT_CANNON_HIT_BURST_SCALE, MainSounds.GOLPE5.get(), 1.15F);
+            playVictimHurtPose(target, "base.hurt_top2", DBSagasEntity.HURT_ANIM_TOP2);
+            freeze(target);
+        } else if (timer == SPIRIT_CANNON_LAUNCH_TICK) {
+            spiritCannonHit(user, target, hitDamage, false, 0.55D, SPIRIT_CANNON_LAUNCH_BURST_SCALE, MainSounds.CRITICO2.get(), 1.25F);
+            playVictimHurtPose(target, "base.hurt_top", DBSagasEntity.HURT_ANIM_TOP);
+            KnockbackHelper.apply(target, new Vec3(0.0D, 1.2D, 0.0D));
+            user.setNoGravity(true);
+            user.setDeltaMovement(Vec3.ZERO);
+        } else if (timer == SPIRIT_CANNON_ELBOW_TICK) {
+            spiritCannonHit(user, target, total * SPIRIT_CANNON_FINAL_HIT_RATIO, true, 0.9D, SPIRIT_CANNON_ELBOW_BURST_SCALE, MainSounds.CRITICO1.get(), 0.8F);
+            playVictimHurtPose(target, "base.hurt_down", DBSagasEntity.HURT_ANIM_DOWN);
+            KnockbackHelper.apply(target, new Vec3(0.0D, -SPIRIT_CANNON_SLAM_POWER, 0.0D));
+            MomentumImpactHandler.registerCollisionImpact(target, MomentumImpactHandler.CollisionImpactType.GROUND,
+                    total * SPIRIT_CANNON_IMPACT_DAMAGE_RATIO, new Vec3(0.0D, -1.0D, 0.0D),
+                    SPIRIT_CANNON_COLOR_PRIMARY, SPIRIT_CANNON_COLOR_SECONDARY, SPIRIT_CANNON_GROUND_BURST_SCALE);
+            user.setDeltaMovement(Vec3.ZERO);
+        } else if (timer < SPIRIT_CANNON_LAUNCH_TICK) {
+            target.invulnerableTime = 20;
+            freeze(target);
+        } else if (timer < SPIRIT_CANNON_ELBOW_TICK) {
+            target.invulnerableTime = 20;
+            boolean lifting = timer <= SPIRIT_CANNON_LAUNCH_TICK + SPIRIT_CANNON_LIFT_TICKS;
+            KnockbackHelper.apply(target, new Vec3(0.0D, lifting ? SPIRIT_CANNON_LIFT_SPEED : 0.04D, 0.0D));
+            target.fallDistance = 0.0F;
+
+            int risen = Math.min(timer - SPIRIT_CANNON_LAUNCH_TICK, SPIRIT_CANNON_LIFT_TICKS);
+            user.setPos(user.getX(), target.getY() + risen * SPIRIT_CANNON_CASTER_LIFT_BONUS, user.getZ());
+            user.setDeltaMovement(Vec3.ZERO);
+        } else {
+            user.setDeltaMovement(Vec3.ZERO);
+        }
+
+        if (timer >= SPIRIT_CANNON_END_TICK) user.stopCombo();
+    }
+
+    private static void spiritCannonHit(DBSagasEntity user, LivingEntity target, float damage, boolean finalHit,
+                                        double heightRatio, float burstScale, SoundEvent sound, float pitch) {
+        float applied = damage;
+        if (!finalHit && target.getHealth() - applied <= 1.0F) applied = Math.max(0.01F, target.getHealth() - 1.0F);
+
+        float sizeFactor = Math.max(1.0F, target.getBbHeight() / 1.8F);
+        Vec3 waveCenter = new Vec3(target.getX(), target.getY() + target.getBbHeight() * 0.6D, target.getZ());
+        Vec3 toAttacker = new Vec3(user.getX() - target.getX(), 0.0D, user.getZ() - target.getZ());
+        if (toAttacker.lengthSqr() > 1.0E-4D) waveCenter = waveCenter.add(toAttacker.normalize().scale(target.getBbWidth() * 0.5D));
+        NetworkHandler.sendToTrackingEntity(new ShockwaveVfxS2C(waveCenter.x, waveCenter.y, waveCenter.z,
+                (finalHit ? 4.5F : 1.8F) * sizeFactor, SPIRIT_CANNON_COLOR_SECONDARY, finalHit ? 13 : 7), user);
+
+        target.invulnerableTime = 0;
+        target.hurt(user.damageSources().mobAttack(user), applied);
+
+        Vec3 impactPos = new Vec3(target.getX(), target.getY() + target.getBbHeight() * heightRatio, target.getZ());
+        user.level().playSound(null, impactPos.x, impactPos.y, impactPos.z, sound, SoundSource.HOSTILE, 2.0F, pitch);
+        NetworkHandler.sendToTrackingEntity(new ImpactBurstVfxS2C(impactPos, user.getLookAngle(), burstScale,
+                SPIRIT_CANNON_COLOR_PRIMARY, SPIRIT_CANNON_COLOR_SECONDARY, false, SPIRIT_CANNON_BURST_TICKS), user);
+    }
+
+    private static void playVictimHurtPose(LivingEntity victim, String playerAnim, String sagaAnim) {
+        if (victim == null || victim.isDeadOrDying()) return;
+        if (victim instanceof ServerPlayer victimPlayer) {
+            NetworkHandler.sendToTrackingEntityAndSelf(new TriggerAnimationS2C(victimPlayer.getUUID(),
+                    TriggerAnimationS2C.AnimationType.KI_ANIMATION_STOP, 0, -1, ""), victimPlayer);
+            NetworkHandler.sendToTrackingEntityAndSelf(new TriggerAnimationS2C(victimPlayer.getUUID(),
+                    TriggerAnimationS2C.AnimationType.KI_ANIMATION, 0, -1, playerAnim), victimPlayer);
+        } else if (victim instanceof DBSagasEntity saga) {
+            saga.stopTriggeredAnimation(DBSagasEntity.HURT_CONTROLLER, sagaAnim);
+            saga.triggerAnim(DBSagasEntity.HURT_CONTROLLER, sagaAnim);
+        }
+    }
+
+    private static void faceTowards(LivingEntity source, LivingEntity target) {
+        source.lookAt(EntityAnchorArgument.Anchor.EYES, target.getEyePosition());
+        source.setYHeadRot(source.getYRot());
+    }
+
+    private static void freeze(LivingEntity entity) {
+        entity.setDeltaMovement(Vec3.ZERO);
+        entity.hurtMarked = true;
     }
 
     /**
@@ -102,9 +786,6 @@ public class ComboManager {
             target.hasImpulse = true;
         }
         if (timer == 25) {
-            if (!isComboBlocked(user, target)) {
-                target.addEffect(new MobEffectInstance(MainEffects.STUN.get(), 40, 0, false, false, true));
-            }
             user.stopCombo();
         }
     }
@@ -149,9 +830,6 @@ public class ComboManager {
         }
         if (timer == 35) {
             meleeHit(user, target, perHit, 0.0, 0.0);
-            if (!isComboBlocked(user, target)) {
-                target.addEffect(new MobEffectInstance(MainEffects.STUN.get(), 60, 0, false, false, true));
-            }
         }
         if (timer == 45) {
             user.teleportTo(target.getX(), target.getY() + 4.0D, target.getZ());
@@ -176,6 +854,7 @@ public class ComboManager {
             float drain = target.getMaxHealth() * 0.05F;
             target.hurt(user.damageSources().mobAttack(user), drain);
             user.heal(drain);
+            user.getCombatBrain().onAbsorb(drain);
             if (target instanceof ServerPlayer sp) {
                 StatsProvider.get(StatsCapability.INSTANCE, sp).ifPresent(data -> {
                     double currentEnergy = data.getResources().getCurrentEnergy();
@@ -253,12 +932,6 @@ public class ComboManager {
             target.hasImpulse = true;
         }
 
-        if (timer == 13) {
-            if (!isComboBlocked(user, target)) {
-                target.addEffect(new MobEffectInstance(MainEffects.STUN.get(), 60, 0, false, true, true));
-            }
-        }
-
         if (timer >= 20) {
             user.stopCombo();
         }
@@ -291,18 +964,27 @@ public class ComboManager {
     }
 
     private static void handleSleepRecovery(DBSagasEntity user, int timer) {
-        if (timer > 0 && timer < 100 && timer % 10 == 0) {
-            float healAmount = user.getMaxHealth() * 0.05F;
-            user.heal(healAmount);
+        user.setDeltaMovement(0.0D, user.getDeltaMovement().y, 0.0D);
 
-            if (user.level() instanceof ServerLevel serverLevel) {
-                serverLevel.sendParticles(ParticleTypes.HAPPY_VILLAGER,
-                        user.getX(), user.getY() + 2, user.getZ(),
-                        5, 0.5, 0.5, 0.5, 0.1);
-            }
+        if (timer == 1) {
+            user.level().playSound(null, user.getX(), user.getY(), user.getZ(), SoundEvents.FOX_SLEEP, SoundSource.HOSTILE, 1.0F, 0.8F);
         }
 
-        if (timer >= 100) {
+        if (timer > 0 && timer < EvasionAttackData.SLEEP_RECOVERY_MAX_TICKS
+                && timer % EvasionAttackHandler.SLEEP_RECOVERY_PULSE_INTERVAL_TICKS == 0) {
+            user.heal(user.getMaxHealth() * EvasionAttackHandler.SLEEP_RECOVERY_HEAL_PER_PULSE);
+        }
+
+        if (timer % SLEEP_Z_INTERVAL_TICKS == 0 && user.level() instanceof ServerLevel serverLevel && !user.isInvisible()) {
+            float yaw = user.yBodyRot * Mth.DEG_TO_RAD;
+            double rightX = -Mth.cos(yaw);
+            double rightZ = -Mth.sin(yaw);
+            serverLevel.sendParticles(MainParticles.SLEEP_Z.get(),
+                    user.getX() + rightX * 0.25D, user.getY() + user.getBbHeight() + 0.15D, user.getZ() + rightZ * 0.25D,
+                    0, rightX * 0.015D, 0.0D, rightZ * 0.015D, 1.0D);
+        }
+
+        if (timer >= EvasionAttackData.SLEEP_RECOVERY_MAX_TICKS) {
             user.stopCombo();
         }
     }

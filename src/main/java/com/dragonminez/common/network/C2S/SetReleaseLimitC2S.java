@@ -1,7 +1,6 @@
 package com.dragonminez.common.network.C2S;
 
 import com.dragonminez.common.init.MainEffects;
-import com.dragonminez.common.network.NetworkHandler;
 import com.dragonminez.common.network.S2C.StatsSyncS2C;
 import com.dragonminez.common.stats.StatsCapability;
 import com.dragonminez.common.stats.StatsProvider;
@@ -34,8 +33,7 @@ public class SetReleaseLimitC2S {
 			if (player == null) return;
 			if (player.hasEffect(MainEffects.STUN.get())) return;
 			StatsProvider.get(StatsCapability.INSTANCE, player).ifPresent(data -> {
-				int potentialUnlockLevel = data.getSkills().hasSkill("potentialunlock") ? data.getSkills().getSkillLevel("potentialunlock") : 0;
-				int maxRelease = 50 + (potentialUnlockLevel * 5);
+				int maxRelease = data.getMaxPowerRelease();
 
 				int newLimit;
 				if (limit <= 0) {
@@ -50,7 +48,7 @@ public class SetReleaseLimitC2S {
 					data.getResources().setPowerRelease(newLimit);
 				}
 
-				NetworkHandler.sendToTrackingEntityAndSelf(new StatsSyncS2C(player), player);
+				StatsSyncS2C.sendRequested(player);
 			});
 		});
 		context.setPacketHandled(true);

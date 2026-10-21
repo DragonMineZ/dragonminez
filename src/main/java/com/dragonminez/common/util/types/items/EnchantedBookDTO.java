@@ -1,57 +1,43 @@
 package com.dragonminez.common.util.types.items;
 
-import com.google.gson.GsonBuilder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.item.EnchantedBookItem;
 import net.minecraft.world.item.ItemStack;
-import net.minecraft.world.item.Items;
+import net.minecraft.world.item.enchantment.Enchantment;
 import net.minecraft.world.item.enchantment.EnchantmentInstance;
-import net.minecraftforge.registries.ForgeRegistries;
 
-import java.util.HashMap;
 import java.util.Map;
 
+/**
+ * An enchanted book. Unlike a regular enchanted item these go in the
+ * {@code StoredEnchantments} tag, which is what {@link EnchantedBookItem#addEnchantment}
+ * writes.
+ */
 @Getter
 @Setter
 @NoArgsConstructor
 public class EnchantedBookDTO extends EnchantedItemDTO {
-    protected String itemType;
-    protected Map<String, Integer> enchantments = new HashMap<>();
 
-    public EnchantedBookDTO(Map<String, Integer> enchantments) {
-        super("enchanted_book", "minecraft:enchanted_book", 1, enchantments);
-    }
+	public static final String ITEM_TYPE = "enchanted_book";
+	private static final ResourceLocation ENCHANTED_BOOK_ID = new ResourceLocation("minecraft", "enchanted_book");
 
-    @Override
-    public ItemStack getItemStack() {
-        var itemStack = new ItemStack(Items.ENCHANTED_BOOK);
-        enchantments.keySet().forEach(key -> {
-            EnchantedBookItem.addEnchantment(
-                    itemStack,
-                    getEnchantmentInstance(key, enchantments.get(key))
-            );
-        });
-        return itemStack;
-    }
+	public EnchantedBookDTO(Map<ResourceLocation, Integer> enchantments) {
+		super(ITEM_TYPE, ENCHANTED_BOOK_ID, 1, enchantments);
+	}
 
-    @Override
-    public String toJson() {
-        return new GsonBuilder().setPrettyPrinting().create().toJson(this, EnchantedBookDTO.class);
-    }
-
-    protected EnchantmentInstance getEnchantmentInstance(String id, Integer level) {
-        var resourceLocation = ResourceLocation.tryParse(id);
-        if (resourceLocation != null) {
-            var enchantment = ForgeRegistries.ENCHANTMENTS.getValue(resourceLocation);
-            if (enchantment != null) {
-                return new EnchantmentInstance(enchantment, level);
-            }
-            return null;
-        }
-        return null;
-
-    }
+	@Override
+	protected void applyEnchantments(ItemStack itemStack) {
+		if (this.enchantments == null || this.enchantments.isEmpty()) {
+			return;
+		}
+		this.enchantments.forEach((id, level) -> {
+			Enchantment enchantment = resolveEnchantment(id);
+			if (enchantment != null) {
+				EnchantedBookItem.addEnchantment(itemStack, new EnchantmentInstance(enchantment, level));
+			}
+		});
+	}
 }

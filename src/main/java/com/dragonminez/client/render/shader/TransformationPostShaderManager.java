@@ -1,16 +1,20 @@
 package com.dragonminez.client.render.shader;
 
+import com.dragonminez.Env;
+import com.dragonminez.LogUtil;
 import com.dragonminez.Reference;
 import com.dragonminez.client.util.ColorUtils;
 import com.dragonminez.client.render.util.IrisCompat;
 import com.dragonminez.client.render.util.ModRenderTypes;
 import com.dragonminez.common.config.ConfigManager;
 import com.dragonminez.common.config.FormConfig;
+import com.dragonminez.common.init.entities.sagas.DBSagasEntity;
 import com.dragonminez.common.stats.StatsCapability;
 import com.dragonminez.common.stats.StatsData;
 import com.dragonminez.common.stats.StatsProvider;
 import com.dragonminez.common.stats.character.Character;
 import com.dragonminez.mixin.client.PostChainAccessor;
+import com.dragonminez.server.events.players.statuseffect.RelicItemsStatusHandler;
 import com.mojang.blaze3d.pipeline.RenderTarget;
 import com.mojang.blaze3d.shaders.Uniform;
 import com.mojang.blaze3d.vertex.PoseStack;
@@ -21,6 +25,7 @@ import net.minecraft.client.renderer.PostChain;
 import net.minecraft.client.renderer.PostPass;
 import net.minecraft.client.renderer.culling.Frustum;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.player.Player;
 
 import javax.annotation.Nullable;
@@ -37,15 +42,22 @@ public final class TransformationPostShaderManager {
 	private static final String BLUR_H_PASS_NAME = Reference.MOD_ID + ":transformation_blur_h";
 	private static final String BLUR_V_PASS_NAME = Reference.MOD_ID + ":transformation_blur_v";
 	private static final String COMPOSITE_PASS_NAME = Reference.MOD_ID + ":transformation_composite";
+	private static final String BLOOM_SOURCE_PASS_NAME = Reference.MOD_ID + ":transformation_bloom_source";
+	private static final String OUTER_BLUR_H_PASS_NAME = Reference.MOD_ID + ":transformation_blur_outer_h";
+	private static final String OUTER_BLUR_V_PASS_NAME = Reference.MOD_ID + ":transformation_blur_outer_v";
 	private static final String MASK_TARGET = "entity_mask";
 
 	private static final float FIXED_GLOW_STRENGTH = 1.35f;
 	private static final float FIXED_BLOOM_STRENGTH = 0.95f;
+	private static final long ANIMATION_TIME_WRAP_TICKS = 24000L;
+	private static final double SAGA_OUTLINE_RANGE_SQR = 96.0 * 96.0;
+	private static final DBSagasEntity.OutlineStyle DEMON_EYE_OUTLINE = new DBSagasEntity.OutlineStyle(0xFF2020, 0x9A0000, 2.5F);
 
 	private static final Map<UUID, TrackedShaderState> TRACKED_PLAYERS = new HashMap<>();
 	private static final Set<UUID> ACTIVE_MASK_PLAYERS = new HashSet<>();
 
 	private static boolean loadedByManager = false;
+	private static boolean loadFailed = false;
 	@Nullable
 	private static ShaderUniformState activeUniformState;
 	private static TransformationMaskBufferSource maskBufferSource = new TransformationMaskBufferSource();
@@ -93,7 +105,7 @@ public final class TransformationPostShaderManager {
 	}
 
 	@Nullable
-	public static MaskData getEntityMaskData(Player player) {
+	public static MaskData getEntityMaskData(Entity player) {
 		Minecraft mc = Minecraft.getInstance();
 		if (mc.player == null || mc.level == null || player == null) return null;
 		UUID playerId = player.getUUID();
@@ -172,6 +184,7 @@ public final class TransformationPostShaderManager {
 
 	@Nullable
 	private static PostChain ensureShaderpackChain(Minecraft mc, RenderTarget main) {
+		if (loadFailed) return null;
 		if (shaderpackChain != null && shaderpackChainWidth == main.width && shaderpackChainHeight == main.height) {
 			return shaderpackChain;
 		}
@@ -185,12 +198,22 @@ public final class TransformationPostShaderManager {
 			shaderpackChain = null;
 			shaderpackChainWidth = -1;
 			shaderpackChainHeight = -1;
+			markLoadFailed();
 		}
 		return shaderpackChain;
 	}
 
 	public static void reset() {
 		clearState(Minecraft.getInstance(), true);
+	}
+
+	public static void onResourceReload() {
+		loadFailed = false;
+	}
+
+	private static void markLoadFailed() {
+		loadFailed = true;
+		LogUtil.error(Env.CLIENT, "Transformation outline shader failed to load; it stays disabled until the next resource reload");
 	}
 
 	private static void updateTrackedPlayers(Minecraft mc) {
@@ -234,13 +257,30 @@ public final class TransformationPostShaderManager {
 			if (playerId.equals(localPlayerId)) activeUniformState = tracked.uniformState;
 		}
 
+		for (Entity entity : mc.level.entitiesForRendering()) {
+			if (!(entity instanceof DBSagasEntity saga) || saga.isInvisible()) continue;
+			if (saga.distanceToSqr(mc.player) > SAGA_OUTLINE_RANGE_SQR) continue;
+			DBSagasEntity.OutlineStyle style = saga.getOutlineStyle();
+			if (style == null) continue;
+
+			UUID sagaId = saga.getUUID();
+			TrackedShaderState tracked = TRACKED_PLAYERS.computeIfAbsent(sagaId, id -> new TrackedShaderState());
+			tracked.uniformState = ShaderUniformState.fromStyle(style);
+			tracked.lastSeenFrame = frameId;
+
+			ACTIVE_MASK_PLAYERS.add(sagaId);
+			if (fallbackUniform == null) fallbackUniform = tracked.uniformState;
+		}
+
 		TRACKED_PLAYERS.entrySet().removeIf(entry -> entry.getValue().lastSeenFrame != frameId);
 		if (activeUniformState == null) activeUniformState = fallbackUniform;
 	}
 
 	private static void applyRuntimeUniforms(PostChain postChain, float partialTicks, Minecraft mc) {
 		if (activeUniformState == null) return;
-		float animationTime = mc.level != null ? ((float) mc.level.getGameTime() + partialTicks) / 20.0f : partialTicks / 20.0f;
+		float animationTime = mc.level != null ? ((float) (mc.level.getGameTime() % ANIMATION_TIME_WRAP_TICKS) + partialTicks) / 20.0f : partialTicks / 20.0f;
+		float outlineRadius = outlineThicknessToBlurRadius(activeUniformState.outlineThickness());
+		float colorMode = activeUniformState.colorMode();
 
 		List<PostPass> passes = ((PostChainAccessor) postChain).dragonminez$getPasses();
 		for (PostPass pass : passes) {
@@ -249,15 +289,29 @@ public final class TransformationPostShaderManager {
 
 			if (UNPACK_PASS_NAME.equals(passName)) {
 				applyUniform(effect, "AnimationTime", animationTime);
+				applyUniform(effect, "ColorChannel", colorMode);
 				continue;
 			}
 
 			if (BLUR_H_PASS_NAME.equals(passName) || BLUR_V_PASS_NAME.equals(passName)) {
-				applyUniform(effect, "BloomRadius", outlineThicknessToBlurRadius(activeUniformState.outlineThickness()));
+				applyUniform(effect, "BloomRadius", outlineRadius);
+				continue;
+			}
+
+			if (OUTER_BLUR_H_PASS_NAME.equals(passName) || OUTER_BLUR_V_PASS_NAME.equals(passName)) {
+				applyUniform(effect, "BloomRadius", colorMode > 0.5f ? outlineRadius : 0.0f);
 				continue;
 			}
 
 			if (COMPOSITE_PASS_NAME.equals(passName)) {
+				applyUniform(effect, "AnimationTime", animationTime);
+				applyUniform(effect, "OutlineRadius", outlineRadius);
+				applyUniform(effect, "FireIntensity", activeUniformState.fireIntensity());
+				applyUniform(effect, "BodyGlow", activeUniformState.bodyGlow());
+			}
+
+			if (COMPOSITE_PASS_NAME.equals(passName) || BLOOM_SOURCE_PASS_NAME.equals(passName)) {
+				applyUniform(effect, "ColorMode", colorMode);
 				applyUniform(effect, "BloomStrength", FIXED_BLOOM_STRENGTH);
 				applyUniform(effect, "GlowStrength", FIXED_GLOW_STRENGTH);
 			}
@@ -272,8 +326,10 @@ public final class TransformationPostShaderManager {
 			return;
 		}
 
+		if (loadFailed) return;
 		mc.gameRenderer.loadEffect(TRANSFORMATION_EFFECT);
 		loadedByManager = isTransformationShaderActive(mc);
+		if (!loadedByManager) markLoadFailed();
 	}
 
 	private static void shutdownManagedShader(Minecraft mc) {
@@ -317,6 +373,10 @@ public final class TransformationPostShaderManager {
 		Character character = data.getCharacter();
 		if (character == null) return null;
 
+		if (RelicItemsStatusHandler.isDemonEyeActive(data) && !player.isSpectator() && !player.isInvisible()) {
+			return new ResolvedShaderConfig("demon_eye", ShaderUniformState.fromStyle(DEMON_EYE_OUTLINE));
+		}
+
 		FormConfig.FormData activeFormData = character.getActiveFormData();
 		FormConfig.FormData activeStackFormData = character.getActiveStackFormData();
 
@@ -354,7 +414,7 @@ public final class TransformationPostShaderManager {
 	}
 
 	private static float outlineThicknessToBlurRadius(float outlineThickness) {
-		return Math.max(2.0f, Math.min(14.0f, outlineThickness * 3.0f));
+		return Math.max(3.0f, Math.min(28.0f, 6.0f + outlineThickness * 3.0f));
 	}
 
 	private static void applyUniform(EffectInstance effect, String uniformName, float value) {
@@ -372,7 +432,7 @@ public final class TransformationPostShaderManager {
 		private ShaderUniformState uniformState;
 	}
 
-	private record ShaderUniformState(float primaryR, float primaryG, float primaryB, float secondaryR, float secondaryG, float secondaryB, float outlineThickness) {
+	private record ShaderUniformState(float primaryR, float primaryG, float primaryB, float secondaryR, float secondaryG, float secondaryB, float outlineThickness, float fireIntensity, float colorMode, float bodyGlow) {
 		private static ShaderUniformState fromConfig(FormConfig.FormData.OutlineShaderConfig config) {
 			float[] primary = ColorUtils.hexToRgb(config.getPrimaryColor());
 			float[] secondary = ColorUtils.hexToRgb(config.getSecondaryColor());
@@ -384,7 +444,28 @@ public final class TransformationPostShaderManager {
 					secondary[0],
 					secondary[1],
 					secondary[2],
-					(float) config.getOutlineThickness()
+					(float) config.getOutlineThickness(),
+					config.getFireIntensity(),
+					config.isGradient() ? 1.0f : 0.0f,
+					config.getBodyGlow()
+			);
+		}
+
+		private static ShaderUniformState fromStyle(DBSagasEntity.OutlineStyle style) {
+			float[] primary = ColorUtils.rgbIntToFloat(style.primaryColor());
+			float[] secondary = ColorUtils.rgbIntToFloat(style.secondaryColor());
+
+			return new ShaderUniformState(
+					primary[0],
+					primary[1],
+					primary[2],
+					secondary[0],
+					secondary[1],
+					secondary[2],
+					Math.max(0.0f, style.thickness()),
+					Math.max(0.0f, style.fireIntensity()),
+					0.0f,
+					0.0f
 			);
 		}
 	}

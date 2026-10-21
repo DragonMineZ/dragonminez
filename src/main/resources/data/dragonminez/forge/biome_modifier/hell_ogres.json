@@ -1,0 +1,15 @@
+{
+  "type": "forge:add_spawns",
+  "biomes": "dragonminez:other_world",
+  "spawners": [{
+    "type": "dragonminez:saga_ogre_red",
+    "weight": 60,
+    "minCount": 1,
+    "maxCount": 2
+  },{
+    "type": "dragonminez:saga_ogre_blue",
+    "weight": 40,
+    "minCount": 1,
+    "maxCount": 2
+  }]
+}

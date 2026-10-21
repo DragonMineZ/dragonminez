@@ -1,20 +1,36 @@
 package com.dragonminez.client.render.layer;
 
+import com.dragonminez.client.render.effects.CandyEffect;
+import com.dragonminez.client.render.DMZRendererCache;
 import com.dragonminez.Reference;
+import com.dragonminez.client.render.HeadPortraitRenderer;
+import com.dragonminez.client.render.hair.SaiyanTailMeshBuilder;
+import com.dragonminez.client.render.HelmetFormLook;
 import com.dragonminez.client.render.firstperson.dto.FirstPersonManager;
+import com.dragonminez.client.render.effects.SolarisSmokeRenderer;
+import com.dragonminez.client.render.effects.TimeHaloRenderer;
+import com.dragonminez.client.render.util.DonorBoneRenderer;
 import com.dragonminez.client.render.util.ModRenderTypes;
+import com.dragonminez.client.systems.FormVisualTransition;
 import com.dragonminez.client.util.ColorUtils;
+import com.dragonminez.client.util.FusionOriginBones;
+import com.dragonminez.client.util.SaiyanTailRules;
+import com.dragonminez.client.util.SkinGathererProvider;
 import com.dragonminez.common.config.ConfigManager;
 import com.dragonminez.common.config.FormConfig;
 import com.dragonminez.common.config.RaceCharacterConfig;
 import com.dragonminez.common.init.MainEffects;
 import com.dragonminez.common.init.MainItems;
 import com.dragonminez.common.init.item.WeightItem;
+import com.dragonminez.common.stats.FusedData;
 import com.dragonminez.common.stats.StatsCapability;
 import com.dragonminez.common.stats.StatsData;
 import com.dragonminez.common.stats.StatsProvider;
-import com.dragonminez.common.stats.extras.ActionMode;
-import com.dragonminez.common.util.TransformationsHelper;
+import com.dragonminez.common.stats.character.Character;
+import com.dragonminez.common.util.FusionForms;
+import com.dragonminez.common.util.FusionTraits;
+import com.dragonminez.common.util.lists.GlindForms;
+import com.dragonminez.common.util.lists.HumanForms;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
 import com.mojang.math.Axis;
@@ -24,7 +40,6 @@ import net.minecraft.client.renderer.RenderType;
 import net.minecraft.client.renderer.texture.OverlayTexture;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.Mth;
-import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import software.bernie.geckolib.cache.object.BakedGeoModel;
@@ -32,14 +47,21 @@ import software.bernie.geckolib.cache.object.GeoBone;
 import software.bernie.geckolib.core.animatable.GeoAnimatable;
 import software.bernie.geckolib.renderer.GeoRenderer;
 import software.bernie.geckolib.renderer.layer.GeoRenderLayer;
+import software.bernie.geckolib.util.RenderUtils;
 import top.theillusivec4.curios.api.CuriosApi;
+
+import java.util.ArrayList;
+import java.util.List;
 
 public class DMZRacePartsLayer<T extends AbstractClientPlayer & GeoAnimatable> extends GeoRenderLayer<T> {
 	private static final ResourceLocation RACES_PARTS_MODEL = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "geo/entity/raceparts.geo.json");
 	private static final ResourceLocation RACES_PARTS_TEXTURE = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "textures/entity/races/raceparts.png");
+	private static final ResourceLocation RACES_PARTS_SHADOW_TEXTURE = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "textures/entity/races/raceparts_shadow.png");
 
 	private static final ResourceLocation ACCESORIES_MODEL = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "geo/entity/races/accesories.geo.json");
 	private static final ResourceLocation SCOUTER_MODEL = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "geo/entity/scouter.geo.json");
+	private static final ResourceLocation DEMON_EYE_TEXTURE = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "textures/item/demon_eye.png");
+	private static final float DEMON_EYE_HALF_SIZE = 3.0f / 16.0f;
 
 	private static final ResourceLocation YAJIROBE_SWORD_MODEL = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "geo/weapons/yajirobe_katana.geo.json");
 	private static final ResourceLocation YAJIROBE_SWORD_TEXTURE = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "textures/item/weapons/yajirobe_katana.png");
@@ -61,6 +83,16 @@ public class DMZRacePartsLayer<T extends AbstractClientPlayer & GeoAnimatable> e
 	private static final ResourceLocation WEIGHTED_ITEMS_MODEL = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "geo/entity/races/weighted_items.geo.json");
 	private static final ResourceLocation WEIGHTED_ITEMS_TEXTURE = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "textures/entity/races/weighted_items.png");
 
+	private static final ResourceLocation SAIYAN_TAIL_MODEL = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "geo/entity/races/human.geo.json");
+	private static final ResourceLocation FROST_DEMON_MODEL = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "geo/entity/races/frostdemon.geo.json");
+	private static final ResourceLocation BIO_ANDROID_MODEL = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "geo/entity/races/bioandroid.geo.json");
+	private static final ResourceLocation BIO_ANDROID_PERFECT_MODEL = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "geo/entity/races/bioandroid_perfect.geo.json");
+	private static final float[] HORN_COLOR = ColorUtils.hexToRgb("#1A1A1A");
+	private static final float PARTS_AURA_TINT = 0.4f;
+	private static final float BODY_AURA_TINT = 0.2f;
+
+	private final SaiyanTailMeshBuilder tailMesh = new SaiyanTailMeshBuilder();
+
 	public DMZRacePartsLayer(GeoRenderer<T> entityRendererIn) {
 		super(entityRendererIn);
 	}
@@ -73,7 +105,7 @@ public class DMZRacePartsLayer<T extends AbstractClientPlayer & GeoAnimatable> e
 		long gameTime = animatable.level().getGameTime();
 		boolean shouldFadeIn = stats.getStatus().isChargingKi()
 				|| stats.getStatus().isAuraActive()
-				|| stats.getStatus().isPermanentAura();
+				|| stats.getStatus().isPermanentAura() || stats.getStatus().isForcedAura();
 		AuraTintTracker.update(playerId, gameTime, shouldFadeIn);
 	}
 
@@ -82,11 +114,12 @@ public class DMZRacePartsLayer<T extends AbstractClientPlayer & GeoAnimatable> e
 		String anchor = playerBone.getName();
 		boolean isLimb = "right_arm".equals(anchor) || "left_arm".equals(anchor)
 				|| "right_leg".equals(anchor) || "left_leg".equals(anchor);
+		if (CandyEffect.isCandy(animatable)) return;
+
+		renderOriginBones(poseStack, animatable, playerBone, isLimb, renderType, bufferSource, partialTick, packedLight, packedOverlay);
 		if (!"head".equals(anchor) && !"body".equals(anchor) && !isLimb) return;
 
-		if (animatable.hasEffect(MainEffects.CANDY.get())) return;
-
-		if (FirstPersonManager.shouldRenderFirstPerson(animatable)) {
+		if (!HeadPortraitRenderer.isActive() && FirstPersonManager.shouldRenderFirstPerson(animatable)) {
 			var stats = StatsProvider.get(StatsCapability.INSTANCE, animatable).orElse(new StatsData(animatable));
 			if ("body".equals(anchor) && !animatable.isSpectator() && stats.getStatus().isHasCreatedCharacter()) {
 				boolean isOozaru = stats.getCharacter().getActiveForm() != null && stats.getCharacter().getActiveForm().contains("ozaru");
@@ -107,7 +140,8 @@ public class DMZRacePartsLayer<T extends AbstractClientPlayer & GeoAnimatable> e
 
 		if (isLimb) {
 			if (!animatable.isSpectator() && !stats.getCharacter().isOozaruCached()) {
-				renderWeightedItems(poseStack, animatable, bufferSource, anchor, partialTick, packedLight, alpha);
+				renderWeights(poseStack, animatable, bufferSource, anchor, partialTick, packedLight, alpha);
+				renderSolarisSmoke(poseStack, animatable, stats.getCharacter(), playerBone, bufferSource, partialTick);
 			}
 			bufferSource.getBuffer(renderType);
 			return;
@@ -117,16 +151,17 @@ public class DMZRacePartsLayer<T extends AbstractClientPlayer & GeoAnimatable> e
 
 		BakedGeoModel playerModel = getGeoModel().getBakedModel(getGeoModel().getModelResource(animatable));
 
-		renderRacePartsForAnchor(poseStack, animatable, playerModel, bufferSource, stats, anchor, partialTick, packedLight, alpha, tintProgress);
+		renderRacePartsForAnchor(poseStack, animatable, playerModel, bufferSource, stats, anchor, partialTick, packedLight, packedOverlay, alpha, tintProgress);
 
 		if (!animatable.isSpectator()) {
 			if ("head".equals(anchor) && !stats.getCharacter().isOozaruCached()) {
 				renderAccessories(poseStack, animatable, playerModel, bufferSource, partialTick, packedLight);
-				renderScouter(poseStack, animatable, playerModel, bufferSource, partialTick, packedLight);
 			} else {
 				renderSword(poseStack, animatable, playerBone, bufferSource, partialTick, packedLight);
 				if ("body".equals(anchor) && !stats.getCharacter().isOozaruCached()) {
-					renderWeightedItems(poseStack, animatable, bufferSource, anchor, partialTick, packedLight, alpha);
+					renderWeights(poseStack, animatable, bufferSource, anchor, partialTick, packedLight, alpha);
+					renderSolarisSmoke(poseStack, animatable, stats.getCharacter(), playerBone, bufferSource, partialTick);
+					renderTimeHalo(poseStack, animatable, stats.getCharacter(), partialTick);
 				}
 			}
 		}
@@ -134,7 +169,7 @@ public class DMZRacePartsLayer<T extends AbstractClientPlayer & GeoAnimatable> e
 		bufferSource.getBuffer(renderType);
 	}
 
-	private void renderRacePartsForAnchor(PoseStack poseStack, T animatable, BakedGeoModel playerModel, MultiBufferSource bufferSource, StatsData stats, String anchor, float partialTick, int packedLight, float alpha, float tintProgress) {
+	private void renderRacePartsForAnchor(PoseStack poseStack, T animatable, BakedGeoModel playerModel, MultiBufferSource bufferSource, StatsData stats, String anchor, float partialTick, int packedLight, int packedOverlay, float alpha, float tintProgress) {
 		var character = stats.getCharacter();
 		var isAlive = stats.getStatus().isAlive();
 		String race = character.getRaceName().toLowerCase();
@@ -166,35 +201,13 @@ public class DMZRacePartsLayer<T extends AbstractClientPlayer & GeoAnimatable> e
 		if (partsModel == null) return;
 
 		RenderType partsRenderType = RenderType.entityTranslucent(RACES_PARTS_TEXTURE);
+		RenderType partsShadowRenderType = RenderType.entityTranslucent(RACES_PARTS_SHADOW_TEXTURE);
 		FormConfig.FormData tintForm = DMZSkinLayer.resolveTintForm(stats);
 		float[] formTintColor = tintForm != null ? tintForm.getRgbTintColor() : null;
 		float formTintIntensity = tintForm != null ? (float) tintForm.getTintIntensity() : 0.0f;
 		float[] topAuraColor = getTopAuraColor(stats);
 
-		float[] accessoryColor = character.getRgbHairColor();
-
-		if (character.hasActiveForm() && character.getActiveFormData() != null && !character.getActiveFormData().getHairColor().isEmpty()) {
-			accessoryColor = character.getActiveFormData().getRgbHairColor();
-		}
-		if (character.hasActiveStackForm() && character.getActiveStackFormData() != null && !character.getActiveStackFormData().getHairColor().isEmpty()) {
-			accessoryColor = character.getActiveStackFormData().getRgbHairColor();
-		}
-
-		if (stats.getStatus().isActionCharging()) {
-			if (stats.getStatus().getSelectedAction() == ActionMode.FORM) {
-				var nextForm = TransformationsHelper.getNextAvailableForm(stats);
-				if (nextForm != null && !nextForm.getHairColor().isEmpty()) {
-					float factor = Mth.clamp(stats.getResources().getActionCharge() / 100.0f, 0.0f, 1.0f);
-					accessoryColor = DMZSkinLayer.lerpColor(factor, accessoryColor, nextForm.getRgbHairColor());
-				}
-			} else if (stats.getStatus().getSelectedAction() == ActionMode.STACK) {
-				var nextForm = TransformationsHelper.getNextAvailableStackForm(stats);
-				if (nextForm != null && !nextForm.getHairColor().isEmpty()) {
-					float factor = Mth.clamp(stats.getResources().getActionCharge() / 100.0f, 0.0f, 1.0f);
-					accessoryColor = DMZSkinLayer.lerpColor(factor, accessoryColor, nextForm.getRgbHairColor());
-				}
-			}
-		}
+		float[] accessoryColor = FormVisualTransition.color(stats, character.getRgbHairColor(), HelmetFormLook.hair(stats));
 
 		if (anchor.equals("head")) {
 			boolean extraHeadBonesEnabled = character.areExtraHeadBonesEnabled();
@@ -216,17 +229,22 @@ public class DMZRacePartsLayer<T extends AbstractClientPlayer & GeoAnimatable> e
 
 						float[] colorToTint = accessoryColor;
 
-						if (character.getRaceName().equals("majin") || character.getRaceName().equals("namekian")) {
+						if (character.getRaceName().equals("majin") || character.getRaceName().equals("namekian")
+								|| character.getRaceName().equals("glind")
+								|| animatable instanceof DMZRendererCache.NpcPuppet) {
 							colorToTint = resolveBodyColor1(stats);
 						}
 
 						float[] tintedColor = applyAuraTint(colorToTint[0], colorToTint[1], colorToTint[2], formTintColor, formTintIntensity, topAuraColor, tintProgress);
+						float[] shadowColor = tintedShadow(colorToTint, formTintColor, formTintIntensity, topAuraColor, tintProgress);
 
 						if (boneName.contains("horn") && character.getRaceName().equals("frostdemon")) {
 							tintedColor = ColorUtils.hexToRgb("#1A1A1A");
+							shadowColor = ColorUtils.skinShadowTone(tintedColor);
 						}
 
 						renderTargetedBone(targetBone, poseStack, bufferSource, animatable, partsRenderType, tintedColor[0], tintedColor[1], tintedColor[2], alpha, partialTick, packedLight);
+						renderTargetedBone(targetBone, poseStack, bufferSource, animatable, partsShadowRenderType, shadowColor[0], shadowColor[1], shadowColor[2], alpha, partialTick, packedLight);
 					}
 				}
 			}
@@ -247,7 +265,9 @@ public class DMZRacePartsLayer<T extends AbstractClientPlayer & GeoAnimatable> e
 					}
 					float[] antennaColor = resolveBodyColor1(stats);
 					float[] tintedColor = applyAuraTint(antennaColor[0], antennaColor[1], antennaColor[2], formTintColor, formTintIntensity, topAuraColor, tintProgress);
+					float[] shadowColor = tintedShadow(antennaColor, formTintColor, formTintIntensity, topAuraColor, tintProgress);
 					renderTargetedBone(antennaBone, poseStack, bufferSource, animatable, partsRenderType, tintedColor[0], tintedColor[1], tintedColor[2], alpha, partialTick, packedLight);
+					renderTargetedBone(antennaBone, poseStack, bufferSource, animatable, partsShadowRenderType, shadowColor[0], shadowColor[1], shadowColor[2], alpha, partialTick, packedLight);
 				}
 			}
 
@@ -268,7 +288,9 @@ public class DMZRacePartsLayer<T extends AbstractClientPlayer & GeoAnimatable> e
 					}
 
 					float[] tintedColor = applyAuraTint(majinBodyColor[0], majinBodyColor[1], majinBodyColor[2], formTintColor, formTintIntensity, topAuraColor, tintProgress);
+					float[] shadowColor = tintedShadow(majinBodyColor, formTintColor, formTintIntensity, topAuraColor, tintProgress);
 					renderTargetedBone(earsBone, poseStack, bufferSource, animatable, partsRenderType, tintedColor[0], tintedColor[1], tintedColor[2], alpha, partialTick, packedLight);
+					renderTargetedBone(earsBone, poseStack, bufferSource, animatable, partsShadowRenderType, shadowColor[0], shadowColor[1], shadowColor[2], alpha, partialTick, packedLight);
 				}
 			}
 
@@ -291,43 +313,154 @@ public class DMZRacePartsLayer<T extends AbstractClientPlayer & GeoAnimatable> e
 			boolean isSaiyanLogic = race.equals("saiyan");
 			boolean hasSaiyanTail = raceConfig.getHasSaiyanTail() != null && raceConfig.getHasSaiyanTail();
 
-			if ((isSaiyanLogic || hasSaiyanTail) && !stats.getStatus().isTailVisible() && character.isHasSaiyanTail()) {
+			float enrolledAlpha = (isSaiyanLogic || hasSaiyanTail) && SaiyanTailRules.hasTail(character)
+					? SaiyanTailRules.enrolledTailAlpha(animatable, stats.getStatus().isTailVisible()) : 0.0f;
+			if (enrolledAlpha > 0.0f) {
 				RenderType tailRenderType = RenderType.entityTranslucentCull(RACES_PARTS_TEXTURE);
+				float tailAlpha = alpha * enrolledAlpha;
 				partsModel.getBone("tailenrolled").ifPresent(targetBone -> {
 					syncTargetBoneAndParents(targetBone, playerModel);
-					float[] tailColor = ColorUtils.hexToRgb("#572117");
-
-					if (character.getBodyColor2() != null && !character.getBodyColor2().isEmpty()) {
-						tailColor = character.getRgbBodyColor2();
-					}
-					if (character.hasActiveForm() && character.getActiveFormData() != null && !character.getActiveFormData().getBodyColor2().isEmpty()) {
-						tailColor = character.getActiveFormData().getRgbBodyColor2();
-					}
-					if (character.hasActiveStackForm() && character.getActiveStackFormData() != null && !character.getActiveStackFormData().getBodyColor2().isEmpty()) {
-						tailColor = character.getActiveStackFormData().getRgbBodyColor2();
-					}
-
-					if (stats.getStatus().isActionCharging()) {
-						if (stats.getStatus().getSelectedAction() == ActionMode.FORM) {
-							var nextForm = TransformationsHelper.getNextAvailableForm(stats);
-							if (nextForm != null && !nextForm.getBodyColor2().isEmpty()) {
-								float factor = Mth.clamp(stats.getResources().getActionCharge() / 100.0f, 0.0f, 1.0f);
-								tailColor = DMZSkinLayer.lerpColor(factor, tailColor, nextForm.getRgbBodyColor2());
-							}
-						} else if (stats.getStatus().getSelectedAction() == ActionMode.STACK) {
-							var nextForm = TransformationsHelper.getNextAvailableStackForm(stats);
-							if (nextForm != null && !nextForm.getBodyColor2().isEmpty()) {
-								float factor = Mth.clamp(stats.getResources().getActionCharge() / 100.0f, 0.0f, 1.0f);
-								tailColor = DMZSkinLayer.lerpColor(factor, tailColor, nextForm.getRgbBodyColor2());
-							}
-						}
-					}
-
+					float[] tailColor = resolveTailColor(stats);
 					float[] tintedColor = applyAuraTint(tailColor[0], tailColor[1], tailColor[2], formTintColor, formTintIntensity, topAuraColor, tintProgress);
-					renderTargetedBone(targetBone, poseStack, bufferSource, animatable, tailRenderType, tintedColor[0], tintedColor[1], tintedColor[2], alpha, partialTick, packedLight);
+					float[] shadowColor = tintedShadow(tailColor, formTintColor, formTintIntensity, topAuraColor, tintProgress);
+					renderTargetedBone(targetBone, poseStack, bufferSource, animatable, tailRenderType, tintedColor[0], tintedColor[1], tintedColor[2], tailAlpha, partialTick, packedLight);
+					renderTargetedBone(targetBone, poseStack, bufferSource, animatable, RenderType.entityTranslucentCull(RACES_PARTS_SHADOW_TEXTURE), shadowColor[0], shadowColor[1], shadowColor[2], tailAlpha, partialTick, packedLight);
 				});
 			}
 		}
+
+		FusedData fused = stats.getFusedData();
+		if (fused != null) {
+			renderFusionParts(poseStack, animatable, playerModel, partsModel, bufferSource, stats, fused, anchor, partialTick, packedLight, packedOverlay, alpha,
+					formTintColor, formTintIntensity, topAuraColor, tintProgress, accessoryColor);
+		}
+	}
+
+	private void renderFusionParts(PoseStack poseStack, T animatable, BakedGeoModel playerModel, BakedGeoModel partsModel, MultiBufferSource bufferSource,
+								   StatsData stats, FusedData fused, String anchor, float partialTick, int packedLight, int packedOverlay, float alpha,
+								   float[] formTint, float formTintIntensity, float[] auraColor, float tintProgress, float[] accessoryColor) {
+		boolean body = anchor.equals("body");
+		float[][] bodyColors = null;
+		for (FusionTraits.Part part : fused.traitPlan(stats.getCharacter()).borrowed()) {
+			if (part.onBody() != body) continue;
+			switch (part.source()) {
+				case RACE_PARTS -> {
+					GeoBone bone = partsModel.getBone(part.bone()).orElse(null);
+					if (bone == null) continue;
+					syncTargetBoneAndParents(bone, playerModel);
+					float[] color = part.category() == FusionTraits.Category.HORNS ? HORN_COLOR
+							: tint(part.category() == FusionTraits.Category.OTHER ? accessoryColor : resolveBodyColor1(stats), formTint, formTintIntensity, auraColor, tintProgress, PARTS_AURA_TINT);
+					renderTargetedBone(bone, poseStack, bufferSource, animatable, RenderType.entityTranslucent(RACES_PARTS_TEXTURE), color[0], color[1], color[2], alpha, partialTick, packedLight);
+				}
+				case SAIYAN_TAIL -> renderBorrowedSaiyanTail(poseStack, animatable, playerModel, partsModel, bufferSource, stats, part.leader(), partialTick, packedLight, packedOverlay, alpha, formTint, formTintIntensity, auraColor, tintProgress);
+				case FROST_DEMON, BIO_ANDROID -> {
+					if (bodyColors == null) bodyColors = SkinGathererProvider.resolveBodyColors(stats);
+					renderBorrowedModelPart(poseStack, animatable, playerModel, bufferSource, stats, fused, part, bodyColors, partialTick, packedLight, packedOverlay, alpha, formTint, formTintIntensity, auraColor, tintProgress);
+				}
+			}
+		}
+	}
+
+	private void renderBorrowedSaiyanTail(PoseStack poseStack, T animatable, BakedGeoModel playerModel, BakedGeoModel partsModel, MultiBufferSource bufferSource, StatsData stats, boolean leaderTail,
+										  float partialTick, int packedLight, int packedOverlay, float alpha, float[] formTint, float formTintIntensity, float[] auraColor, float tintProgress) {
+		float[] tailColor = resolveTailColor(stats);
+		if (stats.getStatus().isTailVisible()) {
+			float[] color = tint(tailColor, formTint, formTintIntensity, auraColor, tintProgress, BODY_AURA_TINT);
+			tailMesh.reset();
+			DonorBoneRenderer.visit(animatable, playerModel, SAIYAN_TAIL_MODEL, "tail1", true, poseStack, partialTick, (bone, stack) -> {
+				if (SaiyanTailMeshBuilder.isTailBone(bone.getName())) tailMesh.add(bone, stack.last().pose(), stack.last().normal());
+			});
+			RenderType type = alpha < 1.0f ? RenderType.entityTranslucent(SaiyanTailMeshBuilder.TEXTURE) : RenderType.entityCutoutNoCull(SaiyanTailMeshBuilder.TEXTURE);
+			tailMesh.emit(bufferSource.getBuffer(type), color, packedLight, packedOverlay, alpha, DMZHairLayer.wantsPixelDetail(animatable));
+			return;
+		}
+		if (leaderTail) return;
+		GeoBone enrolled = partsModel.getBone("tailenrolled").orElse(null);
+		if (enrolled == null) return;
+		syncTargetBoneAndParents(enrolled, playerModel);
+		float[] color = tint(tailColor, formTint, formTintIntensity, auraColor, tintProgress, PARTS_AURA_TINT);
+		renderTargetedBone(enrolled, poseStack, bufferSource, animatable, RenderType.entityTranslucentCull(RACES_PARTS_TEXTURE), color[0], color[1], color[2], alpha, partialTick, packedLight);
+	}
+
+	private void renderOriginBones(PoseStack poseStack, T animatable, GeoBone anchor, boolean isLimb, RenderType renderType, MultiBufferSource bufferSource,
+								   float partialTick, int packedLight, int packedOverlay) {
+		List<GeoBone> bones = FusionOriginBones.childrenOf(anchor);
+		if (bones.isEmpty()) return;
+		if (!isLimb && !HeadPortraitRenderer.isActive() && FirstPersonManager.shouldRenderFirstPerson(animatable)) return;
+
+		var stats = StatsProvider.get(StatsCapability.INSTANCE, animatable).orElse(new StatsData(animatable));
+		float alpha = animatable.isSpectator() ? 0.15f : 1.0f;
+		FormConfig.FormData tintForm = DMZSkinLayer.resolveTintForm(stats);
+		float[] formTint = tintForm != null ? tintForm.getRgbTintColor() : null;
+		float formTintIntensity = tintForm != null ? (float) tintForm.getTintIntensity() : 0.0f;
+		List<DonorBoneRenderer.Layer> layers = new ArrayList<>();
+		SkinGathererProvider.INSTANCE.gatherOriginLayers(animatable, stats,
+				layerSink(layers, alpha, formTint, formTintIntensity, getTopAuraColor(stats), AuraTintTracker.get(animatable.getId())));
+		if (layers.isEmpty()) return;
+		for (GeoBone bone : bones) {
+			DonorBoneRenderer.renderOwn(getRenderer(), animatable, bone, layers, poseStack, bufferSource, partialTick, packedLight, packedOverlay);
+		}
+		bufferSource.getBuffer(renderType);
+	}
+
+	private SkinGathererProvider.BodyLayerSink layerSink(List<DonorBoneRenderer.Layer> layers, float alpha, float[] formTint, float formTintIntensity, float[] auraColor, float tintProgress) {
+		return new SkinGathererProvider.BodyLayerSink() {
+			@Override
+			public void base(ResourceLocation texture, float[] color) {
+				add(alpha < 1.0f ? RenderType.entityTranslucent(texture) : RenderType.entityCutoutNoCull(texture), color, 1.0f);
+			}
+
+			@Override
+			public void overlay(ResourceLocation texture, float[] color) {
+				add(alpha < 1.0f ? ModRenderTypes.skinOverlayTranslucent(texture) : ModRenderTypes.skinOverlayCutout(texture), color, 1.0f);
+			}
+
+			@Override
+			public void translucent(ResourceLocation texture, float[] color) {
+				add(RenderType.entityTranslucent(texture), color, 1.0f);
+			}
+
+			@Override
+			public void fading(String layerId, ResourceLocation texture, float[] color, float targetAlpha) {
+				add(alpha < 1.0f || targetAlpha < 1.0f ? ModRenderTypes.skinOverlayTranslucent(texture) : ModRenderTypes.skinOverlayCutout(texture), color, targetAlpha);
+			}
+
+			private void add(RenderType type, float[] color, float opacity) {
+				if (opacity <= 0.001f) return;
+				float[] tinted = tint(color, formTint, formTintIntensity, auraColor, tintProgress, BODY_AURA_TINT);
+				layers.add(new DonorBoneRenderer.Layer(type, tinted[0], tinted[1], tinted[2], alpha * opacity));
+			}
+		};
+	}
+
+	private void renderBorrowedModelPart(PoseStack poseStack, T animatable, BakedGeoModel playerModel, MultiBufferSource bufferSource, StatsData stats, FusedData fused, FusionTraits.Part part,
+										 float[][] bodyColors, float partialTick, int packedLight, int packedOverlay, float alpha, float[] formTint, float formTintIntensity, float[] auraColor, float tintProgress) {
+		boolean frost = part.source() == FusionTraits.Source.FROST_DEMON;
+		String race = frost ? "frostdemon" : "bioandroid";
+		Character character = stats.getCharacter();
+		boolean originForm = character.hasActiveForm() && race.equalsIgnoreCase(FusionForms.raceOf(stats, character.getActiveFormGroup()));
+		ResourceLocation donorModel = frost ? FROST_DEMON_MODEL : originForm ? BIO_ANDROID_PERFECT_MODEL : BIO_ANDROID_MODEL;
+		String boneName = !frost && originForm && part.category() == FusionTraits.Category.TAIL ? "cola" : part.bone();
+		List<DonorBoneRenderer.Layer> layers = new ArrayList<>();
+		int bodyType = part.leader() ? character.getBodyType() : fused.getPartnerBodyType();
+		String gender = part.leader() ? character.getGender() : fused.getPartnerGender();
+		SkinGathererProvider.INSTANCE.gatherDonorLayers(race, bodyType, gender, originForm ? character.getActiveFormGroup() : null, originForm ? character.getActiveForm() : null,
+				bodyColors, layerSink(layers, alpha, formTint, formTintIntensity, auraColor, tintProgress));
+		DonorBoneRenderer.render(getRenderer(), animatable, playerModel, donorModel, boneName,
+				part.category() == FusionTraits.Category.TAIL, layers, poseStack, bufferSource, partialTick, packedLight, packedOverlay);
+	}
+
+	private float[] resolveTailColor(StatsData stats) {
+		var character = stats.getCharacter();
+		float[] baseTail = character.getBodyColor2() != null && !character.getBodyColor2().isEmpty()
+				? character.getRgbBodyColor2()
+				: ColorUtils.hexToRgb("#572117");
+		return FormVisualTransition.color(stats, baseTail, FormConfig.FormData::getRgbBodyColor2);
+	}
+
+	private float[] tintedShadow(float[] color, float[] formTintColor, float formTintIntensity, float[] auraColor, float tintProgress) {
+		float[] shadow = ColorUtils.skinShadowTone(color);
+		return applyAuraTint(shadow[0], shadow[1], shadow[2], formTintColor, formTintIntensity, auraColor, tintProgress);
 	}
 
 	private void renderTargetedBone(GeoBone targetBone, PoseStack poseStack, MultiBufferSource bufferSource, T animatable, RenderType renderType, float r, float g, float b, float alpha, float partialTick, int packedLight) {
@@ -336,41 +469,15 @@ public class DMZRacePartsLayer<T extends AbstractClientPlayer & GeoAnimatable> e
 	}
 
 	private float[] resolveBodyColor1(StatsData stats) {
-		var character = stats.getCharacter();
-		float[] color = character.getRgbBodyColor();
-
-		if (character.hasActiveForm() && character.getActiveFormData() != null && !character.getActiveFormData().getBodyColor1().isEmpty()) {
-			color = character.getActiveFormData().getRgbBodyColor1();
-		}
-		if (character.hasActiveStackForm() && character.getActiveStackFormData() != null && !character.getActiveStackFormData().getBodyColor1().isEmpty()) {
-			color = character.getActiveStackFormData().getRgbBodyColor1();
-		}
-
-		if (stats.getStatus().isActionCharging()) {
-			float factor = Mth.clamp(stats.getResources().getActionCharge() / 100.0f, 0.0f, 1.0f);
-			if (stats.getStatus().getSelectedAction() == ActionMode.FORM) {
-				var nextForm = TransformationsHelper.getNextAvailableForm(stats);
-				if (nextForm != null && !nextForm.getBodyColor1().isEmpty()) {
-					color = DMZSkinLayer.lerpColor(factor, color, nextForm.getRgbBodyColor1());
-				}
-			} else if (stats.getStatus().getSelectedAction() == ActionMode.STACK) {
-				var nextForm = TransformationsHelper.getNextAvailableStackForm(stats);
-				if (nextForm != null && !nextForm.getBodyColor1().isEmpty()) {
-					color = DMZSkinLayer.lerpColor(factor, color, nextForm.getRgbBodyColor1());
-				}
-			}
-		}
-
-		return color;
+		return FormVisualTransition.color(stats, stats.getCharacter().getRgbBodyColor(), FormConfig.FormData::getRgbBodyColor1);
 	}
 
 	private float[] getTopAuraColor(StatsData stats) {
 		var character = stats.getCharacter();
 		float[] color = character.getRgbAuraColor();
 
-		if (character.hasActiveForm() && character.getActiveFormData() != null && character.getActiveFormData().getAuraColor() != null && !character.getActiveFormData().getAuraColor().isEmpty()) {
-			color = character.getActiveFormData().getRgbAuraColor();
-		}
+		float[] formColor = character.hasActiveForm() ? HelmetFormLook.rgbAuraColor(stats.getPlayer(), character.getActiveFormData()) : null;
+		if (formColor != null) color = formColor;
 
 		if (character.hasActiveStackForm() && character.getActiveStackFormData() != null && character.getActiveStackFormData().getAuraColor() != null && !character.getActiveStackFormData().getAuraColor().isEmpty()) {
 			color = character.getActiveStackFormData().getRgbAuraColor();
@@ -380,8 +487,16 @@ public class DMZRacePartsLayer<T extends AbstractClientPlayer & GeoAnimatable> e
 	}
 
 	private float[] applyAuraTint(float r, float g, float b, float[] formTintColor, float formTintIntensity, float[] auraColor, float tintProgress) {
+		return applyAuraTint(r, g, b, formTintColor, formTintIntensity, auraColor, tintProgress, PARTS_AURA_TINT);
+	}
+
+	private float[] tint(float[] rgb, float[] formTintColor, float formTintIntensity, float[] auraColor, float tintProgress, float auraStrength) {
+		return applyAuraTint(rgb[0], rgb[1], rgb[2], formTintColor, formTintIntensity, auraColor, tintProgress, auraStrength);
+	}
+
+	private float[] applyAuraTint(float r, float g, float b, float[] formTintColor, float formTintIntensity, float[] auraColor, float tintProgress, float auraStrength) {
 		boolean hasFormTint = formTintIntensity > 0.0f && formTintColor != null;
-		float intensity = hasFormTint ? Mth.clamp(formTintIntensity, 0.0f, 1.0f) : 0.4f * tintProgress;
+		float intensity = hasFormTint ? Mth.clamp(formTintIntensity, 0.0f, 1.0f) : auraStrength * tintProgress;
 		intensity *= AuraTintTracker.darkTintScale(r, g, b);
 
 		if (intensity <= 0.001f) return new float[]{r, g, b};
@@ -432,9 +547,51 @@ public class DMZRacePartsLayer<T extends AbstractClientPlayer & GeoAnimatable> e
 	}
 
 	private void renderAccessories(PoseStack poseStack, T animatable, BakedGeoModel playerModel, MultiBufferSource bufferSource, float partialTick, int packedLight) {
-		ItemStack headTechStack = getRenderableCurio(animatable, "head_tech", 0);
+		if (animatable instanceof DMZRendererCache.NpcPuppet puppet) {
+			renderScouter(poseStack, animatable, playerModel, bufferSource, partialTick, packedLight, puppet.getScouter());
+			return;
+		}
+		for (int i = 0; i < getCuriosSlotSize(animatable, "head_tech"); i++) {
+			ItemStack headTechStack = getRenderableCurio(animatable, "head_tech", i);
+			renderPothala(poseStack, animatable,  playerModel, bufferSource, partialTick, packedLight, headTechStack);
+			renderScouter(poseStack, animatable,  playerModel, bufferSource, partialTick, packedLight, headTechStack);
+			renderDemonEye(poseStack, bufferSource, packedLight, headTechStack);
 
-		String headTechId = headTechStack.getItem().getDescriptionId();
+			ItemStack cosmeticHeadTechStack = getRenderableCosmetic(animatable, "head_tech", i);
+			renderPothala(poseStack, animatable, playerModel, bufferSource, partialTick, packedLight, cosmeticHeadTechStack);
+			renderScouter(poseStack, animatable, playerModel, bufferSource, partialTick, packedLight, cosmeticHeadTechStack);
+			renderDemonEye(poseStack, bufferSource, packedLight, cosmeticHeadTechStack);
+		}
+	}
+
+	private void renderDemonEye(PoseStack poseStack, MultiBufferSource bufferSource, int packedLight, ItemStack stack) {
+		if (stack.isEmpty() || stack.getItem() != MainItems.DEMON_EYE.get()) return;
+
+		BakedGeoModel partsModel = getGeoModel().getBakedModel(RACES_PARTS_MODEL);
+		if (partsModel == null) return;
+
+		partsModel.getBone("evil_eye").ifPresent(bone -> {
+			poseStack.pushPose();
+			RenderUtils.prepMatrixForBone(poseStack, bone);
+			poseStack.translate(bone.getPivotX() / 16f, bone.getPivotY() / 16f, bone.getPivotZ() / 16f);
+			PoseStack.Pose pose = poseStack.last();
+			VertexConsumer consumer = bufferSource.getBuffer(RenderType.entityCutoutNoCull(DEMON_EYE_TEXTURE));
+			float h = DEMON_EYE_HALF_SIZE;
+			demonEyeVertex(consumer, pose, h, h, 0f, 0f, packedLight);
+			demonEyeVertex(consumer, pose, -h, h, 1f, 0f, packedLight);
+			demonEyeVertex(consumer, pose, -h, -h, 1f, 1f, packedLight);
+			demonEyeVertex(consumer, pose, h, -h, 0f, 1f, packedLight);
+			poseStack.popPose();
+		});
+	}
+
+	private static void demonEyeVertex(VertexConsumer consumer, PoseStack.Pose pose, float x, float y, float u, float v, int packedLight) {
+		consumer.vertex(pose.pose(), x, y, 0f).color(1f, 1f, 1f, 1f).uv(u, v)
+				.overlayCoords(OverlayTexture.NO_OVERLAY).uv2(packedLight).normal(pose.normal(), 0f, 0f, -1f).endVertex();
+	}
+
+	private void renderPothala(PoseStack poseStack, T animatable, BakedGeoModel playerModel, MultiBufferSource bufferSource, float partialTick, int packedLight, ItemStack stack) {
+		String headTechId = stack.getItem().getDescriptionId();
 		boolean hasPothalaPair = headTechId.contains("pothala_pair");
 		boolean hasPothalaRight = hasPothalaPair || headTechId.contains("pothala_right");
 		boolean hasPothalaLeft = hasPothalaPair || headTechId.contains("pothala_left");
@@ -449,7 +606,7 @@ public class DMZRacePartsLayer<T extends AbstractClientPlayer & GeoAnimatable> e
 		BakedGeoModel accModel = getGeoModel().getBakedModel(ACCESORIES_MODEL);
 		if (accModel == null) return;
 
-		String pothalaColor = stats.getStatus().getPothalaColor().contains("green") ? "green" : "yellow";
+		String pothalaColor = stack.getDescriptionId().contains("green") ? "green" : "yellow";
 		RenderType accRenderType = RenderType.entityCutoutNoCull(ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "textures/entity/races/" + pothalaColor + "pothala.png"));
 
 		if (hasPothalaRight || isFused) {
@@ -467,11 +624,10 @@ public class DMZRacePartsLayer<T extends AbstractClientPlayer & GeoAnimatable> e
 		}
 	}
 
-	private void renderScouter(PoseStack poseStack, T animatable, BakedGeoModel playerModel, MultiBufferSource bufferSource, float partialTick, int packedLight) {
-		ItemStack headTechStack = getRenderableCurio(animatable, "head_tech", 0);
-		if (headTechStack.isEmpty()) return;
+	private void renderScouter(PoseStack poseStack, T animatable, BakedGeoModel playerModel, MultiBufferSource bufferSource, float partialTick, int packedLight, ItemStack stack) {
+		if (stack.isEmpty()) return;
 
-		Item item = headTechStack.getItem();
+		Item item = stack.getItem();
 		String color = null;
 
 		if (item == MainItems.GREEN_SCOUTER.get()) color = "green";
@@ -492,9 +648,18 @@ public class DMZRacePartsLayer<T extends AbstractClientPlayer & GeoAnimatable> e
 		});
 	}
 
-	private void renderWeightedItems(PoseStack poseStack, T animatable, MultiBufferSource bufferSource, String anchor, float partialTick, int packedLight, float alpha) {
-		ItemStack weightStack = getRenderableCurio(animatable, "weights", 0);
-		if (weightStack.isEmpty() || !(weightStack.getItem() instanceof WeightItem weightItem)) return;
+	private void renderWeights(PoseStack poseStack, T animatable, MultiBufferSource bufferSource, String anchor, float partialTick, int packedLight, float alpha) {
+		for (int i = 0; i < getCuriosSlotSize(animatable, "weights"); i++) {
+			ItemStack weightStack = getRenderableCurio(animatable, "weights", i);
+			renderWeightedItems(poseStack, animatable, bufferSource, anchor, partialTick, packedLight, alpha, weightStack);
+
+			ItemStack cosmeticWeightStack = getRenderableCosmetic(animatable, "weights", i);
+			renderWeightedItems(poseStack, animatable, bufferSource, anchor, partialTick, packedLight, alpha, cosmeticWeightStack);
+		}
+	}
+
+	private void renderWeightedItems(PoseStack poseStack, T animatable, MultiBufferSource bufferSource, String anchor, float partialTick, int packedLight, float alpha, ItemStack stack) {
+		if (stack.isEmpty() || !(stack.getItem() instanceof WeightItem weightItem)) return;
 
 		BakedGeoModel weightModel = getGeoModel().getBakedModel(WEIGHTED_ITEMS_MODEL);
 		if (weightModel == null) return;
@@ -530,6 +695,34 @@ public class DMZRacePartsLayer<T extends AbstractClientPlayer & GeoAnimatable> e
 					case "left_arm" -> renderWeightBone(weightModel, "piccoloweight_left", poseStack, animatable, bufferSource, type, partialTick, packedLight, alpha);
 				}
 			}
+		}
+	}
+
+	private static boolean isSolaris(Character character) {
+		return "human".equalsIgnoreCase(character.getRaceName())
+				&& HumanForms.GROUP_SUPERFORMS.equals(character.getActiveFormGroup())
+				&& HumanForms.SOLARIS.equals(character.getActiveForm());
+	}
+
+	private static boolean isRealmOfLight(Character character) {
+		return "glind".equalsIgnoreCase(character.getRaceName())
+				&& GlindForms.GROUP_LEGENDARYFORMS.equalsIgnoreCase(character.getActiveFormGroup())
+				&& GlindForms.TIME_POWER_REALM_OF_LIGHT.equalsIgnoreCase(character.getActiveForm());
+	}
+
+	private void renderTimeHalo(PoseStack poseStack, T animatable, Character character, float partialTick) {
+		if (HeadPortraitRenderer.isActive() || DMZSkinLayer.PREVIEW_MODE) return;
+		TimeHaloRenderer.submit(animatable, isRealmOfLight(character) && !animatable.isInvisible(), poseStack, partialTick);
+	}
+
+	private void renderSolarisSmoke(PoseStack poseStack, T animatable, Character character, GeoBone playerBone, MultiBufferSource bufferSource, float partialTick) {
+		if (!isSolaris(character)) return;
+		float age = animatable.tickCount + partialTick;
+		boolean bloom = !HeadPortraitRenderer.isActive();
+		if ("body".equals(playerBone.getName())) {
+			SolarisSmokeRenderer.renderBody(poseStack, bufferSource, animatable.getId(), age, bloom);
+		} else {
+			SolarisSmokeRenderer.renderWrist(poseStack, playerBone, bufferSource, animatable.getId(), age, bloom);
 		}
 	}
 
@@ -672,5 +865,27 @@ public class DMZRacePartsLayer<T extends AbstractClientPlayer & GeoAnimatable> e
 		if (!stacksHandler.getRenders().get(index)) return ItemStack.EMPTY;
 
 		return stacksHandler.getStacks().getStackInSlot(index);
+	}
+
+	private ItemStack getRenderableCosmetic(T animatable, String slotId, int index) {
+		var inventory = CuriosApi.getCuriosInventory(animatable).orElse(null);
+		if (inventory == null) return ItemStack.EMPTY;
+
+		var stacksHandler = inventory.getCurios().get(slotId);
+		if (stacksHandler == null) return ItemStack.EMPTY;
+
+		if (!stacksHandler.getRenders().get(index)) return ItemStack.EMPTY;
+
+		return stacksHandler.getCosmeticStacks().getStackInSlot(index);
+	}
+
+	private int getCuriosSlotSize(T animatable, String slotId) {
+		var inventory = CuriosApi.getCuriosInventory(animatable).orElse(null);
+		if (inventory == null) return 0;
+
+		var stacksHandler = inventory.getCurios().get(slotId);
+		if (stacksHandler == null) return 0;
+
+		return stacksHandler.getSlots();
 	}
 }

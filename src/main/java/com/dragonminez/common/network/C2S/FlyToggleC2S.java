@@ -1,11 +1,13 @@
 package com.dragonminez.common.network.C2S;
 
+import com.dragonminez.common.network.PacketRateLimiter;
 import com.dragonminez.common.config.ConfigManager;
 import com.dragonminez.common.network.NetworkHandler;
 import com.dragonminez.common.network.S2C.ProgressionSyncS2C;
 import com.dragonminez.common.stats.skills.Skill;
 import com.dragonminez.common.stats.StatsCapability;
 import com.dragonminez.common.stats.StatsProvider;
+import com.dragonminez.server.events.players.statuseffect.FlyStatusHandler;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraftforge.network.NetworkEvent;
@@ -36,12 +38,15 @@ public class FlyToggleC2S {
         ctx.get().enqueueWork(() -> {
             ServerPlayer player = ctx.get().getSender();
             if (player == null) return;
+            if (!PacketRateLimiter.allow(player.getUUID(), "flytogglec2s", player.level().getGameTime(), 2)) return;
 
             StatsProvider.get(StatsCapability.INSTANCE, player).ifPresent(data -> {
+                if (data.getStatus().isStunned()) return;
                 Skill flySkill = data.getSkills().getSkill("fly");
                 if (flySkill == null || flySkill.getLevel() <= 0) return;
 
                 if (flySkill.isActive() == msg.enable) return;
+                if (msg.enable && FlyStatusHandler.isRidingMount(player)) return;
 
                 int flyLevel = flySkill.getLevel();
 

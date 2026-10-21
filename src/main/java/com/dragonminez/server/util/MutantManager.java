@@ -8,6 +8,7 @@ import com.dragonminez.common.network.S2C.StatsSyncS2C;
 import com.dragonminez.common.stats.StatsCapability;
 import com.dragonminez.common.stats.StatsData;
 import com.dragonminez.common.stats.StatsProvider;
+import com.dragonminez.common.util.FusionForms;
 import com.dragonminez.server.world.data.MutantSavedData;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.MinecraftServer;
@@ -33,7 +34,7 @@ public final class MutantManager {
 	}
 
 	public static boolean isMutant(StatsData data) {
-		return data != null && data.getEffects().hasEffect(EFFECT_NAME);
+		return FusionForms.hasAnyMutant(data);
 	}
 
 	public static void grant(ServerPlayer player, StatsData data) {
@@ -83,7 +84,7 @@ public final class MutantManager {
 		if (player == null || data == null || player.getServer() == null) return;
 		GeneralServerConfig.MutantConfig cfg = config();
 		if (cfg == null || !cfg.getEnabled()) return;
-		if (!data.getStatus().isHasCreatedCharacter() || !data.getStatus().isAlive()) return;
+		if (!data.getStatus().isHasCreatedCharacter()) return;
 
 		MutantSavedData saved = MutantSavedData.get(player.getServer());
 		if (saved.isHolder(player.getUUID()) || isMutant(data)) return;
@@ -108,7 +109,6 @@ public final class MutantManager {
 			StatsData data = StatsProvider.get(StatsCapability.INSTANCE, player).orElse(null);
 			if (data == null) continue;
 			if (!data.getStatus().isHasCreatedCharacter()) continue;
-			if (!data.getStatus().isAlive()) continue;
 			if (saved.isHolder(player.getUUID()) || isMutant(data)) continue;
 			candidates.add(player);
 		}

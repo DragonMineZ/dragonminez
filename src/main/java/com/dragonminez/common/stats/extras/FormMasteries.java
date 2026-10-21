@@ -36,6 +36,22 @@ public class FormMasteries {
         return formGroup.toLowerCase() + ":" + formName.toLowerCase();
     }
 
+    public Map<String, Double> entries() {
+        return new HashMap<>(masteries);
+    }
+
+    public double getRaw(String key) {
+        return masteries.getOrDefault(key, 0.0);
+    }
+
+    public void putMax(String key, double value) {
+        masteries.merge(key, value, Math::max);
+    }
+
+    public void addRaw(String key, double amount) {
+        masteries.merge(key, amount, Double::sum);
+    }
+
     public void clear() {
         masteries.clear();
     }

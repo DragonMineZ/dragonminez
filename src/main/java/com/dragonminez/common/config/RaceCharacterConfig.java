@@ -1,5 +1,6 @@
 package com.dragonminez.common.config;
 
+import com.dragonminez.common.diagnostics.RemovedConfigKeys;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonDeserializationContext;
 import com.google.gson.JsonDeserializer;
@@ -18,12 +19,12 @@ import java.util.*;
 @Setter
 @Getter
 @NoArgsConstructor
+@RemovedConfigKeys({"raceName"})
 public class RaceCharacterConfig {
 	public static final String CURRENT_VERSION = ConfigManager.CONFIG_VERSION;
 
 	private String configVersion;
 
-	private String raceName;
 	private Boolean hasGender = true;
 	private Boolean useVanillaSkin = false;
 	private String customModel = "";
@@ -32,8 +33,11 @@ public class RaceCharacterConfig {
 	private String racialSkill = "human";
 	private Boolean hasSaiyanTail = false;
 	private String auraType = "kakarot";
+	private String auraType3D = FormConfig.AURA_3D_USER_PREFERENCE;
+	private FormConfig.Aura3DStyle aura3DStyle = new FormConfig.Aura3DStyle();
 	private Float[] defaultModelScaling = {0.9375f, 0.9375f, 0.9375f};
 	private Integer defaultBodyType = 0;
+	private Integer[] slimBodyTypes = new Integer[0];
 	private Integer defaultHairType = 0;
 	private Integer defaultEyesType = 0;
 	private Integer defaultNoseType = 0;
@@ -47,6 +51,16 @@ public class RaceCharacterConfig {
 	private String defaultEye2Color = null;
 	private String defaultAuraColor = null;
 	private Map<String, FormSkillCost> formSkillsCosts = new HashMap<>();
+
+	public FormConfig.Aura3DStyle getAura3DStyle() {
+		return aura3DStyle != null ? aura3DStyle : FormConfig.Aura3DStyle.DEFAULT;
+	}
+
+	public boolean isSlimBodyType(int bodyType) {
+		if (slimBodyTypes == null) return false;
+		for (Integer slim : slimBodyTypes) if (slim != null && slim == bodyType) return true;
+		return false;
+	}
 
 	private FormSkillCost getFormSkillEntry(String form) {
 		if (form == null) return null;

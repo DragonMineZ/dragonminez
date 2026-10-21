@@ -1,54 +1,65 @@
 package com.dragonminez.server.util;
 
 import com.dragonminez.common.config.ConfigManager;
+import com.dragonminez.common.config.FormConfig;
 import com.dragonminez.common.events.DMZEvent;
 import com.dragonminez.common.init.MainEffects;
 import com.dragonminez.common.init.MainSounds;
 import com.dragonminez.common.network.NetworkHandler;
 import com.dragonminez.common.network.S2C.StatsSyncS2C;
 import com.dragonminez.common.quest.PartyManager;
+import com.dragonminez.common.stats.FusedData;
 import com.dragonminez.common.stats.character.Cooldowns;
 import com.dragonminez.common.stats.StatsCapability;
 import com.dragonminez.common.stats.StatsData;
 import com.dragonminez.common.stats.StatsProvider;
 import net.minecraft.nbt.CompoundTag;
+import net.minecraft.sounds.SoundSource;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerPlayer;
-import net.minecraft.sounds.SoundEvents;
-import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.effect.MobEffectInstance;
-import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.GameType;
 import net.minecraftforge.common.MinecraftForge;
 import com.dragonminez.common.util.CuriosUtil;
+import com.dragonminez.common.util.FusionForms;
+import com.dragonminez.common.util.TransformationsHelper;
 
 import java.awt.*;
 import java.util.UUID;
 
 public class FusionLogic {
-	public static boolean executeMetamoru(ServerPlayer leader, ServerPlayer partner, StatsData lData, StatsData pData) {
-		if (lData.getStatus().isAndroidUpgraded() || pData.getStatus().isAndroidUpgraded()) {
-			leader.displayClientMessage(Component.translatable("message.dragonminez.fusion.android_cannot_fuse"), true);
-			return false;
-		}
+	public static String metamoruBlocker(StatsData lData, StatsData pData) {
+		if (lData.getStatus().isAndroidUpgraded() || pData.getStatus().isAndroidUpgraded()) return "message.dragonminez.fusion.android_cannot_fuse";
+		if (!lData.getCharacter().getRaceName().equals(pData.getCharacter().getRaceName())) return "message.dragonminez.fusion.different_race";
+		if (!sameForm(lData.getCharacter(), pData.getCharacter())) return "message.dragonminez.fusion.different_form";
 
-		if (!lData.getCharacter().getRaceName().equals(pData.getCharacter().getRaceName())) {
-			leader.displayClientMessage(Component.translatable("message.dragonminez.fusion.different_race"), true);
+		int lvl1 = lData.getStats().getTotalStats();
+		int lvl2 = pData.getStats().getTotalStats();
+		double threshold = ConfigManager.getServerConfig().getGameplay().getMetamoruFusionThreshold();
+		if (threshold > 0 && (double) Math.abs(lvl1 - lvl2) / Math.max(lvl1, lvl2) > threshold) return "message.dragonminez.fusion.level_gap";
+		return null;
+	}
+
+	private static boolean sameForm(com.dragonminez.common.stats.character.Character a, com.dragonminez.common.stats.character.Character b) {
+		return sameSlot(a.hasActiveForm(), a.getActiveFormGroup(), a.getActiveForm(), b.hasActiveForm(), b.getActiveFormGroup(), b.getActiveForm())
+				&& sameSlot(a.hasActiveStackForm(), a.getActiveStackFormGroup(), a.getActiveStackForm(), b.hasActiveStackForm(), b.getActiveStackFormGroup(), b.getActiveStackForm());
+	}
+
+	private static boolean sameSlot(boolean activeA, String groupA, String formA, boolean activeB, String groupB, String formB) {
+		if (!activeA || !activeB) return activeA == activeB;
+		return groupA.equalsIgnoreCase(groupB) && formA.equalsIgnoreCase(formB);
+	}
+
+	public static boolean executeMetamoru(ServerPlayer leader, ServerPlayer partner, StatsData lData, StatsData pData) {
+		String blocker = metamoruBlocker(lData, pData);
+		if (blocker != null) {
+			leader.displayClientMessage(Component.translatable(blocker), true);
 			return false;
 		}
 
 		int lvl1 = lData.getStats().getTotalStats();
 		int lvl2 = pData.getStats().getTotalStats();
-
-		double threshold = ConfigManager.getServerConfig().getGameplay().getMetamoruFusionThreshold();
-		if (threshold > 0) {
-			double diff = (double) Math.abs(lvl1 - lvl2) / Math.max(lvl1, lvl2);
-			if (diff > threshold) {
-				leader.displayClientMessage(Component.translatable("message.dragonminez.fusion.level_gap"), true);
-				return false;
-			}
-		}
 
 		if (lData.getStatus().isFused() || pData.getStatus().isFused() ||
 				lData.getStatus().getFusionPartnerUUID() != null || pData.getStatus().getFusionPartnerUUID() != null) return false;
@@ -98,7 +109,7 @@ public class FusionLogic {
 		DMZEvent.FusionEvent event = new DMZEvent.FusionEvent(leader, partner, DMZEvent.FusionEvent.FusionType.POTHALA);
 		if (MinecraftForge.EVENT_BUS.post(event)) return;
 
-		ItemStack leaderHeadTech = CuriosUtil.getFirstStack(leader, "head_tech");
+		ItemStack leaderHeadTech = CuriosUtil.getFirstStackForItem(leader, "head_tech", "pothala");
 		boolean isGreenPothala = !leaderHeadTech.isEmpty() && leaderHeadTech.getItem().getDescriptionId().contains("green");
 
 		lData.getStatus().setPothalaColor(isGreenPothala ? "green" : "yellow");
@@ -115,6 +126,47 @@ public class FusionLogic {
 		leader.level().playSound(null, leader.getX(), leader.getY(), leader.getZ(), MainSounds.FUSION.get(), SoundSource.PLAYERS, 1.0F, 1.0F);
 		damageEarring(leader);
 		damageEarring(partner);
+	}
+
+	public static void executeBeetle(ServerPlayer leader, ServerPlayer partner, StatsData lData, StatsData pData) {
+		if (lData.getStatus().isFused() || pData.getStatus().isFused() ||
+				lData.getStatus().getFusionPartnerUUID() != null || pData.getStatus().getFusionPartnerUUID() != null) return;
+
+		int lvl1 = lData.getStats().getTotalStats();
+		int lvl2 = pData.getStats().getTotalStats();
+
+		DMZEvent.FusionEvent event = new DMZEvent.FusionEvent(leader, partner, DMZEvent.FusionEvent.FusionType.BEETLE);
+		if (MinecraftForge.EVENT_BUS.post(event)) return;
+
+		int FUSION_DURATION = ConfigManager.getServerConfig().getGameplay().getFusionDurationSeconds() * 20;
+
+		applyFusion(leader, partner, lData, pData, "BEETLE", lvl1, lvl2);
+		lData.getStatus().setFusionTimer(FUSION_DURATION);
+		leader.addEffect(new MobEffectInstance(MainEffects.FUSED.get(), FUSION_DURATION, 0, false, false));
+		partner.addEffect(new MobEffectInstance(MainEffects.FUSED.get(), FUSION_DURATION, 0, false, false));
+		leader.displayClientMessage(Component.translatable("message.dragonminez.fusion.success", partner.getDisplayName()), true);
+		partner.displayClientMessage(Component.translatable("message.dragonminez.fusion.success", leader.getDisplayName()), true);
+		leader.level().playSound(null, leader.getX(), leader.getY(), leader.getZ(), MainSounds.FUSION.get(), SoundSource.PLAYERS, 1.0F, 1.0F);
+	}
+
+	public static void startPotaraPose(ServerPlayer leader, StatsData leaderData, ServerPlayer partner, StatsData partnerData, boolean beetle) {
+		leaderData.getStatus().setPotaraPoseTimer(1);
+		leaderData.getStatus().setPotaraPartnerUUID(partner.getUUID());
+		leaderData.getStatus().setPotaraLeader(true);
+		leaderData.getStatus().setPotaraBeetle(beetle);
+		partnerData.getStatus().setPotaraPoseTimer(1);
+		partnerData.getStatus().setPotaraPartnerUUID(leader.getUUID());
+		partnerData.getStatus().setPotaraLeader(false);
+		partnerData.getStatus().setPotaraBeetle(beetle);
+		NetworkHandler.sendToTrackingEntityAndSelf(new StatsSyncS2C(leader), leader);
+		NetworkHandler.sendToTrackingEntityAndSelf(new StatsSyncS2C(partner), partner);
+	}
+
+	public static void clearPotaraPose(StatsData data) {
+		data.getStatus().setPotaraPoseTimer(0);
+		data.getStatus().setPotaraPartnerUUID(null);
+		data.getStatus().setPotaraLeader(false);
+		data.getStatus().setPotaraBeetle(false);
 	}
 
 	private static void applyFusion(ServerPlayer leader, ServerPlayer partner, StatsData lData, StatsData pData, String type, int lvl1, int lvl2) {
@@ -143,8 +195,10 @@ public class FusionLogic {
 		refreshNames(leader);
 		refreshNames(partner);
 
+		FusedData fused = FusedData.build(lData, pData);
 		mixAppearance(lData, pData);
 		calculateAndApplyStats(lData, pData, type, lvl1, lvl2);
+		lData.setFusedData(fused);
 		PartyManager.beginFusionParty(leader, partner);
 
 		NetworkHandler.sendToTrackingEntityAndSelf(new StatsSyncS2C(leader), leader);
@@ -165,6 +219,12 @@ public class FusionLogic {
 		StatsData partnerData = !isLeader ? data : (partnerRef != null ? StatsProvider.get(StatsCapability.INSTANCE, partnerRef).orElse(null) : null);
 
 		if (leaderData != null) {
+			FusedData fused = leaderData.getFusedData();
+			if (fused != null) {
+				fused.reconcileInto(leaderData, partnerData);
+				leaderData.setFusedData(null);
+				revertUnownedForms(leaderRef, leaderData);
+			}
 			leaderData.getBonusStats().removeAllBonuses("FusionBonus");
 
 			CompoundTag original = leaderData.getStatus().getOriginalAppearance();
@@ -202,6 +262,35 @@ public class FusionLogic {
 				NetworkHandler.sendToTrackingEntityAndSelf(new StatsSyncS2C(partnerRef), partnerRef);
 			}
 		}
+	}
+
+	private static void revertUnownedForms(ServerPlayer leader, StatsData data) {
+		var character = data.getCharacter();
+		if (character.hasActiveStackForm() && !containsForm(TransformationsHelper.getUnlockedStackForms(data, character.getActiveStackFormGroup()), character.getActiveStackForm())) {
+			character.clearActiveStackForm(leader, false);
+		}
+		if (character.hasActiveForm()) {
+			String group = character.getActiveFormGroup();
+			boolean owned = !FusionForms.isQualified(group)
+					&& containsForm(TransformationsHelper.getUnlockedForms(data, character.getRaceName(), group), character.getActiveForm());
+			if (!owned) {
+				TransformationsHelper.revertToBaseForm(leader, data, false);
+				if (leader != null && !character.hasActiveForm()) leader.removeEffect(MainEffects.TRANSFORMED.get());
+			}
+		}
+		if (FusionForms.isQualified(character.getSelectedFormGroup())) {
+			character.setSelectedFormGroup("");
+			character.setSelectedForm("");
+		}
+		if (FusionForms.isQualified(character.getPreviousFormGroup())) character.clearPreviousFormRecord();
+		if (leader != null) leader.refreshDimensions();
+	}
+
+	private static boolean containsForm(java.util.List<FormConfig.FormData> forms, String formName) {
+		for (FormConfig.FormData form : forms) {
+			if (form.getName().equalsIgnoreCase(formName)) return true;
+		}
+		return false;
 	}
 
 	private static void clearFusionState(StatsData data) {
@@ -301,14 +390,14 @@ public class FusionLogic {
 	}
 
 	private static void damageEarring(ServerPlayer player) {
-		ItemStack stack = CuriosUtil.getFirstStack(player, "head_tech");
-		if (!stack.isEmpty() && stack.getItem().getDescriptionId().contains("pothala")) {
+		ItemStack stack = CuriosUtil.getFirstStackForItem(player, "head_tech", "pothala");
+		if (!stack.isEmpty()) {
 			stack.hurtAndBreak(1, player, (entity) -> {});
 		}
 	}
 
 	public static void breakPothala(ServerPlayer player) {
-		ItemStack stack = CuriosUtil.getFirstStack(player, "head_tech");
+		ItemStack stack = CuriosUtil.getFirstStackForItem(player, "head_tech", "pothala");
 		if (!stack.isEmpty() && stack.getItem().getDescriptionId().contains("pothala")) {
 			stack.hurtAndBreak(stack.getMaxDamage() + 1, player, (entity) -> {});
 		}

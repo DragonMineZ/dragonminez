@@ -1,16 +1,26 @@
 package com.dragonminez.common.network;
 
+import com.dragonminez.client.animation.EvasionAnimations;
+import com.dragonminez.client.animation.KiAnimations;
 import com.dragonminez.client.animation.IPlayerAnimatable;
 import com.dragonminez.client.events.RadarRenderEvent;
 import com.dragonminez.client.events.FlySkillEvent;
 import com.dragonminez.client.flight.CombatFlightHandler;
 import com.dragonminez.client.gui.InstantTransmissionScreen;
 import com.dragonminez.client.gui.character.CharacterCustomizationScreen;
-import com.dragonminez.client.gui.quest.QuestNPCDialogueScreen;
+import com.dragonminez.client.gui.dialogue.NpcDialogueScreen;
 import com.dragonminez.client.gui.quest.StoryNotificationManager;
-import com.dragonminez.client.gui.quest.StoryToast;
+import com.dragonminez.client.gui.hud.NotificationHUD;
 import com.dragonminez.client.clash.ClientBeamClashState;
+import com.dragonminez.client.render.effects.AuraModeState;
+import com.dragonminez.client.systems.DragonSkyState;
+import com.dragonminez.client.systems.SilentDamageState;
+import com.dragonminez.client.util.DebugFileWriter;
+import com.dragonminez.client.util.TextureCounter;
 import com.dragonminez.common.network.S2C.BeamClashStateS2C;
+import com.dragonminez.common.network.S2C.DialogueResultS2C;
+import com.dragonminez.common.network.S2C.OpenDialogueNodeS2C;
+import com.dragonminez.common.network.S2C.OpenQuestNPCDialogueS2C;
 import com.dragonminez.common.network.S2C.StoryToastS2C;
 import com.dragonminez.common.network.S2C.TriggerAnimationS2C;
 import com.dragonminez.common.stats.StatsCapability;
@@ -19,8 +29,11 @@ import com.dragonminez.common.stats.character.Status;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.player.AbstractClientPlayer;
 import net.minecraft.core.BlockPos;
+import com.dragonminez.common.network.S2C.StatsDeltaS2C;
+import com.dragonminez.common.stats.character.SkinPixels;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.phys.Vec3;
@@ -44,6 +57,35 @@ public class ClientPacketHandler {
 		});
 	}
 
+	public static void handleMinigameStart(com.dragonminez.common.network.S2C.MinigameStartS2C message) {
+		if (Minecraft.getInstance().screen instanceof com.dragonminez.client.gui.character.minigames.BaseMinigameScreen screen
+				&& screen.acceptsStart(message)) {
+			screen.onServerStart(message);
+			return;
+		}
+		if (message.isAccepted()) {
+			com.dragonminez.common.network.NetworkHandler.sendToServer(new com.dragonminez.common.network.C2S.MinigameInputC2S(
+					message.getSessionId(), 0, 0, true, 0L, List.of()));
+		}
+	}
+
+	public static void handleOpenMinigame(String minigameId) {
+		Minecraft.getInstance().setScreen(com.dragonminez.client.gui.character.minigames.BaseMinigameScreen.create(minigameId,
+				com.dragonminez.common.training.MinigameOrigin.COMMAND));
+	}
+
+	public static void handleMinigameResult(com.dragonminez.common.network.S2C.MinigameResultS2C message) {
+		if (Minecraft.getInstance().screen instanceof com.dragonminez.client.gui.character.minigames.BaseMinigameScreen screen) {
+			screen.onServerResult(message);
+		}
+	}
+
+	public static void handleReviveTargets(List<com.dragonminez.common.network.S2C.ReviveTargetsS2C.Entry> entries) {
+		if (Minecraft.getInstance().screen instanceof com.dragonminez.client.gui.WishesScreen screen) {
+			screen.setReviveTargets(entries);
+		}
+	}
+
 	public static void handleStatsSyncPacket(int playerId, CompoundTag nbt) {
 		var clientLevel = Minecraft.getInstance().level;
 		if (clientLevel == null) return;
@@ -59,6 +101,43 @@ public class ClientPacketHandler {
 				player.refreshDimensions();
 				player.refreshDisplayName();
 			});
+			AuraModeState.reconcileLocal(player);
+		}
+	}
+
+	public static void handleStatsDeltaPacket(int playerId, CompoundTag nbt) {
+		var clientLevel = Minecraft.getInstance().level;
+		if (clientLevel == null) return;
+		if (!(clientLevel.getEntity(playerId) instanceof Player player)) return;
+
+		StatsProvider.get(StatsCapability.INSTANCE, player).ifPresent(data -> {
+			CompoundTag groups = new CompoundTag();
+			for (String key : nbt.getAllKeys()) {
+				if (key.equals(StatsDeltaS2C.CHARACTER_PATCH) || key.equals(StatsDeltaS2C.CHARACTER_REMOVED)) continue;
+				groups.put(key, nbt.get(key));
+			}
+			if (StatsDeltaS2C.hasCharacterPatch(nbt)) {
+				CompoundTag character = data.getCharacter().save();
+				character.remove(SkinPixels.NBT_KEY);
+				StatsDeltaS2C.applyCharacterPatch(character, nbt, false);
+				data.getCharacter().load(character);
+			}
+			try {
+				data.load(groups);
+			} catch (ClassNotFoundException e) {
+				throw new RuntimeException(e);
+			}
+			player.refreshDimensions();
+			player.refreshDisplayName();
+		});
+		AuraModeState.reconcileLocal(player);
+	}
+
+	public static void handleSkinPixelsSync(int playerId, CompoundTag tag) {
+		var clientLevel = Minecraft.getInstance().level;
+		if (clientLevel == null) return;
+		if (clientLevel.getEntity(playerId) instanceof Player player) {
+			StatsProvider.get(StatsCapability.INSTANCE, player).ifPresent(data -> data.getCharacter().getSkinPixels().load(tag));
 		}
 	}
 
@@ -75,11 +154,11 @@ public class ClientPacketHandler {
 
 	public static void handleBeamClashState(BeamClashStateS2C msg) {
 		if (msg.isActive()) {
-			ClientBeamClashState.update(true, msg.getMeterPhase(), msg.getSweetLow(),
-					msg.getSweetHigh(), msg.getAdvantage(), msg.getBeamColor(), msg.getOpponentEntityId());
+			ClientBeamClashState.update(msg.getStartGameTime(), msg.getMeterSeed(), msg.getAdvantage(),
+					msg.getSelfColor(), msg.getFoeColor(), msg.getOpponentEntityId(), msg.clashPoint());
 			com.dragonminez.client.clash.BeamClashCinematicCamera.activate();
 		} else {
-			ClientBeamClashState.clear();
+			ClientBeamClashState.clear(msg.getExhaustTicks());
 			com.dragonminez.client.clash.BeamClashCinematicCamera.deactivate();
 		}
 	}
@@ -93,13 +172,16 @@ public class ClientPacketHandler {
 		}
 	}
 
-	public static void handleOpenQuestNpcDialoguePacket(String npcId, List<String> offerableQuestIds,
-			List<String> turnInQuestIds, List<String> inProgressQuestIds, boolean masterNpc, int entityId) {
-		Minecraft mc = Minecraft.getInstance();
-		if (mc.player != null) {
-			mc.setScreen(new QuestNPCDialogueScreen(npcId, offerableQuestIds, turnInQuestIds, inProgressQuestIds,
-					masterNpc, entityId));
-		}
+	public static void handleOpenQuestNpcDialoguePacket(OpenQuestNPCDialogueS2C msg) {
+		NpcDialogueScreen.open(msg);
+	}
+
+	public static void handleDialogueNodePacket(OpenDialogueNodeS2C msg) {
+		NpcDialogueScreen.handleNode(msg);
+	}
+
+	public static void handleDialogueResult(DialogueResultS2C msg) {
+		NpcDialogueScreen.handleResult(msg);
 	}
 
 	public static void handleStoryToastPacket(StoryToastS2C message) {
@@ -108,11 +190,16 @@ public class ClientPacketHandler {
 
 	public static void handlePartyInviteToastPacket(String inviterName) {
 		Minecraft mc = Minecraft.getInstance();
-		mc.getToasts().addToast(new StoryToast(
+		NotificationHUD.push(
 				Component.translatable("toast.dragonminez.party.invite.title"),
-				Component.translatable("toast.dragonminez.party.invite.desc", Component.literal(inviterName)),
-				StoryToast.Tone.INFO
-		));
+				Component.literal(inviterName),
+				Component.translatable("toast.dragonminez.party.invite.hint"),
+				null,
+				NotificationHUD.PRIORITY_NORMAL
+		);
+		if (mc.player != null) {
+			mc.player.playSound(net.minecraft.sounds.SoundEvents.NOTE_BLOCK_CHIME.value(), 1.0F, 1.2F);
+		}
 	}
 
 	public static void handleQuestActionFeedback(Component message) {
@@ -120,11 +207,13 @@ public class ClientPacketHandler {
 		if (mc.player == null) {
 			return;
 		}
-		mc.getToasts().addToast(new StoryToast(
+		NotificationHUD.push(
 				Component.translatable("message.dragonminez.quest.start.failed_title"),
+				null,
 				message,
-				StoryToast.Tone.FAILURE
-		));
+				null,
+				NotificationHUD.PRIORITY_HIGH
+		);
 		mc.player.sendSystemMessage(message);
 	}
 
@@ -142,6 +231,40 @@ public class ClientPacketHandler {
 		RadarRenderEvent.updateRadarData(earthPositions, namekPositions, positionsBySet);
 	}
 
+	public static void handleDragonSky(ResourceLocation dimension, boolean active) {
+		DragonSkyState.update(dimension, active);
+	}
+
+	public static void handleDebugFile(String playerName, String text) {
+		DebugFileWriter.write(playerName, text);
+	}
+
+	public static void handleConfigSyncCommitted() {
+		TextureCounter.clearCache();
+	}
+
+	public static void handleSilentDamage(float amount) {
+		SilentDamageState.add(amount);
+	}
+
+	public static void handleStrikeRush(int playerId, int ticks, int targetId, boolean connected) {
+		var localPlayer = Minecraft.getInstance().player;
+		if (localPlayer != null && localPlayer.getId() == playerId) {
+			if (ticks > 0) com.dragonminez.client.events.FlySkillEvent.startStrikeRush(ticks, targetId);
+			else com.dragonminez.client.events.FlySkillEvent.stopStrikeRush(connected);
+		} else com.dragonminez.client.events.FlySkillEvent.setRemoteStrikeRush(playerId, ticks);
+	}
+
+	public static void handleStrikeCinematic(boolean active, int attackerId, int victimId) {
+		if (active) com.dragonminez.client.render.camera.StrikeCinematicCamera.start(attackerId, victimId);
+		else com.dragonminez.client.render.camera.StrikeCinematicCamera.stop(attackerId);
+	}
+
+	public static void handleStrikeClashHold(boolean active, double x, double y, double z, float yaw) {
+		if (active) com.dragonminez.client.events.FlySkillEvent.holdStrikeClash(new Vec3(x, y, z), yaw);
+		else com.dragonminez.client.events.FlySkillEvent.releaseStrikeClash();
+	}
+
 	public static void handleTriggerAnimationPacket(UUID playerUUID, TriggerAnimationS2C.AnimationType animationType,
 			int variant, int entityId, String stringPayload) {
 		var clientLevel = Minecraft.getInstance().level;
@@ -150,10 +273,16 @@ public class ClientPacketHandler {
 		Player player = clientLevel.getPlayerByUUID(playerUUID);
 		if (player instanceof AbstractClientPlayer clientPlayer && clientPlayer instanceof IPlayerAnimatable animatable) {
 			switch (animationType) {
-				case EVASION -> animatable.dragonminez$triggerEvasion();
+				case EVASION -> animatable.dragonminez$triggerEvasion(variant);
 				case DASH -> animatable.dragonminez$triggerDash(variant);
-				case KI_BLAST_SHOT -> animatable.dragonminez$setShootingKi(variant == 0);
-				case KI_ANIMATION -> animatable.dragonminez$playKiAnimation(stringPayload, variant == 1);
+				case KI_BLAST_SHOT -> {
+					if (variant != 1) animatable.dragonminez$setShootingKiHand(variant == 2);
+					animatable.dragonminez$setShootingKi(variant != 1);
+				}
+				case KI_ANIMATION -> {
+					String anim = stringPayload.startsWith("evs.") ? EvasionAnimations.resolve(stringPayload) : KiAnimations.resolve(stringPayload);
+					animatable.dragonminez$playKiAnimation(anim, variant == 1);
+				}
 				case KI_ANIMATION_STOP -> animatable.dragonminez$stopKiAnimation();
 			}
 		}
@@ -182,6 +311,10 @@ public class ClientPacketHandler {
 		if (entity instanceof AbstractClientPlayer clientPlayer && clientPlayer instanceof IPlayerAnimatable animatable) {
 			animatable.dragonminez$playMeleeAnimation(animationName, isOffhand, speedMultiplier);
 		}
+	}
+
+	public static void handleRaidMusic(String soundId) {
+		com.dragonminez.client.systems.raid.RaidMusicManager.play(soundId);
 	}
 
 }

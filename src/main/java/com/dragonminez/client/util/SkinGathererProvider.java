@@ -2,23 +2,35 @@ package com.dragonminez.client.util;
 
 import com.dragonminez.Reference;
 import com.dragonminez.client.render.layer.DMZSkinLayer;
+import com.dragonminez.client.render.HelmetFormLook;
 import com.dragonminez.common.config.ConfigManager;
 import com.dragonminez.common.config.FormConfig;
 import com.dragonminez.common.config.RaceCharacterConfig;
-import com.dragonminez.common.stats.extras.ActionMode;
 import com.dragonminez.common.stats.character.Character;
+import com.dragonminez.common.stats.character.SkinPixels;
+import com.dragonminez.client.render.util.SkinPixelTextures;
+import com.dragonminez.client.systems.FormVisualTransition;
+import com.dragonminez.common.stats.FusedData;
 import com.dragonminez.common.stats.StatsData;
-import com.dragonminez.common.util.TransformationsHelper;
+import com.dragonminez.common.util.FusionForms;
+import com.dragonminez.common.util.FusionTraits;
 import com.dragonminez.common.util.lists.FrostDemonForms;
 import com.dragonminez.common.util.lists.MajinForms;
 import com.dragonminez.common.util.lists.SaiyanForms;
+import com.mojang.blaze3d.platform.NativeImage;
+import com.mojang.blaze3d.systems.RenderSystem;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.player.AbstractClientPlayer;
+import net.minecraft.client.renderer.texture.DynamicTexture;
+import net.minecraft.client.renderer.texture.TextureManager;
 import net.minecraft.resources.ResourceLocation;
-import net.minecraft.util.Mth;
+import net.minecraft.server.packs.resources.Resource;
 
+import java.io.InputStream;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.BiConsumer;
@@ -36,16 +48,38 @@ public class SkinGathererProvider {
 	}
 
 	public static String modelFamily(String key) {
-		if (key == null || key.isEmpty()) return "human";
-		String k = key.toLowerCase();
-		if (k.startsWith("oozaru")) return "oozaru";
-		if (k.startsWith("namekian")) return "namekian";
-		if (k.startsWith("frostdemon")) return "frostdemon";
-		if (k.startsWith("bioandroid")) return "bioandroid";
-		if (k.startsWith("majin") || k.startsWith("janemba")) return "majin";
-		if (k.startsWith("human") || k.startsWith("saiyan") || k.contains("ssj4d") || k.contains("ssj4gt")
-				|| k.startsWith("buffed") || k.equals("4arms")) return "human";
-		return "custom";
+		return FusionTraits.modelFamily(key);
+	}
+
+	public static boolean isHumanoidKey(String logicKey) {
+		return logicKey.equals("human") || logicKey.equals("saiyan") || logicKey.contains("ssj4d")
+				|| logicKey.contains("ssj4gt") || logicKey.equals("buffed") || logicKey.equals("buffedg3") || logicKey.equals("4arms")
+				|| logicKey.equals("glinddark");
+	}
+
+	public static boolean rendersPlayerSkin(Character character) {
+		if (character == null || character.getBodyType() != 0) return false;
+		String raceName = character.getRaceName().toLowerCase();
+		RaceCharacterConfig raceConfig = ConfigManager.getRaceCharacter(raceName);
+		if (raceConfig == null) return false;
+
+		String raceCustomModel = raceConfig.getCustomModel() != null ? raceConfig.getCustomModel().toLowerCase() : "";
+		String formCustomModel = "";
+		if (character.hasActiveStackForm() && character.getActiveStackFormData() != null && character.getActiveStackFormData().hasCustomModel()) {
+			formCustomModel = character.getActiveStackFormData().getCustomModel().toLowerCase();
+		} else if (character.hasActiveForm() && character.getActiveFormData() != null && character.getActiveFormData().hasCustomModel()) {
+			formCustomModel = character.getActiveFormData().getCustomModel().toLowerCase();
+		}
+		String key = formCustomModel.isEmpty() ? raceCustomModel : formCustomModel;
+		if (key.isEmpty()) key = isBuiltInRace(raceName) ? raceName : "human";
+		String logicKey = key.equals("human_slim") || key.equals("majin_slim") || key.equals("base_slim") ? raceName : key;
+
+		String currentForm = character.getActiveForm();
+		boolean isOozaruForm = raceName.equals("saiyan") && (Objects.equals(currentForm, SaiyanForms.OOZARU) || Objects.equals(currentForm, SaiyanForms.GOLDEN_OOZARU));
+		if (logicKey.equals("oozaru") || isOozaruForm) return false;
+		if (isHumanoidKey(logicKey)) return true;
+		if (isBuiltInRace(raceName) || !modelFamily(logicKey).equals("custom")) return false;
+		return Boolean.TRUE.equals(raceConfig.getUseVanillaSkin());
 	}
 
 	public interface BodyLayerSink extends BiConsumer<ResourceLocation, float[]> {
@@ -56,19 +90,44 @@ public class SkinGathererProvider {
 
 		void base(ResourceLocation texture, float[] color);
 
+		default void overlay(ResourceLocation texture, float[] color) {
+			base(texture, color);
+		}
+
+		default void translucent(ResourceLocation texture, float[] color) {
+			base(texture, color);
+		}
+
+		default void overlayTranslucent(ResourceLocation texture, float[] color) {
+			translucent(texture, color);
+		}
+
 		void fading(String layerId, ResourceLocation texture, float[] color, float targetAlpha);
 
 		default void fading(String layerId, ResourceLocation texture, float[] color) {
 			fading(layerId, texture, color, 1.0f);
 		}
+
+		default void saiyanTail(float[] color) {
+			base(DMZSkinLayer.getSafeTexture(getCachedTexture(SAIYAN_TAIL_TEXTURE)), color);
+		}
 	}
+
+	private static final String SAIYAN_TAIL_TEXTURE = "textures/entity/races/tail1.png";
 
 	private static final Map<String, ResourceLocation> TEXTURE_CACHE = new ConcurrentHashMap<>();
 
 	private static final float[] WHITE_COLOR = {1.0f, 1.0f, 1.0f};
 	private static final float[] DEFAULT_TAIL_COLOR = ColorUtils.hexToRgb("#572117");
 	private static final float[] DEFAULT_ORANGE_COLOR = ColorUtils.hexToRgb("#e67d40");
-	private static final float[] DEFAULT_STINGER_COLOR = ColorUtils.hexToRgb("#D9B28D");
+	private static final float[] DEFAULT_STINGER_COLOR = ColorUtils.hexToRgb("#EDD747");
+
+	private static final ResourceLocation[] UNSHADED = new ResourceLocation[0];
+	private static final float WHITE_SHADOW = ColorUtils.skinShadowTone(WHITE_COLOR)[0];
+	private static final Map<ResourceLocation, ResourceLocation[]> SHADED_LAYERS = new HashMap<>();
+
+	private Character donorScratch;
+	private Character fusionScratch;
 
 	public static ResourceLocation getCachedTexture(String path) {
 		return TEXTURE_CACHE.computeIfAbsent(path, p -> ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, p));
@@ -76,6 +135,16 @@ public class SkinGathererProvider {
 
 	private void emitFadingLayer(BiConsumer<ResourceLocation, float[]> consumer, String layerId, ResourceLocation texture, float[] color) {
 		if (consumer instanceof BodyLayerSink sink) sink.fading(layerId, texture, color);
+		else consumer.accept(texture, color);
+	}
+
+	private void emitOverlayLayer(BiConsumer<ResourceLocation, float[]> consumer, ResourceLocation texture, float[] color) {
+		if (consumer instanceof BodyLayerSink sink) sink.overlay(texture, color);
+		else consumer.accept(texture, color);
+	}
+
+	private void emitTranslucentLayer(BiConsumer<ResourceLocation, float[]> consumer, ResourceLocation texture, float[] color) {
+		if (consumer instanceof BodyLayerSink sink) sink.translucent(texture, color);
 		else consumer.accept(texture, color);
 	}
 
@@ -94,66 +163,29 @@ public class SkinGathererProvider {
 	public void gatherBodyLayers(AbstractClientPlayer player, StatsData stats, float partialTick, BiConsumer<ResourceLocation, float[]> consumer) {
 		var character = stats.getCharacter();
 		String raceName = character.getRaceName().toLowerCase();
-		int bodyType = character.getBodyType();
 		String currentForm = character.getActiveForm();
 
 		RaceCharacterConfig raceConfig = ConfigManager.getRaceCharacter(raceName);
 		if (raceConfig == null) return;
 
 		String raceCustomModel = raceConfig.getCustomModel() != null ? raceConfig.getCustomModel().toLowerCase() : "";
-		String formCustomModel = "";
-
 		boolean hasStackForm = character.hasActiveStackForm() && character.getActiveStackFormData() != null;
 		boolean hasForm = character.hasActiveForm() && character.getActiveFormData() != null;
 
-		if (hasStackForm && character.getActiveStackFormData().hasCustomModel()) {
-			formCustomModel = character.getActiveStackFormData().getCustomModel().toLowerCase();
-		} else if (hasForm && character.getActiveFormData().hasCustomModel()) {
-			formCustomModel = character.getActiveFormData().getCustomModel().toLowerCase();
+		String logicKey = activeLogicKey(character, raceName, raceConfig);
+		String modelKey = logicKey;
+		FusedData fused = stats.getFusedData();
+		boolean partnerModel = fused != null && fused.usesPartnerModel(character);
+		Character look = character;
+		if (partnerModel) {
+			look = baseLook(character);
+			logicKey = raceCustomModel.isEmpty() ? (isBuiltInRace(raceName) ? raceName : "human") : raceCustomModel;
+			if (logicKey.equals("human_slim") || logicKey.equals("majin_slim") || logicKey.equals("base_slim")) logicKey = raceName;
 		}
 
-		String key = formCustomModel.isEmpty() ? raceCustomModel : formCustomModel;
-		if (key.isEmpty()) key = isBuiltInRace(raceName) ? raceName : "human";
-
-		String logicKey = key;
-		if (key.equals("human_slim") || key.equals("majin_slim") || key.equals("base_slim")) {
-			logicKey = raceName;
-		}
-
-		float[] b1 = character.getRgbBodyColor();
-		float[] b2 = character.getRgbBodyColor2();
-		float[] b3 = character.getRgbBodyColor3();
-		float[] hair = character.getRgbHairColor();
-
-		if (hasForm) {
-			var f = character.getActiveFormData();
-			if (f.getRgbBodyColor1() != null) b1 = f.getRgbBodyColor1();
-			if (f.getRgbBodyColor2() != null) b2 = f.getRgbBodyColor2();
-			if (f.getRgbBodyColor3() != null) b3 = f.getRgbBodyColor3();
-			if (f.getRgbHairColor() != null) hair = f.getRgbHairColor();
-		}
-
-		if (hasStackForm) {
-			var sf = character.getActiveStackFormData();
-			if (sf.getRgbBodyColor1() != null) b1 = sf.getRgbBodyColor1();
-			if (sf.getRgbBodyColor2() != null) b2 = sf.getRgbBodyColor2();
-			if (sf.getRgbBodyColor3() != null) b3 = sf.getRgbBodyColor3();
-			if (sf.getRgbHairColor() != null) hair = sf.getRgbHairColor();
-		}
-
-		if (stats.getStatus().isActionCharging()) {
-			FormConfig.FormData nextForm = null;
-			if (stats.getStatus().getSelectedAction() == ActionMode.FORM) nextForm = TransformationsHelper.getNextAvailableForm(stats);
-			else if (stats.getStatus().getSelectedAction() == ActionMode.STACK) nextForm = TransformationsHelper.getNextAvailableStackForm(stats);
-
-			if (nextForm != null) {
-				float factor = Mth.clamp(stats.getResources().getActionCharge() / 100.0f, 0.0f, 1.0f);
-				if (nextForm.getRgbBodyColor1() != null) b1 = DMZSkinLayer.lerpColor(factor, b1, nextForm.getRgbBodyColor1());
-				if (nextForm.getRgbBodyColor2() != null) b2 = DMZSkinLayer.lerpColor(factor, b2, nextForm.getRgbBodyColor2());
-				if (nextForm.getRgbBodyColor3() != null) b3 = DMZSkinLayer.lerpColor(factor, b3, nextForm.getRgbBodyColor3());
-				if (nextForm.getRgbHairColor() != null) hair = DMZSkinLayer.lerpColor(factor, hair, nextForm.getRgbHairColor());
-			}
-		}
+		float[][] colors = resolveBodyColors(stats);
+		float[] b1 = colors[0];
+		float[] b2 = colors[1];
 
 		if (hasForm && character.getActiveFormData().hasExtraFormLayer()) {
 			emitExtraFormLayer(consumer, "extraform_form", character.getActiveFormData());
@@ -164,58 +196,139 @@ public class SkinGathererProvider {
 
 		boolean isOozaruForm = raceName.equals("saiyan") && (Objects.equals(currentForm, SaiyanForms.OOZARU) || Objects.equals(currentForm, SaiyanForms.GOLDEN_OOZARU));
 
-		if (logicKey.equals("oozaru") || isOozaruForm) {
+		if (modelKey.equals("oozaru") || isOozaruForm) {
 			resolveBodyOozaru(b1, b2, consumer);
 			return;
 		}
 
-		boolean isSaiyanLogic = logicKey.equals("saiyan") || logicKey.contains("ssj4gt") || logicKey.contains("ssj4d") || raceName.equals("saiyan");
+		boolean isSaiyanLogic = modelKey.equals("saiyan") || modelKey.contains("ssj4gt") || modelKey.contains("ssj4d") || raceName.equals("saiyan");
 		boolean hasSaiyanTail = raceConfig.getHasSaiyanTail() != null && raceConfig.getHasSaiyanTail();
-		boolean isSSJ4Active = currentForm != null && (currentForm.contains("supersaiyan4") || currentForm.contains("ssj4"));
-		boolean renderSaiyanTail = (isSaiyanLogic || hasSaiyanTail) && (isSSJ4Active || (stats.getStatus().isTailVisible() && character.isHasSaiyanTail()));
+		boolean renderSaiyanTail = (isSaiyanLogic || hasSaiyanTail) && SaiyanTailRules.hasTail(character) && SaiyanTailRules.looseTailShown(player, stats.getStatus().isTailVisible());
 
-		boolean isHumanoid = logicKey.equals("human") || logicKey.equals("saiyan") || logicKey.contains("ssj4d")
-				|| logicKey.contains("ssj4gt") || logicKey.equals("buffed") || logicKey.equals("4arms");
+		resolveRaceBody(player, look, raceName, raceConfig, logicKey, colors, consumer);
 
-		if (isHumanoid && bodyType == 0) {
-			consumer.accept(player.getSkinTextureLocation(), WHITE_COLOR);
-		} else if (isHumanoid) {
-			resolveBodyHumanSaiyan(character, logicKey, b1, b2, b3, consumer);
-		} else {
-            switch (logicKey) {
-                case "namekian", "namekian_orange", "namekian_buffed" -> resolveBodyNamekian(character, b1, b2, b3, consumer);
-                case "majin", "majin_super", "majin_ultra", "majin_evil", "majin_kid", "janemba_fat","janemba_super" -> resolveBodyMajin(character, logicKey, b1, b2, b3, consumer);
-                case "frostdemon", "frostdemon_second", "frostdemon_final", "frostdemon_fifth", "frostdemon_third", "frostdemon_fp", "frostdemon_mecha", "frostdemon_metalcore" -> resolveBodyFrostDemon(character, logicKey, b1, b2, b3, hair, consumer);
-                case "bioandroid", "bioandroid_semi", "bioandroid_perfect", "bioandroid_base", "bioandroid_ultra", "bioandroid_xeno" -> resolveBodyBioAndroid(character, logicKey, b1, b2, b3, hair, consumer);
-				default -> {
-					boolean hasGender = Boolean.TRUE.equals(raceConfig.getHasGender());
-					String genSuffix = hasGender ? (character.getGender().equals(Character.GENDER_FEMALE) ? "_female" : "_male") : "";
-
-					if (Boolean.TRUE.equals(raceConfig.getUseVanillaSkin()) && bodyType == 0) {
-						consumer.accept(player.getSkinTextureLocation(), WHITE_COLOR);
-						break;
-					}
-
-					if (Boolean.TRUE.equals(raceConfig.getIsLayered())) {
-						String prefix = "textures/entity/races/" + raceName + "/" + logicKey + genSuffix + "_" + bodyType + "_";
-						String fallbackPrefix = "textures/entity/races/" + raceName + "/" + logicKey + genSuffix + "_0_";
-
-						consumer.accept(DMZSkinLayer.getSafeTexture(getCachedTexture(prefix + "layer1.png"), getCachedTexture(fallbackPrefix + "layer1.png")), b1);
-						consumer.accept(DMZSkinLayer.getSafeTexture(getCachedTexture(prefix + "layer2.png")), b2);
-						consumer.accept(DMZSkinLayer.getSafeTexture(getCachedTexture(prefix + "layer3.png")), b3);
-					} else {
-						ResourceLocation customTex = getCachedTexture("textures/entity/races/" + raceName + "/" + logicKey + genSuffix + ".png");
-						consumer.accept(DMZSkinLayer.getSafeTexture(customTex), b1);
-					}
-				}
-            }
-        }
+		if (partnerModel) {
+			switch (modelFamily(modelKey)) {
+				case "frostdemon" -> emitFrostDemonFormLayers(modelKey, b1, consumer);
+				case "bioandroid" -> emitBioAndroidFormLayers(modelKey, FusionForms.baseGroup(character.getActiveFormGroup()), consumer);
+				default -> {}
+			}
+		}
 
 		if (renderSaiyanTail) {
 			float[] tailColor = b2 != null ? b2 : DEFAULT_TAIL_COLOR;
-			consumer.accept(DMZSkinLayer.getSafeTexture(getCachedTexture("textures/entity/races/tail1.png")), tailColor);
+			if (consumer instanceof BodyLayerSink sink) sink.saiyanTail(tailColor);
+			else consumer.accept(DMZSkinLayer.getSafeTexture(getCachedTexture(SAIYAN_TAIL_TEXTURE)), tailColor);
 		}
     }
+
+	public static float[][] resolveBodyColors(StatsData stats) {
+		var character = stats.getCharacter();
+		return new float[][]{
+				FormVisualTransition.color(stats, character.getRgbBodyColor(), FormConfig.FormData::getRgbBodyColor1),
+				FormVisualTransition.color(stats, character.getRgbBodyColor2(), FormConfig.FormData::getRgbBodyColor2),
+				FormVisualTransition.color(stats, character.getRgbBodyColor3(), FormConfig.FormData::getRgbBodyColor3),
+				FormVisualTransition.color(stats, character.getRgbHairColor(), HelmetFormLook.hair(stats))
+		};
+	}
+
+	private Character baseLook(Character character) {
+		if (fusionScratch == null) fusionScratch = new Character();
+		fusionScratch.setRace(character.getRaceName());
+		fusionScratch.setGender(character.getGender());
+		fusionScratch.setBodyType(character.getBodyType());
+		fusionScratch.setHairColor(character.getHairColor());
+		fusionScratch.clearActiveForm();
+		fusionScratch.clearActiveStackForm();
+		return fusionScratch;
+	}
+
+	private Character scratchLook(String race, String gender, int bodyType, String formGroup, String form) {
+		if (donorScratch == null) donorScratch = new Character();
+		donorScratch.setRace(race);
+		donorScratch.setGender(gender);
+		donorScratch.setBodyType(bodyType);
+		donorScratch.clearActiveStackForm();
+		if (form != null && !form.isEmpty() && formGroup != null && !formGroup.isEmpty()) donorScratch.setActiveForm(FusionForms.baseGroup(formGroup), form);
+		else donorScratch.clearActiveForm();
+		return donorScratch;
+	}
+
+	private static String activeLogicKey(Character character, String raceName, RaceCharacterConfig raceConfig) {
+		String raceCustomModel = raceConfig.getCustomModel() != null ? raceConfig.getCustomModel().toLowerCase() : "";
+		String formCustomModel = "";
+		if (character.hasActiveStackForm() && character.getActiveStackFormData() != null && character.getActiveStackFormData().hasCustomModel()) {
+			formCustomModel = character.getActiveStackFormData().getCustomModel().toLowerCase();
+		} else if (character.hasActiveForm() && character.getActiveFormData() != null && character.getActiveFormData().hasCustomModel()) {
+			formCustomModel = character.getActiveFormData().getCustomModel().toLowerCase();
+		}
+		String key = formCustomModel.isEmpty() ? raceCustomModel : formCustomModel;
+		if (key.isEmpty()) key = isBuiltInRace(raceName) ? raceName : "human";
+		return key.equals("human_slim") || key.equals("majin_slim") || key.equals("base_slim") ? raceName : key;
+	}
+
+	public void gatherDonorLayers(String race, int bodyType, String gender, String formGroup, String form, float[][] colors, BiConsumer<ResourceLocation, float[]> consumer) {
+		Character look = scratchLook(race, gender, bodyType, formGroup, form);
+		switch (look.getRaceName()) {
+			case "frostdemon" -> resolveBodyFrostDemon(look, "frostdemon", colors[0], colors[1], colors[2], colors[3], consumer);
+			case "bioandroid" -> resolveBodyBioAndroid(look, "bioandroid", colors[0], colors[1], colors[2], colors[3], consumer);
+			default -> {}
+		}
+	}
+
+	public void gatherOriginLayers(AbstractClientPlayer player, StatsData stats, BiConsumer<ResourceLocation, float[]> consumer) {
+		FusedData fused = stats.getFusedData();
+		if (fused == null) return;
+		Character character = stats.getCharacter();
+		String race = fused.getPartnerRace();
+		RaceCharacterConfig raceConfig = ConfigManager.getRaceCharacter(race);
+		if (raceConfig == null) return;
+		String logicKey = activeLogicKey(character, race, raceConfig);
+		Character look = scratchLook(race, fused.getPartnerGender(), fused.getPartnerBodyType(), character.getActiveFormGroup(), character.getActiveForm());
+		resolveRaceBody(player, look, race, raceConfig, logicKey, resolveBodyColors(stats), consumer);
+	}
+
+	private void resolveRaceBody(AbstractClientPlayer player, Character look, String raceName, RaceCharacterConfig raceConfig, String logicKey, float[][] colors, BiConsumer<ResourceLocation, float[]> consumer) {
+		float[] b1 = colors[0];
+		float[] b2 = colors[1];
+		float[] b3 = colors[2];
+		float[] hair = colors[3];
+		int bodyType = look.getBodyType();
+
+		if (isHumanoidKey(logicKey)) {
+			if (bodyType == 0) consumer.accept(player.getSkinTextureLocation(), WHITE_COLOR);
+			else resolveBodyHumanSaiyan(look, logicKey, b1, b2, b3, consumer);
+			if (logicKey.equals("glinddark")) resolveBodyGlindDark(b2, b3, consumer);
+			return;
+		}
+
+		switch (logicKey) {
+			case "namekian", "namekian_orange", "namekian_buffed" -> resolveBodyNamekian(look, b1, b2, b3, consumer);
+			case "majin", "majin_super", "majin_ultra", "majin_evil", "majin_kid", "janemba_imperfect", "janemba_fat", "janemba_super" -> resolveBodyMajin(look, logicKey, b1, b2, b3, consumer);
+			case "frostdemon", "frostdemon_second", "frostdemon_final", "frostdemon_fifth", "frostdemon_third", "frostdemon_fp", "frostdemon_mecha", "frostdemon_metalcore" -> resolveBodyFrostDemon(look, logicKey, b1, b2, b3, hair, consumer);
+			case "bioandroid", "bioandroid_semi", "bioandroid_perfect", "bioandroid_base", "bioandroid_ultra", "bioandroid_xeno", "bioandroid_xenofp" -> resolveBodyBioAndroid(look, logicKey, b1, b2, b3, hair, consumer);
+			case "glindtrueform" -> resolveBodyGlindTrueForm(b1, b2, consumer);
+			case "trascended" -> resolveBodyGlindTranscended(look, b1, b2, consumer);
+			default -> {
+				boolean hasGender = Boolean.TRUE.equals(raceConfig.getHasGender());
+				String genSuffix = hasGender ? (look.getGender().equals(Character.GENDER_FEMALE) ? "_female" : "_male") : "";
+
+				if (Boolean.TRUE.equals(raceConfig.getUseVanillaSkin()) && bodyType == 0) {
+					consumer.accept(player.getSkinTextureLocation(), WHITE_COLOR);
+				} else if (Boolean.TRUE.equals(raceConfig.getIsLayered())) {
+					String prefix = "textures/entity/races/" + raceName + "/" + logicKey + genSuffix + "_" + bodyType + "_";
+					String fallbackPrefix = "textures/entity/races/" + raceName + "/" + logicKey + genSuffix + "_0_";
+
+					acceptWithShadowMask(consumer, DMZSkinLayer.getSafeTexture(getCachedTexture(prefix + "layer1.png"), getCachedTexture(fallbackPrefix + "layer1.png")), b1);
+					acceptWithShadowMask(consumer, DMZSkinLayer.getSafeTexture(getCachedTexture(prefix + "layer2.png")), b2);
+					acceptWithShadowMask(consumer, DMZSkinLayer.getSafeTexture(getCachedTexture(prefix + "layer3.png")), b3);
+				} else {
+					ResourceLocation customTex = getCachedTexture("textures/entity/races/" + raceName + "/" + logicKey + genSuffix + ".png");
+					acceptWithShadowMask(consumer, DMZSkinLayer.getSafeTexture(customTex), b1);
+				}
+			}
+		}
+	}
 
 	public void gatherAndroidLayers(AbstractClientPlayer player, StatsData stats, float partialTick, BiConsumer<ResourceLocation, float[]> consumer) {
 		var character = stats.getCharacter();
@@ -229,7 +342,14 @@ public class SkinGathererProvider {
 
 	public void gatherTattooLayers(AbstractClientPlayer player, StatsData stats, float partialTick, BiConsumer<ResourceLocation, float[]> consumer) {
 		int tattooType = stats.getCharacter().getTattooType();
-		if (tattooType == 0) return;
+		if (tattooType == Character.TATTOO_CUSTOM) {
+			SkinPixels pixels = stats.getCharacter().getSkinPixels();
+			if (!pixels.hasTattoo() || !SkinPixels.customTattooEnabled()) return;
+			ResourceLocation custom = SkinPixelTextures.tattoo(player, pixels);
+			if (custom != null) consumer.accept(custom, WHITE_COLOR);
+			return;
+		}
+		if (tattooType <= 0) return;
 
 		consumer.accept(DMZSkinLayer.getSafeTexture(getCachedTexture("textures/entity/races/tattoos/tattoo_" + tattooType + ".png")), WHITE_COLOR);
 	}
@@ -244,17 +364,58 @@ public class SkinGathererProvider {
 		int bodyType = character.getBodyType();
         String gender = character.getGender().toLowerCase().trim();
         String genderPart = (gender.equals(Character.GENDER_FEMALE)) ? "_female" : "_male";
-		String path = "textures/entity/races/humansaiyan/bodytype" + genderPart + "_" + bodyType + ".png";
-		String fallbackPath = "textures/entity/races/humansaiyan/bodytype" + genderPart + "_0.png";
+		String basePath = "textures/entity/races/humansaiyan/bodytype" + genderPart + "_" + bodyType + "_";
+		String fallbackPath = "textures/entity/races/humansaiyan/bodytype" + genderPart + "_0_";
+		RaceCharacterConfig raceConfig = ConfigManager.getRaceCharacter(character.getRaceName());
+		if (bodyType != 0 && raceConfig != null && raceConfig.isSlimBodyType(bodyType) && !key.equals("glinddark")) {
+			ResourceLocation slimLayer = getCachedTexture(basePath + "slim_layer1.png");
+			if (DMZSkinLayer.getSafeTexture(slimLayer).equals(slimLayer)) basePath = basePath + "slim_";
+		}
 
-		consumer.accept(DMZSkinLayer.getSafeTexture(getCachedTexture(path), getCachedTexture(fallbackPath)), bodyColor);
+		ResourceLocation shadowLayer = getCachedTexture(basePath + "layer1_shadow.png");
+		boolean shaded = DMZSkinLayer.getSafeTexture(shadowLayer).equals(shadowLayer);
+
+		consumer.accept(DMZSkinLayer.getSafeTexture(getCachedTexture(basePath + "layer1.png"), getCachedTexture(fallbackPath + "layer1.png")), shaded ? ColorUtils.skinBaseTone(bodyColor) : bodyColor);
+		if (shaded) emitTranslucentLayer(consumer, shadowLayer, ColorUtils.skinShadowTone(bodyColor));
+	}
+
+	protected void resolveBodyGlindTrueForm(float[] bodyColor, float[] bodyColor2, BiConsumer<ResourceLocation, float[]> consumer) {
+		String basePath = "textures/entity/races/glind/trueform_";
+		ResourceLocation layer1 = DMZSkinLayer.getSafeTexture(getCachedTexture(basePath + "layer1.png"));
+		consumer.accept(layer1, ColorUtils.skinBaseTone(bodyColor));
+		emitShadowLayer(consumer, layer1, bodyColor);
+		acceptWithShadow(consumer, DMZSkinLayer.getSafeTexture(getCachedTexture(basePath + "layer2.png")), bodyColor2);
+	}
+
+	protected void resolveBodyGlindDark(float[] bodyColor2, float[] bodyColor3, BiConsumer<ResourceLocation, float[]> consumer) {
+		String basePath = "textures/entity/races/glind/darkking_";
+		emitOverlayLayer(consumer, DMZSkinLayer.getSafeTexture(getCachedTexture(basePath + "layer2.png")), bodyColor2);
+		emitOverlayLayer(consumer, DMZSkinLayer.getSafeTexture(getCachedTexture(basePath + "layer3.png")), bodyColor3);
+	}
+
+	protected void resolveBodyGlindTranscended(Character character, float[] bodyColor, float[] bodyColor2, BiConsumer<ResourceLocation, float[]> consumer) {
+		boolean female = Character.GENDER_FEMALE.equalsIgnoreCase(character.getGender());
+		String fallbackPath = female ? "textures/entity/races/humansaiyan/bodytype_female_1_" : "textures/entity/races/humansaiyan/bodytype_male_1_";
+		String bodyPath = female ? "textures/entity/races/humansaiyan/bodytype_female_" + Math.max(1, character.getBodyType()) + "_" : fallbackPath;
+		ResourceLocation bodyLayer = getCachedTexture(bodyPath + "layer1.png");
+		if (!DMZSkinLayer.getSafeTexture(bodyLayer).equals(bodyLayer)) bodyPath = fallbackPath;
+		consumer.accept(DMZSkinLayer.getSafeTexture(getCachedTexture(bodyPath + "layer1.png")), ColorUtils.skinBaseTone(bodyColor));
+		ResourceLocation bodyShadow = getCachedTexture(bodyPath + "layer1_shadow.png");
+		if (DMZSkinLayer.getSafeTexture(bodyShadow).equals(bodyShadow)) emitTranslucentLayer(consumer, bodyShadow, ColorUtils.skinShadowTone(bodyColor));
+		ResourceLocation overlay = DMZSkinLayer.getSafeTexture(getCachedTexture("textures/entity/races/glind/trascended_layer2.png"));
+		emitOverlayLayer(consumer, overlay, ColorUtils.skinBaseTone(bodyColor2));
+		ResourceLocation overlayShadow = getCachedTexture("textures/entity/races/glind/trascended_layer2_shadow.png");
+		if (!DMZSkinLayer.getSafeTexture(overlayShadow).equals(overlayShadow)) return;
+		float[] shadowTone = ColorUtils.skinShadowTone(bodyColor2);
+		if (consumer instanceof BodyLayerSink sink) sink.overlayTranslucent(overlayShadow, shadowTone);
+		else consumer.accept(overlayShadow, shadowTone);
 	}
 
 	protected void resolveBodyOozaru(float[] bodyColor, float[] bodyColor2, BiConsumer<ResourceLocation, float[]> consumer) {
 		String basePath = "textures/entity/races/humansaiyan/oozaru_";
 		consumer.accept(DMZSkinLayer.getSafeTexture(getCachedTexture(basePath + "layer1.png"), getCachedTexture(basePath + "layer1.png")), bodyColor2);
 		consumer.accept(DMZSkinLayer.getSafeTexture(getCachedTexture(basePath + "layer2.png"), getCachedTexture(basePath + "layer2.png")), bodyColor);
-		consumer.accept(DMZSkinLayer.getSafeTexture(getCachedTexture(basePath + "layer3.png"), getCachedTexture(basePath + "layer3.png")), WHITE_COLOR);
+		emitOverlayLayer(consumer, DMZSkinLayer.getSafeTexture(getCachedTexture(basePath + "layer3.png"), getCachedTexture(basePath + "layer3.png")), WHITE_COLOR);
 	}
 
     protected void resolveBodyNamekian(Character character, float[] c1, float[] c2, float[] c3, BiConsumer<ResourceLocation, float[]> consumer) {
@@ -263,11 +424,117 @@ public class SkinGathererProvider {
         String basePath = "textures/entity/races/namekian/bodytype_" + bodyType + "_";
         String fallbackPath = "textures/entity/races/namekian/bodytype_0_";
 
-        consumer.accept(DMZSkinLayer.getSafeTexture(getCachedTexture(basePath + "layer1.png"), getCachedTexture(fallbackPath + "layer1.png")), c1);
+        ResourceLocation layer1 = DMZSkinLayer.getSafeTexture(getCachedTexture(basePath + "layer1.png"), getCachedTexture(fallbackPath + "layer1.png"));
+        consumer.accept(layer1, c1);
+        emitShadowLayer(consumer, layer1, c1);
 
-        tryLoadOptionalLayerWithFallback(basePath + "layer2.png", fallbackPath + "layer2.png", c2, consumer);
-        tryLoadOptionalLayerWithFallback(basePath + "layer3.png", fallbackPath + "layer3.png", c3, consumer);
-        tryLoadOptionalLayerWithFallback(basePath + "layer4.png", fallbackPath + "layer4.png", hairColor, consumer);
+        emitShadowLayer(consumer, tryLoadOptionalLayerWithFallback(basePath + "layer2.png", fallbackPath + "layer2.png", c2, consumer), c2);
+        emitShadowLayer(consumer, tryLoadOptionalLayerWithFallback(basePath + "layer3.png", fallbackPath + "layer3.png", c3, consumer), c3);
+        emitShadowLayer(consumer, tryLoadOptionalLayerWithFallback(basePath + "layer4.png", fallbackPath + "layer4.png", hairColor, consumer), hairColor);
+    }
+
+    private void acceptWithShadow(BiConsumer<ResourceLocation, float[]> consumer, ResourceLocation layer, float[] color) {
+        if (shadowMask(layer) == null) {
+            ResourceLocation[] shaded = shadedLayer(layer);
+            if (shaded != null) {
+                consumer.accept(shaded[0], color);
+                emitTranslucentLayer(consumer, shaded[1], ColorUtils.skinShadowTone(color));
+                return;
+            }
+        }
+        consumer.accept(layer, color);
+        emitShadowLayer(consumer, layer, color);
+    }
+
+    private void acceptWithShadowMask(BiConsumer<ResourceLocation, float[]> consumer, ResourceLocation layer, float[] color) {
+        consumer.accept(layer, color);
+        emitShadowLayer(consumer, layer, color);
+    }
+
+    private void emitShadowLayer(BiConsumer<ResourceLocation, float[]> consumer, ResourceLocation layer, float[] color) {
+        ResourceLocation shadow = shadowMask(layer);
+        if (shadow != null) emitTranslucentLayer(consumer, shadow, ColorUtils.skinShadowTone(color));
+    }
+
+    private static ResourceLocation shadowMask(ResourceLocation layer) {
+        if (layer == null) return null;
+        String path = layer.getPath();
+        ResourceLocation shadow = getCachedTexture(path.substring(0, path.length() - ".png".length()) + "_shadow.png");
+        return DMZSkinLayer.getSafeTexture(shadow).equals(shadow) ? shadow : null;
+    }
+
+    public static void clearShadedLayers() {
+        TextureManager manager = Minecraft.getInstance().getTextureManager();
+        for (ResourceLocation[] shaded : SHADED_LAYERS.values()) {
+            for (ResourceLocation location : shaded) manager.release(location);
+        }
+        SHADED_LAYERS.clear();
+    }
+
+    private static ResourceLocation[] shadedLayer(ResourceLocation layer) {
+        if (layer == null || !RenderSystem.isOnRenderThread()) return null;
+        ResourceLocation[] shaded = SHADED_LAYERS.computeIfAbsent(layer, SkinGathererProvider::buildShadedLayer);
+        return shaded == UNSHADED ? null : shaded;
+    }
+
+    private static ResourceLocation[] buildShadedLayer(ResourceLocation layer) {
+        Optional<Resource> resource = Minecraft.getInstance().getResourceManager().getResource(layer);
+        if (resource.isEmpty()) return UNSHADED;
+        NativeImage base = null;
+        NativeImage shadow = null;
+        boolean shaded = false;
+        try (InputStream in = resource.get().open(); NativeImage source = NativeImage.read(NativeImage.Format.RGBA, in)) {
+            int width = source.getWidth();
+            int height = source.getHeight();
+            base = new NativeImage(NativeImage.Format.RGBA, width, height, false);
+            shadow = new NativeImage(NativeImage.Format.RGBA, width, height, false);
+            for (int y = 0; y < height; y++) {
+                for (int x = 0; x < width; x++) {
+                    int abgr = source.getPixelRGBA(x, y);
+                    int a = abgr >>> 24;
+                    int r = abgr & 0xFF;
+                    int g = (abgr >> 8) & 0xFF;
+                    int b = (abgr >> 16) & 0xFF;
+                    int max = Math.max(r, Math.max(g, b));
+                    if (a == 0 || max == 0 || max == 255) {
+                        base.setPixelRGBA(x, y, abgr);
+                        shadow.setPixelRGBA(x, y, 0);
+                        continue;
+                    }
+                    float value = max / 255.0f;
+                    float strength = Math.min(1.0f, (1.0f - value) / (1.0f - WHITE_SHADOW));
+                    float lift = 255.0f / max;
+                    float mask = 1.0f / Math.max(value, WHITE_SHADOW);
+                    base.setPixelRGBA(x, y, packPixel(a, r * lift, g * lift, b * lift));
+                    shadow.setPixelRGBA(x, y, packPixel(a * strength, r * mask, g * mask, b * mask));
+                    shaded = true;
+                }
+            }
+        } catch (Exception e) {
+            shaded = false;
+        }
+        if (!shaded) {
+            if (base != null) base.close();
+            if (shadow != null) shadow.close();
+            return UNSHADED;
+        }
+        return new ResourceLocation[]{registerShaded(layer, ".png", base), registerShaded(layer, "_shadow.png", shadow)};
+    }
+
+    private static ResourceLocation registerShaded(ResourceLocation layer, String suffix, NativeImage image) {
+        String path = layer.getPath();
+        if (path.endsWith(".png")) path = path.substring(0, path.length() - ".png".length());
+        ResourceLocation location = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "shaded/" + layer.getNamespace() + "/" + path + suffix);
+        Minecraft.getInstance().getTextureManager().register(location, new DynamicTexture(image));
+        return location;
+    }
+
+    private static int packPixel(float a, float r, float g, float b) {
+        return (pixelChannel(a) << 24) | (pixelChannel(b) << 16) | (pixelChannel(g) << 8) | pixelChannel(r);
+    }
+
+    private static int pixelChannel(float value) {
+        return Math.max(0, Math.min(255, Math.round(value)));
     }
 
 	protected void resolveBodyFrostDemon(Character character, String key, float[] b1, float[] b2, float[] b3, float[] hair, BiConsumer<ResourceLocation, float[]> consumer) {
@@ -284,48 +551,48 @@ public class SkinGathererProvider {
 		if (isBulky) {
 			prefix = key.equals("frostdemon_third") ? folder + "thirdform_bodytype_" + bodyType + "_" : folder + "bodytype_" + bodyType + "_";
 			fallbackPrefix = key.equals("frostdemon_third") ? folder + "thirdform_bodytype_0_" : folder + "bodytype_0_";
-			consumer.accept(DMZSkinLayer.getSafeTexture(getCachedTexture(prefix + "layer1.png"), getCachedTexture(fallbackPrefix + "layer1.png")), b1);
-			consumer.accept(DMZSkinLayer.getSafeTexture(getCachedTexture(prefix + "layer2.png"), getCachedTexture(fallbackPrefix + "layer2.png")), b2);
-			consumer.accept(DMZSkinLayer.getSafeTexture(getCachedTexture(prefix + "layer3.png"), getCachedTexture(fallbackPrefix + "layer3.png")), b3);
-			consumer.accept(DMZSkinLayer.getSafeTexture(getCachedTexture(prefix + "layer4.png"), getCachedTexture(fallbackPrefix + "layer4.png")), hair);
+			acceptWithShadow(consumer, DMZSkinLayer.getSafeTexture(getCachedTexture(prefix + "layer1.png"), getCachedTexture(fallbackPrefix + "layer1.png")), b1);
+			acceptWithShadow(consumer, DMZSkinLayer.getSafeTexture(getCachedTexture(prefix + "layer2.png"), getCachedTexture(fallbackPrefix + "layer2.png")), b2);
+			acceptWithShadow(consumer, DMZSkinLayer.getSafeTexture(getCachedTexture(prefix + "layer3.png"), getCachedTexture(fallbackPrefix + "layer3.png")), b3);
+			acceptWithShadow(consumer, DMZSkinLayer.getSafeTexture(getCachedTexture(prefix + "layer4.png"), getCachedTexture(fallbackPrefix + "layer4.png")), hair);
 			if (bodyType == 0)
-				consumer.accept(DMZSkinLayer.getSafeTexture(getCachedTexture(prefix + "layer5.png"), getCachedTexture(fallbackPrefix + "layer5.png")), DEFAULT_ORANGE_COLOR);
+				acceptWithShadow(consumer, DMZSkinLayer.getSafeTexture(getCachedTexture(prefix + "layer5.png"), getCachedTexture(fallbackPrefix + "layer5.png")), DEFAULT_ORANGE_COLOR);
 		} else {
 			prefix = key.equals("frostdemon_fifth") ? folder + "fifth_bodytype_" + bodyType + "_" : folder + "finalform_bodytype_" + bodyType + "_";
 			fallbackPrefix = key.equals("frostdemon_fifth") ? folder + "fifth_bodytype_0_" : folder + "finalform_bodytype_0_";
 
-			consumer.accept(DMZSkinLayer.getSafeTexture(getCachedTexture(prefix + "layer1.png"), getCachedTexture(fallbackPrefix + "layer1.png")), b1);
-			consumer.accept(DMZSkinLayer.getSafeTexture(getCachedTexture(prefix + "layer2.png"), getCachedTexture(fallbackPrefix + "layer2.png")), (bodyType == 0 || bodyType == 2) ? hair : b2);
+			acceptWithShadow(consumer, DMZSkinLayer.getSafeTexture(getCachedTexture(prefix + "layer1.png"), getCachedTexture(fallbackPrefix + "layer1.png")), b1);
+			acceptWithShadow(consumer, DMZSkinLayer.getSafeTexture(getCachedTexture(prefix + "layer2.png"), getCachedTexture(fallbackPrefix + "layer2.png")), (bodyType == 0 || bodyType == 2) ? hair : b2);
 			if (bodyType == 1) {
-				consumer.accept(DMZSkinLayer.getSafeTexture(getCachedTexture(prefix + "layer3.png"), getCachedTexture(fallbackPrefix + "layer3.png")), b3);
-				consumer.accept(DMZSkinLayer.getSafeTexture(getCachedTexture(prefix + "layer4.png"), getCachedTexture(fallbackPrefix + "layer4.png")), hair);
+				acceptWithShadow(consumer, DMZSkinLayer.getSafeTexture(getCachedTexture(prefix + "layer3.png"), getCachedTexture(fallbackPrefix + "layer3.png")), b3);
+				acceptWithShadow(consumer, DMZSkinLayer.getSafeTexture(getCachedTexture(prefix + "layer4.png"), getCachedTexture(fallbackPrefix + "layer4.png")), hair);
 			} else if (bodyType == 2) {
-				consumer.accept(DMZSkinLayer.getSafeTexture(getCachedTexture(prefix + "layer3.png"), getCachedTexture(fallbackPrefix + "layer3.png")), hair);
-				consumer.accept(DMZSkinLayer.getSafeTexture(getCachedTexture(prefix + "layer2.png"), getCachedTexture(fallbackPrefix + "layer2.png")), b2);
+				acceptWithShadow(consumer, DMZSkinLayer.getSafeTexture(getCachedTexture(prefix + "layer3.png"), getCachedTexture(fallbackPrefix + "layer3.png")), hair);
+				acceptWithShadow(consumer, DMZSkinLayer.getSafeTexture(getCachedTexture(prefix + "layer2.png"), getCachedTexture(fallbackPrefix + "layer2.png")), b2);
 			}
 		}
 
-        if(key.equals("frostdemon_mecha")){
-            prefix = folder + "mechaform_";
-            fallbackPrefix = folder + "mechaform_";
+		emitFrostDemonFormLayers(key, b1, consumer);
+	}
 
-            consumer.accept(DMZSkinLayer.getSafeTexture(getCachedTexture(prefix + "layer1.png"), getCachedTexture(fallbackPrefix + "layer1.png")), b1);
-        }
-
-        if(key.equals("frostdemon_metalcore")){
-            prefix = folder + "metalcore_";
-            fallbackPrefix = folder + "metalcore_";
-
-            emitFadingLayer(consumer, "metalcore_1", DMZSkinLayer.getSafeTexture(getCachedTexture(prefix + "layer1.png"), getCachedTexture(fallbackPrefix + "layer1.png")), ColorUtils.hexToRgb("#9BA377"));
-            emitFadingLayer(consumer, "metalcore_2", DMZSkinLayer.getSafeTexture(getCachedTexture(prefix + "layer2.png"), getCachedTexture(fallbackPrefix + "layer2.png")), ColorUtils.hexToRgb("#20211A"));
-
-        }
+	private void emitFrostDemonFormLayers(String key, float[] b1, BiConsumer<ResourceLocation, float[]> consumer) {
+		String folder = "textures/entity/races/frostdemon/";
+		if (key.equals("frostdemon_mecha")) {
+			ResourceLocation mecha = getCachedTexture(folder + "mechaform_layer1.png");
+			consumer.accept(DMZSkinLayer.getSafeTexture(mecha, mecha), b1);
+		}
+		if (key.equals("frostdemon_metalcore")) {
+			ResourceLocation core1 = getCachedTexture(folder + "metalcore_layer1.png");
+			ResourceLocation core2 = getCachedTexture(folder + "metalcore_layer2.png");
+			emitFadingLayer(consumer, "metalcore_1", DMZSkinLayer.getSafeTexture(core1, core1), ColorUtils.hexToRgb("#9BA377"));
+			emitFadingLayer(consumer, "metalcore_2", DMZSkinLayer.getSafeTexture(core2, core2), ColorUtils.hexToRgb("#20211A"));
+		}
 	}
 
     protected void resolveBodyBioAndroid(Character character, String key, float[] b1, float[] b2, float[] b3, float[] hair, BiConsumer<ResourceLocation, float[]> consumer) {
         String phase = switch (key) {
             case "bioandroid_semi" -> "semiperfect";
-            case "bioandroid_perfect", "bioandroid_ultra", "bioandroid_xeno" -> "perfect";
+            case "bioandroid_perfect", "bioandroid_ultra", "bioandroid_xeno", "bioandroid_xenofp" -> "perfect";
             case "bioandroid_base" -> "base";
             case "bioandroid" -> character.hasActiveForm() ? "perfect" : "base";
             default -> "perfect";
@@ -335,47 +602,49 @@ public class SkinGathererProvider {
 
         String currentForm = character.getActiveForm() != null ? character.getActiveForm() : "";
         String formGroup = character.getActiveFormGroup() != null ? character.getActiveFormGroup() : "";
-        boolean legendaryGroup = formGroup.equals("legendaryforms");
 
         String prefix = "textures/entity/races/bioandroid/" + phase + "_" + bodyType + "_";
         String fallbackPrefix = "textures/entity/races/bioandroid/" + phase + "_0_";
 
-        float[] finalBodyColor = b1;
-        if(legendaryGroup){
-            finalBodyColor = ColorUtils.darkenColor(b1, 0.4f);
-        }
-
-        consumer.accept(DMZSkinLayer.getSafeTexture(getCachedTexture(prefix + "layer1.png"), getCachedTexture(fallbackPrefix + "layer1.png")), finalBodyColor);
-        consumer.accept(DMZSkinLayer.getSafeTexture(getCachedTexture(prefix + "layer2.png"), getCachedTexture(fallbackPrefix + "layer2.png")), b2);
-        consumer.accept(DMZSkinLayer.getSafeTexture(getCachedTexture(prefix + "layer3.png"), getCachedTexture(fallbackPrefix + "layer3.png")), b3);
-        consumer.accept(DMZSkinLayer.getSafeTexture(getCachedTexture(prefix + "layer4.png"), getCachedTexture(fallbackPrefix + "layer4.png")), hair);
+        acceptWithShadow(consumer, DMZSkinLayer.getSafeTexture(getCachedTexture(prefix + "layer1.png"), getCachedTexture(fallbackPrefix + "layer1.png")), b1);
+        acceptWithShadow(consumer, DMZSkinLayer.getSafeTexture(getCachedTexture(prefix + "layer2.png"), getCachedTexture(fallbackPrefix + "layer2.png")), b2);
+        acceptWithShadow(consumer, DMZSkinLayer.getSafeTexture(getCachedTexture(prefix + "layer3.png"), getCachedTexture(fallbackPrefix + "layer3.png")), b3);
+        acceptWithShadow(consumer, DMZSkinLayer.getSafeTexture(getCachedTexture(prefix + "layer4.png"), getCachedTexture(fallbackPrefix + "layer4.png")), hair);
 
         if (!currentForm.equals("xenomax") && !currentForm.equals("xenofp")) {
-            consumer.accept(DMZSkinLayer.getSafeTexture(getCachedTexture(prefix + "layer5.png"), getCachedTexture(fallbackPrefix + "layer5.png")), DEFAULT_STINGER_COLOR);
+            acceptWithShadow(consumer, DMZSkinLayer.getSafeTexture(getCachedTexture(prefix + "layer5.png"), getCachedTexture(fallbackPrefix + "layer5.png")), DEFAULT_STINGER_COLOR);
         }
 
-        if(legendaryGroup){
-            consumer.accept(DMZSkinLayer.getSafeTexture(getCachedTexture("textures/entity/races/bioandroid/xenoform_layer1.png"), getCachedTexture("textures/entity/races/bioandroid/xenoform_layer1.png")), ColorUtils.hexToRgb("#FFFFFF"));
-
-            if (currentForm.equals("xenomax")){
-                consumer.accept(DMZSkinLayer.getSafeTexture(getCachedTexture("textures/entity/races/bioandroid/xenoform_layer2.png"), getCachedTexture("textures/entity/races/bioandroid/xenoform_layer2.png")), ColorUtils.hexToRgb("#FFFFFF"));
-            }
-        }
+        emitBioAndroidFormLayers(key, formGroup, consumer);
     }
+
+	private void emitBioAndroidFormLayers(String key, String formGroup, BiConsumer<ResourceLocation, float[]> consumer) {
+		boolean xenoModel = key.equals("bioandroid_xeno") || key.equals("bioandroid_xenofp");
+		if (!formGroup.equals("legendaryforms") && !xenoModel) return;
+		emitOverlayLayer(consumer, DMZSkinLayer.getSafeTexture(getCachedTexture("textures/entity/races/bioandroid/xenoform_layer1.png")), WHITE_COLOR);
+		if (xenoModel) emitOverlayLayer(consumer, DMZSkinLayer.getSafeTexture(getCachedTexture("textures/entity/races/bioandroid/xenoform_layer2.png")), WHITE_COLOR);
+	}
 
     protected void resolveBodyMajin(Character character, String key, float[] b1, float[] b2, float[] b3, BiConsumer<ResourceLocation, float[]> consumer) {
 
         if ("janemba_super".equals(key)) {
             String path = "textures/entity/races/majin/janembasuper_0_male_";
-            consumer.accept(getCachedTexture(path + "layer1.png"), b1);
-            consumer.accept(getCachedTexture(path + "layer2.png"), b2);
-            consumer.accept(getCachedTexture(path + "layer3.png"), b3);
+            acceptWithShadow(consumer, getCachedTexture(path + "layer1.png"), b1);
+            acceptWithShadow(consumer, getCachedTexture(path + "layer2.png"), b2);
+            acceptWithShadow(consumer, getCachedTexture(path + "layer3.png"), b3);
+            return;
+        }
+
+        if ("janemba_imperfect".equals(key)) {
+            String path = "textures/entity/races/majin/janemba_0_male_";
+            acceptWithShadow(consumer, getCachedTexture(path + "layer1.png"), b1);
             return;
         }
 
         if ("janemba_fat".equals(key)) {
-            String path = "textures/entity/races/majin/janemba_0_male_";
-            consumer.accept(getCachedTexture(path + "layer1.png"), b1);
+            String path = "textures/entity/races/majin/janembafat_0_male_";
+            acceptWithShadow(consumer, getCachedTexture(path + "layer1.png"), b1);
+            acceptWithShadow(consumer, getCachedTexture(path + "layer2.png"), b2);
             return;
         }
 
@@ -396,10 +665,10 @@ public class SkinGathererProvider {
         String fallbackPath = "textures/entity/races/majin/bodytype_" + genderSuffix + "_0_";
 
         ResourceLocation l1 = DMZSkinLayer.getSafeTexture(getCachedTexture(basePath + "layer1.png"), getCachedTexture(fallbackPath + "layer1.png"));
-        if (l1 != null) consumer.accept(l1, b1);
+        if (l1 != null) acceptWithShadow(consumer, l1, b1);
 
-        tryLoadOptionalLayer(basePath + "layer2.png", b2, consumer);
-        tryLoadOptionalLayer(basePath + "layer3.png", b3, consumer);
+        emitShadowLayer(consumer, tryLoadOptionalLayer(basePath + "layer2.png", b2, consumer), b2);
+        emitShadowLayer(consumer, tryLoadOptionalLayer(basePath + "layer3.png", b3, consumer), b3);
 
         if (genderSuffix.equals("female") && (phase.equals("super") || phase.equals("ultra"))) {
             ResourceLocation tailLoc = getCachedTexture("textures/entity/races/tail1.png");
@@ -407,22 +676,27 @@ public class SkinGathererProvider {
         }
     }
 
-    private void tryLoadOptionalLayer(String path, float[] color, BiConsumer<ResourceLocation, float[]> consumer) {
+    private ResourceLocation tryLoadOptionalLayer(String path, float[] color, BiConsumer<ResourceLocation, float[]> consumer) {
         ResourceLocation loc = getCachedTexture(path);
         if (Minecraft.getInstance().getResourceManager().getResource(loc).isPresent()) {
             consumer.accept(loc, color);
+            return loc;
         }
+        return null;
     }
 
-    private void tryLoadOptionalLayerWithFallback(String path, String fallbackPath, float[] color, BiConsumer<ResourceLocation, float[]> consumer) {
+    private ResourceLocation tryLoadOptionalLayerWithFallback(String path, String fallbackPath, float[] color, BiConsumer<ResourceLocation, float[]> consumer) {
         ResourceLocation loc = getCachedTexture(path);
         ResourceLocation fallbackLoc = getCachedTexture(fallbackPath);
 
         if (Minecraft.getInstance().getResourceManager().getResource(loc).isPresent()) {
             consumer.accept(loc, color);
+            return loc;
         }
         else if (Minecraft.getInstance().getResourceManager().getResource(fallbackLoc).isPresent()) {
             consumer.accept(fallbackLoc, color);
+            return fallbackLoc;
         }
+        return null;
     }
 }

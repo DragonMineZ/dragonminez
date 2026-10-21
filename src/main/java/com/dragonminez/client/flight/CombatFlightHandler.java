@@ -5,7 +5,9 @@ import com.dragonminez.common.config.ConfigManager;
 import com.dragonminez.common.init.EntityAttributes;
 import com.dragonminez.common.network.C2S.CombatFlyImpulseC2S;
 import com.dragonminez.common.network.NetworkHandler;
+import com.dragonminez.client.events.FlySkillEvent;
 import com.dragonminez.common.stats.StatsData;
+import com.dragonminez.client.render.shader.ClientGravityState;
 import com.dragonminez.server.util.GravityLogic;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.player.LocalPlayer;
@@ -27,6 +29,7 @@ public class CombatFlightHandler {
 
 	private static final long DOUBLE_TAP_WINDOW_MS = 250;
 	private static final float BASE_ATTRIBUTE_FLY_SPEED = 0.35F;
+	private static final double COMBAT_SPEED_SCALE = 0.85D;
 	private static final float SMOOTHING = 0.35F;
 	private static final float BURST_DECAY = 0.88F;
 	private static final double PASSIVE_DESCENT = -0.05D;
@@ -57,8 +60,8 @@ public class CombatFlightHandler {
 		float speedScale = getFlySpeedScale(player);
 		float levelMultiplier = 1.0F + (0.20F * flyLevel);
 
-		double baseSpeed = config.getCombatFlyBaseSpeed() * levelMultiplier * speedScale;
-		double sprintSpeed = config.getCombatFlySprintSpeed() * levelMultiplier * speedScale;
+		double baseSpeed = config.getCombatFlyBaseSpeed() * COMBAT_SPEED_SCALE * levelMultiplier * speedScale * data.getResources().getFlightSpeedLimit() / 100;
+		double sprintSpeed = config.getCombatFlySprintSpeed() * COMBAT_SPEED_SCALE * levelMultiplier * speedScale * data.getResources().getFlightSpeedLimit() / 100;
 
 		Minecraft mc = Minecraft.getInstance();
 		boolean forward = !movementRestricted && mc.options.keyUp.isDown();
@@ -94,7 +97,7 @@ public class CombatFlightHandler {
 		double targetY;
 		if (jump) targetY = maxVertical;
 		else if (descend) targetY = -maxVertical;
-		else targetY = PASSIVE_DESCENT;
+		else targetY = PASSIVE_DESCENT * FlySkillEvent.hoverDescentFactor(flyLevel);
 
 		Vec3 target = new Vec3(targetHorizontal.x, targetY, targetHorizontal.z);
 
@@ -115,14 +118,14 @@ public class CombatFlightHandler {
 			combined = velocity.add(burstVelocity);
 		}
 
-		if (GravityLogic.isFlightHardStopped(player)) {
+		if (GravityLogic.isFlightHardStopped(ClientGravityState.getNetGravity())) {
 			velocity = Vec3.ZERO;
 			burstVelocity = Vec3.ZERO;
 			player.setDeltaMovement(0, -1.5, 0);
 			return;
 		}
 
-		double flyFactor = GravityLogic.getFlyFactor(player);
+		double flyFactor = GravityLogic.getFlyFactor(ClientGravityState.getNetGravity());
 		if (flyFactor < 1.0) {
 			velocity = velocity.scale(flyFactor);
 			burstVelocity = burstVelocity.scale(flyFactor);
@@ -180,9 +183,8 @@ public class CombatFlightHandler {
 
 	private static float getFlySpeedScale(LocalPlayer player) {
 		double attrValue = player.getAttributes().hasAttribute(EntityAttributes.FLY_SPEED.get()) ? player.getAttributeValue(EntityAttributes.FLY_SPEED.get()) : 0.0;
-		if (attrValue <= 0.0) return 1.0F;
-		double scale = attrValue / BASE_ATTRIBUTE_FLY_SPEED;
-		return (float) Mth.clamp(scale, 0.25, 4.0);
+		double scale = attrValue <= 0.0 ? 1.0 : Mth.clamp(attrValue / BASE_ATTRIBUTE_FLY_SPEED, 0.25, 4.0);
+		return (float) (scale * FlySkillEvent.flightStateSpeedMultiplier(player));
 	}
 
 	private static double getGroundDistance(LocalPlayer player) {

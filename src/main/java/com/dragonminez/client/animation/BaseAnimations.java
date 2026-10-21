@@ -2,6 +2,9 @@ package com.dragonminez.client.animation;
 
 import software.bernie.geckolib.core.animation.RawAnimation;
 
+import java.util.Locale;
+import java.util.Map;
+
 public class BaseAnimations {
 	public static final RawAnimation IDLE = RawAnimation.begin().thenLoop("base.idle");
 	public static final RawAnimation IDLE_OOZARU = RawAnimation.begin().thenLoop("base.idle_ozaru");
@@ -30,9 +33,20 @@ public class BaseAnimations {
 	public static final RawAnimation TAIL = RawAnimation.begin().thenLoop("base.tail");
 	public static final RawAnimation BLOCK = RawAnimation.begin().thenPlay("base.block");
 	public static final RawAnimation DRAIN = RawAnimation.begin().thenPlay("base.absorb");
+	public static final RawAnimation DRAIN_SEMIPERFECT = RawAnimation.begin().thenLoop("base.absorb2");
 	public static final RawAnimation MINING1 = RawAnimation.begin().thenPlay("base.mining1");
 	public static final RawAnimation MINING2 = RawAnimation.begin().thenPlay("base.mining2");
 	public static final RawAnimation KI_CHARGE = RawAnimation.begin().thenLoop("base.ki_charge");
+	public static final RawAnimation KI_OVERCHARGE = RawAnimation.begin().thenPlay("base.ki_overcharge_start").thenLoop("base.ki_overcharge");
+	private static final Map<String, RawAnimation> KI_CHARGE_BY_RACE = Map.of(
+			"human", RawAnimation.begin().thenLoop("base.ki_charge_human"),
+			"saiyan", RawAnimation.begin().thenLoop("base.ki_charge_saiyan"),
+			"namekian", RawAnimation.begin().thenLoop("base.ki_charge_namekian"),
+			"frostdemon", RawAnimation.begin().thenLoop("base.ki_charge_frostdemon"),
+			"bioandroid", RawAnimation.begin().thenLoop("base.ki_charge_bioandroid"),
+			"majin", RawAnimation.begin().thenLoop("base.ki_charge_majin"),
+			"glind", RawAnimation.begin().thenLoop("base.ki_charge_glind")
+	);
 	public static final RawAnimation TRANSFORMATION = RawAnimation.begin().thenLoop("transf.generic");
 	public static final RawAnimation OOZARU_TRANSFORMATION = RawAnimation.begin().thenLoop("transf.ozaru");
 	public static final RawAnimation ABSORB = RawAnimation.begin().thenLoop("transf.absorb");
@@ -57,4 +71,11 @@ public class BaseAnimations {
 	public static final RawAnimation FLYBACK = RawAnimation.begin().thenPlay("base.flyback");
 	public static final RawAnimation KNOCKBACK_HORIZONTAL = RawAnimation.begin().thenPlay("base.faint_horizontal");
 	public static final RawAnimation KNOCKBACK_VERTICAL = RawAnimation.begin().thenPlay("base.faint_vertical");
+	public static final RawAnimation STUNNED = RawAnimation.begin().thenLoop("base.stunned");
+
+	public static RawAnimation kiChargeFor(String race) {
+		RawAnimation saiyan = KI_CHARGE_BY_RACE.get("saiyan");
+		if (race == null) return saiyan;
+		return KI_CHARGE_BY_RACE.getOrDefault(race.toLowerCase(Locale.ROOT), saiyan);
+	}
 }

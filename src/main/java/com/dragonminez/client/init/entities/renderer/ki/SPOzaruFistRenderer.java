@@ -2,6 +2,8 @@ package com.dragonminez.client.init.entities.renderer.ki;
 
 import com.dragonminez.client.init.entities.model.ki.SPDragonFistModel;
 import com.dragonminez.client.init.entities.model.ki.SPOzaruFistModel;
+import com.dragonminez.client.render.effects.AuraTrailRenderer;
+import com.dragonminez.client.util.ColorUtils;
 import com.dragonminez.common.init.entities.ki.OzaruFistEntity;
 import com.dragonminez.common.init.entities.ki.SPDragonFistEntity;
 import com.mojang.blaze3d.vertex.PoseStack;
@@ -15,6 +17,12 @@ import software.bernie.geckolib.core.object.Color;
 import software.bernie.geckolib.renderer.GeoEntityRenderer;
 
 public class SPOzaruFistRenderer<T extends OzaruFistEntity> extends GeoEntityRenderer<T> {
+    private static final float[] TRAIL_COLOR = ColorUtils.rgbIntToFloat(0xE0A35C);
+    private static final float TRAIL_ALPHA = 0.65f;
+    private static final int TRAIL_SAMPLES = 24;
+    private static final float TRAIL_HALF_WIDTH = 1.80f;
+    private static final float TRAIL_ANCHOR_BACK = 0.00f;
+    private static final float TRAIL_ANCHOR_HEIGHT = 0.50f;
 
     public SPOzaruFistRenderer(EntityRendererProvider.Context renderManager) {
         super(renderManager, new SPOzaruFistModel<>());
@@ -26,6 +34,9 @@ public class SPOzaruFistRenderer<T extends OzaruFistEntity> extends GeoEntityRen
         if (!entity.isFiring()) {
             return;
         }
+
+        AuraTrailRenderer.submitEntityTrail(entity, poseStack.last().pose(), partialTick, TRAIL_COLOR, TRAIL_ALPHA,
+                TRAIL_SAMPLES, TRAIL_HALF_WIDTH, TRAIL_ANCHOR_BACK, TRAIL_ANCHOR_HEIGHT);
 
         poseStack.pushPose();
         poseStack.scale(5.0f, 5.0f, 5.0f);

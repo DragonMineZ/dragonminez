@@ -149,6 +149,16 @@ public class DMZAdvancementsProvider extends AdvancementProvider {
 							)
 					).save(consumer, "dragonminez:roshihouse");
 
+			Advancement babapalace = Advancement.Builder.advancement()
+					.parent(root)
+					.display(
+							Items.GLASS_BOTTLE,
+							Component.translatable("advancements.dragonminez.babapalace.title"),
+							Component.translatable("advancements.dragonminez.babapalace.description"),
+							null, FrameType.GOAL, true, true, false
+					).addCriterion("babapalace", inStructure("baba_palace")
+					).save(consumer, "dragonminez:babapalace");
+
 			Advancement timechamber = Advancement.Builder.advancement()
 					.parent(kamilookout)
 					.display(

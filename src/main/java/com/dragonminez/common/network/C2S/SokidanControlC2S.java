@@ -1,5 +1,6 @@
 package com.dragonminez.common.network.C2S;
 
+import com.dragonminez.common.network.PacketRateLimiter;
 import com.dragonminez.common.init.entities.ki.KiBlastEntity;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.server.level.ServerPlayer;
@@ -23,7 +24,8 @@ public class SokidanControlC2S {
     public void handle(Supplier<NetworkEvent.Context> ctx) {
         ctx.get().enqueueWork(() -> {
             ServerPlayer player = ctx.get().getSender();
-            if (player != null && player.level() != null) {
+            if (player != null && player.level() != null
+                    && PacketRateLimiter.allow(player.getUUID(), "sokidan_control", player.level().getGameTime(), 4L)) {
                 double searchRadius = 64.0;
                 AABB searchBox = player.getBoundingBox().inflate(searchRadius);
 

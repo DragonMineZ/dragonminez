@@ -1,6 +1,7 @@
 package com.dragonminez.client.render.layer;
 
 import com.dragonminez.client.render.compat.CosmeticArmorCompat;
+import com.dragonminez.client.render.util.ArmorPieceInflation;
 import com.dragonminez.client.util.SkinGathererProvider;
 import com.dragonminez.common.config.ConfigManager;
 import com.dragonminez.common.init.armor.DbzArmorItem;
@@ -84,19 +85,23 @@ public class DMZPlayerArmorLayer<T extends AbstractClientPlayer & GeoAnimatable>
             if (boneName.equals("armorBody") || boneName.equals("armor_body")) {
                 boolean isArmored = character.getArmored();
                 boolean isMajin = logicKey.equals("majin");
-                boolean isFemaleHumanOrSaiyan = (race.equals("human") || race.equals("saiyan")) && gender.equals(Character.GENDER_FEMALE);
+                boolean isFemaleHumanOrSaiyan = (race.equals("human") || race.equals("saiyan") || race.equals("glind")) && gender.equals(Character.GENDER_FEMALE);
                 boolean isOozaru = character.isOozaruCached() || logicKey.contains("oozaru");
 
                 boolean isBuffed = logicKey.contains("buffed") || logicKey.contains("frostdemon_fp") || logicKey.contains("majin_ultra")
-                        || logicKey.contains("namekian_orange") || logicKey.contains("bioandroid_ultra") || logicKey.contains("ssj4d") || logicKey.contains("ssj4gt")
+                        || logicKey.contains("namekian_orange") || logicKey.startsWith("bioandroid") || logicKey.contains("ssj4d") || logicKey.contains("ssj4gt")
                         || logicKey.contains("frostdemon_fifth") || logicKey.contains("frostdemon_metalcore") || logicKey.contains("namekian_buffed")
-                        || logicKey.contains("4arms") || logicKey.contains("bioandroid_xeno") || logicKey.contains("janemba_super");
+                        || logicKey.contains("4arms") || logicKey.contains("janemba_super")
+                        || logicKey.equals("janemba_fat") || logicKey.equals("frostdemon_second") || logicKey.equals("glindtrueform") || logicKey.equals("trascended")
+                        || logicKey.equals("glinddark");
                 boolean isDbzArmor = stack.getItem() instanceof DbzArmorTextured;
 
-				boolean isRestrictedMajin = (isMajin && bodyType != 2) || logicKey.equals("janemba_fat");
+				boolean isRestrictedMajin = (isMajin && bodyType != 2) || logicKey.equals("janemba_imperfect");
                 boolean isCustomModel = SkinGathererProvider.modelFamily(logicKey).equals("custom");
 
-                if (isRestrictedMajin || isFemaleHumanOrSaiyan || isOozaru) {
+                if (isOozaru) {
+                    if (isDbzArmor && !isArmored) return null;
+                } else if (isRestrictedMajin || isFemaleHumanOrSaiyan) {
                     if (!isArmored) return null;
                 } else if (isBuffed || isCustomModel) {
                     if (isDbzArmor) return null;
@@ -106,6 +111,12 @@ public class DMZPlayerArmorLayer<T extends AbstractClientPlayer & GeoAnimatable>
 
         return stack;
     }
+
+	@Override
+	protected void prepModelPartForRender(PoseStack poseStack, GeoBone bone, ModelPart sourcePart) {
+		super.prepModelPartForRender(poseStack, bone, sourcePart);
+		ArmorPieceInflation.inflateFittedPart(poseStack, bone, sourcePart, getReferenceCubeForModel(bone, sourcePart));
+	}
 
 	@Override
 	protected @NotNull EquipmentSlot getEquipmentSlotForBone(GeoBone bone, ItemStack stack, T animatable) {

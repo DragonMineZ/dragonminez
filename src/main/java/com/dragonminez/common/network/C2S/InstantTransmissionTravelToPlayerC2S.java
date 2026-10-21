@@ -17,7 +17,6 @@ import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
-import net.minecraft.sounds.SoundSource;
 import net.minecraftforge.network.NetworkEvent;
 
 import java.util.UUID;
@@ -50,6 +49,7 @@ public class InstantTransmissionTravelToPlayerC2S {
 			StatsProvider.get(StatsCapability.INSTANCE, player).ifPresent(data -> {
 				int skillLevel = data.getSkills().getSkillLevel("instant_transmission");
 				if (skillLevel < MENU_SKILL_LEVEL) return;
+				if (data.getStatus().isStunned()) return;
 
 				ServerPlayer target = player.server.getPlayerList().getPlayer(targetId);
 				if (target == null || target.getUUID().equals(player.getUUID())) {
@@ -91,7 +91,8 @@ public class InstantTransmissionTravelToPlayerC2S {
 				}
 
 				double distance = sameDimension ? player.position().distanceTo(target.position()) : 0.0;
-				int kiCost = (DashHandler.getFlyDashKiCost() * 5) + ITTeleportHelper.extraKiCostForDistance(distance);
+				int kiCost = ITTeleportHelper.travelKiCost(DashHandler.getFlyDashKiCost() * 5, distance,
+						player.level().dimension().location().toString(), target.level().dimension().location().toString());
 				if (!bypassCosts) {
 					if (data.getResources().getCurrentEnergy() < kiCost) {
 						fail(player, "no_ki");
@@ -123,7 +124,8 @@ public class InstantTransmissionTravelToPlayerC2S {
 		double dZ = center.getZ() - safePos.getZ();
 		float yaw = (float) (Math.atan2(dZ, dX) * (180D / Math.PI)) - 90.0F;
 
+		ITTeleportHelper.departVfx(player, MainSounds.TP.get());
 		player.teleportTo(targetLevel, safePos.getX() + 0.5, safePos.getY(), safePos.getZ() + 0.5, yaw, player.getXRot());
-		player.playNotifySound(MainSounds.TP.get(), SoundSource.PLAYERS, 1.0F, 1.0F);
+		ITTeleportHelper.arriveVfx(player, MainSounds.TP.get());
 	}
 }

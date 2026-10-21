@@ -14,6 +14,8 @@ public final class MainSounds {
 			DeferredRegister.create(ForgeRegistries.SOUND_EVENTS, Reference.MOD_ID);
 
 	public static final RegistryObject<SoundEvent> GOLPE1 = registerSoundEvent("punch1");
+	public static final RegistryObject<SoundEvent> MINIGAME_SONG_ILL_FORGET = registerSoundEvent("minigame.ill_forget_about_you_in_time");
+	public static final RegistryObject<SoundEvent> MINIGAME_SONG_OH_YEAH = registerSoundEvent("minigame.oh_yeah");
 	public static final RegistryObject<SoundEvent> GOLPE2 = registerSoundEvent("punch2");
 	public static final RegistryObject<SoundEvent> GOLPE3 = registerSoundEvent("punch3");
 	public static final RegistryObject<SoundEvent> GOLPE4 = registerSoundEvent("punch4");
@@ -66,6 +68,13 @@ public final class MainSounds {
 
 	public static final RegistryObject<SoundEvent> NAVE_OPEN = registerSoundEvent("ship_open");
 	public static final RegistryObject<SoundEvent> NAVE_LANDING_OPEN = registerSoundEvent("ship_landing_open");
+	public static final RegistryObject<SoundEvent> VEHICLE_CAR_ENGINE = registerSoundEvent("vehicle.car.engine");
+	public static final RegistryObject<SoundEvent> VEHICLE_CC576_ENGINE = registerSoundEvent("vehicle.cc576.engine");
+	public static final RegistryObject<SoundEvent> VEHICLE_SPACEPOD_ENGINE = registerSoundEvent("vehicle.spacepod.engine");
+	public static final RegistryObject<SoundEvent> VEHICLE_FRIEZA_CAPSULE_ENGINE = registerSoundEvent("vehicle.frieza_capsule.engine");
+	public static final RegistryObject<SoundEvent> VEHICLE_FRIEZA_CAPSULE_TAKEOFF = registerSoundEvent("vehicle.frieza_capsule.takeoff");
+	public static final RegistryObject<SoundEvent> VEHICLE_FRIEZA_CAPSULE_LAND = registerSoundEvent("vehicle.frieza_capsule.land");
+	public static final RegistryObject<SoundEvent> VEHICLE_DOOR = registerSoundEvent("vehicle.door");
 
 	public static final RegistryObject<SoundEvent> FROG1 = registerSoundEvent("frogsound1");
 	public static final RegistryObject<SoundEvent> FROG2 = registerSoundEvent("frogsound2");
@@ -179,6 +188,15 @@ public final class MainSounds {
 	public static final RegistryObject<SoundEvent> OOZARU_GROWL_PLAYER = registerSoundEvent("oozaru_growl_player");
 	public static final RegistryObject<SoundEvent> VEGETA_OOZARU_GROWL = registerSoundEvent("vegeta_oozaru_growl");
 	public static final RegistryObject<SoundEvent> VEGETA_OOZARU_DEATH = registerSoundEvent("vegeta_oozaru_death");
+
+	public static final RegistryObject<SoundEvent> RAID_OST_1 = registerSoundEvent("raid_ost_1");
+	public static final RegistryObject<SoundEvent> WORLDBOSS_MUSIC_JANEMBA = registerSoundEvent("worldboss_music.janemba");
+	public static final RegistryObject<SoundEvent> WORLDBOSS_MUSIC_TURLES = registerSoundEvent("worldboss_music.turles");
+	public static final RegistryObject<SoundEvent> WORLDBOSS_MUSIC_METAL_COOLER_CORE = registerSoundEvent("worldboss_music.metal_cooler_core");
+	public static final RegistryObject<SoundEvent> WORLDBOSS_MUSIC_TAMAGAMI_3 = registerSoundEvent("worldboss_music.tamagami_3");
+	public static final RegistryObject<SoundEvent> WORLDBOSS_MUSIC_TAMAGAMI_2 = registerSoundEvent("worldboss_music.tamagami_2");
+	public static final RegistryObject<SoundEvent> WORLDBOSS_MUSIC_TAMAGAMI_1 = registerSoundEvent("worldboss_music.tamagami_1");
+	public static final RegistryObject<SoundEvent> WORLDBOSS_MUSIC_GOMAH = registerSoundEvent("worldboss_music.gomah");
 
 	private static RegistryObject<SoundEvent> registerSoundEvent(String name) {
 		ResourceLocation id = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, name);

@@ -20,6 +20,7 @@ import com.mojang.math.Axis;
 import net.minecraft.client.Camera;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.ShaderInstance;
+import net.minecraft.client.renderer.culling.Frustum;
 import net.minecraft.client.renderer.RenderType;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.Mth;
@@ -28,6 +29,7 @@ import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.NeutralMob;
 import net.minecraft.world.entity.monster.Enemy;
 import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.client.event.RenderLevelStageEvent;
@@ -41,6 +43,7 @@ import org.lwjgl.opengl.GL11;
 public final class KiSenseAuraRenderer {
 
 	private static final double LOD_DISTANCE = 24.0;
+	private static final double CULL_MARGIN = 1.5;
 
 	private KiSenseAuraRenderer() {}
 
@@ -86,6 +89,7 @@ public final class KiSenseAuraRenderer {
 		float partialTick = event.getPartialTick();
 		long gameTime = mc.level.getGameTime();
 
+		Frustum frustum = event.getFrustum();
 		PoseStack poseStack = iris ? viewStack(mc) : event.getPoseStack();
 		VertexBuffer mesh = AuraMeshFactory.getBillboardQuad();
 		RenderType renderType = auraType(tex);
@@ -116,6 +120,9 @@ public final class KiSenseAuraRenderer {
 
 			float speed = lod ? 0.0f : (gameTime + partialTick) * 0.5f;
 			float scale = baseRadius * powerMul;
+			double reach = scale * CULL_MARGIN;
+			double centerY = lerpY + bbHeight * 0.5;
+			if (frustum != null && !frustum.isVisible(new AABB(lerpX - reach, centerY - reach, lerpZ - reach, lerpX + reach, centerY + reach, lerpZ + reach))) continue;
 
 			drawAuraLayer(poseStack, camera, camPos, lerpX, lerpY, lerpZ, bbHeight, proj, mesh, renderType, tex, shader, border, scale, 0.9f, speed);
 			drawAuraLayer(poseStack, camera, camPos, lerpX, lerpY, lerpZ, bbHeight, proj, mesh, renderType, tex, shader, inner, scale * 0.66f, 0.5f, speed * 1.2f);

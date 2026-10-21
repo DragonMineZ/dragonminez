@@ -1,0 +1,6 @@
+{
+  "type": "forge:add_features",
+  "biomes": "#minecraft:is_overworld",
+  "features": "dragonminez:tree_of_might_canopy_placed",
+  "step": "surface_structures"
+}

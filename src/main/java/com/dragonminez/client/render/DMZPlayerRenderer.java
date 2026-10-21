@@ -1,40 +1,80 @@
 package com.dragonminez.client.render;
 
 import com.dragonminez.client.events.FlySkillEvent;
-import com.dragonminez.client.flight.FlightRollHandler;
+import com.dragonminez.client.flight.FlightOrientationHandler;
 import com.dragonminez.client.animation.IPlayerAnimatable;
+import com.dragonminez.client.render.hair.HairRenderCapture;
+import com.dragonminez.client.render.hair.HairRenderContext;
+import com.dragonminez.client.render.util.SkinPaintContext;
 import com.dragonminez.client.render.layer.*;
+import com.dragonminez.client.systems.BioSwellRenderState;
+import com.dragonminez.client.systems.FormVisualTransition;
 import com.dragonminez.client.render.shader.TransformationPostShaderManager;
+import com.dragonminez.client.render.effects.AuraBorderRenderer;
+import com.dragonminez.client.render.effects.AuraTrailRenderer;
+import com.dragonminez.client.render.effects.DimensionalFistEffect;
+import com.dragonminez.client.render.effects.GodRitualShellEffect;
+import com.dragonminez.client.render.effects.TechniquePreview;
 import com.dragonminez.client.render.shader.TransformationMaskBufferSource;
 import com.dragonminez.client.render.util.IrisCompat;
+import com.dragonminez.client.init.entities.renderer.sagas.SaiyanInvaderRenderer;
 import com.dragonminez.client.util.BoneVisibilityHandler;
+import com.dragonminez.client.util.ColorUtils;
+import com.dragonminez.server.events.players.combat.StrikeCombos.MysticBallCombo;
+import com.dragonminez.server.events.players.statuseffect.RelicItemsStatusHandler;
 import com.dragonminez.mixin.client.GeoModelAccessor;
 import com.dragonminez.common.config.ConfigManager;
 import com.dragonminez.common.stats.StatsCapability;
 import com.dragonminez.common.stats.StatsData;
 import com.dragonminez.common.stats.StatsProvider;
-import com.dragonminez.common.util.lists.SaiyanForms;
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
 import com.mojang.math.Axis;
 import net.minecraft.client.Minecraft;
+import net.minecraft.util.Mth;
 import net.minecraft.client.player.AbstractClientPlayer;
 import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.RenderType;
 import net.minecraft.client.renderer.entity.EntityRendererProvider;
+import net.minecraft.client.renderer.texture.OverlayTexture;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.world.entity.Entity;
+import net.minecraft.world.phys.Vec3;
 import org.jetbrains.annotations.Nullable;
+import org.joml.Quaternionf;
 import org.lwjgl.opengl.GL11;
 import software.bernie.geckolib.cache.object.BakedGeoModel;
+import software.bernie.geckolib.cache.object.GeoBone;
 import software.bernie.geckolib.core.animatable.GeoAnimatable;
 import software.bernie.geckolib.model.GeoModel;
 import software.bernie.geckolib.renderer.GeoEntityRenderer;
 import software.bernie.geckolib.renderer.layer.GeoRenderLayer;
+import software.bernie.geckolib.util.RenderUtils;
 
-import java.util.Objects;
+import java.util.HashMap;
+import java.util.Map;
+
 
 public class DMZPlayerRenderer<T extends AbstractClientPlayer & GeoAnimatable> extends GeoEntityRenderer<T> {
+
+	private static final String HEAD_BONE = "head";
+	private static final float[] DEMON_EYE_TINT = {0.545f, 0.0f, 0.0f, 0.35f};
+	private static final float[] DEMON_EYE_FLAME_INNER = ColorUtils.hexToRgb("#FF2A2A");
+	private static final float[] DEMON_EYE_FLAME_OUTER = ColorUtils.hexToRgb("#6B0000");
+
+	private static final float[] MYSTIC_BALL_TRAIL_COLOR = ColorUtils.rgbIntToFloat(MysticBallCombo.COLOR_MAIN);
+	private static final float MYSTIC_BALL_TRAIL_ALPHA = 0.6f;
+	private static final int MYSTIC_BALL_TRAIL_SAMPLES = 24;
+	private static final float MYSTIC_BALL_TRAIL_HALF_WIDTH = 0.6f;
+	private static final float MYSTIC_BALL_TRAIL_HEIGHT = 0.75f;
+	private static final int MYSTIC_BALL_TRAIL_FADE_TICKS = 30;
+	private static final Map<Integer, int[]> MYSTIC_BALL_TICKS = new HashMap<>();
+	private static final Map<Integer, Vec3> MYSTIC_BALL_AXIS = new HashMap<>();
+	private static final double MYSTIC_BALL_SMEAR_MIN_SPEED = 0.3;
+	private static final float MYSTIC_BALL_STRETCH_PER_SPEED = 0.45f;
+	private static final float MYSTIC_BALL_MAX_STRETCH = 0.9f;
+	private static final float MYSTIC_BALL_SQUASH = 0.45f;
 
 	protected GeoRenderLayer<T> caller = null;
 
@@ -70,6 +110,54 @@ public class DMZPlayerRenderer<T extends AbstractClientPlayer & GeoAnimatable> e
 		BoneVisibilityHandler.updateVisibility(model, animatable, this.caller);
 	}
 
+	public static void submitMysticBallTrail(Entity entity, boolean playing, PoseStack poseStack, float partialTick) {
+		int[] ticks = MYSTIC_BALL_TICKS.get(entity.getId());
+		if (playing && (ticks == null || entity.tickCount - ticks[1] > 5)) {
+			ticks = new int[]{entity.tickCount, entity.tickCount};
+			MYSTIC_BALL_TICKS.put(entity.getId(), ticks);
+		}
+		if (ticks == null) return;
+		if (playing) ticks[1] = entity.tickCount;
+		else if (entity.tickCount - ticks[1] > MYSTIC_BALL_TRAIL_FADE_TICKS) {
+			MYSTIC_BALL_TICKS.remove(entity.getId());
+			return;
+		}
+
+		boolean active = playing && MysticBallCombo.isBallTick(entity.tickCount - ticks[0]);
+		AuraTrailRenderer.submitEntityTrail(entity, poseStack.last().pose(), partialTick, MYSTIC_BALL_TRAIL_COLOR, MYSTIC_BALL_TRAIL_ALPHA,
+				MYSTIC_BALL_TRAIL_SAMPLES, MYSTIC_BALL_TRAIL_HALF_WIDTH, 0.0f, MYSTIC_BALL_TRAIL_HEIGHT, active);
+	}
+
+	public static boolean hasMysticBallTrail(Entity entity) {
+		return MYSTIC_BALL_TICKS.containsKey(entity.getId());
+	}
+
+	public static void applyMysticBallSmear(Entity entity, PoseStack poseStack, float partialTick) {
+		int[] ticks = MYSTIC_BALL_TICKS.get(entity.getId());
+		float elapsed = ticks != null ? entity.tickCount - ticks[0] + partialTick : -1.0f;
+		if (ticks == null || ticks[1] != entity.tickCount || !MysticBallCombo.isBallTick((int) elapsed)) {
+			MYSTIC_BALL_AXIS.remove(entity.getId());
+			return;
+		}
+
+		Vec3 velocity = new Vec3(entity.getX() - entity.xo, entity.getY() - entity.yo, entity.getZ() - entity.zo);
+		double speed = velocity.length();
+		Vec3 axis = speed > 0.05 ? velocity.scale(1.0 / speed) : MYSTIC_BALL_AXIS.get(entity.getId());
+		if (axis == null) return;
+		MYSTIC_BALL_AXIS.put(entity.getId(), axis);
+
+		float stretch = 1.0f + Mth.clamp((float) (speed - MYSTIC_BALL_SMEAR_MIN_SPEED) * MYSTIC_BALL_STRETCH_PER_SPEED, 0.0f, MYSTIC_BALL_MAX_STRETCH);
+		float along = stretch * (1.0f - MYSTIC_BALL_SQUASH * MysticBallCombo.squash(elapsed));
+		float across = 1.0f / Mth.sqrt(along);
+		Quaternionf toAxis = new Quaternionf().rotationTo(0.0f, 1.0f, 0.0f, (float) axis.x, (float) axis.y, (float) axis.z);
+
+		poseStack.translate(0.0f, MYSTIC_BALL_TRAIL_HEIGHT, 0.0f);
+		poseStack.mulPose(toAxis);
+		poseStack.scale(across, along, across);
+		poseStack.mulPose(new Quaternionf(toAxis).conjugate());
+		poseStack.translate(0.0f, -MYSTIC_BALL_TRAIL_HEIGHT, 0.0f);
+	}
+
 	@Override
 	public void render(T entity, float entityYaw, float partialTick, PoseStack poseStack, MultiBufferSource bufferSource, int packedLight) {
 		if (entity == null) {
@@ -77,36 +165,29 @@ public class DMZPlayerRenderer<T extends AbstractClientPlayer & GeoAnimatable> e
 			return;
 		}
 
+		boolean mysticBall = entity instanceof IPlayerAnimatable anim && MysticBallCombo.ANIMATION.equals(anim.dragonminez$getCurrentPlayingAnimation());
+		submitMysticBallTrail(entity, mysticBall, poseStack, partialTick);
+		HairRenderCapture.beginEntity(entity, poseStack);
 		((GeoModelAccessor) (Object) getGeoModel()).dmz$setLastRenderedInstance(-1L);
+
+		if (HeadPortraitRenderer.isActive()) {
+			float previousShadowRadius = this.shadowRadius;
+			super.render(entity, entityYaw, partialTick, poseStack, bufferSource, packedLight);
+			this.shadowRadius = previousShadowRadius;
+			return;
+		}
 
 		var statsCap = StatsProvider.get(StatsCapability.INSTANCE, entity);
 		var stats = statsCap.orElse(new StatsData(entity));
-		var character = stats.getCharacter();
-		String race = character.getRaceName().toLowerCase();
-		String currentForm = character.getActiveForm();
-
-		String logicKey = character.getRenderLogicKey();
-
-		Float[] resolved = character.getResolvedModelScaling();
-		float configScaleX = resolved[0];
-		float configScaleY = resolved[1];
-		float configScaleZ = resolved[2];
-
-		float scalingX, scalingY, scalingZ;
-
-		boolean isOozaru = logicKey.startsWith("oozaru") || (race.equals("saiyan") && (Objects.equals(currentForm, SaiyanForms.OOZARU) || Objects.equals(currentForm, SaiyanForms.GOLDEN_OOZARU)));
-
-		if (isOozaru) {
-			scalingX = Math.max(0.1f, configScaleX - 2.8f);
-			scalingY = Math.max(0.1f, configScaleY - 2.8f);
-			scalingZ = Math.max(0.1f, configScaleZ - 2.8f);
-		} else {
-			scalingX = configScaleX;
-			scalingY = configScaleY;
-			scalingZ = configScaleZ;
-		}
+		float[] resolved = FormVisualTransition.modelScale(stats);
+		float scalingX = resolved[0];
+		float scalingY = resolved[1];
+		float scalingZ = resolved[2];
 
 		poseStack.pushPose();
+		applyMysticBallSmear(entity, poseStack, partialTick);
+		float previewLift = TechniquePreview.modelLift(entity, partialTick);
+		if (previewLift != 0.0F) poseStack.translate(0.0F, previewLift, 0.0F);
 
 		boolean shaderPack = IrisCompat.isShaderPackInUse();
 		boolean captureMask = !shaderPack || TransformationPostShaderManager.isShaderpackMainPass();
@@ -125,21 +206,26 @@ public class DMZPlayerRenderer<T extends AbstractClientPlayer & GeoAnimatable> e
 			);
 		}
 
-		if (FlySkillEvent.getInstance().isFlyingFast(entity)) {
-			float roll = entity == Minecraft.getInstance().player ? FlightRollHandler.getRoll(partialTick) : 0f;
-			float pitch = entity.getViewXRot(partialTick);
+		if (FlySkillEvent.getInstance().isFlyingFast(entity) && !com.dragonminez.common.init.entities.ki.GumBindEntity.isClientBound(entity)) {
 			float pivotY = entity.getBbHeight() / 2f;
 			poseStack.translate(0, pivotY, 0);
-			poseStack.mulPose(Axis.YP.rotationDegrees(180 - entityYaw));
-			poseStack.mulPose(Axis.XP.rotationDegrees(-pitch));
-			poseStack.mulPose(Axis.ZP.rotationDegrees(roll));
-			poseStack.mulPose(Axis.YP.rotationDegrees(-(180 - entityYaw)));
+			if (entity == Minecraft.getInstance().player && FlightOrientationHandler.isActive()) {
+				float bodyYaw = Mth.rotLerp(partialTick, entity.yBodyRotO, entity.yBodyRot);
+				poseStack.mulPose(FlightOrientationHandler.getModelRotation());
+				poseStack.mulPose(Axis.YP.rotationDegrees(-(180 - bodyYaw)));
+			} else {
+				float pitch = entity.getViewXRot(partialTick);
+				poseStack.mulPose(Axis.YP.rotationDegrees(180 - entityYaw));
+				poseStack.mulPose(Axis.XP.rotationDegrees(-pitch));
+				poseStack.mulPose(Axis.YP.rotationDegrees(-(180 - entityYaw)));
+			}
 			poseStack.translate(0, -pivotY, 0);
 		}
 
-		poseStack.scale(scalingX, scalingY, scalingZ);
+		float swellScale = BioSwellRenderState.bodyScale(entity);
+		poseStack.scale(scalingX * swellScale, scalingY * swellScale, scalingZ * swellScale);
 
-		boolean isAuraActive = stats.getStatus().isAuraActive() || stats.getStatus().isPermanentAura();
+		boolean isAuraActive = stats.getStatus().isAuraActive() || stats.getStatus().isPermanentAura() || stats.getStatus().isForcedAura();
 
 		if (isAuraActive) {
 			if (bufferSource instanceof MultiBufferSource.BufferSource bs) bs.endBatch();
@@ -149,16 +235,27 @@ public class DMZPlayerRenderer<T extends AbstractClientPlayer & GeoAnimatable> e
 			RenderSystem.stencilOp(GL11.GL_KEEP, GL11.GL_KEEP, GL11.GL_REPLACE);
 		}
 
+		boolean demonEye = RelicItemsStatusHandler.isDemonEyeActive(stats) && !entity.isSpectator() && !entity.isInvisible();
+		MultiBufferSource baseSource = demonEye ? new SaiyanInvaderRenderer.TintedBufferSource(bufferSource, DEMON_EYE_TINT) : bufferSource;
+		baseSource = GodRitualShellEffect.wrap(entity, stats, baseSource, partialTick);
+		MultiBufferSource renderSource = baseSource;
 		if (maskBufferSource != null) {
-			maskBufferSource.wrap(bufferSource);
+			maskBufferSource.wrap(baseSource);
 			maskBufferSource.setForceCaptureAll(true);
-			try {
-				super.render(entity, entityYaw, partialTick, poseStack, maskBufferSource, packedLight);
-			} finally {
+			renderSource = maskBufferSource;
+		}
+		MultiBufferSource borderSource = demonEye
+				? AuraBorderRenderer.begin(entity, renderSource, DEMON_EYE_FLAME_OUTER, DEMON_EYE_FLAME_INNER, partialTick)
+				: AuraBorderRenderer.begin(entity, renderSource, AuraBorderRenderer.playerColor(entity, stats), partialTick);
+		try {
+			super.render(entity, entityYaw, partialTick, poseStack, borderSource, packedLight);
+		} finally {
+			AuraBorderRenderer.end(borderSource);
+			if (maskBufferSource != null) {
 				maskBufferSource.setForceCaptureAll(false);
 				maskBufferSource.setMaskCaptureEnabled(true);
 			}
-		} else super.render(entity, entityYaw, partialTick, poseStack, bufferSource, packedLight);
+		}
 
 		if (isAuraActive) {
 			if (bufferSource instanceof MultiBufferSource.BufferSource bs) bs.endBatch();
@@ -173,9 +270,139 @@ public class DMZPlayerRenderer<T extends AbstractClientPlayer & GeoAnimatable> e
 
 	@Override
 	public void applyRenderLayers(PoseStack poseStack, T animatable, BakedGeoModel model, RenderType renderType, MultiBufferSource bufferSource, VertexConsumer buffer, float partialTick, int packedLight, int packedOverlay) {
+		boolean portrait = HeadPortraitRenderer.isActive() || editorHeadOnly();
+		boolean armOnly = DimensionalFistEffect.isRenderingArm();
+		boolean paint = SkinPaintContext.active();
 		for (GeoRenderLayer<T> renderLayer : getRenderLayers()) {
+			if (armOnly && !(renderLayer instanceof DMZSkinLayer<?>)) continue;
+			if (portrait && !isPortraitLayer(renderLayer)) continue;
+			if (paint && !isPaintLayer(renderLayer)) continue;
 			renderLayer.render(poseStack, animatable, model, renderType, bufferSource, buffer, partialTick, packedLight, packedOverlay);
 		}
+	}
+
+	@Override
+	public void preApplyRenderLayers(PoseStack poseStack, T animatable, BakedGeoModel model, RenderType renderType, MultiBufferSource bufferSource, VertexConsumer buffer, float partialTick, int packedLight, int packedOverlay) {
+		if (DimensionalFistEffect.isRenderingArm()) {
+			for (GeoRenderLayer<T> renderLayer : getRenderLayers()) {
+				if (renderLayer instanceof DMZSkinLayer<?>) renderLayer.preRender(poseStack, animatable, model, renderType, bufferSource, buffer, partialTick, packedLight, packedOverlay);
+			}
+			return;
+		}
+		if (SkinPaintContext.active()) {
+			for (GeoRenderLayer<T> renderLayer : getRenderLayers()) {
+				if (isPaintLayer(renderLayer)) renderLayer.preRender(poseStack, animatable, model, renderType, bufferSource, buffer, partialTick, packedLight, packedOverlay);
+			}
+			return;
+		}
+		if (!HeadPortraitRenderer.isActive() && !editorHeadOnly()) {
+			super.preApplyRenderLayers(poseStack, animatable, model, renderType, bufferSource, buffer, partialTick, packedLight, packedOverlay);
+			return;
+		}
+		for (GeoRenderLayer<T> renderLayer : getRenderLayers()) {
+			if (isPortraitLayer(renderLayer)) renderLayer.preRender(poseStack, animatable, model, renderType, bufferSource, buffer, partialTick, packedLight, packedOverlay);
+		}
+	}
+
+	@Override
+	public void applyRenderLayersForBone(PoseStack poseStack, T animatable, GeoBone bone, RenderType renderType, MultiBufferSource bufferSource, VertexConsumer buffer, float partialTick, int packedLight, int packedOverlay) {
+		if (DimensionalFistEffect.isRenderingArm()) return;
+		if (SkinPaintContext.active()) {
+			for (GeoRenderLayer<T> renderLayer : getRenderLayers()) {
+				if (isPaintLayer(renderLayer)) renderLayer.renderForBone(poseStack, animatable, bone, renderType, bufferSource, buffer, partialTick, packedLight, packedOverlay);
+			}
+			return;
+		}
+		if (!HeadPortraitRenderer.isActive() && !editorHeadOnly()) {
+			super.applyRenderLayersForBone(poseStack, animatable, bone, renderType, bufferSource, buffer, partialTick, packedLight, packedOverlay);
+			return;
+		}
+		for (GeoRenderLayer<T> renderLayer : getRenderLayers()) {
+			if (isPortraitLayer(renderLayer)) renderLayer.renderForBone(poseStack, animatable, bone, renderType, bufferSource, buffer, partialTick, packedLight, packedOverlay);
+		}
+	}
+
+	private static boolean isPaintLayer(GeoRenderLayer<?> renderLayer) {
+		if (SkinPaintContext.picking()) return renderLayer instanceof DMZSkinLayer<?>;
+		return isPortraitLayer(renderLayer);
+	}
+
+	private static boolean isPortraitLayer(GeoRenderLayer<?> renderLayer) {
+		return renderLayer instanceof DMZSkinLayer<?> || renderLayer instanceof DMZHairLayer<?> || renderLayer instanceof DMZRacePartsLayer;
+	}
+
+	private static boolean editorHeadOnly() {
+		if (HairRenderContext.mode() != HairRenderContext.Mode.EDITOR_PREVIEW) return false;
+		HairRenderContext.Preview preview = HairRenderContext.preview();
+		return preview != null && preview.bodyHidden();
+	}
+
+	@Override
+	public void renderRecursively(PoseStack poseStack, T animatable, GeoBone bone, RenderType renderType, MultiBufferSource bufferSource, VertexConsumer buffer, boolean isReRender, float partialTick, int packedLight, int packedOverlay, float red, float green, float blue, float alpha) {
+		if (SkinPaintContext.hidesBone(bone.getName())) return;
+		SkinPaintContext.recordPickedBone(bone);
+		if (!HeadPortraitRenderer.isActive()) {
+			if (editorHeadOnly() && !isHeadOrHeadChild(bone)) {
+				if (!containsHead(bone)) return;
+				poseStack.pushPose();
+				RenderUtils.prepMatrixForBone(poseStack, bone);
+				for (GeoBone child : bone.getChildBones()) {
+					renderRecursively(poseStack, animatable, child, renderType, bufferSource, buffer, isReRender, partialTick, packedLight, packedOverlay, red, green, blue, alpha);
+				}
+				poseStack.popPose();
+				return;
+			}
+			float[] fistPose = DimensionalFistEffect.beginBonePose(bone);
+			try {
+				super.renderRecursively(poseStack, animatable, bone, renderType, bufferSource, buffer, isReRender, partialTick, packedLight, packedOverlay, red, green, blue, alpha);
+			} finally {
+				DimensionalFistEffect.endBonePose(bone, fistPose);
+			}
+			return;
+		}
+
+		if (isHeadOrHeadChild(bone)) {
+			if (!HEAD_BONE.equals(bone.getName())) {
+				super.renderRecursively(poseStack, animatable, bone, renderType, bufferSource, buffer, isReRender, partialTick, packedLight, packedOverlay, red, green, blue, alpha);
+				return;
+			}
+			float rotX = bone.getRotX(), rotY = bone.getRotY(), rotZ = bone.getRotZ();
+			float posX = bone.getPosX(), posY = bone.getPosY(), posZ = bone.getPosZ();
+			bone.setRotX(0.0f); bone.setRotY(0.0f); bone.setRotZ(0.0f);
+			bone.setPosX(0.0f); bone.setPosY(0.0f); bone.setPosZ(0.0f);
+			try {
+				super.renderRecursively(poseStack, animatable, bone, renderType, bufferSource, buffer, isReRender, partialTick, packedLight, packedOverlay, red, green, blue, alpha);
+			} finally {
+				bone.setRotX(rotX); bone.setRotY(rotY); bone.setRotZ(rotZ);
+				bone.setPosX(posX); bone.setPosY(posY); bone.setPosZ(posZ);
+			}
+			return;
+		}
+
+		if (!containsHead(bone)) return;
+		for (GeoBone child : bone.getChildBones()) {
+			renderRecursively(poseStack, animatable, child, renderType, bufferSource, buffer, isReRender, partialTick, packedLight, packedOverlay, red, green, blue, alpha);
+		}
+	}
+
+	private static boolean isHeadOrHeadChild(GeoBone bone) {
+		for (GeoBone current = bone; current != null; current = current.getParent()) {
+			if (HEAD_BONE.equals(current.getName())) return true;
+		}
+		return false;
+	}
+
+	private static boolean containsHead(GeoBone bone) {
+		for (GeoBone child : bone.getChildBones()) {
+			if (HEAD_BONE.equals(child.getName()) || containsHead(child)) return true;
+		}
+		return false;
+	}
+
+	@Override
+	protected void applyRotations(T animatable, PoseStack poseStack, float ageInTicks, float rotationYaw, float partialTick) {
+		if (HeadPortraitRenderer.isActive()) return;
+		super.applyRotations(animatable, poseStack, ageInTicks, rotationYaw, partialTick);
 	}
 
 	@Override
@@ -184,7 +411,17 @@ public class DMZPlayerRenderer<T extends AbstractClientPlayer & GeoAnimatable> e
 	}
 
 	@Override
+	public int getPackedOverlay(T animatable, float u) {
+		if (BioSwellRenderState.isFlashingWhite(animatable)) {
+			return OverlayTexture.pack(OverlayTexture.u(1.0F), 10);
+		}
+		return super.getPackedOverlay(animatable, u);
+	}
+
+	@Override
 	public boolean shouldShowName(T animatable) {
+		if (HeadPortraitRenderer.isActive()) return false;
+		if (animatable instanceof DMZRendererCache.NpcPuppet) return false;
 		if (animatable == Minecraft.getInstance().getCameraEntity()) return false;
 		return super.shouldShowName(animatable);
 	}

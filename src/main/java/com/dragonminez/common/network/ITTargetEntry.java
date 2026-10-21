@@ -12,13 +12,15 @@ public class ITTargetEntry {
 	private final String name;
 	private final String dimension;
 	private final boolean reachable;
+	private final int kiCost;
 
-	public ITTargetEntry(Type type, String id, String name, String dimension, boolean reachable) {
+	public ITTargetEntry(Type type, String id, String name, String dimension, boolean reachable, int kiCost) {
 		this.type = type;
 		this.id = id;
 		this.name = name;
 		this.dimension = dimension;
 		this.reachable = reachable;
+		this.kiCost = kiCost;
 	}
 
 	public Type getType() { return type; }
@@ -26,6 +28,7 @@ public class ITTargetEntry {
 	public String getName() { return name; }
 	public String getDimension() { return dimension; }
 	public boolean isReachable() { return reachable; }
+	public int getKiCost() { return kiCost; }
 
 	public int getPriority() {
 		return switch (type) {
@@ -41,6 +44,7 @@ public class ITTargetEntry {
 		buf.writeUtf(name);
 		buf.writeUtf(dimension);
 		buf.writeBoolean(reachable);
+		buf.writeVarInt(kiCost);
 	}
 
 	public static ITTargetEntry read(FriendlyByteBuf buf) {
@@ -49,6 +53,7 @@ public class ITTargetEntry {
 		String name = buf.readUtf();
 		String dimension = buf.readUtf();
 		boolean reachable = buf.readBoolean();
-		return new ITTargetEntry(type, id, name, dimension, reachable);
+		int kiCost = buf.readVarInt();
+		return new ITTargetEntry(type, id, name, dimension, reachable, kiCost);
 	}
 }

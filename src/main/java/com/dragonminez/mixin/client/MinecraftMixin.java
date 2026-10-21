@@ -1,16 +1,18 @@
 package com.dragonminez.mixin.client;
 
 import com.dragonminez.client.animation.IPlayerAnimatable;
-import com.dragonminez.client.collision.CollisionHelper;
+import com.dragonminez.common.combat.collision.CollisionHelper;
 import com.dragonminez.client.collision.TargetFinder;
 import com.dragonminez.client.events.DMZClientEvent;
 import com.dragonminez.common.combat.logic.player.PlayerAttackHelper;
 import com.dragonminez.common.combat.logic.player.PlayerAttackProperties;
+import com.dragonminez.common.combat.logic.player.TargetHelper;
 import com.dragonminez.common.combat.player.AttackHand;
 import com.dragonminez.common.combat.util.Minecraft_DMZ;
 import com.dragonminez.common.combat.util.SoundHelper;
 import com.dragonminez.common.network.NetworkHandler;
 import com.dragonminez.common.network.C2S.CombatAttackRequestC2S;
+import com.dragonminez.common.network.C2S.MeleeAttackStartC2S;
 import com.dragonminez.common.stats.StatsCapability;
 import com.dragonminez.common.stats.StatsProvider;
 import net.minecraft.client.Minecraft;
@@ -55,9 +57,9 @@ public abstract class MinecraftMixin implements Minecraft_DMZ {
 	@Unique private static final float ATTACK_QUEUE_WINDOW_TICKS = 1.0F;
 	@Unique private static final int ATTACK_QUEUE_EXPIRY_TICKS = 4;
 
-	@Unique private static final float UPSWING_IMPACT_BIAS = 0.4F;
 	@Unique private static final int BLOCK_MINE_ATTACK_GRACE = 5;
 	@Unique private int lastBlockMineTick = -100;
+	@Unique private boolean miningHold = false;
 
 	@Unique private static final double BLOCK_MINE_TARGET_BIAS = 0.25D;
 
@@ -67,7 +69,7 @@ public abstract class MinecraftMixin implements Minecraft_DMZ {
 
 		boolean[] isDmzBlocking = {false};
 		StatsProvider.get(StatsCapability.INSTANCE, player).ifPresent(data -> isDmzBlocking[0] = data.getStatus().isBlocking());
-		if (player.isBlocking() || isDmzBlocking[0] || PlayerAttackHelper.isChargingTechnique(player)) {
+		if (player.isBlocking() || isDmzBlocking[0] || PlayerAttackHelper.isChargingTechnique(player) || !PlayerAttackHelper.canAttack(player)) {
 			cir.cancel();
 			cir.setReturnValue(false);
 			return;
@@ -78,7 +80,10 @@ public abstract class MinecraftMixin implements Minecraft_DMZ {
 		var hand = PlayerAttackHelper.getCurrentAttack(player, comboCount);
 
 		if (hand == null || !PlayerAttackHelper.canAttack(player)) return;
-		if (!shouldUseCombatAttack(hand)) return;
+		if (!shouldUseCombatAttack(hand)) {
+			miningHold = true;
+			return;
+		}
 
 		cir.cancel();
 		cir.setReturnValue(false);
@@ -101,8 +106,9 @@ public abstract class MinecraftMixin implements Minecraft_DMZ {
 		upswingStack = hand;
 
 		float cooldownTicks = PlayerAttackHelper.getAttackCooldownTicksCapped(player);
-		int swingAnimTicks = meleeAnimTicks(meleeAnimSpeed(cooldownTicks));
-		upswingTicks = Math.max(1, Math.round(swingAnimTicks * (float) hand.upswingRate() * UPSWING_IMPACT_BIAS));
+		float animSpeed = PlayerAttackHelper.getMeleeAnimationSpeed(cooldownTicks);
+		int swingAnimTicks = PlayerAttackHelper.getMeleeAnimationTicks(animSpeed);
+		upswingTicks = PlayerAttackHelper.getMeleeAttackWindupTicks(cooldownTicks, hand);
 		lastSwingDuration = swingAnimTicks;
 		lastAttacked = 0;
 
@@ -115,23 +121,13 @@ public abstract class MinecraftMixin implements Minecraft_DMZ {
 	}
 
 	@Unique
-	private float meleeAnimSpeed(float cooldownTicks) {
-		float speed = 12.0F / Math.max(cooldownTicks, 0.001F);
-		return Math.max(0.55F, Math.min(1.35F, speed));
-	}
-
-	@Unique
-	private int meleeAnimTicks(float animSpeed) {
-		return Math.max(8, Math.round(12.0F / Math.max(animSpeed, 0.1F)));
-	}
-
-	@Unique
 	private void playLocalAttackFeedback(AttackHand hand) {
 		if (hand.attack() == null) return;
 
-		float animSpeedMultiplier = meleeAnimSpeed(PlayerAttackHelper.getAttackCooldownTicksCapped(player));
+		float animSpeedMultiplier = PlayerAttackHelper.getMeleeAnimationSpeed(PlayerAttackHelper.getAttackCooldownTicksCapped(player));
 
 		((IPlayerAnimatable) player).dragonminez$playMeleeAnimation(hand.attack().animation(), hand.isOffHand(), animSpeedMultiplier);
+		NetworkHandler.sendToServer(new MeleeAttackStartC2S(getComboCount(), player.getInventory().selected));
 
 		var swingSound = hand.attack().swingSound();
 		SoundEvent soundEvent = SoundHelper.resolveSoundEvent(swingSound);
@@ -144,7 +140,7 @@ public abstract class MinecraftMixin implements Minecraft_DMZ {
 	private void dragonminez$continueAttack(boolean leftClick, CallbackInfo ci) {
 		if (!leftClick || player == null) return;
 
-		if (PlayerAttackHelper.isChargingTechnique(player)) {
+		if (PlayerAttackHelper.isChargingTechnique(player) || !PlayerAttackHelper.canAttack(player)) {
 			ci.cancel();
 			return;
 		}
@@ -155,12 +151,16 @@ public abstract class MinecraftMixin implements Minecraft_DMZ {
 		boolean canUseCombat = hand != null && PlayerAttackHelper.canAttack(player) && shouldUseCombatAttack(hand);
 
 		if (!canUseCombat) {
-			if (hitResult != null && hitResult.getType() == HitResult.Type.BLOCK) lastBlockMineTick = player.tickCount;
+			if (hitResult != null && hitResult.getType() == HitResult.Type.BLOCK) {
+				lastBlockMineTick = player.tickCount;
+				miningHold = true;
+			}
 			return;
 		}
 		ci.cancel();
 
 		if (player.tickCount - lastBlockMineTick <= BLOCK_MINE_ATTACK_GRACE) return;
+		if (miningHold && !hasTargetsForAttack(hand)) return;
 
 		float cooldownProgress = player.getAttackStrengthScale(0.5F);
 		if (cooldownProgress >= 1.0F && !isAttacking && !isAwaitingUpswing) this.startAttack();
@@ -170,6 +170,7 @@ public abstract class MinecraftMixin implements Minecraft_DMZ {
 	private void dragonminez$tick(CallbackInfo info) {
 		if (itemUseCooldown > 0) itemUseCooldown--;
 		lastAttacked++;
+		if (!((Minecraft) (Object) this).options.keyAttack.isDown()) miningHold = false;
 
 		if (player == null) return;
 
@@ -228,7 +229,7 @@ public abstract class MinecraftMixin implements Minecraft_DMZ {
 		var event = new DMZClientEvent.PlayerAttackHit(player, upswingStack, targetResult.entities, cursorTarget);
 		MinecraftForge.EVENT_BUS.post(event);
 
-		int[] entityIds = targetResult.entities.stream().mapToInt(Entity::getId).toArray();
+		int[] entityIds = targetResult.entities.stream().mapToInt(Entity::getId).distinct().limit(CombatAttackRequestC2S.MAX_ENTITY_IDS).toArray();
 
 		int comboCount = mcDMZ.getComboCount();
 		boolean sneaking = player.hasPose(Pose.CROUCHING);
@@ -307,6 +308,16 @@ public abstract class MinecraftMixin implements Minecraft_DMZ {
 	}
 
 	@Override
+	public boolean isTargetInReach(Entity entity) {
+		if (targetsInReach == null || entity == null) return false;
+		Entity owner = TargetHelper.resolveHittable(entity);
+		for (Entity target : targetsInReach) {
+			if (TargetHelper.resolveHittable(target) == owner) return true;
+		}
+		return false;
+	}
+
+	@Override
 	public float getSwingProgress() {
 		if (lastAttacked > lastSwingDuration || lastSwingDuration <= 0) return 1F;
 		return (float) lastAttacked / lastSwingDuration;
@@ -315,6 +326,11 @@ public abstract class MinecraftMixin implements Minecraft_DMZ {
 	@Override
 	public int getUpswingTicks() {
 		return upswingTicks;
+	}
+
+	@Override
+	public boolean hasPendingAttack() {
+		return isAwaitingUpswing || queuedAttack;
 	}
 
 	@Override

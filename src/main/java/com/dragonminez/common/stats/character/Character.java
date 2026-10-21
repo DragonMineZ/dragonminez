@@ -7,9 +7,18 @@ import com.dragonminez.common.config.RaceCharacterConfig;
 import com.dragonminez.common.events.DMZEvent;
 import com.dragonminez.common.hair.CustomHair;
 import com.dragonminez.common.hair.HairManager;
+import com.dragonminez.common.hair.HairPresets;
+import com.dragonminez.common.hair.HairStyleSlot;
+import com.dragonminez.common.racial.RacialContext;
+import com.dragonminez.common.racial.RacialRegistry;
+import com.dragonminez.common.stats.FusedData;
+import com.dragonminez.common.stats.StatsData;
 import com.dragonminez.common.stats.extras.FormMasteries;
 import com.dragonminez.common.stats.extras.UsedForms;
 import com.dragonminez.common.init.MainSounds;
+import com.dragonminez.common.util.FusionAppearance;
+import com.dragonminez.common.util.FusionForms;
+import com.dragonminez.common.util.FusionTraits;
 import lombok.Getter;
 import lombok.Setter;
 import net.minecraft.core.BlockPos;
@@ -20,6 +29,7 @@ import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraftforge.common.MinecraftForge;
 
+import java.util.EnumMap;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -61,10 +71,15 @@ public class Character {
 
 	private boolean hasSaiyanTail = false;
 	private boolean renderHairBase = true;
+	private boolean aura3D = false;
+	private String aura3DType = FormConfig.AURA_3D_SMOOTH;
+	private float demonEyeGrowth = 1.0f;
 
 	private final Map<String, MasterLocation> interactedMasters = new HashMap<>();
 
 	private final Set<String> knownMinigames = new HashSet<>();
+	private final Map<String, Integer> minigameLearnRuns = new HashMap<>();
+	private final Set<String> learnedSongs = new HashSet<>();
 
 	public void clearInteractedMasters() {
 		interactedMasters.clear();
@@ -82,22 +97,47 @@ public class Character {
 		if (minigameId != null) knownMinigames.remove(minigameId.toLowerCase());
 	}
 
+	public int getLearnRunsFor(String minigameId) {
+		return minigameId == null ? 0 : minigameLearnRuns.getOrDefault(minigameId.toLowerCase(), 0);
+	}
+
+	public int addMinigameLearnRun(String minigameId) {
+		if (minigameId == null) return 0;
+		return minigameLearnRuns.merge(minigameId.toLowerCase(), 1, Integer::sum);
+	}
+
+	public void clearMinigameLearnRuns(String minigameId) {
+		if (minigameId != null) minigameLearnRuns.remove(minigameId.toLowerCase());
+	}
+
+	public boolean isSongLearned(String track) {
+		return track != null && learnedSongs.contains(track);
+	}
+
+	public void addLearnedSong(String track) {
+		if (track != null && !track.isEmpty()) learnedSongs.add(track);
+	}
+
+	public Set<String> getLearnedSongs() {
+		return java.util.Collections.unmodifiableSet(learnedSongs);
+	}
+
 	public static final String GENDER_MALE = "male";
 	public static final String GENDER_FEMALE = "female";
 
 	public static final String CLASS_WARRIOR = "warrior";
 
+	public static final int TATTOO_CUSTOM = -1;
+
 	private int hairId;
-	private CustomHair hairBase = new CustomHair();
-	private CustomHair hairSSJ = new CustomHair();
-	private CustomHair hairSSJ2 = new CustomHair();
-	private CustomHair hairSSJ3 = new CustomHair();
+	private final EnumMap<HairStyleSlot, CustomHair> hairStyles = createEmptyHairStyles();
 	private String activeHeadBone = "";
 	private int bodyType;
 	private int eyesType;
 	private int noseType;
 	private int mouthType;
 	private int tattooType;
+	private final SkinPixels skinPixels = new SkinPixels();
 	private float boobScale = 1.0f;
 	private String bodyColor;
 	private String bodyColor2;
@@ -116,6 +156,7 @@ public class Character {
 	private transient float[] rgbAuraColor;
 
 	private transient boolean oozaruCached = false;
+	private transient StatsData statsData;
 
 	private Boolean armored;
 
@@ -226,9 +267,39 @@ public class Character {
 		if (rgbEye2Color == null) rgbEye2Color = ColorUtils.hexToRgb(eye2Color != null ? eye2Color : "#FFFFFF");
 		return rgbEye2Color;
 	}
+
+	public String getAura3DType() {
+		aura3DType = FormConfig.sanitizeAura3DPreference(aura3DType);
+		return FormConfig.sanitizeAura3DPreference(aura3DType, getRaceName());
+	}
+
+	public void setAura3DType(String type) {
+		this.aura3DType = FormConfig.sanitizeAura3DPreference(type);
+	}
+
 	public float[] getRgbAuraColor() {
 		if (rgbAuraColor == null) rgbAuraColor = ColorUtils.hexToRgb(auraColor != null ? auraColor : "#FFFFFF");
 		return rgbAuraColor;
+	}
+
+	public String getActiveAuraColor() {
+		if (hasActiveStackForm()) {
+			FormConfig.FormData stackForm = getActiveStackFormData();
+			if (stackForm != null && stackForm.getAuraColor() != null && !stackForm.getAuraColor().isEmpty()) {
+				return stackForm.getAuraColor();
+			}
+		}
+		if (hasActiveForm()) {
+			FormConfig.FormData form = getActiveFormData();
+			if (form != null && form.getAuraColor() != null && !form.getAuraColor().isEmpty()) {
+				return form.getAuraColor();
+			}
+		}
+		return auraColor != null && !auraColor.isEmpty() ? auraColor : "#FFFFFF";
+	}
+
+	public float[] getActiveRgbAuraColor() {
+		return ColorUtils.hexToRgb(getActiveAuraColor());
 	}
 
 	public void updateOozaruCache() {
@@ -241,31 +312,78 @@ public class Character {
 				(raceName.equals("saiyan") && (Objects.equals(currentForm, com.dragonminez.common.util.lists.SaiyanForms.OOZARU) || Objects.equals(currentForm, com.dragonminez.common.util.lists.SaiyanForms.GOLDEN_OOZARU)));
 	}
 
+	private static EnumMap<HairStyleSlot, CustomHair> createEmptyHairStyles() {
+		EnumMap<HairStyleSlot, CustomHair> styles = new EnumMap<>(HairStyleSlot.class);
+		for (HairStyleSlot slot : HairStyleSlot.values()) styles.put(slot, new CustomHair());
+		return styles;
+	}
+
 	public CustomHair emptyHair() {
-		return HairManager.getPresetHair(5, this.hairColor);
+		return HairManager.getPresetStyle(HairPresets.BALD_PRESET_ID, HairStyleSlot.BASE);
+	}
+
+	public CustomHair getOwnHairStyle(HairStyleSlot slot) {
+		return hairStyles.get(slot);
+	}
+
+	public void setHairStyle(HairStyleSlot slot, CustomHair hair) {
+		hairStyles.put(slot, hair != null ? hair : new CustomHair());
+	}
+
+	public void clearHairStyles() {
+		for (HairStyleSlot slot : HairStyleSlot.values()) hairStyles.put(slot, new CustomHair());
+	}
+
+	public CustomHair getHairStyle(HairStyleSlot slot) {
+		FusedData fused = fusedData();
+		CustomHair fusedStyle = fused != null ? fused.getHairStyle(slot) : null;
+		if (fusedStyle != null) return fusedStyle;
+		if (this.hairId > 0) return HairManager.getPresetStyle(this.hairId, slot);
+		return resolveOwnStyle(hairStyles, slot);
+	}
+
+	private FusedData fusedData() {
+		return statsData != null ? statsData.getFusedData() : null;
+	}
+
+	public boolean rendersHair() {
+		FusedData fused = fusedData();
+		return fused != null ? fused.hasHair() : HairManager.canUseHair(this);
+	}
+
+	public boolean hasVisibleHair() {
+		FusedData fused = fusedData();
+		CustomHair fusedBase = fused != null ? fused.getHairStyle(HairStyleSlot.BASE) : null;
+		if (fusedBase != null) return !fusedBase.isEmpty();
+		if (hairId == HairPresets.BALD_PRESET_ID) return false;
+		return hairId > 0 || !getHairBase().isEmpty();
+	}
+
+	public boolean rendersHairBase() {
+		FusedData fused = fusedData();
+		return fused != null && fused.hasHair() ? fused.isHairBase() : renderHairBase;
+	}
+
+	public float[] getRgbRenderHairColor() {
+		FusedData fused = fusedData();
+		return fused != null && fused.hasHair() ? fused.getRgbHairColor() : getRgbHairColor();
+	}
+
+	public static CustomHair resolveOwnStyle(Map<HairStyleSlot, CustomHair> styles, HairStyleSlot slot) {
+		CustomHair own = styles.get(slot);
+		if (own != null && !own.isEmpty()) return own;
+		CustomHair base = styles.get(HairStyleSlot.BASE);
+		if (base == null) base = new CustomHair();
+		CustomHair ssj = styles.get(HairStyleSlot.SSJ);
+		return switch (slot) {
+			case BASE, SSJ -> base;
+			case SSJ2, SSJ3 -> ssj != null && !ssj.isEmpty() ? ssj : base;
+			case SSJ4 -> HairPresets.getDefaultSsj4();
+		};
 	}
 
 	public CustomHair getHairBase() {
-		if (this.hairId > 0) return HairManager.getPresetHair(this.hairId, this.hairColor);
-		return hairBase;
-	}
-
-	public CustomHair getHairSSJ() {
-		if (this.hairId > 0) return HairManager.getPresetHairSSJ(this.hairId, this.hairColor);
-		if (hairSSJ == null || hairSSJ.isEmpty()) return hairBase;
-		return hairSSJ;
-	}
-
-	public CustomHair getHairSSJ2() {
-		if (this.hairId > 0) return HairManager.getPresetHairSSJ2(this.hairId, this.hairColor);
-		if (hairSSJ2 == null || hairSSJ2.isEmpty()) return (hairSSJ != null && !hairSSJ.isEmpty()) ? hairSSJ : hairBase;
-		return hairSSJ2;
-	}
-
-	public CustomHair getHairSSJ3() {
-		if (this.hairId > 0) return HairManager.getPresetHairSSJ3(this.hairId, this.hairColor);
-		if (hairSSJ3 == null || hairSSJ3.isEmpty()) return (hairSSJ != null && !hairSSJ.isEmpty()) ? hairSSJ : hairBase;
-		return hairSSJ3;
+		return getHairStyle(HairStyleSlot.BASE);
 	}
 
 	public void setRace(String race) {
@@ -300,6 +418,17 @@ public class Character {
 		return raceConfig != null ? raceConfig.getHasGender() : true;
 	}
 
+	public void setBodyType(int bodyType) {
+		this.bodyType = Math.max(bodyType, getMinBodyType());
+	}
+
+	public int getMinBodyType() {
+		RaceCharacterConfig raceConfig = ConfigManager.getRaceCharacter(getRaceName());
+		if (raceConfig == null || Boolean.TRUE.equals(raceConfig.getUseVanillaSkin())) return 0;
+		String baseKey = Boolean.TRUE.equals(raceConfig.hasCustomModel()) ? raceConfig.getCustomModel() : getRaceName();
+		return FusionTraits.modelFamily(baseKey).equals("human") ? 1 : 0;
+	}
+
 	public Float[] getModelScaling() {
 		RaceCharacterConfig raceConfig = ConfigManager.getRaceCharacter(getRaceName());
 		if (raceConfig != null) {
@@ -316,17 +445,16 @@ public class Character {
 	}
 
 	public Float[] getResolvedModelScaling() {
-		if (isOozaruCached()) {
-			FormConfig.FormData form = getActiveFormData();
-			if (form != null) return safeModelScaling(form.getModelScaling());
-			FormConfig.FormData stack = getActiveStackFormData();
-			if (stack != null) return safeModelScaling(stack.getModelScaling());
-			return safeModelScaling(getModelScaling());
-		}
+		return getModelScalingFor(getActiveFormData(), getActiveStackFormData());
+	}
 
-		FormConfig.FormData form = getActiveFormData();
-		FormConfig.FormData stack = getActiveStackFormData();
+	public Float[] getModelScalingFor(FormConfig.FormData form, FormConfig.FormData stack) {
+		Float[] scaling = resolveFormModelScaling(form, stack);
+		if (demonEyeGrowth <= 1.0f) return scaling;
+		return new Float[]{scaling[0] * demonEyeGrowth, scaling[1] * demonEyeGrowth, scaling[2] * demonEyeGrowth};
+	}
 
+	private Float[] resolveFormModelScaling(FormConfig.FormData form, FormConfig.FormData stack) {
 		if (form == null && stack == null) return safeModelScaling(getModelScaling());
 		if (form != null && stack == null) return safeModelScaling(form.getModelScaling());
 		if (form == null && stack != null) return safeModelScaling(stack.getModelScaling());
@@ -377,16 +505,14 @@ public class Character {
 		tag.putString("Gender", safeString(gender));
 		tag.putString("Class", safeString(characterClass));
 		tag.putInt("HairId", hairId);
-		tag.put("HairBase", hairBase.save());
-		tag.put("HairSSJ", hairSSJ.save());
-		tag.put("HairSSJ2", hairSSJ2.save());
-		tag.put("HairSSJ3", hairSSJ3.save());
+		for (HairStyleSlot slot : HairStyleSlot.values()) tag.put(slot.getNbtKey(), hairStyles.get(slot).save());
 		tag.putString("ActiveHeadBone", activeHeadBone != null ? activeHeadBone : "");
 		tag.putInt("BodyType", bodyType);
 		tag.putInt("EyesType", eyesType);
 		tag.putInt("NoseType", noseType);
 		tag.putInt("MouthType", mouthType);
 		tag.putInt("TattooType", tattooType);
+		tag.put(SkinPixels.NBT_KEY, skinPixels.save());
 		tag.putFloat("BoobScale", boobScale);
 		saveAppearance(tag);
 		tag.putString("SelectedMaster",  safeString(selectedMaster));
@@ -412,6 +538,8 @@ public class Character {
 		tag.put("StackFormsUsedBefore", (stackFormsUsedBefore != null ? stackFormsUsedBefore : new UsedForms()).save());
 		tag.putBoolean("HasSaiyanTail", hasSaiyanTail);
 		tag.putBoolean("RenderHairBase", renderHairBase);
+		tag.putBoolean("Aura3D", aura3D);
+		tag.putString("Aura3DType", getAura3DType());
 		tag.putBoolean("isArmored", armored);
 
 		ListTag mastersList = new ListTag();
@@ -429,6 +557,16 @@ public class Character {
 		for (String minigame : knownMinigames) minigamesList.add(net.minecraft.nbt.StringTag.valueOf(minigame));
 		tag.put("KnownMinigames", minigamesList);
 
+		CompoundTag learnRunsTag = new CompoundTag();
+		for (Map.Entry<String, Integer> entry : minigameLearnRuns.entrySet()) learnRunsTag.putInt(entry.getKey(), entry.getValue());
+		tag.put("MinigameLearnRuns", learnRunsTag);
+
+		ListTag songsList = new ListTag();
+		for (String song : learnedSongs) songsList.add(net.minecraft.nbt.StringTag.valueOf(song));
+		tag.put("LearnedSongs", songsList);
+
+		tag.putFloat("DemonEyeGrowth", demonEyeGrowth);
+
 		return tag;
 	}
 
@@ -444,16 +582,22 @@ public class Character {
 		this.gender = tag.getString("Gender");
 		this.characterClass = tag.getString("Class");
 		this.hairId = tag.getInt("HairId");
-		if (tag.contains("HairBase")) this.hairBase.load(tag.getCompound("HairBase"));
-		if (tag.contains("HairSSJ")) this.hairSSJ.load(tag.getCompound("HairSSJ"));
-		if (tag.contains("HairSSJ2")) this.hairSSJ2.load(tag.getCompound("HairSSJ2"));
-		if (tag.contains("HairSSJ3")) this.hairSSJ3.load(tag.getCompound("HairSSJ3"));
+		for (HairStyleSlot slot : HairStyleSlot.values()) {
+			if (!tag.contains(slot.getNbtKey())) {
+				hairStyles.put(slot, new CustomHair());
+				continue;
+			}
+			CompoundTag hairTag = tag.getCompound(slot.getNbtKey());
+			CustomHair current = hairStyles.get(slot);
+			if (current == null || !current.save().equals(hairTag)) hairStyles.put(slot, CustomHair.fromTag(hairTag));
+		}
 		this.activeHeadBone = tag.getString("ActiveHeadBone");
 		this.bodyType = tag.getInt("BodyType");
 		this.eyesType = tag.getInt("EyesType");
 		this.noseType = tag.getInt("NoseType");
 		this.mouthType = tag.getInt("MouthType");
 		this.tattooType = tag.getInt("TattooType");
+		if (tag.contains(SkinPixels.NBT_KEY, 10)) skinPixels.load(tag.getCompound(SkinPixels.NBT_KEY));
 		this.boobScale = tag.contains("BoobScale") ? tag.getFloat("BoobScale") : 1.0f;
 		setBodyColor(tag.getString("BodyColor"));
 		setBodyColor2(tag.getString("BodyColor2"));
@@ -485,6 +629,8 @@ public class Character {
 		if (tag.contains("StackFormsUsedBefore")) stackFormsUsedBefore.load(tag.getCompound("StackFormsUsedBefore"));
 		this.hasSaiyanTail = tag.getBoolean("HasSaiyanTail");
 		this.renderHairBase = tag.getBoolean("RenderHairBase");
+		this.aura3D = tag.getBoolean("Aura3D");
+		setAura3DType(tag.getString("Aura3DType"));
 		this.armored = tag.getBoolean("isArmored");
 
 		this.interactedMasters.clear();
@@ -505,6 +651,20 @@ public class Character {
 			ListTag minigamesList = tag.getList("KnownMinigames", 8);
 			for (int i = 0; i < minigamesList.size(); i++) this.knownMinigames.add(minigamesList.getString(i));
 		}
+
+		this.minigameLearnRuns.clear();
+		if (tag.contains("MinigameLearnRuns")) {
+			CompoundTag learnRunsTag = tag.getCompound("MinigameLearnRuns");
+			for (String key : learnRunsTag.getAllKeys()) this.minigameLearnRuns.put(key, learnRunsTag.getInt(key));
+		}
+
+		this.learnedSongs.clear();
+		if (tag.contains("LearnedSongs")) {
+			ListTag songsList = tag.getList("LearnedSongs", 8);
+			for (int i = 0; i < songsList.size(); i++) this.learnedSongs.add(songsList.getString(i));
+		}
+
+		this.demonEyeGrowth = tag.contains("DemonEyeGrowth") ? Math.max(1.0f, tag.getFloat("DemonEyeGrowth")) : 1.0f;
 
 		updateOozaruCache();
 	}
@@ -574,10 +734,34 @@ public class Character {
 
 	public FormConfig.FormData getActiveFormData() {
 		if (!hasActiveForm()) return null;
-		return ConfigManager.getForm(getRaceName(), activeFormGroup, activeForm);
+		FormConfig.FormData raw = ConfigManager.getForm(getRaceName(), activeFormGroup, activeForm);
+		return isFused() ? FusionAppearance.present(this, activeFormGroup, raw) : raw;
+	}
+
+	public boolean isFused() {
+		return fusedData() != null;
+	}
+
+	public FormMasteries getFormMasteries() {
+		FusedData fused = statsData != null ? statsData.getFusedData() : null;
+		return fused != null ? fused.getFormMasteries() : formMasteries;
+	}
+
+	public FormMasteries getStackFormMasteries() {
+		FusedData fused = statsData != null ? statsData.getFusedData() : null;
+		return fused != null ? fused.getStackFormMasteries() : stackFormMasteries;
+	}
+
+	public FormMasteries getBaseFormMasteries() {
+		return formMasteries;
+	}
+
+	public FormMasteries getBaseStackFormMasteries() {
+		return stackFormMasteries;
 	}
 
 	public void gainMastery(String group, String form, double amount) {
+		amount = applyRacialMasteryMultiplier(amount);
 		addMasteryResolved(group, form, amount);
 
 		FormConfig.FormData formData = resolveFormData(group, form);
@@ -590,8 +774,15 @@ public class Character {
 			if (entry == null) continue;
 			int dot = entry.indexOf('.');
 			if (dot <= 0 || dot >= entry.length() - 1) continue;
-			addMasteryResolved(entry.substring(0, dot), entry.substring(dot + 1), shared);
+			addMasteryResolved(FusionForms.qualifyLinkedGroup(group, entry.substring(0, dot)), entry.substring(dot + 1), shared);
 		}
+	}
+
+	private double applyRacialMasteryMultiplier(double amount) {
+		if (statsData == null || !(statsData.getPlayer() instanceof ServerPlayer serverPlayer)) return amount;
+		return RacialRegistry.forPlayer(statsData)
+				.map(ability -> ability.modifyMasteryGain(new RacialContext(serverPlayer, statsData), amount))
+				.orElse(amount);
 	}
 
 	private void addMasteryResolved(String group, String form, double amount) {
@@ -600,7 +791,7 @@ public class Character {
 				? ConfigManager.getStackForm(group, form)
 				: ConfigManager.getForm(getRaceName(), group, form);
 		double maxMastery = formData != null ? formData.getMaxMastery() : 100.0;
-		(isStack ? stackFormMasteries : formMasteries).addMastery(group, form, amount, maxMastery);
+		(isStack ? getStackFormMasteries() : getFormMasteries()).addMastery(group, form, amount, maxMastery);
 	}
 
 	private FormConfig.FormData resolveFormData(String group, String form) {
@@ -650,7 +841,8 @@ public class Character {
 
 	public FormConfig.FormData getActiveStackFormData() {
 		if (!hasActiveStackForm()) return null;
-		return ConfigManager.getStackForm(activeStackFormGroup, activeStackForm);
+		FormConfig.FormData raw = ConfigManager.getStackForm(activeStackFormGroup, activeStackForm);
+		return isFused() ? FusionAppearance.present(this, activeStackFormGroup, raw) : raw;
 	}
 
 	public boolean areExtraHeadBonesEnabled() {
@@ -689,20 +881,20 @@ public class Character {
 	}
 
 	public void copyFrom(Character other) {
+		if (other.formsUsedBefore != null) this.formsUsedBefore.copyFrom(other.formsUsedBefore);
+		if (other.stackFormsUsedBefore != null) this.stackFormsUsedBefore.copyFrom(other.stackFormsUsedBefore);
 		this.race = other.race;
 		this.gender = other.gender;
 		this.characterClass = other.characterClass;
 		this.hairId = other.hairId;
-		this.hairBase = other.hairBase.copy();
-		this.hairSSJ = other.hairSSJ.copy();
-		this.hairSSJ2 = other.hairSSJ2.copy();
-		this.hairSSJ3 = other.hairSSJ3.copy();
+		for (HairStyleSlot slot : HairStyleSlot.values()) hairStyles.put(slot, other.hairStyles.get(slot).copy());
 		this.activeHeadBone = other.activeHeadBone;
 		this.bodyType = other.bodyType;
 		this.eyesType = other.eyesType;
 		this.noseType = other.noseType;
 		this.mouthType = other.mouthType;
 		this.tattooType = other.tattooType;
+		this.skinPixels.copyFrom(other.skinPixels);
 		this.boobScale = other.boobScale;
 		setBodyColor(other.bodyColor);
 		setBodyColor2(other.bodyColor2);
@@ -732,11 +924,18 @@ public class Character {
 		this.stackFormMasteries.copyFrom(other.stackFormMasteries);
 		this.hasSaiyanTail = other.hasSaiyanTail;
 		this.renderHairBase = other.renderHairBase;
+		this.aura3D = other.aura3D;
+		this.aura3DType = other.getAura3DType();
 		this.armored = other.armored;
 		this.interactedMasters.clear();
 		this.interactedMasters.putAll(other.interactedMasters);
 		this.knownMinigames.clear();
 		this.knownMinigames.addAll(other.knownMinigames);
+		this.minigameLearnRuns.clear();
+		this.minigameLearnRuns.putAll(other.minigameLearnRuns);
+		this.learnedSongs.clear();
+		this.learnedSongs.addAll(other.learnedSongs);
+		this.demonEyeGrowth = other.demonEyeGrowth;
 		updateOozaruCache();
 	}
 }

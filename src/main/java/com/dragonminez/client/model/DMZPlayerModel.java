@@ -1,13 +1,29 @@
 package com.dragonminez.client.model;
 
+import com.dragonminez.client.render.effects.CandyEffect;
+import com.dragonminez.client.render.DMZRendererCache;
 import com.dragonminez.Reference;
 import com.dragonminez.client.animation.IPlayerAnimatable;
-import com.dragonminez.client.events.FlySkillEvent;
 import com.dragonminez.client.render.util.RenderUtil;
+import com.dragonminez.client.systems.kishare.KiSharePose;
+import com.dragonminez.server.events.players.combat.StrikeCombos.MeteorBurstCombo;
+import com.dragonminez.server.events.players.combat.StrikeCombos.MysticBallCombo;
+import com.dragonminez.server.events.players.combat.StrikeCombos.DarknessEyeBeamCombo;
+import com.dragonminez.common.init.entities.ki.GumBindEntity;
+import com.dragonminez.server.events.players.combat.EvasionAttackHandler;
+import com.dragonminez.server.events.players.combat.StrikeCombos.AndroidCombo;
+import com.dragonminez.server.events.players.combat.StrikeCombos.BeamSwordSlashCombo;
+import com.dragonminez.server.events.players.combat.StrikeCombos.DeathChaserCombo;
+import com.dragonminez.server.events.players.combat.StrikeCombos.PerfectRushCombo;
+import com.dragonminez.server.events.players.combat.StrikeCombos.SpiritBreakerCombo;
+import com.dragonminez.client.util.SaiyanTailRules;
+import com.dragonminez.client.util.SkinGathererProvider;
 import com.dragonminez.common.config.ConfigManager;
+import com.dragonminez.common.config.FormConfig;
 import com.dragonminez.common.config.RaceCharacterConfig;
 import com.dragonminez.common.init.MainEffects;
 import com.dragonminez.common.stats.StatsCapability;
+import com.dragonminez.common.stats.StatsData;
 import com.dragonminez.common.stats.StatsProvider;
 import com.dragonminez.common.stats.character.Character;
 import com.dragonminez.common.util.lists.SaiyanForms;
@@ -15,6 +31,7 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.client.player.AbstractClientPlayer;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.Mth;
+import software.bernie.geckolib.cache.object.BakedGeoModel;
 import software.bernie.geckolib.constant.DataTickets;
 import software.bernie.geckolib.core.animatable.GeoAnimatable;
 import software.bernie.geckolib.core.animatable.model.CoreGeoBone;
@@ -23,18 +40,21 @@ import software.bernie.geckolib.core.molang.MolangParser;
 import software.bernie.geckolib.model.GeoModel;
 import software.bernie.geckolib.model.data.EntityModelData;
 
-import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
 
 public class DMZPlayerModel<T extends AbstractClientPlayer & GeoAnimatable> extends GeoModel<T> {
 
+    private static final String EXPLODE_ANIMATION = "base.explodecell";
+    private static final float EXPLODE_RESET_EASE = 0.25f;
+    private static final float EXPLODE_RESET_EPSILON = 0.01f;
     private static final ResourceLocation BASE_DEFAULT = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "geo/entity/races/human.geo.json");
     private static final ResourceLocation BASE_SLIM = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "geo/entity/races/human_slim.geo.json");
     private static final ResourceLocation MAJIN_FAT = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "geo/entity/races/majin.geo.json");
     private static final ResourceLocation MAJIN_SLIM = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "geo/entity/races/majin_slim.geo.json");
     private static final ResourceLocation JANEMBA_SUPER = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "geo/entity/races/janemba_super.geo.json");
+    private static final ResourceLocation JANEMBA_IMPERFECT = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "geo/entity/races/janemba_imperfect.geo.json");
     private static final ResourceLocation JANEMBA_FAT = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "geo/entity/races/janemba_fat.geo.json");
 
     private static final ResourceLocation FROST_DEMON = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "geo/entity/races/frostdemon.geo.json");
@@ -49,11 +69,19 @@ public class DMZPlayerModel<T extends AbstractClientPlayer & GeoAnimatable> exte
     private static final ResourceLocation BIO_ANDROID_PERFECT = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "geo/entity/races/bioandroid_perfect.geo.json");
     private static final ResourceLocation BIO_ANDROID_ULTRA = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "geo/entity/races/bioandroid_ultra.geo.json");
     private static final ResourceLocation BIO_ANDROID_XENO = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "geo/entity/races/bioandroid_xeno.geo.json");
+    private static final ResourceLocation BIO_ANDROID_XENO_FP = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "geo/entity/races/bioandroid_xenofp.geo.json");
 
     private static final ResourceLocation OOZARU = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "geo/entity/races/oozaru.geo.json");
     private static final ResourceLocation HUMAN_SAIYAN_BUFFED = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "geo/entity/races/hbuffed.geo.json");
     private static final ResourceLocation HUMAN_SAIYAN_SLIM_BUFFED = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "geo/entity/races/hbuffed_slim.geo.json");
     private static final ResourceLocation HUMAN_SAIYAN_FEMALE_BUFFED = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "geo/entity/races/hbuffed_fem.geo.json");
+    private static final ResourceLocation HUMAN_SAIYAN_BUFFED_G3 = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "geo/entity/races/hbuffedg3.geo.json");
+    private static final ResourceLocation HUMAN_SAIYAN_SLIM_BUFFED_G3 = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "geo/entity/races/hbuffed_slimg3.geo.json");
+    private static final ResourceLocation HUMAN_SAIYAN_FEMALE_BUFFED_G3 = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "geo/entity/races/hbuffed_femg3.geo.json");
+    private static final ResourceLocation GLIND_TRUE_FORM = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "geo/entity/races/glindtrueform.geo.json");
+    private static final ResourceLocation GLIND_TRANSCENDED = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "geo/entity/races/trascended.geo.json");
+    private static final ResourceLocation GLIND_TRANSCENDED_FEMALE = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "geo/entity/races/trascended_fem.geo.json");
+    private static final ResourceLocation GLIND_DARK = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "geo/entity/races/glinddark.geo.json");
 
     private static final ResourceLocation HUMAN_SAIYAN_4ARMS = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "geo/entity/races/h4arms.geo.json");
     private static final ResourceLocation HUMAN_SAIYAN_4ARMS_SLIM = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "geo/entity/races/h4armsslim.geo.json");
@@ -70,11 +98,23 @@ public class DMZPlayerModel<T extends AbstractClientPlayer & GeoAnimatable> exte
         ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "animations/entity/races/combat.animation.json"),
         ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "animations/entity/races/ki.animation.json"),
         ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "animations/entity/races/transf.animation.json"),
-        ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "animations/entity/races/skp.animation.json")
+        ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "animations/entity/races/skp.animation.json"),
+        ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "animations/entity/races/evs.animation.json")
+    };
+
+    private static final ResourceLocation PUPPET_ANIM_PRIMARY = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "animations/entity/sagas/saga_base.animation.json");
+    private static final ResourceLocation[] PUPPET_ANIM_FALLBACKS = {
+        ANIM_PRIMARY,
+        ANIM_FALLBACKS[0],
+        ANIM_FALLBACKS[1],
+        ANIM_FALLBACKS[2],
+        ANIM_FALLBACKS[3],
+        ANIM_FALLBACKS[4]
     };
 
     private final ResourceLocation textureLocation;
     private final String customModel;
+    private BakedGeoModel activeModel;
 
     public DMZPlayerModel(String raceName, String customModel) {
         this.customModel = customModel;
@@ -83,102 +123,125 @@ public class DMZPlayerModel<T extends AbstractClientPlayer & GeoAnimatable> exte
 
     @Override
     public ResourceLocation getModelResource(T player) {
-        if (player.hasEffect(MainEffects.CANDY.get())) {
+        if (CandyEffect.isCandy(player)) {
             return CANDY_MODEL;
         }
 
         return StatsProvider.get(StatsCapability.INSTANCE, player).map(data -> {
             Character character = data.getCharacter();
-            String race = character.getRaceName().toLowerCase();
-            String gender = character.getGender().toLowerCase();
-            String currentForm = character.getActiveForm();
-            int bodyType = character.getBodyType();
-            String playerModelName = player.getModelName();
-
-            RaceCharacterConfig raceConfig = ConfigManager.getRaceCharacter(race);
-            var activeStackFormData = character.getActiveStackFormData();
-            var activeFormData = character.getActiveFormData();
-            String activeCustomModel;
-            if (activeStackFormData != null && Boolean.TRUE.equals(activeStackFormData.hasCustomModel()) && !activeStackFormData.getCustomModel().isEmpty()) {
-                activeCustomModel = activeStackFormData.getCustomModel().toLowerCase();
-            } else if (activeFormData != null && activeFormData.hasCustomModel() && !activeFormData.getCustomModel().isEmpty()) {
-                activeCustomModel = activeFormData.getCustomModel().toLowerCase();
-            } else {
-                activeCustomModel = "";
-            }
-            String raceCustomModel = (raceConfig != null && raceConfig.hasCustomModel()) ? raceConfig.getCustomModel().toLowerCase() : "";
-            String fallbackCustomModel = this.customModel != null ? this.customModel.toLowerCase() : "";
-            String formKey = currentForm != null ? currentForm.toLowerCase() : "";
-            String stateKey = String.join("|",
-                    race,
-                    gender,
-                    formKey,
-                    Integer.toString(bodyType),
-                    playerModelName,
-                    activeCustomModel,
-                    raceCustomModel,
-                    fallbackCustomModel,
-                    Boolean.toString(raceConfig != null && raceConfig.getHasGender())
-            );
-
-            return MODEL_RESOLUTION_CACHE.computeIfAbsent(stateKey, ignored -> {
-                boolean isMale = gender.equals(Character.GENDER_MALE);
-                boolean isSlimSkin = playerModelName.contains("slim");
-                boolean isBaseForm = currentForm == null || currentForm.isEmpty() || currentForm.equalsIgnoreCase("base");
-
-                if (race.equals("saiyan") && (Objects.equals(currentForm, SaiyanForms.OOZARU) || Objects.equals(currentForm, SaiyanForms.GOLDEN_OOZARU))) {
-                    return OOZARU;
-                }
-
-                String modelKey = "";
-                if (!activeCustomModel.isEmpty()) {
-                    modelKey = activeCustomModel;
-                } else if (!raceCustomModel.isEmpty()) {
-                    modelKey = raceCustomModel;
-                } else if (!fallbackCustomModel.isEmpty()) {
-                    modelKey = fallbackCustomModel;
-                }
-
-                if (!modelKey.isEmpty()) {
-                    String customRaceGender = (raceConfig != null && raceConfig.getHasGender()) ? gender : "";
-                    if (modelKey.equals("finalbase")) {
-                        switch (race) {
-                            case "human", "saiyan":
-                                if (!isMale) return MAJIN_SLIM;
-                                if (bodyType == 0) return isSlimSkin ? BASE_SLIM : BASE_DEFAULT;
-                                return BASE_DEFAULT;
-                            case "majin": return isMale ? BASE_DEFAULT : MAJIN_SLIM;
-                            case "namekian": return BASE_DEFAULT;
-                            case "frostdemon": return FROST_DEMON;
-                            case "bioandroid": return BIO_ANDROID_PERFECT;
-                        }
-                    }
-                    return resolveCustomModel(modelKey, isSlimSkin, isMale, bodyType, customRaceGender);
-                }
-
-                if (race.equals("bioandroid")) return isBaseForm ? BIO_ANDROID : BIO_ANDROID_PERFECT;
-                if (race.equals("frostdemon")) return FROST_DEMON;
-                if (race.equals("namekian")) return BASE_DEFAULT;
-
-                if (race.equals("majin")) {
-                    if (bodyType == 2) return isMale ? BASE_DEFAULT : MAJIN_SLIM;
-                    if (!isMale) return MAJIN_SLIM;
-                    return MAJIN_FAT;
-                }
-
-                if (race.equals("human") || race.equals("saiyan")) {
-                    if (!isMale) return MAJIN_SLIM;
-                    if (bodyType == 0) return isSlimSkin ? BASE_SLIM : BASE_DEFAULT;
-                    return BASE_DEFAULT;
-                }
-
-                if (!isMale) return MAJIN_SLIM;
-                return isSlimSkin ? BASE_SLIM : BASE_DEFAULT;
-            });
+            ResourceLocation current = resolveModel(player, data, character.getActiveForm(), customModelOf(character.getActiveFormData(), character.getActiveStackFormData()));
+            return ModelMorph.select(player, data, current, look -> resolveModel(player, data, look.form(), customModelOf(look.formData(), look.stackData())));
         }).orElse(BASE_DEFAULT);
     }
 
-    private ResourceLocation resolveCustomModel(String modelName, boolean isSlimSkin, boolean isMale, int bodyType, String customRaceGender) {
+    @Override
+    public BakedGeoModel getBakedModel(ResourceLocation location) {
+        BakedGeoModel morph = ModelMorph.baked(location);
+        BakedGeoModel model = morph != null ? morph : super.getBakedModel(ModelMorph.source(location, BASE_DEFAULT));
+        if (model != this.activeModel) {
+            this.getAnimationProcessor().setActiveModel(model);
+            this.activeModel = model;
+        }
+        return model;
+    }
+
+    private static String customModelOf(FormConfig.FormData formData, FormConfig.FormData stackFormData) {
+        if (stackFormData != null && Boolean.TRUE.equals(stackFormData.hasCustomModel()) && !stackFormData.getCustomModel().isEmpty()) {
+            return stackFormData.getCustomModel().toLowerCase();
+        }
+        if (formData != null && Boolean.TRUE.equals(formData.hasCustomModel()) && !formData.getCustomModel().isEmpty()) {
+            return formData.getCustomModel().toLowerCase();
+        }
+        return "";
+    }
+
+    private ResourceLocation resolveModel(T player, StatsData data, String currentForm, String activeCustomModel) {
+        Character character = data.getCharacter();
+        String race = character.getRaceName().toLowerCase();
+        String gender = character.getGender().toLowerCase();
+        String playerModelName = player.getModelName();
+
+        RaceCharacterConfig raceConfig = ConfigManager.getRaceCharacter(race);
+        String raceCustomModel = (raceConfig != null && raceConfig.hasCustomModel()) ? raceConfig.getCustomModel().toLowerCase() : "";
+        boolean partnerModel = data.getFusedData() != null && data.getFusedData().usesPartnerModel(character);
+        String ownSkinKey = raceCustomModel.isEmpty() ? race : raceCustomModel;
+        int bodyType = partnerModel && character.getBodyType() == 0 && !SkinGathererProvider.isHumanoidKey(ownSkinKey) ? 1 : character.getBodyType();
+        String fallbackCustomModel = this.customModel != null ? this.customModel.toLowerCase() : "";
+        String formKey = currentForm != null ? currentForm.toLowerCase() : "";
+        boolean isSlimSkin = playerModelName.contains("slim");
+        boolean slimBody = bodyType == 0 ? isSlimSkin : raceConfig != null && raceConfig.isSlimBodyType(bodyType);
+        String stateKey = String.join("|",
+                race,
+                gender,
+                formKey,
+                Integer.toString(bodyType),
+                playerModelName,
+                activeCustomModel,
+                raceCustomModel,
+                fallbackCustomModel,
+                Boolean.toString(raceConfig != null && raceConfig.getHasGender()),
+                Boolean.toString(slimBody)
+        );
+
+        return MODEL_RESOLUTION_CACHE.computeIfAbsent(stateKey, ignored -> {
+            boolean isMale = gender.equals(Character.GENDER_MALE);
+            boolean isBaseForm = currentForm == null || currentForm.isEmpty() || currentForm.equalsIgnoreCase("base");
+
+            if (race.equals("saiyan") && (Objects.equals(currentForm, SaiyanForms.OOZARU) || Objects.equals(currentForm, SaiyanForms.GOLDEN_OOZARU))) {
+                return OOZARU;
+            }
+
+            String modelKey = "";
+            if (!activeCustomModel.isEmpty()) {
+                modelKey = activeCustomModel;
+            } else if (!raceCustomModel.isEmpty()) {
+                modelKey = raceCustomModel;
+            } else if (!fallbackCustomModel.isEmpty()) {
+                modelKey = fallbackCustomModel;
+            }
+
+            if (!modelKey.isEmpty()) {
+                String customRaceGender = (raceConfig != null && raceConfig.getHasGender()) ? gender : "";
+                if (modelKey.equals("finalbase")) {
+                    switch (raceCustomModel.isEmpty() ? race : raceCustomModel) {
+                        case "human", "saiyan":
+                            if (!isMale) return MAJIN_SLIM;
+                            return slimBody ? BASE_SLIM : BASE_DEFAULT;
+                        case "majin": return isMale ? BASE_DEFAULT : MAJIN_SLIM;
+                        case "namekian": return BASE_DEFAULT;
+                        case "frostdemon": return FROST_DEMON;
+                        case "bioandroid": return BIO_ANDROID_PERFECT;
+                    }
+                }
+                return resolveCustomModel(modelKey, isSlimSkin, slimBody, isMale, bodyType, customRaceGender);
+            }
+
+            if (race.equals("bioandroid")) return isBaseForm ? BIO_ANDROID : BIO_ANDROID_PERFECT;
+            if (race.equals("frostdemon")) return FROST_DEMON;
+            if (race.equals("namekian")) return BASE_DEFAULT;
+
+            if (race.equals("majin")) {
+                if (bodyType == 2) return isMale ? BASE_DEFAULT : MAJIN_SLIM;
+                if (!isMale) return MAJIN_SLIM;
+                return MAJIN_FAT;
+            }
+
+            if (race.equals("human") || race.equals("saiyan")) {
+                if (!isMale) return MAJIN_SLIM;
+                return slimBody ? BASE_SLIM : BASE_DEFAULT;
+            }
+
+            if (!isMale) return MAJIN_SLIM;
+            return isSlimSkin ? BASE_SLIM : BASE_DEFAULT;
+        });
+    }
+
+    private static ResourceLocation humanoidVariant(boolean slimBody, boolean isMale, int bodyType, ResourceLocation wide, ResourceLocation slim, ResourceLocation female) {
+        if (bodyType != 0 && !isMale) return female;
+        return slimBody ? slim : wide;
+    }
+
+    private ResourceLocation resolveCustomModel(String modelName, boolean isSlimSkin, boolean slimBody, boolean isMale, int bodyType, String customRaceGender) {
         String key = modelName.toLowerCase();
 
         switch (key) {
@@ -186,25 +249,19 @@ public class DMZPlayerModel<T extends AbstractClientPlayer & GeoAnimatable> exte
             case "human":
             case "saiyan":
                 if (!isMale) return MAJIN_SLIM;
-                if (bodyType == 0) return isSlimSkin ? BASE_SLIM : BASE_DEFAULT;
-                return BASE_DEFAULT;
+                return slimBody ? BASE_SLIM : BASE_DEFAULT;
             case "oozaru": return OOZARU;
             case "ssj4gt":
-                if (bodyType == 0) return isSlimSkin ? BASE_SLIM : BASE_DEFAULT;
-                if (!isMale) return MAJIN_SLIM;
-                return BASE_DEFAULT;
-            case "ssj4d":
-                if (bodyType == 0) return isSlimSkin ? HUMAN_SAIYAN_SLIM_BUFFED : HUMAN_SAIYAN_BUFFED;
-                if (!isMale) return HUMAN_SAIYAN_FEMALE_BUFFED;
-                return HUMAN_SAIYAN_BUFFED;
             case "buffed":
-                if (bodyType == 0) return isSlimSkin ? HUMAN_SAIYAN_SLIM_BUFFED : HUMAN_SAIYAN_BUFFED;
-                if (!isMale) return HUMAN_SAIYAN_FEMALE_BUFFED;
-                return HUMAN_SAIYAN_BUFFED;
+                return humanoidVariant(slimBody, isMale, bodyType, HUMAN_SAIYAN_BUFFED, HUMAN_SAIYAN_SLIM_BUFFED, HUMAN_SAIYAN_FEMALE_BUFFED);
+            case "ssj4d":
+            case "buffedg3":
+                return humanoidVariant(slimBody, isMale, bodyType, HUMAN_SAIYAN_BUFFED_G3, HUMAN_SAIYAN_SLIM_BUFFED_G3, HUMAN_SAIYAN_FEMALE_BUFFED_G3);
             case "4arms":
-                if (bodyType == 0) return isSlimSkin ? HUMAN_SAIYAN_4ARMS_SLIM : HUMAN_SAIYAN_4ARMS;
-                if (!isMale) return HUMAN_SAIYAN_4ARMS_FEM;
-                return HUMAN_SAIYAN_4ARMS;
+                return humanoidVariant(slimBody, isMale, bodyType, HUMAN_SAIYAN_4ARMS, HUMAN_SAIYAN_4ARMS_SLIM, HUMAN_SAIYAN_4ARMS_FEM);
+            case "glindtrueform": return GLIND_TRUE_FORM;
+            case "trascended": return isMale ? GLIND_TRANSCENDED : GLIND_TRANSCENDED_FEMALE;
+            case "glinddark": return GLIND_DARK;
 
             // NAMEKIAN
             case "namekian": return BASE_DEFAULT;
@@ -218,6 +275,7 @@ public class DMZPlayerModel<T extends AbstractClientPlayer & GeoAnimatable> exte
             case "majin_super": return isMale ? BASE_DEFAULT : MAJIN_SLIM;
             case "majin_ultra": return isMale ? HUMAN_SAIYAN_BUFFED : HUMAN_SAIYAN_FEMALE_BUFFED;
             case "majin_evil": case "majin_kid": return isMale ? BASE_SLIM : MAJIN_SLIM;
+            case "janemba_imperfect": return JANEMBA_IMPERFECT;
             case "janemba_fat": return JANEMBA_FAT;
             case "janemba_super": return JANEMBA_SUPER;
 
@@ -236,6 +294,7 @@ public class DMZPlayerModel<T extends AbstractClientPlayer & GeoAnimatable> exte
             case "bioandroid_perfect": return BIO_ANDROID_PERFECT;
             case "bioandroid_ultra": return BIO_ANDROID_ULTRA;
             case "bioandroid_xeno": return BIO_ANDROID_XENO;
+            case "bioandroid_xenofp": return BIO_ANDROID_XENO_FP;
 
         }
 
@@ -248,7 +307,7 @@ public class DMZPlayerModel<T extends AbstractClientPlayer & GeoAnimatable> exte
 
     @Override
     public ResourceLocation getTextureResource(T t) {
-        if (t.hasEffect(MainEffects.CANDY.get())) {
+        if (CandyEffect.isCandy(t)) {
             return CANDY_TEXTURE;
         }
         return textureLocation;
@@ -256,12 +315,23 @@ public class DMZPlayerModel<T extends AbstractClientPlayer & GeoAnimatable> exte
 
     @Override
     public ResourceLocation getAnimationResource(T t) {
+        if (t instanceof DMZRendererCache.NpcPuppet) return PUPPET_ANIM_PRIMARY;
         return ANIM_PRIMARY;
     }
 
     @Override
     public ResourceLocation[] getAnimationResourceFallbacks(T t) {
+        if (t instanceof DMZRendererCache.NpcPuppet) return PUPPET_ANIM_FALLBACKS;
         return ANIM_FALLBACKS;
+    }
+
+    private static boolean clipOwnsHead(String anim) {
+        return MysticBallCombo.ANIMATION.equals(anim) || MeteorBurstCombo.ANIMATION.equals(anim)
+                || DarknessEyeBeamCombo.ANIMATION.equals(anim) || DeathChaserCombo.ANIMATION.equals(anim)
+                || AndroidCombo.ANIMATION.equals(anim)
+                || EvasionAttackHandler.CANDY_BEAM_ANIMATION.equals(anim)
+                || EvasionAttackHandler.GUM_BIND_ANIMATION.equals(anim) || GumBindEntity.BOUND_ANIMATION.equals(anim)
+                || BeamSwordSlashCombo.ANIMATION.equals(anim) || PerfectRushCombo.ANIMATION.equals(anim) || SpiritBreakerCombo.ANIMATION.equals(anim);
     }
 
     @Override
@@ -270,7 +340,10 @@ public class DMZPlayerModel<T extends AbstractClientPlayer & GeoAnimatable> exte
         boolean transfAnimPlaying = animatable instanceof IPlayerAnimatable pa && pa.dragonminez$getCurrentPlayingAnimation().startsWith("transf.");
         boolean actuallyTransforming = StatsProvider.get(StatsCapability.INSTANCE, animatable)
                 .map(data -> data.getStatus().isActionCharging()).orElse(false);
-        boolean skipHead = transfAnimPlaying && actuallyTransforming;
+        String playingAnim = animatable instanceof IPlayerAnimatable playing ? playing.dragonminez$getCurrentPlayingAnimation() : "";
+        String kiAnim = animatable instanceof IPlayerAnimatable playing ? playing.dragonminez$getCurrentKiAnimation() : "";
+        boolean ownsHead = clipOwnsHead(playingAnim) || clipOwnsHead(kiAnim);
+        boolean skipHead = (transfAnimPlaying && actuallyTransforming) || ownsHead;
 
         float partialTick = animationState.getPartialTick();
         float bodyYaw = Mth.lerp(partialTick, animatable.yBodyRotO, animatable.yBodyRot);
@@ -300,9 +373,10 @@ public class DMZPlayerModel<T extends AbstractClientPlayer & GeoAnimatable> exte
         }
 
         if (animatable instanceof IPlayerAnimatable playerAnim && playerAnim.dragonminez$isShootingKi()) {
-            if (rightArm != null) {
-                rightArm.setRotX(lookPitch + 1.5708F);
-                rightArm.setRotY(lookYaw);
+            CoreGeoBone shootingArm = playerAnim.dragonminez$isShootingKiLeftHand() ? leftArm : rightArm;
+            if (shootingArm != null) {
+                shootingArm.setRotX(lookPitch + 1.5708F);
+                shootingArm.setRotY(lookYaw);
             }
         }
 
@@ -327,8 +401,39 @@ public class DMZPlayerModel<T extends AbstractClientPlayer & GeoAnimatable> exte
             if (leftArm != null) RenderUtil.animateHand(animatable, leftArm, partialTick, ageInTicks);
         } catch (Exception ignored) {}
 
+        StatsProvider.get(StatsCapability.INSTANCE, animatable).ifPresent(data -> {
+            if (SaiyanTailRules.hasTail(data.getCharacter())) {
+                SaiyanTailRules.applyWrapCurl(animatable, data.getStatus().isTailVisible(), this.getAnimationProcessor()::getBone);
+            }
+        });
+        KiSharePose.apply(animatable, rightArm, leftArm, partialTick);
         applyBoobScale(animatable);
+        clearExplosionHeadOffset(animatable);
     }
+
+    private void clearExplosionHeadOffset(T animatable) {
+        if (animatable instanceof IPlayerAnimatable playerAnim
+                && EXPLODE_ANIMATION.equals(playerAnim.dragonminez$getCurrentPlayingAnimation())) return;
+
+        CoreGeoBone head = this.getAnimationProcessor().getBone("head");
+        if (head == null) return;
+
+        boolean settled = Math.abs(head.getPosX()) < EXPLODE_RESET_EPSILON
+                && Math.abs(head.getPosY()) < EXPLODE_RESET_EPSILON
+                && Math.abs(head.getPosZ()) < EXPLODE_RESET_EPSILON
+                && Math.abs(head.getScaleX() - 1.0f) < EXPLODE_RESET_EPSILON
+                && Math.abs(head.getScaleY() - 1.0f) < EXPLODE_RESET_EPSILON
+                && Math.abs(head.getScaleZ() - 1.0f) < EXPLODE_RESET_EPSILON;
+        if (settled) return;
+
+        head.setPosX(Mth.lerp(EXPLODE_RESET_EASE, head.getPosX(), 0.0f));
+        head.setPosY(Mth.lerp(EXPLODE_RESET_EASE, head.getPosY(), 0.0f));
+        head.setPosZ(Mth.lerp(EXPLODE_RESET_EASE, head.getPosZ(), 0.0f));
+        head.setScaleX(Mth.lerp(EXPLODE_RESET_EASE, head.getScaleX(), 1.0f));
+        head.setScaleY(Mth.lerp(EXPLODE_RESET_EASE, head.getScaleY(), 1.0f));
+        head.setScaleZ(Mth.lerp(EXPLODE_RESET_EASE, head.getScaleZ(), 1.0f));
+    }
+
 
     private void applyBoobScale(T animatable) {
         CoreGeoBone boobas = this.getAnimationProcessor().getBone("boobas");

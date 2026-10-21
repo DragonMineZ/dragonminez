@@ -1,11 +1,13 @@
 package com.dragonminez.server.world.biome;
 
 import com.dragonminez.Reference;
+import com.dragonminez.server.world.feature.OtherworldPlacedFeatures;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.data.worldgen.BootstapContext;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.level.biome.*;
+import net.minecraft.world.level.levelgen.GenerationStep;
 
 public class OtherworldBiomes {
 	public static final ResourceKey<Biome> OTHERWORLD = ResourceKey.create(Registries.BIOME, ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "other_world"));
@@ -19,6 +21,11 @@ public class OtherworldBiomes {
 
 		BiomeGenerationSettings.Builder biomeBuilder = new BiomeGenerationSettings.Builder(context.lookup(Registries.PLACED_FEATURE), context.lookup(Registries.CONFIGURED_CARVER));
 
+		biomeBuilder.addFeature(GenerationStep.Decoration.RAW_GENERATION, OtherworldPlacedFeatures.CRYSTAL_SPIKE_PLACED);
+		biomeBuilder.addFeature(GenerationStep.Decoration.LOCAL_MODIFICATIONS, OtherworldPlacedFeatures.CANDY_ORB_PLACED);
+		biomeBuilder.addFeature(GenerationStep.Decoration.SURFACE_STRUCTURES, OtherworldPlacedFeatures.BONE_SPINE_PLACED);
+		biomeBuilder.addFeature(GenerationStep.Decoration.VEGETAL_DECORATION, OtherworldPlacedFeatures.THORN_BALL_PLACED);
+
 		return new Biome.BiomeBuilder()
 				.hasPrecipitation(false)
 				.downfall(0.0f)
@@ -29,7 +36,7 @@ public class OtherworldBiomes {
 						.waterColor(4214155)
 						.waterFogColor(4214120)
 						.skyColor(0xBE55AA)
-						.grassColorOverride(0xDCF2FF)
+						.grassColorOverride(0x7ACB45)
 						.foliageColorOverride(0xDCF2FF)
 						.fogColor(0xCE7EBD)
 						.ambientMoodSound(AmbientMoodSettings.LEGACY_CAVE_SETTINGS)

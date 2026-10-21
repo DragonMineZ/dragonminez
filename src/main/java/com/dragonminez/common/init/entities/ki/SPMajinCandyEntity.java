@@ -153,7 +153,7 @@ public class SPMajinCandyEntity extends AbstractKiProjectile {
                 if (!this.level().isClientSide) {
                     // Gated to ~1s pulses; the candy effect refreshes on each landed pulse.
                     if (this.applyContinuousDamage(target)) {
-                        target.addEffect(new MobEffectInstance(MainEffects.CANDY.get(), 200, 0, false, true));
+                        com.dragonminez.server.events.players.combat.EvasionAttackHandler.applyCandy(owner, target, 200, 0);
                     }
                 }
             } else {
@@ -177,7 +177,7 @@ public class SPMajinCandyEntity extends AbstractKiProjectile {
             if (hitEntity instanceof LivingEntity target && target != owner) {
                 target.hurt(MainDamageTypes.kiblast(this.level(), this, (LivingEntity) owner), this.getKiDamage());
 
-                target.addEffect(new MobEffectInstance(MainEffects.CANDY.get(), 100, 0, false, true));
+                com.dragonminez.server.events.players.combat.EvasionAttackHandler.applyCandy(owner instanceof LivingEntity livingOwner ? livingOwner : null, target, 100, 0);
                 this.discard();
             }
         }

@@ -1,100 +1,62 @@
 package com.dragonminez.server.world.raid;
 
+import com.dragonminez.common.config.RaidDefinition;
 import lombok.Getter;
 import net.minecraft.network.chat.Component;
 
-import java.util.ArrayList;
 import java.util.List;
 
 @Getter
 public class RaidType {
 
+	private static final double DEFAULT_ACTIVATION_RADIUS = 48.0D;
+	private static final double DEFAULT_LEASH_DISTANCE = 80.0D;
+	private static final int DEFAULT_INTER_WAVE_DELAY_TICKS = 100;
+	public static final int DEFAULT_PREPARATION_TICKS = 60 * 20;
+
 	private final String id;
+	private final RaidDefinition definition;
 	private final Component displayName;
-	private final List<RaidWave> waves;
-	/** Players within this many blocks of the centre are pulled into the raid / boss bar. */
 	private final double activationRadius;
-	/** A participant beyond this distance from the centre is treated as having left the raid. */
 	private final double leashDistance;
-	/** Ticks to wait between a wave being cleared and the next one spawning. */
 	private final int interWaveDelayTicks;
-	private final RaidReward reward;
 
-	private RaidType(Builder builder) {
-		this.id = builder.id;
-		this.displayName = builder.displayName;
-		this.waves = builder.waves;
-		this.activationRadius = builder.activationRadius;
-		this.leashDistance = builder.leashDistance;
-		this.interWaveDelayTicks = builder.interWaveDelayTicks;
-		this.reward = builder.reward;
+	public RaidType(String id, RaidDefinition definition) {
+		this.id = id;
+		this.definition = definition;
+		this.displayName = Component.translatable(definition.displayNameOr("raid.dragonminez." + id));
+		this.activationRadius = definition.activationRadiusOr(DEFAULT_ACTIVATION_RADIUS);
+		this.leashDistance = definition.leashDistanceOr(DEFAULT_LEASH_DISTANCE);
+		this.interWaveDelayTicks = definition.interWaveDelayTicksOr(DEFAULT_INTER_WAVE_DELAY_TICKS);
 	}
 
-	public int waveCount() {
-		return waves.size();
+	public List<RaidDefinition.Wave> getWaves() {
+		return definition.getWaves() != null ? definition.getWaves() : List.of();
 	}
 
-	public RaidWave wave(int index) {
-		return waves.get(index);
+	public int waveCount() { return getWaves().size(); }
+
+	public RaidDefinition.Wave wave(int index) { return getWaves().get(index); }
+
+	public boolean isFinalWave(int index) { return index == waveCount() - 1; }
+
+	public boolean isEnabled() { return definition.isEnabled(); }
+
+	public RaidDefinition.Trigger getTrigger() { return definition.getTrigger(); }
+
+	public boolean hasTrigger() { return definition.hasTrigger(); }
+
+	public int preparationTicks() {
+		return hasTrigger() ? getTrigger().preparationTicksOr(DEFAULT_PREPARATION_TICKS) : DEFAULT_PREPARATION_TICKS;
 	}
 
-	public boolean isFinalWave(int index) {
-		return index == waves.size() - 1;
-	}
+	public String preparationMusic() { return definition.preparationMusic(); }
 
-	public static Builder builder(String id) {
-		return new Builder(id);
-	}
+	public String battleMusic() { return definition.battleMusic(); }
 
-	public static class Builder {
-		private final String id;
-		private Component displayName;
-		private final List<RaidWave> waves = new ArrayList<>();
-		private double activationRadius = 48.0;
-		private double leashDistance = 64.0;
-		private int interWaveDelayTicks = 100; // 5 seconds
-		private RaidReward reward = RaidReward.builder().build();
+	public RaidDefinition.Rewards getRewards() { return definition.getRewards(); }
 
-		private Builder(String id) {
-			this.id = id;
-			this.displayName = Component.literal(id);
-		}
-
-		public Builder name(Component displayName) {
-			this.displayName = displayName;
-			return this;
-		}
-
-		public Builder wave(RaidWave wave) {
-			this.waves.add(wave);
-			return this;
-		}
-
-		public Builder activationRadius(double radius) {
-			this.activationRadius = radius;
-			return this;
-		}
-
-		public Builder leashDistance(double distance) {
-			this.leashDistance = distance;
-			return this;
-		}
-
-		public Builder interWaveDelay(int ticks) {
-			this.interWaveDelayTicks = ticks;
-			return this;
-		}
-
-		public Builder reward(RaidReward reward) {
-			this.reward = reward;
-			return this;
-		}
-
-		public RaidType build() {
-			if (waves.isEmpty()) {
-				throw new IllegalStateException("Raid type '" + id + "' must have at least one wave");
-			}
-			return new RaidType(this);
-		}
+	public boolean isUsable() {
+		return isEnabled() && !getWaves().isEmpty();
 	}
 }

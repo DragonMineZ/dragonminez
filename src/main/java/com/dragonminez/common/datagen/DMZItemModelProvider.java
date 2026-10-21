@@ -21,8 +21,14 @@ import net.minecraftforge.registries.RegistryObject;
 import java.util.Map;
 
 public class DMZItemModelProvider extends ItemModelProvider {
+	private static final ExistingFileHelper.ResourceType ITEM_TEXTURE =
+			new ExistingFileHelper.ResourceType(net.minecraft.server.packs.PackType.CLIENT_RESOURCES, ".png", "textures");
+
+	private final ExistingFileHelper files;
+
 	public DMZItemModelProvider(PackOutput output, ExistingFileHelper existingFileHelper) {
 		super(output, Reference.MOD_ID, existingFileHelper);
+		this.files = existingFileHelper;
 	}
 
 	@Override
@@ -31,17 +37,45 @@ public class DMZItemModelProvider extends ItemModelProvider {
 		for (DragonRadarDefinition radarDefinition : DragonBallDefinitions.getRadars()) {
 			DragonRadarAssetDefinition assets = radarDefinition.resolveAssetDefinition();
 			RegistryObject<Item> item = MainItems.getDragonRadarItemOrThrow(radarDefinition.getId());
-			if (assets != null && assets.getItemTexturePath().isPresent()) {
+			// Varios radares comparten la misma asset definition (y por tanto la misma textura).
+			// Si existe un icono propio con el nombre de registro del item, ese manda.
+			ResourceLocation ownTexture = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "item/" + item.getId().getPath());
+			if (files.exists(ownTexture, ITEM_TEXTURE)) {
+				withExistingParent(item.getId().getPath(), mcLoc("item/generated")).texture("layer0", ownTexture);
+			} else if (assets != null && assets.getItemTexturePath().isPresent()) {
 				withExistingParent(item.getId().getPath(), mcLoc("item/generated")).texture("layer0", ResourceLocation.parse(assets.getItemTexturePath().get()));
 			} else {
 				simpleItem(item);
 			}
 		}
 		simpleItem(MainItems.MIGHT_TREE_FRUIT);
+		simpleItem(MainItems.SACRED_WATER);
+		simpleItem(MainItems.DEMON_EYE);
+		simpleItem(MainItems.SATAN_BADGE);
 		simpleItem(MainItems.NUBE_ITEM);
 		simpleItem(MainItems.NUBE_NEGRA_ITEM);
 		simpleItem(MainItems.NAVE_SAIYAN_ITEM);
+		simpleItem(MainItems.VEHICLE_ENGINE);
+		simpleItem(MainItems.VEHICLE_PROPELLER);
+		simpleItem(MainItems.VEHICLE_SEAT);
+		simpleItem(MainItems.VEHICLE_PLATING);
+		simpleItem(MainItems.CAR_RED_ITEM);
+		simpleItem(MainItems.CAR_YELLOW_ITEM);
+		simpleItem(MainItems.CC576_ITEM);
+		simpleItem(MainItems.FRIEZA_CAPSULE_ITEM);
 		simpleItem(MainItems.SENZU_BEAN);
+		simpleItem(MainItems.SENZU_BEAN_BLUE);
+		simpleItem(MainItems.SENZU_BEAN_RED);
+		simpleItem(MainItems.SENZU_BEAN_YELLOW);
+		simpleItem(MainItems.SENZU_BEAN_SEEDS_BLUE);
+		simpleItem(MainItems.SENZU_BEAN_SEEDS_RED);
+		simpleItem(MainItems.SENZU_BEAN_SEEDS_YELLOW);
+		simpleItem(MainItems.SENZU_BEAN_BAG);
+		simpleItem(MainItems.MEDI_BUG_ANT);
+		simpleItem(MainItems.MEDI_BUG_BEETLE);
+		simpleItem(MainItems.MEDI_BUG_BEETLE_PAIR);
+		simpleItem(MainItems.MEDI_BUG_RHINO);
+		simpleItem(MainItems.MEDI_BUG_WORM);
 		simpleItem(MainItems.RED_CAPSULE);
 		simpleItem(MainItems.YELLOW_CAPSULE);
 		simpleItem(MainItems.PURPLE_CAPSULE);
@@ -57,6 +91,17 @@ public class DMZItemModelProvider extends ItemModelProvider {
 		simpleItem(MainItems.HEART_MEDICINE);
 		simpleItem(MainItems.NAMEK_WATER_BUCKET);
 		simpleItem(MainItems.HEALING_BUCKET);
+		simpleItem(MainItems.EMPTY_CAPSULE);
+		simpleItem(MainItems.MASTERY_CAPSULE);
+		simpleItem(MainItems.TURTLE_SCALE);
+		simpleItem(MainItems.NAMEK_MOSS);
+		simpleItem(MainItems.OOZARU_ROOT);
+		simpleItem(MainItems.KATCHIN_SPROUT);
+		simpleItem(MainItems.METEOR_FLOWER);
+		simpleItem(MainItems.AURA_LILY);
+		simpleItem(MainItems.HERMIT_FERN);
+		simpleItem(MainItems.KAIOSHIN_FRUIT);
+		simpleItem(MainItems.ZENKAI_LOTUS);
 		for (DragonBallSetDefinition setDefinition : DragonBallDefinitions.getBallSets()) {
 			DragonBallSetAssetDefinition assets = setDefinition.resolveAssetDefinition();
 			for (Map.Entry<Integer, RegistryObject<Item>> entry : MainItems.getDragonBallBlockItems(setDefinition.getId()).entrySet()) {
@@ -83,23 +128,36 @@ public class DMZItemModelProvider extends ItemModelProvider {
 		withExistingParent(MainItems.DINO_2.getId().getPath(), mcLoc("item/template_spawn_egg"));
 		withExistingParent(MainItems.DINO_3.getId().getPath(), mcLoc("item/template_spawn_egg"));
 		withExistingParent(MainItems.DINO_KID.getId().getPath(), mcLoc("item/template_spawn_egg"));
+		withExistingParent(MainItems.GIRAN_SE.getId().getPath(), mcLoc("item/template_spawn_egg"));
 		withExistingParent(MainItems.NAMEK_FROG_SE.getId().getPath(), mcLoc("item/template_spawn_egg"));
 		withExistingParent(MainItems.GINYU_FROG_SE.getId().getPath(), mcLoc("item/template_spawn_egg"));
+		withExistingParent(MainItems.GIANT_FISH_SE.getId().getPath(), mcLoc("item/template_spawn_egg"));
+		withExistingParent(MainItems.GIANT_TURTLE_SE.getId().getPath(), mcLoc("item/template_spawn_egg"));
 		withExistingParent(MainItems.SOLDIER01_SE.getId().getPath(), mcLoc("item/template_spawn_egg"));
 		withExistingParent(MainItems.SOLDIER02_SE.getId().getPath(), mcLoc("item/template_spawn_egg"));
 		withExistingParent(MainItems.SOLDIER03_SE.getId().getPath(), mcLoc("item/template_spawn_egg"));
+		withExistingParent(MainItems.EVIL_CLONE_GOKU_SE.getId().getPath(), mcLoc("item/template_spawn_egg"));
+		withExistingParent(MainItems.EVIL_CLONE_VEGETA_SE.getId().getPath(), mcLoc("item/template_spawn_egg"));
+		withExistingParent(MainItems.EVIL_CLONE_PICCOLO_SE.getId().getPath(), mcLoc("item/template_spawn_egg"));
+		withExistingParent(MainItems.EVIL_CLONE_NAPPA_SE.getId().getPath(), mcLoc("item/template_spawn_egg"));
+		withExistingParent(MainItems.EVIL_CLONE_KRILLIN_SE.getId().getPath(), mcLoc("item/template_spawn_egg"));
 		withExistingParent(MainItems.NWARRIOR_SE.getId().getPath(), mcLoc("item/template_spawn_egg"));
+		withExistingParent(MainItems.DEMON_VILLAGER_SE.getId().getPath(), mcLoc("item/template_spawn_egg"));
+		withExistingParent(MainItems.TIME_PATROLLER_SE.getId().getPath(), mcLoc("item/template_spawn_egg"));
 		withExistingParent(MainItems.SAIBAMAN_SE.getId().getPath(), mcLoc("item/template_spawn_egg"));
 		withExistingParent(MainItems.KAIWAREMAN_SE.getId().getPath(), mcLoc("item/template_spawn_egg"));
 		withExistingParent(MainItems.KYUKONMAN_SE.getId().getPath(), mcLoc("item/template_spawn_egg"));
 		withExistingParent(MainItems.COPYMAN_SE.getId().getPath(), mcLoc("item/template_spawn_egg"));
 		withExistingParent(MainItems.TENNENMAN_SE.getId().getPath(), mcLoc("item/template_spawn_egg"));
 		withExistingParent(MainItems.JINKOUMAN_SE.getId().getPath(), mcLoc("item/template_spawn_egg"));
+		withExistingParent(MainItems.BIOMAN_SE.getId().getPath(), mcLoc("item/template_spawn_egg"));
 		withExistingParent(MainItems.REDRIBBONSOLDIER_SE.getId().getPath(), mcLoc("item/template_spawn_egg"));
 		withExistingParent(MainItems.REDRIBBONROBOT1_SE.getId().getPath(), mcLoc("item/template_spawn_egg"));
 		withExistingParent(MainItems.REDRIBBONROBOT2_SE.getId().getPath(), mcLoc("item/template_spawn_egg"));
 		withExistingParent(MainItems.REDRIBBONROBOT3_SE.getId().getPath(), mcLoc("item/template_spawn_egg"));
 		withExistingParent(MainItems.BANDIT_SE.getId().getPath(), mcLoc("item/template_spawn_egg"));
+		withExistingParent(MainItems.OGRE_RED_SE.getId().getPath(), mcLoc("item/template_spawn_egg"));
+		withExistingParent(MainItems.OGRE_BLUE_SE.getId().getPath(), mcLoc("item/template_spawn_egg"));
 
 		//Comidas
 		simpleItem(MainItems.DINO_MEAT_RAW);
@@ -110,6 +168,10 @@ public class DMZItemModelProvider extends ItemModelProvider {
 		simpleItem(MainItems.DINO_TAIL_COOKED);
 		simpleItem(MainItems.FROG_LEGS_RAW);
 		simpleItem(MainItems.FROG_LEGS_COOKED);
+		simpleItem(MainItems.GIANT_FISH_RAW);
+		simpleItem(MainItems.GIANT_FISH_COOKED);
+		simpleItem(MainItems.GIANT_TURTLE_RAW);
+		simpleItem(MainItems.GIANT_TURTLE_COOKED);
 
 		//Armaduras (DEJAR A-Z POR FAVOR Q SINO ME PIERDO XD)
 		generateArmorSetModels(MainItems.A13_ARMOR);
@@ -193,6 +255,7 @@ public class DMZItemModelProvider extends ItemModelProvider {
 		generateArmorSetModels(MainItems.ZAMASU_ARMOR);
         generateArmorSetModels(MainItems.THRAGG_ARMOR);
         generateArmorSetModels(MainItems.GILGAMESH_ARMOR);
+        //generateArmorSetModels(MainItems.SCARLETBLAZE_ARMOR);
         generateArmorSetModels(MainItems.SUBARU_NATSUKI_ARMOR);
         generateArmorSetModels(MainItems.SUBARU_NATSUKI_ARC6_ARMOR);
         generateArmorSetModels(MainItems.RADITZ_ARMOR);
@@ -202,6 +265,9 @@ public class DMZItemModelProvider extends ItemModelProvider {
         generateArmorSetModels(MainItems.XENO_GOKU_PATREON_ARMOR);
         generateArmorSetModels(MainItems.VERGIL_ARMOR);
         generateArmorSetModels(MainItems.GREAT_SAIYAMAN_2_ARMOR);
+        //generateArmorSetModels(MainItems.TAIYOU_GI_ARMOR);
+        //generateArmorSetModels(MainItems.BRIGHTLYS_REGULAR_WEAR_ARMOR);
+        //generateArmorSetModels(MainItems.TRUNKS_XENO_ARMOR);
 
         //Crafting Armaduras
 		simpleItem(MainItems.KIKONO_STRING);
@@ -298,6 +364,7 @@ public class DMZItemModelProvider extends ItemModelProvider {
 		simpleItem(MainItems.GETE_SCRAP);
 		simpleItem(MainItems.GETE_INGOT);
 		simpleItem(MainItems.KIKONO_SHARD);
+		simpleItem(MainItems.MAJILITE);
 
 		//Gete Cosas
 		simpleItem(MainItems.GETE_RED_CAPSULE);
@@ -348,6 +415,9 @@ public class DMZItemModelProvider extends ItemModelProvider {
 		simpleBlockItem(MainBlocks.NAMEK_DEEPSLATE_COPPER);
 		simpleBlockItem(MainBlocks.TIME_CHAMBER_PORTAL);
 		simpleBlockItem(MainBlocks.OTHERWORLD_CLOUD);
+		simpleBlockItem(MainBlocks.HELL_GROUND);
+		simpleBlockItem(MainBlocks.HELL_STONE);
+		simpleBlockItem(MainBlocks.HELL_DEEPSTONE);
 		simpleBlockItem(MainBlocks.GETE_ORE);
 
 		//Variantes de bloques
@@ -382,6 +452,16 @@ public class DMZItemModelProvider extends ItemModelProvider {
 		wallItem(MainBlocks.NAMEK_DEEPSLATE_WALL, MainBlocks.NAMEK_DEEPSLATE);
 		wallItem(MainBlocks.ROCKY_STONE_WALL, MainBlocks.ROCKY_STONE);
 		wallItem(MainBlocks.ROCKY_COBBLESTONE_WALL, MainBlocks.ROCKY_COBBLESTONE);
+		simpleBlockItem(MainBlocks.MAKAI_STONE_STAIRS);
+		simpleBlockItem(MainBlocks.MAKAI_STONE_SLAB);
+		wallItem(MainBlocks.MAKAI_STONE_WALL, MainBlocks.MAKAI_STONE);
+		simpleBlockItem(MainBlocks.ADOBE_STAIRS);
+		simpleBlockItem(MainBlocks.ADOBE_SLAB);
+		wallItem(MainBlocks.ADOBE_WALL, MainBlocks.ADOBE);
+		simpleBlockItem(MainBlocks.DEMON_BRICK_STAIRS);
+		simpleBlockItem(MainBlocks.DEMON_BRICK_SLAB);
+		wallItem(MainBlocks.DEMON_BRICK_WALL, MainBlocks.DEMON_BRICKS);
+		blockItem(MainBlocks.MAKAI_SHRUB);
 
 		//Vegetacion
 		blockAsItem(MainBlocks.CHRYSANTHEMUM_FLOWER);

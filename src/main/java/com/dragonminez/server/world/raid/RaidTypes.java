@@ -1,10 +1,12 @@
 package com.dragonminez.server.world.raid;
 
-import com.dragonminez.common.init.MainEntities;
-import net.minecraft.network.chat.Component;
-import net.minecraft.world.item.Items;
+import com.dragonminez.Env;
+import com.dragonminez.LogUtil;
+import com.dragonminez.common.config.RaidDefaults;
+import com.dragonminez.common.config.RaidDefinition;
 
 import java.util.Collections;
+import java.util.List;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Set;
@@ -12,13 +14,27 @@ import java.util.Set;
 public final class RaidTypes {
 
 	private static final Map<String, RaidType> REGISTRY = new LinkedHashMap<>();
+	private static List<RaidType> TRIGGERABLE = List.of();
+	public static final String DEFAULT_ID = RaidDefaults.SAIYAN_ASSAULT;
 
-	/** Fallback raid used when an unknown id is requested. */
-	public static final String DEFAULT_ID = "saiyan_assault";
+	private RaidTypes() {}
 
-	public static RaidType register(RaidType type) {
-		REGISTRY.put(type.getId(), type);
-		return type;
+	public static void reload(Map<String, RaidDefinition> definitions) {
+		REGISTRY.clear();
+
+		for (Map.Entry<String, RaidDefinition> entry : definitions.entrySet()) {
+			RaidType type = new RaidType(entry.getKey(), entry.getValue());
+
+			if (!type.isEnabled()) continue;
+			if (!type.isUsable()) {
+				LogUtil.warn(Env.SERVER, "Raid '{}' defines no waves and was skipped", entry.getKey());
+				continue;
+			}
+			REGISTRY.put(entry.getKey(), type);
+		}
+
+		TRIGGERABLE = REGISTRY.values().stream().filter(RaidType::hasTrigger).toList();
+		LogUtil.info(Env.SERVER, "Loaded {} raid type(s): {}", REGISTRY.size(), REGISTRY.keySet());
 	}
 
 	public static RaidType get(String id) {
@@ -38,40 +54,7 @@ public final class RaidTypes {
 		return Collections.unmodifiableSet(REGISTRY.keySet());
 	}
 
-	static {
-		// Built-in starter raid: escalating Saiyan-saga waves that culminate in a Nappa boss fight.
-		register(RaidType.builder(DEFAULT_ID)
-				.name(Component.translatable("raid.dragonminez.saiyan_assault"))
-				.activationRadius(48.0)
-				.leashDistance(80.0)
-				.interWaveDelay(100)
-				// Wave 1 — a probing group of saibamen.
-				.wave(RaidWave.builder()
-						.add(MainEntities.SAGA_SAIBAMAN, 3)
-						.build())
-				// Wave 2 — more saibamen, slightly tougher.
-				.wave(RaidWave.builder()
-						.add(MainEntities.SAGA_SAIBAMAN, 5)
-						.health(1.25).damage(1.15)
-						.build())
-				// Wave 3 — saibamen escorting Raditz.
-				.wave(RaidWave.builder()
-						.add(MainEntities.SAGA_SAIBAMAN, 4)
-						.add(MainEntities.SAGA_RADITZ, 1)
-						.health(1.5).damage(1.3)
-						.build())
-				// Final wave — Nappa boss with a saibaman guard.
-				.wave(RaidWave.builder()
-						.add(MainEntities.SAGA_SAIBAMAN, 3)
-						.add(MainEntities.SAGA_NAPPA, 1)
-						.health(2.0).damage(1.6)
-						.boss(true)
-						.build())
-				.reward(RaidReward.builder()
-						.item(() -> Items.DIAMOND, 4)
-						.build())
-				.build());
+	public static List<RaidType> triggerable() {
+		return TRIGGERABLE;
 	}
-
-	private RaidTypes() {}
 }

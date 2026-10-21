@@ -16,6 +16,10 @@ public class DragonBallSavedData extends SavedData {
 	private final Map<String, Map<Integer, List<BlockPos>>> activeBallsBySet = new HashMap<>();
 	private final Map<String, Map<Integer, List<BlockPos>>> pendingBallsBySet = new HashMap<>();
 	private final Set<String> firstSpawnedSetIds = new HashSet<>();
+	private final Map<String, Integer> spawnedCopiesBySet = new HashMap<>();
+	private final Map<UUID, Summon> summons = new HashMap<>();
+
+	public record Summon(String setId, long expiresAt) {}
 
 	public DragonBallSavedData() {
 		for (DragonBallSetDefinition definition : DragonBallDefinitions.getBallSets()) {
@@ -49,6 +53,24 @@ public class DragonBallSavedData extends SavedData {
 		return pendingBallsBySet.computeIfAbsent(setId, DragonBallSavedData::createStarMapForSetId);
 	}
 
+	public List<BlockPos> getActiveBalls(String setId, int star) {
+		return getActiveBalls(setId).computeIfAbsent(star, ignored -> new ArrayList<>());
+	}
+
+	public List<BlockPos> getPendingBalls(String setId, int star) {
+		return getPendingBalls(setId).computeIfAbsent(star, ignored -> new ArrayList<>());
+	}
+
+	public int getTrackedCount(String setId, int star) {
+		return getActiveBalls(setId, star).size() + getPendingBalls(setId, star).size();
+	}
+
+	public Set<String> getKnownSetIds() {
+		Set<String> ids = new LinkedHashSet<>(activeBallsBySet.keySet());
+		ids.addAll(pendingBallsBySet.keySet());
+		return ids;
+	}
+
 	public List<BlockPos> getAllKnownPositionsForRadar(String setId) {
 		List<BlockPos> allPos = new ArrayList<>();
 		DragonBallSetDefinition definition = DragonBallDefinitions.getBallSet(setId);
@@ -72,6 +94,34 @@ public class DragonBallSavedData extends SavedData {
 		setDirty();
 	}
 
+	public int getSpawnedCopies(String setId) {
+		return spawnedCopiesBySet.getOrDefault(setId, -1);
+	}
+
+	public void setSpawnedCopies(String setId, int copies) {
+		spawnedCopiesBySet.put(setId, copies);
+		setDirty();
+	}
+
+	public void addSummon(UUID dragonId, String setId, long expiresAt) {
+		summons.put(dragonId, new Summon(setId, expiresAt));
+		setDirty();
+	}
+
+	public Summon getSummon(UUID dragonId) {
+		return summons.get(dragonId);
+	}
+
+	public Summon removeSummon(UUID dragonId) {
+		Summon removed = summons.remove(dragonId);
+		if (removed != null) setDirty();
+		return removed;
+	}
+
+	public Map<UUID, Summon> getSummons() {
+		return summons;
+	}
+
 	public static DragonBallSavedData load(CompoundTag tag) {
 		DragonBallSavedData data = new DragonBallSavedData();
 		if (tag.contains("SetData")) {
@@ -81,10 +131,17 @@ public class DragonBallSavedData extends SavedData {
 				loadMap(entry.getList("Active", 10), data.getActiveBalls(setId));
 				loadMap(entry.getList("Pending", 10), data.getPendingBalls(setId));
 				if (entry.getBoolean("FirstSpawned")) data.firstSpawnedSetIds.add(setId);
+				if (entry.contains("SpawnedCopies")) data.spawnedCopiesBySet.put(setId, entry.getInt("SpawnedCopies"));
 			}
 		} else {
 			loadLegacySet(tag, data, "earth", "ActiveEarth", "PendingEarth", "FirstSpawnEarth");
 			loadLegacySet(tag, data, "namek", "ActiveNamek", "PendingNamek", "FirstSpawnNamek");
+		}
+		ListTag summonList = tag.getList("Summons", 10);
+		for (int i = 0; i < summonList.size(); i++) {
+			CompoundTag item = summonList.getCompound(i);
+			if (!item.hasUUID("Dragon")) continue;
+			data.summons.put(item.getUUID("Dragon"), new Summon(item.getString("Set"), item.getLong("ExpiresAt")));
 		}
 		return data;
 	}
@@ -97,16 +154,32 @@ public class DragonBallSavedData extends SavedData {
 
 	@Override
 	public @NotNull CompoundTag save(CompoundTag tag) {
+		Set<String> setIds = new LinkedHashSet<>();
+		for (DragonBallSetDefinition definition : DragonBallDefinitions.getBallSets()) setIds.add(definition.getId());
+		setIds.addAll(getKnownSetIds());
+		setIds.addAll(firstSpawnedSetIds);
+		setIds.addAll(spawnedCopiesBySet.keySet());
+
 		CompoundTag setData = new CompoundTag();
-		for (DragonBallSetDefinition definition : DragonBallDefinitions.getBallSets()) {
-			String setId = definition.getId();
+		for (String setId : setIds) {
 			CompoundTag entry = new CompoundTag();
 			entry.put("Active", saveMap(getActiveBalls(setId)));
 			entry.put("Pending", saveMap(getPendingBalls(setId)));
 			entry.putBoolean("FirstSpawned", firstSpawnedSetIds.contains(setId));
+			if (spawnedCopiesBySet.containsKey(setId)) entry.putInt("SpawnedCopies", spawnedCopiesBySet.get(setId));
 			setData.put(setId, entry);
 		}
 		tag.put("SetData", setData);
+
+		ListTag summonList = new ListTag();
+		for (Map.Entry<UUID, Summon> entry : summons.entrySet()) {
+			CompoundTag item = new CompoundTag();
+			item.putUUID("Dragon", entry.getKey());
+			item.putString("Set", entry.getValue().setId());
+			item.putLong("ExpiresAt", entry.getValue().expiresAt());
+			summonList.add(item);
+		}
+		tag.put("Summons", summonList);
 		return tag;
 	}
 
@@ -115,7 +188,8 @@ public class DragonBallSavedData extends SavedData {
 			CompoundTag item = list.getCompound(i);
 			int star = item.getInt("Star");
 			BlockPos pos = NbtUtils.readBlockPos(item.getCompound("Pos"));
-			map.computeIfAbsent(star, ignored -> new ArrayList<>()).add(pos);
+			List<BlockPos> positions = map.computeIfAbsent(star, ignored -> new ArrayList<>());
+			if (!positions.contains(pos)) positions.add(pos);
 		}
 	}
 

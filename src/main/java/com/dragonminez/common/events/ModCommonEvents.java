@@ -5,15 +5,19 @@ import com.dragonminez.common.dragonball.DragonBallDataPackResources;
 import com.dragonminez.common.init.MainAttributes;
 import com.dragonminez.common.init.MainBlocks;
 import com.dragonminez.common.init.MainEntities;
+import com.dragonminez.common.init.MainItems;
+import com.dragonminez.common.init.MainPotions;
 import com.dragonminez.common.init.entities.*;
 import com.dragonminez.common.init.entities.animal.*;
 import com.dragonminez.common.init.entities.dragon.DragonWishEntity;
+import com.dragonminez.common.init.entities.demon.DemonVillagersEntity;
 import com.dragonminez.common.init.entities.namek.NamekTraderEntity;
 import com.dragonminez.common.init.entities.namek.NamekWarriorEntity;
 import com.dragonminez.common.init.entities.redribbon.BanditEntity;
 import com.dragonminez.common.init.entities.redribbon.RedRibbonSoldierEntity;
 import com.dragonminez.common.init.entities.redribbon.RobotEntity;
 import com.dragonminez.common.init.entities.sagas.*;
+import com.dragonminez.common.init.entities.vehicle.VehicleEntity;
 import com.dragonminez.common.stats.techniques.PredefinedTechniques;
 import com.dragonminez.server.world.data.DragonBallSavedData;
 import com.dragonminez.server.world.gen.OverworldSurfaceRules;
@@ -25,8 +29,16 @@ import net.minecraft.server.packs.repository.PackSource;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.ai.attributes.AttributeSupplier;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.Items;
+import net.minecraft.world.item.alchemy.PotionUtils;
+import net.minecraft.world.item.alchemy.Potions;
+import net.minecraft.world.item.crafting.Ingredient;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.FlowerPotBlock;
+import net.minecraftforge.common.brewing.BrewingRecipe;
+import net.minecraftforge.common.brewing.BrewingRecipeRegistry;
+import net.minecraftforge.common.crafting.StrictNBTIngredient;
 import net.minecraftforge.common.capabilities.RegisterCapabilitiesEvent;
 import net.minecraftforge.event.AddPackFindersEvent;
 import net.minecraftforge.event.entity.EntityAttributeCreationEvent;
@@ -78,18 +90,26 @@ public class ModCommonEvents {
                 MainEntities.SAGA_FRIEZA_SOLDIER3, MainEntities.SAGA_MORO_SOLDIER
         );
         var ozarus = List.of(
-                MainEntities.SAGA_OZARU_VEGETA, MainEntities.SAGA_OZARU
+                MainEntities.SAGA_OZARU_VEGETA, MainEntities.SAGA_OZARU, MainEntities.SAGA_BABY_GOLDEN_OZARU
         );
 
         for (var saibaman : saibamans) event.put((EntityType<? extends LivingEntity>) saibaman.get(), SagaSaibamanEntity.createAttributes().build());
+        event.put(MainEntities.SAGA_BIOMAN.get(), SagaSaibamanEntity.BiomanEntity.createAttributes().build());
         for (var soldier : soldiers) event.put((EntityType<? extends LivingEntity>) soldier.get(), SagaFriezaSoldier01Entity.createAttributes().build());
         for (var ozaru : ozarus) event.put((EntityType<? extends LivingEntity>) ozaru.get(), SagaOzaruEntity.createAttributes().build());
+        var ogres = List.of(MainEntities.SAGA_OGRE_RED, MainEntities.SAGA_OGRE_BLUE);
+        for (var ogre : ogres) event.put(ogre.get(), SagaOgreEntity.createAttributes().build());
+        event.put(MainEntities.MINI_JANEMBA_STAMPEDE.get(), MiniJanembaStampedeEntity.createAttributes().build());
+        event.put(MainEntities.SAGA_SAIYAN_SOLDIER.get(), DBSagasEntity.createAttributes().build());
+        event.put(MainEntities.SAGA_SAIYAN_ELITE.get(), DBSagasEntity.createAttributes().build());
+        event.put(MainEntities.SAGA_SAIYAN_OOZARU.get(), SagaSaiyanInvadersEntity.Oozaru.createAttributes().build());
+        for (var clone : MainEntities.getEvilClones()) event.put((EntityType<? extends LivingEntity>) clone.get(), EvilCloneEntity.createAttributes().build());
 
 
         AttributeSupplier defaultSagaAttributes = DBSagasEntity.createAttributes().build();
 
         for (var sagaEntity : MainEntities.getSagaEntities()) {
-            if (saibamans.contains(sagaEntity) || soldiers.contains(sagaEntity) || ozarus.contains(sagaEntity)) {
+            if (saibamans.contains(sagaEntity) || soldiers.contains(sagaEntity) || ozarus.contains(sagaEntity) || ogres.contains(sagaEntity) || sagaEntity == MainEntities.MINI_JANEMBA_STAMPEDE || sagaEntity == MainEntities.WILD_GIRAN || sagaEntity == MainEntities.SAGA_BIOMAN) {
                 continue;
             }
             event.put((EntityType<? extends LivingEntity>) sagaEntity.get(), defaultSagaAttributes);
@@ -104,19 +124,28 @@ public class ModCommonEvents {
         event.put(MainEntities.NAMEK_TRADER.get(), NamekTraderEntity.createAttributes().build());
         event.put(MainEntities.CC_NAMEKIAN.get(), NamekTraderEntity.createAttributes().build());
         event.put(MainEntities.NAMEK_WARRIOR.get(), NamekWarriorEntity.createAttributes().build());
+        event.put(MainEntities.DEMON_VILLAGER.get(), DemonVillagersEntity.Resident.createAttributes().build());
+        event.put(MainEntities.TIME_PATROLLER.get(), DemonVillagersEntity.Resident.createAttributes().build());
         event.put(MainEntities.SABERTOOTH.get(), SabertoothEntity.createAttributes().build());
+        event.put(MainEntities.WILD_GIRAN.get(), SagaZFightersEntity.WildGiranEntity.createAttributes().build());
+        event.put(MainEntities.GIANT_FISH.get(), GiantFishEntity.createAttributes());
+        event.put(MainEntities.GIANT_TURTLE.get(), GiantTurtleEntity.createAttributes());
 
         event.put(MainEntities.BANDIT.get(), BanditEntity.createAttributes().build());
         event.put(MainEntities.RED_RIBBON_ROBOT1.get(), RobotEntity.createAttributes().build());
         event.put(MainEntities.RED_RIBBON_ROBOT2.get(), RobotEntity.createAttributes().build());
         event.put(MainEntities.RED_RIBBON_ROBOT3.get(), RobotEntity.createAttributes().build());
         event.put(MainEntities.RED_RIBBON_SOLDIER.get(), RedRibbonSoldierEntity.createAttributes().build());
-        event.put(MainEntities.SPACE_POD.get(), SpacePodEntity.createAttributes());
-        event.put(MainEntities.FLYING_NIMBUS.get(), FlyingNimbusEntity.createAttributes());
-        event.put(MainEntities.BLACK_NIMBUS.get(), BlackNimbusEntity.createAttributes());
+        event.put(MainEntities.SPACE_POD.get(), VehicleEntity.createAttributes());
+        event.put(MainEntities.FLYING_NIMBUS.get(), VehicleEntity.createAttributes());
+        event.put(MainEntities.BLACK_NIMBUS.get(), VehicleEntity.createAttributes());
+        event.put(MainEntities.CAR.get(), VehicleEntity.createAttributes());
+        event.put(MainEntities.CC576.get(), VehicleEntity.createAttributes());
+        event.put(MainEntities.FRIEZA_CAPSULE.get(), VehicleEntity.createAttributes());
         event.put(MainEntities.ROBOT_XENOVERSE.get(), RobotEntity.createAttributes().build());
         event.put(MainEntities.PUNCH_MACHINE.get(), PunchMachineEntity.createAttributes().build());
         event.put(MainEntities.MAJIN_SKILL.get(), MajinSkillEntity.createAttributes().build());
+        event.put(MainEntities.BIO_CELL_JR.get(), DBSagasEntity.createAttributes().build());
 
     }
 
@@ -139,6 +168,21 @@ public class ModCommonEvents {
 			((FlowerPotBlock) Blocks.FLOWER_POT).addPlant(MainBlocks.SACRED_FERN.getId(), MainBlocks.POTTED_SACRED_FERN);
 			((FlowerPotBlock) Blocks.FLOWER_POT).addPlant(MainBlocks.NAMEK_AJISSA_SAPLING.getId(), MainBlocks.POTTED_AJISSA_SAPLING);
 			((FlowerPotBlock) Blocks.FLOWER_POT).addPlant(MainBlocks.NAMEK_SACRED_SAPLING.getId(), MainBlocks.POTTED_SACRED_SAPLING);
+
+			ItemStack waterBottle = PotionUtils.setPotion(new ItemStack(Items.POTION), Potions.WATER);
+			ItemStack curativePotion = MainPotions.createCurativeFlask();
+			BrewingRecipeRegistry.addRecipe(new BrewingRecipe(
+					StrictNBTIngredient.of(waterBottle),
+					Ingredient.of(MainItems.NAMEK_MOSS.get()),
+					curativePotion));
+
+			ItemStack heartMedicine = new ItemStack(MainItems.HEART_MEDICINE.get());
+			for (var regeneration : List.of(Potions.REGENERATION, Potions.LONG_REGENERATION, Potions.STRONG_REGENERATION)) {
+				BrewingRecipeRegistry.addRecipe(new BrewingRecipe(
+						StrictNBTIngredient.of(PotionUtils.setPotion(new ItemStack(Items.POTION), regeneration)),
+						Ingredient.of(MainItems.SENZU_BEAN.get()),
+						heartMedicine));
+			}
 
 			Regions.register(new OverworldRegion(40));
 			SurfaceRuleManager.addSurfaceRules(SurfaceRuleManager.RuleCategory.OVERWORLD, Reference.MOD_ID, OverworldSurfaceRules.makeRules());

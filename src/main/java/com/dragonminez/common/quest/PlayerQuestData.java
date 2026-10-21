@@ -1,6 +1,10 @@
 package com.dragonminez.common.quest;
 
 import com.dragonminez.common.config.ConfigManager;
+import com.dragonminez.common.quest.rewards.AttributePointsReward;
+import com.dragonminez.common.quest.rewards.AttributesReward;
+import com.dragonminez.common.quest.rewards.GenericItemReward;
+import com.dragonminez.common.quest.rewards.ItemReward;
 import com.dragonminez.common.quest.rewards.TPSReward;
 import lombok.Getter;
 import lombok.Setter;
@@ -20,117 +24,54 @@ import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 
-/**
- * Per-player quest progress for all quest types (saga, sidequest, daily, event).
- * <p>
- * All quests are keyed by their string ID. Saga quests use the composite key
- * {@code "sagaId:numericId"} (e.g. {@code "saiyan_saga:1"}). Side-quests use their
- * natural string ID (e.g. {@code "roshi_basic_training"}).
- * Serialized to/from NBT under the {@code "PlayerQuestData"} key in the player's stats compound.
- *
- * @since 2.0
- * @see QuestRegistry
- */
 public class PlayerQuestData {
 
-    // ========================================================================================
-    // Progress Status
-    // ========================================================================================
-
-    /**
-     * The status of a quest for a given player.
-     * Can return NOT_STARTED (default), ACCEPTED (in progress), FAILED (waiting restart), or SUCCESS.
-     */
     public enum QuestStatus {
-        /** Quest has not been started. */
         NOT_STARTED,
-        /** Quest has been accepted and is in progress. */
         ACCEPTED,
-        /** Quest failed and is waiting restart conditions. */
         FAILED,
-        /** Quest has been completed successfully. */
         SUCCESS
     }
-
-    // ========================================================================================
-    // Internal State
-    // ========================================================================================
-
-    /** All quest progress, keyed by string quest ID. */
     private final Map<String, QuestProgress> quests = new LinkedHashMap<>();
-
-    /** Tracks which sagas the player has unlocked */
     private final Map<String, Boolean> sagaUnlockState = new HashMap<>();
-
-    /** Per-quest anchors used by elapsed start requirements. */
     private final Map<String, QuestStartRequirementTiming> startRequirementTimings = new LinkedHashMap<>();
-
-    /** NPC keys this player has made hostile through direct actions. */
     private final Set<String> hostileNpcKeys = new LinkedHashSet<>();
-
-    /** Current tracked quest key (saga:questId or sidequestId) shown in client HUD. */
     @Getter
     private String trackedQuestId = null;
-
-    /**
-     * Active story difficulty for this player (or the party they lead). Drives enemy scaling and
-     * reward/TP multipliers, and selects which quest tree is currently live.
-     */
     @Getter
     private Difficulty difficulty = Difficulty.NORMAL;
-
-    /**
-     * Whether this player has made their one-time difficulty choice. Until chosen, the quest
-     * tree shows the difficulty selection overlay. The change-difficulty wish resets this to
-     * {@code false} to reopen the selection without touching quest progress.
-     */
     @Getter
     @Setter
     private boolean difficultyChosen = false;
-
-    /**
-     * How many times this player has wiped their story with the reset-story wish. Each reset decays
-     * the TP paid out by quest rewards ({@link #tpRewardMultiplier()}); item/skill rewards are untouched.
-     */
     @Getter
     private int storyResetCount = 0;
-
-    /** Active party identifier for synchronized story progress. */
     @Getter
     private UUID activePartyId = null;
 
-    /** Leader that owns the current synchronized quest state. */
     @Getter
     private UUID partyLeaderId = null;
 
-    /** Snapshot of the current online party composition for the local player UI. */
+    @Getter
+    private UUID partyOwnerId = null;
+
     private final List<UUID> partyMemberIds = new ArrayList<>();
 
-    /** Synced flag mirroring the server party's PvP (friendly-fire) state for client-side relation checks. */
     @Getter
     private boolean partyPvpEnabled = false;
 
-    /** Pending invitation shown in the quest screen. */
+    private final List<PartyInviteData> pendingPartyInvites = new ArrayList<>();
+
+    public static final int MAX_PENDING_PARTY_INVITES = 5;
+
+    @Getter
     @Setter
-    private PartyInviteData pendingPartyInvite = null;
+    private String migratedFor = null;
 
-    // ========================================================================================
-    // Quest Progress - Accept / Complete / Reset
-    // ========================================================================================
-
-    /**
-     * Accepts a quest, marking it as in-progress.
-     *
-     * @param questId the string quest ID
-     */
     public void acceptQuest(String questId) {
         getOrCreateProgress(questId).setStatus(QuestStatus.ACCEPTED);
         clearStartRequirementTiming(questId);
     }
 
-    /**
-     * Marks a quest as failed and resets objective/reward progress for restart.
-     */
     public void failQuest(String questId) {
         QuestProgress progress = getOrCreateProgress(questId);
         progress.markFailed();
@@ -139,9 +80,6 @@ public class PlayerQuestData {
         clearStartRequirementTiming(questId);
     }
 
-    /**
-     * Restarts a previously failed quest back to in-progress.
-     */
     public void restartFailedQuest(String questId) {
         QuestProgress progress = getOrCreateProgress(questId);
         progress.resetForRestart();
@@ -149,35 +87,49 @@ public class PlayerQuestData {
         clearStartRequirementTiming(questId);
     }
 
-    /**
-     * Completes a quest, marking it as finished.
-     *
-     * @param questId the string quest ID
-     */
     public void completeQuest(String questId) {
-        getOrCreateProgress(questId).setStatus(QuestStatus.SUCCESS);
+        QuestProgress progress = getOrCreateProgress(questId);
+        progress.setStatus(QuestStatus.SUCCESS);
+        progress.recordCompletion(System.currentTimeMillis());
         clearStartRequirementTiming(questId);
     }
 
-    /**
-     * Returns whether the given quest is currently in progress.
-     */
+    public void restartCompletedQuest(String questId) {
+        QuestProgress progress = getOrCreateProgress(questId);
+        progress.resetForRestart();
+        progress.setStatus(QuestStatus.ACCEPTED);
+        clearStartRequirementTiming(questId);
+    }
+
+    public long getLastCompletedRealMs(String questId) {
+        QuestProgress progress = quests.get(questId);
+        return progress != null ? progress.getLastCompletedRealMs() : 0L;
+    }
+
+    public int getTimesCompleted(String questId) {
+        QuestProgress progress = quests.get(questId);
+        return progress != null ? progress.getTimesCompleted() : 0;
+    }
+
+    public long getQuestAcceptedGameTime(String questId) {
+        QuestProgress progress = quests.get(questId);
+        return progress != null ? progress.getAcceptedGameTime() : -1L;
+    }
+
+    public void setQuestAcceptedGameTime(String questId, long gameTime) {
+        getOrCreateProgress(questId).setAcceptedGameTime(gameTime);
+    }
+
     public boolean isQuestAccepted(String questId) {
         QuestProgress progress = quests.get(questId);
         return progress != null && progress.getStatus() == QuestStatus.ACCEPTED;
     }
 
-    /**
-     * Returns whether the given quest has been completed.
-     */
     public boolean isQuestCompleted(String questId) {
         QuestProgress progress = quests.get(questId);
         return progress != null && progress.getStatus() == QuestStatus.SUCCESS;
     }
 
-    /**
-     * Returns the status of a given quest.
-     */
     public QuestStatus getQuestStatus(String questId) {
         QuestProgress progress = quests.get(questId);
         return progress != null ? progress.getStatus() : QuestStatus.NOT_STARTED;
@@ -192,70 +144,43 @@ public class PlayerQuestData {
         }
         return failed;
     }
-
-    /**
-     * Resets all progress for a given quest.
-     */
     public void resetQuest(String questId) {
         quests.remove(questId);
         clearStartRequirementTiming(questId);
     }
-
-    /**
-     * Sets the active story difficulty. Progress is a single shared tree independent of difficulty,
-     * so this only changes the scaling/reward label.
-     */
     public void setDifficulty(Difficulty newDifficulty) {
         if (newDifficulty == null || newDifficulty == difficulty) return;
         difficulty = newDifficulty;
     }
-
-    /**
-     * Reopens the one-time difficulty selection without touching quest progress
-     * (used by the change-difficulty Dragon wish).
-     */
     public void requestDifficultyReselect() {
         this.difficultyChosen = false;
     }
-
-    /**
-     * Resets all quest progress.
-     */
     public void resetAll() {
         clearActiveQuestState();
     }
-
-    /**
-     * Records a story wipe done through the reset-story wish, decaying future quest TP payouts.
-     * Admin resets ({@code /dmzstory reset}) deliberately do not count.
-     */
     public void markStoryReset() {
         storyResetCount++;
     }
 
-    /** Clears the reset-story decay (full character wipes start from a clean slate). */
     public void clearStoryResets() {
         storyResetCount = 0;
     }
 
-    /**
-     * TP payout factor for quest rewards: {@code storyResetTPMultiplier ^ storyResetCount}
-     * (100% / 50% / 25% ... with the default config value).
-     */
     public double tpRewardMultiplier() {
         if (storyResetCount <= 0) return 1.0;
         double perReset = ConfigManager.getServerConfig().getGameplay().getStoryResetTPMultiplier();
         return Math.pow(perReset, storyResetCount);
     }
 
-    /**
-     * Reward multiplier to hand to {@link QuestReward#giveReward(net.minecraft.server.level.ServerPlayer, double)}
-     * and its description counterpart. Only TP rewards decay on story resets — items, skills and
-     * transformations stay at full value so replaying the story still works as intended.
-     */
     public double rewardMultiplierFor(QuestReward reward) {
-        double multiplier = difficulty.questRewardMultiplier();
-        return reward instanceof TPSReward ? multiplier * tpRewardMultiplier() : multiplier;
+        return rewardMultiplierFor(reward, difficulty);
+    }
+
+    public double rewardMultiplierFor(QuestReward reward, Difficulty rewardDifficulty) {
+        double multiplier = rewardDifficulty.questRewardMultiplier();
+        boolean scaledByResets = reward instanceof TPSReward || reward instanceof AttributesReward
+                || reward instanceof AttributePointsReward || reward instanceof ItemReward || reward instanceof GenericItemReward;
+        return scaledByResets ? multiplier * tpRewardMultiplier() : multiplier;
     }
 
     private void clearActiveQuestState() {
@@ -266,9 +191,6 @@ public class PlayerQuestData {
         trackedQuestId = null;
     }
 
-    /**
-     * Resets all quest progress for quests belonging to the given saga (keys starting with "sagaId:").
-     */
     public void resetSaga(String sagaId) {
         String prefix = sagaId + ":";
         quests.keySet().removeIf(key -> key.startsWith(prefix));
@@ -314,9 +236,6 @@ public class PlayerQuestData {
         hostileNpcKeys.remove(npcKey);
     }
 
-    /**
-     * Returns the set of all quest IDs that have been accepted (in progress).
-     */
     public Set<String> getAcceptedQuestIds() {
         Set<String> accepted = new LinkedHashSet<>();
         for (Map.Entry<String, QuestProgress> entry : quests.entrySet()) {
@@ -327,9 +246,6 @@ public class PlayerQuestData {
         return accepted;
     }
 
-    /**
-     * Returns the set of all quest IDs that have been completed.
-     */
     public Set<String> getCompletedQuestIds() {
         Set<String> completed = new LinkedHashSet<>();
         for (Map.Entry<String, QuestProgress> entry : quests.entrySet()) {
@@ -344,9 +260,6 @@ public class PlayerQuestData {
     // Objective Progress
     // ========================================================================================
 
-    /**
-     * Sets the progress value for a specific objective within a quest.
-     */
     public void setObjectiveProgress(String questId, int objectiveIndex, int progress) {
         getOrCreateProgress(questId).setObjectiveProgress(objectiveIndex, progress);
     }
@@ -374,9 +287,6 @@ public class PlayerQuestData {
         return progress != null ? progress.getFailureCount() : 0;
     }
 
-    /**
-     * Returns the progress value for a specific objective within a quest.
-     */
     public int getObjectiveProgress(String questId, int objectiveIndex) {
         QuestProgress progress = quests.get(questId);
         return progress != null ? progress.getObjectiveProgress(objectiveIndex) : 0;
@@ -386,35 +296,83 @@ public class PlayerQuestData {
     // Reward Claims
     // ========================================================================================
 
-    /**
-     * Marks a reward as claimed for a given quest.
-     */
     public void claimReward(String questId, int rewardIndex) {
         getOrCreateProgress(questId).claimReward(rewardIndex);
     }
 
-    /**
-     * Returns whether a reward has been claimed for a given quest.
-     */
     public boolean isRewardClaimed(String questId, int rewardIndex) {
         QuestProgress progress = quests.get(questId);
         return progress != null && progress.isRewardClaimed(rewardIndex);
+    }
+
+    public boolean hasAnyRewardClaim(String questId) {
+        QuestProgress progress = quests.get(questId);
+        return progress != null && progress.rewardsClaimed.containsValue(Boolean.TRUE);
+    }
+
+    public void claimAllRewardSlots(String questId, int rewardCount) {
+        QuestProgress progress = getOrCreateProgress(questId);
+        for (int i = 0; i < rewardCount; i++) progress.claimReward(i);
+    }
+
+    public void completeWithoutRewards(String questId, int rewardCount) {
+        QuestProgress progress = getOrCreateProgress(questId);
+        progress.setStatus(QuestStatus.SUCCESS);
+        progress.recordCompletion(System.currentTimeMillis());
+        for (int i = 0; i < rewardCount; i++) progress.claimReward(i);
+        clearStartRequirementTiming(questId);
+    }
+
+    public int getHighestClaimedRewardIndex(String questId) {
+        QuestProgress progress = quests.get(questId);
+        int highest = -1;
+        if (progress == null) return highest;
+        for (Map.Entry<Integer, Boolean> entry : progress.rewardsClaimed.entrySet()) {
+            if (Boolean.TRUE.equals(entry.getValue())) highest = Math.max(highest, entry.getKey());
+        }
+        return highest;
+    }
+
+    public Map<Integer, Integer> getObjectiveRequiredSnapshot(String questId) {
+        QuestProgress progress = quests.get(questId);
+        return progress != null ? new HashMap<>(progress.objectiveRequired) : new HashMap<>();
+    }
+
+    public void resetObjectiveProgress(String questId) {
+        QuestProgress progress = quests.get(questId);
+        if (progress != null) progress.objectiveProgress.clear();
+    }
+
+    public String getAcceptedDimension(String questId) {
+        QuestProgress progress = quests.get(questId);
+        return progress != null ? progress.getAcceptedDimension() : null;
+    }
+
+    public void setAcceptedDimension(String questId, String dimension) {
+        getOrCreateProgress(questId).setAcceptedDimension(dimension);
+    }
+
+    public String getObjectiveSignature(String questId) {
+        QuestProgress progress = quests.get(questId);
+        return progress != null ? progress.getObjectiveSignature() : null;
+    }
+
+    public void setObjectiveSignature(String questId, String signature) {
+        getOrCreateProgress(questId).setObjectiveSignature(signature);
+    }
+
+    public Set<String> getKnownQuestIds() {
+        return new LinkedHashSet<>(quests.keySet());
     }
 
     // ========================================================================================
     // Saga Unlock State
     // ========================================================================================
 
-    /**
-     * Sets the unlock state for a saga.
-     */
     public void setSagaUnlocked(String sagaId, boolean unlocked) {
         sagaUnlockState.put(sagaId, unlocked);
     }
 
-    /**
-     * Returns whether a saga is locked or not
-     */
     public boolean isSagaLocked(String sagaId) {
         return sagaUnlockState.getOrDefault(sagaId, false);
     }
@@ -423,13 +381,6 @@ public class PlayerQuestData {
     // Saga Quest Keys
     // ========================================================================================
 
-    /**
-     * Builds the composite key used for saga quests: {@code "sagaId:numericId"}.
-     *
-     * @param sagaId  the saga identifier
-     * @param questId the numeric quest ID within the saga
-     * @return the composite string key
-     */
     public static String sagaQuestKey(String sagaId, int questId) {
         return sagaId + ":" + questId;
     }
@@ -450,15 +401,14 @@ public class PlayerQuestData {
         return playerId != null && playerId.equals(partyLeaderId);
     }
 
-    public void setPartyState(UUID partyId, UUID leaderId, Collection<UUID> members, boolean pvpEnabled) {
+    public boolean isPartyOwner(UUID playerId) {
+        return playerId != null && playerId.equals(partyOwnerId != null ? partyOwnerId : partyLeaderId);
+    }
+
+    public void setPartyState(UUID partyId, UUID leaderId, UUID ownerId, Collection<UUID> members, boolean pvpEnabled) {
         this.activePartyId = partyId;
-        this.partyLeaderId = leaderId;
         this.partyPvpEnabled = pvpEnabled;
         this.partyMemberIds.clear();
-
-        if (leaderId != null) {
-            this.partyMemberIds.add(leaderId);
-        }
 
         if (members != null) {
             for (UUID memberId : members) {
@@ -466,56 +416,59 @@ public class PlayerQuestData {
                 this.partyMemberIds.add(memberId);
             }
         }
+        this.partyLeaderId = leaderId != null && partyMemberIds.contains(leaderId) ? leaderId : null;
+        this.partyOwnerId = ownerId != null && partyMemberIds.contains(ownerId) ? ownerId : null;
     }
 
     public void clearPartyState() {
         this.activePartyId = null;
         this.partyLeaderId = null;
+        this.partyOwnerId = null;
         this.partyPvpEnabled = false;
         this.partyMemberIds.clear();
     }
 
+    public List<PartyInviteData> getPendingPartyInvites() {
+        pendingPartyInvites.removeIf(PartyInviteData::isExpired);
+        return Collections.unmodifiableList(pendingPartyInvites);
+    }
+
     public PartyInviteData getPendingPartyInviteData() {
-        return pendingPartyInvite;
+        List<PartyInviteData> invites = getPendingPartyInvites();
+        return invites.isEmpty() ? null : invites.get(invites.size() - 1);
+    }
+
+    public PartyInviteData getPendingPartyInvite(UUID partyId) {
+        if (partyId == null) return getPendingPartyInviteData();
+        for (PartyInviteData invite : getPendingPartyInvites()) {
+            if (partyId.equals(invite.getPartyId())) return invite;
+        }
+        return null;
     }
 
     public boolean hasPendingPartyInvite() {
-        return pendingPartyInvite != null;
+        return !getPendingPartyInvites().isEmpty();
+    }
+
+    public void addPendingPartyInvite(PartyInviteData invite) {
+        if (invite == null) return;
+        pendingPartyInvites.removeIf(existing -> existing.isExpired()
+                || (invite.getPartyId() != null && invite.getPartyId().equals(existing.getPartyId()))
+                || (invite.getInviterUUID() != null && invite.getInviterUUID().equals(existing.getInviterUUID())));
+        pendingPartyInvites.add(invite);
+        while (pendingPartyInvites.size() > MAX_PENDING_PARTY_INVITES) pendingPartyInvites.remove(0);
+    }
+
+    public void removePendingPartyInvite(UUID partyId) {
+        if (partyId == null) {
+            if (!pendingPartyInvites.isEmpty()) pendingPartyInvites.remove(pendingPartyInvites.size() - 1);
+            return;
+        }
+        pendingPartyInvites.removeIf(invite -> partyId.equals(invite.getPartyId()));
     }
 
 	public void clearPendingPartyInvite() {
-        this.pendingPartyInvite = null;
-    }
-
-    /**
-     * Forward-merges another player's (the party leader's) live quest tree into this one. Progress
-     * is only ever advanced, never rolled back: per quest the more-advanced status wins
-     * ({@code NOT_STARTED < ACCEPTED < SUCCESS}) and each objective takes the higher progress. Quests
-     * this player already has that the other lacks are left untouched. The other's difficulty is
-     * adopted. Personal reward-claim flags are preserved (claims are per-member).
-     */
-    public void mergeQuestStateFrom(PlayerQuestData other) {
-        if (other == null) return;
-
-        this.difficulty = other.difficulty;
-
-        for (QuestProgress otherProgress : other.quests.values()) {
-            QuestProgress own = quests.get(otherProgress.getQuestId());
-            if (own == null) {
-                own = new QuestProgress(otherProgress.getQuestId());
-                quests.put(own.getQuestId(), own);
-            }
-            own.mergeForwardFrom(otherProgress);
-        }
-
-        for (Map.Entry<String, Boolean> entry : other.sagaUnlockState.entrySet()) {
-            if (entry.getValue()) sagaUnlockState.put(entry.getKey(), true);
-            else sagaUnlockState.putIfAbsent(entry.getKey(), false);
-        }
-
-        if (trackedQuestId == null && other.trackedQuestId != null) {
-            trackedQuestId = other.trackedQuestId;
-        }
+        this.pendingPartyInvites.clear();
     }
 
     // ========================================================================================
@@ -605,9 +558,6 @@ public class PlayerQuestData {
         }
     }
 
-    /**
-     * Serializes the active difficulty plus the single quest tree.
-     */
     private CompoundTag serializeFullQuestState() {
         CompoundTag tag = new CompoundTag();
         tag.putString("difficulty", difficulty.name());
@@ -615,11 +565,6 @@ public class PlayerQuestData {
         return tag;
     }
 
-    /**
-     * Restores the single quest tree, transparently migrating the legacy per-difficulty
-     * {@code difficultyStates} layout (keep the active difficulty's tree) and the older
-     * single-tree + {@code hardModeEnabled} layout.
-     */
     private void deserializeFullQuestState(CompoundTag tag) {
         clearActiveQuestState();
 
@@ -651,13 +596,13 @@ public class PlayerQuestData {
     // NBT Serialization
     // ========================================================================================
 
-    /**
-     * Serializes all quest progress to NBT.
-     */
     public CompoundTag serializeNBT() {
         CompoundTag tag = serializeFullQuestState();
         tag.putBoolean("difficultyChosen", difficultyChosen);
         tag.putInt("storyResetCount", storyResetCount);
+        if (migratedFor != null && !migratedFor.isBlank()) {
+            tag.putString("migratedFor", migratedFor);
+        }
 
         CompoundTag partyTag = new CompoundTag();
         if (activePartyId != null) {
@@ -665,6 +610,9 @@ public class PlayerQuestData {
         }
         if (partyLeaderId != null) {
             partyTag.putString("leaderId", partyLeaderId.toString());
+        }
+        if (partyOwnerId != null) {
+            partyTag.putString("ownerId", partyOwnerId.toString());
         }
         if (partyPvpEnabled) {
             partyTag.putBoolean("pvpEnabled", true);
@@ -676,8 +624,10 @@ public class PlayerQuestData {
             }
             partyTag.put("members", membersTag);
         }
-        if (pendingPartyInvite != null) {
-            partyTag.put("pendingInvite", pendingPartyInvite.serializeNBT());
+        if (!pendingPartyInvites.isEmpty()) {
+            ListTag invitesTag = new ListTag();
+            for (PartyInviteData invite : pendingPartyInvites) invitesTag.add(invite.serializeNBT());
+            partyTag.put("pendingInvites", invitesTag);
         }
         if (!partyTag.isEmpty()) {
             tag.put("partyState", partyTag);
@@ -685,20 +635,18 @@ public class PlayerQuestData {
 
         return tag;
     }
-
-    /**
-     * Deserializes quest progress from NBT.
-     */
     public void deserializeNBT(CompoundTag tag) {
         deserializeFullQuestState(tag);
         difficultyChosen = tag.getBoolean("difficultyChosen");
         storyResetCount = Math.max(0, tag.getInt("storyResetCount"));
+        migratedFor = tag.contains("migratedFor", Tag.TAG_STRING) ? tag.getString("migratedFor") : null;
 
         activePartyId = null;
         partyLeaderId = null;
+        partyOwnerId = null;
         partyPvpEnabled = false;
         partyMemberIds.clear();
-        pendingPartyInvite = null;
+        pendingPartyInvites.clear();
 
         if (tag.contains("partyState", Tag.TAG_COMPOUND)) {
             CompoundTag partyTag = tag.getCompound("partyState");
@@ -708,6 +656,9 @@ public class PlayerQuestData {
             }
             if (partyTag.contains("leaderId", Tag.TAG_STRING)) {
                 partyLeaderId = parseUuid(partyTag.getString("leaderId"));
+            }
+            if (partyTag.contains("ownerId", Tag.TAG_STRING)) {
+                partyOwnerId = parseUuid(partyTag.getString("ownerId"));
             }
             partyPvpEnabled = partyTag.getBoolean("pvpEnabled");
             if (partyTag.contains("members", Tag.TAG_LIST)) {
@@ -719,11 +670,14 @@ public class PlayerQuestData {
                     }
                 }
             }
-            if (partyLeaderId != null && !partyMemberIds.contains(partyLeaderId)) {
-                partyMemberIds.add(0, partyLeaderId);
-            }
-            if (partyTag.contains("pendingInvite", Tag.TAG_COMPOUND)) {
-                pendingPartyInvite = PartyInviteData.deserialize(partyTag.getCompound("pendingInvite"));
+            if (partyTag.contains("pendingInvites", Tag.TAG_LIST)) {
+                ListTag invitesTag = partyTag.getList("pendingInvites", Tag.TAG_COMPOUND);
+                for (int i = 0; i < invitesTag.size() && pendingPartyInvites.size() < MAX_PENDING_PARTY_INVITES; i++) {
+                    pendingPartyInvites.add(PartyInviteData.deserialize(invitesTag.getCompound(i)));
+                }
+            } else if (partyTag.contains("pendingInvite", Tag.TAG_COMPOUND)) {
+                // Saves from before invitations could stack.
+                pendingPartyInvites.add(PartyInviteData.deserialize(partyTag.getCompound("pendingInvite")));
             }
         }
     }
@@ -732,9 +686,6 @@ public class PlayerQuestData {
     // Quest Progress Inner Class
     // ========================================================================================
 
-    /**
-     * Tracks progress for a single quest: status, per-objective progress, and reward claims.
-     */
     public static class QuestProgress {
 
         @Getter
@@ -752,6 +703,19 @@ public class PlayerQuestData {
         @Getter
         @Setter
         private Difficulty difficulty = Difficulty.NORMAL;
+        @Getter
+        private long lastCompletedRealMs = 0L;
+        @Getter
+        private int timesCompleted = 0;
+        @Getter
+        @Setter
+        private long acceptedGameTime = -1L;
+        @Getter
+        @Setter
+        private String acceptedDimension = null;
+        @Getter
+        @Setter
+        private String objectiveSignature = null;
 
         public QuestProgress(String questId) {
             this.questId = questId;
@@ -782,49 +746,13 @@ public class PlayerQuestData {
             return rewardsClaimed.getOrDefault(index, false);
         }
 
-        public Map<Integer, Boolean> copyRewardClaims() {
-            return new HashMap<>(rewardsClaimed);
-        }
-
-        public void clearRewardClaims() {
-            rewardsClaimed.clear();
-        }
-
-        public void restoreRewardClaims(Map<Integer, Boolean> claims) {
-            if (claims != null) rewardsClaimed.putAll(claims);
-        }
-
-        /**
-         * Advances this progress toward {@code other} without ever regressing: the more-advanced
-         * status wins, objectives take the higher value, and missing objective requirements are
-         * adopted. Reward-claim flags are left untouched (they are personal per member).
-         */
-        public void mergeForwardFrom(QuestProgress other) {
-            if (other == null) return;
-            if (statusRank(other.status) > statusRank(this.status)) {
-                this.status = other.status;
-                this.difficulty = other.difficulty;
-            }
-            for (Map.Entry<Integer, Integer> entry : other.objectiveProgress.entrySet()) {
-                int current = objectiveProgress.getOrDefault(entry.getKey(), 0);
-                if (entry.getValue() > current) objectiveProgress.put(entry.getKey(), entry.getValue());
-            }
-            for (Map.Entry<Integer, Integer> entry : other.objectiveRequired.entrySet()) {
-                objectiveRequired.putIfAbsent(entry.getKey(), entry.getValue());
-            }
-        }
-
-        private static int statusRank(QuestStatus status) {
-            return switch (status) {
-                case NOT_STARTED -> 0;
-                case FAILED -> 1;
-                case ACCEPTED -> 2;
-                case SUCCESS -> 3;
-            };
-        }
-
         public void markFailed() {
             failureCount++;
+        }
+
+        public void recordCompletion(long realTimeMs) {
+            this.lastCompletedRealMs = realTimeMs;
+            this.timesCompleted++;
         }
 
         public void resetForRestart() {
@@ -850,6 +778,11 @@ public class PlayerQuestData {
             tag.put("objectiveRequirements", objectiveRequirementsTag);
             tag.putInt("failureCount", failureCount);
             tag.putString("difficulty", difficulty.name());
+            tag.putLong("lastCompletedRealMs", lastCompletedRealMs);
+            tag.putInt("timesCompleted", timesCompleted);
+            tag.putLong("acceptedGameTime", acceptedGameTime);
+            if (acceptedDimension != null) tag.putString("acceptedDimension", acceptedDimension);
+            if (objectiveSignature != null) tag.putString("objectiveSignature", objectiveSignature);
 
             CompoundTag rewardsTag = new CompoundTag();
             for (Map.Entry<Integer, Boolean> entry : rewardsClaimed.entrySet()) {
@@ -872,15 +805,34 @@ public class PlayerQuestData {
 
             CompoundTag objectivesTag = tag.getCompound("objectives");
             for (String key : objectivesTag.getAllKeys()) {
-                progress.objectiveProgress.put(Integer.parseInt(key), objectivesTag.getInt(key));
+                Integer index = parseIndex(key);
+                if (index != null) progress.objectiveProgress.put(index, Math.max(0, objectivesTag.getInt(key)));
             }
 
             CompoundTag objectiveRequirementsTag = tag.getCompound("objectiveRequirements");
             for (String key : objectiveRequirementsTag.getAllKeys()) {
-                progress.objectiveRequired.put(Integer.parseInt(key), objectiveRequirementsTag.getInt(key));
+                Integer index = parseIndex(key);
+                if (index != null) progress.objectiveRequired.put(index, objectiveRequirementsTag.getInt(key));
+            }
+            if (tag.contains("acceptedDimension", Tag.TAG_STRING)) {
+                progress.acceptedDimension = tag.getString("acceptedDimension");
+            }
+            if (tag.contains("objectiveSignature", Tag.TAG_STRING)) {
+                progress.objectiveSignature = tag.getString("objectiveSignature");
             }
             if (tag.contains("failureCount", Tag.TAG_INT)) {
                 progress.failureCount = tag.getInt("failureCount");
+            }
+            if (tag.contains("lastCompletedRealMs", Tag.TAG_LONG)) {
+                progress.lastCompletedRealMs = tag.getLong("lastCompletedRealMs");
+            }
+            if (tag.contains("timesCompleted", Tag.TAG_INT)) {
+                progress.timesCompleted = tag.getInt("timesCompleted");
+            }
+            if (tag.contains("acceptedGameTime", Tag.TAG_LONG)) {
+                progress.acceptedGameTime = tag.getLong("acceptedGameTime");
+            } else {
+                progress.acceptedGameTime = -1L;
             }
             if (tag.contains("difficulty", Tag.TAG_STRING)) {
                 progress.difficulty = Difficulty.fromName(tag.getString("difficulty"));
@@ -890,10 +842,20 @@ public class PlayerQuestData {
 
             CompoundTag rewardsTag = tag.getCompound("rewards");
             for (String key : rewardsTag.getAllKeys()) {
-                progress.rewardsClaimed.put(Integer.parseInt(key), rewardsTag.getBoolean(key));
+                Integer index = parseIndex(key);
+                if (index != null) progress.rewardsClaimed.put(index, rewardsTag.getBoolean(key));
             }
 
             return progress;
+        }
+
+        private static Integer parseIndex(String key) {
+            try {
+                int value = Integer.parseInt(key);
+                return value >= 0 ? value : null;
+            } catch (NumberFormatException e) {
+                return null;
+            }
         }
     }
 

@@ -1,5 +1,6 @@
 package com.dragonminez.mixin.common;
 
+import com.dragonminez.common.stats.FormTransition;
 import com.dragonminez.common.stats.StatsCapability;
 import com.dragonminez.common.stats.StatsProvider;
 import net.minecraft.world.entity.Entity;
@@ -22,8 +23,10 @@ public abstract class EntityMixin {
 		if (!(self instanceof Player player)) return;
 
 		StatsProvider.get(StatsCapability.INSTANCE, player).ifPresent(data -> {
-			Float[] scaling = data.getCharacter().getResolvedModelScaling();
-			float currentScaleY = scaling[1];
+			FormTransition transition = data.getFormTransition();
+			float currentScaleY = transition.isReady()
+					? transition.modelScale(data.getCharacter(), transition.now())[1]
+					: data.getCharacter().getResolvedModelScaling()[1];
 
 			final float BASE_SCALE = 0.9375f;
 			float ratioY = currentScaleY / BASE_SCALE;

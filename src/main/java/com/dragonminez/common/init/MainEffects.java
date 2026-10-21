@@ -25,6 +25,7 @@ public class MainEffects {
 	public static final RegistryObject<MobEffect> KI_SLOW = EFFECTS.register("ki_slow", () ->
 			new DMZEffect(false).addAttributeModifier(Attributes.MOVEMENT_SPEED, "E21BB9D6-BF78-4D05-83DE-497DA4664A43",
 					-0.9D, AttributeModifier.Operation.MULTIPLY_TOTAL));
+	public static final RegistryObject<MobEffect> KNOCKOUT = EFFECTS.register("knockout", () -> new DMZEffect(MobEffectCategory.HARMFUL, 0xD62020).uncurable());
 
 	// Placeholders, info for the player | Neutral
 	public static final RegistryObject<MobEffect> DASH_CD = EFFECTS.register("dash_cd", DMZEffect::new);
@@ -34,9 +35,14 @@ public class MainEffects {
 	public static final RegistryObject<MobEffect> FUSION_CD = EFFECTS.register("fusion_cd", DMZEffect::new);
 	public static final RegistryObject<MobEffect> SAIYAN_PASSIVE = EFFECTS.register("saiyan_passive", DMZEffect::new);
 	public static final RegistryObject<MobEffect> BIOANDROID_PASSIVE = EFFECTS.register("bioandroid_passive", DMZEffect::new);
+	public static final RegistryObject<MobEffect> BIOANDROID_EXPLODE_CD = EFFECTS.register("bioandroid_explode_cd", DMZEffect::new);
 	public static final RegistryObject<MobEffect> MAJIN_REVIVE = EFFECTS.register("majin_revive", DMZEffect::new);
 	public static final RegistryObject<MobEffect> KI_BLAST_CD = EFFECTS.register("ki_blast_cd", DMZEffect::new);
 	public static final RegistryObject<MobEffect> POISE_CD = EFFECTS.register("poise_cd", DMZEffect::new);
+	public static final RegistryObject<MobEffect> GOD_RITUAL_CD = EFFECTS.register("god_ritual_cd", DMZEffect::new);
+	public static final RegistryObject<MobEffect> KI_TRANSFER_DRAIN = EFFECTS.register("ki_transfer_drain", () -> new DMZEffect(MobEffectCategory.HARMFUL, 0x5A6B85));
+	public static final RegistryObject<MobEffect> KI_TRANSFER_BOOST = EFFECTS.register("ki_transfer_boost", () -> new DMZEffect(MobEffectCategory.BENEFICIAL, 0x5CE1FF));
+	public static final RegistryObject<MobEffect> ADRENALINE = EFFECTS.register("adrenaline", () -> new DMZEffect(true));
 
 	// Status Effects | Beneficial
 	public static final RegistryObject<MobEffect> KICHARGE = EFFECTS.register("kicharge", () -> new DMZEffect(true));
@@ -54,6 +60,20 @@ public class MainEffects {
 	public static final RegistryObject<MobEffect> TP_GAIN = EFFECTS.register("tp_gain", () -> new DMZEffect(MobEffectCategory.BENEFICIAL, 0xF29B38));
 	public static final RegistryObject<MobEffect> MASTERY_GAIN = EFFECTS.register("mastery_gain", () -> new DMZEffect(MobEffectCategory.BENEFICIAL, 0x9B59D0));
 	public static final RegistryObject<MobEffect> MUTANT = EFFECTS.register("mutant", () -> new DMZEffect(MobEffectCategory.BENEFICIAL, 0xB14CE0));
+	public static final RegistryObject<MobEffect> KAMI_BLESS = EFFECTS.register("kami_bless", () -> new DMZEffect(MobEffectCategory.BENEFICIAL, 0x7FE08A));
+	public static final RegistryObject<MobEffect> MEDI_SHELL = EFFECTS.register("medi_shell", () -> new DMZEffect(MobEffectCategory.BENEFICIAL, 0xE0559B));
+
+	// Raids
+	public static final RegistryObject<MobEffect> RAID_WRATH = EFFECTS.register("raid_wrath", () -> new DMZEffect(MobEffectCategory.HARMFUL, 0x9B30D9));
+	public static final RegistryObject<MobEffect> WORLD_HERO = EFFECTS.register("world_hero", () -> new DMZEffect(MobEffectCategory.BENEFICIAL, 0xF2C438));
+
+	// Farming plant buffs
+	public static final RegistryObject<MobEffect> OOZARU_ROOT = EFFECTS.register("oozaru_root", () -> new DMZEffect(MobEffectCategory.BENEFICIAL, 0xC0392B));
+	public static final RegistryObject<MobEffect> KATCHIN_SPROUT = EFFECTS.register("katchin_sprout", () -> new DMZEffect(MobEffectCategory.BENEFICIAL, 0x95A5A6));
+	public static final RegistryObject<MobEffect> METEOR_FLOWER = EFFECTS.register("meteor_flower", () -> new DMZEffect(MobEffectCategory.BENEFICIAL, 0xE67E22));
+	public static final RegistryObject<MobEffect> AURA_LILY = EFFECTS.register("aura_lily", () -> new DMZEffect(MobEffectCategory.BENEFICIAL, 0xF1C40F));
+	public static final RegistryObject<MobEffect> HERMIT_FERN = EFFECTS.register("hermit_fern", () -> new DMZEffect(MobEffectCategory.BENEFICIAL, 0x27AE60));
+	public static final RegistryObject<MobEffect> KAIOSHIN_FRUIT = EFFECTS.register("kaioshin_fruit", () -> new DMZEffect(MobEffectCategory.BENEFICIAL, 0x3C7DFF));
 
     public static void register(IEventBus eventBus) { EFFECTS.register(eventBus); }
 }

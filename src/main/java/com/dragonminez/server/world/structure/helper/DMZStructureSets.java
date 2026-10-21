@@ -4,6 +4,7 @@ import com.dragonminez.Reference;
 import com.dragonminez.common.init.MainTags;
 import com.dragonminez.server.world.biome.NamekBiomes;
 import com.dragonminez.server.world.biome.SacredKaiBiomes;
+import com.dragonminez.server.world.structure.BossStructures.GomahCradleShape;
 import com.dragonminez.server.world.structure.placement.BiomeAwareUniquePlacement;
 import com.dragonminez.server.world.structure.placement.FixedStructurePlacement;
 import com.dragonminez.server.world.structure.placement.UniqueNearSpawnPlacement;
@@ -17,8 +18,12 @@ import net.minecraft.resources.ResourceKey;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.tags.BiomeTags;
 import net.minecraft.world.level.biome.Biome;
+import net.minecraft.world.level.block.Rotation;
 import net.minecraft.world.level.levelgen.structure.Structure;
+import net.minecraft.world.level.levelgen.structure.BuiltinStructureSets;
 import net.minecraft.world.level.levelgen.structure.StructureSet;
+import net.minecraft.world.level.levelgen.structure.placement.RandomSpreadStructurePlacement;
+import net.minecraft.world.level.levelgen.structure.placement.RandomSpreadType;
 import net.minecraft.world.level.levelgen.structure.placement.StructurePlacement;
 
 import java.util.Optional;
@@ -31,7 +36,13 @@ public class DMZStructureSets {
 			CELL_ARENA = createKey("cell_arena"), FRIEZA_SHIP = createKey("frieza_ship"),
 			PICCOLO_HOUSE = createKey("piccolo_house"), OLDKAI_PILLAR = createKey("oldkai_pillar"),
 			YAMCHA_HOUSE = createKey("yamcha_house"), TRUNKS_SHIP = createKey("trunks_ship"),
-			VEGETA_POD = createKey("vegeta_pod");
+			VEGETA_POD = createKey("vegeta_pod"),
+			BABA_PALACE = createKey("baba_palace"), TREE_OF_MIGHT = createKey("tree_of_might"),
+			SAIYAN_CRATER = createKey("saiyan_crater"), GETE_STAR = createKey("gete_star"),
+			DEMON_VILLAGE = createKey("demon_village"),
+			GOMAH_CAMP = createKey("gomah_camp"), BUU_HOUSE = createKey("buu_house"),
+			GOMAH_CRADLE = createKey("gomah_cradle"), RED_RIBBON_BASE = createKey("red_ribbon_base"),
+			BUDOKAI_TENKAICHI = createKey("budokai_tenkaichi");
 
 	public static void bootstrap(BootstapContext<StructureSet> context) {
 		HolderGetter<Structure> structures = context.lookup(Registries.STRUCTURE);
@@ -41,6 +52,10 @@ public class DMZStructureSets {
 				12345678, biomes.getOrThrow(MainTags.Biomes.IS_PLAINSLIKE));
 		unique(context, ROSHI_HOUSE, structures.getOrThrow(DMZStructures.ROSHI_HOUSE),
 				87654321, biomes.getOrThrow(BiomeTags.IS_OCEAN));
+		unique(context, BABA_PALACE, structures.getOrThrow(DMZStructures.BABA_PALACE),
+				31415926, biomes.getOrThrow(BiomeTags.IS_OCEAN));
+		unique(context, BUDOKAI_TENKAICHI, structures.getOrThrow(DMZStructures.BUDOKAI_TENKAICHI),
+				BUDOKAI_TENKAICHI_SALT, DMZStructures.budokaiOceans(biomes));
 
 		context.register(TIMECHAMBER, new StructureSet(
 				structures.getOrThrow(DMZStructures.TIMECHAMBER),
@@ -69,7 +84,7 @@ public class DMZStructureSets {
 		));
 
 		unique(context, GERO_LAB, structures.getOrThrow(DMZStructures.GERO_LAB),
-				99887766, biomes.getOrThrow(MainTags.Biomes.IS_ROCKYBIOME));
+				99887766, biomes.getOrThrow(MainTags.Biomes.IS_GEROLAB));
 		unique(context, BABIDI, structures.getOrThrow(DMZStructures.BABIDI),
 				18273645, biomes.getOrThrow(MainTags.Biomes.IS_MOUNTAINLIKE));
 		unique(context, CELL_ARENA, structures.getOrThrow(DMZStructures.CELL_ARENA),
@@ -77,7 +92,7 @@ public class DMZStructureSets {
 		unique(context, FRIEZA_SHIP, structures.getOrThrow(DMZStructures.FRIEZA_SHIP),
 				24681357, HolderSet.direct(biomes.getOrThrow(NamekBiomes.AJISSA_PLAINS)));
 		unique(context, PICCOLO_HOUSE, structures.getOrThrow(DMZStructures.PICCOLO_HOUSE),
-				36925814, biomes.getOrThrow(MainTags.Biomes.IS_LAND));
+				36925814, biomes.getOrThrow(MainTags.Biomes.IS_PLAINSLIKE));
 		unique(context, OLDKAI_PILLAR, structures.getOrThrow(DMZStructures.OLDKAI_PILLAR),
 				41258963, HolderSet.direct(biomes.getOrThrow(SacredKaiBiomes.SACREDKAI_PLAINS)));
 		unique(context, YAMCHA_HOUSE, structures.getOrThrow(DMZStructures.YAMCHA_HOUSE),
@@ -86,10 +101,111 @@ public class DMZStructureSets {
 				66332211, biomes.getOrThrow(MainTags.Biomes.IS_LAND));
 		unique(context, VEGETA_POD, structures.getOrThrow(DMZStructures.VEGETA_POD),
 				77889900, biomes.getOrThrow(MainTags.Biomes.IS_ROCKYBIOME));
+		unique(context, BUU_HOUSE, structures.getOrThrow(DMZStructures.BUU_HOUSE),
+				71727374, biomes.getOrThrow(MainTags.Biomes.IS_PLAINSLIKE));
+		unique(context, TREE_OF_MIGHT, structures.getOrThrow(DMZStructures.TREE_OF_MIGHT),
+				TREE_OF_MIGHT_SALT, biomes.getOrThrow(MainTags.Biomes.IS_SWAMPLIKE), TREE_OF_MIGHT_MIN_DISTANCE);
+		unique(context, GETE_STAR, structures.getOrThrow(DMZStructures.GETE_STAR),
+				GETE_STAR_SALT, HolderSet.direct(biomes.getOrThrow(NamekBiomes.AJISSA_PLAINS), biomes.getOrThrow(NamekBiomes.SACRED_LAND)),
+				GETE_STAR_MIN_DISTANCE);
+
+		HolderGetter<StructureSet> sets = context.lookup(Registries.STRUCTURE_SET);
+		context.register(SAIYAN_CRATER, new StructureSet(
+				structures.getOrThrow(DMZStructures.SAIYAN_CRATER),
+				new RandomSpreadStructurePlacement(
+						Vec3i.ZERO,
+						StructurePlacement.FrequencyReductionMethod.DEFAULT,
+						1.0f,
+						SAIYAN_CRATER_SALT,
+						Optional.of(new StructurePlacement.ExclusionZone(sets.getOrThrow(BuiltinStructureSets.VILLAGES), 6)),
+						SAIYAN_CRATER_SPACING,
+						SAIYAN_CRATER_SEPARATION,
+						RandomSpreadType.LINEAR
+				)
+		));
+
+		context.register(RED_RIBBON_BASE, new StructureSet(
+				structures.getOrThrow(DMZStructures.RED_RIBBON_BASE),
+				new RandomSpreadStructurePlacement(
+						Vec3i.ZERO,
+						StructurePlacement.FrequencyReductionMethod.DEFAULT,
+						1.0f,
+						RED_RIBBON_BASE_SALT,
+						Optional.of(new StructurePlacement.ExclusionZone(sets.getOrThrow(BuiltinStructureSets.VILLAGES), 8)),
+						RED_RIBBON_BASE_SPACING,
+						RED_RIBBON_BASE_SEPARATION,
+						RandomSpreadType.LINEAR
+				)
+		));
+
+		context.register(DEMON_VILLAGE, new StructureSet(
+				structures.getOrThrow(DMZStructures.DEMON_VILLAGE),
+				new RandomSpreadStructurePlacement(
+						Vec3i.ZERO,
+						StructurePlacement.FrequencyReductionMethod.DEFAULT,
+						1.0f,
+						DEMON_VILLAGE_SALT,
+						Optional.empty(),
+						DEMON_VILLAGE_SPACING,
+						DEMON_VILLAGE_SEPARATION,
+						RandomSpreadType.TRIANGULAR
+				)
+		));
+
+		context.register(GOMAH_CAMP, new StructureSet(
+				structures.getOrThrow(DMZStructures.GOMAH_CAMP),
+				new RandomSpreadStructurePlacement(
+						Vec3i.ZERO,
+						StructurePlacement.FrequencyReductionMethod.DEFAULT,
+						1.0f,
+						GOMAH_CAMP_SALT,
+						Optional.of(new StructurePlacement.ExclusionZone(sets.getOrThrow(DEMON_VILLAGE), 6)),
+						GOMAH_CAMP_SPACING,
+						GOMAH_CAMP_SEPARATION,
+						RandomSpreadType.LINEAR
+				)
+		));
+
+		context.register(GOMAH_CRADLE, new StructureSet(
+				structures.getOrThrow(DMZStructures.GOMAH_CRADLE),
+				new FixedStructurePlacement(
+						Vec3i.ZERO,
+						StructurePlacement.FrequencyReductionMethod.DEFAULT,
+						1.0f,
+						GOMAH_CRADLE_SALT,
+						Optional.empty(),
+						GomahCradleShape.ORIGIN.x, GomahCradleShape.ORIGIN.z
+				)
+		));
 	}
+
+	private static final int GOMAH_CRADLE_SALT = 59173046;
+	private static final int BUDOKAI_TENKAICHI_SALT = 62830185;
+
+	public static final int TREE_OF_MIGHT_SALT = 28475016;
+	public static final int GETE_STAR_SALT = 61937482;
+	private static final int GETE_STAR_MIN_DISTANCE = 1000;
+	private static final int SAIYAN_CRATER_SALT = 51738264;
+	private static final int SAIYAN_CRATER_SPACING = 40;
+	private static final int SAIYAN_CRATER_SEPARATION = 20;
+	private static final int RED_RIBBON_BASE_SALT = 40318627;
+	private static final int RED_RIBBON_BASE_SPACING = 32;
+	private static final int RED_RIBBON_BASE_SEPARATION = 16;
+	private static final int TREE_OF_MIGHT_MIN_DISTANCE = 1000;
+	private static final int DEMON_VILLAGE_SALT = 73019284;
+	private static final int DEMON_VILLAGE_SPACING = 24;
+	private static final int DEMON_VILLAGE_SEPARATION = 8;
+	private static final int GOMAH_CAMP_SALT = 82640175;
+	private static final int GOMAH_CAMP_SPACING = 40;
+	private static final int GOMAH_CAMP_SEPARATION = 20;
 
 	private static void unique(BootstapContext<StructureSet> context, ResourceKey<StructureSet> key,
 							   Holder<Structure> structure, int salt, HolderSet<Biome> validBiomes) {
+		unique(context, key, structure, salt, validBiomes, 0);
+	}
+
+	private static void unique(BootstapContext<StructureSet> context, ResourceKey<StructureSet> key,
+							   Holder<Structure> structure, int salt, HolderSet<Biome> validBiomes, int minDistanceFromSpawn) {
 		context.register(key, new StructureSet(
 				structure,
 				new BiomeAwareUniquePlacement(
@@ -98,7 +214,9 @@ public class DMZStructureSets {
 						1.0f,
 						salt,
 						Optional.empty(),
-						validBiomes
+						validBiomes,
+						Rotation.NONE,
+						minDistanceFromSpawn
 				)
 		));
 	}

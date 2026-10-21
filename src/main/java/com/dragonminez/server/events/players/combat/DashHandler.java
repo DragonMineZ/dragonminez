@@ -28,6 +28,7 @@ import net.minecraft.world.phys.Vec3;
 import net.minecraftforge.common.MinecraftForge;
 
 public class DashHandler {
+	private static final int PERFECT_EVASION_COOLDOWN_TICKS = 30;
 
 	public static int getFlyDashKiCost() {
 		int baseDrain = ConfigManager.getCombatConfig().getBaselineFormDrain();
@@ -62,7 +63,7 @@ public class DashHandler {
 			long currentTime = System.currentTimeMillis();
 			long lastHurtTime = data.getStatus().getLastHurtTime();
 			int evasionWindow = ConfigManager.getCombatConfig().getPerfectEvasionWindowMs();
-			boolean isEvasion = (currentTime - lastHurtTime) <= evasionWindow;
+			boolean isEvasion = (currentTime - lastHurtTime) <= evasionWindow && !data.getCooldowns().hasCooldown(Cooldowns.PERFECT_EVASION_CD);
 			boolean evasionActive = ConfigManager.getCombatConfig().getEnablePerfectEvasion();
 			int recentAttackerId = player.getPersistentData().getInt(CombatEvent.DMZ_LAST_ATTACKER_ID_TAG);
 			LivingEntity recentAttacker = player.level().getEntity(recentAttackerId) instanceof LivingEntity living ? living : null;
@@ -84,6 +85,7 @@ public class DashHandler {
 				if (currentEnergy >= kiCost) {
 					data.getResources().removeEnergy(kiCost);
 					data.getStatus().setLastHurtTime(0);
+					data.getCooldowns().setCooldown(Cooldowns.PERFECT_EVASION_CD, PERFECT_EVASION_COOLDOWN_TICKS);
 
 					if (recentAttacker != null) {
 						if (isVanish) {

@@ -3,17 +3,15 @@ package com.dragonminez.common.network.C2S;
 import com.dragonminez.Env;
 import com.dragonminez.LogUtil;
 import com.dragonminez.common.combat.logic.knockback.ConfigurableKnockback;
+import com.dragonminez.common.combat.logic.player.MeleeTargetValidator;
+import com.dragonminez.common.combat.logic.player.MeleeWindupTracker;
 import com.dragonminez.common.combat.logic.player.PlayerAttackHelper;
 import com.dragonminez.common.combat.logic.player.PlayerAttackProperties;
 import com.dragonminez.common.combat.logic.player.TargetHelper;
-import com.dragonminez.common.combat.util.SoundHelper;
-import com.dragonminez.common.network.NetworkHandler;
-import com.dragonminez.common.network.S2C.MeleeAnimationS2C;
-import com.dragonminez.common.stats.StatsCapability;
-import com.dragonminez.common.stats.StatsProvider;
+import com.dragonminez.common.combat.weapon.WeaponAttributes;
+import com.dragonminez.common.training.MinigameSessionManager;
 import lombok.Getter;
 import net.minecraft.network.FriendlyByteBuf;
-import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.LivingEntity;
@@ -27,18 +25,27 @@ import com.google.common.collect.Multimap;
 import net.minecraft.world.entity.ai.attributes.Attribute;
 import io.netty.handler.codec.DecoderException;
 
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Supplier;
 
 @Getter
 public class CombatAttackRequestC2S {
 
-	private static final int MAX_ENTITY_IDS = 64;
+	public static final int MAX_ENTITY_IDS = 64;
 
 	private final int comboCount;
 	private final boolean isSneaking;
 	private final int selectedSlot;
 	private final int[] entityIds;
+	private float arrivalPitch = Float.NaN;
+	private float arrivalYaw = Float.NaN;
 
 	public CombatAttackRequestC2S(int comboCount, boolean isSneaking, int selectedSlot, int[] entityIds) {
 		this.comboCount = comboCount;
@@ -72,14 +79,14 @@ public class CombatAttackRequestC2S {
 	}
 
 	public void handle(Supplier<NetworkEvent.Context> ctx) {
+		long arrivalNanos = System.nanoTime();
 		ctx.get().enqueueWork(() -> {
 			ServerPlayer player = ctx.get().getSender();
-			if (player != null) {
-				StatsProvider.get(StatsCapability.INSTANCE, player).ifPresent(stats -> {
-					if (stats.getStatus().isStunned()) return;
-					processAttackRequest(player, this);
-				});
-			}
+			if (player == null) return;
+			MinigameSessionManager.onPlayerAction(player, "melee");
+			this.arrivalPitch = player.getXRot();
+			this.arrivalYaw = player.getYRot();
+			if (MeleeWindupTracker.canStrike(player)) MeleeWindupTracker.submitHit(player, this, arrivalNanos);
 		});
 
 		ctx.get().setPacketHandled(true);
@@ -87,26 +94,31 @@ public class CombatAttackRequestC2S {
 
     private static final UUID SWEEPING_MODIFIER_UUID = UUID.fromString("99435a26-9fa8-48b4-a8eb-8438bf228eb3");
 
-	private static final String LAST_MELEE_ATTACK_TIME_TAG = "dmz_last_melee_attack_time";
-	private static final int ATTACK_RATE_TOLERANCE_TICKS = 2;
+	private static final Map<UUID, int[]> LAST_COMBO = new ConcurrentHashMap<>();
+
+	public static void clearCombo(UUID uuid) {
+		LAST_COMBO.remove(uuid);
+	}
+
+	private static int resolveComboCount(ServerPlayer player, int requested) {
+		int[] last = LAST_COMBO.get(player.getUUID());
+		int effective = 0;
+		if (requested > 0 && last != null && requested - 1 == last[0]) effective = last[1] + 1;
+		LAST_COMBO.put(player.getUUID(), new int[]{requested, effective});
+		return effective;
+	}
 
 	public static void processAttackRequest(ServerPlayer player, CombatAttackRequestC2S request) {
 		player.server.execute(() -> {
-			int comboCount = request.getComboCount();
+			if (player.isDeadOrDying() || player.isSpectator()) return;
 			int selectedSlot = request.getSelectedSlot();
-			int[] entityIds = request.getEntityIds();
+			int[] entityIds = Arrays.stream(request.getEntityIds()).distinct().toArray();
 
 			if (selectedSlot != player.getInventory().selected) {
 				LogUtil.warn(Env.SERVER, "Player {} tried to attack with mismatched selected slot", player.getName().getString());
 				return;
 			}
-
-			long gameTime = player.level().getGameTime();
-			long lastAttackTime = player.getPersistentData().getLong(LAST_MELEE_ATTACK_TIME_TAG);
-			int minInterval = Math.max(0, (int) Math.floor(player.getCurrentItemAttackStrengthDelay()) - ATTACK_RATE_TOLERANCE_TICKS);
-			if (lastAttackTime > 0 && gameTime - lastAttackTime < minInterval) return;
-			player.getPersistentData().putLong(LAST_MELEE_ATTACK_TIME_TAG, gameTime);
-
+			int comboCount = resolveComboCount(player, request.getComboCount());
 			((PlayerAttackProperties) player).setComboCount(comboCount);
 
 			var hand = PlayerAttackHelper.getCurrentAttack(player, comboCount);
@@ -115,17 +127,11 @@ public class CombatAttackRequestC2S {
 				return;
 			}
 
-			if (player.level() instanceof ServerLevel serverLevel) {
-				SoundHelper.playSound(serverLevel, player, player, hand.attack().swingSound());
-			}
-
-			float cooldownTicks = PlayerAttackHelper.getAttackCooldownTicksCapped(player);
-			float animSpeedMultiplier = 12.0F / Math.max(cooldownTicks, 0.001F);
-			animSpeedMultiplier = Math.max(0.55F, Math.min(1.35F, animSpeedMultiplier));
-			String animName = hand.attack() != null ? hand.attack().animation() : "";
-			boolean isOffhand = hand.isOffHand();
-			var animPacket = new MeleeAnimationS2C(player.getId(), animName, isOffhand, animSpeedMultiplier);
-			NetworkHandler.sendToTrackingEntity(animPacket, player);
+			List<WeaponAttributes.Attack> reachAttacks = new ArrayList<>(2);
+			reachAttacks.add(hand.attack());
+			var requestedHand = PlayerAttackHelper.getCurrentAttack(player, request.getComboCount());
+			if (requestedHand != null && requestedHand.attack() != hand.attack()) reachAttacks.add(requestedHand.attack());
+			List<MeleeTargetValidator.Aim> aims = MeleeTargetValidator.candidateAims(player, request.getArrivalPitch(), request.getArrivalYaw());
 
 			if (hand.isOffHand()) PlayerAttackHelper.setAttributesForOffHandAttack(player, true);
 
@@ -158,17 +164,22 @@ public class CombatAttackRequestC2S {
 			}
 
 			boolean firstHit = true;
+			Set<Entity> struckOwners = new HashSet<>();
 			for (int id : entityIds) {
 				Entity entity = TargetHelper.getEntityOrPart(player.level(), id);
 				if (entity == null) continue;
+				Entity owner = TargetHelper.resolveHittable(entity);
+				if (struckOwners.contains(owner)) continue;
 
 				if (!TargetHelper.isAttackableMount(entity) && player.getVehicle() == entity) continue;
 
 				double maxRange = PlayerAttackHelper.getEffectiveAttackRange(player, hand.attributes().attackRange());
 				TargetHelper.Relation relation = TargetHelper.getRelation(player, entity);
-				if (!TargetHelper.canAttack(player, entity, maxRange + 4.0D)) continue;
+				if (!TargetHelper.canAttack(player, entity, maxRange + 4.0D, aims)) continue;
 
-				if (player.distanceToSqr(entity) <= (maxRange * maxRange) + 16.0) {
+				if (player.distanceToSqr(entity) <= (maxRange * maxRange) + 16.0
+						&& MeleeTargetValidator.canHit(player, entity, reachAttacks, maxRange, aims)) {
+					struckOwners.add(owner);
 
 					if (firstHit) {
 						player.getPersistentData().putBoolean("dmz_first_hit", true);
@@ -178,7 +189,7 @@ public class CombatAttackRequestC2S {
 					}
 
 					TargetHelper.onSuccessfulAttack(player, entity, relation);
-					player.attack(entity);
+					TargetHelper.attackApproved(player, entity);
 				}
 
 				if (entity instanceof LivingEntity livingEntity) {

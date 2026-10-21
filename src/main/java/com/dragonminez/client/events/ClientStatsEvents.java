@@ -4,26 +4,36 @@ import com.dragonminez.Reference;
 import com.dragonminez.client.clash.ClientBeamClashState;
 import com.dragonminez.client.flight.FlightSoundInstance;
 import com.dragonminez.client.gui.hud.ScouterHUD;
+import com.dragonminez.client.render.HelmetFormLook;
+import com.dragonminez.client.systems.BioSwellRenderState;
+import com.dragonminez.client.systems.FormVisualTransition;
+import com.dragonminez.client.systems.kishare.KiShareInput;
 import com.dragonminez.client.systems.kisense.CombatIndicators;
 import com.dragonminez.client.systems.kisense.KiSenseScan;
 import com.dragonminez.client.systems.kisense.KiSenseState;
 import com.dragonminez.client.util.ColorUtils;
 import com.dragonminez.client.util.KeyBinds;
+import com.dragonminez.common.init.entities.vehicle.VehicleEntity;
 import com.dragonminez.common.init.MainParticles;
 import com.dragonminez.common.init.particles.AuraParticle;
 import com.dragonminez.common.init.particles.DivineParticle;
 import com.dragonminez.common.config.FormConfig;
 import com.dragonminez.common.network.C2S.*;
 import com.dragonminez.common.network.NetworkHandler;
+import com.dragonminez.common.network.TriBeamPackets;
 import com.dragonminez.common.stats.*;
 import com.dragonminez.common.stats.character.Character;
 import com.dragonminez.common.stats.character.Cooldowns;
+import com.dragonminez.common.stats.character.Status;
 import com.dragonminez.common.stats.extras.ActionMode;
 import com.dragonminez.common.stats.skills.Skill;
 import com.dragonminez.common.stats.techniques.*;
 import com.dragonminez.common.util.BetaWhitelist;
+import com.dragonminez.common.util.FusionForms;
 import com.dragonminez.common.util.TransformationsHelper;
 import com.dragonminez.server.events.players.StatsEvents;
+import com.dragonminez.server.events.players.combat.StrikeAttackHandler;
+import com.dragonminez.common.init.item.weapons.BraveSwordItem;
 import com.dragonminez.server.util.GravityLogic;
 import net.minecraft.ChatFormatting;
 import net.minecraft.client.Minecraft;
@@ -32,6 +42,7 @@ import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.network.chat.Component;
 import net.minecraft.util.Mth;
 import com.dragonminez.common.combat.logic.player.PlayerAttackHelper;
+import com.dragonminez.common.combat.util.Minecraft_DMZ;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.entity.ai.attributes.AttributeInstance;
 import net.minecraft.world.entity.ai.attributes.AttributeModifier;
@@ -39,6 +50,7 @@ import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.entity.player.Player;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.client.event.ClientPlayerNetworkEvent;
+import com.dragonminez.client.render.util.SkinPixelTextures;
 import net.minecraftforge.client.event.ComputeFovModifierEvent;
 import net.minecraftforge.client.event.InputEvent;
 import net.minecraftforge.client.event.MovementInputUpdateEvent;
@@ -58,17 +70,24 @@ public class ClientStatsEvents {
 	private static long lastTransformTapTime = 0;
 	private static long lastKiChargeTapTime = 0;
 	private static int kiBlastTimer = 0;
+	private static int kiBlastHoldTicks = 0;
+	private static final int KI_VOLLEY_HOLD_TICKS = 6;
 	private static int blockLockTicks = 0;
 	private static final int BLOCK_REACTIVATION_LOCK_TICKS = 5;
+	private static final int SLEEP_Z_INTERVAL_TICKS = 10;
 	private static boolean wasTransformKeyDown = false;
 	private static boolean wasKiChargeKeyDown = false;
 	private static long lastDashTime = 0;
 	private static boolean wasDashKeyDown = false;
 	private static boolean wasDescendActionDown = false;
+	private static boolean wasRacialSecondaryActionDown = false;
+	private static long lastRacialSecondarySent = 0;
 	private static long itKeyDownTime = 0;
 	private static boolean wasITKeyDown = false;
 	private static boolean itMenuOpened = false;
 	private static boolean wasRightClickDown = false;
+	private static boolean wasClashPressDown = false;
+	private static long triBeamFollowUpUntil = 0L;
 	private static boolean wasInstantTransformKeyDown = false;
 	private static final long TAP_ACTION_COOLDOWN_MS = 500;
 	private static long lastInstantTransformSent = 0;
@@ -79,8 +98,27 @@ public class ClientStatsEvents {
 	private static boolean chargePending = false;
 	private static int chargePendingTicks = 0;
 	private static final boolean[] wasSlotKeyDown = new boolean[TECHNIQUE_VISIBLE_SLOTS];
+	private static boolean localActionChargeReleased = false;
+
+	public static boolean isLocalActionChargeReleased() {
+		return localActionChargeReleased;
+	}
 
 	private static ActionMode lastActionMode = null;
+
+	public static void setTriBeamFollowUpWindow(int windowTicks) {
+		Minecraft mc = Minecraft.getInstance();
+		if (mc.level == null) return;
+		if (windowTicks <= 0) {
+			if (triBeamFollowUpUntil > 0L) mc.gui.clear();
+			triBeamFollowUpUntil = 0L;
+			return;
+		}
+		triBeamFollowUpUntil = mc.level.getGameTime() + windowTicks;
+		mc.gui.setTimes(0, windowTicks, 6);
+		mc.gui.setSubtitle(Component.translatable("message.dragonminez.tri_beam.follow_up"));
+		mc.gui.setTitle(Component.empty());
+	}
 
 	@SubscribeEvent
 	public static void onMouseScroll(InputEvent.MouseScrollingEvent event) {
@@ -98,7 +136,25 @@ public class ClientStatsEvents {
 		Minecraft mc = Minecraft.getInstance();
 		LocalPlayer localPlayer = mc.player;
 
-		if (localPlayer == null) return;
+		if (localPlayer == null) {
+			com.dragonminez.client.gui.tournament.TournamentOverlay.clear();
+			com.dragonminez.common.network.TournamentPackets.RivalS2C.clearClient();
+			return;
+		}
+		if (!mc.isPaused()) com.dragonminez.client.gui.tournament.TournamentOverlay.tick();
+
+		if (mc.level != null && !mc.isPaused()) {
+			for (var player : mc.level.players()) {
+				StatsProvider.get(StatsCapability.INSTANCE, player).ifPresent(data -> {
+					BioSwellRenderState.tick(player, data);
+					if (data.getStatus().isSleepRecovering()) spawnSleepZ(mc, player);
+					if (player != localPlayer && data.getStatus().isActionCharging() && data.getStatus().getSelectedAction() == ActionMode.FUSION) {
+						faceBodyToYaw(player);
+					}
+				});
+			}
+			FormVisualTransition.tick(mc.level.players());
+		}
 
 		StatsProvider.get(StatsCapability.INSTANCE, localPlayer).ifPresent(data -> {
 			if (!data.getStatus().isHasCreatedCharacter()) {
@@ -120,12 +176,18 @@ public class ClientStatsEvents {
 				var stats = StatsProvider.get(StatsCapability.INSTANCE, player).orElse(null);
 				if (stats == null || !stats.getStatus().isHasCreatedCharacter()) continue;
 
-				boolean isAuraActive = stats.getStatus().isAuraActive() || stats.getStatus().isPermanentAura();
+				float bioSwell = BioSwellRenderState.swell(player);
+				if (bioSwell > 0.02f) {
+					spawnBioChargeDust(player, bioSwell);
+					if (player.onGround()) spawnFloatingRubble(player, 0.6f + bioSwell * 1.4f);
+				}
+
+				boolean isAuraActive = stats.getStatus().isAuraActive() || stats.getStatus().isPermanentAura() || stats.getStatus().isForcedAura();
 				if (!isAuraActive) continue;
 
 				float totalScale = getBodyScale(stats)[0];
 
-				if (player.onGround()) {
+				if (player.onGround() && stats.getStatus().getGodRitualRole() != Status.GOD_RITUAL_DONOR) {
 					spawnGroundDust(player, totalScale);
 					spawnFloatingRubble(player, totalScale);
 				}
@@ -133,7 +195,7 @@ public class ClientStatsEvents {
 				if (!BetaWhitelist.isAllowed(player.getGameProfile().getName())) continue;
 
 				if (characterHasAuraColor(stats.getCharacter())) {
-					int particleColor = getAuraColor(stats.getCharacter());
+					int particleColor = getAuraColor(player, stats.getCharacter());
 					spawnCalmAuraParticle(player, totalScale, particleColor);
 				}
 
@@ -144,6 +206,7 @@ public class ClientStatsEvents {
 			}
 		}
 
+		localActionChargeReleased = false;
 		if (mc.screen != null) {
 			StatsProvider.get(StatsCapability.INSTANCE, localPlayer).ifPresent(data -> {
 				if (data.getStatus().isBlocking()) {
@@ -165,7 +228,9 @@ public class ClientStatsEvents {
 
 			Character character = data.getCharacter();
 
-			boolean isStunned = data.getStatus().isStunned();
+			boolean isStunned = data.getStatus().isStunned() || data.getStatus().isSharingKi();
+			if (KeyBinds.KI_CHARGE.isDown() && !KeyBinds.isPhysicallyDown(KeyBinds.KI_CHARGE)) KeyBinds.KI_CHARGE.setDown(false);
+			if (KeyBinds.ACTION_KEY.isDown() && !KeyBinds.isPhysicallyDown(KeyBinds.ACTION_KEY)) KeyBinds.ACTION_KEY.setDown(false);
 			boolean isKiChargeKeyPressed = KeyBinds.KI_CHARGE.isDown() && !isStunned;
 			boolean isDescendKeyPressed = KeyBinds.SECOND_FUNCTION_KEY.isDown() && !isStunned;
 			boolean isActionKeyPressed = KeyBinds.ACTION_KEY.isDown() && !isStunned;
@@ -181,7 +246,8 @@ public class ClientStatsEvents {
 				isActionKeyPressed = false;
 				isBlockKeyDown = false;
 
-				if (isMovementRestricted && TechniqueDispatcher.isFiringKiAttack(localPlayer)) {
+				if (isMovementRestricted && TechniqueDispatcher.isFiringKiAttack(localPlayer)
+						&& !TechniqueDispatcher.isFiringSteerableKiAttack(localPlayer)) {
 					localPlayer.setYRot(localPlayer.yRotO);
 					localPlayer.setXRot(localPlayer.xRotO);
 					localPlayer.yHeadRot = localPlayer.yHeadRotO;
@@ -192,19 +258,26 @@ public class ClientStatsEvents {
 			if (data.getStatus().isActionCharging() && data.getStatus().getSelectedAction() == ActionMode.FUSION) {
 				localPlayer.setYRot(localPlayer.yRotO);
 				localPlayer.setXRot(localPlayer.xRotO);
-				localPlayer.yHeadRot = localPlayer.yHeadRotO;
-				localPlayer.yBodyRot = localPlayer.yBodyRotO;
+				faceBodyToYaw(localPlayer);
 			}
 
 			boolean isChargingTechnique = data.getTechniques().isTechniqueCharging() || data.getTechniques().isTechniqueChargeActive();
 			if (blockLockTicks > 0) blockLockTicks--;
 			if (isChargingTechnique || isDescendKeyPressed || blockLockTicks > 0) isBlockKeyDown = false;
+			if (isBlockKeyDown && ((Minecraft_DMZ) mc).hasPendingAttack()) {
+				((Minecraft_DMZ) mc).cancelUpswing();
+			}
 
 			boolean isStackMode = data.getStatus().getSelectedAction() == ActionMode.STACK;
 			var nextForm = TransformationsHelper.getNextAvailableForm(data);
 			boolean isOozaruNextForm = !isStackMode && TransformationsHelper.isOozaruForm(nextForm);
 			boolean canAutoChargeOozaru = !isActionRestricted && TransformationsHelper.shouldAutoChargeOozaru(localPlayer, data);
-			boolean shouldChargeAction = isActionKeyPressed || canAutoChargeOozaru;
+			// Alt+G is the racial secondary action, so while RACIAL is selected the modifier must not
+			// also charge the primary one — otherwise the primary fires (and can stun) before the
+			// secondary packet is ever sent.
+			boolean racialSecondaryChord = isDescendKeyPressed && data.getStatus().getSelectedAction() == ActionMode.RACIAL;
+			boolean shouldChargeAction = (isActionKeyPressed && !racialSecondaryChord) || canAutoChargeOozaru;
+			localActionChargeReleased = !shouldChargeAction;
 
 			boolean kiWeaponActive = PlayerAttackHelper.isKiWeaponActive(localPlayer);
 			boolean handsEmpty = localPlayer.getItemInHand(InteractionHand.MAIN_HAND).isEmpty() && localPlayer.getItemInHand(InteractionHand.OFF_HAND).isEmpty();
@@ -224,8 +297,26 @@ public class ClientStatsEvents {
 			}
 
 			boolean chargeSessionActive = data.getTechniques().isTechniqueCharging() || data.getTechniques().isTechniqueChargeActive();
-			if (isDescendKeyPressed && isRightClickDown && !wasRightClickDown && !chargeSessionActive
-					&& !TechniqueDispatcher.isFiringKiAttack(localPlayer) && (!data.getStatus().isFused() && !data.getStatus().isFusionLeader())) {
+			boolean kiBlastChordDown = isDescendKeyPressed && isRightClickDown;
+			boolean kiBlastAllowed = !chargeSessionActive && !KiShareInput.isChordDown()
+					&& !TechniqueDispatcher.isFiringKiAttack(localPlayer) && (!data.getStatus().isFused() && !data.getStatus().isFusionLeader());
+			boolean fireKiBlast = false;
+			boolean fireKiVolley = false;
+			if (!kiBlastAllowed) {
+				kiBlastHoldTicks = 0;
+			} else if (kiBlastChordDown && !wasRightClickDown) {
+				kiBlastHoldTicks = 1;
+			} else if (kiBlastHoldTicks > 0) {
+				if (!kiBlastChordDown) {
+					fireKiBlast = true;
+					kiBlastHoldTicks = 0;
+				} else if (++kiBlastHoldTicks >= KI_VOLLEY_HOLD_TICKS) {
+					fireKiBlast = true;
+					fireKiVolley = true;
+					kiBlastHoldTicks = 0;
+				}
+			}
+			if (fireKiBlast) {
 				float[] kiRgb;
 				if (character.hasActiveStackForm()
 						&& character.getActiveStackFormData() != null
@@ -240,13 +331,20 @@ public class ClientStatsEvents {
 				} else kiRgb = character.getRgbAuraColor();
 				int colorMain = ColorUtils.rgbToInt(kiRgb[0], kiRgb[1], kiRgb[2]);
 				int colorBorder = ColorUtils.darkenColor(colorMain, 0.85f);
-				NetworkHandler.sendToServer(new KiBlastC2S(true, colorMain, colorBorder));
+				NetworkHandler.sendToServer(new KiBlastC2S(true, fireKiVolley, colorMain, colorBorder));
 				kiBlastTimer = 10;
-				blockLockTicks = 20;
+				blockLockTicks = fireKiVolley ? 30 : 20;
 			}
 
-			if (ClientBeamClashState.isActive() && isRightClickDown && !wasRightClickDown) {
-				NetworkHandler.sendToServer(new BeamClashInputC2S());
+			boolean clashPressDown = mc.options.keyUse.isDown() && (!isStunned || FlySkillEvent.isStrikeClashHeld());
+			if (ClientBeamClashState.isActive() && clashPressDown && !wasClashPressDown) {
+				ClientBeamClashState.onLocalPress();
+			}
+			wasClashPressDown = clashPressDown;
+
+			if (triBeamFollowUpUntil > 0L && isRightClickDown && !wasRightClickDown) {
+				if (mc.level.getGameTime() <= triBeamFollowUpUntil) NetworkHandler.sendToServer(new TriBeamPackets.FollowUpC2S());
+				else triBeamFollowUpUntil = 0L;
 			}
 
 			wasRightClickDown = isRightClickDown;
@@ -335,6 +433,14 @@ public class ClientStatsEvents {
 				NetworkHandler.sendToServer(new ExecuteActionC2S(ExecuteActionC2S.ActionType.FORCE_DESCEND, false));
 				lastDescendSent = currentTime;
 			}
+			// Alt+G on the DESCEND chord doubles as the racial secondary action (Cell Jr dismiss, BioAndroid self-destruct trigger) while ActionMode.RACIAL is selected.
+			if (isDescendActionDown && !wasRacialSecondaryActionDown
+					&& data.getStatus().getSelectedAction().equals(ActionMode.RACIAL)
+					&& (currentTime - lastRacialSecondarySent) >= TAP_ACTION_COOLDOWN_MS) {
+				NetworkHandler.sendToServer(new com.dragonminez.common.network.C2S.RacialSecondaryActionC2S());
+				lastRacialSecondarySent = currentTime;
+			}
+			wasRacialSecondaryActionDown = isDescendActionDown;
 			wasDescendActionDown = isDescendActionDown;
 
 			boolean isFlying = data.getSkills().isSkillActive("fly") && !localPlayer.onGround() && !localPlayer.isInWater();
@@ -376,7 +482,7 @@ public class ClientStatsEvents {
 
 		if (activeChargeSlot < 0) {
 			resetChargeSession();
-			boolean firingRestricted = TechniqueDispatcher.isMovementRestrictedKiAttack(player, data);
+			boolean firingRestricted = TechniqueDispatcher.isMovementRestrictedKiAttack(player, data) || player.getVehicle() instanceof VehicleEntity;
 
 			for (int i = 0; i < TECHNIQUE_VISIBLE_SLOTS; i++) {
 				boolean pressed = downNow[i] && !wasSlotKeyDown[i];
@@ -386,7 +492,7 @@ public class ClientStatsEvents {
 				String id = techniques.getEquippedSlots()[i];
 				TechniqueData t = (id == null || id.isEmpty()) ? null : techniques.getUnlockedTechniques().get(id);
 				if (t == null) continue;
-				if (!canActivateTechnique(data, player)) continue;
+				if (!canActivateTechnique(data, player, t)) continue;
 
 				if (t instanceof StrikeAttackData) {
 					techniques.selectSlot(i);
@@ -395,11 +501,17 @@ public class ClientStatsEvents {
 					int targetId = lockedTarget != null ? lockedTarget.getId() : -1;
 					NetworkHandler.sendToServer(new StrikeAttackC2S(targetId));
 					net.minecraftforge.common.MinecraftForge.EVENT_BUS.post(new DMZClientEvent.StrikeAttack(player, targetId));
-				} else if (t instanceof KiAttackData && "taiyoken".equals(id)) {
-						if (data.getCooldowns().hasCooldown("TechniqueCooldown_taiyoken")) continue;
+				} else if (t instanceof EvasionAttackData) {
+						if (data.getCooldowns().hasCooldown("TechniqueCooldown_" + id)) continue;
 						techniques.selectSlot(i);
 						NetworkHandler.sendToServer(new SelectTechniqueSlotC2S(i));
-						NetworkHandler.sendToServer(new TaiyokenCastC2S());
+						var lockedEvasionTarget = LockOnEvent.getLockedTarget();
+						NetworkHandler.sendToServer(new EvasionCastC2S(id, lockedEvasionTarget != null ? lockedEvasionTarget.getId() : -1));
+					} else if (t instanceof ReviveTechniqueData) {
+						if (data.getCooldowns().hasCooldown("TechniqueCooldown_" + id)) continue;
+						techniques.selectSlot(i);
+						var lockedReviveTarget = LockOnEvent.getLockedTarget();
+						NetworkHandler.sendToServer(new WorldBossReviveC2S(lockedReviveTarget != null ? lockedReviveTarget.getId() : -1));
 					} else if (t instanceof KiAttackData ki && !data.getCooldowns().hasCooldown("TechniqueCooldown_" + id)) { if (player.isPassenger() && TechniqueDispatcher.restrictsMovementWhileCharging(ki.getKiType())) continue; var lockedKiTarget = LockOnEvent.getLockedTarget(); int kiTargetId = lockedKiTarget != null ? lockedKiTarget.getId() : -1;
 					if (ki.isInstantCast()) NetworkHandler.sendToServer(TechniqueChargeC2S.start(i, kiTargetId));
 					else {
@@ -442,13 +554,13 @@ public class ClientStatsEvents {
 			FormConfig.FormData blocked = TransformationsHelper.getNextFormCandidate(data);
 			if (blocked != null) {
 				String group = character.hasActiveForm() ? character.getActiveFormGroup() : character.getSelectedFormGroup();
-				Component formName = Component.translatable("race.dragonminez." + character.getRaceName() + ".form." + group + "." + blocked.getName());
+				Component formName = Component.translatable(FusionForms.formTranslationKey(character.getRaceName(), group, blocked.getName()));
 				localPlayer.displayClientMessage(Component.translatable("message.dragonminez.form.no_mastery", blocked.getUnlockOnMastery().intValue(), formName), true);
 			}
 		}
 	}
 
-	private static boolean canActivateTechnique(StatsData data, LocalPlayer player) {
+	private static boolean canActivateTechnique(StatsData data, LocalPlayer player, TechniqueData technique) {
 		if (player.isSpectator()) return false;
 		if (data.getStatus().isFused() && !data.getStatus().isFusionLeader()) return false;
 		if (data.getSkills().getSkillLevel("kicontrol") <= 0) {
@@ -457,6 +569,9 @@ public class ClientStatsEvents {
 			return false;
 		}
 		if (data.getResources().getPowerRelease() < 5) return false;
+		if (technique instanceof StrikeAttackData && StrikeAttackHandler.requiresBraveSword(technique.getId())) {
+			return player.getMainHandItem().getItem() instanceof BraveSwordItem;
+		}
 		if (!player.getMainHandItem().isEmpty()) return false;
 		return true;
 	}
@@ -473,6 +588,15 @@ public class ClientStatsEvents {
 		for (int i = 0; i < TECHNIQUE_VISIBLE_SLOTS; i++) wasSlotKeyDown[i] = false;
 	}
 
+
+	private static void faceBodyToYaw(Player player) {
+		float yaw = player.getYRot();
+		player.yHeadRot = yaw;
+		player.yHeadRotO = yaw;
+		player.yBodyRot = yaw;
+		player.yBodyRotO = yaw;
+	}
+
 	@SubscribeEvent
 	public static void onKeyPressed(InputEvent.Key event) {
 		LocalPlayer player = Minecraft.getInstance().player;
@@ -480,7 +604,7 @@ public class ClientStatsEvents {
 
 		StatsProvider.get(StatsCapability.INSTANCE, player).ifPresent(data -> {
 			if (!data.getStatus().isHasCreatedCharacter()) return;
-			boolean isStunned = data.getStatus().isStunned();
+			boolean isStunned = data.getStatus().isStunned() || data.getStatus().isSharingKi();
 			if (TechniqueDispatcher.isMovementRestrictedKiAttack(player, data) || isStunned) return;
 
 			boolean isDashKeyDown = KeyBinds.DASH_KEY.isDown();
@@ -520,8 +644,11 @@ public class ClientStatsEvents {
 			if (speedAttr != null) {
 				double totalModFactor = 1.0;
 
-				AttributeModifier formMod = speedAttr.getModifier(StatsEvents.FORM_SPEED_UUID);
-				if (formMod != null) totalModFactor *= (1.0 + formMod.getAmount());
+				AttributeModifier speedMod = speedAttr.getModifier(StatsEvents.SPEED_UUID);
+				if (speedMod != null) totalModFactor *= (1.0 + speedMod.getAmount());
+
+				AttributeModifier turboMod = speedAttr.getModifier(StatsEvents.TURBO_SPEED_UUID);
+				if (turboMod != null) totalModFactor *= (1.0 + turboMod.getAmount());
 
 				AttributeModifier gravityMod = speedAttr.getModifier(GravityLogic.GRAVITY_SPEED_UUID);
 				if (gravityMod != null) totalModFactor *= (1.0 + gravityMod.getAmount());
@@ -558,7 +685,11 @@ public class ClientStatsEvents {
 	public static void onMovementInput(MovementInputUpdateEvent event) {
 		StatsProvider.get(StatsCapability.INSTANCE, event.getEntity()).ifPresent(data -> {
 			if (TechniqueDispatcher.isMovementRestrictedKiAttack(event.getEntity(), data) || data.getStatus().isStunned()
-					|| data.getStatus().isActionCharging() || data.getStatus().getPotaraPoseTimer() > 0) {
+					|| FlySkillEvent.isStrikeClashHeld()
+					|| com.dragonminez.client.systems.worldboss.ClientWorldBossState.Player.isCasting()
+					|| data.getStatus().isActionCharging() || data.getStatus().isChargingKi()
+					|| data.getStatus().getPotaraPoseTimer() > 0
+					|| data.getStatus().getEvasionLockTicks() > 0) {
 				event.getInput().forwardImpulse = 0;
 				event.getInput().leftImpulse = 0;
 				event.getInput().jumping = false;
@@ -572,7 +703,30 @@ public class ClientStatsEvents {
 	}
 
 	@SubscribeEvent
+	public static void onInteractionKey(InputEvent.InteractionKeyMappingTriggered event) {
+		Minecraft mc = Minecraft.getInstance();
+		if (mc.player == null) return;
+		StatsProvider.get(StatsCapability.INSTANCE, mc.player).ifPresent(data -> {
+			if (!data.getStatus().isSleepRecovering()) return;
+			event.setSwingHand(false);
+			event.setCanceled(true);
+		});
+	}
+
+	private static void spawnSleepZ(Minecraft mc, Player player) {
+		if (player.isInvisible() || (player.tickCount + player.getId()) % SLEEP_Z_INTERVAL_TICKS != 0) return;
+		if (player == mc.player && mc.options.getCameraType().isFirstPerson()) return;
+		float yaw = player.yBodyRot * Mth.DEG_TO_RAD;
+		double rightX = -Mth.cos(yaw);
+		double rightZ = -Mth.sin(yaw);
+		mc.level.addParticle(MainParticles.SLEEP_Z.get(),
+				player.getX() + rightX * 0.25, player.getY() + player.getBbHeight() + 0.15, player.getZ() + rightZ * 0.25,
+				rightX * 0.015, 0.0, rightZ * 0.015);
+	}
+
+	@SubscribeEvent
 	public static void onClientLogout(ClientPlayerNetworkEvent.LoggingOut event) {
+		BioSwellRenderState.clear();
 		wasRightClickDown = false;
 		lastTransformTapTime = 0;
 		lastKiChargeTapTime = 0;
@@ -581,22 +735,11 @@ public class ClientStatsEvents {
 		KiSenseScan.clear();
 		CombatIndicators.clear();
 		StatsCapability.clearClientCache();
+		SkinPixelTextures.clear();
 	}
 
 	private static float[] getBodyScale(StatsData stats) {
-		var character = stats.getCharacter();
-
-		Float[] resolved = character.getResolvedModelScaling();
-		float sX = resolved[0], sY = resolved[1], sZ = resolved[2];
-
-		String currentForm = character.getActiveForm() != null ? character.getActiveForm().toLowerCase() : "";
-		if (currentForm.contains("ozaru")) {
-			sX = Math.max(0.1f, sX - 2.8f);
-			sY = Math.max(0.1f, sY - 2.8f);
-			sZ = Math.max(0.1f, sZ - 2.8f);
-		}
-
-		return new float[]{sX, sY, sZ};
+		return FormVisualTransition.modelScale(stats);
 	}
 
 	private static boolean characterHasAuraColor(Character character) {
@@ -605,12 +748,12 @@ public class ClientStatsEvents {
 		return character.getAuraColor() != null;
 	}
 
-	private static int getAuraColor(Character character) {
+	private static int getAuraColor(Player player, Character character) {
 		String hex = character.getAuraColor();
 		if (character.hasActiveStackForm() && character.getActiveStackFormData() != null && character.getActiveStackFormData().getAuraColor() != null) {
 			hex = character.getActiveStackFormData().getAuraColor();
 		} else if (character.hasActiveForm() && character.getActiveFormData() != null && character.getActiveFormData().getAuraColor() != null) {
-			hex = character.getActiveFormData().getAuraColor();
+			hex = HelmetFormLook.auraColor(player, character.getActiveFormData());
 		}
 		return ColorUtils.hexToInt(hex != null ? hex : "#FFFFFF");
 	}
@@ -697,6 +840,29 @@ public class ClientStatsEvents {
 			double velZ = Math.sin(angle) * speedBase;
 
 			level.addParticle(MainParticles.DUST.get(), x, y, z, velX, velY, velZ);
+		}
+	}
+
+	/**
+	 * Dust blown outward while a bio android charges its self-destruct, ramping with the swell.
+	 * Driven by the synced swell, so it shows for every charging player in view, not just the local one.
+	 */
+	private static void spawnBioChargeDust(Player player, float swell) {
+		var level = player.level();
+		var random = player.getRandom();
+
+		int count = 4 + Mth.ceil(swell * 16.0f);
+		for (int i = 0; i < count; i++) {
+			double angle = random.nextDouble() * 2 * Math.PI;
+			double radius = (0.2 + random.nextDouble() * 1.3) * (0.5 + swell);
+
+			double x = player.getX() + Math.cos(angle) * radius;
+			double y = player.getY() + 0.1 + random.nextDouble() * 0.5 * swell;
+			double z = player.getZ() + Math.sin(angle) * radius;
+
+			double speed = (0.10 + random.nextDouble() * 0.18) * (0.4 + swell);
+			level.addParticle(MainParticles.DUST.get(), x, y, z,
+					Math.cos(angle) * speed, 0.0, Math.sin(angle) * speed);
 		}
 	}
 

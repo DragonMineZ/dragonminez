@@ -1,6 +1,8 @@
 package com.dragonminez.client.events;
 
 import com.dragonminez.Reference;
+import com.dragonminez.client.render.camera.OverShoulderCamera;
+import com.dragonminez.client.render.camera.StrikeCinematicCamera;
 import com.dragonminez.client.systems.kisense.KiSenseScan;
 import com.dragonminez.client.systems.taiyoken.TaiyokenBlindState;
 import com.dragonminez.common.init.MainSounds;
@@ -13,6 +15,7 @@ import com.mojang.blaze3d.vertex.*;
 import com.mojang.math.Axis;
 import lombok.Getter;
 import net.minecraft.client.Minecraft;
+import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.client.renderer.GameRenderer;
 import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.resources.ResourceLocation;
@@ -37,14 +40,17 @@ import java.util.Optional;
 @Mod.EventBusSubscriber(modid = Reference.MOD_ID, value = Dist.CLIENT)
 public class LockOnEvent {
 	private static final ResourceLocation LOCK_ICON = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "textures/gui/lock_on.png");
+	private static final double NEAR_FOLLOW_BLEND = 1.0;
 	@Getter
 	private static LivingEntity lockedTarget = null;
+	private static LivingEntity suspendedTarget = null;
 	private static int scanTickCounter = 0;
 
 	public static void toggleLock() {
 		Minecraft mc = Minecraft.getInstance();
 		Player player = mc.player;
 		if (player == null) return;
+		if (StrikeCinematicCamera.isFilming()) return;
 
 		if (TaiyokenBlindState.isActive()) {
 			unlock();
@@ -74,6 +80,37 @@ public class LockOnEvent {
 
 	public static void unlock() {
 		lockedTarget = null;
+		suspendedTarget = null;
+	}
+
+	public static void suspend() {
+		if (lockedTarget != null) suspendedTarget = lockedTarget;
+		lockedTarget = null;
+	}
+
+	public static void resume() {
+		LivingEntity target = suspendedTarget;
+		suspendedTarget = null;
+		Minecraft mc = Minecraft.getInstance();
+		Player player = mc.player;
+		if (target == null || player == null || lockedTarget != null || target.level() != mc.level) return;
+		if (TaiyokenBlindState.isActive()) return;
+		StatsProvider.get(StatsCapability.INSTANCE, player).ifPresent(data -> {
+			if (isLockValid(player, target, data)) lockedTarget = target;
+		});
+	}
+
+	private static boolean isLockValid(Player player, LivingEntity target, StatsData data) {
+		if (!target.isAlive()) return false;
+		int level = data.getSkills().getSkillLevel("kisense");
+		if (level <= 0 || data.getSkills().getSkill("kisense") == null) return false;
+
+		double maxRange = 15.0 + 5.0 * level;
+		if (data.getStatus().isAndroidUpgraded()) maxRange += 25.0;
+		if (player.distanceTo(target) > maxRange) return false;
+
+		if (!KiSenseScan.canTarget(target, data)) return false;
+		return player.hasLineOfSight(target) || data.getStatus().isAndroidUpgraded();
 	}
 
 	@SubscribeEvent
@@ -82,6 +119,11 @@ public class LockOnEvent {
 		Minecraft mc = Minecraft.getInstance();
 		Player player = mc.player;
 		if (player == null || lockedTarget == null) return;
+
+		if (lockedTarget.level() != mc.level) {
+			unlock();
+			return;
+		}
 
 		if (com.dragonminez.client.systems.taiyoken.TaiyokenBlindState.isActive()) {
 			unlock();
@@ -98,27 +140,7 @@ public class LockOnEvent {
 			}
 
 			StatsProvider.get(StatsCapability.INSTANCE, player).ifPresent(data -> {
-				int level = data.getSkills().getSkillLevel("kisense");
-
-				if (level <= 0 || data.getSkills().getSkill("kisense") == null) {
-					unlock();
-					return;
-				}
-
-				double maxRange = 15.0 + 5.0 * level;
-				if (data.getStatus().isAndroidUpgraded()) maxRange += 25.0;
-
-				if (player.distanceTo(lockedTarget) > maxRange) {
-					unlock();
-					return;
-				}
-
-				if (!KiSenseScan.canTarget(lockedTarget, data)) {
-					unlock();
-					return;
-				}
-
-				if (!player.hasLineOfSight(lockedTarget) && !data.getStatus().isAndroidUpgraded()) unlock();
+				if (!isLockValid(player, lockedTarget, data)) unlock();
 			});
 		}
 	}
@@ -129,12 +151,22 @@ public class LockOnEvent {
 		Minecraft mc = Minecraft.getInstance();
 		Player player = mc.player;
 		if (player == null || lockedTarget == null) return;
+		if (lockedTarget.level() != mc.level) {
+			unlock();
+			return;
+		}
 
 		float partialTick = event.renderTickTime;
 		double targetX = Mth.lerp(partialTick, lockedTarget.xo, lockedTarget.getX());
 		double targetY = Mth.lerp(partialTick, lockedTarget.yo, lockedTarget.getY()) + lockedTarget.getBbHeight() * 0.5;
 		double targetZ = Mth.lerp(partialTick, lockedTarget.zo, lockedTarget.getZ());
 		Vec3 targetPos = new Vec3(targetX, targetY, targetZ);
+
+		if (OverShoulderCamera.isDecoupled() && player instanceof LocalPlayer localPlayer) {
+			OverShoulderCamera.steerToward(localPlayer, targetPos, partialTick, 0.15F);
+			return;
+		}
+
 		Vec3 playerPos = player.getEyePosition(partialTick);
 
 		double dX = targetPos.x - playerPos.x;
@@ -147,8 +179,13 @@ public class LockOnEvent {
 
 		float smoothFactor = 0.15F;
 
-		float newYaw = rotlerp(player.getYRot(), targetYaw, smoothFactor);
-		float newPitch = rotlerp(player.getXRot(), targetPitch, smoothFactor);
+		double nearHorizontal = (player.getBbWidth() + lockedTarget.getBbWidth()) * 0.5;
+		double nearVertical = (player.getBbHeight() + lockedTarget.getBbHeight()) * 0.5;
+		float yawFollow = (float) Mth.clamp((dist - nearHorizontal * 0.5) / NEAR_FOLLOW_BLEND, 0.0, 1.0);
+		float pitchFollow = Math.max(yawFollow, (float) Mth.clamp((Math.abs(dY) - nearVertical) / NEAR_FOLLOW_BLEND, 0.0, 1.0));
+
+		float newYaw = rotlerp(player.getYRot(), targetYaw, smoothFactor * yawFollow);
+		float newPitch = rotlerp(player.getXRot(), targetPitch, smoothFactor * pitchFollow);
 
 		player.setYRot(newYaw);
 		player.setXRot(newPitch);
@@ -273,7 +310,8 @@ public class LockOnEvent {
 		StatsData targetData = StatsProvider.get(StatsCapability.INSTANCE, targetPlayer).orElse(null);
 		if (targetData == null) return true;
 		if (KiSenseScan.isCloaked(targetPlayer)) return false;
-		if (TransformationsHelper.hasGodFormActive(targetData) && myData.getSkills().getSkillLevel("godforms") <= 0) return false;
+		if (KiSenseScan.isKiSuppressed(targetData)) return false;
+		if (TransformationsHelper.hasGodFormActive(targetData) && !TransformationsHelper.hasGodKi(myData)) return false;
 		return true;
 	}
 }

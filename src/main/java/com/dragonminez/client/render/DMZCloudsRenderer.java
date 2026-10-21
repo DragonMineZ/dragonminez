@@ -23,8 +23,15 @@ public class DMZCloudsRenderer {
 	private boolean generateClouds = true;
 
 	public void render(PoseStack poseStack, Matrix4f projectionMatrix, float partialTick, double camX, double camY, double camZ, Vec3 customColor) {
+		this.render(poseStack, projectionMatrix, partialTick, camX, camY, camZ, customColor, Minecraft.getInstance().level.effects().getCloudHeight());
+	}
+
+	public void render(PoseStack poseStack, Matrix4f projectionMatrix, float partialTick, double camX, double camY, double camZ, Vec3 customColor, float cloudHeight) {
+		this.render(poseStack, projectionMatrix, partialTick, camX, camY, camZ, customColor, cloudHeight, (float) Minecraft.getInstance().level.getGameTime() + partialTick);
+	}
+
+	public void render(PoseStack poseStack, Matrix4f projectionMatrix, float partialTick, double camX, double camY, double camZ, Vec3 customColor, float cloudHeight, float cloudTicks) {
 		Minecraft mc = Minecraft.getInstance();
-		float cloudHeight = mc.level.effects().getCloudHeight();
 
 		if (Float.isNaN(cloudHeight)) {
 			return;
@@ -41,7 +48,7 @@ public class DMZCloudsRenderer {
 		);
 		RenderSystem.depthMask(true);
 
-		double time = (double) ((float) mc.level.getGameTime() + partialTick) * 0.03F;
+		double time = (double) (cloudTicks * 0.03F);
 		double viewX = (camX + time) / 12.0D;
 		double viewY = (double) (cloudHeight - (float) camY + 0.33F);
 		double viewZ = camZ / 12.0D + 0.33D;

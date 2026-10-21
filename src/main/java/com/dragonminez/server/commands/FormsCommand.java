@@ -18,7 +18,9 @@ import net.minecraft.server.level.ServerPlayer;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Set;
 
 public class FormsCommand {
 
@@ -36,6 +38,12 @@ public class FormsCommand {
 
 				.then(Commands.literal("set")
 						.requires(source -> DMZPermissions.check(source, DMZPermissions.FORMS_SET_SELF, DMZPermissions.FORMS_SET_OTHERS))
+						.then(Commands.literal("all")
+								.then(Commands.argument("level", IntegerArgumentType.integer(0))
+										.executes(ctx -> setAllForms(ctx.getSource(), List.of(ctx.getSource().getPlayerOrException()), IntegerArgumentType.getInteger(ctx, "level")))
+										.then(Commands.argument("targets", EntityArgument.players())
+												.requires(source -> DMZPermissions.hasPermission(source, DMZPermissions.FORMS_SET_OTHERS))
+												.executes(ctx -> setAllForms(ctx.getSource(), EntityArgument.getPlayers(ctx, "targets"), IntegerArgumentType.getInteger(ctx, "level"))))))
 						.then(Commands.argument("form", StringArgumentType.string()).suggests(FORM_SUGGESTIONS)
 								.then(Commands.argument("level", IntegerArgumentType.integer(0))
 										.executes(ctx -> setForm(ctx.getSource(), List.of(ctx.getSource().getPlayerOrException()), StringArgumentType.getString(ctx, "form"), IntegerArgumentType.getInteger(ctx, "level")))
@@ -82,6 +90,30 @@ public class FormsCommand {
 			source.sendSuccess(() -> Component.translatable("command.dragonminez.forms.set_success", formName, level, targets.iterator().next().getName().getString()), log);
 		} else {
 			source.sendSuccess(() -> Component.translatable("command.dragonminez.forms.set_multiple", formName, level, targets.size()), log);
+		}
+		return targets.size();
+	}
+
+	private static int setAllForms(CommandSourceStack source, Collection<ServerPlayer> targets, int level) {
+		boolean log = ConfigManager.getServerConfig().getGameplay().getCommandOutputOnConsole();
+		var config = ConfigManager.getSkillsConfig();
+		Set<String> allForms = new LinkedHashSet<>(config.getFormSkills());
+		allForms.addAll(config.getStackSkills());
+
+		for (ServerPlayer player : targets) {
+			StatsProvider.get(StatsCapability.INSTANCE, player).ifPresent(data -> {
+				for (String form : allForms) {
+					data.getSkills().setSkillLevel(form, level);
+				}
+				NetworkHandler.sendToTrackingEntityAndSelf(new ProgressionSyncS2C(player), player);
+			});
+		}
+
+		int count = allForms.size();
+		if (targets.size() == 1) {
+			source.sendSuccess(() -> Component.translatable("command.dragonminez.forms.set_all_success", count, level, targets.iterator().next().getName().getString()), log);
+		} else {
+			source.sendSuccess(() -> Component.translatable("command.dragonminez.forms.set_all_multiple", count, level, targets.size()), log);
 		}
 		return targets.size();
 	}

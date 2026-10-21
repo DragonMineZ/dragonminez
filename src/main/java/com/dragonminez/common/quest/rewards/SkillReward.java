@@ -3,8 +3,10 @@ package com.dragonminez.common.quest.rewards;
 import com.dragonminez.common.quest.QuestReward;
 import com.dragonminez.common.stats.StatsCapability;
 import com.dragonminez.common.stats.StatsProvider;
+import com.dragonminez.common.stats.techniques.PredefinedTechniques;
 import lombok.Getter;
 import net.minecraft.network.chat.Component;
+import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.server.level.ServerPlayer;
 
 @Getter
@@ -21,7 +23,7 @@ public class SkillReward extends QuestReward {
 	@Override
 	public void giveReward(ServerPlayer player) {
 		StatsProvider.get(StatsCapability.INSTANCE, player).ifPresent(data -> {
-			if (data.getSkills().getSkillLevel(skill) < level) data.getSkills().setSkillLevel(skill, level);
+			if (data.getBaseSkills().getSkillLevel(skill) < level) data.grantSkillLevel(skill, level);
 		});
 	}
 
@@ -29,8 +31,17 @@ public class SkillReward extends QuestReward {
 	public Component getDescription() {
 		return Component.translatable(
 				"gui.dragonminez.quests.rewards.skill",
-				Component.translatable("skill.dragonminez." + skill),
+				displayName(skill),
 				level
 		);
+	}
+
+	public MutableComponent displayName() {
+		return displayName(skill);
+	}
+
+	public static MutableComponent displayName(String skill) {
+		String techniqueKey = PredefinedTechniques.nameKey(skill);
+		return Component.translatable(techniqueKey != null ? techniqueKey : "skill.dragonminez." + skill);
 	}
 }

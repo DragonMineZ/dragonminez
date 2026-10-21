@@ -1,0 +1,608 @@
+package com.dragonminez.server.events.players;
+
+import com.dragonminez.Env;
+import com.dragonminez.LogUtil;
+import com.dragonminez.Reference;
+import com.dragonminez.common.config.GeneralServerConfig;
+import com.dragonminez.common.events.DMZEvent;
+import com.dragonminez.common.init.MainEffects;
+import com.dragonminez.common.init.MainSounds;
+import com.dragonminez.common.init.entities.ki.KiBlastEntity;
+import com.dragonminez.common.network.NetworkHandler;
+import com.dragonminez.common.network.S2C.StatsSyncS2C;
+import com.dragonminez.common.stats.StatsCapability;
+import com.dragonminez.common.stats.StatsData;
+import com.dragonminez.common.stats.StatsProvider;
+import com.dragonminez.common.util.GodRitualHelper;
+import net.minecraft.network.chat.Component;
+import net.minecraft.server.MinecraftServer;
+import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.sounds.SoundEvents;
+import net.minecraft.sounds.SoundSource;
+import net.minecraft.world.effect.MobEffect;
+import net.minecraft.world.effect.MobEffectInstance;
+import net.minecraft.world.entity.player.Player;
+import net.minecraftforge.event.TickEvent;
+import net.minecraftforge.event.entity.living.LivingAttackEvent;
+import net.minecraftforge.event.entity.living.LivingDamageEvent;
+import net.minecraftforge.event.entity.living.LivingDeathEvent;
+import net.minecraftforge.event.entity.living.LivingEntityUseItemEvent;
+import net.minecraftforge.event.entity.player.AttackEntityEvent;
+import net.minecraftforge.event.entity.player.PlayerEvent;
+import net.minecraftforge.event.entity.player.PlayerInteractEvent;
+import net.minecraftforge.event.server.ServerStoppedEvent;
+import net.minecraftforge.eventbus.api.EventPriority;
+import net.minecraftforge.eventbus.api.SubscribeEvent;
+import net.minecraftforge.fml.common.Mod;
+import net.minecraftforge.server.ServerLifecycleHooks;
+
+import javax.annotation.Nullable;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.UUID;
+
+@Mod.EventBusSubscriber(modid = Reference.MOD_ID, bus = Mod.EventBusSubscriber.Bus.FORGE)
+public final class KiShareService {
+	private static final double START_RANGE_TOLERANCE = 2.0;
+	private static final float START_SOUND_VOLUME = 0.6f;
+
+	private static final int INDICATOR_TOLERANCE_TICKS = 20;
+
+	public static final double GENKI_RANGE = 64.0;
+	private static final int GENKI_CALL_INTERVAL = 50;
+	private static final double GENKI_KI_PERCENT_PER_SECOND = 0.10;
+
+	private static final Map<UUID, Link> LINKS = new LinkedHashMap<>();
+	private static final Map<UUID, Integer> BOOSTED = new HashMap<>();
+	private static final Map<UUID, Float> ATTACK_CREDIT = new HashMap<>();
+	private static final Map<UUID, Map<UUID, Integer>> RETAINED = new HashMap<>();
+	private static final Set<UUID> DRAINED = new HashSet<>();
+	private static final Map<UUID, Long> RESTART_AT = new HashMap<>();
+	private static final Map<UUID, Long> GENKI_CALLS = new HashMap<>();
+
+	private static final class Link {
+		private final UUID receiver;
+		private final long startTick;
+		private final boolean genki;
+		private float pendingKi;
+		private float damageTaken;
+		private int transferTicks;
+
+		private Link(UUID receiver, long startTick, boolean genki) {
+			this.receiver = receiver;
+			this.startTick = startTick;
+			this.genki = genki;
+		}
+	}
+
+	public record SettledDonor(ServerPlayer player, StatsData data) {}
+
+	private KiShareService() {}
+
+	public static boolean isDonating(Player player) {
+		return player != null && LINKS.containsKey(player.getUUID());
+	}
+
+	public static boolean isReceiving(UUID receiver) {
+		for (Link link : LINKS.values()) {
+			if (link.receiver.equals(receiver)) return true;
+		}
+		return false;
+	}
+
+	public static void requestStart(ServerPlayer donor, int targetId) {
+		GeneralServerConfig.KiTransferConfig cfg = GodRitualHelper.transferConfig();
+		if (cfg == null || !cfg.getEnabled() || LINKS.containsKey(donor.getUUID())) return;
+		Long restartAt = RESTART_AT.get(donor.getUUID());
+		if (restartAt != null && donor.level().getGameTime() < restartAt) return;
+		boolean genki = targetId < 0;
+		ServerPlayer receiver = genki ? nearestGenkiCaster(donor)
+				: donor.level().getEntity(targetId) instanceof ServerPlayer target ? target : null;
+		if (receiver == null || receiver == donor) return;
+		StatsData donorData = stats(donor);
+		StatsData receiverData = stats(receiver);
+		if (donorData == null || receiverData == null) return;
+
+		String refusal = refusal(donor, donorData, receiver, receiverData, cfg, genki);
+		if (refusal != null) {
+			donor.displayClientMessage(Component.translatable(refusal, receiver.getDisplayName()), true);
+			return;
+		}
+
+		LINKS.put(donor.getUUID(), new Link(receiver.getUUID(), donor.level().getGameTime(), genki));
+		var status = donorData.getStatus();
+		status.setKiTransferTarget(receiver.getId());
+		status.setChargingKi(false);
+		status.setActionCharging(false);
+		status.setBlocking(false);
+		donorData.getTechniques().clearTechniqueCharge();
+		sync(donor);
+
+		donor.level().playSound(null, donor.getX(), donor.getY(), donor.getZ(), MainSounds.AURA_START.get(), SoundSource.PLAYERS, START_SOUND_VOLUME, 1.2f);
+		donor.displayClientMessage(Component.translatable(genki ? "message.dragonminez.kishare.genki_giving" : "message.dragonminez.kishare.giving", receiver.getDisplayName()), true);
+		receiver.displayClientMessage(Component.translatable(genki ? "message.dragonminez.kishare.genki_receiving" : "message.dragonminez.kishare.receiving", donor.getDisplayName()), true);
+		LogUtil.debug(Env.SERVER, "Ki share started: {} -> {} (donor ki {}/{})", donor.getGameProfile().getName(),
+				receiver.getGameProfile().getName(), donorData.getResources().getCurrentEnergy(), donorData.getMaxEnergy());
+	}
+
+	public static void requestStop(ServerPlayer donor) {
+		stop(donor.getServer(), donor.getUUID(), null);
+	}
+
+	public static void releaseForRitual(MinecraftServer server, UUID receiver) {
+		for (UUID donorId : new ArrayList<>(LINKS.keySet())) {
+			if (LINKS.get(donorId).receiver.equals(receiver)) stop(server, donorId, null);
+		}
+		stop(server, receiver, null);
+	}
+
+	public static List<SettledDonor> settledDonors(MinecraftServer server, UUID receiver, long now) {
+		GeneralServerConfig.KiTransferConfig cfg = GodRitualHelper.transferConfig();
+		long delay = cfg != null ? Math.round(cfg.getBoostDelaySeconds() * 20.0) : 20L;
+		List<SettledDonor> out = new ArrayList<>();
+		for (Map.Entry<UUID, Link> entry : LINKS.entrySet()) {
+			Link link = entry.getValue();
+			if (!link.receiver.equals(receiver) || now - link.startTick < delay) continue;
+			ServerPlayer donor = server.getPlayerList().getPlayer(entry.getKey());
+			StatsData data = donor != null ? stats(donor) : null;
+			if (data != null) out.add(new SettledDonor(donor, data));
+		}
+		return out;
+	}
+
+	public static int drawAttackCredit(ServerPlayer receiver, int amount) {
+		Float credit = ATTACK_CREDIT.get(receiver.getUUID());
+		if (credit == null || amount <= 0) return 0;
+		int drawn = (int) Math.min(amount, Math.floor(credit));
+		if (drawn <= 0) return 0;
+		float left = credit - drawn;
+		if (left <= 0.0f) ATTACK_CREDIT.remove(receiver.getUUID());
+		else ATTACK_CREDIT.put(receiver.getUUID(), left);
+		return drawn;
+	}
+
+	@SubscribeEvent
+	public static void onServerTick(TickEvent.ServerTickEvent event) {
+		if (event.phase != TickEvent.Phase.END) return;
+		MinecraftServer server = ServerLifecycleHooks.getCurrentServer();
+		if (server == null) return;
+		GeneralServerConfig.KiTransferConfig cfg = GodRitualHelper.transferConfig();
+		tickGenkiCalls(server, cfg);
+		if (LINKS.isEmpty() && BOOSTED.isEmpty() && ATTACK_CREDIT.isEmpty() && RETAINED.isEmpty() && DRAINED.isEmpty()) return;
+
+		if (cfg == null || !cfg.getEnabled()) {
+			for (UUID donorId : new ArrayList<>(LINKS.keySet())) stop(server, donorId, null);
+			RETAINED.clear();
+			refreshBoosts(server, Map.of());
+			ATTACK_CREDIT.clear();
+			tickDrains(server, cfg);
+			return;
+		}
+
+		Map<UUID, Set<UUID>> boostingDonors = new HashMap<>();
+		Set<UUID> receivers = new HashSet<>();
+		long delay = Math.round(cfg.getBoostDelaySeconds() * 20.0);
+		for (UUID donorId : new ArrayList<>(LINKS.keySet())) {
+			Link link = LINKS.get(donorId);
+			if (link == null) continue;
+			ServerPlayer donor = server.getPlayerList().getPlayer(donorId);
+			ServerPlayer receiver = server.getPlayerList().getPlayer(link.receiver);
+			StatsData donorData = donor != null ? stats(donor) : null;
+			StatsData receiverData = receiver != null ? stats(receiver) : null;
+			String reason = linkBreak(donor, donorData, receiver, receiverData, link, cfg);
+			if (reason != null) {
+				stop(server, donorId, reason.isEmpty() ? null : reason);
+				continue;
+			}
+			if (!transfer(donor, donorData, receiver, receiverData, link, cfg)) {
+				stop(server, donorId, "message.dragonminez.kishare.out_of_ki");
+				continue;
+			}
+			receivers.add(link.receiver);
+			if (++link.transferTicks % cfg.getIntervalTicks() == 0) completeInterval(donor, donorData, link, cfg);
+			if (donor.level().getGameTime() - link.startTick >= delay) {
+				boostingDonors.computeIfAbsent(link.receiver, k -> new HashSet<>()).add(donorId);
+			}
+		}
+
+		tickRetained(boostingDonors);
+		Map<UUID, Integer> boostsPerReceiver = new HashMap<>();
+		boostingDonors.forEach((receiver, donors) -> boostsPerReceiver.put(receiver, donors.size()));
+		refreshBoosts(server, boostsPerReceiver);
+		tickDrains(server, cfg);
+		ATTACK_CREDIT.keySet().removeIf(id -> {
+			ServerPlayer receiver = server.getPlayerList().getPlayer(id);
+			StatsData data = receiver != null ? stats(receiver) : null;
+			return data == null || !isChargingAttack(data);
+		});
+
+		for (UUID receiverId : receivers) {
+			ServerPlayer receiver = server.getPlayerList().getPlayer(receiverId);
+			if (receiver != null) GodRitualService.evaluate(server, receiver);
+		}
+	}
+
+	private static String refusal(ServerPlayer donor, StatsData donorData, ServerPlayer receiver, StatsData receiverData,
+								  GeneralServerConfig.KiTransferConfig cfg, boolean genki) {
+		if (!canAct(donor, donorData)) return "message.dragonminez.kishare.cannot";
+		if (!isValidReceiver(receiver, receiverData) || receiverData.getStatus().isInGodRitual()) return "message.dragonminez.kishare.invalid_target";
+		if (LINKS.containsKey(receiver.getUUID())) return "message.dragonminez.kishare.target_busy";
+		if (isReceiving(donor.getUUID())) return "message.dragonminez.kishare.self_busy";
+		if (donorData.getResources().getCurrentEnergy() <= 0.0f) return "message.dragonminez.kishare.out_of_ki";
+		if (donor.level() != receiver.level()) return "message.dragonminez.kishare.too_far";
+		if (genki) return donor.distanceTo(receiver) > GENKI_RANGE ? "message.dragonminez.kishare.too_far" : null;
+		if (donor.distanceTo(receiver) > cfg.getStartRange() + START_RANGE_TOLERANCE
+				|| !donor.hasLineOfSight(receiver)) return "message.dragonminez.kishare.too_far";
+		return null;
+	}
+
+	private static String linkBreak(ServerPlayer donor, StatsData donorData, ServerPlayer receiver, StatsData receiverData,
+									Link link, GeneralServerConfig.KiTransferConfig cfg) {
+		if (donor == null || donorData == null) return "";
+		if (donorData.getStatus().isInGodRitual()) return "";
+		if (!canAct(donor, donorData)) return "message.dragonminez.kishare.interrupted";
+		if (receiver == null || receiverData == null || !isValidReceiver(receiver, receiverData)) return "message.dragonminez.kishare.lost";
+		if (receiverData.getStatus().isInGodRitual()) return "";
+		double maxDistance = link.genki ? Math.max(GENKI_RANGE, cfg.getMaxLinkDistance()) : cfg.getMaxLinkDistance();
+		if (donor.level() != receiver.level() || donor.distanceTo(receiver) > maxDistance) return "message.dragonminez.kishare.lost";
+		if (link.genki && chargingGenki(receiver) == null) return "message.dragonminez.kishare.genki_released";
+		return null;
+	}
+
+	@Nullable
+	public static KiBlastEntity chargingGenki(ServerPlayer player) {
+		StatsData data = stats(player);
+		if (data == null || !isChargingAttack(data)) return null;
+		return TickHandler.findChargingEntity(player) instanceof KiBlastEntity ball && ball.isChargingGenki() ? ball : null;
+	}
+
+	@Nullable
+	private static ServerPlayer nearestGenkiCaster(ServerPlayer donor) {
+		ServerPlayer best = null;
+		double bestDistance = GENKI_RANGE * GENKI_RANGE;
+		for (ServerPlayer other : donor.serverLevel().players()) {
+			if (other == donor || !other.isAlive() || other.isSpectator()) continue;
+			double distance = donor.distanceToSqr(other);
+			if (distance > bestDistance || chargingGenki(other) == null) continue;
+			best = other;
+			bestDistance = distance;
+		}
+		return best;
+	}
+
+	private static void tickGenkiCalls(MinecraftServer server, @Nullable GeneralServerConfig.KiTransferConfig cfg) {
+		if (cfg == null || !cfg.getEnabled()) {
+			GENKI_CALLS.clear();
+			return;
+		}
+		long now = server.getTickCount();
+		Set<UUID> casters = new HashSet<>();
+		Set<UUID> called = new HashSet<>();
+		for (ServerPlayer caster : server.getPlayerList().getPlayers()) {
+			if (chargingGenki(caster) == null) continue;
+			casters.add(caster.getUUID());
+			Long last = GENKI_CALLS.get(caster.getUUID());
+			if (last != null && now - last < GENKI_CALL_INTERVAL) continue;
+			GENKI_CALLS.put(caster.getUUID(), now);
+			for (ServerPlayer other : caster.serverLevel().players()) {
+				if (other == caster || !other.isAlive() || other.isSpectator() || LINKS.containsKey(other.getUUID())) continue;
+				if (other.distanceTo(caster) > GENKI_RANGE || called.contains(other.getUUID())) continue;
+				StatsData otherData = stats(other);
+				if (otherData == null || !otherData.getStatus().isHasCreatedCharacter() || isChargingAttack(otherData)) continue;
+				called.add(other.getUUID());
+				other.displayClientMessage(Component.translatable("message.dragonminez.kishare.genki_call", caster.getDisplayName()), true);
+				other.playNotifySound(SoundEvents.NOTE_BLOCK_CHIME.value(), SoundSource.PLAYERS, 0.7f, 1.6f);
+			}
+		}
+		GENKI_CALLS.keySet().retainAll(casters);
+	}
+
+	private static boolean canAct(ServerPlayer player, StatsData data) {
+		if (!player.isAlive() || player.isSpectator() || !data.getStatus().isHasCreatedCharacter()) return false;
+		if (player.hasEffect(MainEffects.STUN.get())) return false;
+		var status = data.getStatus();
+		return !status.isKnockedDown() && !status.isStrikeLocked() && !status.isMatchFrozen() && !status.isInGodRitual();
+	}
+
+	private static boolean isValidReceiver(ServerPlayer receiver, StatsData data) {
+		return receiver.isAlive() && !receiver.isSpectator() && data.getStatus().isHasCreatedCharacter();
+	}
+
+	private static boolean transfer(ServerPlayer donor, StatsData donorData, ServerPlayer receiver, StatsData receiverData,
+									Link link, GeneralServerConfig.KiTransferConfig cfg) {
+		double percentPerSecond = chargingGenki(receiver) != null ? GENKI_KI_PERCENT_PER_SECOND : cfg.getKiPercentPerSecond();
+		link.pendingKi += (float) (donorData.getMaxEnergy() * percentPerSecond / 20.0);
+		float whole = (float) (Math.floor(link.pendingKi * 4.0) / 4.0);
+		if (whole <= 0.0f) return true;
+		link.pendingKi -= whole;
+
+		float available = donorData.getResources().getCurrentEnergy();
+		float given = donor.isCreative() ? whole : Math.min(whole, available);
+		if (given <= 0.0f) return false;
+		if (!donor.isCreative()) donorData.getResources().setCurrentEnergy(available - given);
+		deliver(receiver, receiverData, given, cfg);
+		return donor.isCreative() || donorData.getResources().getCurrentEnergy() > 0.0f;
+	}
+
+	private static void deliver(ServerPlayer receiver, StatsData data, float amount, GeneralServerConfig.KiTransferConfig cfg) {
+		float max = data.getMaxEnergy();
+		if (isChargingAttack(data) && TickHandler.findChargingEntity(receiver) instanceof KiBlastEntity genki
+				&& genki.absorbGenkiDonation(amount / Math.max(1.0f, max))) return;
+		float current = data.getResources().getCurrentEnergy();
+		float stored = Math.min(Math.max(0.0f, max - current), amount);
+		if (stored > 0.0f) data.getResources().setCurrentEnergy(current + stored);
+		float overflow = amount - stored;
+		if (overflow <= 0.0f || !isChargingAttack(data)) return;
+		float cap = (float) (max * cfg.getAttackChargeCreditRatio());
+		ATTACK_CREDIT.merge(receiver.getUUID(), overflow, (a, b) -> Math.min(cap, a + b));
+	}
+
+	private static boolean isChargingAttack(StatsData data) {
+		return data.getTechniques().isTechniqueCharging() || data.getTechniques().isTechniqueChargeActive();
+	}
+
+	private static void completeInterval(ServerPlayer donor, StatsData donorData, Link link, GeneralServerConfig.KiTransferConfig cfg) {
+		int retain = cfg.getRetainTicksPerInterval();
+		if (retain > 0) RETAINED.computeIfAbsent(link.receiver, k -> new HashMap<>()).merge(donor.getUUID(), retain, Integer::sum);
+		if (donor.isCreative()) return;
+
+		var status = donorData.getStatus();
+		int stacks = Math.min(cfg.getMaxDonorPenaltyStacks(), status.getKiDrainStacks() + 1);
+		boolean changed = stacks != status.getKiDrainStacks();
+		status.setKiDrainStacks(stacks);
+		status.setKiDrainTicks(status.getKiDrainTicks() + retain);
+		DRAINED.add(donor.getUUID());
+		if (changed) sync(donor);
+	}
+
+	private static void tickRetained(Map<UUID, Set<UUID>> boostingDonors) {
+		if (RETAINED.isEmpty()) return;
+		for (var receiverIt = RETAINED.entrySet().iterator(); receiverIt.hasNext(); ) {
+			var receiverEntry = receiverIt.next();
+			UUID receiverId = receiverEntry.getKey();
+			for (var donorIt = receiverEntry.getValue().entrySet().iterator(); donorIt.hasNext(); ) {
+				var donorEntry = donorIt.next();
+				Link active = LINKS.get(donorEntry.getKey());
+				boolean stillGiving = active != null && active.receiver.equals(receiverId);
+				int left = stillGiving ? donorEntry.getValue() : donorEntry.getValue() - 1;
+				if (left <= 0) {
+					donorIt.remove();
+					continue;
+				}
+				donorEntry.setValue(left);
+				boostingDonors.computeIfAbsent(receiverId, k -> new HashSet<>()).add(donorEntry.getKey());
+			}
+			if (receiverEntry.getValue().isEmpty()) receiverIt.remove();
+		}
+	}
+
+	private static void tickDrains(MinecraftServer server, @Nullable GeneralServerConfig.KiTransferConfig cfg) {
+		if (DRAINED.isEmpty()) return;
+		for (var it = DRAINED.iterator(); it.hasNext(); ) {
+			UUID id = it.next();
+			ServerPlayer player = server.getPlayerList().getPlayer(id);
+			StatsData data = player != null ? stats(player) : null;
+			if (data == null) {
+				it.remove();
+				continue;
+			}
+			var status = data.getStatus();
+			boolean donating = LINKS.containsKey(id);
+			if (!donating && status.getKiDrainTicks() > 0) status.setKiDrainTicks(status.getKiDrainTicks() - 1);
+			if (status.getKiDrainTicks() <= 0 || cfg == null || !cfg.getEnabled()) {
+				clearDrain(player, data);
+				it.remove();
+				continue;
+			}
+			showIndicator(player, MainEffects.KI_TRANSFER_DRAIN.get(), donating ? -1 : status.getKiDrainTicks(), status.getKiDrainStacks() - 1);
+		}
+	}
+
+	private static void clearDrain(ServerPlayer player, StatsData data) {
+		var status = data.getStatus();
+		boolean had = status.getKiDrainStacks() != 0 || status.getKiDrainTicks() != 0;
+		status.setKiDrainStacks(0);
+		status.setKiDrainTicks(0);
+		if (player.hasEffect(MainEffects.KI_TRANSFER_DRAIN.get())) player.removeEffect(MainEffects.KI_TRANSFER_DRAIN.get());
+		if (had) sync(player);
+	}
+
+	private static void showIndicator(ServerPlayer player, MobEffect effect, int duration, int amplifier) {
+		int amp = Math.max(0, amplifier);
+		MobEffectInstance current = player.getEffect(effect);
+		if (current != null && current.getAmplifier() == amp) {
+			boolean currentInfinite = current.isInfiniteDuration();
+			if (duration < 0 && currentInfinite) return;
+			if (duration >= 0 && !currentInfinite && Math.abs(current.getDuration() - duration) <= INDICATOR_TOLERANCE_TICKS) return;
+		}
+		player.forceAddEffect(new MobEffectInstance(effect, duration < 0 ? MobEffectInstance.INFINITE_DURATION : duration, amp, false, false, true), null);
+	}
+
+	private static void refreshBoostIndicator(ServerPlayer receiver, int donors) {
+		if (donors <= 0) {
+			if (receiver.hasEffect(MainEffects.KI_TRANSFER_BOOST.get())) receiver.removeEffect(MainEffects.KI_TRANSFER_BOOST.get());
+			return;
+		}
+		UUID receiverId = receiver.getUUID();
+		boolean live = isReceiving(receiverId);
+		int longest = 0;
+		Map<UUID, Integer> retained = RETAINED.get(receiverId);
+		if (retained != null) {
+			for (int ticks : retained.values()) longest = Math.max(longest, ticks);
+		}
+		showIndicator(receiver, MainEffects.KI_TRANSFER_BOOST.get(), live ? -1 : longest, donors - 1);
+	}
+
+	public static void clearTransferEffects(ServerPlayer player) {
+		RETAINED.remove(player.getUUID());
+		BOOSTED.remove(player.getUUID());
+		DRAINED.remove(player.getUUID());
+		StatsData data = stats(player);
+		if (data != null) {
+			clearDrain(player, data);
+			if (data.getStatus().getKiTransferDonors() != 0 && !isReceiving(player.getUUID())) {
+				data.getStatus().setKiTransferDonors(0);
+				sync(player);
+			}
+		}
+		if (player.hasEffect(MainEffects.KI_TRANSFER_BOOST.get())) player.removeEffect(MainEffects.KI_TRANSFER_BOOST.get());
+	}
+
+	private static void refreshBoosts(MinecraftServer server, Map<UUID, Integer> settledPerReceiver) {
+		Set<UUID> touched = new HashSet<>(BOOSTED.keySet());
+		touched.addAll(settledPerReceiver.keySet());
+		for (UUID receiverId : touched) {
+			int donors = settledPerReceiver.getOrDefault(receiverId, 0);
+			if (donors > 0) BOOSTED.put(receiverId, donors);
+			else BOOSTED.remove(receiverId);
+			ServerPlayer receiver = server.getPlayerList().getPlayer(receiverId);
+			StatsData data = receiver != null ? stats(receiver) : null;
+			if (data == null) continue;
+			refreshBoostIndicator(receiver, donors);
+			if (data.getStatus().getKiTransferDonors() == donors) continue;
+			data.getStatus().setKiTransferDonors(donors);
+			sync(receiver);
+		}
+	}
+
+	private static void stop(@Nullable MinecraftServer server, UUID donorId, @Nullable String messageKey) {
+		Link link = LINKS.remove(donorId);
+		if (link == null || server == null) return;
+		GeneralServerConfig.KiTransferConfig cfg = GodRitualHelper.transferConfig();
+		int restartTicks = cfg != null ? cfg.getRestartCooldownTicks() : 40;
+		if (restartTicks > 0) RESTART_AT.put(donorId, server.overworld().getGameTime() + restartTicks);
+		ServerPlayer donor = server.getPlayerList().getPlayer(donorId);
+		StatsData data = donor != null ? stats(donor) : null;
+		if (data == null) return;
+		if (data.getStatus().getKiTransferTarget() != -1) {
+			data.getStatus().setKiTransferTarget(-1);
+			sync(donor);
+		}
+		if (messageKey != null) donor.displayClientMessage(Component.translatable(messageKey), true);
+	}
+
+	private static boolean isLocked(Player player) {
+		if (player == null) return false;
+		return StatsProvider.get(StatsCapability.INSTANCE, player).map(data -> data.getStatus().isKiShareLocked()).orElse(false);
+	}
+
+	@SubscribeEvent(priority = EventPriority.LOWEST)
+	public static void onDamage(LivingDamageEvent event) {
+		if (event.isCanceled() || event.getAmount() <= 0.0f || !(event.getEntity() instanceof ServerPlayer victim)) return;
+		Link link = LINKS.get(victim.getUUID());
+		if (link == null) return;
+		GeneralServerConfig.KiTransferConfig cfg = GodRitualHelper.transferConfig();
+		if (cfg == null) return;
+		link.damageTaken += Math.min(event.getAmount(), victim.getHealth());
+		if (link.damageTaken >= victim.getMaxHealth() * cfg.getInterruptDamageRatio()) {
+			stop(victim.getServer(), victim.getUUID(), "message.dragonminez.kishare.interrupted");
+		}
+	}
+
+	@SubscribeEvent(priority = EventPriority.HIGH)
+	public static void onAttackEntity(AttackEntityEvent event) {
+		if (isLocked(event.getEntity())) event.setCanceled(true);
+	}
+
+	@SubscribeEvent(priority = EventPriority.HIGH)
+	public static void onLivingAttack(LivingAttackEvent event) {
+		if (event.getEntity().level().isClientSide) return;
+		if (event.getSource().getEntity() instanceof Player attacker && isLocked(attacker)) event.setCanceled(true);
+	}
+
+	@SubscribeEvent(priority = EventPriority.HIGH)
+	public static void onRightClickItem(PlayerInteractEvent.RightClickItem event) {
+		if (isLocked(event.getEntity())) event.setCanceled(true);
+	}
+
+	@SubscribeEvent(priority = EventPriority.HIGH)
+	public static void onRightClickBlock(PlayerInteractEvent.RightClickBlock event) {
+		if (isLocked(event.getEntity())) event.setCanceled(true);
+	}
+
+	@SubscribeEvent(priority = EventPriority.HIGH)
+	public static void onEntityInteract(PlayerInteractEvent.EntityInteract event) {
+		if (isLocked(event.getEntity())) event.setCanceled(true);
+	}
+
+	@SubscribeEvent(priority = EventPriority.HIGH)
+	public static void onEntityInteractSpecific(PlayerInteractEvent.EntityInteractSpecific event) {
+		if (isLocked(event.getEntity())) event.setCanceled(true);
+	}
+
+	@SubscribeEvent(priority = EventPriority.HIGH)
+	public static void onLeftClickBlock(PlayerInteractEvent.LeftClickBlock event) {
+		if (isLocked(event.getEntity())) event.setCanceled(true);
+	}
+
+	@SubscribeEvent(priority = EventPriority.HIGH)
+	public static void onUseItemStart(LivingEntityUseItemEvent.Start event) {
+		if (event.getEntity() instanceof Player player && isLocked(player)) event.setCanceled(true);
+	}
+
+	@SubscribeEvent(priority = EventPriority.HIGH)
+	public static void onEnergyRegen(DMZEvent.EnergyRegenEvent event) {
+		if (event.getAmount() > 0.0 && isDonating(event.getPlayer())) event.setCanceled(true);
+	}
+
+	@SubscribeEvent
+	public static void onDeath(LivingDeathEvent event) {
+		if (event.getEntity() instanceof ServerPlayer player) stop(player.getServer(), player.getUUID(), null);
+	}
+
+	@SubscribeEvent
+	public static void onDimensionChange(PlayerEvent.PlayerChangedDimensionEvent event) {
+		if (event.getEntity() instanceof ServerPlayer player) stop(player.getServer(), player.getUUID(), null);
+	}
+
+	@SubscribeEvent
+	public static void onLogin(PlayerEvent.PlayerLoggedInEvent event) {
+		if (!(event.getEntity() instanceof ServerPlayer player)) return;
+		StatsData data = stats(player);
+		if (data == null) return;
+		var status = data.getStatus();
+		if (status.getKiDrainTicks() > 0) DRAINED.add(player.getUUID());
+		if (player.hasEffect(MainEffects.KI_TRANSFER_BOOST.get())) player.removeEffect(MainEffects.KI_TRANSFER_BOOST.get());
+		if (status.getKiTransferTarget() == -1 && status.getKiTransferDonors() == 0) return;
+		status.setKiTransferTarget(-1);
+		status.setKiTransferDonors(0);
+		sync(player);
+	}
+
+	@SubscribeEvent
+	public static void onLogout(PlayerEvent.PlayerLoggedOutEvent event) {
+		if (!(event.getEntity() instanceof ServerPlayer player)) return;
+		stop(player.getServer(), player.getUUID(), null);
+		BOOSTED.remove(player.getUUID());
+		ATTACK_CREDIT.remove(player.getUUID());
+		RETAINED.remove(player.getUUID());
+		DRAINED.remove(player.getUUID());
+		RESTART_AT.remove(player.getUUID());
+		StatsData data = stats(player);
+		if (data != null) data.getStatus().setKiTransferDonors(0);
+	}
+
+	@SubscribeEvent
+	public static void onServerStopped(ServerStoppedEvent event) {
+		LINKS.clear();
+		BOOSTED.clear();
+		ATTACK_CREDIT.clear();
+		RETAINED.clear();
+		DRAINED.clear();
+		RESTART_AT.clear();
+		GENKI_CALLS.clear();
+	}
+
+	private static StatsData stats(Player player) {
+		return StatsProvider.get(StatsCapability.INSTANCE, player).orElse(null);
+	}
+
+	private static void sync(ServerPlayer player) {
+		NetworkHandler.sendToTrackingEntityAndSelf(new StatsSyncS2C(player), player);
+	}
+}

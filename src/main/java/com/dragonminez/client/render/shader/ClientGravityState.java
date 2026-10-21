@@ -46,6 +46,10 @@ public final class ClientGravityState {
 		ClientGravityState.zone = zone;
 	}
 
+	public static void reset() {
+		update(0.0f, 1.0f, 0.0f, 1.0f, 1.0f, 0, 0, 0, 0.0f, 1.0f, 0);
+	}
+
 	public static float getShaderIntensity() {
 		if (machineGravity <= 0.0f) return 0.0f;
 		double forMax = ConfigManager.getServerConfig().getGravity().getDeviceShaderGravityForMax();

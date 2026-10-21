@@ -7,10 +7,9 @@ This file records instructions, preferences, prohibitions, decisions, and durabl
 ## Relationship To Other AI Docs
 
 - `AI/Agents.md` is the local AI onboarding entry point. Always read it first.
-- `AI/Context.md` stores current project architecture, systems, commands, and nuanced repo facts.
 - `AI/Skills.md` describes how to package repeatable workflows.
 - `AI/Memory.md` stores durable behavior guidance that remains useful across future sessions.
-- If information belongs only to the current task, put it in `AI/Context.md` or a task note, not here.
+- If information belongs only to the current task, put it in a task note, not here.
 - Do not duplicate broad architecture already documented elsewhere unless the memory changes future behavior.
 
 ## What To Record
@@ -68,7 +67,7 @@ Use this schema for each memory entry:
 - Guidance: What future AI agents should do because of this.
 - Do Not: Optional. What future AI agents should avoid.
 - Verification: Optional. How to confirm the memory is still true.
-- Related: Optional. Link to `AI/Agents.md`, `AI/Context.md`, source files, issues, or PRs.
+- Related: Optional. Link to `AI/Agents.md`, source files, issues, or PRs.
 ```
 
 ## Seed Entries
@@ -82,7 +81,6 @@ Use this schema for each memory entry:
 - Summary: Many DragonMineZ JSON files are intended to be edited by players and addon authors.
 - Guidance: Preserve readability, clear field names, lenient loading where appropriate, useful errors, and migration/backfill paths for JSON-backed user data.
 - Do Not: Do not replace user-facing JSON formats with opaque or generated-only structures unless the user explicitly approves the break.
-- Related: `AI/Agents.md`, `AI/Context.md`
 
 ### 2026-05-05 - Prefer Replacing Old Code Over Compatibility Branching
 
@@ -109,6 +107,80 @@ Use this schema for each memory entry:
 ## Entries
 
 Add durable memories below this line, newest first.
+
+### 2026-10-05 - Player Cooldowns Tick Once, Only In TickHandler
+
+- Type: decision
+- Status: active
+- Source: user
+- Scope: `common/stats/character/Cooldowns`, `server/events/players/TickHandler`
+- Summary: From 2026-01-19 (5b938e478) to 2026-10-05 `StatsCapability.onPlayerTick` and `TickHandler.onPlayerTick` both called `Cooldowns.tick()`, so every `StatsData` cooldown and duration (dash, techniques, knockdowns, Senzu gift, Kami, Baba revive, racial abilities...) lasted half its configured value, released 2.1.x included. The user chose to keep every configured value and remove the extra tick, so from 2.2 they all last their full written length.
+- Guidance: Treat cooldown values as real ticks (`xxxSeconds * 20` = real seconds). Before adding a `PlayerTickEvent` subscriber that advances player state, check that nothing else already advances it.
+- Do Not: Do not tick `Cooldowns` from a second place, and do not halve config values or constants to "restore" the old 2.1 timing without asking.
+- Verification: `grep -rn "getCooldowns().tick()" src/main/java` has exactly one hit, in `TickHandler`.
+- Related: `client/gui/dialogue/CooldownClock`
+
+### 2026-10-01 - Client Code Must Not Recompute Server-Only Gameplay State
+
+- Type: pitfall
+- Status: active
+- Source: debugging
+- Scope: client code and common code reachable from the logical client (`StatsData` getters, client events, mixins)
+- Summary: `server/util/GravityLogic` (device zones in `GravityDeviceManager`, WorldGuard, NPC gravity cache) only has real data on the server; client callers saw 0 machine gravity on dedicated servers and raced the server thread on its static maps in singleplayer. The same applied to client-side fly-ki checks that used a different formula than `FlyStatusHandler`.
+- Guidance: On the client read the server-synced value instead (`ClientGravityState` from `GravityZoneSyncS2C`, synced `StatsData`), and route common code through `DistExecutor` when it needs a client holder. Mirror server formulas exactly or let the server decide and sync.
+- Do Not: Do not call `GravityLogic` or other server managers from client code; do not let a singleplayer host test stand in for a dedicated-server test of client/server agreement.
+- Related: `StatsData.getSyncedTrainingZone`, `ConfigManager.useServerSync`
+
+### 2026-10-01 - Validate Every C2S Packet Against Server State
+
+- Type: prohibition
+- Status: active
+- Source: review
+- Scope: `common/network/C2S/*`
+- Summary: An audit found packets that trusted the client for gating it only enforced in the GUI: recustomize (class swap + full heal), space pod travel without a pod, master-only skill purchase from anywhere, remote quest turn-in, uncapped `readUtf`/collection sizes, NaN floats passing `Mth.clamp`, and unthrottled handlers that broadcast a full `StatsSyncS2C`.
+- Guidance: Re-check on the server what the screen assumes (nearby NPC/entity, vehicle, pending wish token, skill/offering, alive/spectator), cap every decoded string and collection, reject non-finite floats before clamping, and throttle spammable handlers with `PacketRateLimiter` (use `StatsSyncS2C.sendRequested` for immediate syncs; the 10-tick periodic sync covers drops).
+- Do Not: Do not rely on a client-side button condition as the only gate.
+
+### 2026-09-26 - Never Cache Framebuffer Attachments By Texture Id
+
+- Type: pitfall
+- Status: active
+- Source: debugging
+- Scope: `client/render/shader/BloomPipeline.java`, and any raw framebuffer built on another `RenderTarget`'s textures
+- Summary: `RenderTarget.resize` deletes and recreates its textures and NVIDIA returns the same texture names, so a raw framebuffer whose attachments were cached by id kept pointing at the deleted textures, still reported `GL_FRAMEBUFFER_COMPLETE`, and drew nowhere. Every bloom (ki attacks and auras) vanished after the first maximise or fullscreen switch until a restart.
+- Guidance: Re-attach such framebuffers once per frame. To verify, make the effect render once, then resize the window (GLFW maximise/restore, `Window.toggleFullScreen`) and read the target texture back.
+- Do Not: Do not treat an unchanged texture id or a complete framebuffer status as proof that an attachment is still the live texture.
+
+### 2026-09-26 - RenderType Clear State Leaks Into Manual Draw Passes
+
+- Type: pitfall
+- Status: active
+- Source: debugging
+- Scope: effects drawn manually in `PlayerEffectsRenderHandler` / `EffectBloomRenderer` (ki tasks)
+- Summary: `RenderType.clearRenderState()` (and `BufferSource.endBatch()`, which calls it) leaves blending and the depth test off, depth writes on and culling on. Inside the ki pass this made everything drawn after the Final Flash/Galick Gun lightning opaque, visible through walls, and written at full strength into the bloom mask.
+- Guidance: After flushing a RenderType in the middle of a manual pass, put the pass state back (`EffectBloomRenderer.restoreKiState` for ki tasks).
+- Related: `KiWaveRenderer#renderGalickLightning`, `KiProjectileRenderer`
+
+### 2026-09-23 - LevelTickEvent Fires Once Per Loaded Dimension
+
+- Type: pitfall
+- Status: active
+- Source: debugging
+- Scope: repo-wide (`TickEvent.LevelTickEvent` subscribers)
+- Summary: `LevelTickEvent` fires for every loaded `ServerLevel` each server tick; global per-tick state advanced inside it runs N times per tick (6+ with DMZ's dimensions). The beam clash tug-of-war and meter ran 6× too fast this way until 2026-09-23.
+- Guidance: In a `LevelTickEvent` handler only advance state that belongs to `event.level` (compare the entity/level reference), or move per-tick global work to `TickEvent.ServerTickEvent`.
+- Do Not: Do not keep a static list of world objects and tick all of it from a level tick handler.
+- Related: `BeamClashManager.advanceActiveClashes(ServerLevel)`, `BeamClash.level()`
+
+### 2026-09-23 - ClashMeter Is A Shared Deterministic Simulation
+
+- Type: durable-fact
+- Status: active
+- Source: implementation
+- Scope: `common/combat/clash/ClashMeter.java`, `ClashParticipant`, `client/clash/ClientBeamClashState`
+- Summary: The beam clash timing meter is simulated identically on client and server from `(seed, ticks since clash start)`; the client stamps presses with the meter time it rendered and the server re-simulates that instant and checks plausibility (latency window bounded by real time, marker consistency, monotonic claims, one press per cycle).
+- Guidance: Any change to `ClashMeter` (cycle lengths, window placement, grading) changes both sides at once; keep it free of `Random`, side effects and platform-dependent math. Tune feel in `BeamClash` (`DRIFT_PER_TICK`, `MOMENTUM_DECAY`, `BURST_PER_PERFECT_PRESS`) rather than by sending meter state over the network.
+- Do Not: Do not reintroduce a server-ticked meter phase in `BeamClashStateS2C`, and do not score from the client's claimed marker — it is only a consistency check against the re-simulation.
 
 ### 2026-07-12 - Post Shaders Must Output Alpha 1.0 Before The Vanilla Blit Pass
 

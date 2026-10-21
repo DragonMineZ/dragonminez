@@ -2,6 +2,8 @@ package com.dragonminez.client.events;
 
 import com.dragonminez.Reference;
 import com.dragonminez.common.init.MainSounds;
+import com.dragonminez.client.render.effects.AuraFxState;
+import com.dragonminez.client.systems.raid.RaidMusicManager;
 import com.dragonminez.common.init.sounds.AuraLoopSound;
 import com.dragonminez.common.stats.StatsCapability;
 import com.dragonminez.common.stats.StatsProvider;
@@ -32,21 +34,14 @@ public class SoundClientHandler {
         if (mc.level == null) {
             ACTIVE_AURA_SOUNDS.clear();
             LIGHTNING_TIMERS.clear();
+            RaidMusicManager.stop();
             return;
         }
 
         if (mc.isPaused()) return;
-
-        for (Player player : mc.level.players()) {
-            updatePlayerAuraSound(player, mc);
-        }
-
-        ACTIVE_AURA_SOUNDS.entrySet().removeIf(entry ->
-                entry.getValue().isStopped() || !mc.getSoundManager().isActive(entry.getValue()));
-
-        if (mc.level.getGameTime() % 200 == 0) { // Cada 10 segundos
-            LIGHTNING_TIMERS.keySet().removeIf(uuid -> mc.level.getPlayerByUUID(uuid) == null);
-        }
+        for (Player player : mc.level.players()) updatePlayerAuraSound(player, mc);
+        ACTIVE_AURA_SOUNDS.entrySet().removeIf(entry -> entry.getValue().isStopped() || !mc.getSoundManager().isActive(entry.getValue()));
+        if (mc.level.getGameTime() % 200 == 0) LIGHTNING_TIMERS.keySet().removeIf(uuid -> mc.level.getPlayerByUUID(uuid) == null);
     }
 
     private static void updatePlayerAuraSound(Player player, Minecraft mc) {
@@ -57,13 +52,10 @@ public class SoundClientHandler {
 
         if (stats == null) return;
 
-        var character = stats.getCharacter();
-
-        boolean hasAura = stats.getStatus().isAuraActive() || stats.getStatus().isPermanentAura();
+        boolean hasAura = stats.getStatus().isAuraActive() || stats.getStatus().isPermanentAura() || stats.getStatus().isForcedAura();
 
         AuraLoopSound existing = ACTIVE_AURA_SOUNDS.get(playerId);
-        boolean isPlaying = existing != null && !existing.isStopped()
-                && mc.getSoundManager().isActive(existing);
+        boolean isPlaying = existing != null && !existing.isStopped() && mc.getSoundManager().isActive(existing);
 
         if (hasAura) {
             if (!isPlaying) {
@@ -73,18 +65,7 @@ public class SoundClientHandler {
             }
         }
 
-        boolean hasLightnings = false;
-
-        if (character.hasActiveStackForm() && character.getActiveStackFormData() != null) {
-            if (character.getActiveStackFormData().getHasLightnings()) {
-                hasLightnings = true;
-            }
-        }
-        else if (character.hasActiveForm() && character.getActiveFormData() != null) {
-            if (character.getActiveFormData().getHasLightnings()) {
-                hasLightnings = true;
-            }
-        }
+        boolean hasLightnings = AuraFxState.hasLightning(stats);
 
         if (hasLightnings) {
             long currentTime = mc.level.getGameTime();

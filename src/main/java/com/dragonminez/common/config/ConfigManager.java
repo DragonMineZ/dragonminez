@@ -3,8 +3,10 @@ package com.dragonminez.common.config;
 import com.dragonminez.Env;
 import com.dragonminez.LogUtil;
 import com.dragonminez.client.animation.AnimationCache;
+import com.dragonminez.common.config.migration.RacialConfigMigrator;
 import com.dragonminez.common.diagnostics.JsonLoadReport;
 import com.dragonminez.common.init.MainEntities;
+import com.dragonminez.common.util.FusionForms;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.JsonArray;
@@ -13,7 +15,14 @@ import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import com.google.gson.JsonPrimitive;
 import net.minecraft.world.entity.EntityType;
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.fml.loading.FMLEnvironment;
 import net.minecraftforge.fml.loading.FMLPaths;
+import com.dragonminez.common.network.CompressionUtil;
+import com.dragonminez.common.network.NetworkHandler;
+import com.dragonminez.common.network.S2C.SyncServerConfigS2C;
+import net.minecraft.server.level.ServerPlayer;
+import net.minecraftforge.server.ServerLifecycleHooks;
 import net.minecraftforge.registries.RegistryObject;
 
 import java.io.IOException;
@@ -30,7 +39,7 @@ import java.util.function.Supplier;
 import java.util.stream.Stream;
 
 public class ConfigManager {
-	public static final String CONFIG_VERSION = "2.1.3";
+	public static final String CONFIG_VERSION = "2.2.0";
 	public static final String CLIENT_ONLY_CONFIG = "general-user";
 
 	private static final String PREVIOUS_CONFIGS_ROOT = "/data/dragonminez/previousConfigs/";
@@ -48,8 +57,10 @@ public class ConfigManager {
 	private static final Path CONFIG_DIR = FMLPaths.CONFIGDIR.get().resolve("dragonminez");
 	private static final Path STACK_FORMS_DIR = CONFIG_DIR.resolve("forms");
 	private static final Path RACES_DIR = CONFIG_DIR.resolve("races");
-	private static final String[] DEFAULT_RACES = {"human", "saiyan", "namekian", "frostdemon", "bioandroid", "majin"};
-	private static final Set<String> RACES_WITH_GENDER = new HashSet<>(Arrays.asList("human", "saiyan", "majin"));
+	private static final Path RAIDS_DIR = CONFIG_DIR.resolve("raids");
+	private static final Path TOURNAMENTS_DIR = CONFIG_DIR.resolve("tournaments");
+	private static final String[] DEFAULT_RACES = {"human", "saiyan", "namekian", "frostdemon", "bioandroid", "majin", "glind"};
+	private static final Set<String> RACES_WITH_GENDER = new HashSet<>(Arrays.asList("human", "saiyan", "majin", "glind"));
 
 	private static final Map<String, RaceStatsConfig> RACE_STATS = new HashMap<>();
 	private static final Map<String, RaceCharacterConfig> RACE_CHARACTER = new HashMap<>();
@@ -58,20 +69,34 @@ public class ConfigManager {
 	private static final List<String> CACHED_CONFIG_FILES = new ArrayList<>();
 
 	private static Map<String, FormConfig> STACK_FORMS = new HashMap<>();
+	private static final Map<String, RaidDefinition> RAIDS = new LinkedHashMap<>();
+	private static final Map<String, TournamentDefinition> TOURNAMENTS = new LinkedHashMap<>();
+	public static final String SYNC_END_MARKER = "__end__";
+	private static final String SYNC_EXCLUDED_SERVER_SECTION = "storage";
 
-	private static GeneralServerConfig SERVER_SYNCED_GENERAL_SERVER;
-	private static SkillsConfig SERVER_SYNCED_SKILLS;
-	private static TechniqueConfig SERVER_SYNCED_TECHNIQUES;
-	private static CombatConfig SERVER_SYNCED_COMBAT;
-	private static TrainingConfig SERVER_SYNCED_TRAINING;
-	private static Map<String, Map<String, FormConfig>> SERVER_SYNCED_FORMS;
-	private static Map<String, RaceStatsConfig> SERVER_SYNCED_STATS;
-	private static Map<String, RaceCharacterConfig> SERVER_SYNCED_CHARACTER;
-	private static Map<String, FormConfig> SERVER_SYNCED_STACK_FORMS;
-	private static EntitiesConfig SERVER_SYNCED_ENTITIES;
-	private static boolean serverSyncActive = false;
+	private static final class SyncedConfigs {
+		private GeneralServerConfig generalServer;
+		private SkillsConfig skills;
+		private TechniqueConfig techniques;
+		private CombatConfig combat;
+		private TrainingConfig training;
+		private Map<String, Map<String, FormConfig>> forms = new HashMap<>();
+		private Map<String, RaceStatsConfig> stats = new HashMap<>();
+		private Map<String, RaceCharacterConfig> character = new HashMap<>();
+		private Map<String, FormConfig> stackForms = new HashMap<>();
+		private EntitiesConfig entities;
+	}
+
+	public record SyncPayload(String path, byte[] data) {}
+
+	private static volatile SyncedConfigs SYNCED = new SyncedConfigs();
+	private static SyncedConfigs pendingSync;
+	private static volatile Thread syncClientThread;
+	private static volatile List<SyncPayload> cachedSyncPayloads;
+	private static volatile boolean serverSyncActive = false;
 
 	private static GeneralUserConfig userConfig;
+	private static HudLayoutConfig hudLayoutConfig;
 	private static GeneralServerConfig serverConfig;
 	private static CombatConfig combatConfig;
 	private static TrainingConfig trainingConfig;
@@ -81,6 +106,7 @@ public class ConfigManager {
 
 	public static void initialize() {
 		LogUtil.info(Env.COMMON, "Initializing DragonMineZ configuration system...");
+		invalidateSyncPayloads();
 		JsonLoadReport.clear("config");
 
 		try {
@@ -90,6 +116,8 @@ public class ConfigManager {
 			loadGeneralConfigs();
 			loadAllRaces();
 			createOrLoadStackForms(true);
+			loadRaids();
+			loadTournaments();
 
 			LogUtil.info(Env.COMMON, "Configuration system initialized successfully");
 			LogUtil.info(Env.COMMON, "Loaded races: {}", LOADED_RACES);
@@ -100,6 +128,7 @@ public class ConfigManager {
 
 	public static void reload() {
 		LogUtil.info(Env.COMMON, "Reloading DragonMineZ configuration system...");
+		invalidateSyncPayloads();
 		JsonLoadReport.clear("config");
 
 		try {
@@ -114,10 +143,133 @@ public class ConfigManager {
 			loadGeneralConfigs();
 			loadAllRaces();
 			createOrLoadStackForms(true);
+			loadRaids();
+			loadTournaments();
 			LogUtil.info(Env.COMMON, "Configuration system reloaded successfully");
 		} catch (IOException e) {
 			LogUtil.error(Env.COMMON, "Error reloading configuration system: {}", e.getMessage());
 		}
+	}
+
+	private static void loadRaids() throws IOException {
+		RAIDS.clear();
+		Files.createDirectories(RAIDS_DIR);
+
+		Map<String, RaidDefinition> shipped = RaidDefaults.create();
+		for (Map.Entry<String, RaidDefinition> entry : shipped.entrySet()) {
+			Path path = RAIDS_DIR.resolve(entry.getKey() + ".json");
+			RaidDefinition loaded = loadAndValidate(path, RaidDefinition.class, entry::getValue,
+					RaidDefinition::getConfigVersion, RaidDefinition::setConfigVersion,
+					RaidDefinition.CURRENT_VERSION, null);
+			if (loaded != null) RAIDS.put(entry.getKey(), loaded);
+		}
+
+		try (Stream<Path> stream = Files.list(RAIDS_DIR)) {
+			stream.filter(Files::isRegularFile)
+					.filter(p -> p.toString().endsWith(".json"))
+					.filter(p -> !p.getFileName().toString().toLowerCase().startsWith("old_"))
+					.sorted(Comparator.comparing(p -> p.getFileName().toString()))
+					.forEach(path -> {
+						String id = path.getFileName().toString();
+						id = id.substring(0, id.length() - 5);
+						if (shipped.containsKey(id)) return;
+
+						try {
+							RaidDefinition custom = LOADER.loadConfig(path, RaidDefinition.class);
+							if (custom != null) RAIDS.put(id, custom);
+						} catch (Exception e) {
+							LogUtil.error(Env.COMMON, "Could not read custom raid '{}': {}", id, e.getMessage());
+							JsonLoadReport.error("config", "raids/" + id + ".json",
+									"Malformed JSON: " + JsonLoadReport.rootCause(e) + " — this raid was skipped");
+						}
+					});
+		}
+
+		LogUtil.info(Env.COMMON, "Loaded {} raid definition(s): {}", RAIDS.size(), RAIDS.keySet());
+	}
+
+	/** Raid id to definition, in load order. Feed this to {@code RaidTypes.reload(...)}. */
+	public static Map<String, RaidDefinition> getRaids() {
+		return Collections.unmodifiableMap(RAIDS);
+	}
+
+	/** Mirrors {@link #loadRaids()}: shipped defaults get the version merge, extra files load as-is. */
+	private static void loadTournaments() throws IOException {
+		TOURNAMENTS.clear();
+		Files.createDirectories(TOURNAMENTS_DIR);
+
+		Map<String, TournamentDefinition> shipped = TournamentDefinition.Defaults.create();
+		for (Map.Entry<String, TournamentDefinition> entry : shipped.entrySet()) {
+			Path path = TOURNAMENTS_DIR.resolve(entry.getKey() + ".json");
+			TournamentDefinition loaded = loadAndValidate(path, TournamentDefinition.class, entry::getValue,
+					TournamentDefinition::getConfigVersion, TournamentDefinition::setConfigVersion,
+					TournamentDefinition.CURRENT_VERSION, null);
+			if (loaded != null) TOURNAMENTS.put(entry.getKey(), loaded);
+		}
+
+		try (Stream<Path> stream = Files.list(TOURNAMENTS_DIR)) {
+			stream.filter(Files::isRegularFile)
+					.filter(p -> p.toString().endsWith(".json"))
+					.filter(p -> !p.getFileName().toString().toLowerCase().startsWith("old_"))
+					.sorted(Comparator.comparing(p -> p.getFileName().toString()))
+					.forEach(path -> {
+						String id = path.getFileName().toString();
+						id = id.substring(0, id.length() - 5);
+						if (shipped.containsKey(id)) return;
+
+						try {
+							TournamentDefinition custom = LOADER.loadConfig(path, TournamentDefinition.class);
+							if (custom != null) TOURNAMENTS.put(id, custom);
+						} catch (Exception e) {
+							LogUtil.error(Env.COMMON, "Could not read custom tournament '{}': {}", id, e.getMessage());
+							JsonLoadReport.error("config", "tournaments/" + id + ".json",
+									"Malformed JSON: " + JsonLoadReport.rootCause(e) + " — this tournament was skipped");
+						}
+					});
+		}
+
+		LogUtil.info(Env.COMMON, "Loaded {} tournament definition(s): {}", TOURNAMENTS.size(), TOURNAMENTS.keySet());
+	}
+
+	public static Map<String, TournamentDefinition> getTournaments() {
+		return Collections.unmodifiableMap(TOURNAMENTS);
+	}
+
+	/**
+	 * Records the ring position for a tournament and writes it back to its JSON, so the offset
+	 * only has to be measured once per structure rather than guessed.
+	 *
+	 * @param x offset in blocks from the structure's corner
+	 * @return false when the tournament is unknown or the file could not be written
+	 */
+	public static boolean saveTournamentRing(String id, int x, int y, int z) {
+		TournamentDefinition def = TOURNAMENTS.get(id);
+		if (def == null) return false;
+
+		TournamentDefinition.RingOffset ring = def.getRing();
+		if (ring == null) {
+			ring = new TournamentDefinition.RingOffset();
+			def.setRing(ring);
+		}
+		ring.setX(x);
+		ring.setY(y);
+		ring.setZ(z);
+
+		try {
+			LOADER.saveConfig(TOURNAMENTS_DIR.resolve(id + ".json"), def);
+			return true;
+		} catch (IOException e) {
+			LogUtil.error(Env.COMMON, "Could not save ring position for tournament '{}': {}", id, e.getMessage());
+			return false;
+		}
+	}
+
+	/** Null when the id is unknown, disabled, or the file is missing fighters. */
+	public static TournamentDefinition getTournament(String id) {
+		if (id == null) return null;
+		TournamentDefinition def = TOURNAMENTS.get(id);
+		if (def == null || !def.isEnabled() || !def.isUsable()) return null;
+		return def;
 	}
 
 	private static String peekConfigVersion(Path path) {
@@ -165,7 +317,7 @@ public class ConfigManager {
 		return 0;
 	}
 
-	private static boolean isOutdated(String storedVersion) {
+	static boolean isOutdated(String storedVersion) {
 		Integer[] stored = parseSemver(storedVersion);
 		if (stored == null) return true;
 		Integer[] current = parseSemver(CONFIG_VERSION);
@@ -293,6 +445,7 @@ public class ConfigManager {
 
 			JsonObject oldObj = oldParsed.getAsJsonObject();
 			JsonObject newObj = newTree.getAsJsonObject();
+			if (clazz == GeneralServerConfig.class) RacialConfigMigrator.migrate(oldObj);
 			int preserved = mergeMatchingValues(oldObj, newObj, baseline, clazz);
 
 			T merged = GSON.fromJson(newObj, clazz);
@@ -498,6 +651,7 @@ public class ConfigManager {
 		try (Stream<Path> stream = Files.list(formsDir)) {
 			stream.filter(p -> p.toString().endsWith(".json"))
 					.filter(p -> !p.getFileName().toString().toLowerCase().startsWith("old_"))
+					.sorted(Comparator.comparing(p -> p.getFileName().toString()))
 					.forEach(p -> {
 						try {
 							FormConfig existing = LOADER.loadConfig(p, FormConfig.class);
@@ -527,6 +681,7 @@ public class ConfigManager {
 		try (Stream<Path> stream = Files.list(formsDir)) {
 			stream.filter(p -> p.toString().endsWith(".json"))
 					.filter(p -> !p.getFileName().toString().toLowerCase().startsWith("old_"))
+					.sorted(Comparator.comparing(p -> p.getFileName().toString()))
 					.forEach(p -> {
 						try {
 							FormConfig existing = LOADER.loadConfig(p, FormConfig.class);
@@ -547,12 +702,22 @@ public class ConfigManager {
 
 	private static void loadGeneralConfigs() {
 		userConfig = loadAndValidate(CONFIG_DIR.resolve("general-user.json"), GeneralUserConfig.class, GeneralUserConfig::new, GeneralUserConfig::getConfigVersion, GeneralUserConfig::setConfigVersion, GeneralUserConfig.CURRENT_VERSION, null);
+		loadHudLayoutConfig();
 		serverConfig = loadAndValidate(CONFIG_DIR.resolve("general-server.json"), GeneralServerConfig.class, GeneralServerConfig::new, GeneralServerConfig::getConfigVersion, GeneralServerConfig::setConfigVersion, GeneralServerConfig.CURRENT_VERSION, "general-server.json");
 		combatConfig = loadAndValidate(CONFIG_DIR.resolve("combat.json"), CombatConfig.class, CombatConfig::new, CombatConfig::getConfigVersion, CombatConfig::setConfigVersion, CombatConfig.CURRENT_VERSION, null);
 		trainingConfig = loadAndValidate(CONFIG_DIR.resolve("training.json"), TrainingConfig.class, TrainingConfig::new, TrainingConfig::getConfigVersion, TrainingConfig::setConfigVersion, TrainingConfig.CURRENT_VERSION, null);
 		skillsConfig = loadAndValidate(CONFIG_DIR.resolve("skills.json"), SkillsConfig.class, SkillsConfig::new, SkillsConfig::getConfigVersion, SkillsConfig::setConfigVersion, SkillsConfig.CURRENT_VERSION, "skills.json");
 		techniqueConfig = loadAndValidate(CONFIG_DIR.resolve("techniques.json"), TechniqueConfig.class, TechniqueConfig::new, TechniqueConfig::getConfigVersion, TechniqueConfig::setConfigVersion, TechniqueConfig.CURRENT_VERSION, null);
+		if (skillsConfig.addMissingDefaults()) saveWithAddedDefaults(CONFIG_DIR.resolve("skills.json"), skillsConfig);
+		if (techniqueConfig.addMissingDefaults()) saveWithAddedDefaults(CONFIG_DIR.resolve("techniques.json"), techniqueConfig);
 		entitiesConfig = loadAndValidate(CONFIG_DIR.resolve("entities.json"), EntitiesConfig.class, ConfigManager::createDefaultEntitiesConfig, EntitiesConfig::getConfigVersion, EntitiesConfig::setConfigVersion, EntitiesConfig.CURRENT_VERSION, null);
+	}
+
+	private static void saveWithAddedDefaults(Path path, Object config) {
+		LogUtil.warn(Env.COMMON, "Added missing default entries to {}", path.getFileName());
+		try { LOADER.saveConfig(path, config); } catch (Exception e) {
+			LogUtil.error(Env.COMMON, "Failed to save {} after adding missing defaults: {}", path.getFileName(), e.getMessage());
+		}
 	}
 
 	private static void createOrLoadRace(String raceName, boolean isDefault) throws IOException {
@@ -675,12 +840,17 @@ public class ConfigManager {
 		addDefaultEntityStats(statsMap, MainEntities.DINOSAUR2, 150.0, 12.0, 0.0);
 		addDefaultEntityStats(statsMap, MainEntities.DINOSAUR3, 75.0, 10.0, 0.0);
 		addDefaultEntityStats(statsMap, MainEntities.SABERTOOTH, 30.0, 5.0, 0.0);
+		addDefaultEntityStats(statsMap, MainEntities.GIANT_FISH, 80.0, 8.0, 0.0);
+		addDefaultEntityStats(statsMap, MainEntities.GIANT_TURTLE, 40.0, 0.0, 0.0);
 		addDefaultEntityStats(statsMap, MainEntities.BANDIT, 75.0, 10.0, 0.0);
 		addDefaultEntityStats(statsMap, MainEntities.RED_RIBBON_SOLDIER, 40.0, 5.0, 0.0);
 		addDefaultEntityStats(statsMap, MainEntities.RED_RIBBON_ROBOT1, 120.0, 15.0, 0.0);
 		addDefaultEntityStats(statsMap, MainEntities.RED_RIBBON_ROBOT2, 120.0, 15.0, 0.0);
 		addDefaultEntityStats(statsMap, MainEntities.RED_RIBBON_ROBOT3, 120.0, 15.0, 0.0);
 		addDefaultEntityStats(statsMap, MainEntities.MINI_BUU, 60.0, 8.0, 6.0);
+		addDefaultEntityStats(statsMap, MainEntities.SAGA_OGRE_RED, 200.0, 20.0, 0.0);
+		addDefaultEntityStats(statsMap, MainEntities.SAGA_OGRE_BLUE, 200.0, 20.0, 0.0);
+		addDefaultEntityStats(statsMap, MainEntities.MINI_JANEMBA_STAMPEDE, 20.0, 2.0, 0.0);
 
 		EntitiesConfig.TransformSettings transform = config.getTransformDefaults();
 		transform.setHealthMultiplier(1.5D);
@@ -708,7 +878,7 @@ public class ConfigManager {
 		for (String raceName : DEFAULT_RACES) createOrLoadRace(raceName, true);
 
 		try (var stream = Files.list(RACES_DIR)) {
-			stream.forEach(racePath -> {
+			stream.sorted(Comparator.comparing(p -> p.getFileName().toString())).forEach(racePath -> {
 				if (Files.isDirectory(racePath)) {
 					String raceName = racePath.getFileName().toString();
 					if (!isDefaultRace(raceName)) {
@@ -732,7 +902,6 @@ public class ConfigManager {
 
 	private static RaceCharacterConfig createDefaultCharacterConfig(String raceName, boolean isDefault) {
 		RaceCharacterConfig config = new RaceCharacterConfig();
-		config.setRaceName(raceName);
 		config.setUseVanillaSkin(false);
 		config.setCustomModel("");
 
@@ -747,6 +916,7 @@ public class ConfigManager {
 				case "frostdemon" -> setupFrostDemonCharacter(config);
 				case "bioandroid" -> setupBioAndroidCharacter(config);
 				case "majin" -> setupMajinCharacter(config);
+				case "glind" -> setupGlindCharacter(config);
 				default -> setupDefaultCharacter(config);
 			}
 		} else {
@@ -863,10 +1033,10 @@ public class ConfigManager {
 		config.setDefaultNoseType(0);
 		config.setDefaultMouthType(0);
 		config.setDefaultTattooType(0);
-		config.setDefaultBodyColor("#187600");
-		config.setDefaultBodyColor2("#9FE321");
-		config.setDefaultBodyColor3("#FF7600");
-		config.setDefaultHairColor("#187600");
+		config.setDefaultBodyColor("#396E14");
+		config.setDefaultBodyColor2("#c7b022");
+		config.setDefaultBodyColor3("#fa9a02");
+		config.setDefaultHairColor("#38628F");
 		config.setDefaultEye1Color("#2E2424");
 		config.setDefaultEye2Color("#F06F6E");
 		config.setDefaultAuraColor("#1AA700");
@@ -898,6 +1068,31 @@ public class ConfigManager {
 		config.setFormSkillTpCosts("legendaryforms", new Integer[]{-1, -1, -1});
 	}
 
+	private static void setupGlindCharacter(RaceCharacterConfig config) {
+		config.setCustomModel("human");
+		config.setIsLayered(true);
+		config.setRacialSkill("glind");
+		config.setHeadBones(new String[]{"ears1", "hair"});
+		config.setDefaultModelScaling(new Float[]{0.9375f, 0.9375f, 0.9375f});
+		config.setDefaultBodyType(1);
+		config.setSlimBodyTypes(new Integer[]{2});
+		config.setDefaultHairType(28);
+		config.setDefaultEyesType(0);
+		config.setDefaultNoseType(0);
+		config.setDefaultMouthType(0);
+		config.setDefaultTattooType(0);
+		config.setDefaultBodyColor("#D2A3DA");
+		config.setDefaultBodyColor2("#D2A3DA");
+		config.setDefaultBodyColor3("#D2A3DA");
+		config.setDefaultHairColor("#EDEDED");
+		config.setDefaultEye1Color("#222629");
+		config.setDefaultEye2Color("#222629");
+		config.setDefaultAuraColor("#E3C4FF");
+		config.setFormSkillTpCosts("superforms", new Integer[]{18000, 31000, 52000, 83000, 117000});
+		config.setFormSkillTpCosts("godforms", new Integer[]{});
+		config.setFormSkillTpCosts("legendaryforms", new Integer[]{-1, -1, -1});
+	}
+
 	private static void setupDefaultCharacter(RaceCharacterConfig config) {
 		config.setUseVanillaSkin(true);
 		config.setIsLayered(true);
@@ -921,32 +1116,38 @@ public class ConfigManager {
 		config.setFormSkillTpCosts("legendaryforms", new Integer[]{});
 	}
 
+	private static final double DEFAULT_VIT_SCALING_MAX_RATIO = 4.0;
+	private static final double DEFAULT_DEF_SCALING_MAX_RATIO = 4.0;
+
 	private static RaceStatsConfig createDefaultStatsConfig() {
 		RaceStatsConfig config = new RaceStatsConfig();
 
-		setupInitialStats(config.getClassStats("warrior"), 10, 0, 5, 5, 0, 0, 1.75, 0.06, 4.0, 0.08, 12.0, 0.12);
-		setupScalingStats(config.getClassStats("warrior"), 1.4, 1.0, 0.24, 1.6, 1.8, 0.5, 1.5);
+		setupInitialStats(config.getOrCreateClassStats("warrior"), 10, 0, 5, 5, 0, 0, 1.75, 0.06, 4.0, 0.08, 12.0, 0.045, 0.06);
+		setupScalingStats(config.getOrCreateClassStats("warrior"), 1.4, 1.0, 0.24, 1.6, 1.8, 0.5, 1.5);
 
-		setupInitialStats(config.getClassStats("spiritualist"), 0, 0, 0, 0, 10, 10, 0.5, 0.015, 8.0, 0.20, 5.0, 0.05);
-		setupScalingStats(config.getClassStats("spiritualist"), 0.3, 0.5, 0.156, 0.7, 1.4, 1.9, 3.7);
+		setupInitialStats(config.getOrCreateClassStats("spiritualist"), 0, 0, 0, 0, 10, 10, 0.5, 0.015, 8.0, 0.20, 5.0, 0.01875, 0.025);
+		setupScalingStats(config.getOrCreateClassStats("spiritualist"), 0.3, 0.5, 0.156, 0.7, 1.4, 1.9, 3.7);
 
-		setupInitialStats(config.getClassStats("martialartist"), 0, 10, 0, 10, 0, 0, 1.5, 0.0525, 4.0, 0.08, 9.0, 0.09);
-		setupScalingStats(config.getClassStats("martialartist"), 0.8, 1.8, 0.18, 1.3, 2.2, 0.6, 1.6);
+		setupInitialStats(config.getOrCreateClassStats("martialartist"), 0, 10, 0, 10, 0, 0, 1.5, 0.0525, 4.0, 0.08, 9.0, 0.03375, 0.045);
+		setupScalingStats(config.getOrCreateClassStats("martialartist"), 0.8, 1.8, 0.18, 1.3, 2.2, 0.6, 1.6);
 
-		setupInitialStats(config.getClassStats("berserker"), 10, 0, 0, 10, 0, 0, 1.0, 0.0375, 2.0, 0.04, 14.0, 0.13);
-		setupScalingStats(config.getClassStats("berserker"), 1.7, 0.8, 0.18, 1.1, 3.0, 0.4, 1.3);
+		setupInitialStats(config.getOrCreateClassStats("berserker"), 10, 0, 0, 10, 0, 0, 1.0, 0.0375, 2.0, 0.04, 14.0, 0.04875, 0.065);
+		setupScalingStats(config.getOrCreateClassStats("berserker"), 1.7, 0.8, 0.18, 1.1, 3.0, 0.4, 1.3);
 
-		setupInitialStats(config.getClassStats("paladin"), 0, 5, 10, 5, 0, 0, 2.0, 0.0675, 4.0, 0.08, 8.0, 0.08);
-		setupScalingStats(config.getClassStats("paladin"), 0.8, 1.2, 0.336, 1.2, 2.0, 0.6, 1.2);
+		setupInitialStats(config.getOrCreateClassStats("paladin"), 0, 5, 10, 5, 0, 0, 2.0, 0.0675, 4.0, 0.08, 8.0, 0.03, 0.04);
+		setupScalingStats(config.getOrCreateClassStats("paladin"), 0.8, 1.2, 0.336, 1.2, 2.0, 0.6, 1.2);
 
-		setupInitialStats(config.getClassStats("tank"), 0, 0, 10, 10, 0, 0, 2.25, 0.075, 5.0, 0.10, 9.0, 0.09);
-		setupScalingStats(config.getClassStats("tank"), 0.6, 0.7, 0.384, 1.5, 2.5, 0.5, 0.8);
-		config.getClassStats("tank").setTpGainMultiplier(1.25);
+		setupInitialStats(config.getOrCreateClassStats("tank"), 0, 0, 10, 10, 0, 0, 2.25, 0.075, 5.0, 0.10, 9.0, 0.03375, 0.045);
+		setupScalingStats(config.getOrCreateClassStats("tank"), 0.6, 0.7, 0.384, 1.5, 2.5, 0.5, 0.8);
+		config.getOrCreateClassStats("tank").setTpGainMultiplier(1.25);
 
-		setupInitialStats(config.getClassStats("cleric"), 0, 0, 5, 0, 0, 15, 0.5, 0.015, 12.0, 0.24, 16.0, 0.12);
-		setupScalingStats(config.getClassStats("cleric"), 0.5, 0.5, 0.168, 2.6, 1.2, 0.8, 3.0);
-		config.getClassStats("cleric").setTpGainMultiplier(1.25);
-		config.getClassStats("cleric").setTpCostMultiplier(0.9);
+		setupInitialStats(config.getOrCreateClassStats("cleric"), 0, 0, 5, 0, 0, 15, 0.5, 0.015, 12.0, 0.24, 16.0, 0.045, 0.06);
+		setupScalingStats(config.getOrCreateClassStats("cleric"), 0.5, 0.5, 0.168, 2.6, 1.2, 0.8, 3.0);
+		config.getOrCreateClassStats("cleric").setTpGainMultiplier(1.25);
+		config.getOrCreateClassStats("cleric").setTpCostMultiplier(0.9);
+
+		setupInitialStats(config.getOrCreateClassStats("unversed"), 4, 3, 3, 4, 3, 3, 1.4, 0.048, 5.0, 0.10, 10.0, 0.0375, 0.05);
+		setupScalingStats(config.getOrCreateClassStats("unversed"), 0.9, 0.9, 0.22, 1.35, 1.9, 0.85, 1.75);
 		setupDefaultPassives(config);
 		return config;
 	}
@@ -959,19 +1160,19 @@ public class ConfigManager {
 		warrior.put("armorPenAtMax", 0.10);
 		warrior.put("stackDurationTicks", 100.0);
 		warrior.put("comboResetTicks", 60.0);
-		setupPassive(config.getClassStats("warrior"), warrior);
+		setupPassive(config.getOrCreateClassStats("warrior"), warrior);
 
 		Map<String, Double> martial = new HashMap<>();
 		martial.put("maxBonus", 0.25);
 		martial.put("hpHigh", 0.75);
 		martial.put("hpLow", 0.25);
-		setupPassive(config.getClassStats("martialartist"), martial);
+		setupPassive(config.getOrCreateClassStats("martialartist"), martial);
 
 		Map<String, Double> spiritualist = new HashMap<>();
 		spiritualist.put("cdPrimary", 0.20);
 		spiritualist.put("cdSecondary", 0.15);
 		spiritualist.put("durationBonus", 0.25);
-		setupPassive(config.getClassStats("spiritualist"), spiritualist);
+		setupPassive(config.getOrCreateClassStats("spiritualist"), spiritualist);
 
 		Map<String, Double> berserker = new HashMap<>();
 		berserker.put("hpThreshHigh", 0.66);
@@ -980,25 +1181,35 @@ public class ConfigManager {
 		berserker.put("critHigh", 0.10);
 		berserker.put("hpRegenLow", 0.75);
 		berserker.put("critLow", 0.25);
-		setupPassive(config.getClassStats("berserker"), berserker);
+		setupPassive(config.getOrCreateClassStats("berserker"), berserker);
 
 		Map<String, Double> paladin = new HashMap<>();
 		paladin.put("redirectPct", 0.15);
 		paladin.put("lifestealPct", 0.15);
-		setupPassive(config.getClassStats("paladin"), paladin);
+		setupPassive(config.getOrCreateClassStats("paladin"), paladin);
 
 		Map<String, Double> tank = new HashMap<>();
 		tank.put("stmToHpRegenRatio", 0.5);
 		tank.put("healingBonus", 0.25);
 		tank.put("lowHpThreshold", 0.30);
 		tank.put("lowHpMultiplier", 2.0);
-		setupPassive(config.getClassStats("tank"), tank);
+		setupPassive(config.getOrCreateClassStats("tank"), tank);
 
 		Map<String, Double> cleric = new HashMap<>();
 		cleric.put("cdPrimary", 0.20);
 		cleric.put("cdSecondary", 0.15);
 		cleric.put("durationBonus", 0.25);
-		setupPassive(config.getClassStats("cleric"), cleric);
+		setupPassive(config.getOrCreateClassStats("cleric"), cleric);
+
+		Map<String, Double> unversed = new HashMap<>();
+		unversed.put("physicalBonus", 0.15);
+		unversed.put("kiBonus", 0.15);
+		unversed.put("physicalCharges", 3.0);
+		unversed.put("meleeHitsToPrime", 3.0);
+		unversed.put("chargeDurationTicks", 160.0);
+		unversed.put("comboResetTicks", 100.0);
+		unversed.put("strikeWindowTicks", 60.0);
+		setupPassive(config.getOrCreateClassStats("unversed"), unversed);
 	}
 
 	private static void setupPassive(RaceStatsConfig.ClassStats classStats, Map<String, Double> values) {
@@ -1007,7 +1218,7 @@ public class ConfigManager {
 		passive.setValues(values);
 	}
 
-	private static void setupInitialStats(RaceStatsConfig.ClassStats classStats, int str, int skp, int res, int vit, int pwr, int ene, double baseHp5, double hp5VitScaling, double baseEp5, double ep5EneScaling, double baseSp5, double sp5StmScaling) {
+	private static void setupInitialStats(RaceStatsConfig.ClassStats classStats, int str, int skp, int res, int vit, int pwr, int ene, double baseHp5, double hp5VitScaling, double baseEp5, double ep5EneScaling, double baseSp5, double sp5VitScaling, double sp5ResScaling) {
 		RaceStatsConfig.BaseStats base = classStats.getBaseStats();
 		base.setStrength(str);
 		base.setStrikePower(skp);
@@ -1020,7 +1231,8 @@ public class ConfigManager {
 		classStats.setBaseEp5(baseEp5);
 		classStats.setEp5EneScaling(ep5EneScaling);
 		classStats.setBaseSp5(baseSp5);
-		classStats.setSp5StmScaling(sp5StmScaling);
+		classStats.setSp5StmScaling(sp5VitScaling);
+		classStats.setSp5ResScaling(sp5ResScaling);
 	}
 
 	private static void setupScalingStats(RaceStatsConfig.ClassStats classStats, double strScale, double skpScale, double defScale, double stmScale, double vitScale, double pwrScale, double eneScale) {
@@ -1028,16 +1240,18 @@ public class ConfigManager {
 		scaling.setStrengthScaling(strScale);
 		scaling.setStrikePowerScaling(skpScale);
 		scaling.setDefenseScaling(defScale);
+		scaling.setDefenseScalingMax(defScale * DEFAULT_DEF_SCALING_MAX_RATIO);
 		scaling.setStaminaScaling(stmScale);
 		scaling.setVitalityScaling(vitScale);
+		scaling.setVitalityScalingMax(vitScale * DEFAULT_VIT_SCALING_MAX_RATIO);
 		scaling.setKiPowerScaling(pwrScale);
 		scaling.setEnergyScaling(eneScale);
 	}
 
 	public static RaceStatsConfig getRaceStats(String raceName) {
 		String key = raceName != null ? raceName.toLowerCase() : "human";
-		if (serverSyncActive) {
-			Map<String, RaceStatsConfig> synced = SERVER_SYNCED_STATS != null ? SERVER_SYNCED_STATS : Collections.emptyMap();
+		if (useServerSync()) {
+			Map<String, RaceStatsConfig> synced = SYNCED.stats != null ? SYNCED.stats : Collections.emptyMap();
 			RaceStatsConfig config = synced.getOrDefault(key, synced.get("human"));
 			return config != null ? config : createDefaultStatsConfig();
 		}
@@ -1047,8 +1261,8 @@ public class ConfigManager {
 
 	public static RaceCharacterConfig getRaceCharacter(String raceName) {
 		String key = raceName != null ? raceName.toLowerCase() : "human";
-		if (serverSyncActive) {
-			Map<String, RaceCharacterConfig> synced = SERVER_SYNCED_CHARACTER != null ? SERVER_SYNCED_CHARACTER : Collections.emptyMap();
+		if (useServerSync()) {
+			Map<String, RaceCharacterConfig> synced = SYNCED.character != null ? SYNCED.character : Collections.emptyMap();
 			RaceCharacterConfig config = synced.getOrDefault(key, synced.get("human"));
 			return config != null ? config : createDefaultCharacterConfig(key, false);
 		}
@@ -1058,7 +1272,7 @@ public class ConfigManager {
 
 	public static List<String> getLoadedRaces() {
 		List<String> races;
-		if (serverSyncActive) races = SERVER_SYNCED_CHARACTER != null ? new ArrayList<>(SERVER_SYNCED_CHARACTER.keySet()) : new ArrayList<>();
+		if (useServerSync()) races = SYNCED.character != null ? new ArrayList<>(SYNCED.character.keySet()) : new ArrayList<>();
 		else races = new ArrayList<>(LOADED_RACES);
 
 		races.sort((r1, r2) -> {
@@ -1080,22 +1294,72 @@ public class ConfigManager {
 	public static List<String> getDefaultRaces() { return Arrays.asList(DEFAULT_RACES); }
 	public static boolean isRaceLoaded(String raceName) {
 		if (raceName == null) return false;
-		if (serverSyncActive) return SERVER_SYNCED_CHARACTER != null && SERVER_SYNCED_CHARACTER.containsKey(raceName.toLowerCase());
+		if (useServerSync()) return SYNCED.character != null && SYNCED.character.containsKey(raceName.toLowerCase());
 		return LOADED_RACES.stream().anyMatch(r -> r.equalsIgnoreCase(raceName));
 	}
 	public static GeneralUserConfig getUserConfig() { return userConfig != null ? userConfig : new GeneralUserConfig(); }
+	private static final class DefaultConfigs {
+		private static final GeneralServerConfig SERVER = new GeneralServerConfig();
+		private static final CombatConfig COMBAT = new CombatConfig();
+		private static final TrainingConfig TRAINING = new TrainingConfig();
+		private static final SkillsConfig SKILLS = new SkillsConfig();
+		private static final TechniqueConfig TECHNIQUES = new TechniqueConfig();
+		private static final EntitiesConfig ENTITIES = new EntitiesConfig();
+	}
+
 	public static GeneralServerConfig getServerConfig() {
-		if (serverSyncActive && SERVER_SYNCED_GENERAL_SERVER != null) return SERVER_SYNCED_GENERAL_SERVER;
-		return serverConfig != null ? serverConfig : new GeneralServerConfig();
+		if (useServerSync()) return SYNCED.generalServer != null ? SYNCED.generalServer : DefaultConfigs.SERVER;
+		return serverConfig != null ? serverConfig : DefaultConfigs.SERVER;
 	}
 	public static CombatConfig getCombatConfig() {
-		if (serverSyncActive && SERVER_SYNCED_COMBAT != null) return SERVER_SYNCED_COMBAT;
-		return combatConfig != null ? combatConfig : new CombatConfig();
+		if (useServerSync()) return SYNCED.combat != null ? SYNCED.combat : DefaultConfigs.COMBAT;
+		return combatConfig != null ? combatConfig : DefaultConfigs.COMBAT;
 	}
 	public static TrainingConfig getTrainingConfig() {
-		if (serverSyncActive && SERVER_SYNCED_TRAINING != null) return SERVER_SYNCED_TRAINING;
-		return trainingConfig != null ? trainingConfig : new TrainingConfig();
+		if (useServerSync()) return SYNCED.training != null ? SYNCED.training : DefaultConfigs.TRAINING;
+		return trainingConfig != null ? trainingConfig : DefaultConfigs.TRAINING;
 	}
+	private static void loadHudLayoutConfig() {
+		if (FMLEnvironment.dist != Dist.CLIENT) {
+			hudLayoutConfig = new HudLayoutConfig();
+			return;
+		}
+		Path path = CONFIG_DIR.resolve(HudLayoutConfig.FILE_NAME + ".json");
+		boolean isNew = !Files.exists(path);
+		hudLayoutConfig = loadAndValidate(path, HudLayoutConfig.class, HudLayoutConfig::new, HudLayoutConfig::getConfigVersion, HudLayoutConfig::setConfigVersion, HudLayoutConfig.CURRENT_VERSION, null);
+		boolean movedFromUserConfig = userConfig != null && userConfig.migrateLegacyHud(hudLayoutConfig, isNew);
+		boolean renamed = hudLayoutConfig.migrateLegacyNames();
+		if (movedFromUserConfig || renamed) saveHudLayoutConfig();
+		if (movedFromUserConfig) saveGeneralUserConfig();
+	}
+
+	public static HudLayoutConfig getHudLayoutConfig() {
+		if (hudLayoutConfig == null) hudLayoutConfig = new HudLayoutConfig();
+		return hudLayoutConfig;
+	}
+
+	public static void saveHudLayoutConfig() {
+		try { LOADER.saveConfig(CONFIG_DIR.resolve(HudLayoutConfig.FILE_NAME + ".json"), getHudLayoutConfig()); }
+		catch (IOException e) { LogUtil.error(Env.COMMON, "Error saving HUD layout: {}", e.getMessage()); }
+	}
+
+	public static void reloadHudLayoutConfig() {
+		Path path = CONFIG_DIR.resolve(HudLayoutConfig.FILE_NAME + ".json");
+		if (!Files.exists(path)) return;
+		try {
+			HudLayoutConfig loaded = LOADER.loadConfig(path, HudLayoutConfig.class);
+			if (loaded == null) return;
+			hudLayoutConfig = loaded;
+			if (loaded.migrateLegacyNames()) saveHudLayoutConfig();
+		} catch (Exception e) {
+			LogUtil.warn(Env.COMMON, "Could not reload {}.json, keeping the layout in memory: {}", HudLayoutConfig.FILE_NAME, e.getMessage());
+		}
+	}
+
+	public static boolean isClientOnlyConfig(String configFile) {
+		return CLIENT_ONLY_CONFIG.equals(configFile) || HudLayoutConfig.FILE_NAME.equals(configFile);
+	}
+
 	public static void saveGeneralUserConfig() {
 		try { LOADER.saveConfig(CONFIG_DIR.resolve("general-user.json"), userConfig); }
 		catch (IOException e) { LogUtil.error(Env.COMMON, "Error saving user configuration: {}", e.getMessage()); }
@@ -1220,6 +1484,7 @@ public class ConfigManager {
 	}
 
 	public static void reloadSpecificConfig(String configFilePath) throws IOException {
+		invalidateSyncPayloads();
 		Path path = CONFIG_DIR.resolve(configFilePath + ".json");
 		if (configFilePath.equals("general-server")) {
 			serverConfig = LOADER.loadConfig(path, GeneralServerConfig.class);
@@ -1229,8 +1494,10 @@ public class ConfigManager {
 			trainingConfig = LOADER.loadConfig(path, TrainingConfig.class);
 		} else if (configFilePath.equals("skills")) {
 			skillsConfig = LOADER.loadConfig(path, SkillsConfig.class);
+			if (skillsConfig.addMissingDefaults()) saveWithAddedDefaults(path, skillsConfig);
 		} else if (configFilePath.equals("techniques")) {
 			techniqueConfig = LOADER.loadConfig(path, TechniqueConfig.class);
+			if (techniqueConfig.addMissingDefaults()) saveWithAddedDefaults(path, techniqueConfig);
 		} else if (configFilePath.equals("entities")) {
 			entitiesConfig = LOADER.loadConfig(path, EntitiesConfig.class);
 		} else if (configFilePath.startsWith("races/")) {
@@ -1271,7 +1538,7 @@ public class ConfigManager {
 			String content = Files.readString(path);
 			return (content == null || content.isBlank()) ? null : content;
 		} catch (IOException e) {
-			LogUtil.error(Env.COMMON, "Could not read config for sync: " + configFilePath);
+			LogUtil.error(Env.COMMON, "Could not read config file: " + configFilePath);
 			return null;
 		}
 	}
@@ -1283,86 +1550,182 @@ public class ConfigManager {
 		return fileNameFallback.toLowerCase();
 	}
 
-	public static void applySpecificSyncedConfig(String configFilePath, String json) {
+	public static boolean isViewingRemoteServerConfig() {
+		return serverSyncActive && ServerLifecycleHooks.getCurrentServer() == null;
+	}
+
+	public static List<String> getEditorConfigFiles() {
+		if (!isViewingRemoteServerConfig()) return new ArrayList<>(getAvailableConfigFiles());
+		SyncedConfigs synced = SYNCED;
+		List<String> files = new ArrayList<>(List.of("general-server", "combat", "training", "skills", "techniques", "entities", CLIENT_ONLY_CONFIG, HudLayoutConfig.FILE_NAME));
+		synced.character.keySet().forEach(race -> files.add("races/" + race + "/character"));
+		synced.stats.keySet().forEach(race -> files.add("races/" + race + "/stats"));
+		synced.forms.forEach((race, groups) -> groups.keySet().forEach(group -> files.add("races/" + race + "/forms/" + group)));
+		synced.stackForms.keySet().forEach(group -> files.add("forms/" + group));
+		return files;
+	}
+
+	public static String getEditorConfigJson(String configFilePath) {
+		if (!isViewingRemoteServerConfig() || isClientOnlyConfig(configFilePath)) return getSpecificConfigJson(configFilePath);
+		SyncedConfigs synced = SYNCED;
+		Object value = switch (configFilePath) {
+			case "general-server" -> synced.generalServer;
+			case "combat" -> synced.combat;
+			case "training" -> synced.training;
+			case "skills" -> synced.skills;
+			case "techniques" -> synced.techniques;
+			case "entities" -> synced.entities;
+			default -> null;
+		};
+		String[] parts = configFilePath.split("/");
+		if (value == null && parts.length >= 3 && parts[0].equals("races")) {
+			if (parts[2].equals("character")) value = synced.character.get(parts[1]);
+			else if (parts[2].equals("stats")) value = synced.stats.get(parts[1]);
+			else if (parts[2].equals("forms") && parts.length >= 4) value = synced.forms.getOrDefault(parts[1], Map.of()).get(parts[3]);
+		} else if (value == null && parts.length == 2 && parts[0].equals("forms")) {
+			value = synced.stackForms.get(parts[1]);
+		}
+		return value != null ? GSON.toJson(value) : null;
+	}
+
+	public static void reloadClientOnlyConfig(String configFilePath) {
+		if (CLIENT_ONLY_CONFIG.equals(configFilePath)) {
+			userConfig = loadAndValidate(CONFIG_DIR.resolve(CLIENT_ONLY_CONFIG + ".json"), GeneralUserConfig.class, GeneralUserConfig::new, GeneralUserConfig::getConfigVersion, GeneralUserConfig::setConfigVersion, GeneralUserConfig.CURRENT_VERSION, null);
+		} else if (HudLayoutConfig.FILE_NAME.equals(configFilePath)) {
+			reloadHudLayoutConfig();
+		}
+	}
+
+	private static void invalidateSyncPayloads() {
+		cachedSyncPayloads = null;
+	}
+
+	public static List<SyncPayload> getSyncPayloads() {
+		List<SyncPayload> cached = cachedSyncPayloads;
+		if (cached != null) return cached;
+		List<SyncPayload> payloads = new ArrayList<>();
+		JsonObject server = GSON.toJsonTree(serverConfig != null ? serverConfig : DefaultConfigs.SERVER).getAsJsonObject();
+		server.remove(SYNC_EXCLUDED_SERVER_SECTION);
+		addSyncPayload(payloads, "general-server", GSON.toJson(server));
+		addSyncPayload(payloads, "combat", GSON.toJson(combatConfig != null ? combatConfig : DefaultConfigs.COMBAT));
+		addSyncPayload(payloads, "training", GSON.toJson(trainingConfig != null ? trainingConfig : DefaultConfigs.TRAINING));
+		addSyncPayload(payloads, "skills", GSON.toJson(skillsConfig != null ? skillsConfig : DefaultConfigs.SKILLS));
+		addSyncPayload(payloads, "techniques", GSON.toJson(techniqueConfig != null ? techniqueConfig : DefaultConfigs.TECHNIQUES));
+		addSyncPayload(payloads, "entities", GSON.toJson(entitiesConfig != null ? entitiesConfig : DefaultConfigs.ENTITIES));
+		for (String race : new ArrayList<>(LOADED_RACES)) {
+			String key = race.toLowerCase();
+			RaceCharacterConfig character = RACE_CHARACTER.get(key);
+			RaceStatsConfig stats = RACE_STATS.get(key);
+			if (character != null) addSyncPayload(payloads, "races/" + key + "/character", GSON.toJson(character));
+			if (stats != null) addSyncPayload(payloads, "races/" + key + "/stats", GSON.toJson(stats));
+			Map<String, FormConfig> forms = RACE_FORMS.get(key);
+			if (forms == null) continue;
+			for (Map.Entry<String, FormConfig> entry : forms.entrySet()) {
+				if (entry.getValue() != null) addSyncPayload(payloads, "races/" + key + "/forms/" + entry.getKey(), GSON.toJson(entry.getValue()));
+			}
+		}
+		for (Map.Entry<String, FormConfig> entry : STACK_FORMS.entrySet()) {
+			if (entry.getValue() != null) addSyncPayload(payloads, "forms/" + entry.getKey(), GSON.toJson(entry.getValue()));
+		}
+		List<SyncPayload> result = List.copyOf(payloads);
+		cachedSyncPayloads = result;
+		return result;
+	}
+
+	private static void addSyncPayload(List<SyncPayload> payloads, String path, String json) {
+		if (json == null || json.isBlank()) return;
+		payloads.add(new SyncPayload(path, CompressionUtil.compress(json)));
+	}
+
+	public static void sendConfigSync(ServerPlayer player) {
+		List<SyncPayload> payloads = getSyncPayloads();
+		boolean reset = true;
+		for (SyncPayload payload : payloads) {
+			NetworkHandler.sendToPlayer(new SyncServerConfigS2C(payload.path(), payload.data(), reset), player);
+			reset = false;
+		}
+		NetworkHandler.sendToPlayer(new SyncServerConfigS2C(SYNC_END_MARKER, new byte[0], reset), player);
+	}
+
+	public static boolean applySpecificSyncedConfig(String configFilePath, String json) {
+		if (SYNC_END_MARKER.equals(configFilePath)) {
+			commitServerSyncBatch();
+			return true;
+		}
+		SyncedConfigs target = pendingSync != null ? pendingSync : SYNCED;
 		try {
-			serverSyncActive = true;
-			if (configFilePath.equals("general-server")) SERVER_SYNCED_GENERAL_SERVER = GSON.fromJson(json, GeneralServerConfig.class);
-			else if (configFilePath.equals("combat")) SERVER_SYNCED_COMBAT = GSON.fromJson(json, CombatConfig.class);
-			else if (configFilePath.equals("training")) SERVER_SYNCED_TRAINING = GSON.fromJson(json, TrainingConfig.class);
-			else if (configFilePath.equals("skills")) SERVER_SYNCED_SKILLS = GSON.fromJson(json, SkillsConfig.class);
-			else if (configFilePath.equals("techniques")) SERVER_SYNCED_TECHNIQUES = GSON.fromJson(json, TechniqueConfig.class);
-			else if (configFilePath.equals("entities")) SERVER_SYNCED_ENTITIES = GSON.fromJson(json, EntitiesConfig.class);
+			if (configFilePath.equals("general-server")) target.generalServer = GSON.fromJson(json, GeneralServerConfig.class);
+			else if (configFilePath.equals("combat")) target.combat = GSON.fromJson(json, CombatConfig.class);
+			else if (configFilePath.equals("training")) target.training = GSON.fromJson(json, TrainingConfig.class);
+			else if (configFilePath.equals("skills")) target.skills = GSON.fromJson(json, SkillsConfig.class);
+			else if (configFilePath.equals("techniques")) target.techniques = GSON.fromJson(json, TechniqueConfig.class);
+			else if (configFilePath.equals("entities")) target.entities = GSON.fromJson(json, EntitiesConfig.class);
 			else if (configFilePath.startsWith("races/")) {
 				String[] parts = configFilePath.split("/");
-				String raceName = parts[1];
+				if (parts.length < 3) return false;
+				String raceName = parts[1].toLowerCase();
 				if (parts[2].equals("stats")) {
-					if (SERVER_SYNCED_STATS == null) SERVER_SYNCED_STATS = new HashMap<>();
-					SERVER_SYNCED_STATS.put(raceName.toLowerCase(), GSON.fromJson(json, RaceStatsConfig.class));
+					target.stats.put(raceName, GSON.fromJson(json, RaceStatsConfig.class));
 				} else if (parts[2].equals("character")) {
-					if (SERVER_SYNCED_CHARACTER == null) SERVER_SYNCED_CHARACTER = new HashMap<>();
-					SERVER_SYNCED_CHARACTER.put(raceName.toLowerCase(), GSON.fromJson(json, RaceCharacterConfig.class));
-				} else if (parts[2].equals("forms")) {
-					if (SERVER_SYNCED_FORMS == null) SERVER_SYNCED_FORMS = new HashMap<>();
+					target.character.put(raceName, GSON.fromJson(json, RaceCharacterConfig.class));
+				} else if (parts[2].equals("forms") && parts.length >= 4) {
 					FormConfig formConfig = GSON.fromJson(json, FormConfig.class);
-					SERVER_SYNCED_FORMS.computeIfAbsent(raceName.toLowerCase(), k -> new HashMap<>())
-							.put(formGroupKey(formConfig, parts[3]), formConfig);
+					target.forms.computeIfAbsent(raceName, k -> new HashMap<>()).put(formGroupKey(formConfig, parts[3]), formConfig);
 				}
 			} else if (configFilePath.startsWith("forms/")) {
-				if (SERVER_SYNCED_STACK_FORMS == null) SERVER_SYNCED_STACK_FORMS = new HashMap<>();
 				FormConfig formConfig = GSON.fromJson(json, FormConfig.class);
-				SERVER_SYNCED_STACK_FORMS.put(formGroupKey(formConfig, configFilePath.split("/")[1]), formConfig);
+				target.stackForms.put(formGroupKey(formConfig, configFilePath.split("/")[1]), formConfig);
 			}
-		} catch (Exception e) { LogUtil.error(Env.CLIENT, "Error applying synced config: " + e.getMessage()); }
-	}
-
-	public static void applySyncedServerConfig(GeneralServerConfig syncedServerConfig, CombatConfig syncedCombatConfig, SkillsConfig syncedSkillsConfig, Map<String, Map<String, FormConfig>> syncedForms, Map<String, RaceStatsConfig> syncedStats, Map<String, RaceCharacterConfig> syncedCharacters, Map<String, FormConfig> syncedStackForms) {
-		SERVER_SYNCED_GENERAL_SERVER = syncedServerConfig;
-		SERVER_SYNCED_COMBAT = syncedCombatConfig;
-		SERVER_SYNCED_SKILLS = syncedSkillsConfig;
-		SERVER_SYNCED_FORMS = syncedForms;
-		SERVER_SYNCED_STATS = syncedStats;
-		SERVER_SYNCED_CHARACTER = syncedCharacters;
-		SERVER_SYNCED_STACK_FORMS = syncedStackForms;
-		serverSyncActive = true;
-	}
-
-	private static void clearSyncedMaps() {
-		SERVER_SYNCED_GENERAL_SERVER = null;
-		SERVER_SYNCED_COMBAT = null;
-		SERVER_SYNCED_TRAINING = null;
-		SERVER_SYNCED_SKILLS = null;
-		SERVER_SYNCED_TECHNIQUES = null;
-		SERVER_SYNCED_ENTITIES = null;
-		SERVER_SYNCED_FORMS = null;
-		SERVER_SYNCED_STATS = null;
-		SERVER_SYNCED_CHARACTER = null;
-		SERVER_SYNCED_STACK_FORMS = null;
+		} catch (Exception e) {
+			LogUtil.error(Env.CLIENT, "Error applying synced config '{}': {}", configFilePath, e.getMessage());
+		}
+		return false;
 	}
 
 	public static void beginServerSyncBatch() {
-		clearSyncedMaps();
+		pendingSync = new SyncedConfigs();
+	}
+
+	private static void commitServerSyncBatch() {
+		if (pendingSync == null) return;
+		SYNCED = pendingSync;
+		pendingSync = null;
+		syncClientThread = Thread.currentThread();
 		serverSyncActive = true;
 	}
 
 	public static void clearServerSync() {
-		clearSyncedMaps();
+		pendingSync = null;
+		SYNCED = new SyncedConfigs();
 		serverSyncActive = false;
+		syncClientThread = null;
+	}
+
+	private static boolean useServerSync() {
+		if (!serverSyncActive) return false;
+		if (ServerLifecycleHooks.getCurrentServer() == null) return true;
+		return Thread.currentThread() == syncClientThread;
 	}
 
 	public static Map<String, RaceStatsConfig> getAllRaceStats() {
-		if (serverSyncActive) return SERVER_SYNCED_STATS != null ? SERVER_SYNCED_STATS : new HashMap<>();
+		if (useServerSync()) return SYNCED.stats != null ? SYNCED.stats : new HashMap<>();
 		return new HashMap<>(RACE_STATS);
 	}
 	public static Map<String, RaceCharacterConfig> getAllRaceCharacters() {
-		if (serverSyncActive) return SERVER_SYNCED_CHARACTER != null ? SERVER_SYNCED_CHARACTER : new HashMap<>();
+		if (useServerSync()) return SYNCED.character != null ? SYNCED.character : new HashMap<>();
 		return new HashMap<>(RACE_CHARACTER);
 	}
 	public static Map<String, Map<String, FormConfig>> getAllForms() {
-		if (serverSyncActive) return SERVER_SYNCED_FORMS != null ? SERVER_SYNCED_FORMS : new HashMap<>();
+		if (useServerSync()) return SYNCED.forms != null ? SYNCED.forms : new HashMap<>();
 		return RACE_FORMS;
 	}
 	public static Map<String, FormConfig> getAllFormsForRace(String raceName) { return getAllForms().getOrDefault(raceName.toLowerCase(), new HashMap<>()); }
 	public static FormConfig getFormGroup(String raceName, String groupName) {
+		String qualifierRace = FusionForms.qualifierRace(groupName);
+		if (qualifierRace != null) {
+			raceName = qualifierRace;
+			groupName = FusionForms.baseGroup(groupName);
+		}
 		Map<String, FormConfig> raceForms = getAllFormsForRace(raceName);
 		return raceForms != null ? raceForms.get(groupName.toLowerCase()) : null;
 	}
@@ -1371,7 +1734,7 @@ public class ConfigManager {
 		return group != null ? group.getForm(formName) : null;
 	}
 	public static Map<String, FormConfig> getAllStackForms() {
-		if (serverSyncActive) return SERVER_SYNCED_STACK_FORMS != null ? SERVER_SYNCED_STACK_FORMS : new HashMap<>();
+		if (useServerSync()) return SYNCED.stackForms != null ? SYNCED.stackForms : new HashMap<>();
 		return STACK_FORMS;
 	}
 	public static FormConfig getStackFormGroup(String groupName) {
@@ -1383,27 +1746,22 @@ public class ConfigManager {
 		return group != null ? group.getForm(formName) : null;
 	}
 	public static SkillsConfig getSkillsConfig() {
-		if (serverSyncActive && SERVER_SYNCED_SKILLS != null) return SERVER_SYNCED_SKILLS;
-		return skillsConfig != null ? skillsConfig : new SkillsConfig();
+		if (useServerSync()) return SYNCED.skills != null ? SYNCED.skills : DefaultConfigs.SKILLS;
+		return skillsConfig != null ? skillsConfig : DefaultConfigs.SKILLS;
 	}
 	public static TechniqueConfig getTechniqueConfig() {
-		if (serverSyncActive && SERVER_SYNCED_TECHNIQUES != null) return SERVER_SYNCED_TECHNIQUES;
-		return techniqueConfig != null ? techniqueConfig : new TechniqueConfig();
+		if (useServerSync()) return SYNCED.techniques != null ? SYNCED.techniques : DefaultConfigs.TECHNIQUES;
+		return techniqueConfig != null ? techniqueConfig : DefaultConfigs.TECHNIQUES;
 	}
 	public static EntitiesConfig getEntitiesConfig() {
-		if (serverSyncActive) return SERVER_SYNCED_ENTITIES;
-		return entitiesConfig;
+		if (useServerSync()) return SYNCED.entities != null ? SYNCED.entities : DefaultConfigs.ENTITIES;
+		return entitiesConfig != null ? entitiesConfig : DefaultConfigs.ENTITIES;
 	}
 	public static EntitiesConfig.EntityStats getEntityStats(String registryName) {
 		EntitiesConfig config = getEntitiesConfig();
 		return config != null && config.getDefaultEntityStats() != null ? config.getDefaultEntityStats().get(registryName) : null;
 	}
 
-	/**
-	 * Global transform tuning (server-synced). Never returns null; a fresh
-	 * {@link EntitiesConfig.TransformSettings} is returned when unconfigured so
-	 * callers can rely on the {@code ...Or(fallback)} helpers.
-	 */
 	public static EntitiesConfig.TransformSettings getEntityTransformDefaults() {
 		EntitiesConfig config = getEntitiesConfig();
 		EntitiesConfig.TransformSettings transform = config != null ? config.getTransformDefaults() : null;

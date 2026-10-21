@@ -1,6 +1,7 @@
 package com.dragonminez.common.combat.clash;
 
 import com.dragonminez.Reference;
+import com.dragonminez.common.combat.logic.player.TargetHelper;
 import com.dragonminez.common.init.MainSounds;
 import com.dragonminez.common.init.entities.ki.AbstractKiProjectile;
 import com.dragonminez.common.network.NetworkHandler;
@@ -11,6 +12,7 @@ import net.minecraft.sounds.SoundEvent;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.phys.Vec3;
 import net.minecraftforge.registries.RegistryObject;
 import net.minecraftforge.event.TickEvent;
@@ -24,33 +26,42 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.UUID;
+import java.util.concurrent.CopyOnWriteArrayList;
 
-/**
- * Server-side coordinator for beam clashes. Each server-level tick it detects new
- * head-on beam collisions, advances active clashes (tug-of-war + QTE meters), resolves
- * winners, and keeps both participants invulnerable for the duration.
- */
 @Mod.EventBusSubscriber(modid = Reference.MOD_ID, bus = Mod.EventBusSubscriber.Bus.FORGE)
 public class BeamClashManager {
-
-    /** Beam directions must oppose at least this much (dot < value) to count as head-on. */
     private static final double OPPOSITION_DOT = -0.3;
-    /** Clash triggers when the two beam segments come within (combined size × factor + pad). */
+
     private static final double CLASH_RADIUS_FACTOR = 1.0;
     private static final double CLASH_RADIUS_PAD = 1.5;
-    /** A minor attack is shattered when its center is within (combined size × factor + pad) of a major beam. */
+
     private static final double MINOR_BREAK_FACTOR = 0.7;
     private static final double MINOR_BREAK_PAD = 0.6;
 
     private static final List<BeamClash> ACTIVE_CLASHES = new ArrayList<>();
     private static final Set<UUID> CLASHING_OWNERS = new HashSet<>();
+    private static final List<ExternalClash> EXTERNAL_CLASHES = new CopyOnWriteArrayList<>();
+
+    public interface ExternalClash {
+        boolean handlePress(ServerPlayer player, float pressTime, float marker);
+
+        boolean involves(UUID ownerId);
+    }
+
+    public static void registerExternal(ExternalClash clash) {
+        if (!EXTERNAL_CLASHES.contains(clash)) EXTERNAL_CLASHES.add(clash);
+    }
+
+    public static void unregisterExternal(ExternalClash clash) {
+        EXTERNAL_CLASHES.remove(clash);
+    }
 
     @SubscribeEvent
     public static void onLevelTick(TickEvent.LevelTickEvent event) {
         if (event.phase != TickEvent.Phase.END) return;
         if (!(event.level instanceof ServerLevel level)) return;
 
-        advanceActiveClashes();
+        advanceActiveClashes(level);
 
         List<AbstractKiProjectile> majors = new ArrayList<>();
         List<AbstractKiProjectile> minors = new ArrayList<>();
@@ -65,23 +76,24 @@ public class BeamClashManager {
             }
         }
 
-        detectNewClashes(majors);
+        detectNewClashes(majors, level.getGameTime());
         breakMinorAttacks(level, majors, minors);
         rebuildClashingOwners();
-        syncParticipants();
+        syncParticipants(level);
     }
 
-    private static void advanceActiveClashes() {
+    private static void advanceActiveClashes(ServerLevel level) {
         ACTIVE_CLASHES.removeIf(clash -> {
+            if (clash.level() != level) return false;
             BeamClash.Result result = clash.tick();
             switch (result) {
                 case A_WINS, B_WINS -> {
-                    notifyEnded(clash);
+                    notifyEnded(clash, result);
                     clash.resolve(result);
                     return true;
                 }
                 case DISSOLVED -> {
-                    notifyEnded(clash);
+                    notifyEnded(clash, result);
                     clash.dissolve();
                     return true;
                 }
@@ -92,7 +104,7 @@ public class BeamClashManager {
         });
     }
 
-    private static void detectNewClashes(List<AbstractKiProjectile> majors) {
+    private static void detectNewClashes(List<AbstractKiProjectile> majors, long gameTime) {
         for (int i = 0; i < majors.size(); i++) {
             AbstractKiProjectile beamA = majors.get(i);
             if (beamA.isClashLocked()) continue;
@@ -101,20 +113,24 @@ public class BeamClashManager {
                 AbstractKiProjectile beamB = majors.get(j);
                 if (beamB.isClashLocked()) continue;
                 if (!(beamB.getOwner() instanceof LivingEntity ownerB)) continue;
-                if (ownerA == ownerB) continue;
+                if (ownerA == ownerB || areAllies(ownerA, ownerB)) continue;
 
                 if (beamsClash(beamA, beamB)) {
                     BeamClash clash = new BeamClash(
                             new ClashParticipant(beamA, ownerA),
-                            new ClashParticipant(beamB, ownerB));
-                    // Lock immediately so neither beam is re-paired this tick.
+                            new ClashParticipant(beamB, ownerB), gameTime);
+
                     beamA.setClashLock(beamA.getClashBeamLength(), ownerB.getUUID());
                     beamB.setClashLock(beamB.getClashBeamLength(), ownerA.getUUID());
                     ACTIVE_CLASHES.add(clash);
-                    break; // beamA is now taken
+                    break;
                 }
             }
         }
+    }
+
+    private static boolean areAllies(LivingEntity a, LivingEntity b) {
+        return a instanceof Player playerA && b instanceof Player playerB && TargetHelper.areFriendlyPlayers(playerA, playerB);
     }
 
     private static boolean beamsClash(AbstractKiProjectile beamA, AbstractKiProjectile beamB) {
@@ -142,7 +158,8 @@ public class BeamClashManager {
 
             for (AbstractKiProjectile minor : minors) {
                 if (minor.isRemoved()) continue;
-                if (minor.getOwner() == majorOwner) continue; // don't shatter your own blasts
+                if (minor.getOwner() == majorOwner) continue;
+                if (minor.getOwner() instanceof LivingEntity minorOwner && areAllies(majorOwner, minorOwner)) continue;
                 double threshold = (major.getSize() + minor.getSize()) * MINOR_BREAK_FACTOR + MINOR_BREAK_PAD;
                 if (pointSegmentDistanceSq(minor.position(), a0, a1) <= threshold * threshold) {
                     shatterMinor(level, minor);
@@ -222,8 +239,9 @@ public class BeamClashManager {
         }
     }
 
-    private static void syncParticipants() {
+    private static void syncParticipants(ServerLevel level) {
         for (BeamClash clash : ACTIVE_CLASHES) {
+            if (clash.level() != level) continue;
             sendState(clash, clash.a());
             sendState(clash, clash.b());
         }
@@ -233,31 +251,38 @@ public class BeamClashManager {
         if (!(participant.owner() instanceof ServerPlayer player)) return;
         float advantage = clash.advantageFor(player);
         ClashParticipant opponent = participant == clash.a() ? clash.b() : clash.a();
+        Vec3 point = clash.clashPoint();
         NetworkHandler.sendToPlayer(new BeamClashStateS2C(
                 true,
-                participant.meterPhase(),
-                BeamClash.SWEET_LOW,
-                BeamClash.SWEET_HIGH,
+                clash.startGameTime(),
+                participant.meterSeed(),
                 advantage,
                 participant.beam().getColorBorder(),
-                opponent.owner().getId()
+                opponent.beam().getColorBorder(),
+                opponent.owner().getId(),
+                point.x, point.y, point.z, 0
         ), player);
     }
 
-    private static void notifyEnded(BeamClash clash) {
-        notifyEnded(clash.a());
-        notifyEnded(clash.b());
+    private static void notifyEnded(BeamClash clash, BeamClash.Result result) {
+        ClashParticipant loser = result == BeamClash.Result.A_WINS ? clash.b()
+                : result == BeamClash.Result.B_WINS ? clash.a() : null;
+        notifyEnded(clash.a(), clash.a() == loser ? BeamClash.LOSER_EXHAUST_TICKS : 0);
+        notifyEnded(clash.b(), clash.b() == loser ? BeamClash.LOSER_EXHAUST_TICKS : 0);
     }
 
-    private static void notifyEnded(ClashParticipant participant) {
+    private static void notifyEnded(ClashParticipant participant, int exhaustTicks) {
         if (participant.owner() instanceof ServerPlayer player) {
-            NetworkHandler.sendToPlayer(BeamClashStateS2C.inactive(), player);
+            NetworkHandler.sendToPlayer(BeamClashStateS2C.inactive(exhaustTicks), player);
         }
     }
 
-    /** Returns true while the entity is locked in an active beam clash (used for invulnerability). */
     public static boolean isClashing(UUID ownerId) {
-        return CLASHING_OWNERS.contains(ownerId);
+        if (CLASHING_OWNERS.contains(ownerId)) return true;
+        for (ExternalClash clash : EXTERNAL_CLASHES) {
+            if (clash.involves(ownerId)) return true;
+        }
+        return false;
     }
 
     @SuppressWarnings("unchecked")
@@ -266,26 +291,33 @@ public class BeamClashManager {
             MainSounds.GOLPE4, MainSounds.GOLPE5, MainSounds.GOLPE6
     };
 
-    /** Routes a player's clash key press to their active clash, scoring the QTE meter. */
-    public static void handlePlayerPress(ServerPlayer player) {
+    public static void handlePlayerPress(ServerPlayer player, float pressTime, float marker) {
         for (BeamClash clash : ACTIVE_CLASHES) {
             ClashParticipant participant = clash.participantFor(player.getUUID());
             if (participant != null) {
-                participant.registerPlayerPress();
-                playPunchSound(player);
+                float serverTime = (float) (player.level().getGameTime() - clash.startGameTime());
+                ClashMeter.Grade grade = participant.registerPlayerPress(pressTime, marker, serverTime, clash.realElapsedTicks(), player.latency);
+                playPressFeedback(player, grade);
                 return;
             }
         }
+        for (ExternalClash clash : EXTERNAL_CLASHES) {
+            if (clash.handlePress(player, pressTime, marker)) return;
+        }
     }
 
-    private static void playPunchSound(ServerPlayer player) {
+    public static void playPressFeedback(ServerPlayer player, ClashMeter.Grade grade) {
+        if (grade == ClashMeter.Grade.PERFECT) playPunchSound(player, 1.15F);
+        else if (grade == ClashMeter.Grade.GOOD) playPunchSound(player, 0.95F);
+    }
+
+    private static void playPunchSound(ServerPlayer player, float basePitch) {
         SoundEvent sound = PUNCH_SOUNDS[player.getRandom().nextInt(PUNCH_SOUNDS.length)].get();
-        float pitch = 0.9F + player.getRandom().nextFloat() * 0.2F;
+        float pitch = basePitch + player.getRandom().nextFloat() * 0.1F;
         player.level().playSound(null, player.getX(), player.getY(), player.getZ(),
                 sound, SoundSource.PLAYERS, 1.0F, pitch);
     }
 
-    /** Cinematic invulnerability: clashing fighters ignore all other incoming damage. */
     @SubscribeEvent(priority = EventPriority.HIGHEST)
     public static void onClashingHurt(LivingAttackEvent event) {
         LivingEntity victim = event.getEntity();

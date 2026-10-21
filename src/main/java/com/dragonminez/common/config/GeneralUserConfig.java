@@ -1,11 +1,20 @@
 package com.dragonminez.common.config;
 
+import com.dragonminez.common.diagnostics.RemovedConfigKeys;
+import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
+import java.util.ArrayList;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Locale;
+import java.util.Map;
+
 @Getter
 @Setter
+@RemovedConfigKeys({"techniqueHotbarRightSide", "xenoverseHudPosX", "xenoverseHudPosY", "xenoverseHudScale", "healthBarPosX", "healthBarPosY", "energyBarPosX", "energyBarPosY", "staminaBarPosX", "staminaBarPosY", "liveCrowdinTranslations"})
 public class GeneralUserConfig {
 	public static final String CURRENT_VERSION = ConfigManager.CONFIG_VERSION;
 
@@ -14,29 +23,45 @@ public class GeneralUserConfig {
 
 	private Boolean firstPersonAnimated = true;
 	private boolean impactFramesEnabled = false;
-	private Boolean techniqueHotbarRightSide = false;
+	private boolean reserveFirstHotbarSlot = false;
+	private int kiSoundVolume = 100;
 	private Boolean alwaysVisibleHudValues = false;
 	private Boolean hideHudNumbers = false;
-	private Integer xenoverseHudPosX = 5;
-	private Integer xenoverseHudPosY = 5;
-	private Float xenoverseHudScale = 1.0f;
+	private Boolean partyMarkers = true;
 	private Boolean advancedDescription = true;
 	private Boolean advancedDescriptionPercentage = true;
-	private Boolean alternativeHud = false;
+	@Getter(AccessLevel.NONE) @Setter(AccessLevel.NONE) private String hudStyle = null;
+	@Getter(AccessLevel.NONE) @Setter(AccessLevel.NONE) private Map<String, Map<String, HudPlacement>> hudLayout = null;
+
+	@Getter(AccessLevel.NONE) @Setter(AccessLevel.NONE) private Boolean alternativeHud = null;
 	private Boolean hexagonStatsDisplay = false;
-	private Float menuScaleMultiplier = 1.0f;
+	public static final float DEFAULT_MENU_SCALE = 0.75f;
+	private Float menuScaleMultiplier = DEFAULT_MENU_SCALE;
 	private Float utilityMenuScaleMultiplier = 1.0f;
-	private Integer healthBarPosX = 10;
-	private Integer healthBarPosY = 20;
-	private Integer energyBarPosX = 10;
-	private Integer energyBarPosY = 10;
-	private Integer staminaBarPosX = 10;
-	private Integer staminaBarPosY = 10;
 	private Boolean cameraMovementDuringFlight = true;
-	private Boolean liveCrowdinTranslations = true;
+	private Float flightTurnSensitivity = 0.75f;
+	private Boolean tutorialsEnabled = true;
+	private List<String> tutorialsSeen = new ArrayList<>();
 	private Boolean showAccumulativeDamage = true;
+	private Integer rhythmAudioOffsetMs = 60;
 	private Boolean taiyokenInvertPalette = false;
 	private Boolean transformationOutlines = true;
+	private Boolean aura3DPersonal = false;
+	private Boolean aura3DEntities = false;
+	private String aura3DStyle = FormConfig.AURA_3D_SMOOTH;
+
+	public static final String HAIR_PHYSICS_HIGH = "HIGH";
+	public static final String HAIR_PHYSICS_LOW = "LOW";
+	public static final String HAIR_PHYSICS_OFF = "OFF";
+
+	private String hairPhysicsQuality = HAIR_PHYSICS_HIGH;
+
+	public String getHairPhysicsQuality() {
+		if (hairPhysicsQuality == null) return HAIR_PHYSICS_HIGH;
+		String normalized = hairPhysicsQuality.trim().toUpperCase(Locale.ROOT);
+		if (!normalized.equals(HAIR_PHYSICS_LOW) && !normalized.equals(HAIR_PHYSICS_OFF)) return HAIR_PHYSICS_HIGH;
+		return normalized;
+	}
 
 	private Integer overShoulderMode = 2;
 	private Boolean overShoulderLeft = false;
@@ -44,6 +69,39 @@ public class GeneralUserConfig {
 	private Float overShoulderUp = 0.35f;
 	private Float overShoulderSide = 1.45f;
 	private Float overShoulderSmoothing = 0.4f;
+
+	public boolean migrateLegacyHud(HudLayoutConfig target, boolean targetIsNew) {
+		boolean changed = false;
+		if (targetIsNew && (hudStyle != null || alternativeHud != null)) {
+			if (hudStyle != null) target.setStyle(HudLayoutConfig.normalizeStyle(hudStyle));
+			else target.setStyle(Boolean.TRUE.equals(alternativeHud) ? HudLayoutConfig.STYLE_VANILLA : HudLayoutConfig.STYLE_XENOVERSE);
+			changed = true;
+		}
+		if (hudLayout != null && !hudLayout.isEmpty() && target.getLayout().isEmpty()) {
+			target.getLayout().putAll(hudLayout);
+			changed = true;
+		}
+		if (hudStyle != null || hudLayout != null || alternativeHud != null) changed = true;
+		hudStyle = null;
+		hudLayout = null;
+		alternativeHud = null;
+		return changed;
+	}
+
+	public Boolean getTutorialsEnabled() {
+		if (tutorialsEnabled == null) tutorialsEnabled = true;
+		return tutorialsEnabled;
+	}
+
+	public List<String> getTutorialsSeen() {
+		if (tutorialsSeen == null) tutorialsSeen = new ArrayList<>();
+		return tutorialsSeen;
+	}
+
+	public Float getFlightTurnSensitivity() {
+		if (flightTurnSensitivity == null || !Float.isFinite(flightTurnSensitivity)) flightTurnSensitivity = 0.75f;
+		return Math.max(0.2f, Math.min(flightTurnSensitivity, 2.0f));
+	}
 
 	public Integer getOverShoulderMode() {
 		if (overShoulderMode == null || overShoulderMode < 0 || overShoulderMode > 2) overShoulderMode = 2;
@@ -80,6 +138,21 @@ public class GeneralUserConfig {
 		return taiyokenInvertPalette;
 	}
 
+	public Boolean getAura3DPersonal() {
+		if (aura3DPersonal == null) aura3DPersonal = false;
+		return aura3DPersonal;
+	}
+
+	public Boolean getAura3DEntities() {
+		if (aura3DEntities == null) aura3DEntities = false;
+		return aura3DEntities;
+	}
+
+	public String getAura3DStyle() {
+		aura3DStyle = FormConfig.sanitizeAura3DPreference(aura3DStyle);
+		return aura3DStyle;
+	}
+
 	public Boolean getTransformationOutlines() {
 		if (transformationOutlines == null) transformationOutlines = true;
 		return transformationOutlines;
@@ -91,7 +164,7 @@ public class GeneralUserConfig {
 	}
 
 	public Float getMenuScaleMultiplier() {
-		if (!Float.isFinite(menuScaleMultiplier) || menuScaleMultiplier <= 0.0f) menuScaleMultiplier = 1.0f;
+		if (menuScaleMultiplier == null || !Float.isFinite(menuScaleMultiplier) || menuScaleMultiplier <= 0.0f) menuScaleMultiplier = DEFAULT_MENU_SCALE;
 		return menuScaleMultiplier;
 	}
 
@@ -108,35 +181,21 @@ public class GeneralUserConfig {
 		this.utilityMenuScaleMultiplier = utilityMenuScaleMultiplier;
 	}
 
-	public Float getXenoverseHudScale() {
-		if (xenoverseHudScale == null || !Float.isFinite(xenoverseHudScale) || xenoverseHudScale <= 0.0f) xenoverseHudScale = 1.0f;
-		return xenoverseHudScale;
-	}
-
-	public void setXenoverseHudScale(Float xenoverseHudScale) {
-		if (xenoverseHudScale == null || !Float.isFinite(xenoverseHudScale) || xenoverseHudScale <= 0.0f) {
-			this.xenoverseHudScale = 1.0f;
-			return;
-		}
-		this.xenoverseHudScale = xenoverseHudScale;
-	}
-
-	public Boolean getTechniqueHotbarRightSide() {
-		if (techniqueHotbarRightSide == null) techniqueHotbarRightSide = false;
-		return techniqueHotbarRightSide;
-	}
-
 	public Boolean getHideHudNumbers() {
 		if (hideHudNumbers == null) hideHudNumbers = false;
 		return hideHudNumbers;
 	}
 
+	public Boolean getPartyMarkers() {
+		if (partyMarkers == null) partyMarkers = true;
+		return partyMarkers;
+	}
+
 	public void setMenuScaleMultiplier(Float menuScaleMultiplier) {
-		if (!Float.isFinite(menuScaleMultiplier) || menuScaleMultiplier <= 0.0f) {
-			this.menuScaleMultiplier = 1.0f;
+		if (menuScaleMultiplier == null || !Float.isFinite(menuScaleMultiplier) || menuScaleMultiplier <= 0.0f) {
+			this.menuScaleMultiplier = DEFAULT_MENU_SCALE;
 			return;
 		}
 		this.menuScaleMultiplier = menuScaleMultiplier;
 	}
 }
-

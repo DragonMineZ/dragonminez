@@ -2,9 +2,15 @@ package com.dragonminez.common.network.C2S;
 
 import com.dragonminez.Env;
 import com.dragonminez.LogUtil;
+import com.dragonminez.common.alignment.NpcDispositionService;
 import com.dragonminez.common.network.NetworkHandler;
+import com.dragonminez.common.network.S2C.DialogueResultS2C;
 import com.dragonminez.common.network.S2C.QuestActionFeedbackS2C;
 import com.dragonminez.common.quest.QuestService;
+import com.dragonminez.common.stats.StatsCapability;
+import com.dragonminez.common.stats.StatsData;
+import com.dragonminez.common.stats.StatsProvider;
+import com.dragonminez.server.storage.StorageManager;
 import net.minecraft.ChatFormatting;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.network.chat.Component;
@@ -32,43 +38,63 @@ public class QuestActionC2S {
 
 	public QuestActionC2S(FriendlyByteBuf buffer) {
 		this.actionType = buffer.readEnum(ActionType.class);
-		this.questId = buffer.readUtf();
-		this.npcId = buffer.readUtf();
+		this.questId = buffer.readUtf(256);
+		this.npcId = buffer.readUtf(256);
 	}
 
 	public void encode(FriendlyByteBuf buffer) {
 		buffer.writeEnum(actionType);
-		buffer.writeUtf(questId);
-		buffer.writeUtf(npcId);
+		buffer.writeUtf(questId, 256);
+		buffer.writeUtf(npcId, 256);
+	}
+
+	private static Component giverAlignmentBlocker(ServerPlayer player, String questId) {
+		QuestService.ResolvedQuest resolved = QuestService.resolveQuest(questId);
+		if (resolved == null) return null;
+		StatsData data = StatsProvider.get(StatsCapability.INSTANCE, player).orElse(null);
+		return NpcDispositionService.questGiverBlocker(data, resolved.quest());
 	}
 
 	public void handle(Supplier<NetworkEvent.Context> contextSupplier) {
 		NetworkEvent.Context context = contextSupplier.get();
 		context.enqueueWork(() -> {
 			ServerPlayer player = context.getSender();
-			if (player == null) {
+			if (player == null || StorageManager.isLoadPending(player)) {
 				return;
 			}
 
 			try {
 				Component failure = switch (actionType) {
-					case START -> QuestService.startQuest(player, questId);
+					case START -> {
+						Component blocker = giverAlignmentBlocker(player, questId);
+						yield blocker != null ? blocker : QuestService.startQuest(player, questId);
+					}
 					case RESUMMON -> QuestService.resummonQuest(player, questId);
 					case TURN_IN -> QuestService.turnInQuest(player, questId, npcId);
 				};
 
-				if (failure != null) {
+				if (failure != null && (npcId.isBlank() || actionType == ActionType.RESUMMON)) {
 					NetworkHandler.sendToPlayer(new QuestActionFeedbackS2C(
 							failure.copy().withStyle(ChatFormatting.RED)), player);
+				} else if (failure != null) {
+					player.sendSystemMessage(failure.copy().withStyle(ChatFormatting.RED));
 				}
+				replyToDialogue(player, failure == null, failure);
 			} catch (Exception exception) {
 				LogUtil.error(Env.SERVER, "Failed to handle quest action " + actionType + " for quest '"
 						+ questId + "' requested by " + player.getGameProfile().getName(), exception);
 				NetworkHandler.sendToPlayer(new QuestActionFeedbackS2C(
 						Component.translatable("message.dragonminez.quest.start.unavailable")
 								.withStyle(ChatFormatting.RED)), player);
+				replyToDialogue(player, false, null);
 			}
 		});
 		context.setPacketHandled(true);
+	}
+
+	private void replyToDialogue(ServerPlayer player, boolean success, Component reason) {
+		if (npcId.isBlank() || actionType == ActionType.RESUMMON) return;
+		String action = actionType == ActionType.START ? DialogueResultS2C.questStart(questId) : DialogueResultS2C.questTurnIn(questId);
+		NetworkHandler.sendToPlayer(new DialogueResultS2C(npcId, action, success, success ? null : reason), player);
 	}
 }

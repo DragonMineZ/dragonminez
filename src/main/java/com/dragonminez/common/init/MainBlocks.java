@@ -6,6 +6,7 @@ import com.dragonminez.common.dragonball.DragonBallSetDefinition;
 import com.dragonminez.common.init.block.custom.*;
 import com.dragonminez.server.world.tree.NamekAjissaGrower;
 import com.dragonminez.server.world.tree.NamekSacredGrower;
+import net.minecraft.util.valueproviders.UniformInt;
 import net.minecraft.world.effect.MobEffects;
 import net.minecraft.world.item.BlockItem;
 import net.minecraft.world.item.Item;
@@ -14,8 +15,10 @@ import net.minecraft.world.level.block.state.BlockBehaviour;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.properties.BlockSetType;
 import net.minecraft.world.level.block.state.properties.BlockStateProperties;
+import net.minecraft.world.level.block.state.properties.NoteBlockInstrument;
 import net.minecraft.world.level.block.state.properties.WoodType;
 import net.minecraft.world.level.material.MapColor;
+import net.minecraft.world.level.material.PushReaction;
 import net.minecraftforge.eventbus.api.IEventBus;
 import net.minecraftforge.registries.DeferredRegister;
 import net.minecraftforge.registries.ForgeRegistries;
@@ -42,8 +45,33 @@ public final class MainBlocks {
 	public static final RegistryObject<Block> TIME_CHAMBER_BLOCK = registerBlock("time_chamber_block",
 			() -> new Block(BlockBehaviour.Properties.copy(Blocks.QUARTZ_BLOCK).noParticlesOnBreak().strength(-1.0f,3600000.0F).sound(SoundType.BONE_BLOCK)));
 	public static final RegistryObject<Block> OTHERWORLD_CLOUD = registerBlock("otherworld_cloud",
-			() -> new Block(BlockBehaviour.Properties.copy(Blocks.POWDER_SNOW).strength(-1.0f,3600000.0F).sound(SoundType.AZALEA)
+			() -> new OtherworldCloudBlock(BlockBehaviour.Properties.copy(Blocks.POWDER_SNOW).strength(-1.0f,3600000.0F).sound(SoundType.AZALEA)
 					.noCollission().noLootTable().noParticlesOnBreak()));
+	public static final RegistryObject<Block> HELL_GROUND = registerBlock("hell_ground",
+			() -> new Block(BlockBehaviour.Properties.copy(Blocks.STONE).mapColor(MapColor.COLOR_PINK)
+					.requiresCorrectToolForDrops().sound(SoundType.TUFF)));
+	public static final RegistryObject<Block> HELL_STONE = registerBlock("hell_stone",
+			() -> new Block(BlockBehaviour.Properties.copy(Blocks.STONE).mapColor(MapColor.COLOR_PURPLE)
+					.requiresCorrectToolForDrops().sound(SoundType.TUFF)));
+	public static final RegistryObject<Block> HELL_DEEPSTONE = registerBlock("hell_deepstone",
+			() -> new Block(BlockBehaviour.Properties.copy(Blocks.STONE).mapColor(MapColor.NETHER)
+					.requiresCorrectToolForDrops().sound(SoundType.DEEPSLATE)));
+	public static final RegistryObject<Block> MIGHT_TREE_WOOD = registerBlock("might_tree_wood",
+			() -> new Block(BlockBehaviour.Properties.of().mapColor(MapColor.TERRACOTTA_PURPLE).instrument(NoteBlockInstrument.BASS)
+					.strength(-1.0F, 3600000.0F).noLootTable().sound(SoundType.CHERRY_WOOD)
+					.isValidSpawn((pState, pLevel, pPos, pType) -> false).pushReaction(PushReaction.BLOCK)));
+	public static final RegistryObject<Block> MIGHT_TREE_ROOT = registerBlock("might_tree_root",
+			() -> new MightTreeRootBlock(BlockBehaviour.Properties.of().mapColor(MapColor.TERRACOTTA_PURPLE)
+					.strength(-1.0F, 3600000.0F).noLootTable().noOcclusion().sound(SoundType.MANGROVE_ROOTS)
+					.isValidSpawn((pState, pLevel, pPos, pType) -> false).pushReaction(PushReaction.BLOCK)));
+	public static final RegistryObject<Block> MIGHT_TREE_LEAVES = registerBlock("might_tree_leaves",
+			() -> new Block(BlockBehaviour.Properties.of().mapColor(MapColor.TERRACOTTA_CYAN).strength(0.3F)
+					.noLootTable().sound(SoundType.AZALEA_LEAVES)
+					.isValidSpawn((pState, pLevel, pPos, pType) -> false)));
+	public static final RegistryObject<Block> MIGHT_TREE_FRUIT_BLOCK = registerBlockOnly("might_tree_fruit_block",
+			() -> new MightTreeFruitBlock(BlockBehaviour.Properties.of().mapColor(MapColor.COLOR_RED).strength(0.3F)
+					.sound(SoundType.SHROOMLIGHT).lightLevel(pState -> 6).noOcclusion()
+					.isValidSpawn((pState, pLevel, pPos, pType) -> false).pushReaction(PushReaction.DESTROY)));
 	public static final RegistryObject<Block> NAMEK_BLOCK = registerBlock("namek_block",
 			() -> new Block(BlockBehaviour.Properties.copy(Blocks.QUARTZ_BLOCK).sound(SoundType.BONE_BLOCK)));
 	public static final RegistryObject<Block> NAMEK_GRASS_BLOCK = registerBlock("namek_grass_block",
@@ -132,6 +160,15 @@ public final class MainBlocks {
 			() -> new Block(BlockBehaviour.Properties.copy(Blocks.NETHERITE_BLOCK)));
 	public static final RegistryObject<Block> GETE_ORE = registerBlock("gete_debris_ore",
 			() -> new Block(BlockBehaviour.Properties.copy(Blocks.ANCIENT_DEBRIS).requiresCorrectToolForDrops()));
+	public static final RegistryObject<Block> GETE_STAR_HULL = registerBlock("gete_star_hull",
+			() -> new Block(BlockBehaviour.Properties.of().mapColor(MapColor.COLOR_PURPLE).instrument(NoteBlockInstrument.IRON_XYLOPHONE)
+					.strength(-1.0F, 3600000.0F).noLootTable().sound(SoundType.NETHERITE_BLOCK)
+					.isValidSpawn((pState, pLevel, pPos, pType) -> false).pushReaction(PushReaction.BLOCK)));
+	public static final RegistryObject<Block> GETE_STAR_CIRCUIT = registerBlock("gete_star_circuit",
+			() -> new Block(BlockBehaviour.Properties.of().mapColor(MapColor.COLOR_RED).instrument(NoteBlockInstrument.IRON_XYLOPHONE)
+					.strength(-1.0F, 3600000.0F).noLootTable().sound(SoundType.NETHERITE_BLOCK).lightLevel(state -> 12)
+					.emissiveRendering((pState, pLevel, pPos) -> true)
+					.isValidSpawn((pState, pLevel, pPos, pType) -> false).pushReaction(PushReaction.BLOCK)));
 	public static final RegistryObject<Block> NAMEK_KIKONO_ORE = registerBlock("namek_kikono_ore",
 			() -> new Block(BlockBehaviour.Properties.copy(Blocks.ANCIENT_DEBRIS).requiresCorrectToolForDrops()));
 	public static final RegistryObject<Block> KIKONO_BLOCK = registerBlock("kikono_block",
@@ -184,6 +221,83 @@ public final class MainBlocks {
 	public static final RegistryObject<Block> SACRED_PLANET_GRASS_BLOCK = registerBlock("sacred_planet_grass_block",
 			() -> new SacredPlanetGrassBlock(BlockBehaviour.Properties.copy(Blocks.GRASS_BLOCK).sound(SoundType.GRASS)));
 
+	//Reino Demoníaco
+	public static final RegistryObject<Block> MAKAI_STONE = registerBlock("makai_stone",
+			() -> new DemonRealmBlocks.SkylitBlock(BlockBehaviour.Properties.copy(Blocks.STONE).mapColor(MapColor.COLOR_YELLOW).requiresCorrectToolForDrops().sound(SoundType.TUFF)));
+	public static final RegistryObject<Block> MAKAI_STONE_SLAB = registerBlock("makai_stone_slab",
+			() -> new SlabBlock(BlockBehaviour.Properties.copy(Blocks.STONE_SLAB).mapColor(MapColor.COLOR_YELLOW).requiresCorrectToolForDrops().sound(SoundType.TUFF)));
+	public static final RegistryObject<Block> MAKAI_STONE_STAIRS = registerBlock("makai_stone_stairs",
+			() -> new StairBlock(() -> MAKAI_STONE.get().defaultBlockState(), BlockBehaviour.Properties.copy(Blocks.STONE_STAIRS).mapColor(MapColor.COLOR_YELLOW).requiresCorrectToolForDrops().sound(SoundType.TUFF)));
+	public static final RegistryObject<Block> MAKAI_STONE_WALL = registerBlock("makai_stone_wall",
+			() -> new WallBlock(BlockBehaviour.Properties.copy(Blocks.COBBLESTONE_WALL).mapColor(MapColor.COLOR_YELLOW).requiresCorrectToolForDrops().sound(SoundType.TUFF)));
+	public static final RegistryObject<Block> MAKAI_STRATA_STONE = registerBlock("makai_strata_stone",
+			() -> new DemonRealmBlocks.SkylitBlock(BlockBehaviour.Properties.copy(Blocks.STONE).mapColor(MapColor.TERRACOTTA_YELLOW).requiresCorrectToolForDrops().sound(SoundType.TUFF)));
+	public static final RegistryObject<Block> MAKAI_GRASS_BLOCK = registerBlock("makai_grass_block",
+			() -> new DemonRealmBlocks.SkylitSoilBlock(BlockBehaviour.Properties.copy(Blocks.DIRT).mapColor(MapColor.GRASS).strength(0.6F).sound(SoundType.GRASS)));
+	public static final RegistryObject<Block> MAKAI_DIRT = registerBlock("makai_dirt",
+			() -> new DemonRealmBlocks.SkylitSoilBlock(BlockBehaviour.Properties.copy(Blocks.DIRT).sound(SoundType.ROOTED_DIRT)));
+	public static final RegistryObject<Block> LILAC_SAND = registerBlock("lilac_sand",
+			() -> new DemonRealmBlocks.SkylitSandBlock(0xCFA9C9, BlockBehaviour.Properties.copy(Blocks.SAND).mapColor(MapColor.COLOR_PINK)));
+	public static final RegistryObject<Block> MAKAI_SAND = registerBlock("makai_sand",
+			() -> new DemonRealmBlocks.SkylitSandBlock(0xD7C381, BlockBehaviour.Properties.copy(Blocks.SAND).mapColor(MapColor.SAND)));
+	public static final RegistryObject<Block> MAKAI_SHRUB = registerBlock("makai_shrub",
+			() -> new DemonRealmBlocks.MakaiShrubBlock(BlockBehaviour.Properties.copy(Blocks.FERN).mapColor(MapColor.COLOR_CYAN)));
+	public static final RegistryObject<Block> MAKAI_BUSH = registerBlock("makai_bush",
+			() -> new Block(BlockBehaviour.Properties.copy(Blocks.AZALEA_LEAVES).mapColor(MapColor.COLOR_CYAN)
+					.isViewBlocking((pState, pLevel, pPos) -> false).isSuffocating((pState, pLevel, pPos) -> false)));
+	public static final RegistryObject<Block> ADOBE = registerBlock("adobe",
+			() -> new DemonRealmBlocks.SkylitBlock(BlockBehaviour.Properties.copy(Blocks.MUD_BRICKS).mapColor(MapColor.COLOR_ORANGE)));
+	public static final RegistryObject<Block> ADOBE_SLAB = registerBlock("adobe_slab",
+			() -> new SlabBlock(BlockBehaviour.Properties.copy(Blocks.MUD_BRICK_SLAB).mapColor(MapColor.COLOR_ORANGE)));
+	public static final RegistryObject<Block> ADOBE_STAIRS = registerBlock("adobe_stairs",
+			() -> new StairBlock(() -> ADOBE.get().defaultBlockState(), BlockBehaviour.Properties.copy(Blocks.MUD_BRICK_STAIRS).mapColor(MapColor.COLOR_ORANGE)));
+	public static final RegistryObject<Block> ADOBE_WALL = registerBlock("adobe_wall",
+			() -> new WallBlock(BlockBehaviour.Properties.copy(Blocks.MUD_BRICK_WALL).mapColor(MapColor.COLOR_ORANGE)));
+	public static final RegistryObject<Block> ADOBE_BRICKS = registerBlock("adobe_bricks",
+			() -> new DemonRealmBlocks.SkylitBlock(BlockBehaviour.Properties.copy(Blocks.MUD_BRICKS).mapColor(MapColor.TERRACOTTA_ORANGE)));
+	public static final RegistryObject<Block> GAS_VENT = registerBlock("gas_vent",
+			() -> new DemonRealmBlocks.GasVentBlock(BlockBehaviour.Properties.copy(Blocks.STONE).mapColor(MapColor.COLOR_YELLOW).requiresCorrectToolForDrops().sound(SoundType.TUFF)));
+	public static final RegistryObject<Block> DARK_SEA_CLOUD = registerBlock("dark_sea_cloud",
+			() -> new DemonRealmBlocks.DarkSeaCloudBlock(BlockBehaviour.Properties.copy(Blocks.POWDER_SNOW).mapColor(MapColor.COLOR_PURPLE)
+					.strength(-1.0F, 3600000.0F).sound(SoundType.AZALEA).noCollission().noLootTable().noParticlesOnBreak()
+					.isValidSpawn((pState, pLevel, pPos, pType) -> false)));
+	public static final RegistryObject<Block> TURQUOISE_ROCK = registerBlock("turquoise_rock",
+			() -> new Block(BlockBehaviour.Properties.copy(Blocks.STONE).mapColor(MapColor.COLOR_CYAN).requiresCorrectToolForDrops()));
+	public static final RegistryObject<Block> MAJILITE_ORE = registerBlock("majilite_ore",
+			() -> new DropExperienceBlock(BlockBehaviour.Properties.copy(Blocks.DIAMOND_ORE).mapColor(MapColor.COLOR_CYAN).requiresCorrectToolForDrops().strength(3.0F, 6.0F),
+					UniformInt.of(3, 7)));
+	public static final RegistryObject<Block> DEMON_ROCK = registerBlock("demon_rock",
+			() -> new Block(BlockBehaviour.Properties.copy(Blocks.BLACKSTONE).mapColor(MapColor.COLOR_BLACK).requiresCorrectToolForDrops()));
+	public static final RegistryObject<Block> DEMON_HORN = registerBlock("demon_horn",
+			() -> new Block(BlockBehaviour.Properties.copy(Blocks.BLACKSTONE).mapColor(MapColor.COLOR_PURPLE).requiresCorrectToolForDrops()));
+	public static final RegistryObject<Block> DEMON_HORN_GLOW = registerBlock("demon_horn_glow",
+			() -> new Block(BlockBehaviour.Properties.copy(Blocks.BLACKSTONE).mapColor(MapColor.COLOR_MAGENTA).lightLevel(pState -> 12)
+					.emissiveRendering((pState, pLevel, pPos) -> true).requiresCorrectToolForDrops()));
+	public static final RegistryObject<Block> DEMON_BRICKS = registerBlock("demon_bricks",
+			() -> new Block(BlockBehaviour.Properties.copy(Blocks.NETHER_BRICKS).mapColor(MapColor.NETHER).requiresCorrectToolForDrops()));
+	public static final RegistryObject<Block> DEMON_BRICK_SLAB = registerBlock("demon_brick_slab",
+			() -> new SlabBlock(BlockBehaviour.Properties.copy(Blocks.NETHER_BRICK_SLAB).mapColor(MapColor.NETHER).requiresCorrectToolForDrops()));
+	public static final RegistryObject<Block> DEMON_BRICK_STAIRS = registerBlock("demon_brick_stairs",
+			() -> new StairBlock(() -> DEMON_BRICKS.get().defaultBlockState(), BlockBehaviour.Properties.copy(Blocks.NETHER_BRICK_STAIRS).mapColor(MapColor.NETHER).requiresCorrectToolForDrops()));
+	public static final RegistryObject<Block> DEMON_BRICK_WALL = registerBlock("demon_brick_wall",
+			() -> new WallBlock(BlockBehaviour.Properties.copy(Blocks.NETHER_BRICK_WALL).mapColor(MapColor.NETHER).requiresCorrectToolForDrops()));
+	public static final RegistryObject<Block> DEMON_MAGMA_ROCK = registerBlock("demon_magma_rock",
+			() -> new MagmaBlock(BlockBehaviour.Properties.copy(Blocks.MAGMA_BLOCK).mapColor(MapColor.NETHER).lightLevel(pState -> 6)));
+	public static final RegistryObject<Block> RED_ASH = registerBlock("red_ash",
+			() -> new Block(BlockBehaviour.Properties.copy(Blocks.SOUL_SOIL).mapColor(MapColor.TERRACOTTA_RED).sound(SoundType.SAND)));
+	public static final RegistryObject<Block> CRIMSON_CRYSTAL = registerBlock("crimson_crystal",
+			() -> new Block(BlockBehaviour.Properties.copy(Blocks.AMETHYST_BLOCK).mapColor(MapColor.COLOR_RED).lightLevel(pState -> 10).requiresCorrectToolForDrops()));
+	public static final RegistryObject<Block> DEMON_REALM_CRUST = registerBlock("demon_realm_crust",
+			() -> new DemonRealmBlocks.SkylitBlock(BlockBehaviour.Properties.copy(Blocks.BEDROCK).mapColor(MapColor.COLOR_GRAY).noLootTable()));
+	public static final RegistryObject<Block> LIGHT_SHIELD = registerBlock("light_shield",
+			() -> new DemonRealmBlocks.LightShieldBlock(BlockBehaviour.Properties.of().mapColor(MapColor.COLOR_ORANGE)
+					.strength(-1.0F, 3600000.0F).noCollission().noOcclusion().noLootTable()
+					.emissiveRendering((pState, pLevel, pPos) -> true)
+					.sound(SoundType.AMETHYST).pushReaction(PushReaction.BLOCK)
+					.isValidSpawn((pState, pLevel, pPos, pType) -> false)
+					.isViewBlocking((pState, pLevel, pPos) -> false)
+					.isSuffocating((pState, pLevel, pPos) -> false)));
+
 	//Ores (Default) de Namek
 	public static final RegistryObject<Block> NAMEK_DIAMOND_ORE = registerBlock("namek_diamond_ore",
 			() -> new DropExperienceBlock(BlockBehaviour.Properties.copy(Blocks.DIAMOND_ORE).requiresCorrectToolForDrops().strength(3.0F, 6.0F)));
@@ -234,10 +348,20 @@ public final class MainBlocks {
 	public static final RegistryObject<Block> FUEL_GENERATOR = registerBlock("fuel_generator",
 			() -> new FuelGeneratorBlock(BlockBehaviour.Properties.copy(Blocks.FURNACE)
 					.mapColor(MapColor.STONE).requiresCorrectToolForDrops().noOcclusion()));
+	public static final RegistryObject<Block> PATTERN_STATION = registerPatternStation();
 	public static final RegistryObject<Block> ENERGY_CABLE = registerBlock("energy_cable",
 			() -> new EnergyCableBlock(BlockBehaviour.Properties.copy(Blocks.WHITE_WOOL)
 					.mapColor(MapColor.STONE).noOcclusion()));
 	public static final RegistryObject<Block> GRAVITY_DEVICE = registerGravityDevice();
+
+	private static RegistryObject<Block> registerPatternStation() {
+		RegistryObject<Block> block = BLOCK_REGISTER.register("pattern_station",
+				() -> new PatternStationBlock(BlockBehaviour.Properties.copy(Blocks.CRAFTING_TABLE)
+						.mapColor(MapColor.QUARTZ).noOcclusion()));
+		MainItems.ITEM_REGISTER.register("pattern_station",
+				() -> new com.dragonminez.common.init.item.PatternStationItem(block.get(), new Item.Properties()));
+		return block;
+	}
 
 	private static RegistryObject<Block> registerGravityDevice() {
 		RegistryObject<Block> block = BLOCK_REGISTER.register("gravity_device",
@@ -332,6 +456,36 @@ public final class MainBlocks {
 			() -> new FlowerPotBlock(() -> ((FlowerPotBlock) Blocks.FLOWER_POT), MainBlocks.SACRED_FERN,
 					BlockBehaviour.Properties.copy(Blocks.POTTED_FERN).noOcclusion()));
 
+	//AGRICULTURA
+	public static final RegistryObject<Block> OOZARU_ROOT_CROP = registerBlockOnly("oozaru_root_crop",
+			() -> new StatCropBlock(BlockBehaviour.Properties.copy(Blocks.WHEAT), MainItems.OOZARU_ROOT));
+	public static final RegistryObject<Block> KATCHIN_SPROUT_CROP = registerBlockOnly("katchin_sprout_crop",
+			() -> new StatCropBlock(BlockBehaviour.Properties.copy(Blocks.WHEAT), MainItems.KATCHIN_SPROUT));
+	public static final RegistryObject<Block> METEOR_FLOWER_CROP = registerBlockOnly("meteor_flower_crop",
+			() -> new StatCropBlock(BlockBehaviour.Properties.copy(Blocks.WHEAT), MainItems.METEOR_FLOWER));
+	public static final RegistryObject<Block> AURA_LILY_CROP = registerBlockOnly("aura_lily_crop",
+			() -> new StatCropBlock(BlockBehaviour.Properties.copy(Blocks.WHEAT), MainItems.AURA_LILY));
+	public static final RegistryObject<Block> HERMIT_FERN_CROP = registerBlockOnly("hermit_fern_crop",
+			() -> new StatCropBlock(BlockBehaviour.Properties.copy(Blocks.WHEAT), MainItems.HERMIT_FERN));
+	public static final RegistryObject<Block> KAIOSHIN_FRUIT_CROP = registerBlockOnly("kaioshin_fruit_crop",
+			() -> new StatCropBlock(BlockBehaviour.Properties.copy(Blocks.WHEAT), MainItems.KAIOSHIN_FRUIT));
+	public static final RegistryObject<Block> ZENKAI_LOTUS_CROP = registerBlockOnly("zenkai_lotus_crop",
+			() -> new StatCropBlock(BlockBehaviour.Properties.copy(Blocks.WHEAT), MainItems.ZENKAI_LOTUS));
+	public static final RegistryObject<Block> NAMEK_MOSS_CROP = registerBlockOnly("namek_moss_crop",
+			() -> new StatCropBlock(BlockBehaviour.Properties.copy(Blocks.WHEAT), MainItems.NAMEK_MOSS, NAMEK_GRASS_BLOCK));
+
+	public static final RegistryObject<Block> SENZU_BLUE_CROP = registerBlockOnly("senzu_blue_crop",
+			() -> new StatCropBlock(BlockBehaviour.Properties.copy(Blocks.WHEAT), MainItems.SENZU_BEAN_SEEDS_BLUE));
+	public static final RegistryObject<Block> SENZU_RED_CROP = registerBlockOnly("senzu_red_crop",
+			() -> new StatCropBlock(BlockBehaviour.Properties.copy(Blocks.WHEAT), MainItems.SENZU_BEAN_SEEDS_RED));
+	public static final RegistryObject<Block> SENZU_YELLOW_CROP = registerBlockOnly("senzu_yellow_crop",
+			() -> new StatCropBlock(BlockBehaviour.Properties.copy(Blocks.WHEAT), MainItems.SENZU_BEAN_SEEDS_YELLOW));
+
+	public static final java.util.List<RegistryObject<Block>> STAT_CROPS = java.util.List.of(
+			OOZARU_ROOT_CROP, KATCHIN_SPROUT_CROP, METEOR_FLOWER_CROP, AURA_LILY_CROP,
+			HERMIT_FERN_CROP, KAIOSHIN_FRUIT_CROP, ZENKAI_LOTUS_CROP, NAMEK_MOSS_CROP,
+			SENZU_BLUE_CROP, SENZU_RED_CROP, SENZU_YELLOW_CROP);
+
 	//LIQUIDOS
 	public static final RegistryObject<LiquidBlock> HEALING_LIQUID = BLOCK_REGISTER.register("healing_liquid_block",
 			() -> new LiquidBlock(MainFluids.SOURCE_HEALING, BlockBehaviour.Properties.copy(Blocks.WATER).noLootTable().liquid().replaceable()));
@@ -386,7 +540,8 @@ public final class MainBlocks {
 				.explosionResistance(3600000.0F)
 				.noOcclusion()
 				.noParticlesOnBreak()
-				.lightLevel(value -> 7);
+				.sound(DragonBallBlock.SOUND)
+				.lightLevel(state -> state.hasProperty(DragonBallBlock.GATHERED) && state.getValue(DragonBallBlock.GATHERED) ? 15 : 7);
 	}
 
 	private static DragonBallType dragonBallTypeFromStar(int star) {

@@ -1,9 +1,14 @@
 package com.dragonminez.common.network.C2S;
 
+import com.dragonminez.Env;
+import com.dragonminez.LogUtil;
+import com.dragonminez.common.hair.HairStyleSlot;
+import com.dragonminez.common.hair.HairSanitizer;
 import com.dragonminez.common.config.ConfigManager;
 import com.dragonminez.common.hair.CustomHair;
 import com.dragonminez.common.network.NetworkHandler;
 import com.dragonminez.common.network.S2C.StatsSyncS2C;
+import com.dragonminez.common.stats.character.AppearanceValidator;
 import com.dragonminez.common.stats.character.Character;
 import com.dragonminez.common.stats.StatsCapability;
 import com.dragonminez.common.stats.StatsProvider;
@@ -42,7 +47,7 @@ public class CreateCharacterC2S {
 		this.className = character.getCharacterClass();
 		this.gender = character.getGender();
 		this.hairId = character.getHairId();
-		this.customHair = character.getHairBase();
+		this.customHair = character.getOwnHairStyle(HairStyleSlot.BASE);
 		this.bodyType = character.getBodyType();
 		this.eyesType = character.getEyesType();
 		this.noseType = character.getNoseType();
@@ -151,12 +156,39 @@ public class CreateCharacterC2S {
 			ServerPlayer player = ctx.get().getSender();
 			if (player == null) return;
 
+			if (!ConfigManager.isRaceLoaded(msg.raceName)) {
+				LogUtil.warn(Env.COMMON, "Rejected CreateCharacterC2S from '{}': unknown race '{}'", player.getGameProfile().getName(), msg.raceName);
+				StatsProvider.get(StatsCapability.INSTANCE, player).ifPresent(data ->
+						NetworkHandler.sendToTrackingEntityAndSelf(new StatsSyncS2C(player), player));
+				return;
+			}
+
 			StatsProvider.get(StatsCapability.INSTANCE, player).ifPresent(data -> {
 				if (!data.getStatus().isHasCreatedCharacter()) {
-					data.initializeWithRaceAndClass(msg.raceName, msg.className, msg.gender,
-							msg.hairId, msg.customHair, msg.bodyType, msg.eyesType, msg.noseType, msg.mouthType, msg.tattooType, msg.boobScale,
-							msg.activeHeadBone, msg.hairColor, msg.bodyColor, msg.bodyColor2, msg.bodyColor3,
-							msg.eye1Color, msg.eye2Color, msg.auraColor);
+					if (msg.customHair != null) HairSanitizer.sanitizeAndLog(msg.customHair, HairStyleSlot.BASE, player.getGameProfile().getName());
+					Character previous = data.getCharacter();
+					String safeClass = AppearanceValidator.characterClass(msg.raceName, msg.className, previous.getCharacterClass());
+					if (!safeClass.equals(msg.className)) {
+						LogUtil.warn(Env.COMMON, "CreateCharacterC2S from '{}' sent unknown class '{}', using '{}'", player.getGameProfile().getName(), msg.className, safeClass);
+					}
+					data.initializeWithRaceAndClass(msg.raceName, safeClass, AppearanceValidator.gender(msg.gender),
+							AppearanceValidator.hairId(msg.hairId, previous.getHairId()), msg.customHair,
+							AppearanceValidator.styleIndex(msg.bodyType, previous.getBodyType()),
+							AppearanceValidator.styleIndex(msg.eyesType, previous.getEyesType()),
+							AppearanceValidator.styleIndex(msg.noseType, previous.getNoseType()),
+							AppearanceValidator.styleIndex(msg.mouthType, previous.getMouthType()),
+							AppearanceValidator.tattoo(msg.tattooType, previous.getTattooType()),
+							AppearanceValidator.boobScale(msg.boobScale, 1.0f),
+							AppearanceValidator.headBone(msg.raceName, msg.activeHeadBone, ""),
+							AppearanceValidator.color(msg.hairColor, previous.getHairColor()),
+							AppearanceValidator.color(msg.bodyColor, previous.getBodyColor()),
+							AppearanceValidator.color(msg.bodyColor2, previous.getBodyColor2()),
+							AppearanceValidator.color(msg.bodyColor3, previous.getBodyColor3()),
+							AppearanceValidator.color(msg.eye1Color, previous.getEye1Color()),
+							AppearanceValidator.color(msg.eye2Color, previous.getEye2Color()),
+							AppearanceValidator.color(msg.auraColor, previous.getAuraColor()));
+					Character character = data.getCharacter();
+					if (!character.canHaveGender() || !Character.GENDER_FEMALE.equals(character.getGender())) character.setGender(Character.GENDER_MALE);
 					data.getCharacter().setSelectedFormGroup(TransformationsHelper.getGroupWithFirstAvailableForm(data));
 					data.getCharacter().setSelectedForm(TransformationsHelper.getFirstAvailableForm(data));
 					data.getCharacter().setSelectedStackFormGroup(TransformationsHelper.getGroupWithFirstAvailableStackForm(data));

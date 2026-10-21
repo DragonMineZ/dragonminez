@@ -1,7 +1,6 @@
 package com.dragonminez.common.wish.wishes;
 
 import com.dragonminez.common.wish.Wish;
-import com.google.gson.GsonBuilder;
 import net.minecraft.server.level.ServerPlayer;
 
 public class CommandWish extends Wish {
@@ -15,13 +14,14 @@ public class CommandWish extends Wish {
 	@Override
 	public void grant(ServerPlayer player) {
 		for (String command : commands) {
-			String parsedCommand = command.replace("%player%", player.getName().getString());
+			String parsedCommand = command.replace("%player%", commandSafeName(player));
 			player.getServer().getCommands().performPrefixedCommand(player.getServer().createCommandSourceStack().withPermission(4), parsedCommand);
 		}
 	}
 
-	@Override
-	public String toJson() {
-		return new GsonBuilder().setPrettyPrinting().create().toJson(this, CommandWish.class);
+
+	private static String commandSafeName(ServerPlayer player) {
+		String name = player.getGameProfile().getName();
+		return name != null && name.matches("[A-Za-z0-9_]{1,16}") ? name : player.getStringUUID();
 	}
 }

@@ -1,5 +1,7 @@
 package com.dragonminez.common.stats.techniques;
 
+import com.dragonminez.Env;
+import com.dragonminez.LogUtil;
 import com.dragonminez.common.config.ConfigManager;
 import com.dragonminez.common.config.TechniqueConfig;
 import com.dragonminez.common.stats.StatsData;
@@ -22,6 +24,7 @@ import java.util.ArrayList;
 import java.util.Base64;
 import java.util.List;
 import java.util.UUID;
+import java.util.regex.Pattern;
 import java.util.zip.Deflater;
 import java.util.zip.DeflaterOutputStream;
 import java.util.zip.GZIPInputStream;
@@ -38,7 +41,10 @@ public class KiAttackData extends TechniqueData {
 	public enum AffectedStat { STR, SKP, DEF, STM_REGEN, HP_REGEN, ENE_REGEN, PWR }
 
 	private static final int MAX_IMPORT_NBT_BYTES = 64 * 1024;
-	private static final int MAX_IMPORT_CODE_LENGTH = 16 * 1024;
+	public static final int MAX_IMPORT_CODE_LENGTH = 16 * 1024;
+	private static final int MAX_IMPORT_TEXT_LENGTH = 64;
+	private static final int MAX_IMPORT_ALLOWED_RACES = 32;
+	private static final Pattern IMPORT_ANIMATION_PATTERN = Pattern.compile("ki\\.[a-z0-9_]{1,48}");
 
 	public static final int MIN_SECONDARY_INTENSITY = 5;
 	public static final int MAX_SECONDARY_INTENSITY = 50;
@@ -97,20 +103,22 @@ public class KiAttackData extends TechniqueData {
 	}
 
 	public String getAnimationPrefix() {
-		if (this.animation != null && !this.animation.isEmpty()) return this.animation;
-
 		if (PredefinedTechniques.isPredefinedTechniqueId(this.id)) {
 			KiAttackData predefined = PredefinedTechniques.REGISTRY.get(this.id);
 			if (predefined != null && predefined.getAnimation() != null && !predefined.getAnimation().isEmpty()) return predefined.getAnimation();
 		}
+
+		if (this.animation != null && !this.animation.isEmpty()) return this.animation;
 
 		return switch (kiType != null ? kiType : KiType.SMALL_BALL) {
 			case BARRAGE -> "ki.barrage";
 			case GIANT_BALL -> "ki.large_ball";
 			case WAVE -> "ki.kameha";
 			case DISK -> "ki.kienzan";
-			case EXPLOSION, SHIELD -> "ki.explosion";
-			case BEAM, LASER -> "ki.makkako";
+			case EXPLOSION -> "ki.explosion";
+			case SHIELD -> "ki.barrier";
+			case BEAM -> "ki.makkako";
+			case LASER -> "ki.laser";
 			case SMALL_BALL, MEDIUM_BALL -> "ki.bigbang";
 			default -> "ki.kameha";
 		};
@@ -158,6 +166,12 @@ public class KiAttackData extends TechniqueData {
 		return kiType == KiType.SMALL_BALL || kiType == KiType.LASER;
 	}
 
+	public boolean requiresFullCharge() {
+		return isInstantCast()
+				|| kiType == KiType.MEDIUM_BALL
+				|| kiType == KiType.GIANT_BALL;
+	}
+
 	public static final int OVERCHARGE_MAX_PERCENT = 175;
 	public static final int OVERCHARGE_TIER_PERCENT = 25;
 
@@ -173,7 +187,7 @@ public class KiAttackData extends TechniqueData {
 	}
 
 	public void setSecondaryIntensity(float value) {
-		this.secondaryIntensity = value <= 0 ? 0 : Mth.clamp(value, MIN_SECONDARY_INTENSITY, MAX_SECONDARY_INTENSITY);
+		this.secondaryIntensity = !Float.isFinite(value) || value <= 0 ? 0 : Mth.clamp(value, MIN_SECONDARY_INTENSITY, MAX_SECONDARY_INTENSITY);
 	}
 
 	public void setSecondaryDuration(int value) {
@@ -216,6 +230,31 @@ public class KiAttackData extends TechniqueData {
 		KiType resolvedType = this.kiType != null ? this.kiType : KiType.SMALL_BALL;
 		double overload = largeOverloadKiMultiplier(resolvedType, this.damageMultiplier);
 		return Math.max(5.0, ((damageDone * 0.5 + complexityFactor) * typeMult * utilMult * configCostMult * secondaryCostMultiplier() * overload) / 2);
+	}
+
+	private static boolean isTransformed(StatsData statsData) {
+		return statsData.getTotalMultiplier("PWR") > 1.0001;
+	}
+	public float resolveCastSize(StatsData statsData) {
+		if (statsData == null) return getSize();
+
+		TechniqueConfig.TechniqueTypeConfig cfg = ConfigManager.getTechniqueConfig()
+				.getKiTypeConfig(this.kiType != null ? this.kiType : KiType.SMALL_BALL);
+
+		double cap = isTransformed(statsData) ? cfg.getTransformedSizeCap() : cfg.getBaseSizeCap();
+		if (cap <= 0.0) return getSize();
+
+		float xpBonus = Math.max(0.0F, this.sizeLevel * 0.1F);
+		float authored = Math.max(0.0F, this.size - xpBonus);
+
+		double floor = Math.min(authored, cap);
+		double power = Math.max(1.0, statsData.getStats().getKiPower());
+		double from = Math.max(1.0, cfg.getSizePowerFloor());
+		double to = Math.max(from * 10.0, cfg.getSizePowerCeiling());
+
+		double progress = Mth.clamp(Math.log(power / from) / Math.log(to / from), 0.0, 1.0);
+
+		return (float) (floor + (cap - floor) * progress) + xpBonus;
 	}
 
 	public int getUpgradeXpCost(String statName) {
@@ -451,7 +490,7 @@ public class KiAttackData extends TechniqueData {
 			attack.sanitizeImportedStats();
 			return attack;
 		} catch (Exception e) {
-			e.printStackTrace();
+			LogUtil.debug(Env.COMMON, "Failed to import technique code: {}", e.toString());
 			return null;
 		}
 	}
@@ -463,6 +502,20 @@ public class KiAttackData extends TechniqueData {
 		this.armorPenLevel = 0;
 		this.castTimeLevel = 0;
 		this.cooldownLevel = 0;
+
+		if (this.name != null && this.name.length() > MAX_IMPORT_TEXT_LENGTH) this.name = this.name.substring(0, MAX_IMPORT_TEXT_LENGTH);
+		if (this.author != null && this.author.length() > MAX_IMPORT_TEXT_LENGTH) this.author = this.author.substring(0, MAX_IMPORT_TEXT_LENGTH);
+		List<String> races = new ArrayList<>();
+		for (String race : this.allowedRaces) {
+			if (races.size() >= MAX_IMPORT_ALLOWED_RACES) break;
+			if (race != null && !race.isEmpty() && race.length() <= MAX_IMPORT_TEXT_LENGTH) races.add(race);
+		}
+		this.allowedRaces = races;
+
+		if (this.animation == null || !IMPORT_ANIMATION_PATTERN.matcher(this.animation).matches()) this.animation = "";
+		this.colorInterior &= 0xFFFFFF;
+		this.colorExterior &= 0xFFFFFF;
+		this.colorOutline &= 0xFFFFFF;
 
 		KiType resolvedType = this.kiType != null ? this.kiType : KiType.SMALL_BALL;
 		float[] normalized = normalizeStatsForType(resolvedType, this.damageMultiplier, this.size, this.speed, this.armorPenetration);
@@ -541,6 +594,15 @@ public class KiAttackData extends TechniqueData {
 		this.colorInterior = tag.getInt("ColorInterior");
 		this.colorExterior = tag.getInt("ColorExterior");
 		this.colorOutline = tag.getInt("ColorOutline");
+
+		if (PredefinedTechniques.isPredefinedTechniqueId(this.id)) {
+			KiAttackData predefined = PredefinedTechniques.REGISTRY.get(this.id);
+			if (predefined != null) {
+				this.colorInterior = predefined.getColorInterior();
+				this.colorExterior = predefined.getColorExterior();
+				this.colorOutline = predefined.getColorOutline();
+			}
+		}
 		this.damageMultiplier = tag.getFloat("DamageMultiplier");
 		this.speed = tag.getFloat("Speed");
 		this.size = tag.getFloat("Size");
@@ -551,6 +613,15 @@ public class KiAttackData extends TechniqueData {
 		this.cooldownLevel = tag.getInt("CooldownLevel");
 		this.speedLevel = tag.getInt("SpeedLevel");
 		this.sizeLevel = tag.getInt("SizeLevel");
+
+		KiAttackData template = PredefinedTechniques.REGISTRY.get(this.id);
+		if (template != null && template != this) {
+			this.damageMultiplier = template.getDamageMultiplier() + Math.max(0, this.damageLevel) * 0.05f;
+			this.size = template.getSize() + Math.max(0, this.sizeLevel) * 0.1f;
+			this.speed = template.getSpeed() + Math.max(0, this.speedLevel) * 0.05f;
+			this.armorPenetration = template.getArmorPenetration() + Math.max(0, this.armorPenLevel);
+			this.cooldown = template.getCooldown();
+		}
 
 		try { this.secondaryEffectType = SecondaryEffectType.valueOf(tag.getString("SecondaryEffectType")); }
 		catch (Exception e) { this.secondaryEffectType = SecondaryEffectType.NONE; }
@@ -563,17 +634,21 @@ public class KiAttackData extends TechniqueData {
 
 	public static float[] normalizeStatsForType(KiType type, float damage, float size, float speed, int armorPen) {
 		KiType resolvedType = type != null ? type : KiType.SMALL_BALL;
-		float normalizedDamage = Mth.clamp(damage, getMinDamageForType(resolvedType), getMaxDamageForType(resolvedType));
+		float normalizedDamage = Mth.clamp(finiteOr(damage, getMinDamageForType(resolvedType)), getMinDamageForType(resolvedType), getMaxDamageForType(resolvedType));
 		float normalizedSize = usesCustomSize(resolvedType)
-				? Mth.clamp(size, getMinSizeForType(resolvedType), getMaxSizeForType(resolvedType))
+				? Mth.clamp(finiteOr(size, getMinSizeForType(resolvedType)), getMinSizeForType(resolvedType), getMaxSizeForType(resolvedType))
 				: getDefaultSizeForType(resolvedType);
 		float normalizedSpeed = usesCustomSpeed(resolvedType)
-				? Mth.clamp(speed, getMinSpeedForType(resolvedType), getMaxSpeedForType(resolvedType))
+				? Mth.clamp(finiteOr(speed, getMinSpeedForType(resolvedType)), getMinSpeedForType(resolvedType), getMaxSpeedForType(resolvedType))
 				: getDefaultSpeedForType(resolvedType);
 		float normalizedArmorPen = usesCustomArmorPen(resolvedType)
 				? Mth.clamp(armorPen, 0, getMaxArmorPenForType(resolvedType))
 				: getDefaultArmorPenForType(resolvedType);
 		return new float[]{normalizedDamage, normalizedSize, normalizedSpeed, normalizedArmorPen};
+	}
+
+	private static float finiteOr(float value, float fallback) {
+		return Float.isFinite(value) ? value : fallback;
 	}
 
 	public static boolean usesCustomSize(KiType type) {
@@ -666,10 +741,11 @@ public class KiAttackData extends TechniqueData {
 	}
 
 	private static final float LARGE_OVERLOAD_KI_FACTOR = 2.0f;
+	private static final float LARGE_OVERLOAD_KI_MAX = 3.0f;
 
 	private static float largeOverloadKiMultiplier(KiType type, float damage) {
 		if (!isLargeDamageTier(type) || damage <= 2.0f) return 1.0f;
-		return 1.0f + (damage - 2.0f) * LARGE_OVERLOAD_KI_FACTOR;
+		return Math.min(LARGE_OVERLOAD_KI_MAX, 1.0f + (damage - 2.0f) * LARGE_OVERLOAD_KI_FACTOR);
 	}
 
 	public static float getDefaultSizeForType(KiType type) {

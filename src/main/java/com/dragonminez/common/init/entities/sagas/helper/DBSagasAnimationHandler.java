@@ -1,18 +1,38 @@
 package com.dragonminez.common.init.entities.sagas.helper;
 
 import com.dragonminez.common.init.entities.sagas.DBSagasEntity;
-import com.dragonminez.common.init.entities.sagas.DBSagasEntity.AiTier;
 import com.dragonminez.common.init.entities.sagas.DBSagasEntity.LocomotionMode;
+import com.dragonminez.common.init.entities.worldboss.AllWorldBossesEntity;
 import net.minecraft.world.entity.ai.attributes.Attributes;
 import software.bernie.geckolib.core.animatable.GeoAnimatable;
 import software.bernie.geckolib.core.animation.AnimationController;
 import software.bernie.geckolib.core.animation.AnimationState;
+import software.bernie.geckolib.core.animation.RawAnimation;
 import software.bernie.geckolib.core.object.PlayState;
 
 public class DBSagasAnimationHandler {
 
     public static <T extends GeoAnimatable> PlayState walkPredicate(AnimationState<T> event) {
-        DBSagasEntity entity = (DBSagasEntity) event.getAnimatable();
+        return walkPredicate(event, (DBSagasEntity) event.getAnimatable());
+    }
+
+    public static <T extends GeoAnimatable> PlayState walkPredicate(AnimationState<T> event, DBSagasEntity entity) {
+
+        if (entity.isInSleepPose()) {
+            event.getController().setAnimationSpeed(1.0D);
+            return event.setAndContinue(entity.getSleepAnimation());
+        }
+
+        if (entity.getBossAbility() >= 0 || entity.isStrikeClashing()) {
+            event.getController().setAnimationSpeed(1.0D);
+            return PlayState.STOP;
+        }
+
+        if (entity.isStrikeRushing()) {
+            event.getController().setAnimationSpeed(1.0D);
+            if (entity.getDBZStyle() == 3) return event.setAndContinue(DBSagasAnimations.ANIM_FLY_FAST4);
+            return event.setAndContinue(DBSagasAnimations.ANIM_FLY_FAST);
+        }
 
         if (entity.isEvading() || entity.isComboing()) {
             event.getController().setAnimationSpeed(1.0D);
@@ -48,15 +68,11 @@ public class DBSagasAnimationHandler {
 
         //MOVING
         if (event.isMoving()) {
-            boolean runAnim;
-            if (entity.getAiTier() != AiTier.SIMPLE) {
-                LocomotionMode mode = entity.getLocomotionMode();
-                runAnim = mode == LocomotionMode.RUN || mode == LocomotionMode.DASH || mode == LocomotionMode.WALK_SLOW;
-                if (mode == LocomotionMode.WALK_SLOW) {
-                    event.getController().setAnimationSpeed(1.0D);
-                }
-            } else {
-                runAnim = entity.isAggressive() || entity.getTarget() != null;
+            LocomotionMode mode = entity.getLocomotionMode();
+            boolean runAnim = mode == LocomotionMode.RUN || mode == LocomotionMode.DASH || mode == LocomotionMode.WALK_SLOW
+                    || (mode == LocomotionMode.IDLE && (entity.isAggressive() || entity.getTarget() != null));
+            if (mode == LocomotionMode.WALK_SLOW) {
+                event.getController().setAnimationSpeed(1.0D);
             }
 
             if (runAnim) {
@@ -64,12 +80,14 @@ public class DBSagasAnimationHandler {
                 if (style == 2) return event.setAndContinue(DBSagasAnimations.ANIM_RUN_3);
                 if (style == 3) return event.setAndContinue(DBSagasAnimations.ANIM_RUN_4);
                 if (style == 4) return event.setAndContinue(DBSagasAnimations.ANIM_RUN_5);
+                if (style == 6) return event.setAndContinue(DBSagasAnimations.ANIM_RUN_7);
                 return event.setAndContinue(DBSagasAnimations.ANIM_RUN);
             } else {
                 if (style == 1) return event.setAndContinue(DBSagasAnimations.ANIM_WALK_2);
                 if (style == 2) return event.setAndContinue(DBSagasAnimations.ANIM_WALK_3);
                 if (style == 3) return event.setAndContinue(DBSagasAnimations.ANIM_WALK_4);
                 if (style == 4) return event.setAndContinue(DBSagasAnimations.ANIM_WALK_5);
+                if (style == 6) return event.setAndContinue(DBSagasAnimations.ANIM_WALK_7);
                 return event.setAndContinue(DBSagasAnimations.ANIM_WALK);
             }
         }
@@ -79,13 +97,23 @@ public class DBSagasAnimationHandler {
         if (style == 2) return event.setAndContinue(DBSagasAnimations.ANIM_IDLE_3);
         if (style == 3) return event.setAndContinue(DBSagasAnimations.ANIM_IDLE_4);
         if (style == 4) return event.setAndContinue(DBSagasAnimations.ANIM_IDLE_5);
+        if (style == 6) return event.setAndContinue(DBSagasAnimations.ANIM_IDLE_7);
         return event.setAndContinue(DBSagasAnimations.ANIM_IDLE);
     }
 
-    public static <T extends GeoAnimatable> PlayState skillPredicate(AnimationState<T> event) {
-        DBSagasEntity entity = (DBSagasEntity) event.getAnimatable();
+    private static RawAnimation kiClip(DBSagasEntity entity, int skill, RawAnimation cast, RawAnimation fire) {
+        return entity.getClientCastTicks() > SkillManager.getFireTick(entity, skill) ? fire : cast;
+    }
 
-        if (entity.isComboing()) {
+    public static <T extends GeoAnimatable> PlayState skillPredicate(AnimationState<T> event) {
+        return skillPredicate(event, (DBSagasEntity) event.getAnimatable());
+    }
+
+    public static <T extends GeoAnimatable> PlayState skillPredicate(AnimationState<T> event, DBSagasEntity entity) {
+
+        if (entity.isStrikeClashing()) return event.setAndContinue(DBSagasAnimations.ANIM_STRIKE_CLASH);
+
+        if (entity.isComboing() && !entity.isStrikeRushing()) {
             int comboId = entity.getComboId();
 
             if (comboId == 0) return event.setAndContinue(DBSagasAnimations.ANIM_COMBO1);
@@ -96,36 +124,61 @@ public class DBSagasAnimationHandler {
                 return event.setAndContinue(DBSagasAnimations.ANIM_COMBO3);
             }
             if (comboId == 4) return event.setAndContinue(DBSagasAnimations.ANIM_GRAB_KI);
-            if (comboId == 5) return event.setAndContinue(DBSagasAnimations.ANIM_COMBO4);
+            if (comboId == 5) return event.setAndContinue(DBSagasAnimations.ANIM_GUM_PUNCH);
             if (comboId == 6) return event.setAndContinue(DBSagasAnimations.ANIM_COMBO5);
-            if (comboId == 7) return event.setAndContinue(DBSagasAnimations.ANIM_COMBO6);
+            if (comboId == 7) return event.setAndContinue(DBSagasAnimations.ANIM_SLEEP_RECOVERY);
             if (comboId == 8) return event.setAndContinue(DBSagasAnimations.ANIM_COMBO7);
+            if (comboId == 9) return event.setAndContinue(DBSagasAnimations.ANIM_SPIRIT_BREAKING_CANNON);
+            if (comboId == 11) return event.setAndContinue(DBSagasAnimations.ANIM_SUPER_GOD_FIST);
+            if (comboId == 12) return event.setAndContinue(DBSagasAnimations.ANIM_DEADLY_DANCE_VEGETTO);
+            if (comboId == 13) return event.setAndContinue(DBSagasAnimations.ANIM_METEOR_BURST);
+            if (comboId == 14) return event.setAndContinue(DBSagasAnimations.ANIM_MYSTIC_BALL);
+            if (comboId == 15) return event.setAndContinue(DBSagasAnimations.ANIM_BEAM_SWORD_SLASH);
+            if (comboId == 16) return event.setAndContinue(DBSagasAnimations.ANIM_PERFECT_RUSH);
+            if (comboId == 17) return event.setAndContinue(DBSagasAnimations.ANIM_SPIRIT_BREAKER);
 
         }
 
         if (entity.isCasting()) {
             int skill = entity.getSkillType();
             switch (skill) {
-                case 1: return event.setAndContinue(DBSagasAnimations.ANIM_KI_KAME);
-                case 2: return event.setAndContinue(DBSagasAnimations.ANIM_KI_GALICK);
-                case 3: return event.setAndContinue(DBSagasAnimations.ANIM_KI_MAKKAKO);
-                case 4: return event.setAndContinue(DBSagasAnimations.ANIM_KI_LASER);
-                case 5: return event.setAndContinue(DBSagasAnimations.ANIM_KI_EXPLOSION);
-                case 6: return event.setAndContinue(DBSagasAnimations.ANIM_KI_BARRIER);
-                case 7: return event.setAndContinue(DBSagasAnimations.ANIM_KI_EXPLOSION);
-                case 8: return event.setAndContinue(DBSagasAnimations.ANIM_KIWAVE);
-                case 9: return event.setAndContinue(DBSagasAnimations.ANIM_KIOZARU);
-                case 10: return event.setAndContinue(DBSagasAnimations.ANIM_KI_BARRAGE);
+                case 1: return event.setAndContinue(kiClip(entity, skill, DBSagasAnimations.ANIM_KAMEHA_CAST, DBSagasAnimations.ANIM_KAMEHA_FIRE));
+                case 2: return event.setAndContinue(kiClip(entity, skill, DBSagasAnimations.ANIM_GALICK_CAST, DBSagasAnimations.ANIM_GALICK_FIRE));
+                case 3: return event.setAndContinue(kiClip(entity, skill, DBSagasAnimations.ANIM_MAKKAKO_CAST, DBSagasAnimations.ANIM_MAKKAKO_FIRE));
+                case 4: return event.setAndContinue(DBSagasAnimations.ANIM_LASER_FIRE);
+                case 5: return event.setAndContinue(kiClip(entity, skill, DBSagasAnimations.ANIM_EXPLOSION_CAST, DBSagasAnimations.ANIM_EXPLOSION_FIRE));
+                case 6: return event.setAndContinue(kiClip(entity, skill, DBSagasAnimations.ANIM_BARRIER_CAST, DBSagasAnimations.ANIM_BARRIER_FIRE));
+                case 7: return event.setAndContinue(DBSagasAnimations.ANIM_RAGE_SCREAM);
+                case 8: return event.setAndContinue(kiClip(entity, skill, DBSagasAnimations.ANIM_FINALFLASH_CAST, DBSagasAnimations.ANIM_FINALFLASH_FIRE));
+                case 9: return event.setAndContinue(kiClip(entity, skill, DBSagasAnimations.ANIM_MOUTH_BLAST_CAST, DBSagasAnimations.ANIM_MOUTH_BLAST_FIRE));
+                case 10: return event.setAndContinue(kiClip(entity, skill, DBSagasAnimations.ANIM_BARRAGE_CAST, DBSagasAnimations.ANIM_BARRAGE_FIRE));
                 case 11: return event.setAndContinue(DBSagasAnimations.ANIM_KIBLAST);
                 case 12: return event.setAndContinue(DBSagasAnimations.ANIM_KIATTACK);
-                case 13: return event.setAndContinue(DBSagasAnimations.ANIM_KI_LASER);
-                case 14: return event.setAndContinue(DBSagasAnimations.ANIM_KI_DISC);
-                case 15: return event.setAndContinue(DBSagasAnimations.ANIM_KIBALL);
-                case 16: return event.setAndContinue(DBSagasAnimations.ANIM_KI_MASENKO);
-                case 17: return event.setAndContinue(DBSagasAnimations.ANIM_KI_BIG_BANG);
-                case 18: return event.setAndContinue(DBSagasAnimations.ANIM_KI_FINALFLASH);
+                case 13: return event.setAndContinue(DBSagasAnimations.ANIM_LASER_FIRE_LOOP);
+                case 14: return event.setAndContinue(kiClip(entity, skill, DBSagasAnimations.ANIM_KIENZAN_CAST, DBSagasAnimations.ANIM_KIENZAN_FIRE));
+                case 15: return event.setAndContinue(kiClip(entity, skill, DBSagasAnimations.ANIM_LARGE_BALL_CAST, DBSagasAnimations.ANIM_LARGE_BALL_FIRE));
+                case 16: return event.setAndContinue(kiClip(entity, skill, DBSagasAnimations.ANIM_MASENKO_CAST, DBSagasAnimations.ANIM_MASENKO_FIRE));
+                case 17: return event.setAndContinue(kiClip(entity, skill, DBSagasAnimations.ANIM_BIGBANG_CAST, DBSagasAnimations.ANIM_BIGBANG_FIRE));
+                case 18: return event.setAndContinue(kiClip(entity, skill, DBSagasAnimations.ANIM_FINALFLASH_CAST, DBSagasAnimations.ANIM_FINALFLASH_FIRE));
                 case 19: return event.setAndContinue(DBSagasAnimations.ANIM_KI_LASER);
                 case 20: return event.setAndContinue(DBSagasAnimations.ANIM_KI_EXPLOSION);
+                case 22: return event.setAndContinue(DBSagasAnimations.ANIM_WOLF_FANG);
+                case 23: return event.setAndContinue(DBSagasAnimations.ANIM_DRAGON_FIST);
+                case 21: return event.setAndContinue(kiClip(entity, skill, DBSagasAnimations.ANIM_FINALFLASH_CAST, DBSagasAnimations.ANIM_FINALFLASH_FIRE));
+                case 24: return event.setAndContinue(kiClip(entity, skill, DBSagasAnimations.ANIM_KAMEHA_CAST, DBSagasAnimations.ANIM_KAMEHA_FIRE));
+                case 25: return event.setAndContinue(DBSagasAnimations.ANIM_TAIYOKEN);
+                case 37: return event.setAndContinue(DBSagasAnimations.ANIM_GUM_BIND);
+                case 26: return event.setAndContinue(DBSagasAnimations.ANIM_DODONPA_FIRE);
+                case 27: return event.setAndContinue(kiClip(entity, skill, DBSagasAnimations.ANIM_BURNING_ATTACK_CAST, DBSagasAnimations.ANIM_BURNING_ATTACK_FIRE));
+                case 28: return event.setAndContinue(kiClip(entity, skill, DBSagasAnimations.ANIM_SUPERNOVA_COOLER_CAST, DBSagasAnimations.ANIM_SUPERNOVA_COOLER_FIRE));
+                case 29: return event.setAndContinue(kiClip(entity, skill, DBSagasAnimations.ANIM_ASSAULT_RAIN_CAST, DBSagasAnimations.ANIM_ASSAULT_RAIN_FIRE));
+                case 30: return event.setAndContinue(kiClip(entity, skill, DBSagasAnimations.ANIM_BLASTER_METEOR_CAST, DBSagasAnimations.ANIM_BLASTER_METEOR_FIRE));
+                case 31: return event.setAndContinue(DBSagasAnimations.ANIM_BOSS_SPECIAL1);
+                case 32: return event.setAndContinue(DBSagasAnimations.ANIM_BOSS_DESTRUCTION);
+                case 33: return event.setAndContinue(kiClip(entity, skill, DBSagasAnimations.ANIM_SOUL_PUNISHER_CAST, DBSagasAnimations.ANIM_SOUL_PUNISHER_FIRE));
+                case 34: return event.setAndContinue(kiClip(entity, skill, DBSagasAnimations.ANIM_BIGBANG_CAST, DBSagasAnimations.ANIM_BIGBANG_FIRE));
+                case 35: return event.setAndContinue(DBSagasAnimations.ANIM_OOZARU_FIST);
+                case 36: return event.setAndContinue(DBSagasAnimations.ANIM_OOZARU_SLAM);
                 default: return event.setAndContinue(DBSagasAnimations.ANIM_KIWAVE);
             }
         }
@@ -134,6 +187,7 @@ public class DBSagasAnimationHandler {
             int style = entity.getDBZStyle();
             if (style == 1) return event.setAndContinue(DBSagasAnimations.ANIM_TRANSFORMATION2);
             if (style == 2) return event.setAndContinue(DBSagasAnimations.ANIM_TRANSFORMATION3);
+            if (style == 6) return event.setAndContinue(DBSagasAnimations.ANIM_TRANSFORMATION7);
             return event.setAndContinue(DBSagasAnimations.ANIM_TRANSFORMATION1);
         }
 
@@ -142,10 +196,13 @@ public class DBSagasAnimationHandler {
     }
 
     public static <T extends GeoAnimatable> PlayState attackPredicate(AnimationState<T> event) {
-        DBSagasEntity entity = (DBSagasEntity) event.getAnimatable();
+        return attackPredicate(event, (DBSagasEntity) event.getAnimatable());
+    }
+
+    public static <T extends GeoAnimatable> PlayState attackPredicate(AnimationState<T> event, DBSagasEntity entity) {
 
         if (entity.isCasting() || entity.isTransforming() || entity.isComboing() ||
-                entity.isEvading() || entity.isZanzoken()) {
+                entity.isEvading() || entity.isZanzoken() || entity.isStrikeClashing()) {
             return PlayState.STOP;
         }
 
@@ -154,6 +211,7 @@ public class DBSagasAnimationHandler {
         if (entity.swingTime > 0 && !entity.isAttacking()) {
             entity.setAttacking(true);
             event.getController().forceAnimationReset();
+            event.getController().setAnimationSpeed(entity.getAttackAnimationSpeed());
 
             int randAttack = entity.getRandom().nextInt(3);
 
@@ -173,7 +231,14 @@ public class DBSagasAnimationHandler {
                 if (randAttack == 0) event.getController().setAnimation(DBSagasAnimations.ANIM_ATTACK1_5);
                 else if (randAttack == 1) event.getController().setAnimation(DBSagasAnimations.ANIM_ATTACK2_5);
                 else event.getController().setAnimation(DBSagasAnimations.ANIM_ATTACK3_5);
-
+            } else if (style == 5) {
+                if (randAttack == 0) event.getController().setAnimation(DBSagasAnimations.ANIM_ATTACK1_6);
+                else if (randAttack == 1) event.getController().setAnimation(DBSagasAnimations.ANIM_ATTACK2_6);
+                else event.getController().setAnimation(DBSagasAnimations.ANIM_ATTACK3_6);
+            } else if (style == 7) {
+                if (randAttack == 0) event.getController().setAnimation(DBSagasAnimations.ANIM_ATTACK1_8);
+                else if (randAttack == 1) event.getController().setAnimation(DBSagasAnimations.ANIM_ATTACK2_8);
+                else event.getController().setAnimation(DBSagasAnimations.ANIM_ATTACK3_8);
             } else {
                 if (randAttack == 0) event.getController().setAnimation(DBSagasAnimations.ANIM_ATTACK1);
                 else if (randAttack == 1) event.getController().setAnimation(DBSagasAnimations.ANIM_ATTACK2);
@@ -194,7 +259,10 @@ public class DBSagasAnimationHandler {
     }
 
     public static <T extends GeoAnimatable> PlayState evasionPredicate(AnimationState<T> event) {
-        DBSagasEntity entity = (DBSagasEntity) event.getAnimatable();
+        return evasionPredicate(event, (DBSagasEntity) event.getAnimatable());
+    }
+
+    public static <T extends GeoAnimatable> PlayState evasionPredicate(AnimationState<T> event, DBSagasEntity entity) {
 
         if (entity.isZanzoken()) {
             event.getController().forceAnimationReset();
@@ -206,6 +274,123 @@ public class DBSagasAnimationHandler {
         }
 
         event.getController().forceAnimationReset();
+        return PlayState.STOP;
+    }
+
+    public static <T extends GeoAnimatable> PlayState bossAbilityPredicate(AnimationState<T> event) {
+        DBSagasEntity entity = (DBSagasEntity) event.getAnimatable();
+        int ability = entity.getBossAbility();
+        event.getController().setAnimationSpeed(1.0D);
+
+        if (ability == AllWorldBossesEntity.Tamagami3.ABILITY_HAMMER_THROW) {
+            boolean thrown = entity.getBossAbilityTicks() >= AllWorldBossesEntity.Tamagami3.THROW_TICK;
+            return event.setAndContinue(thrown ? DBSagasAnimations.ANIM_TAMAGAMI_RELEASE : DBSagasAnimations.ANIM_TAMAGAMI_RAISE);
+        }
+        if (ability == AllWorldBossesEntity.Tamagami3.ABILITY_HAMMER_SLAM) {
+            if (entity.getBossAbilityTicks() < AllWorldBossesEntity.Tamagami3.SLAM_APEX) return event.setAndContinue(DBSagasAnimations.ANIM_TAMAGAMI_RAISE);
+            event.getController().setAnimationSpeed(AllWorldBossesEntity.Tamagami3.SLAM_ANIMATION_SPEED);
+            return event.setAndContinue(DBSagasAnimations.ANIM_TAMAGAMI_SLAM);
+        }
+        if (ability == AllWorldBossesEntity.Tamagami3.ABILITY_HAMMER_SLAM_FOLLOW) {
+            if (entity.getBossAbilityTicks() < AllWorldBossesEntity.Tamagami3.FOLLOW_APEX) return event.setAndContinue(DBSagasAnimations.ANIM_TAMAGAMI_RAISE);
+            event.getController().setAnimationSpeed(AllWorldBossesEntity.Tamagami3.SLAM_ANIMATION_SPEED);
+            return event.setAndContinue(DBSagasAnimations.ANIM_TAMAGAMI_SLAM);
+        }
+        if (ability == AllWorldBossesEntity.Tamagami3.ABILITY_METEOR) {
+            boolean struck = entity.getBossAbilityTicks() >= AllWorldBossesEntity.Tamagami3.METEOR_STRIKE;
+            return event.setAndContinue(struck ? DBSagasAnimations.ANIM_TAMAGAMI_SLAM : DBSagasAnimations.ANIM_TAMAGAMI_RAISE);
+        }
+        if (ability == AllWorldBossesEntity.Tamagami3.ABILITY_CYCLONE && entity instanceof AllWorldBossesEntity.Tamagami3 tamagami) {
+            if (tamagami.isDizzy()) return event.setAndContinue(DBSagasAnimations.ANIM_TAMAGAMI_SLEEP);
+            boolean spinning = entity.getBossAbilityTicks() >= AllWorldBossesEntity.Tamagami3.CYCLONE_WINDUP;
+            return event.setAndContinue(spinning ? DBSagasAnimations.ANIM_TAMAGAMI_RELEASE : DBSagasAnimations.ANIM_TAMAGAMI_RAISE);
+        }
+        if (ability == AllWorldBossesEntity.Tamagami3.ABILITY_PILLARS) {
+            boolean smashed = entity.getBossAbilityTicks() >= AllWorldBossesEntity.Tamagami3.PILLAR_SMASH;
+            return event.setAndContinue(smashed ? DBSagasAnimations.ANIM_TAMAGAMI_SLAM : DBSagasAnimations.ANIM_TAMAGAMI_RAISE);
+        }
+        if (ability == AllWorldBossesEntity.Tamagami1.ABILITY_STANCE) {
+            int ticks = entity.getBossAbilityTicks();
+            if (ticks < AllWorldBossesEntity.Tamagami1.STANCE_TICKS) return event.setAndContinue(DBSagasAnimations.ANIM_TAMAGAMI_RAISE);
+            if (ticks < AllWorldBossesEntity.Tamagami1.STANCE_TICKS + AllWorldBossesEntity.Tamagami1.STANCE_SLASH_TICKS) {
+                return event.setAndContinue(DBSagasAnimations.ANIM_TAMAGAMI_RELEASE);
+            }
+            return event.setAndContinue(DBSagasAnimations.ANIM_TAMAGAMI_SLEEP);
+        }
+        if (ability == AllWorldBossesEntity.Tamagami1.ABILITY_COUNTER) return event.setAndContinue(DBSagasAnimations.ANIM_TAMAGAMI_RELEASE);
+        if (ability == AllWorldBossesEntity.Tamagami1.ABILITY_FLASH) {
+            boolean cut = entity.getBossAbilityTicks() >= AllWorldBossesEntity.Tamagami1.FLASH_FIRST;
+            return event.setAndContinue(cut ? DBSagasAnimations.ANIM_TAMAGAMI_RELEASE : DBSagasAnimations.ANIM_TAMAGAMI_RAISE);
+        }
+        if (ability == AllWorldBossesEntity.Tamagami1.ABILITY_CHASE) {
+            boolean struck = entity.getBossAbilityTicks() >= AllWorldBossesEntity.Tamagami1.CHASE_STRIKE;
+            return event.setAndContinue(struck ? DBSagasAnimations.ANIM_TAMAGAMI_RELEASE : DBSagasAnimations.ANIM_TAMAGAMI_RAISE);
+        }
+        if (ability == AllWorldBossesEntity.Tamagami1.ABILITY_BREATHE) return event.setAndContinue(DBSagasAnimations.ANIM_TAMAGAMI_SLEEP);
+        if (ability == AllWorldBossesEntity.Tamagami2.ABILITY_LUNGE) {
+            boolean dashing = entity.getBossAbilityTicks() >= AllWorldBossesEntity.Tamagami2.LUNGE_DASH;
+            return event.setAndContinue(dashing ? DBSagasAnimations.ANIM_TAMAGAMI_RELEASE : DBSagasAnimations.ANIM_TAMAGAMI_RAISE);
+        }
+        if (ability == AllWorldBossesEntity.Tamagami2.ABILITY_LUNGE_FOLLOW) {
+            boolean dashing = entity.getBossAbilityTicks() >= AllWorldBossesEntity.Tamagami2.FOLLOW_DASH;
+            return event.setAndContinue(dashing ? DBSagasAnimations.ANIM_TAMAGAMI_RELEASE : DBSagasAnimations.ANIM_TAMAGAMI_RAISE);
+        }
+        if (ability == AllWorldBossesEntity.Tamagami2.ABILITY_GALE) return event.setAndContinue(DBSagasAnimations.ANIM_TAMAGAMI_RAISE);
+        if (ability == AllWorldBossesEntity.Tamagami2.ABILITY_WHIRLWINDS) {
+            boolean erupted = entity.getBossAbilityTicks() >= AllWorldBossesEntity.Tamagami2.WHIRLWIND_ERUPT_TICK;
+            return event.setAndContinue(erupted ? DBSagasAnimations.ANIM_TAMAGAMI_RELEASE : DBSagasAnimations.ANIM_TAMAGAMI_RAISE);
+        }
+        if (ability == AllWorldBossesEntity.Gomah.ABILITY_GREAT_SPHERE) {
+            boolean released = entity.getBossAbilityTicks() >= AllWorldBossesEntity.Gomah.SPHERE_CHANNEL;
+            return event.setAndContinue(released ? DBSagasAnimations.ANIM_GOMAH_SPHERE_FIRE : DBSagasAnimations.ANIM_GOMAH_SPHERE_CAST);
+        }
+        if (ability == AllWorldBossesEntity.Gomah.ABILITY_EVIL_EYE) {
+            boolean flashed = entity.getBossAbilityTicks() >= AllWorldBossesEntity.Gomah.EVIL_EYE_CHARGE;
+            return event.setAndContinue(flashed ? DBSagasAnimations.ANIM_GOMAH_BEAM_FIRE : DBSagasAnimations.ANIM_GOMAH_BEAM_CAST);
+        }
+        if (ability == AllWorldBossesEntity.Gomah.ABILITY_DEMON_GRAB) return event.setAndContinue(DBSagasAnimations.ANIM_BOSS_GRAB);
+        if (ability == AllWorldBossesEntity.Gomah.ABILITY_ERUPTION) return event.setAndContinue(DBSagasAnimations.ANIM_GOMAH_SPHERE_CAST);
+        if (ability == AllWorldBossesEntity.Gomah.ABILITY_QUAKE) return event.setAndContinue(DBSagasAnimations.ANIM_BOSS_SPECIAL2);
+        if (ability == AllWorldBossesEntity.Gomah.ABILITY_EYE_BEAM) {
+            boolean fired = entity.getBossAbilityTicks() >= AllWorldBossesEntity.Gomah.BEAM_FIRE_TICK;
+            return event.setAndContinue(fired ? DBSagasAnimations.ANIM_GOMAH_BEAM_FIRE : DBSagasAnimations.ANIM_GOMAH_BEAM_CAST);
+        }
+        if (ability == 2) return event.setAndContinue(DBSagasAnimations.ANIM_BOSS_SPECIAL2);
+        if (ability == 3) return event.setAndContinue(DBSagasAnimations.ANIM_BOSS_SPECIAL3);
+        if (ability == 5) return event.setAndContinue(DBSagasAnimations.ANIM_BOSS_CUTS);
+        if (ability == 6) return event.setAndContinue(DBSagasAnimations.ANIM_BOSS2_SPECIAL1);
+        if (ability == 7) {
+            boolean thrown = entity.getBossAbilityTicks() >= AllWorldBossesEntity.Turles.KILL_DRIVER_THROW_TICK;
+            return event.setAndContinue(thrown ? DBSagasAnimations.ANIM_KILL_DRIVER_FIRE : DBSagasAnimations.ANIM_KILL_DRIVER_CAST);
+        }
+        if (ability == 8) return event.setAndContinue(DBSagasAnimations.ANIM_METEOR_BURST);
+        if (ability == 9) return event.setAndContinue(DBSagasAnimations.ANIM_BOSS_GRAB);
+        if (ability == AllWorldBossesEntity.MetalCoolerCore.ABILITY_ORBITAL_LASERS) return event.setAndContinue(DBSagasAnimations.ANIM_LASER_FIRE_LOOP);
+        if (ability == AllWorldBossesEntity.MetalCoolerCore.ABILITY_CABLES) return event.setAndContinue(DBSagasAnimations.ANIM_KIBLAST);
+        if (ability == AllWorldBossesEntity.MetalCoolerCore.ABILITY_OVERLOAD) return event.setAndContinue(DBSagasAnimations.ANIM_CORE_OVERLOAD);
+        if (ability == AllWorldBossesEntity.MetalCoolerCore.ABILITY_SUPERNOVA) {
+            boolean released = entity.getBossAbilityTicks() >= AllWorldBossesEntity.MetalCoolerCore.SUPERNOVA_CHANNEL;
+            return event.setAndContinue(released ? DBSagasAnimations.ANIM_CORE_SUPERNOVA_RELEASE : DBSagasAnimations.ANIM_CORE_SUPERNOVA_CHANNEL);
+        }
+
+        event.getController().forceAnimationReset();
+        return PlayState.STOP;
+    }
+
+    public static <T extends GeoAnimatable> PlayState hurtPredicate(AnimationState<T> event) {
+        return hurtPredicate(event, (DBSagasEntity) event.getAnimatable());
+    }
+
+    public static <T extends GeoAnimatable> PlayState hurtPredicate(AnimationState<T> event, DBSagasEntity entity) {
+
+        if (entity.isDeadOrDying() || entity.isInSleepPose() || entity.getBossAbility() >= 0
+                || entity.isCasting() || entity.isComboing() || entity.isTransforming()
+                || entity.isEvading() || entity.isZanzoken() || entity.isStrikeClashing()) {
+            return PlayState.STOP;
+        }
+
+        if (event.getController().isPlayingTriggeredAnimation()) return PlayState.CONTINUE;
+        if (entity.isStunned()) return event.setAndContinue(DBSagasAnimations.ANIM_STUNNED);
         return PlayState.STOP;
     }
 

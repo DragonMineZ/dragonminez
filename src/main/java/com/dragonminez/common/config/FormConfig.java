@@ -1,5 +1,7 @@
 package com.dragonminez.common.config;
 
+import com.dragonminez.common.racial.impl.GlindDivinity;
+import com.dragonminez.common.util.FusionForms;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
@@ -11,6 +13,12 @@ import java.util.*;
 @NoArgsConstructor
 public class FormConfig {
 	public static final String CURRENT_VERSION = ConfigManager.CONFIG_VERSION;
+
+	public static final String AURA_3D_SMOOTH = "smooth";
+	public static final String AURA_3D_SPARKING = "sparking";
+	public static final String AURA_3D_GOD = "god";
+	public static final String AURA_3D_USER_PREFERENCE = "userPreference";
+
 	private String configVersion;
 
 	private String groupName;
@@ -41,6 +49,131 @@ public class FormConfig {
 		return forms.get(key);
 	}
 
+	public static String sanitizeAura3DPreference(String preference) {
+		if (AURA_3D_SPARKING.equalsIgnoreCase(preference)) return AURA_3D_SPARKING;
+		if (AURA_3D_GOD.equalsIgnoreCase(preference)) return AURA_3D_GOD;
+		return AURA_3D_SMOOTH;
+	}
+
+	public static String sanitizeAura3DPreference(String preference, String race) {
+		String sanitized = sanitizeAura3DPreference(preference);
+		return AURA_3D_GOD.equals(sanitized) && !GlindDivinity.grantsGodAura(race) ? AURA_3D_SMOOTH : sanitized;
+	}
+
+	public static String resolveAura3DType(String type, String preference) {
+		if (type == null || type.isBlank() || AURA_3D_USER_PREFERENCE.equalsIgnoreCase(type.trim())) {
+			return sanitizeAura3DPreference(preference);
+		}
+		return type;
+	}
+
+	@Setter
+	@Getter
+	@NoArgsConstructor
+	public static class Aura3DStyle {
+		public static final Aura3DStyle DEFAULT = new Aura3DStyle();
+
+		private Float[] size = {1.10f, 1.17f, 1.02f};
+		private Integer flamePeaks = 12;
+		private Float waveFrequency = 2.0f;
+		private Float waveSpeed = 5.0f;
+		private Float waveAmplitude = 0.75f;
+		private Float noiseDetail = 0.10f;
+		private Float upwardBias = 0.54f;
+		private Float coreAlpha = 0.05f;
+		private Float rimAlpha = 1.0f;
+		private Float rimPower = 4.0f;
+		private Float rimThreshold = 0.05f;
+		private String coreColor = "";
+		private String rimColor = "";
+		private String noiseColor = "";
+		private Float bloomIntensity = 1.0f;
+		private Integer spikeDensity = 32;
+		private Float spikeBurstRate = 3.0f;
+		private Float spikeRarity = 3.0f;
+		private Float bandStart = 0.50f;
+		private String secondBorderColor = "";
+
+		public float getSizeX() { return size != null && size.length > 0 && size[0] != null ? Math.max(0.05f, size[0]) : 1.10f; }
+		public float getSizeY() { return size != null && size.length > 1 && size[1] != null ? Math.max(0.05f, size[1]) : 1.17f; }
+		public float getSizeZ() { return size != null && size.length > 2 && size[2] != null ? Math.max(0.05f, size[2]) : 1.02f; }
+		public int getFlamePeaks() { return flamePeaks != null ? Math.max(1, Math.min(64, flamePeaks)) : 12; }
+		public float getWaveFrequency() { return waveFrequency != null ? Math.max(0.0f, waveFrequency) : 2.0f; }
+		public float getWaveSpeed() { return waveSpeed != null ? waveSpeed : 5.0f; }
+		public float getWaveAmplitude() { return waveAmplitude != null ? Math.max(0.0f, waveAmplitude) : 0.75f; }
+		public float getNoiseDetail() { return noiseDetail != null ? Math.max(0.0f, noiseDetail) : 0.10f; }
+		public float getUpwardBias() { return upwardBias != null ? Math.max(0.0f, Math.min(1.0f, upwardBias)) : 0.54f; }
+		public float getCoreAlpha() { return coreAlpha != null ? Math.max(0.0f, Math.min(1.0f, coreAlpha)) : 0.05f; }
+		public float getRimAlpha() { return rimAlpha != null ? Math.max(0.0f, Math.min(1.0f, rimAlpha)) : 1.0f; }
+		public float getRimPower() { return rimPower != null ? Math.max(0.1f, rimPower) : 4.0f; }
+		public float getRimThreshold() { return rimThreshold != null ? Math.max(0.001f, rimThreshold) : 0.05f; }
+		public String getCoreColor() { return coreColor != null ? coreColor.trim() : ""; }
+		public String getRimColor() { return rimColor != null ? rimColor.trim() : ""; }
+		public String getNoiseColor() { return noiseColor != null ? noiseColor.trim() : ""; }
+		public float getBloomIntensity() { return bloomIntensity != null ? Math.max(0.0f, bloomIntensity) : 1.0f; }
+		public int getSpikeDensity() { return spikeDensity != null ? Math.max(4, Math.min(32, spikeDensity)) : 32; }
+		public float getSpikeBurstRate() { return spikeBurstRate != null ? Math.max(0.0f, spikeBurstRate) : 3.0f; }
+		public float getSpikeRarity() { return spikeRarity != null ? Math.max(0.1f, spikeRarity) : 3.0f; }
+		public float getBandStart() { return bandStart != null ? Math.max(0.05f, Math.min(0.95f, bandStart)) : 0.50f; }
+		public String getSecondBorderColor() { return secondBorderColor != null ? secondBorderColor.trim() : ""; }
+
+		public Aura3DStyle size(float x, float y, float z) {
+			this.size = new Float[]{x, y, z};
+			return this;
+		}
+
+		public Aura3DStyle waves(float frequency, float speed, float amplitude) {
+			this.waveFrequency = frequency;
+			this.waveSpeed = speed;
+			this.waveAmplitude = amplitude;
+			return this;
+		}
+
+		public Aura3DStyle turbulence(float noiseDetail, float upwardBias) {
+			this.noiseDetail = noiseDetail;
+			this.upwardBias = upwardBias;
+			return this;
+		}
+
+		public Aura3DStyle rim(float coreAlpha, float rimAlpha, float rimPower, float rimThreshold) {
+			this.coreAlpha = coreAlpha;
+			this.rimAlpha = rimAlpha;
+			this.rimPower = rimPower;
+			this.rimThreshold = rimThreshold;
+			return this;
+		}
+
+		public Aura3DStyle colors(String core, String rim, String noise) {
+			this.coreColor = core;
+			this.rimColor = rim;
+			this.noiseColor = noise;
+			return this;
+		}
+
+		public Aura3DStyle peaks(int peaks) {
+			this.flamePeaks = peaks;
+			return this;
+		}
+
+		public Aura3DStyle bloom(float intensity) {
+			this.bloomIntensity = intensity;
+			return this;
+		}
+
+		public Aura3DStyle spikes(int density, float burstRate, float rarity, float bandStart) {
+			this.spikeDensity = density;
+			this.spikeBurstRate = burstRate;
+			this.spikeRarity = rarity;
+			this.bandStart = bandStart;
+			return this;
+		}
+
+		public Aura3DStyle secondBorder(String color) {
+			this.secondBorderColor = color;
+			return this;
+		}
+	}
+
 	@Setter
 	@Getter
 	@NoArgsConstructor
@@ -50,6 +183,7 @@ public class FormConfig {
 		private String formCombo = "";
 		private String customModel = "";
 		private boolean keepBaseFormHeadBones = false;
+		private Boolean hideTail = false;
 		private String transformationAnimation = "transf.generic";
 		private String bodyColor1 = "";
 		private String bodyColor2 = "";
@@ -59,14 +193,19 @@ public class FormConfig {
 		private String hairType = "";
 		private String forcedHairCode = "";
 		private String hairColor = "";
+		private Boolean furUsesHairColor = false;
 		private String eye1Color = "";
 		private String eye2Color = "";
 		private String auraType = "kakarot";
+		private String auraType3D = AURA_3D_USER_PREFERENCE;
 		private Integer auraLayer = 0;
 		private String auraColor = "";
 		private Integer extraAuraLayer = -1;
 		private String extraAuraColor = "#FFFFFF";
 		private String extraAuraType = "kakarot";
+		private String extraAuraType3D = AURA_3D_USER_PREFERENCE;
+		private Aura3DStyle aura3DStyle = new Aura3DStyle();
+		private Aura3DStyle extraAura3DStyle = new Aura3DStyle();
 		private Boolean hasLightnings = false;
 		private String lightningColor = "";
 		private String tintColor = "#FF0000";
@@ -84,6 +223,8 @@ public class FormConfig {
 		private Double energyDrain = 0.0;
 		private Double staminaDrain = 0.0;
 		private Double healthDrain = 0.0;
+		private Double otherworldTimeDrain = 1.0;
+		private Double otherworldTimeDrainMastered = 1.0;
 		private Double attackSpeed = 1.0;
 		private Double maxMastery = 100.0;
 		private Double masteryPerHitDealt = 0.01;
@@ -93,6 +234,8 @@ public class FormConfig {
 		private Double maxStatsMultiplier = 1.25;
 		private String formRequisite = "";
 		private String formRequisiteType = "all";
+		private Integer levelRequisite = 0;
+		private String sagaRequisite = "";
 		private Double unlockOnMastery = 0.0;
 		private Double stackOnMastery = 0.0;
 		private Double instantTransformOnMastery = 40.0;
@@ -167,6 +310,21 @@ public class FormConfig {
 			return Math.max(0, healthDrain);
 		}
 
+		public Double getOtherworldTimeDrain() {
+			return otherworldTimeDrain != null ? Math.max(0, otherworldTimeDrain) : 1.0;
+		}
+
+		public Double getOtherworldTimeDrainMastered() {
+			return otherworldTimeDrainMastered != null ? Math.max(0, otherworldTimeDrainMastered) : getOtherworldTimeDrain();
+		}
+
+		public double getOtherworldTimeDrainAt(double mastery) {
+			double max = getMaxMastery();
+			double ratio = max > 0 ? Math.max(0.0, Math.min(1.0, mastery / max)) : 1.0;
+			double base = getOtherworldTimeDrain();
+			return base + (getOtherworldTimeDrainMastered() - base) * ratio;
+		}
+
 		public Double getAttackSpeed() {
 			return Math.max(0.1, attackSpeed);
 		}
@@ -199,6 +357,31 @@ public class FormConfig {
 			return "any".equalsIgnoreCase(formRequisiteType != null ? formRequisiteType.trim() : "") ? "any" : "all";
 		}
 
+		public int getLevelRequisite() {
+			return levelRequisite != null ? Math.max(0, levelRequisite) : 0;
+		}
+
+		public String getSagaRequisite() {
+			return sagaRequisite != null ? sagaRequisite.trim() : "";
+		}
+
+		public String getSagaRequisiteId() {
+			String value = getSagaRequisite();
+			int separator = value.lastIndexOf(':');
+			return separator > 0 ? value.substring(0, separator).trim() : "";
+		}
+
+		public int getSagaRequisiteQuest() {
+			String value = getSagaRequisite();
+			int separator = value.lastIndexOf(':');
+			if (separator <= 0) return -1;
+			try {
+				return Integer.parseInt(value.substring(separator + 1).trim());
+			} catch (NumberFormatException e) {
+				return -1;
+			}
+		}
+
 		public Double getUnlockOnMastery() {
 			return Math.max(0, unlockOnMastery);
 		}
@@ -229,7 +412,7 @@ public class FormConfig {
 
 		public boolean isIncompatibleWith(String groupId, String formId) {
 			if (groupId == null || formId == null) return false;
-			String key = (groupId + "." + formId).toLowerCase();
+			String key = (FusionForms.baseGroup(groupId) + "." + formId).toLowerCase();
 			for (String entry : getIncompatibleWith()) {
 				if (entry != null && entry.trim().toLowerCase().equals(key)) return true;
 			}
@@ -238,6 +421,14 @@ public class FormConfig {
 
 		public Double getStackDrainMultiplier() {
 			return Math.max(0.01, stackDrainMultiplier);
+		}
+
+		public boolean hidesTail() {
+			return Boolean.TRUE.equals(hideTail);
+		}
+
+		public boolean usesHairColorForFur() {
+			return Boolean.TRUE.equals(furUsesHairColor);
 		}
 
 		public Boolean hasCustomModel() {
@@ -301,6 +492,14 @@ public class FormConfig {
 			return extraAuraType != null && !extraAuraType.isEmpty() ? extraAuraType : "kakarot";
 		}
 
+		public Aura3DStyle getAura3DStyle() {
+			return aura3DStyle != null ? aura3DStyle : Aura3DStyle.DEFAULT;
+		}
+
+		public Aura3DStyle getExtraAura3DStyle() {
+			return extraAura3DStyle != null ? extraAura3DStyle : Aura3DStyle.DEFAULT;
+		}
+
 		public OutlineShaderConfig getOutlineShader() {
 			return outlineShader != null ? outlineShader : new OutlineShaderConfig();
 		}
@@ -308,7 +507,6 @@ public class FormConfig {
 		public List<MobEffectConfig> getMobEffects() {
 			return mobEffects != null ? mobEffects : Collections.emptyList();
 		}
-
 
 		public List<TriggerItemCost> getTriggerItemCosts() {
 			return triggerItemCosts != null ? triggerItemCosts : Collections.emptyList();
@@ -513,10 +711,18 @@ public class FormConfig {
 		@Getter
 		@NoArgsConstructor
 		public static class OutlineShaderConfig {
+			public static final float DEFAULT_FIRE_INTENSITY = 0.0f;
+			public static final float MAX_FIRE_INTENSITY = 3.0f;
+			public static final String COLOR_MODE_PULSE = "pulse";
+			public static final String COLOR_MODE_GRADIENT = "gradient";
+
 			private Boolean enabled = false;
 			private String primaryColor = "#7FFFFF";
 			private String secondaryColor = "#7FFFFF";
 			private Double outlineThickness = 1.5;
+			private Double fireIntensity = (double) DEFAULT_FIRE_INTENSITY;
+			private String colorMode = COLOR_MODE_PULSE;
+			private Double bodyGlow = 0.0;
 
 			public boolean isEnabled() {
 				return Boolean.TRUE.equals(enabled);
@@ -532,6 +738,24 @@ public class FormConfig {
 
 			public double getOutlineThickness() {
 				return Math.max(0.0, outlineThickness != null ? outlineThickness : 1.5);
+			}
+
+			public float getFireIntensity() {
+				if (fireIntensity == null || fireIntensity.isNaN()) return DEFAULT_FIRE_INTENSITY;
+				return (float) Math.max(0.0, Math.min(MAX_FIRE_INTENSITY, fireIntensity));
+			}
+
+			public String getColorMode() {
+				return COLOR_MODE_GRADIENT.equalsIgnoreCase(colorMode) ? COLOR_MODE_GRADIENT : COLOR_MODE_PULSE;
+			}
+
+			public boolean isGradient() {
+				return COLOR_MODE_GRADIENT.equals(getColorMode());
+			}
+
+			public float getBodyGlow() {
+				if (bodyGlow == null || bodyGlow.isNaN()) return 0.0f;
+				return (float) Math.max(0.0, Math.min(1.0, bodyGlow));
 			}
 		}
 	}

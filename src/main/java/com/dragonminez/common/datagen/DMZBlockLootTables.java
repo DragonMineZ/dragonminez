@@ -5,13 +5,18 @@ import com.dragonminez.common.dragonball.DragonBallSetDefinition;
 import com.dragonminez.common.init.MainBlocks;
 import com.dragonminez.common.init.MainItems;
 import com.dragonminez.common.init.block.custom.KikonoStationBlock;
+import com.dragonminez.common.init.block.custom.PatternStationBlock;
+import net.minecraft.advancements.critereon.StatePropertiesPredicate;
 import net.minecraft.data.loot.BlockLootSubProvider;
 import net.minecraft.world.flag.FeatureFlags;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.item.enchantment.Enchantments;
+import net.minecraft.world.level.ItemLike;
 import net.minecraft.world.level.block.Block;
+import net.minecraft.world.level.block.CropBlock;
 import net.minecraft.world.level.block.state.properties.DoubleBlockHalf;
+import net.minecraft.world.level.storage.loot.predicates.LootItemBlockStatePropertyCondition;
 import net.minecraft.world.level.storage.loot.LootPool;
 import net.minecraft.world.level.storage.loot.LootTable;
 import net.minecraft.world.level.storage.loot.entries.EmptyLootItem;
@@ -88,6 +93,41 @@ public class DMZBlockLootTables extends BlockLootSubProvider {
 		this.dropSelf(MainBlocks.ROCKY_COBBLESTONE_STAIRS.get());
 		this.dropSelf(MainBlocks.ROCKY_COBBLESTONE_SLAB.get());
 		this.dropSelf(MainBlocks.ROCKY_COBBLESTONE_WALL.get());
+		this.dropSelf(MainBlocks.HELL_GROUND.get());
+		this.dropSelf(MainBlocks.HELL_STONE.get());
+		this.dropSelf(MainBlocks.HELL_DEEPSTONE.get());
+
+		//Reino Demoníaco
+		this.dropSelf(MainBlocks.MAKAI_STONE.get());
+		this.dropSelf(MainBlocks.MAKAI_STONE_STAIRS.get());
+		this.add(MainBlocks.MAKAI_STONE_SLAB.get(), block -> createSlabItemTable(MainBlocks.MAKAI_STONE_SLAB.get()));
+		this.dropSelf(MainBlocks.MAKAI_STONE_WALL.get());
+		this.dropSelf(MainBlocks.MAKAI_STRATA_STONE.get());
+		this.add(MainBlocks.MAKAI_GRASS_BLOCK.get(), block -> createSingleItemTableWithSilkTouch(block, MainBlocks.MAKAI_DIRT.get()));
+		this.dropSelf(MainBlocks.MAKAI_DIRT.get());
+		this.dropSelf(MainBlocks.LILAC_SAND.get());
+		this.dropSelf(MainBlocks.MAKAI_SAND.get());
+		this.dropSelf(MainBlocks.MAKAI_SHRUB.get());
+		this.dropSelf(MainBlocks.MAKAI_BUSH.get());
+		this.dropSelf(MainBlocks.DEMON_HORN.get());
+		this.dropSelf(MainBlocks.DEMON_HORN_GLOW.get());
+		this.dropSelf(MainBlocks.GAS_VENT.get());
+		this.dropSelf(MainBlocks.TURQUOISE_ROCK.get());
+		this.add(MainBlocks.MAJILITE_ORE.get(), block -> SingleOreDrop(MainBlocks.MAJILITE_ORE.get(), MainItems.MAJILITE.get()));
+		this.dropSelf(MainBlocks.DEMON_ROCK.get());
+		this.dropSelf(MainBlocks.DEMON_BRICKS.get());
+		this.dropSelf(MainBlocks.DEMON_BRICK_STAIRS.get());
+		this.add(MainBlocks.DEMON_BRICK_SLAB.get(), block -> createSlabItemTable(MainBlocks.DEMON_BRICK_SLAB.get()));
+		this.dropSelf(MainBlocks.DEMON_BRICK_WALL.get());
+		this.dropSelf(MainBlocks.ADOBE.get());
+		this.dropSelf(MainBlocks.ADOBE_STAIRS.get());
+		this.add(MainBlocks.ADOBE_SLAB.get(), block -> createSlabItemTable(MainBlocks.ADOBE_SLAB.get()));
+		this.dropSelf(MainBlocks.ADOBE_WALL.get());
+		this.dropSelf(MainBlocks.ADOBE_BRICKS.get());
+		this.dropSelf(MainBlocks.DEMON_MAGMA_ROCK.get());
+		this.dropSelf(MainBlocks.RED_ASH.get());
+		this.dropSelf(MainBlocks.CRIMSON_CRYSTAL.get());
+		this.dropOther(MainBlocks.MIGHT_TREE_FRUIT_BLOCK.get(), MainItems.MIGHT_TREE_FRUIT.get());
 		//this.dropSelf(MainBlocks.GETE_FURNACE.get());
 		this.dropSelf(MainBlocks.GETE_ORE.get());
 		this.dropSelf(MainBlocks.TIME_CHAMBER_BLOCK.get());
@@ -95,6 +135,8 @@ public class DMZBlockLootTables extends BlockLootSubProvider {
 				block -> createSinglePropConditionTable(block, KikonoStationBlock.HALF, DoubleBlockHalf.LOWER));
 		this.dropSelf(MainBlocks.ENERGY_CABLE.get());
 		this.dropSelf(MainBlocks.FUEL_GENERATOR.get());
+		this.add(MainBlocks.PATTERN_STATION.get(),
+				block -> createSinglePropConditionTable(block, PatternStationBlock.HALF, DoubleBlockHalf.LOWER));
 		this.dropSelf(MainBlocks.GRAVITY_DEVICE.get());
 
 
@@ -175,6 +217,47 @@ public class DMZBlockLootTables extends BlockLootSubProvider {
 		this.add(MainBlocks.POTTED_SACRED_TRILLIUM_FLOWER.get(), createPotFlowerItemTable(MainBlocks.SACRED_TRILLIUM_FLOWER.get()));
 		this.add(MainBlocks.POTTED_AJISSA_SAPLING.get(), createPotFlowerItemTable(MainBlocks.NAMEK_AJISSA_SAPLING.get()));
 		this.add(MainBlocks.POTTED_SACRED_SAPLING.get(), createPotFlowerItemTable(MainBlocks.NAMEK_SACRED_SAPLING.get()));
+
+		this.add(MainBlocks.OOZARU_ROOT_CROP.get(), block -> statCropDrop(block, MainItems.OOZARU_ROOT.get()));
+		this.add(MainBlocks.KATCHIN_SPROUT_CROP.get(), block -> statCropDrop(block, MainItems.KATCHIN_SPROUT.get()));
+		this.add(MainBlocks.METEOR_FLOWER_CROP.get(), block -> statCropDrop(block, MainItems.METEOR_FLOWER.get()));
+		this.add(MainBlocks.AURA_LILY_CROP.get(), block -> statCropDrop(block, MainItems.AURA_LILY.get()));
+		this.add(MainBlocks.HERMIT_FERN_CROP.get(), block -> statCropDrop(block, MainItems.HERMIT_FERN.get()));
+		this.add(MainBlocks.KAIOSHIN_FRUIT_CROP.get(), block -> statCropDrop(block, MainItems.KAIOSHIN_FRUIT.get()));
+		this.add(MainBlocks.ZENKAI_LOTUS_CROP.get(), block -> statCropDrop(block, MainItems.ZENKAI_LOTUS.get()));
+		this.add(MainBlocks.NAMEK_MOSS_CROP.get(), block -> statCropDrop(block, MainItems.NAMEK_MOSS.get()));
+
+		this.add(MainBlocks.SENZU_BLUE_CROP.get(), block -> senzuCropDrop(block, MainItems.SENZU_BEAN_SEEDS_BLUE.get(), MainItems.SENZU_BEAN_BLUE.get()));
+		this.add(MainBlocks.SENZU_RED_CROP.get(), block -> senzuCropDrop(block, MainItems.SENZU_BEAN_SEEDS_RED.get(), MainItems.SENZU_BEAN_RED.get()));
+		this.add(MainBlocks.SENZU_YELLOW_CROP.get(), block -> senzuCropDrop(block, MainItems.SENZU_BEAN_SEEDS_YELLOW.get(), MainItems.SENZU_BEAN_YELLOW.get()));
+	}
+
+	/** Siempre devuelve la semilla; al madurar suelta además la judía. */
+	protected LootTable.Builder senzuCropDrop(Block crop, ItemLike seeds, ItemLike bean) {
+		LootItemBlockStatePropertyCondition.Builder mature = LootItemBlockStatePropertyCondition
+				.hasBlockStateProperties(crop)
+				.setProperties(StatePropertiesPredicate.Builder.properties()
+						.hasProperty(CropBlock.AGE, 7));
+		return this.applyExplosionDecay(crop, LootTable.lootTable()
+				.withPool(LootPool.lootPool().setRolls(ConstantValue.exactly(1.0F))
+						.add(LootItem.lootTableItem(seeds)))
+				.withPool(LootPool.lootPool().setRolls(ConstantValue.exactly(1.0F))
+						.when(mature)
+						.add(LootItem.lootTableItem(bean))));
+	}
+
+	protected LootTable.Builder statCropDrop(Block crop, ItemLike plant) {
+		LootItemBlockStatePropertyCondition.Builder mature = LootItemBlockStatePropertyCondition
+				.hasBlockStateProperties(crop)
+				.setProperties(StatePropertiesPredicate.Builder.properties()
+						.hasProperty(CropBlock.AGE, 7));
+		return this.applyExplosionDecay(crop, LootTable.lootTable()
+				.withPool(LootPool.lootPool().setRolls(ConstantValue.exactly(1.0F))
+						.add(LootItem.lootTableItem(plant)))
+				.withPool(LootPool.lootPool().setRolls(ConstantValue.exactly(1.0F))
+						.when(mature)
+						.add(LootItem.lootTableItem(plant)
+								.apply(SetItemCountFunction.setCount(ConstantValue.exactly(2.0F))))));
 	}
 
 

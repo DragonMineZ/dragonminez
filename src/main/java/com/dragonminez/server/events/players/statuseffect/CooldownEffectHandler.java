@@ -14,11 +14,17 @@ public class CooldownEffectHandler implements IStatusEffectHandler {
 		PotionEffectHelper.syncCooldownIndicator(player, data, Cooldowns.DOUBLEDASH_CD, MainEffects.DOUBLEDASH_CD.get());
 		PotionEffectHelper.syncCooldownIndicator(player, data, Cooldowns.TELEPORT_CD, MainEffects.TELEPORT_CD.get());
 		PotionEffectHelper.syncCooldownIndicator(player, data, Cooldowns.FUSION_CD, MainEffects.FUSION_CD.get());
+		PotionEffectHelper.syncCooldownIndicator(player, data, Cooldowns.GOD_RITUAL, MainEffects.GOD_RITUAL_CD.get());
 		PotionEffectHelper.syncCooldownIndicator(player, data, Cooldowns.KI_BLAST_CD, MainEffects.KI_BLAST_CD.get());
 		PotionEffectHelper.syncCooldownIndicator(player, data, Cooldowns.POISE_CD, MainEffects.POISE_CD.get());
 		PotionEffectHelper.syncCooldownIndicator(player, data, Cooldowns.MAJIN_REVIVE_CD, MainEffects.MAJIN_REVIVE.get());
 		PotionEffectHelper.syncCooldownIndicator(player, data, Cooldowns.ZENKAI, MainEffects.SAIYAN_PASSIVE.get());
 		PotionEffectHelper.syncCooldownIndicator(player, data, Cooldowns.DRAIN, MainEffects.BIOANDROID_PASSIVE.get());
+		if (data.getStatus().isKnockedDown()) {
+			PotionEffectHelper.syncCooldownIndicator(player, data, Cooldowns.KNOCKDOWN_DURATION, MainEffects.KNOCKOUT.get());
+		} else if (player.hasEffect(MainEffects.KNOCKOUT.get())) {
+			player.removeEffect(MainEffects.KNOCKOUT.get());
+		}
 	}
 
 	@Override

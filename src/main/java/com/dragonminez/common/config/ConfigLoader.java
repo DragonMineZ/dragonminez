@@ -6,6 +6,7 @@ import com.dragonminez.common.diagnostics.JsonLoadReport;
 import com.dragonminez.common.diagnostics.JsonSchema;
 import com.google.gson.Gson;
 import com.google.gson.JsonElement;
+import com.google.gson.JsonObject;
 import com.google.gson.JsonSyntaxException;
 import lombok.AllArgsConstructor;
 
@@ -13,6 +14,7 @@ import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -24,7 +26,7 @@ public class ConfigLoader {
 		try {
 			String content = Files.readString(path, StandardCharsets.UTF_8);
 			JsonElement tree = gson.fromJson(content, JsonElement.class);
-			if (tree != null && tree.isJsonObject()) {
+			if (tree != null && tree.isJsonObject() && !isAboutToBeRegenerated(tree.getAsJsonObject())) {
 				JsonSchema.check("config", path.getFileName().toString(), "", tree.getAsJsonObject(), clazz);
 			}
 			return gson.fromJson(tree, clazz);
@@ -33,6 +35,11 @@ public class ConfigLoader {
 		} catch (Exception e) {
 			throw new IOException("Failed to parse config file: " + path.getFileName(), e);
 		}
+	}
+
+	private static boolean isAboutToBeRegenerated(JsonObject tree) {
+		JsonElement version = tree.get("configVersion");
+		return version != null && version.isJsonPrimitive() && ConfigManager.isOutdated(version.getAsString());
 	}
 
 	public void saveConfig(Path path, Object config) throws IOException {
@@ -50,6 +57,7 @@ public class ConfigLoader {
 		try (var stream = Files.list(formsPath)) {
 			stream.filter(path -> path.toString().endsWith(".json"))
 					.filter(path -> !path.getFileName().toString().toLowerCase().startsWith("old_"))
+					.sorted(Comparator.comparing(path -> path.getFileName().toString()))
 					.forEach(formFile -> {
 						try {
 							FormConfig formConfig = loadConfig(formFile, FormConfig.class);
@@ -84,6 +92,7 @@ public class ConfigLoader {
 		try (var stream = Files.list(formsPath)) {
 			stream.filter(path -> path.toString().endsWith(".json"))
 					.filter(path -> !path.getFileName().toString().toLowerCase().startsWith("old_"))
+					.sorted(Comparator.comparing(path -> path.getFileName().toString()))
 					.forEach(formFile -> {
 						try {
 							FormConfig formConfig = loadConfig(formFile, FormConfig.class);
