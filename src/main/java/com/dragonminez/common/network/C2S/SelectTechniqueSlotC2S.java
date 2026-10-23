@@ -32,7 +32,7 @@ public class SelectTechniqueSlotC2S {
 			if (player != null) {
 				StatsProvider.get(StatsCapability.INSTANCE, player).ifPresent(data -> {
 					data.getTechniques().selectSlot(slotIndex);
-					NetworkHandler.sendToTrackingEntityAndSelf(new ProgressionSyncS2C(player), player);
+					NetworkHandler.sendToPlayer(new ProgressionSyncS2C(player), player);
 				});
 			}
 		});

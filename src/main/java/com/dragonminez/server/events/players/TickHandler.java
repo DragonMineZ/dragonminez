@@ -1,11 +1,12 @@
 package com.dragonminez.server.events.players;
 
 import com.dragonminez.Env;
-import com.dragonminez.LogUtil;
 import com.dragonminez.Reference;
+import com.dragonminez.common.combat.SilentDamage;
+import com.dragonminez.common.combat.clash.StrikeClash;
+import com.dragonminez.common.combat.logic.player.MeleeWindupTracker;
 import com.dragonminez.common.config.ConfigManager;
 import com.dragonminez.common.config.FormConfig;
-import com.dragonminez.common.config.RaceStatsConfig;
 import com.dragonminez.common.events.DMZEvent;
 import com.dragonminez.common.init.MainEffects;
 import com.dragonminez.common.init.MainEnchants;
@@ -14,14 +15,22 @@ import com.dragonminez.common.init.MainSounds;
 import com.dragonminez.common.init.item.PothalaPairItem;
 import com.dragonminez.common.init.entities.ShadowDummyEntity;
 import com.dragonminez.common.init.entities.ki.*;
+import com.dragonminez.common.network.C2S.KiBlastC2S;
 import com.dragonminez.common.network.C2S.SummonPlayerShadowDummyC2S;
 import com.dragonminez.common.network.NetworkHandler;
-import com.dragonminez.common.network.S2C.AppearanceSyncS2C;
+import com.dragonminez.common.network.StatsDeltaSync;
+import com.dragonminez.common.network.S2C.ResourceSyncS2C;
+import com.dragonminez.common.network.PartyPackets;
 import com.dragonminez.common.network.S2C.StatsSyncS2C;
 import com.dragonminez.common.network.S2C.TechniqueChargeSyncS2C;
 import com.dragonminez.common.network.S2C.TriggerAnimationS2C;
+import com.dragonminez.common.racial.RacialContext;
+import com.dragonminez.common.racial.RacialRegistry;
+import com.dragonminez.common.racial.impl.MajinAbsorption;
 import com.dragonminez.common.stats.*;
+import com.dragonminez.common.racial.impl.BioAndroidEvolution;
 import com.dragonminez.common.stats.character.Cooldowns;
+import com.dragonminez.common.stats.character.Status;
 import com.dragonminez.common.stats.extras.ActionMode;
 import com.dragonminez.common.stats.techniques.KiAttackData;
 import com.dragonminez.common.stats.techniques.TechniqueData;
@@ -35,17 +44,22 @@ import com.dragonminez.server.events.players.actionmode.FormModeHandler;
 import com.dragonminez.server.events.players.actionmode.FusionModeHandler;
 import com.dragonminez.server.events.players.actionmode.RacialModeHandler;
 import com.dragonminez.server.events.players.actionmode.StackFormModeHandler;
+import com.dragonminez.server.events.players.combat.KiTechniqueHandler;
+import com.dragonminez.server.events.players.combat.StrikeAttackHandler;
 import com.dragonminez.server.events.players.statuseffect.*;
+import com.dragonminez.server.util.BabaReviveService;
+import com.dragonminez.server.util.BeetleFusionTracker;
+import com.dragonminez.server.util.FusionDanceAligner;
 import com.dragonminez.server.util.FusionLogic;
 import com.dragonminez.server.util.GravityLogic;
 import com.dragonminez.server.util.GravityStateSync;
 import com.dragonminez.server.util.PotionEffectHelper;
+import com.dragonminez.server.util.TriggerFormMarker;
 import com.dragonminez.server.world.dimension.OtherworldDimension;
 import net.minecraft.core.BlockPos;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
-import net.minecraft.sounds.SoundEvent;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.LivingEntity;
@@ -55,7 +69,6 @@ import net.minecraft.world.item.enchantment.EnchantmentHelper;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.LightBlock;
 import net.minecraft.world.level.block.state.BlockState;
-import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.neoforged.neoforge.common.NeoForge;
@@ -88,6 +101,9 @@ public class TickHandler {
 	public static final double MEDITATION_BONUS_PER_LEVEL = 0.05;
 	private static final Map<UUID, Integer> masterySecondsByPlayer = new HashMap<>();
 	private static final Map<UUID, Integer> chargeTicksByPlayer = new HashMap<>();
+	private static final Map<UUID, Integer> flySprintAuraTicks = new HashMap<>();
+	private static final Set<UUID> unlitFlySprintAura = new HashSet<>();
+	private static final int FLY_SPRINT_AURA_LINGER_TICKS = 6;
 	private static final Map<UUID, Integer> playerTickCounters = new HashMap<>();
 	private static final Map<UUID, BlockPos> auraLightPositions = new HashMap<>();
 	private static final Map<UUID, Integer> auraLightLevels = new HashMap<>();
@@ -103,6 +119,8 @@ public class TickHandler {
 	public static void onPlayerTick(PlayerTickEvent.Post event) {
 		if (event.getEntity().level().isClientSide) return;
 		if (!(event.getEntity() instanceof ServerPlayer serverPlayer)) return;
+
+		MeleeWindupTracker.tick(serverPlayer);
 
 		UUID playerId = serverPlayer.getUUID();
 		int graceTicks = forceKillGraceByPlayer.getOrDefault(playerId, 0);
@@ -124,19 +142,32 @@ public class TickHandler {
 			if (serverPlayer.tickCount % AURA_LIGHT_INTERVAL == 0) updateAuraLight(serverPlayer, data);
 
 			boolean isStunned = serverPlayer.hasEffect(MainEffects.STUN) || data.getStatus().isStrikeLocked();
+			boolean isDowned = data.getStatus().isKnockedDown();
+			boolean isFrozen = com.dragonminez.server.world.tournament.Tournament.Manager.isInGrace(serverPlayer.getUUID(), serverPlayer.level().getGameTime());
+			if (data.getStatus().isMatchFrozen() != isFrozen) {
+				data.getStatus().setMatchFrozen(isFrozen);
+				NetworkHandler.sendToPlayer(new ResourceSyncS2C(serverPlayer), serverPlayer);
+			}
 
-			if (isStunned) {
+			boolean wasStunEffect = data.getStatus().isStunEffect();
+			if (isStunned || isDowned || isFrozen) {
 				data.getStatus().setChargingKi(false);
 				data.getStatus().setActionCharging(false);
 				data.getTechniques().clearTechniqueCharge();
 				data.getResources().setActionCharge(0);
-				if (!data.getStatus().isStunEffect()) data.getStatus().setStunEffect(true);
+				KiSurgeService.breakSurge(serverPlayer, data);
+				if (isStunned && !data.getStatus().isStunEffect()) data.getStatus().setStunEffect(true);
+				if (!isStunned && data.getStatus().isStunEffect()) data.getStatus().setStunEffect(false);
 			} else if (data.getStatus().isStunEffect()) data.getStatus().setStunEffect(false);
+			if (wasStunEffect != data.getStatus().isStunEffect()) {
+				StatsDeltaSync.markDirty(serverPlayer);
+			}
 
 			data.getCooldowns().tick();
+			KiBlastC2S.tickVolley(serverPlayer, data, isStunned || isDowned || isFrozen);
 			data.getEffects().tick();
 			data.getSecondaryStatEffects().tick();
-			clearExpiredKnockdown(data);
+			clearExpiredKnockdown(serverPlayer, data);
 
 			for (IStatusEffectHandler handler : STATUS_EFFECT_HANDLERS) {
 				handler.onPlayerTick(serverPlayer, data);
@@ -156,7 +187,7 @@ public class TickHandler {
                 serverPlayer.hasImpulse = true;
             }
 
-			if (!isStunned) handleTechniqueCharge(serverPlayer, data);
+			if (!isStunned && !isDowned && !isFrozen) handleTechniqueCharge(serverPlayer, data);
 
 			boolean shouldRegen = tickCounter >= REGEN_INTERVAL && !serverPlayer.isDeadOrDying();
 			boolean shouldSync = tickCounter % SYNC_INTERVAL == 0;
@@ -191,7 +222,7 @@ public class TickHandler {
 
 			if (shouldRegen) {
 				double meditationBonus = meditationLevel > 0 ? 1.0 + (meditationLevel * MEDITATION_BONUS_PER_LEVEL) : 1.0;
-				boolean activeCharging = isChargingKi && !isDescending;
+				boolean activeCharging = (isChargingKi || data.getStatus().isForcedCharge()) && !isDescending;
 				double foodRegenMod = getFoodRegenMultiplier(serverPlayer);
 
 				regenerateHealth(serverPlayer, data, foodRegenMod);
@@ -204,7 +235,7 @@ public class TickHandler {
 				playerTickCounters.put(playerId, tickCounter);
 			}
 
-			boolean isMovementRestricted = TechniqueDispatcher.isMovementRestrictedKiAttack(serverPlayer, data);
+			boolean isMovementRestricted = TechniqueDispatcher.isMovementRestrictedKiAttack(serverPlayer, data) || isChargingKi;
 			boolean isFiring = TechniqueDispatcher.isFiringKiAttack(serverPlayer);
 			boolean wasExecuting = serverPlayer.getPersistentData().getBoolean("dmz_was_executing_ki");
 
@@ -219,7 +250,7 @@ public class TickHandler {
 
 				if (serverPlayer.getPose() != Pose.STANDING) serverPlayer.setPose(Pose.STANDING);
 
-				if (isFiring) {
+				if (isFiring && !TechniqueDispatcher.isFiringSteerableKiAttack(serverPlayer)) {
 					serverPlayer.setYRot(serverPlayer.yRotO);
 					serverPlayer.setXRot(serverPlayer.xRotO);
 					serverPlayer.yHeadRot = serverPlayer.yHeadRotO;
@@ -243,12 +274,13 @@ public class TickHandler {
 				serverPlayer.yHeadRot = serverPlayer.yHeadRotO;
 				serverPlayer.yBodyRot = serverPlayer.yBodyRotO;
 			}
+			FusionDanceAligner.tick(serverPlayer, data);
 
 			if (serverPlayer.tickCount % 10 == 0
 					&& data.getStatus().getPotaraPoseTimer() == 0
 					&& !data.getStatus().isFused()
 					&& data.getStatus().getFusionPartnerUUID() == null) {
-				ItemStack head = CuriosUtil.getFirstStack(serverPlayer, "head_tech");
+				ItemStack head = CuriosUtil.getFirstStackForItem(serverPlayer, "head_tech", "pothala");
 				Item counterpart = pothalaLeftCounterpart(head.getItem());
 				int pairId = counterpart != null ? PothalaPairItem.getPairId(head) : 0;
 				if (pairId != 0) {
@@ -258,20 +290,22 @@ public class TickHandler {
 						if (otherData == null || otherData.getStatus().getPotaraPoseTimer() > 0
 								|| otherData.getStatus().isFused() || otherData.getStatus().getFusionPartnerUUID() != null) continue;
 						if (serverPlayer.distanceTo(other) > 20.0f) continue;
-						ItemStack otherHead = CuriosUtil.getFirstStack(other, "head_tech");
+						ItemStack otherHead = CuriosUtil.getFirstStackForItem(other, "head_tech", "pothala");
 						if (otherHead.getItem() == counterpart && PothalaPairItem.getPairId(otherHead) == pairId) {
-							startPotaraPose(serverPlayer, data, other, otherData);
+							FusionLogic.startPotaraPose(serverPlayer, data, other, otherData, false);
 							break;
 						}
 					}
 				}
 			}
 
+			if (serverPlayer.tickCount % 10 == 0) BeetleFusionTracker.tick(serverPlayer, data);
+
 			if (data.getStatus().getPotaraPoseTimer() > 0) {
 				UUID potaraPartnerUUID = data.getStatus().getPotaraPartnerUUID();
 				ServerPlayer potaraPartner = potaraPartnerUUID != null ? serverPlayer.getServer().getPlayerList().getPlayer(potaraPartnerUUID) : null;
 				if (potaraPartner == null || !potaraPartner.isAlive() || serverPlayer.distanceTo(potaraPartner) > 24.0f) {
-					clearPotaraPose(data);
+					FusionLogic.clearPotaraPose(data);
 					NetworkHandler.sendToTrackingEntityAndSelf(new StatsSyncS2C(serverPlayer), serverPlayer);
 				} else {
 					int elapsed = data.getStatus().getPotaraPoseTimer();
@@ -293,11 +327,13 @@ public class TickHandler {
 					data.getStatus().setPotaraPoseTimer(elapsed + 1);
 
 					if (data.getStatus().isPotaraLeader() && (dist < 1.4 || elapsed > 200)) {
-						clearPotaraPose(data);
+						boolean beetle = data.getStatus().isPotaraBeetle();
+						FusionLogic.clearPotaraPose(data);
 						StatsData partnerData = StatsProvider.get(StatsCapability.INSTANCE, potaraPartner).orElse(null);
 						if (partnerData != null) {
-							clearPotaraPose(partnerData);
-							FusionLogic.executePothala(serverPlayer, potaraPartner, data, partnerData);
+							FusionLogic.clearPotaraPose(partnerData);
+							if (beetle) FusionLogic.executeBeetle(serverPlayer, potaraPartner, data, partnerData);
+							else FusionLogic.executePothala(serverPlayer, potaraPartner, data, partnerData);
 						} else {
 							NetworkHandler.sendToTrackingEntityAndSelf(new StatsSyncS2C(serverPlayer), serverPlayer);
 						}
@@ -305,7 +341,8 @@ public class TickHandler {
 				}
 			}
 
-			boolean kiAnimShouldBeActive = playerOwnsKiProjectile(serverPlayer) || data.getTechniques().isTechniqueCharging() || data.getTechniques().isTechniqueChargeActive();
+			boolean kiAnimShouldBeActive = playerOwnsKiProjectile(serverPlayer) || data.getTechniques().isTechniqueCharging() || data.getTechniques().isTechniqueChargeActive()
+					|| KiTechniqueHandler.isFireAnimationHeld(serverPlayer);
 			boolean kiAnimWasActive = serverPlayer.getPersistentData().getBoolean("dmz_ki_anim_active");
 			if (kiAnimShouldBeActive) serverPlayer.getPersistentData().putBoolean("dmz_ki_anim_active", true);
 			else if (kiAnimWasActive) {
@@ -325,9 +362,23 @@ public class TickHandler {
 				if (chargeTicks % 2 == 0) chargePowerRelease(data, chargeTicks, isChargingKi && isDescending);
 			} else if (chargeTicksByPlayer.containsKey(playerId)) chargeTicksByPlayer.remove(playerId);
 
+			KiSurgeService.tick(serverPlayer, data);
+
 			boolean auraFromActions = isChargingKi || (data.getStatus().isActionCharging() && (data.getStatus().getSelectedAction() == ActionMode.FORM || data.getStatus().getSelectedAction() == ActionMode.STACK));
-			boolean auraFromFlySprint = data.getSkills().isSkillActive("fly") && serverPlayer.isSprinting() && serverPlayer.getDeltaMovement().length() > 0.65F;
-			data.getStatus().setAuraActive(auraFromActions || auraFromFlySprint);
+			if (data.getSkills().isSkillActive("fly") && serverPlayer.isSprinting() && !serverPlayer.onGround()
+					&& data.getStatus().getFlightMode() != Status.FLIGHT_COMBAT) {
+				flySprintAuraTicks.put(playerId, FLY_SPRINT_AURA_LINGER_TICKS);
+			} else {
+				int linger = flySprintAuraTicks.getOrDefault(playerId, 0) - 1;
+				if (linger > 0) flySprintAuraTicks.put(playerId, linger);
+				else flySprintAuraTicks.remove(playerId);
+			}
+			boolean auraFromFlySprint = flySprintAuraTicks.containsKey(playerId);
+			boolean auraFromRitual = GodRitualService.isParticipant(serverPlayer);
+			boolean auraFromStrikeRush = StrikeAttackHandler.isRushing(serverPlayer) || StrikeClash.isClashing(serverPlayer.getUUID());
+			data.getStatus().setAuraActive(auraFromActions || auraFromFlySprint || auraFromRitual || auraFromStrikeRush);
+			if (auraFromFlySprint && !auraFromActions && !auraFromRitual && !auraFromStrikeRush) unlitFlySprintAura.add(playerId);
+			else unlitFlySprintAura.remove(playerId);
 
 			if (tickCounter % 5 == 0) {
 				boolean hasYajirobe = serverPlayer.getInventory().hasAnyOf(Set.of(MainItems.KATANA_YAJIROBE.get()));
@@ -347,12 +398,6 @@ public class TickHandler {
 					data.getStatus().setRenderKatana(renderKatanaTarget);
 				}
 
-				// backWeapon names the weapon the player OWNS, whether it is in hand or not, so
-				// it does not change when the weapon is merely drawn or stowed. That matters:
-				// this block runs only every 5 ticks and then still has to reach the client, so
-				// a field that flipped on every draw would leave the client disagreeing for up
-				// to 500ms with the hand it can already see, and the sheath would blink out.
-				// The client derives drawn state from the held item instead, which is instant.
 				ItemStack heldWeapon = ItemStack.EMPTY;
 				ItemStack stowedWeapon = ItemStack.EMPTY;
 				for (int i = 0; i < serverPlayer.getInventory().getContainerSize(); i++) {
@@ -404,29 +449,39 @@ public class TickHandler {
 				if (weaponDrawn != wasDrawn) serverPlayer.getPersistentData().putBoolean("dmz_weapon_drawn", weaponDrawn);
 				if (!currentBackWeapon.equals(newBackWeapon)) data.getStatus().setBackWeapon(newBackWeapon);
 
-				ItemStack headTechStack = CuriosUtil.getFirstStack(serverPlayer, "head_tech");
-				String itemId = headTechStack.getDescriptionId();
+				ItemStack scouterStack = CuriosUtil.getFirstStackForItem(serverPlayer, "head_tech", "scouter");
+				if (!scouterStack.isEmpty()) {
+					String scouterItemId = scouterStack.getDescriptionId();
+					if (!data.getStatus().getScouterItem().equals(scouterItemId)) {
+						data.getStatus().setScouterItem(scouterItemId);
+					}
+				} else if (!data.getStatus().getScouterItem().isEmpty()) {
+					data.getStatus().setScouterItem("");
+				}
 
-				boolean hasScouter = itemId.contains("scouter");
-				if (hasScouter) {
-					if (!data.getStatus().getScouterItem().equals(itemId)) data.getStatus().setScouterItem(itemId);
-				} else if (!data.getStatus().getScouterItem().isEmpty()) data.getStatus().setScouterItem("");
-
-				boolean hasPothala = itemId.contains("pothala");
-				if (hasPothala) {
-					boolean isGreenPothala = itemId.contains("green");
+				ItemStack pothalaStack = CuriosUtil.getFirstStackForItem(serverPlayer, "head_tech", "pothala");
+				if (!pothalaStack.isEmpty()) {
+					String pothalaItemId = pothalaStack.getDescriptionId();
+					boolean isGreenPothala = pothalaItemId.contains("green");
 					data.getStatus().setPothalaColor(isGreenPothala ? "green" : "yellow");
-				} else if (!data.getStatus().getPothalaColor().isEmpty()) data.getStatus().setPothalaColor("");
+				} else if (!data.getStatus().getPothalaColor().isEmpty()) {
+					data.getStatus().setPothalaColor("");
+				}
 			}
 
 			handleOtherworldTransfer(serverPlayer, data, playerId);
 
 			if (tickCounter % 20 == 0) {
+				int maxPowerRelease = data.getMaxPowerRelease();
+				if (data.getResources().getPowerRelease() > maxPowerRelease) data.getResources().setPowerRelease(maxPowerRelease);
 				handleActionCharge(serverPlayer, data);
 				handleActiveFormDrains(serverPlayer, data);
 				enforceShadowDummyTether(serverPlayer, data);
 				GravityLogic.tick(serverPlayer);
 				GravityStateSync.sync(serverPlayer);
+				if (ConfigManager.getServerConfig().getWorldGen().getOtherworldActive()) {
+					BabaReviveService.tickTempReturn(serverPlayer, data);
+				}
 
 				if (data.getStatus().isAndroidUpgraded() && (data.getCharacter().getActiveForm().isEmpty() || data.getCharacter().getActiveForm() == null)) {
 					data.getCharacter().setActiveForm("androidforms", "androidbase");
@@ -434,18 +489,25 @@ public class TickHandler {
 				}
 			}
 
-			if (shouldSync) NetworkHandler.sendToTrackingEntityAndSelf(new StatsSyncS2C(serverPlayer), serverPlayer);
+			data.getFormTransition().tick(data, serverPlayer.tickCount);
+			if (data.getFormTransition().consumeDimensionRefresh()) serverPlayer.refreshDimensions();
+
+			if (shouldSync) StatsDeltaSync.periodic(serverPlayer);
+			if (shouldSync) PartyPackets.sendHudSync(serverPlayer);
 		});
 	}
 
 	private static void handleOtherworldTransfer(ServerPlayer serverPlayer, StatsData data, UUID playerId) {
+		boolean inOtherworld = serverPlayer.serverLevel().dimension().equals(OtherworldDimension.OTHERWORLD_KEY);
 		boolean shouldTransfer = ConfigManager.getServerConfig().getWorldGen().getOtherworldActive()
 				&& !data.getStatus().isAlive()
+				&& data.getStatus().getTempReturnTimer() <= 0
 				&& !serverPlayer.isSpectator() && !serverPlayer.isCreative()
-				&& !serverPlayer.serverLevel().dimension().equals(OtherworldDimension.OTHERWORLD_KEY);
+				&& (!inOtherworld || BabaReviveService.isSpiritArrivalPending(playerId));
 
 		if (!shouldTransfer) {
 			otherworldTpGraceByPlayer.remove(playerId);
+			if (data.getStatus().isAlive() || data.getStatus().getTempReturnTimer() > 0) BabaReviveService.clearSpiritArrival(playerId);
 			return;
 		}
 
@@ -456,8 +518,8 @@ public class TickHandler {
 		}
 
 		otherworldTpGraceByPlayer.remove(playerId);
-		ServerLevel otherworld = serverPlayer.getServer().getLevel(OtherworldDimension.OTHERWORLD_KEY);
-		if (otherworld != null) serverPlayer.teleportTo(otherworld, 0, 41, 10, 0, 0);
+		BabaReviveService.clearSpiritArrival(playerId);
+		OtherworldDimension.teleportToSpiritArrival(serverPlayer);
 	}
 
     @SubscribeEvent
@@ -492,8 +554,12 @@ public class TickHandler {
 			NetworkHandler.sendToTrackingEntityAndSelf(new TriggerAnimationS2C(serverPlayer.getUUID(), TriggerAnimationS2C.AnimationType.KI_ANIMATION_STOP, 0, -1, ""), serverPlayer);
 		}
 		CHARGING_CACHE.remove(playerId);
+		KiBlastC2S.clearVolley(playerId);
 		CHARGE_COST_ACCUM.remove(playerId);
 		chargeTicksByPlayer.remove(playerId);
+		flySprintAuraTicks.remove(playerId);
+		unlitFlySprintAura.remove(playerId);
+		StatsDeltaSync.clear(playerId);
 		masterySecondsByPlayer.remove(playerId);
 		playerTickCounters.remove(playerId);
 		forceKillGraceByPlayer.remove(playerId);
@@ -509,6 +575,7 @@ public class TickHandler {
 	@SubscribeEvent
 	public static void onPlayerRespawn(PlayerEvent.PlayerRespawnEvent event) {
 		UUID playerId = event.getEntity().getUUID();
+		MeleeWindupTracker.clear(playerId);
 		forceKillGraceByPlayer.put(playerId, FORCED_KILL_GRACE_TICKS);
 		playerTickCounters.remove(playerId);
 	}
@@ -528,9 +595,10 @@ public class TickHandler {
 		}
 	}
 
-	private static void clearExpiredKnockdown(StatsData data) {
+	private static void clearExpiredKnockdown(ServerPlayer serverPlayer, StatsData data) {
 		if (data.getStatus().isKnockedDown() && !data.getCooldowns().hasCooldown(Cooldowns.KNOCKDOWN_DURATION)) {
 			data.getStatus().setKnockedDown(false);
+			NetworkHandler.sendToTrackingEntityAndSelf(new StatsSyncS2C(serverPlayer), serverPlayer);
 		}
 	}
 
@@ -550,9 +618,10 @@ public class TickHandler {
 
 
 	private static void updateAuraLight(ServerPlayer player, StatsData data) {
-		boolean auraActive = data.getStatus().isAuraActive() || data.getStatus().isPermanentAura();
 		ServerLevel level = player.serverLevel();
 		UUID playerId = player.getUUID();
+		boolean auraActive = (data.getStatus().isAuraActive() && !unlitFlySprintAura.contains(playerId))
+				|| data.getStatus().isPermanentAura() || data.getStatus().isForcedAura();
 		int currentLevel = auraLightLevels.getOrDefault(playerId, 0);
 		int targetLevel = auraActive ? AURA_LIGHT_LEVEL : 0;
 		int nextLevel = approach(currentLevel, targetLevel, AURA_LIGHT_STEP);
@@ -630,6 +699,8 @@ public class TickHandler {
 			return;
 		}
 		if (foodRegenMod <= 0.0) return;
+		// Writes health directly, so LivingHealEvent never sees it; the self-destruct block has to be checked here.
+		if (BioAndroidEvolution.isExplosionRecovering(data)) return;
 
 		float maxHealth = player.getMaxHealth();
 		if (currentHealth >= maxHealth) return;
@@ -665,7 +736,7 @@ public class TickHandler {
 		else {
 			masterySecondsByPlayer.put(masteryPlayerId, 0);
 
-			if (hasActiveForm && activeForm != null) {
+			if (hasActiveForm && activeForm != null && !TriggerFormMarker.isTriggeredForm(player, data)) {
 				String activeFormName = activeForm.getName().toLowerCase();
 				String activeFormGroup = data.getCharacter().getActiveFormGroup();
 
@@ -677,11 +748,11 @@ public class TickHandler {
 					double masteryGain = formData != null ? formData.getPassiveMasteryEveryFiveSeconds() : 0.001;
 					masteryGain = PotionEffectHelper.applyMasteryGainMultiplier(player, masteryGain);
 					data.getCharacter().gainMastery(activeFormGroup, activeFormName, masteryGain);
-					NetworkHandler.sendToTrackingEntityAndSelf(new AppearanceSyncS2C(player), player);
+					StatsDeltaSync.markDirty(player);
 				}
 			}
 
-			if (hasActiveStackForm && activeStackForm != null) {
+			if (hasActiveStackForm && activeStackForm != null && !TriggerFormMarker.isTriggeredStack(player, data)) {
 				String activeFormName = activeStackForm.getName().toLowerCase();
 				String activeFormGroup = data.getCharacter().getActiveStackFormGroup();
 
@@ -693,7 +764,7 @@ public class TickHandler {
 					double masteryGain = formData != null ? formData.getPassiveMasteryEveryFiveSeconds() : 0.001;
 					masteryGain = PotionEffectHelper.applyMasteryGainMultiplier(player, masteryGain);
 					data.getCharacter().gainMastery(activeFormGroup, activeFormName, masteryGain);
-					NetworkHandler.sendToTrackingEntityAndSelf(new AppearanceSyncS2C(player), player);
+					StatsDeltaSync.markDirty(player);
 				}
 			}
 		}
@@ -715,8 +786,9 @@ public class TickHandler {
 			double newEnergy = Math.max(0.0, Math.min((double) effectiveMaxEnergy, (double) currentEnergy + Math.ceil(energyChange)));
 			data.getResources().setCurrentEnergy((float) newEnergy);
 
-			if (newEnergy <= maxEnergy * 0.05 && !data.getStatus().isAndroidUpgraded() && (hasActiveForm || hasActiveStackForm)) {
-				data.getCharacter().clearActiveForm(player, false);
+			if (newEnergy <= maxEnergy * 0.05 && !data.getStatus().isAndroidUpgraded() && (hasActiveForm || hasActiveStackForm)
+					&& !GodRitualService.isParticipant(player)) {
+				if (!TransformationsHelper.clampToEvolutionFloor(data)) data.getCharacter().clearActiveForm(player, false);
 				data.getCharacter().clearActiveStackForm(player, false);
 				data.getResources().setPowerRelease(0);
 				data.getResources().setActionCharge(0);
@@ -790,10 +862,9 @@ public class TickHandler {
 	}
 
 	private static void handleActionCharge(ServerPlayer player, StatsData data) {
+		if (GodRitualService.ownsActionCharge(player)) return;
 		if (!data.getStatus().isActionCharging()) {
-			if (data.getResources().getActionCharge() > 0) {
-				data.getResources().setActionCharge(0);
-			}
+			if (data.getResources().getActionCharge() > 0) data.getResources().setActionCharge(0);
 			return;
 		}
 
@@ -825,7 +896,7 @@ public class TickHandler {
 	private static void chargePowerRelease(StatsData data, int chargeTicks, boolean descending) {
 		int currentRelease = data.getResources().getPowerRelease();
 		int potentialUnlockLevel = data.getSkills().getSkillLevel("potentialunlock");
-		int maxRelease = 50 + (potentialUnlockLevel * 5);
+		int maxRelease = data.getMaxPowerRelease();
 
 		int releaseLimit = data.getResources().getReleaseLimit();
 		if (releaseLimit > 0) maxRelease = Math.min(maxRelease, releaseLimit);
@@ -896,8 +967,12 @@ public class TickHandler {
 			CHARGING_CACHE.remove(player.getUUID());
 			activeKi = null;
 		}
-		if (activeKi == null && techniques.getTechniqueChargePercent() == 0.0f) {
-			TechniqueDispatcher.executeKiAttack(player, player.level(), kiAttack, data, 0.01f);
+		if (activeKi == null && techniques.getTechniqueChargePercent() == 0.0f
+				&& !TechniqueDispatcher.executeKiAttack(player, player.level(), kiAttack, data, 0.01f)) {
+			CHARGE_COST_ACCUM.remove(player.getUUID());
+			techniques.clearTechniqueCharge();
+			NetworkHandler.sendToTrackingEntityAndSelf(new TechniqueChargeSyncS2C(player.getId(), 0.0f, false), player);
+			return;
 		}
 
 		final float OVER = KiAttackData.OVERCHARGE_MAX_PERCENT;
@@ -913,22 +988,25 @@ public class TickHandler {
 		boolean outOfKi = false;
 		if (percent < ceiling - 0.01f) {
 			float rate = (percent < 100.0f) ? 100.0f / baseTicks : KiAttackData.OVERCHARGE_TIER_PERCENT / (float) baseTicks;
+			if (data.getStatus().isSurgeActive()) rate *= ConfigManager.getCombatConfig().getSurgeKiChargeSpeedMultiplier().floatValue();
 			float newP = Math.min(ceiling, percent + rate);
 
 			if (creative) percent = newP;
 			else {
 				double chargeCost = 0.5 * base * (KiAttackData.costMultiplier(newP) - KiAttackData.costMultiplier(percent));
-				float accum = CHARGE_COST_ACCUM.getOrDefault(player.getUUID(), 0.0f) + (float) chargeCost;
+				double costModifier = data.getKiAttackCostModifier();
+				float accum = CHARGE_COST_ACCUM.getOrDefault(player.getUUID(), 0.0f) + (float) (chargeCost * costModifier);
+				int credited = KiShareService.drawAttackCredit(player, (int) accum);
+				accum -= credited;
 				float energy = data.getResources().getCurrentEnergy();
-				int whole = (int) accum;
-				int effectiveWhole = (int) Math.round(whole * data.getKiAttackCostModifier());
+				int effectiveWhole = (int) accum;
 
 				if (energy >= effectiveWhole) {
 					if (effectiveWhole > 0) {
 						data.getResources().removeEnergy(effectiveWhole);
-						applyHumanKiPassiveDuringCharge(player, data, whole);
+						applyHumanKiPassiveDuringCharge(player, data, (float) (effectiveWhole / costModifier));
 					}
-					accum -= whole;
+					accum -= effectiveWhole;
 					CHARGE_COST_ACCUM.put(player.getUUID(), accum);
 					percent = newP;
 				} else {
@@ -936,7 +1014,7 @@ public class TickHandler {
 					percent = percent + (newP - percent) * affordFrac;
 					data.getResources().setCurrentEnergy(0);
 					CHARGE_COST_ACCUM.put(player.getUUID(), 0.0f);
-					applyHumanKiPassiveDuringCharge(player, data, Math.round(whole * affordFrac));
+					applyHumanKiPassiveDuringCharge(player, data, (float) (effectiveWhole / costModifier * affordFrac));
 					outOfKi = true;
 				}
 			}
@@ -944,7 +1022,9 @@ public class TickHandler {
 		}
 
 		boolean reachedCeiling = percent >= ceiling - 0.01f;
-		if ((!holding || instant) && (reachedCeiling || outOfKi)) {
+		boolean waitingForDonors = holding && KiShareService.isReceiving(player.getUUID()) && KiShareService.chargingGenki(player) != null;
+		boolean shouldFire = kiAttack.requiresFullCharge() ? ((reachedCeiling && !waitingForDonors) || outOfKi) : (!holding || outOfKi);
+		if (shouldFire) {
 			resolveKiAttackOnRelease(player, data, techniques);
 			return;
 		}
@@ -952,13 +1032,15 @@ public class TickHandler {
 		NetworkHandler.sendToTrackingEntityAndSelf(new TechniqueChargeSyncS2C(player.getId(), techniques.getTechniqueChargePercent(), true), player);
 	}
 
+	private static final float MIN_RELEASE_PERCENT = 10.0f;
+
 	private static void resolveKiAttackOnRelease(ServerPlayer player, StatsData data, Techniques techniques) {
 		float effectiveCharge = Math.min(techniques.getTechniqueChargePercent(), KiAttackData.OVERCHARGE_MAX_PERCENT);
 
 		var activeKi = findChargingEntity(player);
 
 		if (activeKi != null) {
-			if (effectiveCharge < 50.0f) {
+			if (effectiveCharge < MIN_RELEASE_PERCENT) {
 				activeKi.discard();
 			} else {
 				float chargeMultiplier = effectiveCharge / 100.0f;
@@ -982,7 +1064,8 @@ public class TickHandler {
 							boolean drainsOverLife = activeKi.isMovementRestrictedType();
 							double fireFraction = drainsOverLife ? 0.25 : 0.50;
 							int originalFireCost = (int) Math.round(fireFraction * base * costMult);
-							int modifiedFireCost = (int) Math.round(originalFireCost * data.getKiAttackCostModifier());
+							int modifiedFireCost = (int) Math.round(fireFraction * base * costMult * data.getKiAttackCostModifier());
+							modifiedFireCost = MajinAbsorption.applyHealTechniqueCostReduction(data, kiAttack, modifiedFireCost);
 							if (modifiedFireCost > 0) data.getResources().removeEnergy(modifiedFireCost);
 
 							applyHumanKiPassiveDuringCharge(player, data, originalFireCost);
@@ -1014,7 +1097,7 @@ public class TickHandler {
 		techniques.clearTechniqueCharge();
 	}
 
-	private static AbstractKiProjectile findChargingEntity(ServerPlayer player) {
+	static AbstractKiProjectile findChargingEntity(ServerPlayer player) {
 		UUID playerId = player.getUUID();
 		AbstractKiProjectile cached = CHARGING_CACHE.get(playerId);
 
@@ -1040,23 +1123,6 @@ public class TickHandler {
 		return null;
 	}
 
-	private static void clearPotaraPose(StatsData data) {
-		data.getStatus().setPotaraPoseTimer(0);
-		data.getStatus().setPotaraPartnerUUID(null);
-		data.getStatus().setPotaraLeader(false);
-	}
-
-	private static void startPotaraPose(ServerPlayer leader, StatsData leaderData, ServerPlayer partner, StatsData partnerData) {
-		leaderData.getStatus().setPotaraPoseTimer(1);
-		leaderData.getStatus().setPotaraPartnerUUID(partner.getUUID());
-		leaderData.getStatus().setPotaraLeader(true);
-		partnerData.getStatus().setPotaraPoseTimer(1);
-		partnerData.getStatus().setPotaraPartnerUUID(leader.getUUID());
-		partnerData.getStatus().setPotaraLeader(false);
-		NetworkHandler.sendToTrackingEntityAndSelf(new StatsSyncS2C(leader), leader);
-		NetworkHandler.sendToTrackingEntityAndSelf(new StatsSyncS2C(partner), partner);
-	}
-
 	private static Item pothalaLeftCounterpart(Item rightItem) {
 		if (rightItem == MainItems.POTHALA_RIGHT.get()) return MainItems.POTHALA_LEFT.get();
 		if (rightItem == MainItems.GREEN_POTHALA_RIGHT.get()) return MainItems.GREEN_POTHALA_LEFT.get();
@@ -1080,6 +1146,9 @@ public class TickHandler {
 		if (ki instanceof KiExplosionEntity explosion) return explosion.isFiring();
 		if (ki instanceof KiBarrierEntity barrier) return barrier.isFiring();
         if (ki instanceof KiAreaEntity area) return area.isFiring();
+		if (ki instanceof KillDriverEntity ring) return ring.isFiring();
+		if (ki instanceof HellzoneGrenadeEntity hellzone) return hellzone.isFiring();
+		if (ki instanceof HellzoneGrenadeEntity.Orb) return true;
 		return false;
 	}
 
@@ -1103,8 +1172,11 @@ public class TickHandler {
 		boolean hasActiveStackForm = data.getCharacter().getActiveStackForm() != null && !data.getCharacter().getActiveStackForm().isEmpty();
 
 		if (hasActiveForm && data.getCharacter().getSelectedFormGroup().contains("oozaru") && !data.getCharacter().isHasSaiyanTail()
-				&& !SaiyanForms.SUPER_SAIYAN_4.equals(data.getCharacter().getActiveForm())) {
-			TransformationsHelper.revertToBaseForm(player, data);
+				&& !SaiyanForms.SUPER_SAIYAN_4.equals(data.getCharacter().getActiveForm())
+				&& !TransformationsHelper.isInScriptedForm(data)) {
+			if (TransformationsHelper.revertToBaseForm(player, data)) {
+				player.removeEffect(MainEffects.TRANSFORMED);
+			}
 			TransformationItemCostHelper.clearFormDurationSecondsRemaining(player);
 			player.removeEffect(MainEffects.TRANSFORMED);
 			player.refreshDimensions();
@@ -1121,9 +1193,12 @@ public class TickHandler {
 			hasActiveStackForm = data.getCharacter().getActiveStackForm() != null && !data.getCharacter().getActiveStackForm().isEmpty();
 		}
 
-		if ((hasActiveForm || hasActiveStackForm) && !player.isCreative() && !player.isSpectator()) {
+		if ((hasActiveForm || hasActiveStackForm) && !player.isCreative() && !player.isSpectator() && !GodRitualService.isParticipant(player)) {
 
-			int energyDrain = (int) Math.round(data.getEffectiveEnergyDrain());
+			int rawEnergyDrain = (int) Math.round(data.getEffectiveEnergyDrain());
+			int energyDrain = RacialRegistry.forPlayer(data)
+					.map(ability -> ability.consumeFormUpkeep(new RacialContext(player, data), rawEnergyDrain))
+					.orElse(rawEnergyDrain);
 			int staminaDrain = (int) Math.round(data.getEffectiveStaminaDrain());
 			double healthDrain = Math.round(data.getEffectiveHealthDrain());
 
@@ -1132,19 +1207,21 @@ public class TickHandler {
 			boolean hasEnoughHealth = healthDrain <= 0 || player.getHealth() > healthDrain;
 
 			if (hasEnoughEnergy && hasEnoughStamina && hasEnoughHealth) {
-				if (energyDrain > 0) data.getResources().removeEnergy(energyDrain);
+				if (energyDrain > 0) data.getResources().removeEnergy(energyDrain, false);
 				else if (energyDrain < 0) data.getResources().addEnergy(-energyDrain);
 				if (staminaDrain > 0) data.getResources().removeStamina(staminaDrain);
 				else if (staminaDrain < 0) data.getResources().addStamina(-staminaDrain);
-				if (healthDrain > 0) player.setHealth((float) (player.getHealth() - healthDrain));
-				else if (healthDrain < 0) player.setHealth((float) Math.min(player.getMaxHealth(), player.getHealth() - healthDrain));
+				if (healthDrain > 0) SilentDamage.apply(player, healthDrain);
+				else if (healthDrain < 0 && !BioAndroidEvolution.isExplosionRecovering(data) && !BabaReviveService.isHealingBlocked(data))
+					player.setHealth((float) Math.min(player.getMaxHealth(), player.getHealth() - healthDrain));
 			} else {
 				data.getCharacter().clearActiveStackForm(player);
 				TransformationItemCostHelper.clearStackFormDurationSecondsRemaining(player);
 				player.removeEffect(MainEffects.STACK_TRANSFORMED);
-				TransformationsHelper.revertToBaseForm(player, data);
+				if (TransformationsHelper.revertToBaseForm(player, data)) {
+					player.removeEffect(MainEffects.TRANSFORMED);
+				}
 				TransformationItemCostHelper.clearFormDurationSecondsRemaining(player);
-				player.removeEffect(MainEffects.TRANSFORMED);
 				player.refreshDimensions();
 
 				String drainMessage = !hasEnoughEnergy ? "message.dragonminez.form.drained_ki"
@@ -1177,7 +1254,8 @@ public class TickHandler {
 
 	private static void handleSingleDurationCost(ServerPlayer player, StatsData data, boolean baseForm) {
 		FormConfig.FormData activeData = baseForm ? data.getCharacter().getActiveFormData() : data.getCharacter().getActiveStackFormData();
-		if (activeData == null || !activeData.hasDurationItemCosts()) {
+		boolean triggered = baseForm ? TriggerFormMarker.isTriggeredForm(player, data) : TriggerFormMarker.isTriggeredStack(player, data);
+		if (activeData == null || !activeData.hasDurationItemCosts() || triggered) {
 			if (baseForm) TransformationItemCostHelper.clearFormDurationSecondsRemaining(player);
 			else TransformationItemCostHelper.clearStackFormDurationSecondsRemaining(player);
 			return;
@@ -1200,9 +1278,10 @@ public class TickHandler {
 
 	private static void clearTransformationForMissingDurationItem(ServerPlayer player, StatsData data, boolean baseForm) {
 		if (baseForm) {
-			TransformationsHelper.revertToBaseForm(player, data);
+			if (TransformationsHelper.revertToBaseForm(player, data)) {
+				player.removeEffect(MainEffects.TRANSFORMED);
+			}
 			TransformationItemCostHelper.clearFormDurationSecondsRemaining(player);
-			player.removeEffect(MainEffects.TRANSFORMED);
 		} else {
 			data.getCharacter().clearActiveStackForm(player);
 			TransformationItemCostHelper.clearStackFormDurationSecondsRemaining(player);
@@ -1212,14 +1291,15 @@ public class TickHandler {
 		player.refreshDimensions();
 	}
 
-	private static void applyHumanKiPassiveDuringCharge(ServerPlayer player, StatsData data, int originalKiCost) {
+	private static void applyHumanKiPassiveDuringCharge(ServerPlayer player, StatsData data, float originalKiCost) {
 		if (!data.isHumanRacialActive() || data.isAndroidRacialActive() || originalKiCost <= 0) return;
+		if (KiTechniqueHandler.TriBeam.isNeo(data.getTechniques().getChargingTechniqueId())) return;
 
 		float hpAccum = player.getPersistentData().getFloat("dmz_human_hp_drain_accum") + originalKiCost * 0.125f;
 		int hpWhole = (int) hpAccum;
 
 		if (hpWhole > 0 && player.getHealth() > hpWhole + 2.0f) {
-			player.setHealth(player.getHealth() - hpWhole);
+			SilentDamage.apply(player, hpWhole);
 			double bonusDmg = player.getPersistentData().getDouble("dmz_human_ki_bonus_dmg") + hpWhole;
 			player.getPersistentData().putDouble("dmz_human_ki_bonus_dmg", bonusDmg);
 			hpAccum -= hpWhole;
@@ -1241,7 +1321,7 @@ public class TickHandler {
 
 	public static void registerStatusEffectHandlers() {
 		STATUS_EFFECT_HANDLERS.add(new TransformStatusHandler());
-		STATUS_EFFECT_HANDLERS.add(new BioDrainHandler());
+		STATUS_EFFECT_HANDLERS.add(new RacialStatusHandler());
 		STATUS_EFFECT_HANDLERS.add(new CooldownEffectHandler());
 		STATUS_EFFECT_HANDLERS.add(new FlyStatusHandler());
 		STATUS_EFFECT_HANDLERS.add(new FusionStatusHandler());
@@ -1249,7 +1329,8 @@ public class TickHandler {
 		STATUS_EFFECT_HANDLERS.add(new MajinStatusHandler());
 		STATUS_EFFECT_HANDLERS.add(new MightFruitStatusHandler());
 		STATUS_EFFECT_HANDLERS.add(new MutantStatusHandler());
-		STATUS_EFFECT_HANDLERS.add(new SaiyanPassiveHandler());
+		STATUS_EFFECT_HANDLERS.add(new FarmingBuffStatusHandler());
+		STATUS_EFFECT_HANDLERS.add(new RelicItemsStatusHandler());
 	}
 
 	public static void registerActionModeHandler(String actionMode, IActionModeHandler actionModeHandler) {

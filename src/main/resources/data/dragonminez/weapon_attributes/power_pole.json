@@ -2,7 +2,38 @@
   "parent": "dragonminez:staff",
   "attributes": {
     "crit_chance": 0.15,
-    "crit_damage": 0.10
+    "crit_damage": 0.10,
+    "attacks": [
+      {
+        "hitbox": "HORIZONTAL_PLANE",
+        "damage_multiplier": 0.8,
+        "angle": 160,
+        "upswing": 0.5,
+        "animation": "combat.two_handed_slash_horizontal_right",
+        "swing_sound": {
+          "id": "dragonminez:staff_slash"
+        }
+      },
+      {
+        "hitbox": "HORIZONTAL_PLANE",
+        "damage_multiplier": 1,
+        "angle": 160,
+        "upswing": 0.5,
+        "animation": "combat.two_handed_slash_horizontal_left",
+        "swing_sound": {
+          "id": "dragonminez:staff_slash"
+        }
+      },
+      {
+        "hitbox": "HORIZONTAL_PLANE",
+        "damage_multiplier": 1.2,
+        "angle": 360,
+        "upswing": 0.5,
+        "animation": "combat.two_handed_spin",
+        "swing_sound": {
+          "id": "dragonminez:staff_spin"
+        }
+      }
+    ]
   }
 }
-

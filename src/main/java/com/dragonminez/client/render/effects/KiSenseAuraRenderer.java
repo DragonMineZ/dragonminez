@@ -6,7 +6,6 @@ import com.dragonminez.client.render.shader.SearchGrayscaleManager;
 import com.dragonminez.client.render.util.AuraMeshFactory;
 import com.dragonminez.client.render.util.IrisCompat;
 import com.dragonminez.client.render.util.ModRenderTypes;
-import com.dragonminez.client.render.util.RenderBufferUtil;
 import com.dragonminez.client.systems.kisense.KiSenseScan;
 import com.dragonminez.client.systems.kisense.KiSenseState;
 import com.dragonminez.common.config.ConfigManager;
@@ -21,6 +20,7 @@ import com.mojang.math.Axis;
 import net.minecraft.client.Camera;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.ShaderInstance;
+import net.minecraft.client.renderer.culling.Frustum;
 import net.minecraft.client.renderer.RenderType;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.Mth;
@@ -29,6 +29,7 @@ import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.NeutralMob;
 import net.minecraft.world.entity.monster.Enemy;
 import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
 import net.neoforged.api.distmarker.Dist;
 import net.neoforged.neoforge.client.event.RenderLevelStageEvent;
@@ -43,6 +44,7 @@ import org.lwjgl.opengl.GL11;
 public final class KiSenseAuraRenderer {
 
 	private static final double LOD_DISTANCE = 24.0;
+	private static final double CULL_MARGIN = 1.5;
 
 	private KiSenseAuraRenderer() {}
 
@@ -63,14 +65,14 @@ public final class KiSenseAuraRenderer {
 		if (iris) {
 			mc.getMainRenderTarget().bindWrite(false);
 			SearchGrayscaleManager.process(event.getPartialTick().getGameTimeDeltaPartialTick(false), false);
-			renderAuras(mc, event);
+			renderAuras(mc, event, true);
 		} else {
 			SearchGrayscaleManager.process(event.getPartialTick().getGameTimeDeltaPartialTick(false));
-			renderAuras(mc, event);
+			renderAuras(mc, event, false);
 		}
 	}
 
-	private static void renderAuras(Minecraft mc, RenderLevelStageEvent event) {
+	private static void renderAuras(Minecraft mc, RenderLevelStageEvent event, boolean iris) {
 		StatsData myData = StatsProvider.get(StatsCapability.INSTANCE, mc.player).orElse(null);
 		if (myData == null) return;
 
@@ -88,11 +90,8 @@ public final class KiSenseAuraRenderer {
 		float partialTick = event.getPartialTick().getGameTimeDeltaPartialTick(false);
 		long gameTime = mc.level.getGameTime();
 
-		// Not event.getPoseStack(): 1.21 hands the stage an identity PoseStack and keeps the camera
-		// rotation on RenderSystem.getModelViewStack(). VertexBuffer#drawWithShader below takes the
-		// model-view matrix explicitly and never reads RenderSystem, so without the view baked in here
-		// the auras render unrotated and slide off their entities every time the camera turns.
-		PoseStack poseStack = RenderBufferUtil.stageModelViewPose(event);
+		Frustum frustum = event.getFrustum();
+		PoseStack poseStack = iris ? viewStack(mc) : event.getPoseStack();
 		VertexBuffer mesh = AuraMeshFactory.getBillboardQuad();
 		RenderType renderType = auraType(tex);
 
@@ -122,6 +121,9 @@ public final class KiSenseAuraRenderer {
 
 			float speed = lod ? 0.0f : (gameTime + partialTick) * 0.5f;
 			float scale = baseRadius * powerMul;
+			double reach = scale * CULL_MARGIN;
+			double centerY = lerpY + bbHeight * 0.5;
+			if (frustum != null && !frustum.isVisible(new AABB(lerpX - reach, centerY - reach, lerpZ - reach, lerpX + reach, centerY + reach, lerpZ + reach))) continue;
 
 			drawAuraLayer(poseStack, camera, camPos, lerpX, lerpY, lerpZ, bbHeight, proj, mesh, renderType, tex, shader, border, scale, 0.9f, speed);
 			drawAuraLayer(poseStack, camera, camPos, lerpX, lerpY, lerpZ, bbHeight, proj, mesh, renderType, tex, shader, inner, scale * 0.66f, 0.5f, speed * 1.2f);
@@ -167,6 +169,14 @@ public final class KiSenseAuraRenderer {
 
 	private static boolean isPassive(LivingEntity entity) {
 		return !(entity instanceof Player) && !(entity instanceof Enemy) && !(entity instanceof NeutralMob);
+	}
+
+	private static PoseStack viewStack(Minecraft mc) {
+		PoseStack stack = new PoseStack();
+		Camera cam = mc.gameRenderer.getMainCamera();
+		stack.mulPose(Axis.XP.rotationDegrees(cam.getXRot()));
+		stack.mulPose(Axis.YP.rotationDegrees(cam.getYRot() + 180.0F));
+		return stack;
 	}
 
 	private static RenderType auraType(ResourceLocation texture) {

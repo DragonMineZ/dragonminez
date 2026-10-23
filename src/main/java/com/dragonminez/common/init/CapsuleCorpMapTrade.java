@@ -40,6 +40,8 @@ public class CapsuleCorpMapTrade implements VillagerTrades.ItemListing {
 
 	/** Custom data key on the map stack with the structure destination id. */
 	public static final String STRUCTURE_TAG = "dmz_structure";
+	public static final String PENDING_TAG = "dmz_pending";
+	private static final double TARGET_TOLERANCE = 8.0D;
 
 	private final ItemStack priceA;
 	private final ItemStack priceB;
@@ -71,19 +73,30 @@ public class CapsuleCorpMapTrade implements VillagerTrades.ItemListing {
 		}
 
 		BlockPos pos = StructureLocator.locateStructure(serverLevel, this.destination, trader.blockPosition());
-		if (pos == null) {
-			return null;
-		}
 
-		ItemStack map = createMapStack(serverLevel, pos, this.destination, this.displayName, this.destinationType);
+        ItemStack map = pos != null
+				? createMapStack(serverLevel, pos, this.destination, this.displayName, this.destinationType)
+				: createPendingMapStack(this.destination, this.displayName);
 
 		ItemCost costA = toCost(this.priceA);
 		Optional<ItemCost> costB = this.priceB.isEmpty() ? Optional.empty() : Optional.of(toCost(this.priceB));
-		return new MerchantOffer(costA, costB, map, this.maxUses, this.villagerXp, 0.2F);
+		MerchantOffer offer = new MerchantOffer(costA, costB, map, this.maxUses, this.villagerXp, 0.2F);
+		if (pos == null) offer.setToOutOfStock();
+		return offer;
 	}
 
 	private static ItemCost toCost(ItemStack stack) {
 		return new ItemCost(stack.getItem().builtInRegistryHolder(), stack.getCount(), DataComponentPredicate.EMPTY);
+	}
+
+	private static ItemStack createPendingMapStack(ResourceKey<Structure> destination, String displayName) {
+		ItemStack map = new ItemStack(Items.FILLED_MAP);
+		map.set(DataComponents.CUSTOM_NAME, Component.translatable("filled_map." + displayName));
+		CustomData.update(DataComponents.CUSTOM_DATA, map, tag -> {
+			tag.putString(STRUCTURE_TAG, destination.location().toString());
+			tag.putBoolean(PENDING_TAG, true);
+		});
+		return map;
 	}
 
 	private static ItemStack createMapStack(ServerLevel level, BlockPos pos, ResourceKey<Structure> destination,
@@ -94,6 +107,15 @@ public class CapsuleCorpMapTrade implements VillagerTrades.ItemListing {
 		map.set(DataComponents.CUSTOM_NAME, Component.translatable("filled_map." + displayName));
 		CustomData.update(DataComponents.CUSTOM_DATA, map, tag -> tag.putString(STRUCTURE_TAG, destination.location().toString()));
 		return map;
+	}
+
+	public void ensureOffered(ServerLevel level, AbstractVillager merchant) {
+		MerchantOffers offers = merchant.getOffers();
+		for (MerchantOffer offer : offers) {
+			if (offer.getResult().is(Items.FILLED_MAP) && this.destination.equals(structureKeyFrom(level, offer.getResult()))) return;
+		}
+		MerchantOffer offer = this.getOffer(merchant, merchant.getRandom());
+		if (offer != null) offers.add(offer);
 	}
 
 	public static void refreshStaleMapOffers(ServerLevel level, AbstractVillager merchant) {
@@ -109,10 +131,13 @@ public class CapsuleCorpMapTrade implements VillagerTrades.ItemListing {
 			BlockPos pos = StructureLocator.locateStructure(level, key, merchant.blockPosition());
 			if (pos == null || matchesTarget(result, pos)) continue;
 
+			CustomData resultData = result.getOrDefault(DataComponents.CUSTOM_DATA, CustomData.EMPTY);
+			boolean wasPending = resultData.copyTag().getBoolean(PENDING_TAG);
+
 			ItemStack fresh = createMapStack(level, pos, key,
 					Reference.MOD_ID + "." + key.location().getPath(), MapDecorationTypes.RED_X);
 			offers.set(i, new MerchantOffer(offer.getItemCostA(), offer.getItemCostB(), fresh,
-					offer.getUses(), offer.getMaxUses(), offer.getXp(),
+					wasPending ? 0 : offer.getUses(), offer.getMaxUses(), offer.getXp(),
 					offer.getPriceMultiplier(), offer.getDemand()));
 		}
 	}
@@ -141,6 +166,7 @@ public class CapsuleCorpMapTrade implements VillagerTrades.ItemListing {
 		if (decorations == null) return false;
 		MapDecorations.Entry entry = decorations.decorations().get("+");
 		if (entry == null) return false;
-		return (int) entry.x() == pos.getX() && (int) entry.z() == pos.getZ();
+		return Math.abs(entry.x() - pos.getX()) <= TARGET_TOLERANCE
+				&& Math.abs(entry.z() - pos.getZ()) <= TARGET_TOLERANCE;
 	}
 }

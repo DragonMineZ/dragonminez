@@ -5,17 +5,24 @@
   "compatibilityLevel": "JAVA_21",
   "refmap": "dragonminez.refmap.json",
   "mixins": [
+    "common.ChunkSerializerMixin",
     "common.EnchantmentMixin",
     "common.EntityMixin",
+    "common.InventoryMixin",
     "common.ItemStackMixin",
     "common.LivingEntityAccessor",
     "common.LivingEntityMixin",
     "common.PlayerListMixin",
     "common.PlayerMixin",
     "common.RangedAttributeMixin",
-    "common.StructureTemplatePoolAccessor"
+    "common.SinglePoolElementAccessor",
+    "common.StructureTemplateAccessor",
+    "common.StructureTemplatePaletteInvoker",
+    "common.StructureTemplatePoolAccessor",
+    "common.SweepingEdgeEnchantmentMixin"
   ],
   "client": [
+    "client.AbstractSoundInstanceAccessor",
     "client.BundleTooltipComponentAccessor",
     "client.BrandingControlMixin",
     "client.ClientTextTooltipAccessor",

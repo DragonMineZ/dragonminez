@@ -1,6 +1,7 @@
 package com.dragonminez.server.world.feature;
 
 import com.dragonminez.Reference;
+import com.dragonminez.common.init.MainBlocks;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Registry;
 import net.minecraft.core.registries.Registries;
@@ -57,6 +58,22 @@ final class FeatureUtil {
             case 3 -> Blocks.OXEYE_DAISY.defaultBlockState();
             default -> Blocks.CORNFLOWER.defaultBlockState();
         };
+    }
+
+    static BlockPos findHellSurface(WorldGenLevel level, BlockPos start) {
+        BlockPos.MutableBlockPos cursor = start.mutable();
+        int floor = level.getMinBuildHeight() + 2;
+        while (cursor.getY() > floor && level.isEmptyBlock(cursor)) {
+            cursor.move(0, -1, 0);
+        }
+        if (cursor.getY() <= floor) return null;
+        return isHellGround(level.getBlockState(cursor)) ? cursor.immutable() : null;
+    }
+
+    static boolean isHellGround(BlockState state) {
+        return state.is(MainBlocks.HELL_STONE.get())
+                || state.is(MainBlocks.HELL_GROUND.get())
+                || state.is(MainBlocks.HELL_DEEPSTONE.get());
     }
 
     static boolean isInsideDmzStructure(WorldGenLevel level, BlockPos pos) {

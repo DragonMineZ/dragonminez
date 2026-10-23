@@ -1,5 +1,7 @@
 package com.dragonminez.client.events;
 
+import com.dragonminez.client.gui.hud.PartyHudCache;
+import com.dragonminez.client.gui.hud.NotificationHUD;
 import com.dragonminez.Reference;
 import com.dragonminez.client.crowdin.CrowdinManager;
 import com.dragonminez.client.gui.UtilityMenuScreen;
@@ -11,6 +13,7 @@ import com.dragonminez.client.gui.character.RaceSelectionScreen;
 import com.dragonminez.client.render.DMZRendererCache;
 import com.dragonminez.client.render.shader.TransformationPostShaderManager;
 import com.dragonminez.client.render.shader.UtilityMenuBlur;
+import com.dragonminez.client.systems.DragonSkyState;
 import com.dragonminez.client.util.TextureCounter;
 import com.dragonminez.client.util.KeyBinds;
 import com.dragonminez.client.gui.character.CharacterStatsScreen;
@@ -21,11 +24,13 @@ import com.dragonminez.common.config.ConfigManager;
 import com.dragonminez.common.init.MainSounds;
 import com.dragonminez.common.init.entities.SpacePodEntity;
 import com.dragonminez.common.network.C2S.SokidanControlC2S;
+import com.dragonminez.common.network.C2S.ReserveFirstHotbarSlotC2S;
 import com.dragonminez.common.network.NetworkHandler;
 import com.dragonminez.common.stats.StatsCapability;
 import com.dragonminez.common.stats.StatsProvider;
 import com.dragonminez.mixin.client.MinecraftAccessor;
 import com.dragonminez.mixin.common.LivingEntityAccessor;
+import com.dragonminez.server.world.dimension.CustomSpecialEffects;
 import com.mojang.blaze3d.systems.RenderSystem;
 import net.minecraft.util.Mth;
 import com.mojang.blaze3d.platform.InputConstants;
@@ -38,11 +43,9 @@ import net.neoforged.api.distmarker.Dist;
 import net.neoforged.neoforge.client.event.InputEvent;
 import net.neoforged.neoforge.client.event.RenderGuiLayerEvent;
 import net.neoforged.neoforge.client.event.RenderLevelStageEvent;
+import net.neoforged.neoforge.client.event.ViewportEvent;
 import net.neoforged.neoforge.client.gui.VanillaGuiLayers;
 import net.neoforged.neoforge.client.event.ClientTickEvent;
-import net.neoforged.neoforge.event.tick.PlayerTickEvent;
-import net.neoforged.neoforge.event.tick.ServerTickEvent;
-import net.neoforged.neoforge.event.tick.LevelTickEvent;
 import net.neoforged.neoforge.client.event.ClientPlayerNetworkEvent;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
@@ -82,6 +85,14 @@ public class ForgeClientEvents {
 	 * floor that stops a sync delay from becoming an unrecoverable hang.
 	 */
 	@SubscribeEvent
+	public static void hideDragonMinezGuiLayers(RenderGuiLayerEvent.Pre event) {
+		Minecraft minecraft = Minecraft.getInstance();
+		if (minecraft.options.hideGui && Reference.MOD_ID.equals(event.getName().getNamespace())) {
+			event.setCanceled(true);
+		}
+	}
+
+	@SubscribeEvent
 	public static void RenderHealthBar(RenderGuiLayerEvent.Pre event) {
 		LocalPlayer player = Minecraft.getInstance().player;
 		if (player == null) return;
@@ -94,9 +105,18 @@ public class ForgeClientEvents {
 	}
 
 	@SubscribeEvent
+	public static void onRenderFog(ViewportEvent.RenderFog event) {
+		CustomSpecialEffects.DemonRealmEffects.adjustFog(event);
+	}
+
+	@SubscribeEvent
+	public static void onComputeFogColor(ViewportEvent.ComputeFogColor event) {
+		CustomSpecialEffects.OtherWorldEffects.adjustFogColor(event);
+		CustomSpecialEffects.applyDragonNightFog(event);
+	}
+
+	@SubscribeEvent
 	public static void onPlayerClone(ClientPlayerNetworkEvent.Clone event) {
-		// Fired when the local player entity is rebuilt: respawn after death and dimension change.
-		// Lets the quest tree's "Start" button be clickable again without waiting out the cooldown.
 		QuestTreeScreen.clearResummonCooldowns();
 		CameraAimHelper.clearLocalSokidans();
 	}
@@ -106,6 +126,7 @@ public class ForgeClientEvents {
 		TextureCounter.clearCache();
 		CameraAimHelper.clearLocalSokidans();
 		if (Minecraft.getInstance().player == null) return;
+		NetworkHandler.sendToServer(new ReserveFirstHotbarSlotC2S(ConfigManager.getUserConfig().isReserveFirstHotbarSlot()));
 		StatsProvider.get(StatsCapability.INSTANCE, Minecraft.getInstance().player).ifPresent(data -> {
 			isHasCreatedCharacterCache = data.getStatus().isHasCreatedCharacter();
 		});
@@ -216,6 +237,7 @@ public class ForgeClientEvents {
 
 		Minecraft mc = Minecraft.getInstance();
 		TransformationPostShaderManager.tick();
+		DragonSkyState.tick();
 		if (mc.player == null || mc.level == null) {
 			CameraAimHelper.clearLocalSokidans();
 			return;
@@ -318,6 +340,16 @@ public class ForgeClientEvents {
 	public static void onClientDisconnect(ClientPlayerNetworkEvent.LoggingOut event) {
 		CameraAimHelper.clearLocalSokidans();
 		ConfigManager.clearServerSync();
+		PartyHudCache.clear();
+		NotificationHUD.clear();
+		com.dragonminez.client.systems.worldboss.ClientWorldBossState.clear();
+		com.dragonminez.client.render.shader.KnockoutShaderManager.reset();
+		com.dragonminez.client.render.effects.BeamClashScreenRenderer.reset();
+		com.dragonminez.client.clash.ClientBeamClashState.clear();
+		FlySkillEvent.releaseStrikeClash();
+		com.dragonminez.client.render.shader.ClientGravityState.reset();
+		LockOnEvent.unlock();
+		com.dragonminez.client.render.camera.StrikeCinematicCamera.reset();
 		DMZRendererCache.clear();
 		TextureCounter.clearCache();
 		pendingCharacterCreationReopen = false;

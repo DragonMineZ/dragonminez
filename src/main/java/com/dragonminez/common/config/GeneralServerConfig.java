@@ -1,53 +1,398 @@
 package com.dragonminez.common.config;
 
+import com.dragonminez.common.diagnostics.RemovedConfigKeys;
 import com.dragonminez.common.init.item.consumables.CapsuleType;
-import lombok.AllArgsConstructor;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
-
 import java.util.*;
 
-@Getter
-@NoArgsConstructor
 public class GeneralServerConfig {
 	public static final String CURRENT_VERSION = ConfigManager.CONFIG_VERSION;
-
-	@Setter
 	private String configVersion;
-
 	private WorldGenConfig worldGen = new WorldGenConfig();
 	private GameplayConfig gameplay = new GameplayConfig();
 	private RacialSkillsConfig racialSkills = new RacialSkillsConfig();
 	private DynamicGrowthConfig dynamicGrowth = new DynamicGrowthConfig();
 	private GravityConfig gravity = new GravityConfig();
 	private MutantConfig mutant = new MutantConfig();
+	private FalseSuperSaiyanConfig falseSuperSaiyan = new FalseSuperSaiyanConfig();
+	private KiTransferConfig kiTransfer = new KiTransferConfig();
+	private GodRitualConfig superSaiyanGodRitual = new GodRitualConfig();
+	private WorldBossConfig worldBoss = new WorldBossConfig();
 	private CraftingConfig crafting = new CraftingConfig();
 	private StorageConfig storage = new StorageConfig();
 	private DeveloperConfig developer = new DeveloperConfig();
+	private HairConfig hair = new HairConfig();
 
-	@Getter
-	@NoArgsConstructor
+	public HairConfig getHair() {
+		if (hair == null) hair = new HairConfig();
+		return hair;
+	}
+
+	public FalseSuperSaiyanConfig getFalseSuperSaiyan() {
+		if (falseSuperSaiyan == null) falseSuperSaiyan = new FalseSuperSaiyanConfig();
+		return falseSuperSaiyan;
+	}
+
+	public KiTransferConfig getKiTransfer() {
+		if (kiTransfer == null) kiTransfer = new KiTransferConfig();
+		return kiTransfer;
+	}
+
+	public GodRitualConfig getSuperSaiyanGodRitual() {
+		if (superSaiyanGodRitual == null) superSaiyanGodRitual = new GodRitualConfig();
+		return superSaiyanGodRitual;
+	}
+
+	public WorldBossConfig getWorldBoss() {
+		if (worldBoss == null) worldBoss = new WorldBossConfig();
+		return worldBoss;
+	}
+
+
+	public static class WorldBossConfig {
+		private Integer contributionRange = 150;
+		private Integer audienceRefreshSeconds = 5;
+		private Integer meterLingerSeconds = 15;
+		private Double damageWeight = 1.0;
+		private Double mitigatedWeight = 1.0;
+		private Double receivedWeight = 1.0;
+		private Double healedWeight = 1.0;
+		private Integer lives = 3;
+		private Integer reviveSlot = 4;
+		private Integer reviveCastSeconds = 15;
+		private Integer reviveCooldownSeconds = 90;
+		private Integer reviveInterruptCooldownSeconds = 15;
+		private Double reviveInterruptDamageRatio = 0.1;
+		private Double reviveDecayMultiplier = 3.0;
+		private Integer truceGraceSeconds = 15;
+		private Double reviveRange = 6.0;
+		private Double reviveRestoreRatio = 0.25;
+		private Integer knockoutTitleSeconds = 5;
+		private List<Double> rankChanceBonus = new ArrayList<>(List.of(0.25, 0.15, 0.1));
+		private Double guaranteedRewardMinRatio = 0.5;
+		private Double minContributionShare = 0.075;
+		private Double healthPerExtraMember = 0.5;
+		private Double damagePerExtraMember = 0.25;
+		private Map<String, List<WorldBossRewardEntry>> rewards = defaultWorldBossRewards();
+
+		public int getContributionRange() {
+			return Math.max(16, positiveInt(contributionRange, 150));
+		}
+
+		public int getAudienceRefreshSeconds() {
+			return Math.max(1, positiveInt(audienceRefreshSeconds, 5));
+		}
+
+		public int getMeterLingerSeconds() {
+			return positiveInt(meterLingerSeconds, 15);
+		}
+
+		public double getDamageWeight() {
+			return positive(damageWeight, 1.0);
+		}
+
+		public double getMitigatedWeight() {
+			return positive(mitigatedWeight, 1.0);
+		}
+
+		public double getReceivedWeight() {
+			return positive(receivedWeight, 1.0);
+		}
+
+		public double getHealedWeight() {
+			return positive(healedWeight, 1.0);
+		}
+
+		public int getLives() {
+			return positiveInt(lives, 3);
+		}
+
+		public int getReviveSlotIndex() {
+			return Math.max(0, Math.min(7, positiveInt(reviveSlot, 4) - 1));
+		}
+
+		public int getReviveCastSeconds() {
+			return Math.max(1, positiveInt(reviveCastSeconds, 15));
+		}
+
+		public int getReviveCooldownSeconds() {
+			return positiveInt(reviveCooldownSeconds, 90);
+		}
+
+		public int getReviveInterruptCooldownSeconds() {
+			return positiveInt(reviveInterruptCooldownSeconds, 15);
+		}
+
+		public double getReviveInterruptDamageRatio() {
+			return Math.max(0.01, positive(reviveInterruptDamageRatio, 0.1));
+		}
+
+		public double getReviveDecayMultiplier() {
+			return Math.max(1.0, positive(reviveDecayMultiplier, 3.0));
+		}
+
+		public int getTruceGraceSeconds() {
+			return positiveInt(truceGraceSeconds, 15);
+		}
+
+		public double getReviveRange() {
+			return Math.max(1.0, positive(reviveRange, 6.0));
+		}
+
+		public double getReviveRestoreRatio() {
+			return clamp01(reviveRestoreRatio, 0.25);
+		}
+
+		public int getKnockoutTitleSeconds() {
+			return Math.max(1, positiveInt(knockoutTitleSeconds, 5));
+		}
+
+		public double getGuaranteedRewardMinRatio() {
+			return clamp01(guaranteedRewardMinRatio, 0.5);
+		}
+
+		public double getMinContributionShare() {
+			return clamp01(minContributionShare, 0.075);
+		}
+
+		public double getHealthPerExtraMember() {
+			return positive(healthPerExtraMember, 0.5);
+		}
+
+		public double getDamagePerExtraMember() {
+			return positive(damagePerExtraMember, 0.25);
+		}
+
+		public double getRankChanceBonus(int rank) {
+			if (rankChanceBonus == null || rank < 0 || rank >= rankChanceBonus.size()) return 0.0;
+			return positive(rankChanceBonus.get(rank), 0.0);
+		}
+
+		public List<WorldBossRewardEntry> getRewards(String bossKey) {
+			if (bossKey == null) return List.of();
+			List<WorldBossRewardEntry> list = rewards != null ? rewards.get(bossKey) : null;
+			if (list == null) list = defaultWorldBossRewards().get(bossKey);
+			return list != null ? list : List.of();
+		}
+
+		private static Map<String, List<WorldBossRewardEntry>> defaultWorldBossRewards() {
+			Map<String, List<WorldBossRewardEntry>> map = new LinkedHashMap<>();
+			List<WorldBossRewardEntry> janemba = new ArrayList<>();
+			janemba.add(WorldBossRewardEntry.attributes(500, 1.0));
+			janemba.add(WorldBossRewardEntry.item("dragonminez:dimensional_sword", 1, 0.5));
+			janemba.add(WorldBossRewardEntry.skill("dimensional_teleport", 1, 0.2));
+			map.put("janemba", janemba);
+			List<WorldBossRewardEntry> turles = new ArrayList<>();
+			turles.add(WorldBossRewardEntry.attributes(50, 1.0));
+			turles.add(WorldBossRewardEntry.item("dragonminez:might_tree_fruit", 1, 0.5));
+			turles.add(WorldBossRewardEntry.skill("kill_driver", 1, 0.25));
+			turles.add(WorldBossRewardEntry.skill("meteor_burst", 1, 0.15));
+			map.put("turles", turles);
+			List<WorldBossRewardEntry> metalCoolerCore = new ArrayList<>();
+			metalCoolerCore.add(WorldBossRewardEntry.attributes(105, 1.0));
+			metalCoolerCore.add(WorldBossRewardEntry.skill("supernova_cooler", 1, 0.2));
+			metalCoolerCore.add(WorldBossRewardEntry.item("dragonminez:gete_ingot", 4, 1.0));
+			for (String capsule : List.of("red", "purple", "yellow", "green", "orange", "blue")) {
+				metalCoolerCore.add(WorldBossRewardEntry.item("dragonminez:gete_" + capsule + "_capsule", 1, 0.12));
+			}
+			map.put("metal_cooler_core", metalCoolerCore);
+			map.put("tamagami_3", List.of(WorldBossRewardEntry.attributes(90, 1.0), WorldBossRewardEntry.item("dragonminez:tamagami_hammer", 1, 0.3)));
+			map.put("tamagami_2", List.of(WorldBossRewardEntry.attributes(300, 1.0), WorldBossRewardEntry.item("dragonminez:tamagami_trident", 1, 0.3)));
+			map.put("tamagami_1", List.of(WorldBossRewardEntry.attributes(360, 1.0), WorldBossRewardEntry.item("dragonminez:tamagami_sword", 1, 0.3)));
+			map.put("gomah", List.of(WorldBossRewardEntry.attributes(435, 1.0), WorldBossRewardEntry.item("dragonminez:demon_eye", 1, 0.02)));
+			return map;
+		}
+
+		private static int positiveInt(Integer value, int fallback) {
+			return value != null && value >= 0 ? value : fallback;
+		}
+
+		private static double positive(Double value, double fallback) {
+			return value != null && Double.isFinite(value) && value >= 0.0 ? value : fallback;
+		}
+
+		private static double clamp01(Double value, double fallback) {
+			return Math.max(0.0, Math.min(1.0, positive(value, fallback)));
+		}
+	}
+
+
+	public static class WorldBossRewardEntry {
+		private String type = "ITEM";
+		private String item;
+		private Integer count;
+		private Integer amount;
+		private String skill;
+		private Integer level;
+		private String command;
+		private String translationKey;
+		private String formGroup;
+		private String formName;
+		private Double mastery;
+		private Boolean stack;
+		private String code;
+		private Double chance = 1.0;
+
+		public static WorldBossRewardEntry attributes(int amount, double chance) {
+			WorldBossRewardEntry entry = new WorldBossRewardEntry();
+			entry.type = "ATTRIBUTES";
+			entry.amount = amount;
+			entry.chance = chance;
+			return entry;
+		}
+
+		public static WorldBossRewardEntry item(String item, int count, double chance) {
+			WorldBossRewardEntry entry = new WorldBossRewardEntry();
+			entry.type = "ITEM";
+			entry.item = item;
+			entry.count = count;
+			entry.chance = chance;
+			return entry;
+		}
+
+		public static WorldBossRewardEntry skill(String skill, int level, double chance) {
+			WorldBossRewardEntry entry = new WorldBossRewardEntry();
+			entry.type = "SKILL";
+			entry.skill = skill;
+			entry.level = level;
+			entry.chance = chance;
+			return entry;
+		}
+
+		public double getChance() {
+			return chance != null && Double.isFinite(chance) ? Math.max(0.0, Math.min(1.0, chance)) : 1.0;
+		}
+
+		public boolean isGuaranteed() {
+			return getChance() >= 1.0;
+		}
+
+		public String getType() {
+			return this.type;
+		}
+
+		public String getItem() {
+			return this.item;
+		}
+
+		public Integer getCount() {
+			return this.count;
+		}
+
+		public Integer getAmount() {
+			return this.amount;
+		}
+
+		public String getSkill() {
+			return this.skill;
+		}
+
+		public Integer getLevel() {
+			return this.level;
+		}
+
+		public String getCommand() {
+			return this.command;
+		}
+
+		public String getTranslationKey() {
+			return this.translationKey;
+		}
+
+		public String getFormGroup() {
+			return this.formGroup;
+		}
+
+		public String getFormName() {
+			return this.formName;
+		}
+
+		public Double getMastery() {
+			return this.mastery;
+		}
+
+		public Boolean getStack() {
+			return this.stack;
+		}
+
+		public String getCode() {
+			return this.code;
+		}
+
+		public WorldBossRewardEntry() {
+		}
+	}
+
+
+	public static class HairConfig {
+		private Integer maxSegmentsPerStrand = 12;
+		private Map<String, Float> maxStrandLength = defaultMaxStrandLength();
+		private Float maxStrandWidth = 8.0F;
+		private Float maxRootOffset = 2.0F;
+		private Integer maxTotalSegmentsPerStyle = 600;
+
+		private static Map<String, Float> defaultMaxStrandLength() {
+			Map<String, Float> map = new LinkedHashMap<>();
+			map.put("base", 20.0F);
+			map.put("ssj", 20.0F);
+			map.put("ssj2", 20.0F);
+			map.put("ssj3", 20.0F);
+			map.put("ssj4", 20.0F);
+			return map;
+		}
+
+		public int getMaxSegmentsPerStrand() {
+			int value = maxSegmentsPerStrand != null ? maxSegmentsPerStrand : 12;
+			return Math.max(1, Math.min(value, 32));
+		}
+
+		public float getMaxStrandLength(String hairType) {
+			Float value = maxStrandLength != null ? maxStrandLength.get(hairType) : null;
+			if (value == null || !Float.isFinite(value)) value = defaultMaxStrandLength().getOrDefault(hairType, 20.0F);
+			return Math.max(0.5F, Math.min(value, 128.0F));
+		}
+
+		public float getMaxStrandWidth() {
+			float value = maxStrandWidth != null && Float.isFinite(maxStrandWidth) ? maxStrandWidth : 8.0F;
+			return Math.max(0.25F, Math.min(value, 16.0F));
+		}
+
+		public float getMaxRootOffset() {
+			float value = maxRootOffset != null && Float.isFinite(maxRootOffset) ? maxRootOffset : 2.0F;
+			return Math.max(0.0F, Math.min(value, 4.0F));
+		}
+
+		public int getMaxTotalSegmentsPerStyle() {
+			int value = maxTotalSegmentsPerStyle != null ? maxTotalSegmentsPerStyle : 600;
+			return Math.max(1, Math.min(value, 68 * 32));
+		}
+	}
+
+
 	public static class DeveloperConfig {
 		private Boolean reportJsonProblemsInChat = true;
 
 		public Boolean isReportJsonProblemsInChat() {
 			return reportJsonProblemsInChat == null || reportJsonProblemsInChat;
 		}
+
+		public Boolean getReportJsonProblemsInChat() {
+			return this.reportJsonProblemsInChat;
+		}
+
+		public DeveloperConfig() {
+		}
 	}
 
-	@Getter
-	@NoArgsConstructor
+
 	public static class WorldGenConfig {
 		private Boolean generateCustomStructures = true;
 		private Boolean generateDragonBalls = true;
 		private Boolean otherworldActive = true;
 		private Integer dbSpawnRange = 1000;
 		private Integer dragonBallSets = 1;
-		private Integer structureMinDistanceFromSpawn = 0;
-		private Integer structureMaxDistanceFromSpawn = 4000;
-		private Integer structureMinDistanceBetween = 250;
-
+		private Integer structureMinDistanceFromSpawn = 500;
+		private Integer structureMaxDistanceFromSpawn = 10000;
+		private Integer structureMinDistanceBetween = 500;
 		private Integer structureSpacing = 6000;
 		private Integer structureSeparation = 2000;
 
@@ -65,12 +410,12 @@ public class GeneralServerConfig {
 		}
 
 		public Integer getStructureMinDistanceFromSpawn() {
-			int value = structureMinDistanceFromSpawn != null ? structureMinDistanceFromSpawn : 0;
+			int value = structureMinDistanceFromSpawn != null ? structureMinDistanceFromSpawn : 500;
 			return Math.max(0, Math.min(value, getStructureMaxDistanceFromSpawn() - 16));
 		}
 
 		public Integer getStructureMinDistanceBetween() {
-			int value = structureMinDistanceBetween != null ? structureMinDistanceBetween : 250;
+			int value = structureMinDistanceBetween != null ? structureMinDistanceBetween : 500;
 			return Math.max(0, value);
 		}
 
@@ -83,16 +428,47 @@ public class GeneralServerConfig {
 			int value = structureSeparation != null ? structureSeparation : 2000;
 			return Math.max(0, Math.min(value, getStructureSpacingBlocks() - 16));
 		}
+
+		public Boolean getGenerateCustomStructures() {
+			return this.generateCustomStructures;
+		}
+
+		public Boolean getGenerateDragonBalls() {
+			return this.generateDragonBalls;
+		}
+
+		public Boolean getOtherworldActive() {
+			return this.otherworldActive;
+		}
+
+		public Integer getStructureSpacing() {
+			return this.structureSpacing;
+		}
+
+		public Integer getStructureSeparation() {
+			return this.structureSeparation;
+		}
+
+		public WorldGenConfig() {
+		}
 	}
 
-	@Getter
-	@NoArgsConstructor
+
+	@RemovedConfigKeys({"vitCurveKneeLevelMode", "vitCurveKneeStatMode", "defCurveKneeLevelMode", "defCurveKneeStatMode"})
 	public static class GameplayConfig {
 		private Boolean forceCharacterCreation = true;
 		private Boolean commandOutputOnConsole = true;
 		private Integer reviveCooldownSeconds = 180;
+		private Boolean babaTemporaryRevive = true;
+		private Integer babaTempReturnSeconds = 3600;
+		private Map<String, Double> babaTimeMultiplierPerWorld = defaultBabaTimeMultiplierPerWorld();
+		private Double defaultBabaTimeMultiplier = 1.0;
+		private Boolean babaHardcoreEnabled = false;
+		private Double babaHardcoreCooldownGrowth = 0.5;
 		private Double tpGainMultiplier = 1.0;
-		private Double increaseTPGainRelativeToTPCost = 0.5;
+		private Double increaseTPGainRelativeToTPCost = 0.75;
+		private Integer progressionReferenceLevel = 10000;
+		private Double attributeRewardPointRatio = 0.5;
 		private Double globalTPCostMultiplier = 1.0;
 		private Integer minTPCost = 16;
 		private Integer maxTPDiscount = 140;
@@ -104,24 +480,42 @@ public class GeneralServerConfig {
 		private Integer tpPerItemCrafted = 1;
 		private Boolean gravityBonusEnabled = true;
 		private Double HTCTpMultiplier = 1.75;
+		private Double otherworldDeadTpMultiplier = 2.0;
 		private Boolean maxLevelValueInsteadOfStats = true;
 		// Long, not Integer: server owners set this well past Integer.MAX_VALUE (10000000000 is a
 		// real value in the wild). As an Integer, Gson aborts the whole parse with
 		// "Expected an int but was 10000000000", which takes the entire synced config down with it.
 		private Long maxValue = 10000L;
+		private Double vitCurveKnee = 16000.0;
+		private Double defCurveKnee = 20000.0;
 		private CapsulesConfig capsules = new CapsulesConfig();
 		private Boolean storyModeEnabled = true;
 		private Boolean createDefaultSagas = true;
 		private Boolean sideQuestsEnabled = true;
 		private Boolean createDefaultSideQuests = true;
 		private Boolean autoUpdateQuests = true;
+		private Boolean levelFormRequisiteEnabled = true;
+		private Boolean sagaFormRequisiteEnabled = true;
+		private Boolean pixelTattooPaintingEnabled = true;
 		private Double defaultQuestPartyMultiplier = 1.45;
 		private Integer senzuCooldownTicks = 240;
 		private Integer senzuGiftCooldownTicks = 18000;
 		private Integer senzuGiftAmount = 5;
+		private Double kamiBlessTpMultiplier = 1.2;
+		private Integer kamiBlessDurationSeconds = 300;
+		private Integer kamiBlessCooldownSeconds = 1800;
 		private FoodConfig food = new FoodConfig();
 		private Double mightFruitPower = 1.2;
 		private Double majinPower = 1.3;
+		private Double sacredWaterMultiplier = 1.1;
+		private Double demonEyeMultiplier = 1.5;
+		private Double demonEyeKiDrainPercent = 0.02;
+		private Double demonEyeHealthDrainPercent = 0.02;
+		private Integer demonEyeAlignmentLossIntervalSeconds = 10;
+		private Double demonEyeMaxGrowth = 0.5;
+		private Integer demonEyeGrowthSeconds = 300;
+		private Integer demonEyeBackHitsToRemove = 3;
+		private Integer demonEyeBackHitWindowSeconds = 10;
 		private Double metamoruFusionThreshold = 0.5;
 		private String[] fusionBoosts = {"STR", "SKP", "PWR"};
 		private Integer fusionDurationSeconds = 900;
@@ -134,7 +528,7 @@ public class GeneralServerConfig {
 		private Double enemyHealthPerPartyPlayer = 1.25;
 		private Double enemyDamagePerPartyPlayer = 1.1;
 		private Integer instantTransmissionPlayerRangePerLevel = 200;
-
+		private Integer partyMarkerRange = 2000;
 		private Double easyModeHPMultiplier = 0.75;
 		private Double easyModeDamageMultiplier = 0.5;
 		private Double easyModeTPMultiplier = 1.25;
@@ -143,24 +537,17 @@ public class GeneralServerConfig {
 		private Double hardModeDamageMultiplier = 1.5;
 		private Double hardModeTPMultiplier = 1.25;
 		private Double hardModeQuestRewardMultiplier = 1.25;
-
-		/** TP reward decay applied per story reset (wish): run 1 = 100%, run 2 = 50%, run 3 = 25%, ... Set to 1.0 to disable. */
+		/**
+		 * TP reward decay applied per story reset (wish): run 1 = 100%, run 2 = 50%, run 3 = 25%, ... Set to 1.0 to disable.
+		 */
 		private Double storyResetTPMultiplier = 0.5;
-
-		private List<String> helmetsThatKeepHair = new ArrayList<>(Arrays.asList(
-				"dragonminez:invencible_armor_helmet",
-				"dragonminez:invencible_blue_armor_helmet"
-		));
-
+		private List<String> helmetsThatKeepHair = new ArrayList<>(Arrays.asList("dragonminez:invencible_armor_helmet", "dragonminez:invencible_blue_armor_helmet", "dragonminez:broly_z_armor_helmet"));
 		private Map<TpSource, List<TpBoost>> tpGainBoosts = defaultTpGainBoosts();
 
 		private static Map<TpSource, List<TpBoost>> defaultTpGainBoosts() {
 			Map<TpSource, List<TpBoost>> map = new LinkedHashMap<>();
 			for (TpSource source : TpSource.values()) {
-				List<TpBoost> boosts = new ArrayList<>(Arrays.asList(
-						TpBoost.CLASS, TpBoost.RACIALSKILL, TpBoost.HTC, TpBoost.GRAVITY,
-						TpBoost.WEIGHTS, TpBoost.GLOBAL, TpBoost.POTION, TpBoost.MUTANT
-				));
+				List<TpBoost> boosts = new ArrayList<>(Arrays.asList(TpBoost.CLASS, TpBoost.RACIALSKILL, TpBoost.HTC, TpBoost.OTHERWORLD, TpBoost.GRAVITY, TpBoost.WEIGHTS, TpBoost.GLOBAL, TpBoost.POTION, TpBoost.MUTANT));
 				if (source == TpSource.STORY) boosts.add(TpBoost.DIFFICULTY);
 				map.put(source, boosts);
 			}
@@ -170,12 +557,51 @@ public class GeneralServerConfig {
 		public List<TpBoost> getTpGainBoosts(TpSource source) {
 			if (tpGainBoosts == null) return Arrays.asList(TpBoost.values());
 			List<TpBoost> boosts = tpGainBoosts.get(source);
+			if (boosts == null) boosts = tpGainBoosts.containsKey(source) ? List.of() : defaultTpGainBoosts().get(source);
 			if (boosts == null) return List.of();
 			return boosts.stream().filter(Objects::nonNull).toList();
 		}
 
 		public Integer getReviveCooldownSeconds() {
 			return Math.max(0, Math.min(reviveCooldownSeconds, Integer.MAX_VALUE));
+		}
+
+		private static Map<String, Double> defaultBabaTimeMultiplierPerWorld() {
+			Map<String, Double> map = new LinkedHashMap<>();
+			map.put("minecraft:overworld", 1.0);
+			map.put("minecraft:the_nether", 2.0);
+			map.put("minecraft:the_end", 3.0);
+			map.put("dragonminez:namek", 1.0);
+			map.put("dragonminez:time_chamber", 5.0);
+			map.put("dragonminez:sacredkaiplanet", 1.0);
+			return map;
+		}
+
+		public Boolean getBabaTemporaryRevive() {
+			return babaTemporaryRevive != null ? babaTemporaryRevive : true;
+		}
+
+		public Integer getBabaTempReturnSeconds() {
+			return babaTempReturnSeconds != null ? Math.max(1, babaTempReturnSeconds) : 3600;
+		}
+
+		public Double getBabaTimeMultiplier(String dimensionId) {
+			double fallback = defaultBabaTimeMultiplier != null ? Math.max(0.0, defaultBabaTimeMultiplier) : 1.0;
+			if (babaTimeMultiplierPerWorld == null) return fallback;
+			Double value = babaTimeMultiplierPerWorld.get(dimensionId);
+			return value != null ? Math.max(0.0, value) : fallback;
+		}
+
+		public Boolean getBabaHardcoreEnabled() {
+			return babaHardcoreEnabled != null ? babaHardcoreEnabled : false;
+		}
+
+		public Double getBabaHardcoreCooldownGrowth() {
+			return babaHardcoreCooldownGrowth != null ? Math.max(0, babaHardcoreCooldownGrowth) : 0.5;
+		}
+
+		public Double getOtherworldDeadTpMultiplier() {
+			return otherworldDeadTpMultiplier != null ? Math.max(1.0, otherworldDeadTpMultiplier) : 2.0;
 		}
 
 		public Boolean getForceCharacterCreation() {
@@ -187,7 +613,16 @@ public class GeneralServerConfig {
 		}
 
 		public Double getIncreaseTPGainRelativeToTPCost() {
-			return Math.max(0.0, increaseTPGainRelativeToTPCost != null ? increaseTPGainRelativeToTPCost : 0.5);
+			return Math.max(0.0, increaseTPGainRelativeToTPCost != null ? increaseTPGainRelativeToTPCost : 0.75);
+		}
+
+		public Integer getProgressionReferenceLevel() {
+			return Math.max(2, progressionReferenceLevel != null ? progressionReferenceLevel : 10000);
+		}
+
+		public Double getAttributeRewardPointRatio() {
+			double ratio = attributeRewardPointRatio != null ? attributeRewardPointRatio : 0.5;
+			return Double.isFinite(ratio) ? Math.max(0.0, Math.min(1.0, ratio)) : 0.5;
 		}
 
 		public Double getGlobalTpCostMultiplier() {
@@ -234,8 +669,28 @@ public class GeneralServerConfig {
 			return maxLevelValueInsteadOfStats != null ? maxLevelValueInsteadOfStats : true;
 		}
 
+		public Double getVitCurveKnee() {
+			return vitCurveKnee != null && Double.isFinite(vitCurveKnee) ? Math.max(1.0, vitCurveKnee) : 16000.0;
+		}
+
+		public Double getDefCurveKnee() {
+			return defCurveKnee != null && Double.isFinite(defCurveKnee) ? Math.max(1.0, defCurveKnee) : 20000.0;
+		}
+
 		public Integer getSenzuCooldownTicks() {
 			return Math.max(0, Math.min(senzuCooldownTicks, Integer.MAX_VALUE));
+		}
+
+		public boolean getLevelFormRequisiteEnabled() {
+			return levelFormRequisiteEnabled == null || levelFormRequisiteEnabled;
+		}
+
+		public boolean getSagaFormRequisiteEnabled() {
+			return sagaFormRequisiteEnabled == null || sagaFormRequisiteEnabled;
+		}
+
+		public boolean getPixelTattooPaintingEnabled() {
+			return pixelTattooPaintingEnabled == null || pixelTattooPaintingEnabled;
 		}
 
 		public Double getDefaultQuestPartyMultiplier() {
@@ -250,6 +705,42 @@ public class GeneralServerConfig {
 			return Math.max(0, Math.min(majinPower, Double.MAX_VALUE));
 		}
 
+		public Double getSacredWaterMultiplier() {
+			return sacredWaterMultiplier == null ? 1.2 : Math.max(1.0, Math.min(sacredWaterMultiplier, 100.0));
+		}
+
+		public Double getDemonEyeMultiplier() {
+			return demonEyeMultiplier == null ? 1.5 : Math.max(1.0, Math.min(demonEyeMultiplier, 100.0));
+		}
+
+		public Double getDemonEyeKiDrainPercent() {
+			return demonEyeKiDrainPercent == null ? 0.02 : Math.max(0.0, Math.min(demonEyeKiDrainPercent, 1.0));
+		}
+
+		public Double getDemonEyeHealthDrainPercent() {
+			return demonEyeHealthDrainPercent == null ? 0.02 : Math.max(0.0, Math.min(demonEyeHealthDrainPercent, 1.0));
+		}
+
+		public Integer getDemonEyeAlignmentLossIntervalSeconds() {
+			return demonEyeAlignmentLossIntervalSeconds == null ? 10 : Math.max(0, demonEyeAlignmentLossIntervalSeconds);
+		}
+
+		public Double getDemonEyeMaxGrowth() {
+			return demonEyeMaxGrowth == null ? 0.5 : Math.max(0.0, Math.min(demonEyeMaxGrowth, 10.0));
+		}
+
+		public Integer getDemonEyeGrowthSeconds() {
+			return demonEyeGrowthSeconds == null ? 300 : Math.max(0, demonEyeGrowthSeconds);
+		}
+
+		public Integer getDemonEyeBackHitsToRemove() {
+			return demonEyeBackHitsToRemove == null ? 3 : Math.max(0, demonEyeBackHitsToRemove);
+		}
+
+		public Integer getDemonEyeBackHitWindowSeconds() {
+			return demonEyeBackHitWindowSeconds == null ? 10 : Math.max(1, demonEyeBackHitWindowSeconds);
+		}
+
 		public Double getMetamoruFusionThreshold() {
 			return Math.max(0, Math.min(metamoruFusionThreshold, Double.MAX_VALUE));
 		}
@@ -260,6 +751,21 @@ public class GeneralServerConfig {
 
 		public Integer getFusionCooldownSeconds() {
 			return Math.max(0, Math.min(fusionCooldownSeconds, Integer.MAX_VALUE));
+		}
+
+		public Double getKamiBlessTpMultiplier() {
+			if (kamiBlessTpMultiplier == null) return 1.2;
+			return Math.max(1.0, kamiBlessTpMultiplier);
+		}
+
+		public Integer getKamiBlessDurationSeconds() {
+			if (kamiBlessDurationSeconds == null) return 300;
+			return Math.max(1, Math.min(kamiBlessDurationSeconds, Integer.MAX_VALUE / 20));
+		}
+
+		public Integer getKamiBlessCooldownSeconds() {
+			if (kamiBlessCooldownSeconds == null) return 1800;
+			return Math.max(0, Math.min(kamiBlessCooldownSeconds, Integer.MAX_VALUE / 20));
 		}
 
 		public Integer getPartyMaxMembers() {
@@ -288,6 +794,10 @@ public class GeneralServerConfig {
 		public Integer getInstantTransmissionPlayerRangePerLevel() {
 			if (instantTransmissionPlayerRangePerLevel == null) return 200;
 			return Math.max(0, Math.min(instantTransmissionPlayerRangePerLevel, Integer.MAX_VALUE));
+		}
+
+		public int getPartyMarkerRange() {
+			return partyMarkerRange != null ? Math.max(0, partyMarkerRange) : 2000;
 		}
 
 		public Boolean getUltimateFormFixedValue() {
@@ -329,191 +839,934 @@ public class GeneralServerConfig {
 		public Double getStoryResetTPMultiplier() {
 			return Math.min(1.0, Math.max(0.0, storyResetTPMultiplier != null ? storyResetTPMultiplier : 0.5));
 		}
+
+		public Boolean getCommandOutputOnConsole() {
+			return this.commandOutputOnConsole;
+		}
+
+		public Map<String, Double> getBabaTimeMultiplierPerWorld() {
+			return this.babaTimeMultiplierPerWorld;
+		}
+
+		public Double getDefaultBabaTimeMultiplier() {
+			return this.defaultBabaTimeMultiplier;
+		}
+
+		public Double getTpGainMultiplier() {
+			return this.tpGainMultiplier;
+		}
+
+		public Integer getMinTPCost() {
+			return this.minTPCost;
+		}
+
+		public Integer getMaxTPDiscount() {
+			return this.maxTPDiscount;
+		}
+
+		public CapsulesConfig getCapsules() {
+			return this.capsules;
+		}
+
+		public Boolean getStoryModeEnabled() {
+			return this.storyModeEnabled;
+		}
+
+		public Boolean getCreateDefaultSagas() {
+			return this.createDefaultSagas;
+		}
+
+		public Boolean getSideQuestsEnabled() {
+			return this.sideQuestsEnabled;
+		}
+
+		public Boolean getCreateDefaultSideQuests() {
+			return this.createDefaultSideQuests;
+		}
+
+		public Boolean getAutoUpdateQuests() {
+			return this.autoUpdateQuests;
+		}
+
+		public Integer getSenzuGiftCooldownTicks() {
+			return this.senzuGiftCooldownTicks;
+		}
+
+		public Integer getSenzuGiftAmount() {
+			return this.senzuGiftAmount;
+		}
+
+		public FoodConfig getFood() {
+			return this.food;
+		}
+
+		public String[] getFusionBoosts() {
+			return this.fusionBoosts;
+		}
+
+		public Boolean getMultiplicationInsteadOfAdditionForMultipliers() {
+			return this.multiplicationInsteadOfAdditionForMultipliers;
+		}
+
+		public List<String> getHelmetsThatKeepHair() {
+			return this.helmetsThatKeepHair;
+		}
+
+		public Map<TpSource, List<TpBoost>> getTpGainBoosts() {
+			return this.tpGainBoosts;
+		}
+
+		public GameplayConfig() {
+		}
 	}
 
-	@Getter
+
 	public static class CapsulesConfig {
 		private String statSeparator = ", ";
 		private Map<CapsuleType, CapsuleValues> values = new HashMap<>();
 
 		public CapsulesConfig() {
 			Arrays.stream(CapsuleType.values()).forEach(type -> {
-				values.put(
-						type,
-						new CapsuleValues(
-								type.getStatName(),
-								5
-						)
-				);
+				values.put(type, new CapsuleValues(type.getStatName(), 5));
 			});
 		}
 
 		public CapsuleValues getCapsuleValues(CapsuleType type) {
-			return values.getOrDefault(
-					type,
-					new CapsuleValues(
-							type.getStatName(),
-							type.getStatPoints()
-					)
-			);
+			return values.getOrDefault(type, new CapsuleValues(type.getStatName(), type.getStatPoints()));
+		}
+
+		public String getStatSeparator() {
+			return this.statSeparator;
+		}
+
+		public Map<CapsuleType, CapsuleValues> getValues() {
+			return this.values;
 		}
 	}
 
-	@Getter
-	@AllArgsConstructor
-	@NoArgsConstructor
+
 	public static class CapsuleValues {
 		private String stats;
 		private Integer points;
+
+		public String getStats() {
+			return this.stats;
+		}
+
+		public Integer getPoints() {
+			return this.points;
+		}
+
+		public CapsuleValues(final String stats, final Integer points) {
+			this.stats = stats;
+			this.points = points;
+		}
+
+		public CapsuleValues() {
+		}
 	}
 
-	@Getter
-	@NoArgsConstructor
+
 	public static class FoodConfig {
 		private Integer minHungerPoints = 2;
 		private Integer maxHungerPoints = 20;
-
-		private Float minSaturationPoints = 0.4f;
-		private Float maxSaturationPoints = 2.0f;
-
-		private Float healthPercentageRecoveredPerHungerPoint = 0.01f;
-		private Float kiPercentageRecoveredPerHungerPoint = 0.01f;
-		private Float staminaPercentageRecoveredPerHungerPoint = 0.02f;
-
-		private Float healthPercentageRecoveredPerSaturationPoint = 0.001f;
-		private Float kiPercentageRecoveredPerSaturationPoint = 0.001f;
-		private Float staminaPercentageRecoveredPerSaturationPoint = 0.004f;
-
+		private Float minSaturationPoints = 0.4F;
+		private Float maxSaturationPoints = 2.0F;
+		private Float healthPercentageRecoveredPerHungerPoint = 0.01F;
+		private Float kiPercentageRecoveredPerHungerPoint = 0.01F;
+		private Float staminaPercentageRecoveredPerHungerPoint = 0.02F;
+		private Float healthPercentageRecoveredPerSaturationPoint = 0.001F;
+		private Float kiPercentageRecoveredPerSaturationPoint = 0.001F;
+		private Float staminaPercentageRecoveredPerSaturationPoint = 0.004F;
 		private List<String> blacklistedNamespaces = new ArrayList<>();
 		private List<String> blacklistedItems = new ArrayList<>();
+
+		public Integer getMinHungerPoints() {
+			return this.minHungerPoints;
+		}
+
+		public Integer getMaxHungerPoints() {
+			return this.maxHungerPoints;
+		}
+
+		public Float getMinSaturationPoints() {
+			return this.minSaturationPoints;
+		}
+
+		public Float getMaxSaturationPoints() {
+			return this.maxSaturationPoints;
+		}
+
+		public Float getHealthPercentageRecoveredPerHungerPoint() {
+			return this.healthPercentageRecoveredPerHungerPoint;
+		}
+
+		public Float getKiPercentageRecoveredPerHungerPoint() {
+			return this.kiPercentageRecoveredPerHungerPoint;
+		}
+
+		public Float getStaminaPercentageRecoveredPerHungerPoint() {
+			return this.staminaPercentageRecoveredPerHungerPoint;
+		}
+
+		public Float getHealthPercentageRecoveredPerSaturationPoint() {
+			return this.healthPercentageRecoveredPerSaturationPoint;
+		}
+
+		public Float getKiPercentageRecoveredPerSaturationPoint() {
+			return this.kiPercentageRecoveredPerSaturationPoint;
+		}
+
+		public Float getStaminaPercentageRecoveredPerSaturationPoint() {
+			return this.staminaPercentageRecoveredPerSaturationPoint;
+		}
+
+		public List<String> getBlacklistedNamespaces() {
+			return this.blacklistedNamespaces;
+		}
+
+		public List<String> getBlacklistedItems() {
+			return this.blacklistedItems;
+		}
+
+		public FoodConfig() {
+		}
 	}
 
-	@Getter
-	@NoArgsConstructor
+
+	public static class SaiyanRacialConfig {
+		private Boolean enabled = true;
+		private Integer minLevel = 100;
+		private Integer cooldownSeconds = 900;
+		private Integer knockoutSeconds = 10;
+		private Double knockoutHealthRegen = 0.4;
+		private Double knockoutStaminaRegen = 0.8;
+		private Double knockoutEnergyRegen = 0.8;
+		private Double overkillThreshold = 1.0;
+		private Integer peakWindowSeconds = 10;
+		private Double maxBuffHitRatio = 0.25;
+		private Double minBuffPct = 0.01;
+		private Double maxBuffPct = 0.1;
+		private Integer permanentMaxBuffs = 3;
+		private Integer tempBuffMinSeconds = 120;
+		private Integer tempBuffMaxSeconds = 240;
+		private Double releaseBonusPerZenkai = 0.05;
+		private Double releaseBonusCap = 0.15;
+		private String[] buffStats = {"STR", "SKP", "PWR"};
+
+		public Integer getMinLevel() {
+			return Math.max(0, Math.min(minLevel != null ? minLevel : 100, Integer.MAX_VALUE));
+		}
+
+		public Integer getCooldownSeconds() {
+			return Math.max(0, Math.min(cooldownSeconds, Integer.MAX_VALUE));
+		}
+
+		public Integer getPermanentMaxBuffs() {
+			return Math.max(0, Math.min(permanentMaxBuffs, Integer.MAX_VALUE));
+		}
+
+		public Boolean getEnabled() {
+			return this.enabled;
+		}
+
+		public Integer getKnockoutSeconds() {
+			return this.knockoutSeconds;
+		}
+
+		public Double getKnockoutHealthRegen() {
+			return this.knockoutHealthRegen;
+		}
+
+		public Double getKnockoutStaminaRegen() {
+			return this.knockoutStaminaRegen;
+		}
+
+		public Double getKnockoutEnergyRegen() {
+			return this.knockoutEnergyRegen;
+		}
+
+		public Double getOverkillThreshold() {
+			return this.overkillThreshold;
+		}
+
+		public Integer getPeakWindowSeconds() {
+			return this.peakWindowSeconds;
+		}
+
+		public Double getMaxBuffHitRatio() {
+			return this.maxBuffHitRatio;
+		}
+
+		public Double getMinBuffPct() {
+			return this.minBuffPct;
+		}
+
+		public Double getMaxBuffPct() {
+			return this.maxBuffPct;
+		}
+
+		public Integer getTempBuffMinSeconds() {
+			return this.tempBuffMinSeconds;
+		}
+
+		public Integer getTempBuffMaxSeconds() {
+			return this.tempBuffMaxSeconds;
+		}
+
+		public Double getReleaseBonusPerZenkai() {
+			return this.releaseBonusPerZenkai;
+		}
+
+		public Double getReleaseBonusCap() {
+			return this.releaseBonusCap;
+		}
+
+		public String[] getBuffStats() {
+			return this.buffStats;
+		}
+
+		public SaiyanRacialConfig() {
+		}
+	}
+
+
+	@RemovedConfigKeys({"foodExhaustionReduction"})
+	public static class NamekianRacialConfig {
+		private Boolean enabled = true;
+		private Integer assimilationAmount = 4;
+		private Integer assimilationCooldownSeconds = 600;
+		private Double assimilationHealthRegen = 0.35;
+		private Double assimilationStatBoost = 0.075;
+		private String[] assimilationBoosts = {"STR", "SKP", "PWR"};
+		private Boolean assimilationOnNamekNpcs = true;
+		private Integer assimilationRequestTimeoutSeconds = 30;
+		private Integer regenChannelSeconds = 3;
+		private Double regenHealthRatio = 0.25;
+		private Double regenEnergyCost = 0.3;
+		private Double regenStaminaCost = 0.2;
+		private Integer regenCooldownSeconds = 45;
+		private Double waterRegenBonus = 0.25;
+		private Integer waterRegenSeconds = 5;
+
+		public Integer getAssimilationAmount() {
+			return Math.max(0, Math.min(assimilationAmount, Integer.MAX_VALUE));
+		}
+
+		public Double getAssimilationHealthRegen() {
+			return Math.max(0, Math.min(assimilationHealthRegen, Double.MAX_VALUE));
+		}
+
+		public Double getAssimilationStatBoost() {
+			return Math.max(0, Math.min(assimilationStatBoost, Double.MAX_VALUE));
+		}
+
+		public Boolean getEnabled() {
+			return this.enabled;
+		}
+
+		public Integer getAssimilationCooldownSeconds() {
+			return this.assimilationCooldownSeconds;
+		}
+
+		public String[] getAssimilationBoosts() {
+			return this.assimilationBoosts;
+		}
+
+		public Boolean getAssimilationOnNamekNpcs() {
+			return this.assimilationOnNamekNpcs;
+		}
+
+		public Integer getAssimilationRequestTimeoutSeconds() {
+			return this.assimilationRequestTimeoutSeconds;
+		}
+
+		public Integer getRegenChannelSeconds() {
+			return this.regenChannelSeconds;
+		}
+
+		public Double getRegenHealthRatio() {
+			return this.regenHealthRatio;
+		}
+
+		public Double getRegenEnergyCost() {
+			return this.regenEnergyCost;
+		}
+
+		public Double getRegenStaminaCost() {
+			return this.regenStaminaCost;
+		}
+
+		public Integer getRegenCooldownSeconds() {
+			return this.regenCooldownSeconds;
+		}
+
+		public Double getWaterRegenBonus() {
+			return this.waterRegenBonus;
+		}
+
+		public Integer getWaterRegenSeconds() {
+			return this.waterRegenSeconds;
+		}
+
+		public NamekianRacialConfig() {
+		}
+	}
+
+
+	public static class MajinRacialConfig {
+		private Boolean enabled = true;
+		private Integer absorptionAmount = 3;
+		private Integer absorptionCooldownSeconds = 600;
+		private Double absorptionHealthRegen = 0.3;
+		private Double absorptionStatCopy = 0.04;
+		private String[] absorptionBoosts = {"STR", "SKP", "PWR"};
+		private Boolean absorptionOnMobs = true;
+		private Integer slotEjectCooldownSeconds = 300;
+		private Double foodHealBonus = 0.25;
+		private Double kiHealReceivedBonus = 0.25;
+		private Double kiHealDealtBonus = 0.25;
+		private Double healTechniqueCooldownReduction = 0.1;
+		private Double healTechniqueCostReduction = 0.1;
+
+		public Integer getAbsorptionAmount() {
+			return Math.max(0, Math.min(absorptionAmount, Integer.MAX_VALUE));
+		}
+
+		public Double getAbsorptionHealthRegen() {
+			return Math.max(0, Math.min(absorptionHealthRegen, Double.MAX_VALUE));
+		}
+
+		public Double getAbsorptionStatCopy() {
+			return Math.max(0, Math.min(absorptionStatCopy, Double.MAX_VALUE));
+		}
+
+		public Boolean getEnabled() {
+			return this.enabled;
+		}
+
+		public Integer getAbsorptionCooldownSeconds() {
+			return this.absorptionCooldownSeconds;
+		}
+
+		public String[] getAbsorptionBoosts() {
+			return this.absorptionBoosts;
+		}
+
+		public Boolean getAbsorptionOnMobs() {
+			return this.absorptionOnMobs;
+		}
+
+		public Integer getSlotEjectCooldownSeconds() {
+			return this.slotEjectCooldownSeconds;
+		}
+
+		public Double getFoodHealBonus() {
+			return this.foodHealBonus;
+		}
+
+		public Double getKiHealReceivedBonus() {
+			return this.kiHealReceivedBonus;
+		}
+
+		public Double getKiHealDealtBonus() {
+			return this.kiHealDealtBonus;
+		}
+
+		public Double getHealTechniqueCooldownReduction() {
+			return this.healTechniqueCooldownReduction;
+		}
+
+		public Double getHealTechniqueCostReduction() {
+			return this.healTechniqueCostReduction;
+		}
+
+		public MajinRacialConfig() {
+		}
+	}
+
+
+	public static class HumanRacialConfig {
+		private Boolean enabled = true;
+		private Double techniqueXpBonus = 0.35;
+		private Double adrenalineThreshold = 0.25;
+		private Integer adrenalineSeconds = 15;
+		private Double adrenalineDamageReduction = 0.3;
+		private Double adrenalineAttackSpeed = 0.25;
+		private Double adrenalineMoveSpeed = 0.25;
+		private Integer adrenalineCooldownSeconds = 180;
+		private Boolean androidBarrierEnabled = true;
+		private Integer androidBarrierMaxSeconds = 10;
+		private Integer androidBarrierCooldownSeconds = 30;
+		private Integer androidBarrierBrokenCooldownSeconds = 180;
+		private Double androidBarrierKiConversion = 0.5;
+		private Double androidBarrierSurgeOverflow = 0.5;
+		private Double androidBarrierBreakOverflow = 0.75;
+		private Double androidBarrierSize = 2.6;
+		private Double androidKiRegenMultiplier = 2.0;
+
+		public double getAndroidKiRegenMultiplier() {
+			return androidKiRegenMultiplier == null ? 2.0 : Math.max(0.0, androidKiRegenMultiplier);
+		}
+
+		public Boolean getEnabled() {
+			return this.enabled;
+		}
+
+		public Double getTechniqueXpBonus() {
+			return this.techniqueXpBonus;
+		}
+
+		public Double getAdrenalineThreshold() {
+			return this.adrenalineThreshold;
+		}
+
+		public Integer getAdrenalineSeconds() {
+			return this.adrenalineSeconds;
+		}
+
+		public Double getAdrenalineDamageReduction() {
+			return this.adrenalineDamageReduction;
+		}
+
+		public Double getAdrenalineAttackSpeed() {
+			return this.adrenalineAttackSpeed;
+		}
+
+		public Double getAdrenalineMoveSpeed() {
+			return this.adrenalineMoveSpeed;
+		}
+
+		public Integer getAdrenalineCooldownSeconds() {
+			return this.adrenalineCooldownSeconds;
+		}
+
+		public Boolean getAndroidBarrierEnabled() {
+			return this.androidBarrierEnabled;
+		}
+
+		public Integer getAndroidBarrierMaxSeconds() {
+			return this.androidBarrierMaxSeconds;
+		}
+
+		public Integer getAndroidBarrierCooldownSeconds() {
+			return this.androidBarrierCooldownSeconds;
+		}
+
+		public Integer getAndroidBarrierBrokenCooldownSeconds() {
+			return this.androidBarrierBrokenCooldownSeconds;
+		}
+
+		public Double getAndroidBarrierKiConversion() {
+			return this.androidBarrierKiConversion;
+		}
+
+		public Double getAndroidBarrierSurgeOverflow() {
+			return this.androidBarrierSurgeOverflow;
+		}
+
+		public Double getAndroidBarrierBreakOverflow() {
+			return this.androidBarrierBreakOverflow;
+		}
+
+		public Double getAndroidBarrierSize() {
+			return this.androidBarrierSize;
+		}
+
+		public HumanRacialConfig() {
+		}
+	}
+
+
+	public static class FrostDemonRacialConfig {
+		private Boolean enabled = true;
+		private Double tpBoost = 1.25;
+		private Double masteryGainBonus = 0.25;
+		private Double kiTechniqueResistance = 0.125;
+		private Double strikeTechniqueResistance = 0.05;
+		private Integer reserveChargeReleaseThreshold = 25;
+		private Double reserveMaxRatio = 0.5;
+		private Integer reserveFullChargeSeconds = 30;
+		private Integer reserveDurationSeconds = 10;
+		private Double reserveFormBonus = 0.15;
+		private String[] reserveChargeForms = {"second", "third", "final"};
+
+		public Double getTpBoost() {
+			return Math.max(1, Math.min(tpBoost, Double.MAX_VALUE));
+		}
+
+		public Integer getReserveFullChargeSeconds() {
+			return Math.max(1, reserveFullChargeSeconds);
+		}
+
+		public Integer getReserveDurationSeconds() {
+			return Math.max(1, reserveDurationSeconds);
+		}
+
+		public Boolean getEnabled() {
+			return this.enabled;
+		}
+
+		public Double getMasteryGainBonus() {
+			return this.masteryGainBonus;
+		}
+
+		public Double getKiTechniqueResistance() {
+			return this.kiTechniqueResistance;
+		}
+
+		public Double getStrikeTechniqueResistance() {
+			return this.strikeTechniqueResistance;
+		}
+
+		public Integer getReserveChargeReleaseThreshold() {
+			return this.reserveChargeReleaseThreshold;
+		}
+
+		public Double getReserveMaxRatio() {
+			return this.reserveMaxRatio;
+		}
+
+		public Double getReserveFormBonus() {
+			return this.reserveFormBonus;
+		}
+
+		public String[] getReserveChargeForms() {
+			return this.reserveChargeForms;
+		}
+
+		public FrostDemonRacialConfig() {
+		}
+	}
+
+
+	public static class GlindRacialConfig {
+		private Boolean enabled = true;
+		private Boolean divineKi = true;
+		private Double meditationDodgeMultiplier = 1.5;
+		private Double regenMultiplier = 1.25;
+		private Double healingReductionBase = 0.2;
+		private Double healingReductionStackEfficiency = 0.5;
+		private Integer evilAttackerMaxAlignment = 25;
+		private Integer goodTargetMinAlignment = 60;
+		private Integer goodAttackerMinAlignment = 75;
+		private Integer evilTargetMaxAlignment = 40;
+		private Double playerDamageBonus = 0.1;
+		private Double frostDemonDamageBonus = 0.15;
+		private Double majinDamageBonus = 0.05;
+		private Double npcDamageBonus = 0.075;
+
+		public Double getMeditationDodgeMultiplier() {
+			return Math.max(0, Math.min(meditationDodgeMultiplier, Double.MAX_VALUE));
+		}
+
+		public Double getRegenMultiplier() {
+			return Math.max(0, Math.min(regenMultiplier, Double.MAX_VALUE));
+		}
+
+		public Double getHealingReductionBase() {
+			return Math.max(0, Math.min(healingReductionBase, 1.0));
+		}
+
+		public Double getHealingReductionStackEfficiency() {
+			return Math.max(0, Math.min(healingReductionStackEfficiency, Double.MAX_VALUE));
+		}
+
+		public Double getPlayerDamageBonus() {
+			return Math.max(0, Math.min(playerDamageBonus, Double.MAX_VALUE));
+		}
+
+		public Double getFrostDemonDamageBonus() {
+			return Math.max(0, Math.min(frostDemonDamageBonus, Double.MAX_VALUE));
+		}
+
+		public Double getMajinDamageBonus() {
+			return Math.max(0, Math.min(majinDamageBonus, Double.MAX_VALUE));
+		}
+
+		public Double getNpcDamageBonus() {
+			return Math.max(0, Math.min(npcDamageBonus, Double.MAX_VALUE));
+		}
+
+		public Boolean getEnabled() {
+			return this.enabled;
+		}
+
+		public Boolean getDivineKi() {
+			return this.divineKi;
+		}
+
+		public Integer getEvilAttackerMaxAlignment() {
+			return this.evilAttackerMaxAlignment;
+		}
+
+		public Integer getGoodTargetMinAlignment() {
+			return this.goodTargetMinAlignment;
+		}
+
+		public Integer getGoodAttackerMinAlignment() {
+			return this.goodAttackerMinAlignment;
+		}
+
+		public Integer getEvilTargetMaxAlignment() {
+			return this.evilTargetMaxAlignment;
+		}
+
+		public GlindRacialConfig() {
+		}
+	}
+
+
+	public static class BioAndroidRacialConfig {
+		private Boolean enabled = true;
+		private Integer cooldownSeconds = 180;
+		private Double drainRatio = 0.25;
+		private Double drainTpRatio = 0.5;
+		private Integer explodeChargeSeconds = 5;
+		private Integer explodeRevertSeconds = 4;
+		private Double explodeDamageRatio = 5.0;
+		private Integer explodeRadius = 36;
+		private Boolean explodeKillsUser = false;
+		private Integer explodeKnockdownSeconds = 30;
+		private Integer explodeCooldownSeconds = 600;
+		private Integer cellJrMax = 3;
+		private Double cellJrStatRatio = 0.2;
+		private Double cellJrOwnerPenalty = 0.1;
+		private Integer cellJrChargeCooldownSeconds = 240;
+		private Integer cellJrLeashRange = 64;
+		private Integer cellJrGlobalCap = 30;
+
+		public Integer getCooldownSeconds() {
+			return Math.max(0, Math.min(cooldownSeconds, Integer.MAX_VALUE));
+		}
+
+		public Double getDrainRatio() {
+			return Math.max(0, Math.min(drainRatio, Double.MAX_VALUE));
+		}
+
+		public Boolean getEnabled() {
+			return this.enabled;
+		}
+
+		public Double getDrainTpRatio() {
+			return this.drainTpRatio;
+		}
+
+		public Integer getExplodeChargeSeconds() {
+			return this.explodeChargeSeconds;
+		}
+
+		public Integer getExplodeRevertSeconds() {
+			return this.explodeRevertSeconds;
+		}
+
+		public Double getExplodeDamageRatio() {
+			return this.explodeDamageRatio;
+		}
+
+		public Integer getExplodeRadius() {
+			return this.explodeRadius;
+		}
+
+		public Boolean getExplodeKillsUser() {
+			return this.explodeKillsUser;
+		}
+
+		public Integer getExplodeKnockdownSeconds() {
+			return this.explodeKnockdownSeconds;
+		}
+
+		public Integer getExplodeCooldownSeconds() {
+			return this.explodeCooldownSeconds;
+		}
+
+		public Integer getCellJrMax() {
+			return this.cellJrMax;
+		}
+
+		public Double getCellJrStatRatio() {
+			return this.cellJrStatRatio;
+		}
+
+		public Double getCellJrOwnerPenalty() {
+			return this.cellJrOwnerPenalty;
+		}
+
+		public Integer getCellJrChargeCooldownSeconds() {
+			return this.cellJrChargeCooldownSeconds;
+		}
+
+		public Integer getCellJrLeashRange() {
+			return this.cellJrLeashRange;
+		}
+
+		public Integer getCellJrGlobalCap() {
+			return this.cellJrGlobalCap;
+		}
+
+		public BioAndroidRacialConfig() {
+		}
+	}
+
+
 	public static class RacialSkillsConfig {
 		private Boolean enableRacialSkills = true;
-		private Boolean humanRacialSkill = true;
-		private Double humanKiRegenBoost = 1.40;
-		private Boolean saiyanRacialSkill = true;
-		private Integer saiyanZenkaiMinLevel = 100;
-		private Integer saiyanZenkaiAmount = 3;
-		private Double saiyanZenkaiHealthRegen = 0.20;
-		private Double saiyanZenkaiStatBoost = 0.075;
-		private String[] saiyanZenkaiBoosts = {"STR", "SKP", "PWR"};
-		private Integer saiyanZenkaiCooldownSeconds = 900;
-		private Boolean namekianRacialSkill = true;
-		private Integer namekianAssimilationAmount = 4;
-		private Double namekianAssimilationHealthRegen = 0.35;
-		private Double namekianAssimilationStatBoost = 0.075;
-		private String[] namekianAssimilationBoosts = {"STR", "SKP", "PWR"};
-		private Boolean namekianAssimilationOnNamekNpcs = true;
-		private Boolean frostDemonRacialSkill = true;
-		private Double frostDemonTPBoost = 1.25;
-		private Boolean bioAndroidRacialSkill = true;
-		private Integer bioAndroidCooldownSeconds = 180;
-		private Double bioAndroidDrainRatio = 0.25;
-		private Boolean majinAbsoprtionSkill = true;
-		private Boolean majinReviveSkill = true;
-		private Integer majinAbsorptionAmount = 3;
-		private Double majinAbsorptionHealthRegen = 0.30;
-		private Double majinAbsorptionStatsCopy = 0.04;
-		private String[] majinAbsorptionBoosts = {"STR", "SKP", "PWR"};
-		private Boolean majinAbsorptionOnMobs = true;
-		private Integer majinReviveCooldownSeconds = 3600;
-		private Double majinReviveHealthRatioPerBlop = 0.25;
+		private SaiyanRacialConfig saiyan = new SaiyanRacialConfig();
+		private NamekianRacialConfig namekian = new NamekianRacialConfig();
+		private MajinRacialConfig majin = new MajinRacialConfig();
+		private HumanRacialConfig human = new HumanRacialConfig();
+		private FrostDemonRacialConfig frostdemon = new FrostDemonRacialConfig();
+		private BioAndroidRacialConfig bioandroid = new BioAndroidRacialConfig();
+		private GlindRacialConfig glind = new GlindRacialConfig();
 
-		public Double getHumanKiRegenBoost() {
-			return Math.max(0, Math.min(humanKiRegenBoost, Double.MAX_VALUE));
+		public Boolean getHumanRacialSkill() {
+			return human.getEnabled();
+		}
+
+		public Boolean getSaiyanRacialSkill() {
+			return saiyan.getEnabled();
 		}
 
 		public Integer getSaiyanZenkaiMinLevel() {
-			return Math.max(0, Math.min(saiyanZenkaiMinLevel != null ? saiyanZenkaiMinLevel : 100, Integer.MAX_VALUE));
+			return saiyan.getMinLevel();
 		}
 
 		public Integer getSaiyanZenkaiAmount() {
-			return Math.max(0, Math.min(saiyanZenkaiAmount, Integer.MAX_VALUE));
+			return saiyan.getPermanentMaxBuffs();
 		}
 
-		public Double getSaiyanZenkaiHealthRegen() {
-			return Math.max(0, Math.min(saiyanZenkaiHealthRegen, Double.MAX_VALUE));
-		}
-
-		public Double getSaiyanZenkaiStatBoost() {
-			return Math.max(0, Math.min(saiyanZenkaiStatBoost, Double.MAX_VALUE));
+		public String[] getSaiyanZenkaiBoosts() {
+			return saiyan.getBuffStats();
 		}
 
 		public Integer getSaiyanZenkaiCooldownSeconds() {
-			return Math.max(0, Math.min(saiyanZenkaiCooldownSeconds, Integer.MAX_VALUE));
+			return saiyan.getCooldownSeconds();
+		}
+
+		public Boolean getNamekianRacialSkill() {
+			return namekian.getEnabled();
 		}
 
 		public Integer getNamekianAssimilationAmount() {
-			return Math.max(0, Math.min(namekianAssimilationAmount, Integer.MAX_VALUE));
+			return namekian.getAssimilationAmount();
 		}
 
 		public Double getNamekianAssimilationHealthRegen() {
-			return Math.max(0, Math.min(namekianAssimilationHealthRegen, Double.MAX_VALUE));
+			return namekian.getAssimilationHealthRegen();
 		}
 
 		public Double getNamekianAssimilationStatBoost() {
-			return Math.max(0, Math.min(namekianAssimilationStatBoost, Double.MAX_VALUE));
+			return namekian.getAssimilationStatBoost();
+		}
+
+		public String[] getNamekianAssimilationBoosts() {
+			return namekian.getAssimilationBoosts();
+		}
+
+		public Boolean getNamekianAssimilationOnNamekNpcs() {
+			return namekian.getAssimilationOnNamekNpcs();
+		}
+
+		public Boolean getFrostDemonRacialSkill() {
+			return frostdemon.getEnabled();
 		}
 
 		public Double getFrostDemonTPBoost() {
-			return Math.max(1, Math.min(frostDemonTPBoost, Double.MAX_VALUE));
+			return frostdemon.getTpBoost();
+		}
+
+		public Boolean getBioAndroidRacialSkill() {
+			return bioandroid.getEnabled();
 		}
 
 		public Integer getBioAndroidCooldownSeconds() {
-			return Math.max(0, Math.min(bioAndroidCooldownSeconds, Integer.MAX_VALUE));
+			return bioandroid.getCooldownSeconds();
 		}
 
 		public Double getBioAndroidDrainRatio() {
-			return Math.max(0, Math.min(bioAndroidDrainRatio, Double.MAX_VALUE));
+			return bioandroid.getDrainRatio();
+		}
+
+		public Boolean getMajinAbsoprtionSkill() {
+			return majin.getEnabled();
 		}
 
 		public Integer getMajinAbsorptionAmount() {
-			return Math.max(0, Math.min(majinAbsorptionAmount, Integer.MAX_VALUE));
+			return majin.getAbsorptionAmount();
 		}
 
 		public Double getMajinAbsorptionHealthRegen() {
-			return Math.max(0, Math.min(majinAbsorptionHealthRegen, Double.MAX_VALUE));
+			return majin.getAbsorptionHealthRegen();
 		}
 
 		public Double getMajinAbsorptionStatCopy() {
-			return Math.max(0, Math.min(majinAbsorptionStatsCopy, Double.MAX_VALUE));
+			return majin.getAbsorptionStatCopy();
 		}
 
-		public Integer getMajinReviveCooldownSeconds() {
-			return Math.max(0, Math.min(majinReviveCooldownSeconds, Integer.MAX_VALUE));
+		public String[] getMajinAbsorptionBoosts() {
+			return majin.getAbsorptionBoosts();
 		}
 
-		public Double getMajinReviveHealthRatioPerBlop() {
-			return Math.max(0, Math.min(majinReviveHealthRatioPerBlop, Double.MAX_VALUE));
+		public Boolean getMajinAbsorptionOnMobs() {
+			return majin.getAbsorptionOnMobs();
+		}
+
+		public Boolean getEnableRacialSkills() {
+			return this.enableRacialSkills;
+		}
+
+		public SaiyanRacialConfig getSaiyan() {
+			return this.saiyan;
+		}
+
+		public NamekianRacialConfig getNamekian() {
+			return this.namekian;
+		}
+
+		public MajinRacialConfig getMajin() {
+			return this.majin;
+		}
+
+		public HumanRacialConfig getHuman() {
+			return this.human;
+		}
+
+		public FrostDemonRacialConfig getFrostdemon() {
+			return this.frostdemon;
+		}
+
+		public BioAndroidRacialConfig getBioandroid() {
+			return this.bioandroid;
+		}
+
+		public GlindRacialConfig getGlind() {
+			return this.glind;
+		}
+
+		public RacialSkillsConfig() {
 		}
 	}
 
-	@Getter
-	@NoArgsConstructor
+
+	@RemovedConfigKeys({"debugChat"})
 	public static class DynamicGrowthConfig {
 		private Boolean enabled = true;
-		private Boolean debugChat = false;
+		private Boolean growthStatsCountForTpCost = false;
 		private Boolean practiceCurveEnabled = true;
 		private Double practiceXpMultiplier = 2.0;
-
 		private Double strPracticeMultiplier = 1.0;
 		private Double skpPracticeMultiplier = 1.0;
 		private Double resPracticeMultiplier = 1.5;
 		private Double vitPracticeMultiplier = 0.5;
 		private Double pwrPracticeMultiplier = 1.0;
 		private Double enePracticeMultiplier = 1.5;
-
 		private Double staminaSpentXpRatio = 0.1;
 		private Double energySpentXpRatio = 0.1;
 		private Double kiWeaponMeleePwrShare = 0.25;
-
+		private Double linkedStatXpShare = 0.5;
 		private Double naturalCombatTpMultiplier = 1.0;
 		private Boolean manualTpPurchasesEnabled = true;
 		private Double attributeTpCostMultiplier = 1.0;
-
 		private Double passiveAnimalPracticeMultiplier = 0.5;
 		private Double villagerPracticeMultiplier = 0.1;
 		private Double lowDamagePracticeMultiplier = 0.2;
@@ -527,6 +1780,10 @@ public class GeneralServerConfig {
 
 		public Boolean isEnabled() {
 			return enabled != null ? enabled : true;
+		}
+
+		public Boolean isGrowthStatsCountForTpCost() {
+			return growthStatsCountForTpCost != null && growthStatsCountForTpCost;
 		}
 
 		public Boolean isPracticeCurveEnabled() {
@@ -559,6 +1816,10 @@ public class GeneralServerConfig {
 
 		public Double getKiWeaponMeleePwrShare() {
 			return clampNonNeg(kiWeaponMeleePwrShare, 0.25);
+		}
+
+		public Double getLinkedStatXpShare() {
+			return clampNonNeg(linkedStatXpShare, 0.5);
 		}
 
 		public Double getNaturalCombatTpMultiplier() {
@@ -617,13 +1878,56 @@ public class GeneralServerConfig {
 			if (value == null) return fallback;
 			return Math.max(0.0, value);
 		}
+
+		public Boolean getEnabled() {
+			return this.enabled;
+		}
+
+		public Boolean getGrowthStatsCountForTpCost() {
+			return this.growthStatsCountForTpCost;
+		}
+
+		public Boolean getPracticeCurveEnabled() {
+			return this.practiceCurveEnabled;
+		}
+
+		public Double getStrPracticeMultiplier() {
+			return this.strPracticeMultiplier;
+		}
+
+		public Double getSkpPracticeMultiplier() {
+			return this.skpPracticeMultiplier;
+		}
+
+		public Double getResPracticeMultiplier() {
+			return this.resPracticeMultiplier;
+		}
+
+		public Double getVitPracticeMultiplier() {
+			return this.vitPracticeMultiplier;
+		}
+
+		public Double getPwrPracticeMultiplier() {
+			return this.pwrPracticeMultiplier;
+		}
+
+		public Double getEnePracticeMultiplier() {
+			return this.enePracticeMultiplier;
+		}
+
+		public Boolean getManualTpPurchasesEnabled() {
+			return this.manualTpPurchasesEnabled;
+		}
+
+		public DynamicGrowthConfig() {
+		}
 	}
 
-	@Getter
-	@NoArgsConstructor
+
 	public static class StorageConfig {
+
 		public enum StorageType {
-			NBT, JSON, DATABASE
+			NBT, JSON, DATABASE;
 		}
 
 		private StorageType storageType = StorageType.NBT;
@@ -633,7 +1937,6 @@ public class GeneralServerConfig {
 		private String table = "player_data";
 		private String username = "root";
 		private String password = "password";
-
 		private Integer poolSize = 10;
 		private Integer threadPoolSize = 4;
 
@@ -644,10 +1947,41 @@ public class GeneralServerConfig {
 		public Integer getThreadPoolSize() {
 			return Math.max(1, threadPoolSize);
 		}
+
+		public StorageType getStorageType() {
+			return this.storageType;
+		}
+
+		public String getHost() {
+			return this.host;
+		}
+
+		public Integer getPort() {
+			return this.port;
+		}
+
+		public String getDatabase() {
+			return this.database;
+		}
+
+		public String getTable() {
+			return this.table;
+		}
+
+		public String getUsername() {
+			return this.username;
+		}
+
+		public String getPassword() {
+			return this.password;
+		}
+
+		public StorageConfig() {
+		}
 	}
 
-	@Getter
-	@NoArgsConstructor
+
+	@RemovedConfigKeys({"tpCurveWidth"})
 	public static class GravityConfig {
 		private Boolean enabled = true;
 		private Map<String, Double> gravityPerWorld = defaultGravityPerWorld();
@@ -655,33 +1989,26 @@ public class GeneralServerConfig {
 		private Double npcGravityValue = 10.0;
 		private Double npcGravityRange = 100.0;
 		private Boolean machineGravityEnabled = true;
-
 		private Double resistanceStatDivisorRatio = 0.9;
 		private Double resistanceScale = 100.0;
-
 		private Boolean statReductionEnabled = true;
 		private String[] affectedStats = {"STR", "SKP", "PWR", "DEF", "STM"};
 		private Double statReductionPerGravity = 0.01;
 		private Double minStatReduction = 0.0;
 		private Double maxStatReduction = 0.9;
-
 		private Double hardStopThreshold = 75.0;
 		private Double maxMovementPenalty = 0.95;
 		private Double maxAttackPenalty = 0.9;
 		private Double penaltyCurveFactor = 1.6;
-
 		private Boolean physicalEnabled = true;
 		private Double maxJumpPenalty = 0.95;
 		private Double extraFallPerGravity = 0.02;
 		private Double maxExtraFall = 0.6;
 		private Double maxFlyPenalty = 0.95;
-
 		private Boolean tpEnabled = true;
 		private Double tpPeakMultiplier = 2.0;
-		private Double tpCurveWidth = 7.0;
 		private Double tpGravityBonusPerGravity = 0.025;
 		private Double masteryBonusPerGravity = 0.0025;
-
 		private Double tpIdealBaseDivisor = 2.0;
 		private Double gravitySensitivity = 1.0;
 		private Double tpComfortRatioLow = 0.5;
@@ -692,19 +2019,16 @@ public class GeneralServerConfig {
 		private Double tpComfortMultiplier = 1.5;
 		private Double tpHeavyMultiplier = 2.5;
 		private Double maxWeightPenalty = 0.6;
-
+		private Double maxWeightRequested = 100000.0;
 		private Double gravityRoomMk2Relief = 0.5;
 		private Double gravityRoomMk2Falloff = 3.0;
 		private Double gravityRoomMk3Relief = 0.8;
 		private Double gravityRoomMk3Falloff = 1.5;
-
 		private Double loadDrainComfort = 1.15;
 		private Double loadDrainIdeal = 1.3;
 		private Double loadDrainHeavy = 1.5;
 		private Double loadDrainOverload = 2.0;
-
 		private Double consumptionPerGravity = 0.04;
-
 		private Integer deviceMinRoomSize = 5;
 		private Integer deviceMaxRoomSize = 25;
 		private Integer deviceMaxGravity = 1000;
@@ -764,7 +2088,7 @@ public class GeneralServerConfig {
 		}
 
 		public String[] getAffectedStats() {
-			return affectedStats != null ? affectedStats : new String[]{"STR", "SKP", "PWR", "DEF", "STM"};
+			return affectedStats != null ? affectedStats : new String[] {"STR", "SKP", "PWR", "DEF", "STM"};
 		}
 
 		public Double getStatReductionPerGravity() {
@@ -829,12 +2153,8 @@ public class GeneralServerConfig {
 			return clampNonNeg(tpPeakMultiplier, 2.0);
 		}
 
-		public Double getTpCurveWidth() {
-			return Math.max(0.0001, tpCurveWidth != null ? tpCurveWidth : 7.0);
-		}
-
 		public Double getTpIdealBaseDivisor() {
-			return Math.max(0.0001, tpIdealBaseDivisor != null ? tpIdealBaseDivisor : 2.0);
+			return Math.max(1.0E-4, tpIdealBaseDivisor != null ? tpIdealBaseDivisor : 2.0);
 		}
 
 		public Double getGravitySensitivity() {
@@ -864,7 +2184,7 @@ public class GeneralServerConfig {
 
 		public Double getTpOverloadHardRatio() {
 			Double value = tpOverloadHardRatio != null ? tpOverloadHardRatio : 2.5;
-			return Math.max(getTpOverloadRatio() + 0.0001, value);
+			return Math.max(getTpOverloadRatio() + 1.0E-4, value);
 		}
 
 		public Double getTpComfortMultiplier() {
@@ -878,6 +2198,11 @@ public class GeneralServerConfig {
 		public Double getMaxWeightPenalty() {
 			Double value = maxWeightPenalty != null ? maxWeightPenalty : 0.6;
 			return Math.max(0.0, Math.min(value, 1.0));
+		}
+
+		public Double getMaxWeightRequestable() {
+			Double value = maxWeightRequested != null ? maxWeightRequested : 100000.0;
+			return Math.max(0.0, Math.min(value, Double.MAX_VALUE));
 		}
 
 		public Double getGravityRoomMk2Relief() {
@@ -956,22 +2281,38 @@ public class GeneralServerConfig {
 			if (value == null) return fallback;
 			return Math.max(0.0, value);
 		}
+
+		public Boolean getEnabled() {
+			return this.enabled;
+		}
+
+		public Map<String, Double> getGravityPerWorld() {
+			return this.gravityPerWorld;
+		}
+
+		public Double getMaxWeightRequested() {
+			return this.maxWeightRequested;
+		}
+
+		public GravityConfig() {
+		}
 	}
 
-	@Getter
-	@NoArgsConstructor
+
+	@RemovedConfigKeys({"powerBonusReductionNoSkill"})
 	public static class MutantConfig {
 		private Boolean enabled = true;
 		private Integer rollIntervalMinutes = 30;
 		private Integer playersPerRoll = 1;
-		private Double chance = 0.20;
+		private Double chance = 0.2;
 		private Integer maxHolders = 1;
 		private String legendaryGroupName = "legendaryforms";
 		private Double tpGainMultiplier = 1.25;
-		private Double masteryGainMultiplier = 1.50;
-		private Double powerBonusReductionNoSkill = 0.67;
+		private Double masteryGainMultiplier = 1.5;
 		private Double powerBonusBoostWithSkill = 0.33;
+		private Double rageBorrowedFormBonus = 0.5;
 		private Boolean keepMutantOnDeath = false;
+		private RageConfig rage = new RageConfig();
 
 		public Boolean getEnabled() {
 			return enabled == null || enabled;
@@ -986,7 +2327,7 @@ public class GeneralServerConfig {
 		}
 
 		public Double getChance() {
-			Double value = chance != null ? chance : 0.20;
+			Double value = chance != null ? chance : 0.2;
 			return Math.max(0.0, Math.min(value, 1.0));
 		}
 
@@ -1003,32 +2344,508 @@ public class GeneralServerConfig {
 		}
 
 		public Double getMasteryGainMultiplier() {
-			return Math.max(0.0, masteryGainMultiplier != null ? masteryGainMultiplier : 1.50);
-		}
-
-		public Double getPowerBonusReductionNoSkill() {
-			Double value = powerBonusReductionNoSkill != null ? powerBonusReductionNoSkill : 0.33;
-			return Math.max(0.0, Math.min(value, 1.0));
+			return Math.max(0.0, masteryGainMultiplier != null ? masteryGainMultiplier : 1.5);
 		}
 
 		public Double getPowerBonusBoostWithSkill() {
 			return Math.max(0.0, powerBonusBoostWithSkill != null ? powerBonusBoostWithSkill : 0.33);
 		}
 
+		public Double getRageBorrowedFormBonus() {
+			double value = rageBorrowedFormBonus != null ? rageBorrowedFormBonus : 0.5;
+			return Double.isFinite(value) ? Math.max(0.0, value) : 0.5;
+		}
+
 		public Boolean getKeepMutantOnDeath() {
 			return keepMutantOnDeath != null && keepMutantOnDeath;
 		}
+
+		public RageConfig getRage() {
+			if (rage == null) rage = new RageConfig();
+			return rage;
+		}
+
+		public MutantConfig() {
+		}
 	}
 
-	@Getter
-	@NoArgsConstructor
+
+	public static class FalseSuperSaiyanConfig {
+		private Boolean enabled = true;
+		private String groupName = "falseform";
+		private String formName = "falsesupersaiyan";
+		private Integer minLevel = 100;
+		private Integer maxLevel = 200;
+		private Double healthThreshold = 0.25;
+		private Boolean requireZenkaiSpent = false;
+		private Double gainPerDealtHealthFraction = 60.0;
+		private Double gainPerReceivedHealthFraction = 150.0;
+		private Double maxGainPerHit = 25.0;
+		private Double significantTargetHealthRatio = 0.1;
+		private Double significantDamageTakenRatio = 0.01;
+		private Double activeGainMultiplier = 0.5;
+		private Double idleGainPerSecond = 10.0;
+		private Double combatGraceSeconds = 2.0;
+		private Double drainSeconds = 8.0;
+		private Double activeDrainSeconds = 12.0;
+
+		public boolean getEnabled() {
+			return enabled == null || enabled;
+		}
+
+		public String getGroupName() {
+			return groupName != null && !groupName.isEmpty() ? groupName : "falseform";
+		}
+
+		public String getFormName() {
+			return formName != null && !formName.isEmpty() ? formName : "falsesupersaiyan";
+		}
+
+		public int getMinLevel() {
+			return Math.max(1, minLevel != null ? minLevel : 100);
+		}
+
+		public int getMaxLevel() {
+			return Math.max(getMinLevel() + 1, maxLevel != null ? maxLevel : 200);
+		}
+
+		public double getHealthThreshold() {
+			return clamp01(healthThreshold, 0.2);
+		}
+
+		public boolean getRequireZenkaiSpent() {
+			return requireZenkaiSpent != null && requireZenkaiSpent;
+		}
+
+		public double getGainPerDealtHealthFraction() {
+			return positive(gainPerDealtHealthFraction, 60.0);
+		}
+
+		public double getGainPerReceivedHealthFraction() {
+			return positive(gainPerReceivedHealthFraction, 150.0);
+		}
+
+		public double getMaxGainPerHit() {
+			return positive(maxGainPerHit, 25.0);
+		}
+
+		public double getSignificantTargetHealthRatio() {
+			return positive(significantTargetHealthRatio, 0.1);
+		}
+
+		public double getSignificantDamageTakenRatio() {
+			return positive(significantDamageTakenRatio, 0.01);
+		}
+
+		public double getActiveGainMultiplier() {
+			return positive(activeGainMultiplier, 0.5);
+		}
+
+		public double getIdleGainPerSecond() {
+			return positive(idleGainPerSecond, 10.0);
+		}
+
+		public double getCombatGraceSeconds() {
+			return positive(combatGraceSeconds, 2.0);
+		}
+
+		public double getDrainSeconds() {
+			return Math.max(0.25, positive(drainSeconds, 8.0));
+		}
+
+		public double getActiveDrainSeconds() {
+			return Math.max(0.25, positive(activeDrainSeconds, 12.0));
+		}
+
+		private static double positive(Double value, double fallback) {
+			return value != null && Double.isFinite(value) && value >= 0.0 ? value : fallback;
+		}
+
+		private static double clamp01(Double value, double fallback) {
+			double resolved = positive(value, fallback);
+			return Math.max(0.0, Math.min(1.0, resolved));
+		}
+
+		public FalseSuperSaiyanConfig() {
+		}
+	}
+
+
+	public static class KiTransferConfig {
+		private Boolean enabled = true;
+		private Double kiPercentPerSecond = 0.025;
+		private Double boostDelaySeconds = 1.0;
+		private Double boostPerDonor = 0.05;
+		private Integer maxBoostDonors = 5;
+		private Double donorSpeedMultiplier = 0.4;
+		private Double interruptDamageRatio = 0.1;
+		private Double startRange = 8.0;
+		private Double maxLinkDistance = 32.0;
+		private Double attackChargeCreditRatio = 1.0;
+		private Double intervalSeconds = 3.0;
+		private Double retainSecondsPerInterval = 5.0;
+		private Double donorPenaltyPerInterval = 0.05;
+		private Double donorPenaltyMax = 0.25;
+		private Double restartCooldownSeconds = 2.0;
+
+		public boolean getEnabled() {
+			return enabled == null || enabled;
+		}
+
+		public int getIntervalTicks() {
+			return Math.max(1, (int) Math.round(positive(intervalSeconds, 3.0) * 20.0));
+		}
+
+		public int getRetainTicksPerInterval() {
+			return (int) Math.round(positive(retainSecondsPerInterval, 5.0) * 20.0);
+		}
+
+		public double getDonorPenaltyPerInterval() {
+			return Math.min(1.0, positive(donorPenaltyPerInterval, 0.05));
+		}
+
+		public double getDonorPenaltyMax() {
+			return Math.min(0.95, positive(donorPenaltyMax, 0.25));
+		}
+
+		public int getRestartCooldownTicks() {
+			return (int) Math.round(positive(restartCooldownSeconds, 2.0) * 20.0);
+		}
+
+		public int getMaxDonorPenaltyStacks() {
+			double per = getDonorPenaltyPerInterval();
+			return per <= 0.0 ? 0 : (int) Math.ceil(getDonorPenaltyMax() / per - 1.0E-6);
+		}
+
+		public double getKiPercentPerSecond() {
+			return Math.min(1.0, positive(kiPercentPerSecond, 0.025));
+		}
+
+		public double getBoostDelaySeconds() {
+			return positive(boostDelaySeconds, 1.0);
+		}
+
+		public double getBoostPerDonor() {
+			return positive(boostPerDonor, 0.05);
+		}
+
+		public int getMaxBoostDonors() {
+			return Math.max(0, maxBoostDonors != null ? maxBoostDonors : 5);
+		}
+
+		public double getDonorSpeedMultiplier() {
+			return Math.max(0.0, Math.min(1.0, positive(donorSpeedMultiplier, 0.4)));
+		}
+
+		public double getInterruptDamageRatio() {
+			return Math.max(0.01, positive(interruptDamageRatio, 0.1));
+		}
+
+		public double getStartRange() {
+			return Math.max(1.0, positive(startRange, 8.0));
+		}
+
+		public double getMaxLinkDistance() {
+			return Math.max(getStartRange(), positive(maxLinkDistance, 32.0));
+		}
+
+		public double getAttackChargeCreditRatio() {
+			return positive(attackChargeCreditRatio, 1.0);
+		}
+
+		private static double positive(Double value, double fallback) {
+			return value != null && Double.isFinite(value) && value >= 0.0 ? value : fallback;
+		}
+
+		public KiTransferConfig() {
+		}
+	}
+
+
+	public static class GodRitualConfig {
+		private Boolean enabled = true;
+		private String groupName = "godritual";
+		private String formName = "supersaiyangodritual";
+		private List<String> donorForms = new ArrayList<>(List.of("ssgrades.supersaiyan", "supersaiyan.supersaiyanmastered"));
+		private List<String> recipientForms = new ArrayList<>(List.of("supersaiyan.supersaiyanmastered"));
+		private Integer requiredDonors = 5;
+		private Integer pureGoodMinAlignment = 90;
+		private Integer pureEvilMaxAlignment = 10;
+		private Double ritualRadius = 5.0;
+		private Double ritualVerticalRange = 3.0;
+		private Double ringRadius = 2.5;
+		private Double channelSeconds = 10.0;
+		private Double liftHeight = 6.0;
+		private Double liftSeconds = 2.0;
+		private Double glowInSeconds = 1.0;
+		private Double glowOutSeconds = 1.5;
+		private String shellColor = "#6FD8FF";
+		private Double interruptDamageRatio = 0.25;
+		private Double interruptCooldownSeconds = 30.0;
+		private Double cooldownMinutes = 30.0;
+		private Double durationMinutes = 5.0;
+		private Double powerBonus = 0.3;
+		private Double mutantPowerBonus = 0.45;
+
+		public boolean getEnabled() {
+			return enabled == null || enabled;
+		}
+
+		public String getGroupName() {
+			return groupName != null && !groupName.isEmpty() ? groupName : "godritual";
+		}
+
+		public String getFormName() {
+			return formName != null && !formName.isEmpty() ? formName : "supersaiyangodritual";
+		}
+
+		public List<String> getDonorForms() {
+			return donorForms != null ? donorForms : List.of("ssgrades.supersaiyan", "supersaiyan.supersaiyanmastered");
+		}
+
+		public List<String> getRecipientForms() {
+			return recipientForms != null ? recipientForms : List.of("supersaiyan.supersaiyanmastered");
+		}
+
+		public int getRequiredDonors() {
+			return Math.max(1, requiredDonors != null ? requiredDonors : 5);
+		}
+
+		public int getPureGoodMinAlignment() {
+			return Math.max(0, Math.min(100, pureGoodMinAlignment != null ? pureGoodMinAlignment : 90));
+		}
+
+		public int getPureEvilMaxAlignment() {
+			return Math.max(0, Math.min(100, pureEvilMaxAlignment != null ? pureEvilMaxAlignment : 10));
+		}
+
+		public double getRitualRadius() {
+			return Math.max(1.0, positive(ritualRadius, 5.0));
+		}
+
+		public double getRitualVerticalRange() {
+			return positive(ritualVerticalRange, 3.0);
+		}
+
+		public double getRingRadius() {
+			return Math.max(1.0, Math.min(getRitualRadius(), positive(ringRadius, 2.5)));
+		}
+
+		public int getChannelTicks() {
+			return Math.max(20, (int) Math.round(positive(channelSeconds, 10.0) * 20.0));
+		}
+
+		public double getLiftHeight() {
+			return positive(liftHeight, 6.0);
+		}
+
+		public int getLiftTicks() {
+			return Math.max(1, (int) Math.round(positive(liftSeconds, 2.0) * 20.0));
+		}
+
+		public int getGlowInTicks() {
+			return Math.max(1, (int) Math.round(positive(glowInSeconds, 1.0) * 20.0));
+		}
+
+		public int getGlowOutTicks() {
+			return Math.max(1, (int) Math.round(positive(glowOutSeconds, 1.5) * 20.0));
+		}
+
+		public String getShellColor() {
+			return shellColor != null && shellColor.matches("#[0-9A-Fa-f]{6}") ? shellColor : "#6FD8FF";
+		}
+
+		public double getInterruptDamageRatio() {
+			return Math.max(0.01, positive(interruptDamageRatio, 0.25));
+		}
+
+		public int getInterruptCooldownTicks() {
+			return (int) Math.round(positive(interruptCooldownSeconds, 30.0) * 20.0);
+		}
+
+		public int getCooldownTicks() {
+			return (int) Math.min(Integer.MAX_VALUE, Math.round(positive(cooldownMinutes, 30.0) * 1200.0));
+		}
+
+		public int getDurationTicks() {
+			return (int) Math.max(20, Math.min(Integer.MAX_VALUE, Math.round(positive(durationMinutes, 5.0) * 1200.0)));
+		}
+
+		public double getPowerBonus() {
+			return positive(powerBonus, 0.3);
+		}
+
+		public double getMutantPowerBonus() {
+			return positive(mutantPowerBonus, 0.45);
+		}
+
+		private static double positive(Double value, double fallback) {
+			return value != null && Double.isFinite(value) && value >= 0.0 ? value : fallback;
+		}
+
+		public GodRitualConfig() {
+		}
+	}
+
+
+	public static class RageConfig {
+		private Double gainPerDealtHealthFraction = 60.0;
+		private Double gainPerReceivedHealthFraction = 150.0;
+		private Double maxGainPerHit = 25.0;
+		private Double significantTargetHealthRatio = 0.1;
+		private Double significantDamageTakenRatio = 0.01;
+		private Double varietyBonusPerStep = 0.25;
+		private Integer varietyMaxSteps = 4;
+		private Double varietyWindowSeconds = 4.0;
+		private Double activeDurationSeconds = 10.0;
+		private Double activeGainMultiplier = 0.35;
+		private Double fullIdleSeconds = 15.0;
+		private Double partialIdleSeconds = 8.0;
+		private Double idleDrainSeconds = 3.0;
+
+		public double getGainPerDealtHealthFraction() {
+			return positive(gainPerDealtHealthFraction, 60.0);
+		}
+
+		public double getGainPerReceivedHealthFraction() {
+			return positive(gainPerReceivedHealthFraction, 150.0);
+		}
+
+		public double getMaxGainPerHit() {
+			return positive(maxGainPerHit, 25.0);
+		}
+
+		public double getSignificantTargetHealthRatio() {
+			return positive(significantTargetHealthRatio, 0.1);
+		}
+
+		public double getSignificantDamageTakenRatio() {
+			return positive(significantDamageTakenRatio, 0.01);
+		}
+
+		public double getVarietyBonusPerStep() {
+			return positive(varietyBonusPerStep, 0.25);
+		}
+
+		public int getVarietyMaxSteps() {
+			return Math.max(0, varietyMaxSteps != null ? varietyMaxSteps : 4);
+		}
+
+		public double getVarietyWindowSeconds() {
+			return positive(varietyWindowSeconds, 4.0);
+		}
+
+		public double getActiveDurationSeconds() {
+			return Math.max(0.5, positive(activeDurationSeconds, 10.0));
+		}
+
+		public double getActiveGainMultiplier() {
+			return positive(activeGainMultiplier, 0.35);
+		}
+
+		public double getFullIdleSeconds() {
+			return positive(fullIdleSeconds, 15.0);
+		}
+
+		public double getPartialIdleSeconds() {
+			return positive(partialIdleSeconds, 8.0);
+		}
+
+		public double getIdleDrainSeconds() {
+			return Math.max(0.25, positive(idleDrainSeconds, 3.0));
+		}
+
+		private static double positive(Double value, double fallback) {
+			return value != null && Double.isFinite(value) && value >= 0.0 ? value : fallback;
+		}
+	}
+
+
 	public static class CraftingConfig {
-		private Boolean copyEnchantmentsFromTemplate = false;
+		private Boolean copyEnchantmentsFromTemplate = true;
 		private Boolean copyWeaponLevelFromTemplate = false;
 		private Boolean copyWeaponLevelProgressFromTemplate = false;
 		private Boolean copyApotheosisRarityFromTemplate = false;
 		private Boolean copyApotheosisAffixesFromTemplate = false;
 		private Boolean copyApotheosisSocketsFromTemplate = false;
 		private Boolean copyApotheosisGemsFromTemplate = false;
+
+		public Boolean getCopyEnchantmentsFromTemplate() {
+			return this.copyEnchantmentsFromTemplate;
+		}
+
+		public Boolean getCopyWeaponLevelFromTemplate() {
+			return this.copyWeaponLevelFromTemplate;
+		}
+
+		public Boolean getCopyWeaponLevelProgressFromTemplate() {
+			return this.copyWeaponLevelProgressFromTemplate;
+		}
+
+		public Boolean getCopyApotheosisRarityFromTemplate() {
+			return this.copyApotheosisRarityFromTemplate;
+		}
+
+		public Boolean getCopyApotheosisAffixesFromTemplate() {
+			return this.copyApotheosisAffixesFromTemplate;
+		}
+
+		public Boolean getCopyApotheosisSocketsFromTemplate() {
+			return this.copyApotheosisSocketsFromTemplate;
+		}
+
+		public Boolean getCopyApotheosisGemsFromTemplate() {
+			return this.copyApotheosisGemsFromTemplate;
+		}
+
+		public CraftingConfig() {
+		}
+	}
+
+	public String getConfigVersion() {
+		return this.configVersion;
+	}
+
+	public WorldGenConfig getWorldGen() {
+		return this.worldGen;
+	}
+
+	public GameplayConfig getGameplay() {
+		return this.gameplay;
+	}
+
+	public RacialSkillsConfig getRacialSkills() {
+		return this.racialSkills;
+	}
+
+	public DynamicGrowthConfig getDynamicGrowth() {
+		return this.dynamicGrowth;
+	}
+
+	public GravityConfig getGravity() {
+		return this.gravity;
+	}
+
+	public MutantConfig getMutant() {
+		return this.mutant;
+	}
+
+	public CraftingConfig getCrafting() {
+		return this.crafting;
+	}
+
+	public StorageConfig getStorage() {
+		return this.storage;
+	}
+
+	public DeveloperConfig getDeveloper() {
+		return this.developer;
+	}
+
+	public GeneralServerConfig() {
+	}
+
+	public void setConfigVersion(final String configVersion) {
+		this.configVersion = configVersion;
 	}
 }

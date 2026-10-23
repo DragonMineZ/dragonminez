@@ -35,6 +35,30 @@ public final class TransformationMaskBufferSource implements MultiBufferSource {
 		return this;
 	}
 
+	public void setMaskCaptureEnabled(boolean enabled) {
+		this.maskCaptureEnabled = enabled;
+		if (this.delegate instanceof TransformationMaskBufferSource inner) inner.setMaskCaptureEnabled(enabled);
+	}
+
+	public void setMaskCaptureBlocked(boolean blocked) {
+		this.maskCaptureBlocked = blocked;
+		if (this.delegate instanceof TransformationMaskBufferSource inner) inner.setMaskCaptureBlocked(blocked);
+	}
+
+	public void setRawColor(int r, int g, int b) {
+		this.packedR = r;
+		this.packedG = g;
+		this.packedB = b;
+	}
+
+	public void detach() {
+		this.delegate = null;
+		this.maskCaptureEnabled = true;
+		this.includeOriginal = true;
+		this.forceCaptureAll = false;
+		this.maskCaptureBlocked = false;
+	}
+
 	public void setEntityColors(float primaryR, float primaryG, float primaryB, float secondaryR, float secondaryG, float secondaryB) {
 		this.packedR = packChannel(primaryR, secondaryR);
 		this.packedG = packChannel(primaryG, secondaryG);
@@ -43,7 +67,9 @@ public final class TransformationMaskBufferSource implements MultiBufferSource {
 
 	@Override
 	public VertexConsumer getBuffer(RenderType renderType) {
-		if (this.maskCaptureBlocked || (!this.maskCaptureEnabled && !this.forceCaptureAll)) {
+		boolean capture = !this.maskCaptureBlocked && (this.maskCaptureEnabled || this.forceCaptureAll);
+		RenderType maskRenderType = capture ? ModRenderTypes.transformationMask(renderType) : null;
+		if (maskRenderType == null) {
 			if (this.delegate == null || !this.includeOriginal) {
 				return EmptyVertexConsumer.INSTANCE;
 			}
@@ -57,7 +83,6 @@ public final class TransformationMaskBufferSource implements MultiBufferSource {
 			}
 			return this.delegate.getBuffer(renderType);
 		}
-		RenderType maskRenderType = ModRenderTypes.transformationMask(renderType);
 		if (this.delegate == null) {
 			VertexConsumer maskDelegate = this.getMaskBuffer(maskRenderType);
 			return new TransformationMaskVertexConsumer(maskDelegate, this.packedR, this.packedG, this.packedB, 255);
@@ -105,20 +130,12 @@ public final class TransformationMaskBufferSource implements MultiBufferSource {
 		return maskBuffer.builder;
 	}
 
-	public void setMaskCaptureEnabled(boolean enabled) {
-		this.maskCaptureEnabled = enabled;
-	}
-
 	public void setIncludeOriginal(boolean includeOriginal) {
 		this.includeOriginal = includeOriginal;
 	}
 
 	public void setForceCaptureAll(boolean forceCaptureAll) {
 		this.forceCaptureAll = forceCaptureAll;
-	}
-
-	public void setMaskCaptureBlocked(boolean blocked) {
-		this.maskCaptureBlocked = blocked;
 	}
 
 	private static int packChannel(float primary, float secondary) {

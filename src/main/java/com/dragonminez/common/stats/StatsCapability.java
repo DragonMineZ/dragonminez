@@ -5,14 +5,16 @@ import com.dragonminez.LogUtil;
 import com.dragonminez.Reference;
 import com.dragonminez.common.config.ConfigManager;
 import com.dragonminez.common.network.NetworkHandler;
+import com.dragonminez.common.network.StatsDeltaSync;
+import com.dragonminez.common.racial.RacialContext;
+import com.dragonminez.common.racial.RacialRegistry;
 import com.dragonminez.common.stats.character.Cooldowns;
 import com.dragonminez.server.events.players.TickHandler;
 import com.dragonminez.common.network.S2C.ResourceSyncS2C;
+import com.dragonminez.common.network.S2C.SkinPixelsSyncS2C;
 import com.dragonminez.common.network.S2C.StatsSyncS2C;
 import com.dragonminez.common.network.S2C.SyncQuestRegistryS2C;
-import com.dragonminez.common.network.S2C.SyncServerConfigS2C;
 import com.dragonminez.common.quest.PlayerQuestData;
-import com.dragonminez.common.quest.QuestRegistry;
 import com.dragonminez.common.util.TransformationsHelper;
 import com.dragonminez.server.world.structure.helper.QuestStructureHints;
 import net.minecraft.server.MinecraftServer;
@@ -90,37 +92,31 @@ public class StatsCapability {
 	@SubscribeEvent
 	public static void onPlayerLogin(PlayerEvent.PlayerLoggedInEvent event) {
 		if (event.getEntity() instanceof ServerPlayer serverPlayer) {
-			List<String> availableConfigs = ConfigManager.getAvailableConfigFiles();
-			boolean resetBatch = true;
-			for (String file : availableConfigs) {
-				if (file.equals(ConfigManager.CLIENT_ONLY_CONFIG)) continue;
-				String jsonPayload = ConfigManager.getSpecificConfigJson(file);
-				if (jsonPayload == null || jsonPayload.isBlank()) continue;
-				NetworkHandler.sendToPlayer(new SyncServerConfigS2C(file, jsonPayload, resetBatch), serverPlayer);
-				resetBatch = false;
-			}
-			NetworkHandler.sendToPlayer(new SyncQuestRegistryS2C(QuestRegistry.getAllSagas(), QuestRegistry.getAllQuests()), serverPlayer);
+			ConfigManager.sendConfigSync(serverPlayer);
+			SyncQuestRegistryS2C.sendTo(serverPlayer);
 
 			MinecraftServer server = serverPlayer.getServer();
 			if (server != null && !QuestStructureHints.isResolved()) {
 				UUID playerId = serverPlayer.getUUID();
 				QuestStructureHints.ensureResolvedAsync(server).thenRun(() -> server.execute(() -> {
 					ServerPlayer online = server.getPlayerList().getPlayer(playerId);
-					if (online != null) NetworkHandler.sendToPlayer(new SyncQuestRegistryS2C(QuestRegistry.getAllSagas(), QuestRegistry.getAllQuests()), online);
+					if (online != null) SyncQuestRegistryS2C.sendTo(online);
 				}));
 			}
 
 			StatsProvider.get(INSTANCE, serverPlayer).ifPresent(data -> {
 				markCurrentDimensionVisited(serverPlayer, data);
 				PlayerQuestData questData = data.getPlayerQuestData();
-				if (questData.isSagaLocked("saiyan_saga")) questData.setSagaUnlocked("saiyan_saga", true);
+				if (questData.isSagaLocked("classic_saga")) questData.setSagaUnlocked("classic_saga", true);
 				TransformationsHelper.ensureSelectedFormDefault(data);
 				TransformationsHelper.ensureSelectedStackFormDefault(data);
 
 				data.getStatus().setStrikeLocked(false);
 				data.getStatus().setStunEffect(false);
 				data.getStatus().setKnockedDown(false);
+				data.getStatus().setMatchFrozen(false);
 				data.getCooldowns().removeCooldown(Cooldowns.KNOCKDOWN_DURATION);
+				com.dragonminez.server.world.worldboss.WorldBossManager.onPlayerLogin(serverPlayer, data);
 
 				Map<String, String> repairedSkills = data.getSkills().repairSkillNames();
 				if (!repairedSkills.isEmpty()) {
@@ -129,17 +125,13 @@ public class StatsCapability {
 				data.getSkills().setSkillActive("kisense", false);
 				// VIT/ENE fields from NBT → attributes + HP mod + reclamp max ki/stamina (like health fix).
 				com.dragonminez.server.events.players.StatsEvents.restoreStatsPoolsOnJoin(serverPlayer);
+				RacialRegistry.forPlayer(data).ifPresent(ability -> ability.onLogin(new RacialContext(serverPlayer, data)));
+				StatsDeltaSync.reset(serverPlayer);
 				NetworkHandler.sendToTrackingEntityAndSelf(new StatsSyncS2C(serverPlayer), serverPlayer);
+				syncSkinPixels(serverPlayer, data);
 			});
 		}
 		event.getEntity().refreshDimensions();
-	}
-
-	@SubscribeEvent
-	public static void onPlayerTick(PlayerTickEvent.Post event) {
-		if (!event.getEntity().level().isClientSide) {
-			StatsProvider.get(INSTANCE, event.getEntity()).ifPresent(StatsData::tick);
-		}
 	}
 
 	@SubscribeEvent
@@ -151,7 +143,10 @@ public class StatsCapability {
 				data.getStatus().setStrikeLocked(false);
 				data.getStatus().setStunEffect(false);
 				data.getStatus().setKnockedDown(false);
+				data.getStatus().setMatchFrozen(false);
 				data.getCooldowns().removeCooldown(Cooldowns.KNOCKDOWN_DURATION);
+				RacialRegistry.forPlayer(data).ifPresent(ability -> ability.onRespawn(new RacialContext(serverPlayer, data)));
+				StatsDeltaSync.reset(serverPlayer);
 				NetworkHandler.sendToTrackingEntityAndSelf(new ResourceSyncS2C(serverPlayer), serverPlayer);
 			});
 		}
@@ -167,11 +162,30 @@ public class StatsCapability {
 				data.getStatus().setStrikeLocked(false);
 				data.getStatus().setStunEffect(false);
 				data.getStatus().setKnockedDown(false);
+				data.getStatus().setMatchFrozen(false);
 				data.getCooldowns().removeCooldown(Cooldowns.KNOCKDOWN_DURATION);
+				com.dragonminez.server.world.worldboss.WorldBossManager.onPlayerChangedDimension(serverPlayer, data);
+				RacialRegistry.forPlayer(data).ifPresent(ability -> ability.onDimensionChange(new RacialContext(serverPlayer, data)));
+				StatsDeltaSync.reset(serverPlayer);
 
 				NetworkHandler.sendToTrackingEntityAndSelf(new StatsSyncS2C(serverPlayer), serverPlayer);
+				syncSkinPixels(serverPlayer, data);
 			});
 		}
+	}
+
+	@SubscribeEvent
+	public static void onStartTracking(PlayerEvent.StartTracking event) {
+		if (!(event.getTarget() instanceof ServerPlayer target) || !(event.getEntity() instanceof ServerPlayer viewer)) return;
+		StatsSyncS2C snapshot = StatsDeltaSync.trackerSnapshot(target);
+		if (snapshot != null) NetworkHandler.sendToPlayer(snapshot, viewer);
+		StatsProvider.get(INSTANCE, target).ifPresent(data -> {
+			if (!data.getCharacter().getSkinPixels().isEmpty()) NetworkHandler.sendToPlayer(new SkinPixelsSyncS2C(target), viewer);
+		});
+	}
+
+	public static void syncSkinPixels(ServerPlayer player, StatsData data) {
+		if (!data.getCharacter().getSkinPixels().isEmpty()) NetworkHandler.sendToTrackingEntityAndSelf(new SkinPixelsSyncS2C(player), player);
 	}
 
 	private static void markCurrentDimensionVisited(ServerPlayer player, StatsData data) {

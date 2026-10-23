@@ -1,0 +1,52 @@
+{
+	"format_version": "1.21.110",
+	"minecraft:geometry": [
+		{
+			"description": {
+				"identifier": "geometry.unknown",
+				"texture_width": 128,
+				"texture_height": 128,
+				"visible_bounds_width": 4,
+				"visible_bounds_height": 4.5,
+				"visible_bounds_offset": [0, 1.75, 0]
+			},
+			"bones": [
+				{
+					"name": "root",
+					"pivot": [0, 0, 0]
+				},
+				{
+					"name": "waist",
+					"parent": "root",
+					"pivot": [0, 12, 0]
+				},
+				{
+					"name": "right_arm",
+					"parent": "waist",
+					"pivot": [-5, 22, 0]
+				},
+				{
+					"name": "right_hand_item",
+					"parent": "right_arm",
+					"pivot": [-6, 14, 0]
+				},
+				{
+					"name": "espadatrunks",
+					"parent": "right_hand_item",
+					"pivot": [-0.12274, 18.51509, -0.82408]
+				},
+				{
+					"name": "espada",
+					"parent": "espadatrunks",
+					"pivot": [-0.03332, 15.09646, 0.3476],
+					"cubes": [
+						{"origin": [-1.03332, 13.09646, -0.6524], "size": [2, 16, 2], "uv": [0, 0]},
+						{"origin": [-1.03332, 2.09646, -0.6524], "size": [2, 11, 2], "inflate": 0.2, "uv": [16, 0]},
+						{"origin": [-1.03332, 0.09646, -0.6524], "size": [2, 2, 2], "inflate": 0.5, "uv": [16, 0]},
+						{"origin": [-14.03332, 29.09646, -7.6524], "size": [28, 16, 16], "uv": [27, 0]}
+					]
+				}
+			]
+		}
+	]
+}

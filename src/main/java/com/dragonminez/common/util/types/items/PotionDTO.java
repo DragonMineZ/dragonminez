@@ -1,6 +1,10 @@
 package com.dragonminez.common.util.types.items;
 
-import com.google.gson.GsonBuilder;
+import com.dragonminez.Env;
+import com.dragonminez.LogUtil;
+import com.dragonminez.common.util.gson.PotionEffectListTypeAdapter;
+import com.google.gson.JsonSyntaxException;
+import com.google.gson.annotations.JsonAdapter;
 import net.minecraft.core.Holder;
 import net.minecraft.core.component.DataComponents;
 import net.minecraft.core.registries.BuiltInRegistries;
@@ -11,84 +15,92 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.alchemy.Potion;
 import net.minecraft.world.item.alchemy.PotionContents;
 import net.minecraft.world.item.alchemy.Potions;
-
 import java.util.ArrayList;
-import java.util.Collection;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
-import java.util.stream.Collectors;
 
 public class PotionDTO extends GenericItemDTO {
-    protected String potion;
-    protected Map<String, Integer> mobEffects = new HashMap<>();
+	public static final String ITEM_TYPE = "potion";
+	private static final ResourceLocation POTION_ITEM_ID = ResourceLocation.withDefaultNamespace("potion");
+	protected ResourceLocation potion;
+	@JsonAdapter(PotionEffectListTypeAdapter.class)
+	protected List<PotionEffectDTO> mobEffects = new ArrayList<>();
 
-    public PotionDTO(String potion, Map<String, Integer> mobEffects) {
-        super("potion", "minecraft:potion", 1);
-        this.potion = potion;
-        this.mobEffects = mobEffects;
-    }
+	public PotionDTO(ResourceLocation potion, List<PotionEffectDTO> mobEffects) {
+		this(ITEM_TYPE, POTION_ITEM_ID, 1, potion, mobEffects);
+	}
 
-    public PotionDTO(String itemType, String itemId, int count, String potion, Map<String, Integer> mobEffects) {
-        super(itemType, itemId, count);
-        this.potion = potion;
-        this.mobEffects = mobEffects;
-    }
+	protected PotionDTO(String itemType, ResourceLocation itemId, int count, ResourceLocation potion, List<PotionEffectDTO> mobEffects) {
+		super(itemType, itemId, count);
+		this.potion = potion;
+		this.mobEffects = mobEffects;
+	}
 
-    @Override
-    public ItemStack getItemStack() {
-        var itemStack = super.getItemStack();
-        Holder<Potion> potionHolder = Potions.WATER;
-        if (potion != null && !potion.isBlank()) {
-            ResourceLocation id = ResourceLocation.tryParse(potion.contains(":") ? potion : "minecraft:" + potion);
-            if (id != null) {
-                var registered = BuiltInRegistries.POTION.getHolder(id);
-                if (registered.isPresent()) potionHolder = registered.get();
-            }
-        }
-        List<MobEffectInstance> customs = new ArrayList<>(getMobEffects());
-        itemStack.set(DataComponents.POTION_CONTENTS, new PotionContents(Optional.of(potionHolder), Optional.empty(), customs));
-        return itemStack;
-    }
+	@Override
+	public void validate() {
+		super.validate();
+		if (this.mobEffects == null) return;
+		for (PotionEffectDTO effect : this.mobEffects) {
+			if (effect == null) {
+				throw new JsonSyntaxException(errorPrefix() + " \'mobEffects\' contains a null entry.");
+			}
+			effect.validate(errorPrefix());
+		}
+	}
 
-    @Override
-    public String toJson() {
-        return new GsonBuilder().setPrettyPrinting().create().toJson(this, PotionDTO.class);
-    }
+	@Override
+	public ItemStack getItemStack() {
+		ItemStack stack = super.getItemStack();
+		if (!stack.isEmpty()) applyPotionData(stack);
+		return stack;
+	}
 
-    protected Collection<MobEffectInstance> getMobEffects() {
-        return this.mobEffects.keySet().stream().map(key -> this.getMobEffect(key, this.mobEffects.get(key))).filter(e -> e != null).collect(Collectors.toList());
-    }
+	@Override
+	public ItemStack getItemStack(net.minecraft.core.RegistryAccess registryAccess) {
+		return getItemStack();
+	}
 
-    protected MobEffectInstance getMobEffect(String id, Integer amplifier) {
-        var resourceLocation = ResourceLocation.tryParse(id);
-        if (resourceLocation != null) {
-            Optional<Holder.Reference<MobEffect>> effect = BuiltInRegistries.MOB_EFFECT.getHolder(resourceLocation);
-            if (effect.isPresent()) {
-                return new MobEffectInstance(effect.get(), 1, amplifier == null ? 0 : amplifier);
-            }
-            return null;
-        }
-        return null;
-    }
+	private void applyPotionData(ItemStack stack) {
+		Holder<Potion> potionHolder = Potions.WATER;
+		if (this.potion != null) {
+			Holder<Potion> registered = BuiltInRegistries.POTION.getHolder(this.potion).orElse(null);
+			if (registered != null) {
+				potionHolder = registered;
+			} else {
+				LogUtil.warn(Env.COMMON, "Unknown potion \'{}\' on item \'{}\', using water.", this.potion, this.itemId);
+			}
+		}
+		List<MobEffectInstance> customEffects = new ArrayList<>();
+		if (this.mobEffects != null) {
+			for (PotionEffectDTO effect : this.mobEffects) {
+				if (effect == null || effect.getEffect() == null) continue;
+				Holder<MobEffect> holder = BuiltInRegistries.MOB_EFFECT.getHolder(effect.getEffect()).orElse(null);
+				if (holder == null) {
+					LogUtil.warn(Env.COMMON, "Unknown mob effect \'{}\' on item \'{}\', skipping.", effect.getEffect(), this.itemId);
+					continue;
+				}
+				customEffects.add(new MobEffectInstance(holder, effect.getDuration() == null ? 1 : effect.getDuration(), effect.getAmplifier() == null ? 0 : effect.getAmplifier(), Boolean.TRUE.equals(effect.getAmbient()), !Boolean.FALSE.equals(effect.getVisible()), !Boolean.FALSE.equals(effect.getShowIcon())));
+			}
+		}
+		stack.set(DataComponents.POTION_CONTENTS, new PotionContents(Optional.of(potionHolder), Optional.empty(), customEffects));
+	}
 
-    @java.lang.SuppressWarnings("all")
-    public String getPotion() {
-        return this.potion;
-    }
+	public ResourceLocation getPotion() {
+		return this.potion;
+	}
 
-    @java.lang.SuppressWarnings("all")
-    public void setPotion(final String potion) {
-        this.potion = potion;
-    }
+	public List<PotionEffectDTO> getMobEffects() {
+		return this.mobEffects;
+	}
 
-    @java.lang.SuppressWarnings("all")
-    public void setMobEffects(final Map<String, Integer> mobEffects) {
-        this.mobEffects = mobEffects;
-    }
+	public void setPotion(final ResourceLocation potion) {
+		this.potion = potion;
+	}
 
-    @java.lang.SuppressWarnings("all")
-    public PotionDTO() {
-    }
+	public void setMobEffects(final List<PotionEffectDTO> mobEffects) {
+		this.mobEffects = mobEffects;
+	}
+
+	public PotionDTO() {
+	}
 }

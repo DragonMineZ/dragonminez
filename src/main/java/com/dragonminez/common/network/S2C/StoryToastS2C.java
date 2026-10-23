@@ -1,22 +1,16 @@
 package com.dragonminez.common.network.S2C;
 
 import com.dragonminez.common.network.ClientPacketHandler;
-import lombok.Getter;
 import net.minecraft.network.FriendlyByteBuf;
 import net.neoforged.api.distmarker.Dist;
 import com.dragonminez.compat.DistExecutor;
 import com.dragonminez.compat.network.NetworkEvent;
-
 import java.util.function.Supplier;
 
-@Getter
 public class StoryToastS2C {
 
 	public enum ToastEventType {
-		QUEST_STARTED,
-		QUEST_FAILED,
-		OBJECTIVE_COMPLETE,
-		QUEST_COMPLETE
+		QUEST_STARTED, QUEST_FAILED, OBJECTIVE_COMPLETE, QUEST_COMPLETE;
 	}
 
 	private final ToastEventType eventType;
@@ -58,20 +52,31 @@ public class StoryToastS2C {
 	}
 
 	public static StoryToastS2C decode(FriendlyByteBuf buf) {
-		return new StoryToastS2C(
-				buf.readEnum(ToastEventType.class),
-				buf.readUtf(),
-				buf.readInt(),
-				buf.readInt(),
-				buf.readInt()
-		);
+		return new StoryToastS2C(buf.readEnum(ToastEventType.class), buf.readUtf(), buf.readInt(), buf.readInt(), buf.readInt());
 	}
 
 	public static void handle(StoryToastS2C msg, Supplier<NetworkEvent.Context> ctx) {
-		ctx.get().enqueueWork(() -> DistExecutor.unsafeRunWhenOn(Dist.CLIENT,
-				() -> () -> ClientPacketHandler.handleStoryToastPacket(msg)));
+		ctx.get().enqueueWork(() -> DistExecutor.unsafeRunWhenOn(Dist.CLIENT, () -> () -> ClientPacketHandler.handleStoryToastPacket(msg)));
 		ctx.get().setPacketHandled(true);
 	}
+
+	public ToastEventType getEventType() {
+		return this.eventType;
+	}
+
+	public String getQuestId() {
+		return this.questId;
+	}
+
+	public int getObjectiveIndex() {
+		return this.objectiveIndex;
+	}
+
+	public int getObjectiveProgress() {
+		return this.objectiveProgress;
+	}
+
+	public int getObjectiveRequired() {
+		return this.objectiveRequired;
+	}
 }
-
-

@@ -2,8 +2,16 @@ package com.dragonminez.server.world.raid;
 
 import com.dragonminez.Env;
 import com.dragonminez.LogUtil;
+import com.dragonminez.common.config.RaidDefinition;
+import com.dragonminez.common.init.EntityAttributes;
+import com.dragonminez.common.network.NetworkHandler;
+import com.dragonminez.common.network.S2C.RaidMusicS2C;
 import com.dragonminez.common.init.entities.IBattlePower;
+import com.dragonminez.common.init.entities.ITextureVariant;
+import com.dragonminez.common.init.entities.sagas.DBSagasEntity;
+import com.dragonminez.common.quest.Difficulty;
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.Direction;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.ListTag;
@@ -24,13 +32,17 @@ import net.minecraft.world.entity.Mob;
 import net.minecraft.world.entity.MobSpawnType;
 import net.minecraft.world.entity.ai.attributes.AttributeInstance;
 import net.minecraft.world.entity.ai.attributes.Attributes;
+import net.minecraft.world.effect.MobEffectInstance;
+import net.minecraft.world.effect.MobEffects;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.levelgen.Heightmap;
 import net.minecraft.world.phys.AABB;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 
@@ -40,28 +52,37 @@ public class Raid {
 		ACTIVE, VICTORY, DEFEAT;
 	}
 
-	/**
-	 * Persistent tag for mobs omg
-	 */
-	public static final String RAID_ID_TAG = "dmz_raid_id";
+	public static final String RAID_ID_TAG = DBSagasEntity.RAID_ID_TAG;
+	private static final int SKY_SPAWN_HEIGHT = 22;
+	private static final int GLOW_INTERVAL_TICKS = 200;
+	private static final int GLOW_DURATION_TICKS = 200;
+	private static final int LEASH_GRACE_TICKS = 15 * 20;
+	private static final int GROUND_SEARCH_UP = 24;
+	private static final int WALKER_SEARCH_UP = 4;
+	private static final int GROUND_SEARCH_DOWN = 32;
 	private final UUID raidId;
 	private final String typeId;
 	private final ResourceKey<Level> dimension;
 	private final BlockPos center;
 	private final Set<UUID> participants;
+	private final Difficulty difficulty;
 	private Status status = Status.ACTIVE;
 	private int currentWaveIndex = -1; // -1 = no wave spawned yet
 	private final Set<UUID> currentWaveMobs = new HashSet<>();
+	private final Set<UUID> currentWaveEscort = new HashSet<>();
 	private int waveDelayTimer = 0; // intermission countdown before the next wave
 	private int totalMobsThisWave = 0; // denominator for boss-bar progress
 	private ServerBossEvent bossEvent; // transient, rebuilt on demand / after load
+	private final Set<UUID> musicListeners = new HashSet<>();
+	private final Map<UUID, Integer> outsideTicks = new HashMap<>();
 
-	public Raid(UUID raidId, String typeId, ResourceKey<Level> dimension, BlockPos center, Set<UUID> participants) {
+	public Raid(UUID raidId, String typeId, ResourceKey<Level> dimension, BlockPos center, Set<UUID> participants, Difficulty difficulty) {
 		this.raidId = raidId;
 		this.typeId = typeId;
 		this.dimension = dimension;
 		this.center = center;
 		this.participants = new HashSet<>(participants);
+		this.difficulty = difficulty != null ? difficulty : Difficulty.NORMAL;
 	}
 
 	public boolean isFinished() {
@@ -90,10 +111,27 @@ public class Raid {
 	/**
 	 * Advances the raid by one tick. Called by {@link RaidSavedData} with the matching level.
 	 */
+	public boolean replaceMob(UUID oldId, LivingEntity replacement) {
+		if (!currentWaveMobs.remove(oldId)) return false;
+		currentWaveMobs.add(replacement.getUUID());
+		if (currentWaveEscort.remove(oldId)) currentWaveEscort.add(replacement.getUUID());
+		if (replacement instanceof DBSagasEntity saga) saga.setRaidTargets(participants);
+		if (replacement.level() instanceof ServerLevel level) {
+			RaidTeams.assign(level, replacement, !currentWaveEscort.contains(replacement.getUUID()));
+		}
+		return true;
+	}
+
 	public void tick(ServerLevel level) {
 		if (status != Status.ACTIVE) return;
 		RaidType type = type();
+		if (type == null) {
+			LogUtil.warn(Env.SERVER, "Raid {} has no type \'{}\' any more; cancelling it", raidId, typeId);
+			cancel(level);
+			return;
+		}
 		ensureBossEvent(type);
+		updateLeash(level, type);
 		List<ServerPlayer> active = resolveActiveParticipants(level, type);
 		refreshBossPlayers(active);
 		// End condition: no participant remains alive and within range (solo death, or whole party out).
@@ -115,7 +153,10 @@ public class Raid {
 			}
 			return;
 		}
+		refreshBattleMusic(type, active);
 		int alive = countAliveMobs(level);
+		updateEscortState(level);
+		refreshGlow(level);
 		updateBossBar(type, alive);
 		if (alive <= 0) {
 			if (type.isFinalWave(currentWaveIndex)) {
@@ -133,6 +174,7 @@ public class Raid {
 			Entity entity = level.getEntity(it.next());
 			if (entity instanceof LivingEntity living && living.isAlive()) {
 				alive++;
+				if (living instanceof DBSagasEntity saga) saga.setRaidTargets(participants);
 			} else if (entity == null) {
 				// Not currently loaded (chunk unloaded). Treat as still pending so the wave doesn't
 				// complete prematurely; it will be recounted once the chunk reloads.
@@ -142,6 +184,30 @@ public class Raid {
 			}
 		}
 		return alive;
+	}
+
+	private void updateEscortState(ServerLevel level) {
+		if (currentWaveEscort.isEmpty()) return;
+		currentWaveEscort.removeIf(id -> {
+			Entity entity = level.getEntity(id);
+			return entity != null && (!(entity instanceof LivingEntity living) || !living.isAlive());
+		});
+		if (!currentWaveEscort.isEmpty()) return;
+		wakeDormantMobs(level);
+	}
+
+	private void refreshGlow(ServerLevel level) {
+		if (level.getGameTime() % GLOW_INTERVAL_TICKS != 0L) return;
+		for (UUID id : currentWaveMobs) {
+			if (!(level.getEntity(id) instanceof LivingEntity living) || !living.isAlive()) continue;
+			living.addEffect(new MobEffectInstance(MobEffects.GLOWING, GLOW_DURATION_TICKS, 0, false, false, false));
+		}
+	}
+
+	private void wakeDormantMobs(ServerLevel level) {
+		for (UUID id : currentWaveMobs) {
+			if (level.getEntity(id) instanceof DBSagasEntity saga) saga.setRaidDormant(false);
+		}
 	}
 
 	// ------------------------------------------------------------------------------------------------
@@ -155,68 +221,129 @@ public class Raid {
 		}
 		currentWaveIndex = waveIndex;
 		currentWaveMobs.clear();
-		RaidWave wave = type.wave(waveIndex);
+		currentWaveEscort.clear();
+		RaidDefinition.Wave wave = type.wave(waveIndex);
 		RandomSource random = level.getRandom();
 		LivingEntity focus = nearestParticipant(level, type);
-		for (RaidWave.SpawnEntry entry : wave.getSpawns()) {
-			EntityType<?> entityType = entry.type().get();
-			for (int i = 0; i < entry.count(); i++) {
-				Mob mob = spawnOne(level, entityType, wave, random, focus);
-				if (mob != null) currentWaveMobs.add(mob.getUUID());
+		List<RaidDefinition.Spawn> spawns = wave.getSpawns() != null ? wave.getSpawns() : List.of();
+		for (RaidDefinition.Spawn spawn : spawns) {
+			for (int i = 0; i < spawn.countOr(1); i++) {
+				EntityType<?> entityType = RaidEntityResolver.resolve(spawn.getEntityId(), random);
+				if (entityType == null) continue;
+				Mob mob = spawnOne(level, entityType, spawn, random, focus);
+				if (mob == null) continue;
+				currentWaveMobs.add(mob.getUUID());
+				if (!spawn.isDormantUntilEscortDead()) currentWaveEscort.add(mob.getUUID());
 			}
 		}
+		if (currentWaveEscort.isEmpty()) wakeDormantMobs(level);
 		totalMobsThisWave = Math.max(1, currentWaveMobs.size());
 		updateBossBar(type, currentWaveMobs.size());
 		LogUtil.info(Env.SERVER, "Raid {} spawned wave {}/{} ({} mobs){}", raidId, waveIndex + 1, type.waveCount(), currentWaveMobs.size(), wave.isBossWave() ? " [BOSS]" : "");
 	}
 
-	private Mob spawnOne(ServerLevel level, EntityType<?> entityType, RaidWave wave, RandomSource random, LivingEntity focus) {
+	private Mob spawnOne(ServerLevel level, EntityType<?> entityType, RaidDefinition.Spawn spawn, RandomSource random, LivingEntity focus) {
 		Entity created = entityType.create(level);
 		if (!(created instanceof Mob mob)) {
 			if (created != null) created.discard();
 			return null;
 		}
-		BlockPos pos = findSpawnPos(level, random);
+		BlockPos pos = findSpawnPos(level, random, mob);
 		mob.moveTo(pos.getX() + 0.5, pos.getY(), pos.getZ() + 0.5, random.nextFloat() * 360.0F, 0.0F);
 		mob.finalizeSpawn(level, level.getCurrentDifficultyAt(pos), MobSpawnType.EVENT, null);
-		// Scale after finalizeSpawn so wave multipliers aren't overwritten by default initialisation.
-		applyScaling(mob, wave);
 		// Tag so raid mobs can be recognised / cleaned up, and stop them despawning naturally.
 		mob.getPersistentData().putString(RAID_ID_TAG, raidId.toString());
 		mob.setPersistenceRequired();
-		if (focus != null) mob.setTarget(focus);
+		if (spawn.hasAbsoluteStats()) mob.getPersistentData().putBoolean("dmz_stats_configured", true);
+		applySpawnOptions(mob, spawn);
+		if (mob instanceof DBSagasEntity saga) saga.setRaidTargets(participants);
+		if (focus != null && !spawn.isDormantUntilEscortDead()) mob.setTarget(focus);
 		level.addFreshEntity(mob);
+		RaidTeams.assign(level, mob, spawn.isDormantUntilEscortDead());
+		applyStats(mob, spawn);
 		return mob;
 	}
 
-	private void applyScaling(Mob mob, RaidWave wave) {
-		AttributeInstance maxHealth = mob.getAttribute(Attributes.MAX_HEALTH);
-		if (maxHealth != null && wave.getHealthMultiplier() != 1.0) {
-			maxHealth.setBaseValue(maxHealth.getBaseValue() * wave.getHealthMultiplier());
+	private void applySpawnOptions(Mob mob, RaidDefinition.Spawn spawn) {
+		if (spawn.getTextureVariant() != null && mob instanceof ITextureVariant variant) {
+			variant.setTextureVariant(spawn.getTextureVariant());
 		}
+		if (mob instanceof DBSagasEntity saga) {
+			if (spawn.getAiTier() != null) saga.setAiTierById(spawn.getAiTier());
+			if (!spawn.canTransformOr(true)) saga.setTransformationDisabled(true);
+			saga.setRaidDormant(spawn.isDormantUntilEscortDead());
+		}
+		CompoundTag data = mob.getPersistentData();
+		boolean transformStats = false;
+		if (spawn.getTransformHealth() != null) {
+			data.putDouble("dmz_quest_tf_hp_abs", Math.max(1.0, spawn.getTransformHealth()));
+			transformStats = true;
+		}
+		if (spawn.getTransformMeleeDamage() != null) {
+			data.putDouble("dmz_quest_tf_melee_abs", Math.max(0.0, spawn.getTransformMeleeDamage()));
+			transformStats = true;
+		}
+		if (spawn.getTransformKiDamage() != null) {
+			data.putDouble("dmz_quest_tf_ki_abs", Math.max(0.0, spawn.getTransformKiDamage()));
+			transformStats = true;
+		}
+		if (transformStats) data.putString("dmz_difficulty", difficulty.name());
+	}
+
+	private void applyStats(Mob mob, RaidDefinition.Spawn spawn) {
+		if (!spawn.hasAbsoluteStats()) return;
+		double hpMult = difficulty.hpMultiplier();
+		double dmgMult = difficulty.damageMultiplier();
+		double health = spawn.healthOr(20.0) * hpMult;
+		AttributeInstance maxHealth = mob.getAttribute(Attributes.MAX_HEALTH);
+		if (maxHealth != null) maxHealth.setBaseValue(health);
 		AttributeInstance attack = mob.getAttribute(Attributes.ATTACK_DAMAGE);
-		if (attack != null && wave.getDamageMultiplier() != 1.0) {
-			attack.setBaseValue(attack.getBaseValue() * wave.getDamageMultiplier());
+		if (attack != null && spawn.getMeleeDamage() != null) {
+			attack.setBaseValue(spawn.meleeDamageOr(1.0) * dmgMult);
+		}
+		AttributeInstance kiDamage = mob.getAttribute(EntityAttributes.KI_BLAST_DAMAGE);
+		if (kiDamage != null && spawn.getKiDamage() != null) {
+			kiDamage.setBaseValue(spawn.kiDamageOr(1.0) * dmgMult);
 		}
 		mob.setHealth(mob.getMaxHealth());
-		if (mob instanceof IBattlePower battlePower && wave.getHealthMultiplier() != 1.0) {
-			battlePower.setBattlePower((int) Math.round(battlePower.getBattlePower() * wave.getHealthMultiplier()));
+		if (mob instanceof IBattlePower battlePower) {
+			battlePower.setBattlePower((int) Math.round(health));
 		}
 	}
 
-	private BlockPos findSpawnPos(ServerLevel level, RandomSource random) {
+	private BlockPos findSpawnPos(ServerLevel level, RandomSource random, Mob mob) {
+		boolean airborne = mob instanceof DBSagasEntity;
 		for (int attempt = 0; attempt < 12; attempt++) {
 			double angle = random.nextDouble() * Math.PI * 2.0;
 			double dist = 6.0 + random.nextDouble() * 10.0;
 			int x = center.getX() + (int) Math.round(Math.cos(angle) * dist);
 			int z = center.getZ() + (int) Math.round(Math.sin(angle) * dist);
-			int y = level.getHeight(Heightmap.Types.MOTION_BLOCKING_NO_LEAVES, x, z);
-			BlockPos pos = new BlockPos(x, y, z);
-			if (level.noCollision(new AABB(pos))) {
-				return pos;
+			int ground = groundNear(level, x, z, airborne ? GROUND_SEARCH_UP : WALKER_SEARCH_UP);
+			if (ground == Integer.MIN_VALUE) continue;
+			BlockPos groundPos = new BlockPos(x, ground, z);
+			if (!level.noCollision(new AABB(groundPos))) continue;
+			if (!airborne) {
+				if (!level.noCollision(mob.getType().getSpawnAABB(x + 0.5, ground, z + 0.5))) continue;
+				return groundPos;
 			}
+			BlockPos sky = groundPos.above(SKY_SPAWN_HEIGHT);
+			return level.noCollision(new AABB(sky)) ? sky : groundPos;
 		}
-		return center.above();
+		return airborne ? center.above(SKY_SPAWN_HEIGHT) : center;
+	}
+
+	private int groundNear(ServerLevel level, int x, int z, int searchUp) {
+		int top = Math.min(level.getHeight(Heightmap.Types.MOTION_BLOCKING_NO_LEAVES, x, z), center.getY() + searchUp);
+		int bottom = center.getY() - GROUND_SEARCH_DOWN;
+		BlockPos.MutableBlockPos pos = new BlockPos.MutableBlockPos(x, top, z);
+		boolean openAbove = level.getBlockState(pos).getCollisionShape(level, pos).isEmpty();
+		while (pos.getY() > bottom) {
+			pos.move(Direction.DOWN);
+			boolean open = level.getBlockState(pos).getCollisionShape(level, pos).isEmpty();
+			if (!open && openAbove) return pos.getY() + 1;
+			openAbove = open;
+		}
+		return Integer.MIN_VALUE;
 	}
 
 	// ------------------------------------------------------------------------------------------------
@@ -238,10 +365,29 @@ public class Raid {
 			if (player.level() != level) continue; // different dimension -> left
 			if (player.isSpectator()) continue;
 			if (!player.isAlive() || player.isDeadOrDying()) continue; // dead -> out
-			if (player.distanceToSqr(cx, cy, cz) > leashSqr) continue; // too far -> left
+			if (player.distanceToSqr(cx, cy, cz) > leashSqr && outsideTicks.getOrDefault(id, 0) >= LEASH_GRACE_TICKS) continue;
 			active.add(player);
 		}
 		return active;
+	}
+
+	private void updateLeash(ServerLevel level, RaidType type) {
+		double leashSqr = type.getLeashDistance() * type.getLeashDistance();
+		double cx = center.getX() + 0.5;
+		double cy = center.getY() + 0.5;
+		double cz = center.getZ() + 0.5;
+		MinecraftServer server = level.getServer();
+		for (UUID id : participants) {
+			ServerPlayer player = server.getPlayerList().getPlayer(id);
+			if (player == null || player.level() != level || player.isSpectator() || !player.isAlive() || player.isDeadOrDying() || player.distanceToSqr(cx, cy, cz) <= leashSqr) {
+				outsideTicks.remove(id);
+				continue;
+			}
+			int ticks = outsideTicks.merge(id, 1, Integer::sum);
+			if (ticks > LEASH_GRACE_TICKS || (ticks - 1) % 20 != 0) continue;
+			int secondsLeft = (LEASH_GRACE_TICKS - ticks + 1 + 19) / 20;
+			player.displayClientMessage(Component.translatable("raid.dragonminez.leash_warning", secondsLeft), true);
+		}
 	}
 
 	private LivingEntity nearestParticipant(ServerLevel level, RaidType type) {
@@ -260,6 +406,22 @@ public class Raid {
 	// ------------------------------------------------------------------------------------------------
 	// Boss bar
 	// ------------------------------------------------------------------------------------------------
+	private void refreshBattleMusic(RaidType type, List<ServerPlayer> active) {
+		for (ServerPlayer player : active) {
+			if (musicListeners.add(player.getUUID())) {
+				NetworkHandler.sendToPlayer(new RaidMusicS2C(type.battleMusic()), player);
+			}
+		}
+	}
+
+	private void stopMusic(ServerLevel level) {
+		for (UUID id : musicListeners) {
+			ServerPlayer player = level.getServer().getPlayerList().getPlayer(id);
+			if (player != null) NetworkHandler.sendToPlayer(new RaidMusicS2C(""), player);
+		}
+		musicListeners.clear();
+	}
+
 	private void ensureBossEvent(RaidType type) {
 		if (bossEvent == null) {
 			bossEvent = new ServerBossEvent(type.getDisplayName(), BossEvent.BossBarColor.RED, BossEvent.BossBarOverlay.NOTCHED_10);
@@ -281,7 +443,7 @@ public class Raid {
 		if (bossEvent == null) return;
 		int waveNumber = Math.max(1, currentWaveIndex + 1);
 		boolean boss = currentWaveIndex >= 0 && type.wave(currentWaveIndex).isBossWave();
-		bossEvent.setName(Component.translatable("raid.dragonminez.bossbar", type.getDisplayName(), waveNumber, type.waveCount()));
+		bossEvent.setName(Component.translatable("raid.dragonminez.bossbar", type.getDisplayName(), waveNumber, type.waveCount(), Math.max(0, aliveMobs)));
 		bossEvent.setColor(boss ? BossEvent.BossBarColor.PURPLE : BossEvent.BossBarColor.RED);
 		if (waveDelayTimer > 0) {
 			bossEvent.setProgress(1.0F);
@@ -296,18 +458,20 @@ public class Raid {
 	private void win(ServerLevel level, List<ServerPlayer> winners) {
 		status = Status.VICTORY;
 		clearBossEvent();
+		stopMusic(level);
 		discardRemainingMobs(level);
-		type().getReward().grant(level, winners, center);
-		for (ServerPlayer player : winners) {
-			player.sendSystemMessage(Component.translatable("raid.dragonminez.victory"));
-		}
+		List<Component> rewardLines = RaidReward.grant(level, winners, type().getRewards());
+		RaidFeedback.celebrate(level, winners, center, rewardLines);
 		LogUtil.info(Env.SERVER, "Raid {} completed (victory)", raidId);
 	}
 
 	private void fail(ServerLevel level) {
 		status = Status.DEFEAT;
 		clearBossEvent();
+		stopMusic(level);
 		discardRemainingMobs(level);
+		outsideTicks.clear();
+		RaidFeedback.mourn(level.getServer(), participants, type() != null ? type().getDefinition().getDefeat() : null);
 		LogUtil.info(Env.SERVER, "Raid {} ended (all participants died or left)", raidId);
 	}
 
@@ -318,6 +482,7 @@ public class Raid {
 		if (status != Status.ACTIVE) return;
 		status = Status.DEFEAT;
 		clearBossEvent();
+		stopMusic(level);
 		discardRemainingMobs(level);
 		LogUtil.info(Env.SERVER, "Raid {} cancelled", raidId);
 	}
@@ -325,9 +490,12 @@ public class Raid {
 	private void discardRemainingMobs(ServerLevel level) {
 		for (UUID id : currentWaveMobs) {
 			Entity entity = level.getEntity(id);
-			if (entity != null) entity.discard();
+			if (entity == null) continue;
+			RaidTeams.release(level, entity);
+			entity.discard();
 		}
 		currentWaveMobs.clear();
+		currentWaveEscort.clear();
 	}
 
 	private void clearBossEvent() {
@@ -348,24 +516,29 @@ public class Raid {
 		tag.putString("Dimension", dimension.location().toString());
 		tag.putLong("Center", center.asLong());
 		tag.putString("Status", status.name());
+		tag.putString("Difficulty", difficulty.name());
 		tag.putInt("WaveIndex", currentWaveIndex);
 		tag.putInt("WaveDelay", waveDelayTimer);
 		tag.putInt("TotalMobs", totalMobsThisWave);
-		ListTag participantsTag = new ListTag();
-		for (UUID id : participants) {
-			CompoundTag entry = new CompoundTag();
-			entry.putUUID("Id", id);
-			participantsTag.add(entry);
-		}
-		tag.put("Participants", participantsTag);
-		ListTag mobsTag = new ListTag();
-		for (UUID id : currentWaveMobs) {
-			CompoundTag entry = new CompoundTag();
-			entry.putUUID("Id", id);
-			mobsTag.add(entry);
-		}
-		tag.put("Mobs", mobsTag);
+		tag.put("Participants", saveUuids(participants));
+		tag.put("Mobs", saveUuids(currentWaveMobs));
+		tag.put("Escort", saveUuids(currentWaveEscort));
 		return tag;
+	}
+
+	private static ListTag saveUuids(Set<UUID> ids) {
+		ListTag list = new ListTag();
+		for (UUID id : ids) {
+			CompoundTag entry = new CompoundTag();
+			entry.putUUID("Id", id);
+			list.add(entry);
+		}
+		return list;
+	}
+
+	private static void loadUuids(CompoundTag tag, String key, Set<UUID> into) {
+		ListTag list = tag.getList(key, Tag.TAG_COMPOUND);
+		for (int i = 0; i < list.size(); i++) into.add(list.getCompound(i).getUUID("Id"));
 	}
 
 	public static Raid load(CompoundTag tag) {
@@ -374,19 +547,14 @@ public class Raid {
 		ResourceKey<Level> dimension = ResourceKey.create(Registries.DIMENSION, ResourceLocation.parse(tag.getString("Dimension")));
 		BlockPos center = BlockPos.of(tag.getLong("Center"));
 		Set<UUID> participants = new HashSet<>();
-		ListTag participantsTag = tag.getList("Participants", Tag.TAG_COMPOUND);
-		for (int i = 0; i < participantsTag.size(); i++) {
-			participants.add(participantsTag.getCompound(i).getUUID("Id"));
-		}
-		Raid raid = new Raid(raidId, typeId, dimension, center, participants);
+		loadUuids(tag, "Participants", participants);
+		Raid raid = new Raid(raidId, typeId, dimension, center, participants, Difficulty.fromName(tag.getString("Difficulty")));
 		raid.status = Status.valueOf(tag.getString("Status"));
 		raid.currentWaveIndex = tag.getInt("WaveIndex");
 		raid.waveDelayTimer = tag.getInt("WaveDelay");
 		raid.totalMobsThisWave = tag.getInt("TotalMobs");
-		ListTag mobsTag = tag.getList("Mobs", Tag.TAG_COMPOUND);
-		for (int i = 0; i < mobsTag.size(); i++) {
-			raid.currentWaveMobs.add(mobsTag.getCompound(i).getUUID("Id"));
-		}
+		loadUuids(tag, "Mobs", raid.currentWaveMobs);
+		loadUuids(tag, "Escort", raid.currentWaveEscort);
 		return raid;
 	}
 
@@ -413,5 +581,9 @@ public class Raid {
 	@java.lang.SuppressWarnings("all")
 	public Status getStatus() {
 		return this.status;
+	}
+
+	public String getTypeId() {
+		return this.typeId;
 	}
 }

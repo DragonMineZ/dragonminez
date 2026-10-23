@@ -14,4 +14,7 @@ public interface LivingEntityAccessor {
 
 	@Accessor("attackStrengthTicker")
 	int getAttackStrengthTicker();
+
+	@Accessor("attackStrengthTicker")
+	void setAttackStrengthTicker(int attackStrengthTicker);
 }

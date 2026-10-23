@@ -13,7 +13,6 @@ import net.minecraft.world.level.levelgen.WorldgenRandom;
 import net.minecraft.world.level.levelgen.structure.placement.StructurePlacement;
 import net.minecraft.world.level.levelgen.structure.placement.StructurePlacementType;
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.NotNull;
 import java.util.Optional;
 
 public class UniqueNearSpawnPlacement extends StructurePlacement {
@@ -34,6 +33,9 @@ public class UniqueNearSpawnPlacement extends StructurePlacement {
 		this(locateOffset, frequencyReductionMethod, frequency, salt, exclusionZone, Rotation.NONE);
 	}
 
+	private volatile long cachedSeed;
+	private volatile ChunkPos cachedChunk;
+
 	@Override
 	protected boolean isPlacementChunk(ChunkGeneratorStructureState structureState, int x, int z) {
 		if (!ConfigManager.getServerConfig().getWorldGen().getGenerateCustomStructures()) {
@@ -44,10 +46,16 @@ public class UniqueNearSpawnPlacement extends StructurePlacement {
 	}
 
 	public ChunkPos getStructureChunk(long worldSeed) {
+		ChunkPos snapshot = this.cachedChunk;
+		if (snapshot != null && this.cachedSeed == worldSeed) return snapshot;
+
 		WorldgenRandom random = new WorldgenRandom(new LegacyRandomSource(worldSeed + this.salt()));
 		int targetChunkX = random.nextInt(100) - 50;
 		int targetChunkZ = random.nextInt(100) - 50;
-		return new ChunkPos(targetChunkX, targetChunkZ);
+		ChunkPos pos = new ChunkPos(targetChunkX, targetChunkZ);
+		this.cachedSeed = worldSeed;
+		this.cachedChunk = pos;
+		return pos;
 	}
 
 	@Override

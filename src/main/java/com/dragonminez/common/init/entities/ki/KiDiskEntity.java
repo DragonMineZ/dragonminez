@@ -1,7 +1,7 @@
 package com.dragonminez.common.init.entities.ki;
 
 import com.dragonminez.common.compat.CameraAimHelper;
-
+import com.dragonminez.common.combat.util.KiTerrainDestruction;
 import com.dragonminez.common.combat.util.MultipartTargeting;
 
 import com.dragonminez.client.util.ColorUtils;
@@ -21,8 +21,10 @@ import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.syncher.EntityDataAccessor;
 import net.minecraft.network.syncher.EntityDataSerializers;
 import net.minecraft.network.syncher.SynchedEntityData;
+import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundSource;
+import net.minecraft.util.Mth;
 import net.minecraft.world.entity.*;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.entity.projectile.Projectile;
@@ -36,6 +38,8 @@ import java.util.List;
 public class KiDiskEntity extends AbstractKiProjectile {
 
     private boolean hasSpawnedSplash = false;
+    private transient Vec3 cutFrom;
+    private transient Vec3 cutLateral;
 
     private static final EntityDataAccessor<Integer> CAST_TIME = SynchedEntityData.defineId(KiDiskEntity.class, EntityDataSerializers.INT);
     private static final EntityDataAccessor<Float> OFFSET_X = SynchedEntityData.defineId(KiDiskEntity.class, EntityDataSerializers.FLOAT);
@@ -115,6 +119,10 @@ public class KiDiskEntity extends AbstractKiProjectile {
             this.shoot(lookDir.x, lookDir.y, lookDir.z, this.getKiSpeed(), 0.0F);
             this.setYRot(CameraAimHelper.yaw(livingOwner, lookDir));
             this.setXRot(CameraAimHelper.pitch(lookDir));
+            this.yRotO = this.getYRot();
+            this.xRotO = this.getXRot();
+            this.cutFrom = this.position();
+            this.cutLateral = null;
 
             this.playSound(MainSounds.KI_DISK_FIRE.get(), 0.7F, 1.5F);
         }
@@ -151,7 +159,8 @@ public class KiDiskEntity extends AbstractKiProjectile {
         Vec3 look = owner.getLookAngle();
         Vec3 right = look.cross(new Vec3(0, 1, 0)).normalize();
         Vec3 up = right.cross(look).normalize();
-        Vec3 offset = right.scale(this.entityData.get(OFFSET_X)).add(up.scale(this.entityData.get(OFFSET_Y))).add(look.scale(this.entityData.get(OFFSET_Z)));
+        Vec3 offset = castOffset(owner, right, up, look,
+                this.entityData.get(OFFSET_X), this.entityData.get(OFFSET_Y), this.entityData.get(OFFSET_Z));
         Vec3 newPos = owner.getEyePosition().add(offset);
         this.setPos(newPos.x, newPos.y, newPos.z);
     }
@@ -198,6 +207,8 @@ public class KiDiskEntity extends AbstractKiProjectile {
                 if (this.tickCount % 10 == 0) {
                     pulseAreaDamage();
                 }
+            } else {
+                this.sliceTerrain();
             }
         }
 
@@ -271,6 +282,29 @@ public class KiDiskEntity extends AbstractKiProjectile {
                 this.hasSpawnedSplash = true;
             }
         }
+    }
+
+    private void sliceTerrain() {
+        Vec3 to = this.position();
+        Vec3 from = this.cutFrom;
+        this.cutFrom = to;
+        if (from == null || !this.isBlockDestructionEnabled() || !(this.level() instanceof ServerLevel serverLevel)) return;
+
+        Vec3 step = to.subtract(from);
+        double length = step.length();
+        if (length < 1.0E-3D) return;
+        Vec3 dir = step.scale(1.0D / length);
+
+        Vec3 lateral = new Vec3(-dir.z, 0.0D, dir.x);
+        if (lateral.lengthSqr() > 1.0E-6D) lateral = lateral.normalize();
+        else if (this.cutLateral != null) lateral = this.cutLateral;
+        else lateral = new Vec3(1.0D, 0.0D, 0.0D);
+        this.cutLateral = lateral;
+
+        float radius = this.scaledDestructionRadius(this.getSize());
+        if (radius <= 0.0F) return;
+        KiTerrainDestruction.slice(serverLevel, KiTerrainDestruction.diskSweep(from, dir, lateral, radius),
+                0.0D, length, this.getKiGriefingSource());
     }
 
     private void pulseAreaDamage() {

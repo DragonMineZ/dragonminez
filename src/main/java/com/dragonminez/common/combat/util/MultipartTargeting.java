@@ -17,12 +17,12 @@ public final class MultipartTargeting {
     }
 
     public static List<LivingEntity> collectTargets(Level level, AABB box) {
-        List<LivingEntity> out = new ArrayList<>(level.getEntitiesOfClass(LivingEntity.class, box));
+        List<LivingEntity> out = level.getEntitiesOfClass(LivingEntity.class, box);
         if (level instanceof ServerLevel serverLevel) {
             for (PartEntity<?> part : serverLevel.getPartEntities()) {
                 if (part.getParent() instanceof LivingEntity parent
-                        && !out.contains(parent)
-                        && part.getBoundingBox().intersects(box)) {
+                        && part.getBoundingBox().intersects(box)
+                        && !out.contains(parent)) {
                     out.add(parent);
                 }
             }

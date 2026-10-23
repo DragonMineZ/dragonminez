@@ -13,10 +13,12 @@ public class PlayerEffectQueue {
 	public interface DeferredEffectTask { void render(); }
 
 	public record AuraRenderEntry(AbstractClientPlayer player, BakedGeoModel playerModel, Matrix4f poseMatrix, float partialTick, int packedLight) {}
+	public record WeaponRenderEntry(AbstractClientPlayer player, BakedGeoModel playerModel, Matrix4f poseMatrix, String weaponType, float[] color, float partialTick, int packedLight) {}
 	public record SparkRenderEntry(AbstractClientPlayer player, BakedGeoModel playerModel, Matrix4f poseMatrix, float partialTick, int packedLight) {}
 	public record FirstPersonAuraEntry(AbstractClientPlayer player, Matrix4f poseMatrix, float partialTick, int packedLight) {}
 
 	private static final List<AuraRenderEntry> AURA_QUEUE = new ArrayList<>();
+	private static final List<WeaponRenderEntry> WEAPON_QUEUE = new ArrayList<>();
 	private static final List<SparkRenderEntry> SPARK_QUEUE = new ArrayList<>();
 	private static final List<FirstPersonAuraEntry> FIRST_PERSON_AURA_QUEUE = new ArrayList<>();
 	private static final List<KiRenderTask> KI_ATTACK_QUEUE = new ArrayList<>();
@@ -24,6 +26,10 @@ public class PlayerEffectQueue {
 
 	public static synchronized void addAura(AbstractClientPlayer player, BakedGeoModel playerModel, PoseStack currentStack, float partialTick, int packedLight) {
 		AURA_QUEUE.add(new AuraRenderEntry(player, playerModel, new Matrix4f(currentStack.last().pose()), partialTick, packedLight));
+	}
+
+	public static synchronized void addWeapon(AbstractClientPlayer player, BakedGeoModel playerModel, PoseStack currentStack, String weaponType, float[] color, float partialTick, int packedLight) {
+		WEAPON_QUEUE.add(new WeaponRenderEntry(player, playerModel, new Matrix4f(currentStack.last().pose()), weaponType, color, partialTick, packedLight));
 	}
 
 	public static synchronized void addSpark(AbstractClientPlayer player, BakedGeoModel playerModel, PoseStack currentStack, float partialTick, int packedLight) {
@@ -46,6 +52,13 @@ public class PlayerEffectQueue {
 		if (AURA_QUEUE.isEmpty()) return new ArrayList<>();
 		List<AuraRenderEntry> copy = new ArrayList<>(AURA_QUEUE);
 		AURA_QUEUE.clear();
+		return copy;
+	}
+
+	public static synchronized List<WeaponRenderEntry> getAndClearWeapons() {
+		if (WEAPON_QUEUE.isEmpty()) return new ArrayList<>();
+		List<WeaponRenderEntry> copy = new ArrayList<>(WEAPON_QUEUE);
+		WEAPON_QUEUE.clear();
 		return copy;
 	}
 

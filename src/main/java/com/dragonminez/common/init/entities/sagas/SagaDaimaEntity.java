@@ -1,0 +1,1163 @@
+package com.dragonminez.common.init.entities.sagas;
+
+import com.dragonminez.common.init.MainEntities;
+import com.dragonminez.common.init.MainItems;
+import com.dragonminez.common.quest.QuestService;
+import net.minecraft.core.particles.ParticleTypes;
+import net.minecraft.nbt.CompoundTag;
+import net.minecraft.network.syncher.EntityDataAccessor;
+import net.minecraft.nbt.Tag;
+import net.minecraft.server.level.ServerLevel;
+import net.minecraft.util.Mth;
+import net.minecraft.world.entity.EquipmentSlot;
+import net.minecraft.world.entity.EntityDimensions;
+import net.minecraft.world.entity.EntityType;
+import net.minecraft.world.entity.ai.attributes.Attributes;
+import net.minecraft.world.entity.monster.Monster;
+import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.level.Level;
+
+import java.util.UUID;
+
+public class SagaDaimaEntity {
+
+    private static final int SSJ_AURA = 0xFFE657;
+    private static final int SSJ4_AURA = 0xFF3A3A;
+    private static final float TAMAGAMI_SCALE = 1.5F;
+
+    /*
+        GOKU DAIMA [ BASE - SSJ - SSJ2 - SSJ3 | SSJ4 ]
+     */
+
+    public static class GokuDaimaBaseEntity extends DBSagasEntity {
+
+        public GokuDaimaBaseEntity(EntityType<? extends Monster> pEntityType, Level pLevel) {
+            super(pEntityType, pLevel);
+
+            this.setCanFly(true);
+            this.setAuraColor(0xFFFFFF);
+            this.setKiBlastSpeed(1.4F);
+            this.setDBZStyle(0);
+            this.setEvade(true, 50);
+            this.setAllowedCombos(180, ComboType.KI_CHARGE_ATTACK, ComboType.AIR, ComboType.SUPER_GOD_FIST);
+            this.addKiSkill(KiSkillType.KAMEHAMEHA, 200, 1.5F);
+            this.addKiSkill(KiSkillType.KI_SMALL, 50, 1.5F, 0x75FFFF, 0x75FFFF);
+
+            this.setWildSense(true, 150);
+        }
+
+        @Override
+        public String getGeckolibModelName() {
+            return "saga_goku";
+        }
+
+        @Override
+        protected boolean hasTransformation() {
+            return true;
+        }
+
+        @Override
+        public EntityType<? extends DBSagasEntity> getNextTransform() {
+            return MainEntities.SAGA_GOKU_DAIMA_SSJ.get();
+        }
+    }
+
+    public static class GokuDaimaSSJEntity extends DBSagasEntity {
+
+        public GokuDaimaSSJEntity(EntityType<? extends Monster> pEntityType, Level pLevel) {
+            super(pEntityType, pLevel);
+
+            this.setCanFly(true);
+            this.setAuraColor(SSJ_AURA);
+            this.setKiBlastSpeed(1.5F);
+            this.setDBZStyle(0);
+            this.setEvade(true, 45);
+            this.setAllowedCombos(170, ComboType.KI_CHARGE_ATTACK, ComboType.AIR);
+            this.addKiSkill(KiSkillType.KAMEHAMEHA, 200, 1.8F);
+            this.addKiSkill(KiSkillType.KI_SMALL, 60, 1.5F, SSJ_AURA, SSJ_AURA);
+            this.addKiSkill(KiSkillType.KI_VOLLEY, 200, 1.5F, SSJ_AURA, SSJ_AURA);
+
+            this.setWildSense(true, 130);
+            this.setZanzoken(3, 300);
+        }
+
+        @Override
+        public String getGeckolibModelName() {
+            return "saga_goku_ssj";
+        }
+
+        @Override
+        protected boolean hasTransformation() {
+            return true;
+        }
+
+        @Override
+        public EntityType<? extends DBSagasEntity> getNextTransform() {
+            return MainEntities.SAGA_GOKU_DAIMA_SSJ2.get();
+        }
+    }
+
+    public static class GokuDaimaSSJ2Entity extends DBSagasEntity {
+
+        public GokuDaimaSSJ2Entity(EntityType<? extends Monster> pEntityType, Level pLevel) {
+            super(pEntityType, pLevel);
+
+            this.setCanFly(true);
+            this.setAuraColor(SSJ_AURA);
+            this.setLightning(true);
+            this.setKiBlastSpeed(1.6F);
+            this.setDBZStyle(0);
+            this.setEvade(true, 40);
+            this.setAllowedCombos(160, ComboType.KI_CHARGE_ATTACK, ComboType.AIR, ComboType.METEOR_COMBINATION);
+            this.addKiSkill(KiSkillType.KAMEHAMEHA, 200, 2.2F);
+            this.addKiSkill(KiSkillType.KI_SMALL, 60, 1.5F, SSJ_AURA, SSJ_AURA);
+            this.addKiSkill(KiSkillType.KI_VOLLEY, 200, 1.6F, SSJ_AURA, SSJ_AURA);
+
+            this.setWildSense(true, 110);
+            this.setZanzoken(3, 250);
+        }
+
+        @Override
+        public String getGeckolibModelName() {
+            return "saga_goku_ssj2";
+        }
+
+        @Override
+        protected boolean hasTransformation() {
+            return true;
+        }
+
+        @Override
+        public EntityType<? extends DBSagasEntity> getNextTransform() {
+            return MainEntities.SAGA_GOKU_DAIMA_SSJ3.get();
+        }
+    }
+
+    public static class GokuDaimaSSJ3Entity extends DBSagasEntity {
+
+        public GokuDaimaSSJ3Entity(EntityType<? extends Monster> pEntityType, Level pLevel) {
+            super(pEntityType, pLevel);
+
+            this.setCanFly(true);
+            this.setAuraColor(SSJ_AURA);
+            this.setLightning(true);
+            this.setKiBlastSpeed(1.7F);
+            this.setDBZStyle(0);
+            this.setEvade(true, 35);
+            this.setAllowedCombos(140, ComboType.KI_CHARGE_ATTACK, ComboType.AIR, ComboType.METEOR_COMBINATION, ComboType.BASIC);
+            this.addKiSkill(KiSkillType.KAMEHAMEHA, 200, 3.0F);
+            this.addKiSkill(KiSkillType.DRAGON_FIST, 600);
+            this.addKiSkill(KiSkillType.KI_SMALL, 60, 1.6F, SSJ_AURA, SSJ_AURA);
+            this.addKiSkill(KiSkillType.KI_VOLLEY, 200, 1.6F, SSJ_AURA, SSJ_AURA);
+
+            this.setWildSense(true, 70);
+            this.setZanzoken(3, 200);
+        }
+
+        @Override
+        public String getGeckolibModelName() {
+            return "saga_goku_ssj3";
+        }
+    }
+
+    public static class GokuDaimaSSJ4Entity extends DBSagasEntity {
+
+        public GokuDaimaSSJ4Entity(EntityType<? extends Monster> pEntityType, Level pLevel) {
+            super(pEntityType, pLevel);
+
+            this.setCanFly(true);
+            this.setAuraColor(SSJ4_AURA);
+            this.setScaleVal(1.2F);
+            this.setKiBlastSpeed(1.8F);
+            this.setDBZStyle(0);
+            this.setEvade(true, 35);
+            this.setAllowedCombos(120, ComboType.KI_CHARGE_ATTACK, ComboType.AIR, ComboType.METEOR_COMBINATION, ComboType.BASIC);
+            this.addKiSkill(KiSkillType.KAMEHAMEHA_X10, 220, 3.2F);
+            this.addKiSkill(KiSkillType.DRAGON_FIST, 550);
+            this.addKiSkill(KiSkillType.KI_VOLLEY, 180, 1.7F, 0xFFB3B3, 0xFF4040);
+
+            this.setWildSense(true, 60);
+            this.setZanzoken(3, 150);
+            this.getAttribute(Attributes.MOVEMENT_SPEED).setBaseValue(0.32D);
+            this.setDefaultMovementSpeed(0.32D);
+        }
+
+        @Override
+        public String getGeckolibModelName() {
+            return "saga_goku_gt_ssj4";
+        }
+    }
+
+    /*
+        GOKU MINI [ BASE - SSJ - SSJ2 - SSJ3 | SSJ4 ]
+     */
+
+    public static class GokuMiniBaseEntity extends DBSagasEntity {
+
+        public GokuMiniBaseEntity(EntityType<? extends Monster> pEntityType, Level pLevel) {
+            super(pEntityType, pLevel);
+
+            this.setCanFly(true);
+            this.setisKid(true);
+            this.setAuraColor(0xFFFFFF);
+            this.setKiBlastSpeed(1.4F);
+            this.setDBZStyle(7);
+            this.setEvade(true, 60);
+            this.setAllowedCombos(180, ComboType.KI_CHARGE_ATTACK, ComboType.AIR);
+            this.addKiSkill(KiSkillType.KAMEHAMEHA, 220, 1.2F);
+            this.addKiSkill(KiSkillType.KI_SMALL, 60, 1.2F, 0x75FFFF, 0x75FFFF);
+
+            this.setWildSense(true, 150);
+            this.setItemSlot(EquipmentSlot.MAINHAND, new ItemStack(MainItems.POWER_POLE.get()));
+            this.setDropChance(EquipmentSlot.MAINHAND, 0.0F);
+        }
+
+        @Override
+        public String getGeckolibModelName() {
+            return "saga_kid_goku";
+        }
+
+        @Override
+        protected boolean hasTransformation() {
+            return true;
+        }
+
+        @Override
+        public EntityType<? extends DBSagasEntity> getNextTransform() {
+            return MainEntities.SAGA_GOKU_MINI_SSJ.get();
+        }
+    }
+
+    public static class GokuMiniSSJEntity extends DBSagasEntity {
+
+        public GokuMiniSSJEntity(EntityType<? extends Monster> pEntityType, Level pLevel) {
+            super(pEntityType, pLevel);
+
+            this.setCanFly(true);
+            this.setisKid(true);
+            this.setAuraColor(SSJ_AURA);
+            this.setKiBlastSpeed(1.5F);
+            this.setDBZStyle(7);
+            this.setEvade(true, 50);
+            this.setAllowedCombos(160, ComboType.KI_CHARGE_ATTACK, ComboType.AIR, ComboType.METEOR_COMBINATION);
+            this.addKiSkill(KiSkillType.KAMEHAMEHA, 200, 1.5F);
+            this.addKiSkill(KiSkillType.KI_VOLLEY, 200, 1.4F, SSJ_AURA, SSJ_AURA);
+
+            this.setWildSense(true, 120);
+            this.setZanzoken(3, 300);
+            this.setItemSlot(EquipmentSlot.MAINHAND, new ItemStack(MainItems.POWER_POLE.get()));
+            this.setDropChance(EquipmentSlot.MAINHAND, 0.0F);
+        }
+
+        @Override
+        public String getGeckolibModelName() {
+            return "saga_goten_ssj";
+        }
+
+        @Override
+        protected boolean hasTransformation() {
+            return true;
+        }
+
+        @Override
+        public EntityType<? extends DBSagasEntity> getNextTransform() {
+            return MainEntities.SAGA_GOKU_MINI_SSJ2.get();
+        }
+    }
+
+    public static class GokuMiniSSJ2Entity extends DBSagasEntity {
+
+        public GokuMiniSSJ2Entity(EntityType<? extends Monster> pEntityType, Level pLevel) {
+            super(pEntityType, pLevel);
+
+            this.setCanFly(true);
+            this.setisKid(true);
+            this.setAuraColor(SSJ_AURA);
+            this.setLightning(true);
+            this.setKiBlastSpeed(1.55F);
+            this.setDBZStyle(0);
+            this.setEvade(true, 45);
+            this.setAllowedCombos(150, ComboType.KI_CHARGE_ATTACK, ComboType.AIR, ComboType.METEOR_COMBINATION);
+            this.addKiSkill(KiSkillType.KAMEHAMEHA, 200, 2.0F);
+            this.addKiSkill(KiSkillType.KI_SMALL, 60, 1.4F, SSJ_AURA, SSJ_AURA);
+            this.addKiSkill(KiSkillType.KI_VOLLEY, 200, 1.5F, SSJ_AURA, SSJ_AURA);
+
+            this.setWildSense(true, 100);
+            this.setZanzoken(3, 250);
+        }
+
+        @Override
+        public String getGeckolibModelName() {
+            return "saga_goten_ssj";
+        }
+
+        @Override
+        protected boolean hasTransformation() {
+            return true;
+        }
+
+        @Override
+        public EntityType<? extends DBSagasEntity> getNextTransform() {
+            return MainEntities.SAGA_GOKU_MINI_SSJ3.get();
+        }
+    }
+
+    public static class GokuMiniSSJ3Entity extends DBSagasEntity {
+
+        public GokuMiniSSJ3Entity(EntityType<? extends Monster> pEntityType, Level pLevel) {
+            super(pEntityType, pLevel);
+
+            this.setCanFly(true);
+            this.setisKid(true);
+            this.setAuraColor(SSJ_AURA);
+            this.setLightning(true);
+            this.setKiBlastSpeed(1.6F);
+            this.setDBZStyle(0);
+            this.setEvade(true, 40);
+            this.setAllowedCombos(140, ComboType.KI_CHARGE_ATTACK, ComboType.AIR, ComboType.METEOR_COMBINATION, ComboType.BASIC);
+            this.addKiSkill(KiSkillType.KAMEHAMEHA, 200, 2.5F);
+            this.addKiSkill(KiSkillType.KI_SMALL, 60, 1.5F, SSJ_AURA, SSJ_AURA);
+            this.addKiSkill(KiSkillType.KI_VOLLEY, 200, 1.5F, SSJ_AURA, SSJ_AURA);
+
+            this.setWildSense(true, 80);
+            this.setZanzoken(3, 200);
+        }
+
+        @Override
+        public String getGeckolibModelName() {
+            return "saga_gokugt_ssj3";
+        }
+    }
+
+    public static class GokuMiniSSJ4Entity extends DBSagasEntity {
+
+        public GokuMiniSSJ4Entity(EntityType<? extends Monster> pEntityType, Level pLevel) {
+            super(pEntityType, pLevel);
+
+            this.setCanFly(true);
+            this.setisKid(true);
+            this.setAuraColor(SSJ4_AURA);
+            this.setKiBlastSpeed(1.8F);
+            this.setDBZStyle(0);
+            this.setEvade(true, 40);
+            this.setAllowedCombos(120, ComboType.KI_CHARGE_ATTACK, ComboType.AIR, ComboType.METEOR_COMBINATION, ComboType.BASIC);
+            this.addKiSkill(KiSkillType.KAMEHAMEHA_X10, 220, 2.8F);
+            this.addKiSkill(KiSkillType.DRAGON_FIST, 600);
+            this.addKiSkill(KiSkillType.KI_VOLLEY, 180, 1.6F, 0xFFB3B3, 0xFF4040);
+
+            this.setWildSense(true, 60);
+            this.setZanzoken(3, 150);
+            this.getAttribute(Attributes.MOVEMENT_SPEED).setBaseValue(0.32D);
+            this.setDefaultMovementSpeed(0.32D);
+        }
+    }
+
+    /*
+        VEGETA DAIMA [ BASE - SSJ - SSJ2 - SSJ3 ]
+     */
+
+    public static class VegetaDaimaBaseEntity extends DBSagasEntity {
+
+        public VegetaDaimaBaseEntity(EntityType<? extends Monster> pEntityType, Level pLevel) {
+            super(pEntityType, pLevel);
+
+            this.setCanFly(true);
+            this.setAuraColor(0xFFFFFF);
+            this.setKiBlastSpeed(1.5F);
+            this.setDBZStyle(0);
+            this.setEvade(true, 55);
+            this.setAllowedCombos(150, ComboType.AIR, ComboType.KI_CHARGE_ATTACK);
+            this.addKiSkill(KiSkillType.KI_VOLLEY, 200, 1.3F, 0x00C0FF, 0x00C0FF);
+            this.addKiSkill(KiSkillType.GALICK_GUN, 350, 1.4F);
+
+            this.setWildSense(true, 140);
+        }
+
+        @Override
+        public String getGeckolibModelName() {
+            return "saga_vegeta";
+        }
+
+        @Override
+        protected boolean hasTransformation() {
+            return true;
+        }
+
+        @Override
+        public EntityType<? extends DBSagasEntity> getNextTransform() {
+            return MainEntities.SAGA_VEGETA_DAIMA_SSJ.get();
+        }
+    }
+
+    public static class VegetaDaimaSSJEntity extends DBSagasEntity {
+
+        public VegetaDaimaSSJEntity(EntityType<? extends Monster> pEntityType, Level pLevel) {
+            super(pEntityType, pLevel);
+
+            this.setCanFly(true);
+            this.setAuraColor(SSJ_AURA);
+            this.setKiBlastSpeed(1.6F);
+            this.setDBZStyle(0);
+            this.setEvade(true, 45);
+            this.setAllowedCombos(140, ComboType.AIR, ComboType.KI_CHARGE_ATTACK);
+            this.addKiSkill(KiSkillType.KI_VOLLEY, 200, 1.4F, SSJ_AURA, SSJ_AURA);
+            this.addKiSkill(KiSkillType.GALICK_GUN, 320, 1.6F);
+            this.addKiSkill(KiSkillType.BIG_BANG, 280, 1.7F);
+
+            this.setWildSense(true, 120);
+            this.setZanzoken(3, 280);
+        }
+
+        @Override
+        public String getGeckolibModelName() {
+            return "saga_vegeta";
+        }
+
+        @Override
+        protected boolean hasTransformation() {
+            return true;
+        }
+
+        @Override
+        public EntityType<? extends DBSagasEntity> getNextTransform() {
+            return MainEntities.SAGA_VEGETA_DAIMA_SSJ2.get();
+        }
+    }
+
+    public static class VegetaDaimaSSJ2Entity extends DBSagasEntity {
+
+        public VegetaDaimaSSJ2Entity(EntityType<? extends Monster> pEntityType, Level pLevel) {
+            super(pEntityType, pLevel);
+
+            this.setCanFly(true);
+            this.setAuraColor(SSJ_AURA);
+            this.setLightning(true);
+            this.setKiBlastSpeed(1.7F);
+            this.setDBZStyle(0);
+            this.setEvade(true, 40);
+            this.setAllowedCombos(130, ComboType.AIR, ComboType.KI_CHARGE_ATTACK, ComboType.METEOR_COMBINATION);
+            this.addKiSkill(KiSkillType.KI_VOLLEY, 190, 1.5F, SSJ_AURA, SSJ_AURA);
+            this.addKiSkill(KiSkillType.GALICK_GUN, 300, 1.8F);
+            this.addKiSkill(KiSkillType.BIG_BANG, 280, 1.9F);
+            this.addKiSkill(KiSkillType.FINAL_FLASH, 400, 2.3F);
+
+            this.setWildSense(true, 100);
+            this.setZanzoken(3, 230);
+        }
+
+        @Override
+        public String getGeckolibModelName() {
+            return "saga_vegeta_ssj2";
+        }
+
+        @Override
+        protected boolean hasTransformation() {
+            return true;
+        }
+
+        @Override
+        public EntityType<? extends DBSagasEntity> getNextTransform() {
+            return MainEntities.SAGA_VEGETA_DAIMA_SSJ3.get();
+        }
+    }
+
+    public static class VegetaDaimaSSJ3Entity extends DBSagasEntity {
+
+        public VegetaDaimaSSJ3Entity(EntityType<? extends Monster> pEntityType, Level pLevel) {
+            super(pEntityType, pLevel);
+
+            this.setCanFly(true);
+            this.setAuraColor(SSJ_AURA);
+            this.setLightning(true);
+            this.setKiBlastSpeed(1.8F);
+            this.setDBZStyle(0);
+            this.setEvade(true, 35);
+            this.setAllowedCombos(120, ComboType.AIR, ComboType.KI_CHARGE_ATTACK, ComboType.METEOR_COMBINATION, ComboType.BASIC, ComboType.DEADLY_DANCE_VEGETTO, ComboType.SPIRIT_BREAKER);
+            this.addKiSkill(KiSkillType.KI_VOLLEY, 180, 1.6F, SSJ_AURA, SSJ_AURA);
+            this.addKiSkill(KiSkillType.GALICK_GUN, 280, 2.2F);
+            this.addKiSkill(KiSkillType.BIG_BANG, 260, 2.2F);
+            this.addKiSkill(KiSkillType.FINAL_FLASH, 380, 3.0F);
+
+            this.setWildSense(true, 70);
+            this.setZanzoken(3, 180);
+        }
+
+        @Override
+        public String getGeckolibModelName() {
+            return "saga_vegeta_ssj3";
+        }
+    }
+
+    /*
+        VEGETA MINI [ BASE - SSJ - SSJ2 - SSJ3 ]
+     */
+
+    public static class VegetaMiniBaseEntity extends DBSagasEntity {
+
+        public VegetaMiniBaseEntity(EntityType<? extends Monster> pEntityType, Level pLevel) {
+            super(pEntityType, pLevel);
+
+            this.setCanFly(true);
+            this.setisKid(true);
+            this.setAuraColor(0xFFFFFF);
+            this.setKiBlastSpeed(1.4F);
+            this.setDBZStyle(0);
+            this.setEvade(true, 60);
+            this.setAllowedCombos(170, ComboType.AIR, ComboType.KI_CHARGE_ATTACK);
+            this.addKiSkill(KiSkillType.KI_VOLLEY, 200, 1.2F, 0x00C0FF, 0x00C0FF);
+            this.addKiSkill(KiSkillType.GALICK_GUN, 380, 1.2F);
+
+            this.setWildSense(true, 150);
+        }
+
+        @Override
+        protected boolean hasTransformation() {
+            return true;
+        }
+
+        @Override
+        public EntityType<? extends DBSagasEntity> getNextTransform() {
+            return MainEntities.SAGA_VEGETA_MINI_SSJ.get();
+        }
+    }
+
+    public static class VegetaMiniSSJEntity extends DBSagasEntity {
+
+        public VegetaMiniSSJEntity(EntityType<? extends Monster> pEntityType, Level pLevel) {
+            super(pEntityType, pLevel);
+
+            this.setCanFly(true);
+            this.setisKid(true);
+            this.setAuraColor(SSJ_AURA);
+            this.setKiBlastSpeed(1.5F);
+            this.setDBZStyle(0);
+            this.setEvade(true, 50);
+            this.setAllowedCombos(150, ComboType.AIR, ComboType.KI_CHARGE_ATTACK);
+            this.addKiSkill(KiSkillType.KI_VOLLEY, 200, 1.3F, SSJ_AURA, SSJ_AURA);
+            this.addKiSkill(KiSkillType.GALICK_GUN, 340, 1.4F);
+            this.addKiSkill(KiSkillType.BIG_BANG, 300, 1.5F);
+
+            this.setWildSense(true, 130);
+            this.setZanzoken(3, 300);
+        }
+
+        @Override
+        public String getGeckolibModelName() {
+            return "saga_vegeta_mini";
+        }
+
+        @Override
+        protected boolean hasTransformation() {
+            return true;
+        }
+
+        @Override
+        public EntityType<? extends DBSagasEntity> getNextTransform() {
+            return MainEntities.SAGA_VEGETA_MINI_SSJ2.get();
+        }
+    }
+
+    public static class VegetaMiniSSJ2Entity extends DBSagasEntity {
+
+        public VegetaMiniSSJ2Entity(EntityType<? extends Monster> pEntityType, Level pLevel) {
+            super(pEntityType, pLevel);
+
+            this.setCanFly(true);
+            this.setisKid(true);
+            this.setAuraColor(SSJ_AURA);
+            this.setLightning(true);
+            this.setKiBlastSpeed(1.55F);
+            this.setDBZStyle(0);
+            this.setEvade(true, 45);
+            this.setAllowedCombos(140, ComboType.AIR, ComboType.KI_CHARGE_ATTACK, ComboType.METEOR_COMBINATION);
+            this.addKiSkill(KiSkillType.KI_VOLLEY, 190, 1.4F, SSJ_AURA, SSJ_AURA);
+            this.addKiSkill(KiSkillType.GALICK_GUN, 320, 1.6F);
+            this.addKiSkill(KiSkillType.BIG_BANG, 290, 1.7F);
+            this.addKiSkill(KiSkillType.FINAL_FLASH, 420, 2.0F);
+
+            this.setWildSense(true, 110);
+            this.setZanzoken(3, 250);
+        }
+
+        @Override
+        public String getGeckolibModelName() {
+            return "saga_vegeta_mini";
+        }
+
+        @Override
+        protected boolean hasTransformation() {
+            return true;
+        }
+
+        @Override
+        public EntityType<? extends DBSagasEntity> getNextTransform() {
+            return MainEntities.SAGA_VEGETA_MINI_SSJ3.get();
+        }
+    }
+
+    public static class VegetaMiniSSJ3Entity extends DBSagasEntity {
+
+        public VegetaMiniSSJ3Entity(EntityType<? extends Monster> pEntityType, Level pLevel) {
+            super(pEntityType, pLevel);
+
+            this.setCanFly(true);
+            this.setisKid(true);
+            this.setAuraColor(SSJ_AURA);
+            this.setLightning(true);
+            this.setKiBlastSpeed(1.6F);
+            this.setDBZStyle(0);
+            this.setEvade(true, 40);
+            this.setAllowedCombos(130, ComboType.AIR, ComboType.KI_CHARGE_ATTACK, ComboType.METEOR_COMBINATION, ComboType.BASIC, ComboType.DEADLY_DANCE_VEGETTO);
+            this.addKiSkill(KiSkillType.KI_VOLLEY, 180, 1.5F, SSJ_AURA, SSJ_AURA);
+            this.addKiSkill(KiSkillType.GALICK_GUN, 300, 1.9F);
+            this.addKiSkill(KiSkillType.BIG_BANG, 270, 1.9F);
+            this.addKiSkill(KiSkillType.FINAL_FLASH, 400, 2.6F);
+
+            this.setWildSense(true, 80);
+            this.setZanzoken(3, 200);
+        }
+    }
+
+    /*
+        GLORIO
+     */
+
+    public static class GlorioEntity extends DBSagasEntity {
+
+        private static final int ELECTRIC_WHIP_COOLDOWN = 260;
+
+        public GlorioEntity(EntityType<? extends Monster> pEntityType, Level pLevel) {
+            super(pEntityType, pLevel);
+
+            this.setCanFly(true);
+            this.setAuraColor(0xFFFFFF);
+            this.setKiBlastSpeed(1.6F);
+            this.setDBZStyle(0);
+            this.setEvade(true, 50);
+            this.setAllowedCombos(140, ComboType.BASIC, ComboType.AIR, ComboType.RAPID_KICKS);
+            this.addKiSkill(KiSkillType.KI_SMALL, 60, 1.4F, 0xE6CCFF, 0x9B30FF);
+            this.addKiSkill(KiSkillType.KI_VOLLEY, 200, 1.4F, 0xE6CCFF, 0x9B30FF);
+            this.addKiSkill(KiSkillType.GENERIC_KI_WAVE, 300, 1.8F, 0xE6CCFF, 0x9B30FF);
+            this.addKiSkill(KiSkillType.DODONPA, ELECTRIC_WHIP_COOLDOWN, 1.2F, 0xE6CCFF, 0x9B30FF);
+
+            this.setWildSense(true, 120);
+            this.setZanzoken(1, 250);
+        }
+    }
+
+    /*
+        GOMAH [ MINI | THIRD EYE ]
+     */
+
+    public static class GomahMiniEntity extends DBSagasEntity {
+
+        public GomahMiniEntity(EntityType<? extends Monster> pEntityType, Level pLevel) {
+            super(pEntityType, pLevel);
+
+            this.setCanFly(true);
+            this.setAuraColor(0xE0245E);
+            this.setKiBlastSpeed(1.5F);
+            this.setDBZStyle(0);
+            this.setEvade(true, 60);
+            this.setAllowedCombos(160, ComboType.BASIC, ComboType.AIR);
+            this.addKiSkill(KiSkillType.KI_SMALL, 60, 1.3F, 0xFFD6E0, 0xE0245E);
+            this.addKiSkill(KiSkillType.KI_VOLLEY, 200, 1.3F, 0xFFD6E0, 0xE0245E);
+            this.addKiSkill(KiSkillType.GENERIC_KI_WAVE, 320, 1.5F, 0xFFD6E0, 0xE0245E);
+            this.addKiSkill(KiSkillType.KI_BARRIER, 300, 1.8F, 0xFF4A4A, 0xD10000);
+
+            this.setWildSense(true, 140);
+        }
+
+        @Override
+        protected boolean hasTransformation() {
+            return true;
+        }
+
+        @Override
+        public EntityType<? extends DBSagasEntity> getNextTransform() {
+            return MainEntities.SAGA_GOMAH_THIRD_EYE.get();
+        }
+    }
+
+    public static class GomahThirdEyeEntity extends DBSagasEntity {
+
+        private static final float BASE_SCALE = 5.5F;
+        private static final float MAX_SCALE = 8.0F;
+        private static final float GROWTH_PER_TICK = 0.02F;
+
+        public GomahThirdEyeEntity(EntityType<? extends Monster> pEntityType, Level pLevel) {
+            super(pEntityType, pLevel);
+
+            this.setCanFly(true);
+            this.setDBZStyle(2);
+            this.setAuraColor(0xE0245E);
+            this.setKiBlastSpeed(2.0F);
+            this.setScaleVal(BASE_SCALE);
+            this.setAllowedCombos(150, ComboType.BASIC, ComboType.AIR, ComboType.KI_CHARGE_ATTACK);
+            this.addKiSkill(KiSkillType.KI_AIR_VOLLEY, 300, 1.0F, 0xFFD6E0, 0xE0245E);
+            this.addKiSkill(KiSkillType.GENERIC_KI_WAVE, 420, 1.2F, 0xFFD6E0, 0xE0245E);
+            this.addKiSkill(KiSkillType.KI_BARRIER, 300, 1.8F, 0xFF4A4A, 0xD10000);
+
+            this.setWildSense(true, 120);
+            this.setZanzoken(1, 150);
+
+            this.getAttribute(Attributes.MOVEMENT_SPEED).setBaseValue(0.28D);
+            this.setDefaultMovementSpeed(0.28D);
+            this.getAttribute(Attributes.KNOCKBACK_RESISTANCE).setBaseValue(0.5D);
+        }
+
+        @Override
+        public void tick() {
+            super.tick();
+            if (this.level().isClientSide || !this.isAlive()) return;
+
+            float damageTaken = Mth.clamp(1.0F - this.getHealth() / this.getMaxHealth(), 0.0F, 1.0F);
+            float target = Mth.lerp(damageTaken, BASE_SCALE, MAX_SCALE);
+            float current = this.getScale();
+            if (target > current + 0.001F) {
+                this.setScaleVal(Math.min(target, current + GROWTH_PER_TICK));
+            }
+        }
+
+        @Override
+        public float getHitboxScale() {
+            return Math.max(1.0F, this.getScale() / BASE_SCALE);
+        }
+
+        @Override
+        public boolean hasHitboxParts() {
+            return true;
+        }
+
+        @Override
+        protected EntityDimensions getCoreDimensions() {
+            return EntityDimensions.scalable(2.3F, 4.6F).scale(this.getHitboxScale());
+        }
+
+        @Override
+        protected DBSagasPart[] createHitboxParts() {
+            return new DBSagasPart[] {
+                    new DBSagasPart(this, "legs", 3.7F, 4.6F, 0.0F, 0.0F, 2.3F),
+                    new DBSagasPart(this, "torso", 4.1F, 4.6F, 0.0F, 0.0F, 6.4F),
+                    new DBSagasPart(this, "head", 3.7F, 3.7F, 0.5F, 0.0F, 10.1F)
+            };
+        }
+    }
+
+    /*
+        GOMAH SOLDIERS [ 1 - 2 ]
+     */
+
+    public static class GomahSoldierEntity extends DBSagasEntity {
+        private static final double SOLDIER_SPEED = 0.34D;
+
+        private float appliedScale = 1.0F;
+        private boolean scaleReady;
+
+        public GomahSoldierEntity(EntityType<? extends Monster> pEntityType, Level pLevel) {
+            super(pEntityType, pLevel);
+
+            this.setCanFly(false);
+            this.setAuraColor(0xE0245E);
+            this.setKiBlastSpeed(1.3F);
+            this.setDBZStyle(0);
+            this.setEvade(true, 80);
+            this.setAllowedCombos(200, ComboType.BASIC);
+            this.addKiSkill(KiSkillType.KI_SMALL, 80, 1.0F, 0xFFD6E0, 0xE0245E);
+
+            this.setWildSense(true, 200);
+
+            this.setDefaultMovementSpeed(SOLDIER_SPEED);
+            this.getAttribute(Attributes.MOVEMENT_SPEED).setBaseValue(SOLDIER_SPEED);
+            this.scaleReady = true;
+        }
+
+        public void setSoldierScale(float scale) {
+            this.setScaleVal(scale);
+            this.applyScale();
+        }
+
+        private void applyScale() {
+            if (!this.scaleReady) return;
+            float scale = this.getScale();
+            if (Math.abs(scale - this.appliedScale) < 1.0E-3F) return;
+            this.appliedScale = scale;
+            this.refreshDimensions();
+        }
+
+        @Override
+        public void onSyncedDataUpdated(EntityDataAccessor<?> key) {
+            super.onSyncedDataUpdated(key);
+            this.applyScale();
+        }
+
+        @Override
+        public void readAdditionalSaveData(CompoundTag pCompound) {
+            super.readAdditionalSaveData(pCompound);
+            this.applyScale();
+        }
+    }
+
+    /*
+        MAJIN DUU
+     */
+
+    public static class MajinDuuEntity extends DBSagasEntity {
+
+        public MajinDuuEntity(EntityType<? extends Monster> pEntityType, Level pLevel) {
+            super(pEntityType, pLevel);
+
+            this.setCanFly(true);
+            this.setAuraColor(0xA6FF3A);
+            this.setKiBlastSpeed(1.6F);
+            this.setDBZStyle(0);
+            this.setEvade(true, 60);
+            this.setAllowedCombos(150, ComboType.GUM_PUNCH, ComboType.GUM_EXPAND, ComboType.BASIC);
+            this.addKiSkill(KiSkillType.KI_SMALL, 50, 1.4F, 0xF0FFD6, 0x7ED321);
+            this.addKiSkill(KiSkillType.KI_VOLLEY, 160, 1.2F, 0xF0FFD6, 0x7ED321);
+            this.addKiSkill(KiSkillType.GENERIC_KI_WAVE, 300, 1.6F, 0xF0FFD6, 0x7ED321);
+
+            this.setWildSense(true, 120);
+
+            this.getAttribute(Attributes.KNOCKBACK_RESISTANCE).setBaseValue(0.35D);
+        }
+    }
+
+    /*
+        MAJIN KUU
+     */
+
+    public static class MajinKuuEntity extends DBSagasEntity {
+
+        public MajinKuuEntity(EntityType<? extends Monster> pEntityType, Level pLevel) {
+            super(pEntityType, pLevel);
+
+            this.setCanFly(true);
+            this.setAuraColor(0xA6FF3A);
+            this.setKiBlastSpeed(1.5F);
+            this.setDBZStyle(0);
+            this.setEvade(true, 70);
+            this.setAllowedCombos(160, ComboType.AIR, ComboType.SLEEP_RECOVERY);
+            this.addKiSkill(KiSkillType.KI_SMALL, 50, 1.5F, 0xF0FFD6, 0x7ED321);
+            this.addKiSkill(KiSkillType.KI_VOLLEY, 160, 1.3F, 0xF0FFD6, 0x7ED321);
+            this.addKiSkill(KiSkillType.GENERIC_KI_WAVE, 320, 1.8F, 0xF0FFD6, 0x7ED321);
+            this.addKiSkill(KiSkillType.ASSAULT_RAIN, 300, 1.5F, 0xF0FFD6, 0x7ED321, 0x4C9A12);
+
+            this.setWildSense(true, 130);
+
+            this.getAttribute(Attributes.KNOCKBACK_RESISTANCE).setBaseValue(0.45D);
+        }
+    }
+    /*
+        TAMAGAMI [ 1 - 2 - 3 ]
+     */
+
+    public abstract static class TamagamiEntity extends DBSagasEntity {
+
+        private static final String ANCHOR_X = "dmz_tamagami_anchor_x";
+        private static final String ANCHOR_Y = "dmz_tamagami_anchor_y";
+        private static final String ANCHOR_Z = "dmz_tamagami_anchor_z";
+        private static final String[] CARRIED_TAGS = {
+                ANCHOR_X, ANCHOR_Y, ANCHOR_Z, "dmz_quest_hp", "dmz_quest_melee", "dmz_quest_ki", "dmz_quest_ai_tier"
+        };
+
+        private final int dragonBallStars;
+
+        protected TamagamiEntity(EntityType<? extends Monster> pEntityType, Level pLevel, int dragonBallStars) {
+            super(pEntityType, pLevel);
+            this.dragonBallStars = dragonBallStars;
+            this.applyTamagamiScale();
+        }
+
+        private void applyTamagamiScale() {
+            this.setScaleVal(TAMAGAMI_SCALE);
+            this.refreshDimensions();
+        }
+
+        @Override
+        public int getNamekDragonBallStars() {
+            return this.dragonBallStars;
+        }
+
+        @Override
+        public String getDragonBallTexturePrefix() {
+            return "dballdemonblock";
+        }
+
+        @Override
+        public void readAdditionalSaveData(CompoundTag pCompound) {
+            super.readAdditionalSaveData(pCompound);
+            this.applyTamagamiScale();
+        }
+
+        @Override
+        public void tick() {
+            super.tick();
+            CompoundTag data = this.getPersistentData();
+            if (!this.level().isClientSide && !data.contains(ANCHOR_X)) {
+                data.putDouble(ANCHOR_X, this.getX());
+                data.putDouble(ANCHOR_Y, this.getY());
+                data.putDouble(ANCHOR_Z, this.getZ());
+            }
+        }
+
+        @Override
+        protected void finishTransformationSpawn(DBSagasEntity newEntity, boolean fullHealth) {
+            float healthFraction = this.getHealth() / this.getMaxHealth();
+            super.finishTransformationSpawn(newEntity, fullHealth);
+            if (newEntity != null && !this.level().isClientSide) {
+                newEntity.setHealth(Math.max(1.0F, newEntity.getMaxHealth() * healthFraction));
+                CompoundTag from = this.getPersistentData();
+                CompoundTag to = newEntity.getPersistentData();
+                for (String key : CARRIED_TAGS) {
+                    Tag value = from.get(key);
+                    if (value != null) to.put(key, value.copy());
+                }
+            }
+        }
+
+        // TODO(Yuse): Daima 7 asks for 3 Tamagami kills, but questSpawnsOneAtATime() is not overridden here,
+        //  so QuestService.spawnKillObjectives spawns all 3 at once (147.6k summed melee) and each one also
+        //  reforms on death while kills are pending. The design was a single Tamagami that reforms; verify in game
+        //  and probably override questSpawnsOneAtATime() to return true.
+        @Override
+        public void remove(RemovalReason reason) {
+            if (reason == RemovalReason.KILLED && this.level() instanceof ServerLevel serverLevel
+                    && QuestService.hasPendingKills(serverLevel, this.getPersistentData())) {
+                this.reform(serverLevel);
+            }
+            super.remove(reason);
+        }
+
+        private void reform(ServerLevel level) {
+            TamagamiEntity reformed = this.reformType().create(level);
+            if (reformed == null) return;
+
+            CompoundTag data = this.getPersistentData();
+            double x = data.contains(ANCHOR_X) ? data.getDouble(ANCHOR_X) : this.getX();
+            double y = data.contains(ANCHOR_Y) ? data.getDouble(ANCHOR_Y) : this.getY();
+            double z = data.contains(ANCHOR_Z) ? data.getDouble(ANCHOR_Z) : this.getZ();
+
+            CompoundTag carried = data.copy();
+            carried.remove("dmz_stats_configured");
+            reformed.getPersistentData().merge(carried);
+            reformed.moveTo(x, y, z, this.getYRot(), 0.0F);
+
+            Player owner = this.questOwner(level);
+            if (owner != null) reformed.setTarget(owner);
+
+            level.sendParticles(ParticleTypes.EXPLOSION_EMITTER, x, y + 1.0D, z, 1, 0.0D, 0.0D, 0.0D, 0.0D);
+            level.sendParticles(ParticleTypes.CLOUD, x, y + 1.5D, z, 40, 0.8D, 1.2D, 0.8D, 0.05D);
+            level.addFreshEntity(reformed);
+        }
+
+        private Player questOwner(ServerLevel level) {
+            try {
+                return level.getServer().getPlayerList().getPlayer(UUID.fromString(this.getPersistentData().getString(QuestService.QUEST_OWNER_TAG)));
+            } catch (IllegalArgumentException e) {
+                return null;
+            }
+        }
+
+        private EntityType<? extends TamagamiEntity> reformType() {
+            return switch (this.dragonBallStars) {
+                case 1 -> MainEntities.SAGA_TAMAGAMI_1.get();
+                case 2 -> MainEntities.SAGA_TAMAGAMI_2.get();
+                default -> MainEntities.SAGA_TAMAGAMI_3.get();
+            };
+        }
+    }
+
+    public static class Tamagami1Entity extends TamagamiEntity {
+
+        public Tamagami1Entity(EntityType<? extends Monster> pEntityType, Level pLevel) {
+            super(pEntityType, pLevel, 1);
+
+            this.setCanFly(true);
+            this.setAuraColor(0xFFFFFF);
+            this.setKiBlastSpeed(1.5F);
+            this.setDBZStyle(0);
+            this.setEvade(true, 60);
+            this.setAllowedCombos(150, ComboType.BASIC, ComboType.AIR);
+            this.addKiSkill(KiSkillType.KI_SMALL, 60, 1.3F, 0xE6F7FF, 0x4FC3F7);
+            this.addKiSkill(KiSkillType.KI_VOLLEY, 200, 1.3F, 0xE6F7FF, 0x4FC3F7);
+
+            this.setWildSense(true, 130);
+            this.setItemSlot(EquipmentSlot.MAINHAND, new ItemStack(MainItems.TAMAGAMI_SWORD.get()));
+            this.setDropChance(EquipmentSlot.MAINHAND, 0.0F);
+        }
+
+        @Override
+        protected boolean hasTransformation() {
+            return true;
+        }
+
+        @Override
+        public EntityType<? extends DBSagasEntity> getNextTransform() {
+            return MainEntities.SAGA_TAMAGAMI_1_POWERED.get();
+        }
+    }
+
+    public static class Tamagami1PoweredEntity extends TamagamiEntity {
+
+        public Tamagami1PoweredEntity(EntityType<? extends Monster> pEntityType, Level pLevel) {
+            super(pEntityType, pLevel, 1);
+
+            this.setCanFly(true);
+            this.setAuraColor(0xFF8C1A);
+            this.setKiBlastSpeed(1.9F);
+            this.setDBZStyle(0);
+            this.setEvade(true, 45);
+            this.setAllowedCombos(100, ComboType.BASIC, ComboType.AIR);
+            this.addKiSkill(KiSkillType.KI_SMALL, 40, 1.6F, 0xFFE0B3, 0xFF8C1A);
+            this.addKiSkill(KiSkillType.KI_VOLLEY, 130, 1.6F, 0xFFE0B3, 0xFF8C1A);
+
+            this.setWildSense(true, 90);
+            this.setZanzoken(2, 250);
+            this.setItemSlot(EquipmentSlot.MAINHAND, new ItemStack(MainItems.TAMAGAMI_SWORD.get()));
+            this.setDropChance(EquipmentSlot.MAINHAND, 0.0F);
+
+            this.getAttribute(Attributes.ATTACK_SPEED).setBaseValue(6.5D);
+        }
+
+        @Override
+        public String getGeckolibModelName() {
+            return "saga_tamagami_1";
+        }
+
+        @Override
+        public OutlineStyle getOutlineStyle() {
+            return new OutlineStyle(0xFF3030, 0x8A0000, 3.0F);
+        }
+    }
+
+    public static class Tamagami2Entity extends TamagamiEntity {
+
+        public Tamagami2Entity(EntityType<? extends Monster> pEntityType, Level pLevel) {
+            super(pEntityType, pLevel, 2);
+
+            this.setCanFly(true);
+            this.setAuraColor(0xFFFFFF);
+            this.setKiBlastSpeed(1.5F);
+            this.setDBZStyle(0);
+            this.setEvade(true, 60);
+            this.setAllowedCombos(150, ComboType.BASIC, ComboType.AIR);
+            this.addKiSkill(KiSkillType.KI_SMALL, 60, 1.4F, 0xE6F7FF, 0x4FC3F7);
+            this.addKiSkill(KiSkillType.GENERIC_KI_WAVE, 300, 1.6F, 0xE6F7FF, 0x4FC3F7);
+
+            this.setWildSense(true, 120);
+            this.setItemSlot(EquipmentSlot.MAINHAND, new ItemStack(MainItems.TAMAGAMI_TRIDENT.get()));
+            this.setDropChance(EquipmentSlot.MAINHAND, 0.0F);
+        }
+
+        @Override
+        protected boolean hasTransformation() {
+            return true;
+        }
+
+        @Override
+        public EntityType<? extends DBSagasEntity> getNextTransform() {
+            return MainEntities.SAGA_TAMAGAMI_2_POWERED.get();
+        }
+    }
+
+    public static class Tamagami2PoweredEntity extends TamagamiEntity {
+
+        public Tamagami2PoweredEntity(EntityType<? extends Monster> pEntityType, Level pLevel) {
+            super(pEntityType, pLevel, 2);
+
+            this.setCanFly(true);
+            this.setAuraColor(0xFF8C1A);
+            this.setKiBlastSpeed(1.9F);
+            this.setDBZStyle(0);
+            this.setEvade(true, 45);
+            this.setAllowedCombos(100, ComboType.BASIC, ComboType.AIR);
+            this.addKiSkill(KiSkillType.KI_SMALL, 40, 1.6F, 0xFFE0B3, 0xFF8C1A);
+            this.addKiSkill(KiSkillType.GENERIC_KI_WAVE, 200, 1.9F, 0xFFE0B3, 0xFF8C1A);
+
+            this.setWildSense(true, 90);
+            this.setZanzoken(2, 250);
+            this.setItemSlot(EquipmentSlot.MAINHAND, new ItemStack(MainItems.TAMAGAMI_TRIDENT.get()));
+            this.setDropChance(EquipmentSlot.MAINHAND, 0.0F);
+
+            this.getAttribute(Attributes.ATTACK_SPEED).setBaseValue(6.5D);
+        }
+
+        @Override
+        public String getGeckolibModelName() {
+            return "saga_tamagami_2";
+        }
+
+        @Override
+        public OutlineStyle getOutlineStyle() {
+            return new OutlineStyle(0x7FD4FF, 0x2F6BFF, 3.0F);
+        }
+    }
+
+    public static class Tamagami3Entity extends TamagamiEntity {
+
+        public Tamagami3Entity(EntityType<? extends Monster> pEntityType, Level pLevel) {
+            super(pEntityType, pLevel, 3);
+
+            this.setCanFly(true);
+            this.setAuraColor(0xFFFFFF);
+            this.setKiBlastSpeed(1.5F);
+            this.setDBZStyle(0);
+            this.setEvade(true, 50);
+            this.setAllowedCombos(140, ComboType.BASIC, ComboType.AIR, ComboType.KI_CHARGE_ATTACK);
+            this.addKiSkill(KiSkillType.KI_VOLLEY, 200, 1.5F, 0xE6F7FF, 0x4FC3F7);
+            this.addKiSkill(KiSkillType.GENERIC_KI_WAVE, 320, 1.8F, 0xE6F7FF, 0x4FC3F7);
+
+            this.setWildSense(true, 110);
+            this.setItemSlot(EquipmentSlot.MAINHAND, new ItemStack(MainItems.TAMAGAMI_HAMMER.get()));
+            this.setDropChance(EquipmentSlot.MAINHAND, 0.0F);
+
+            this.getAttribute(Attributes.KNOCKBACK_RESISTANCE).setBaseValue(0.4D);
+        }
+
+        @Override
+        protected boolean hasTransformation() {
+            return true;
+        }
+
+        @Override
+        public EntityType<? extends DBSagasEntity> getNextTransform() {
+            return MainEntities.SAGA_TAMAGAMI_3_POWERED.get();
+        }
+    }
+
+    public static class Tamagami3PoweredEntity extends TamagamiEntity {
+
+        public Tamagami3PoweredEntity(EntityType<? extends Monster> pEntityType, Level pLevel) {
+            super(pEntityType, pLevel, 3);
+
+            this.setCanFly(true);
+            this.setAuraColor(0xFF8C1A);
+            this.setKiBlastSpeed(1.9F);
+            this.setDBZStyle(0);
+            this.setEvade(true, 40);
+            this.setAllowedCombos(90, ComboType.BASIC, ComboType.AIR, ComboType.KI_CHARGE_ATTACK);
+            this.addKiSkill(KiSkillType.KI_VOLLEY, 130, 1.7F, 0xFFE0B3, 0xFF8C1A);
+            this.addKiSkill(KiSkillType.GENERIC_KI_WAVE, 220, 2.0F, 0xFFE0B3, 0xFF8C1A);
+
+            this.setWildSense(true, 80);
+            this.setZanzoken(2, 250);
+            this.setItemSlot(EquipmentSlot.MAINHAND, new ItemStack(MainItems.TAMAGAMI_HAMMER.get()));
+            this.setDropChance(EquipmentSlot.MAINHAND, 0.0F);
+
+            this.getAttribute(Attributes.KNOCKBACK_RESISTANCE).setBaseValue(0.4D);
+            this.getAttribute(Attributes.ATTACK_SPEED).setBaseValue(6.5D);
+        }
+
+        @Override
+        public String getGeckolibModelName() {
+            return "saga_tamagami_3";
+        }
+
+        @Override
+        public OutlineStyle getOutlineStyle() {
+            return new OutlineStyle(0xFF9A2E, 0xB84A00, 3.0F);
+        }
+    }
+}

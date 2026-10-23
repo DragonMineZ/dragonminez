@@ -11,13 +11,17 @@ import org.jetbrains.annotations.NotNull;
 
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
+import java.util.Set;
 
 public class StructurePlanSavedData extends SavedData {
 	private static final String NAME = "dragonminez_structure_plan";
 
 	private boolean resolved = false;
 	private final Map<Integer, ChunkPos> positions = new HashMap<>();
+	private final Set<Integer> built = new HashSet<>();
+	private final Set<Integer> exhausted = new HashSet<>();
 
 	public static StructurePlanSavedData get(ServerLevel level) {
 		return level.getDataStorage().computeIfAbsent(new SavedData.Factory<>(StructurePlanSavedData::new, StructurePlanSavedData::load), NAME);
@@ -30,23 +34,32 @@ public class StructurePlanSavedData extends SavedData {
 	public Map<Integer, ChunkPos> getPositions() {
 		return Collections.unmodifiableMap(positions);
 	}
+	public Set<Integer> getExhausted() {
+		return Collections.unmodifiableSet(exhausted);
+	}
 
-	/**
-	 * Stores the planned positions. {@code complete} marks the plan as fully
-	 * resolved; when false, missing structures are searched again on next load.
-	 */
-	public void setPositions(Map<Integer, ChunkPos> newPositions, boolean complete) {
+	public void setPositions(Map<Integer, ChunkPos> newPositions, Set<Integer> newExhausted, boolean complete) {
 		this.positions.clear();
 		if (newPositions != null) this.positions.putAll(newPositions);
+		this.exhausted.clear();
+		if (newExhausted != null) this.exhausted.addAll(newExhausted);
+		this.exhausted.removeAll(this.positions.keySet());
 		this.resolved = complete;
 		setDirty();
 	}
 
-	/** Drops one structure's planned position so it can be relocated. */
 	public void removePosition(int salt) {
 		this.positions.remove(salt);
 		this.resolved = false;
 		setDirty();
+	}
+
+	public boolean isBuilt(int salt) {
+		return built.contains(salt);
+	}
+
+	public void markBuilt(int salt) {
+		if (built.add(salt)) setDirty();
 	}
 
 	public static StructurePlanSavedData load(CompoundTag tag, HolderLookup.Provider registries) {
@@ -57,6 +70,13 @@ public class StructurePlanSavedData extends SavedData {
 			CompoundTag entry = list.getCompound(i);
 			data.positions.put(entry.getInt("salt"), new ChunkPos(entry.getInt("x"), entry.getInt("z")));
 		}
+
+		if (tag.contains("built", Tag.TAG_INT_ARRAY)) {
+			for (int salt : tag.getIntArray("built")) data.built.add(salt);
+		} else {
+			data.built.addAll(data.positions.keySet());
+		}
+		for (int salt : tag.getIntArray("exhausted")) data.exhausted.add(salt);
 		return data;
 	}
 
@@ -72,6 +92,12 @@ public class StructurePlanSavedData extends SavedData {
 			list.add(entry);
 		}
 		tag.put("positions", list);
+
+		int[] builtArray = new int[built.size()];
+		int i = 0;
+		for (int salt : built) builtArray[i++] = salt;
+		tag.putIntArray("built", builtArray);
+		tag.putIntArray("exhausted", exhausted.stream().mapToInt(Integer::intValue).toArray());
 		return tag;
 	}
 }

@@ -1,0 +1,26 @@
+{
+  "vertex": "dragonminez:shockwave",
+  "fragment": "dragonminez:impact_burst",
+  "attributes": [
+    "Position",
+    "UV"
+  ],
+  "samplers": [],
+  "uniforms": [
+    { "name": "modelMatrix", "type": "matrix4x4", "count": 16, "values": [1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 1.0] },
+    { "name": "ProjMat", "type": "matrix4x4", "count": 16, "values": [1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 1.0] },
+    { "name": "progress", "type": "float", "count": 1, "values": [ 0.0 ] },
+    { "name": "seed", "type": "float", "count": 1, "values": [ 0.0 ] },
+    { "name": "dirAngle", "type": "float", "count": 1, "values": [ 0.0 ] },
+    { "name": "dirStrength", "type": "float", "count": 1, "values": [ 0.0 ] },
+    { "name": "twoTone", "type": "float", "count": 1, "values": [ 0.0 ] },
+    { "name": "color1", "type": "float", "count": 3, "values": [ 1.0, 1.0, 1.0 ] },
+    { "name": "color2", "type": "float", "count": 3, "values": [ 1.0, 1.0, 1.0 ] }
+  ],
+  "blend": {
+    "func": "add",
+    "srcrgb": "one",
+    "dstrgb": "1-srcalpha"
+  },
+  "cull": false
+}
