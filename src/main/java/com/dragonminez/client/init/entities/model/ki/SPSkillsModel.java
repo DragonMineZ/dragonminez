@@ -1,19 +1,14 @@
 package com.dragonminez.client.init.entities.model.ki;
 
 import com.dragonminez.Reference;
-import com.dragonminez.common.init.entities.animal.DinoGlobalEntity;
-import com.dragonminez.common.init.entities.ki.AbstractKiProjectile;
 import com.dragonminez.common.init.entities.ki.SPBlueHurricaneEntity;
 import net.minecraft.resources.ResourceLocation;
-import net.minecraft.util.Mth;
 import net.minecraft.core.registries.BuiltInRegistries;
-import software.bernie.geckolib.constant.DataTickets;
-import software.bernie.geckolib.cache.object.GeoBone;
-import software.bernie.geckolib.animation.AnimationState;
+import software.bernie.geckolib.animatable.GeoEntity;
 import software.bernie.geckolib.model.GeoModel;
 import software.bernie.geckolib.model.data.EntityModelData;
 
-public class SPSkillsModel<T extends SPBlueHurricaneEntity> extends GeoModel<T> {
+public class SPSkillsModel<T extends SPBlueHurricaneEntity & GeoEntity> extends GeoModel<T> {
 
     @Override
     public ResourceLocation getModelResource(T animatable) {

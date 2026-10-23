@@ -7,6 +7,7 @@ import com.dragonminez.LogUtil;
 import com.dragonminez.Reference;
 import com.dragonminez.client.util.ColorUtils;
 import com.dragonminez.common.alignment.NpcAlignmentRules;
+import com.dragonminez.common.combat.logic.player.PlayerAttackHelper;
 import com.dragonminez.common.combat.logic.player.TargetHelper;
 import com.dragonminez.common.combat.logic.weapon.WeaponRegistry;
 import com.dragonminez.common.combat.util.Player_DMZ;
@@ -16,7 +17,9 @@ import com.dragonminez.common.config.ConfigManager;
 import com.dragonminez.common.dragonball.DragonBallDefinitions;
 import com.dragonminez.common.init.CapsuleCorpMapTrade;
 import com.dragonminez.common.init.MainAttributes;
+import com.dragonminez.common.init.MainEffects;
 import com.dragonminez.common.init.MainEnchants;
+import com.dragonminez.common.init.MainEntities;
 import com.dragonminez.common.init.MainItems;
 import com.dragonminez.common.init.MainVillagers;
 import com.dragonminez.common.init.MainParticles;
@@ -28,16 +31,17 @@ import com.dragonminez.common.init.entities.ki.KiBarrierEntity;
 import com.dragonminez.common.init.entities.sagas.DBSagasEntity;
 import com.dragonminez.common.network.NetworkHandler;
 import com.dragonminez.common.network.PacketRateLimiter;
-import com.dragonminez.common.network.TrainingSessionTracker;
 import com.dragonminez.common.network.S2C.AppearanceSyncS2C;
 import com.dragonminez.common.network.S2C.SyncWeaponRegistryS2C;
 import com.dragonminez.common.spacepod.SpacePodDestinationRegistry;
 import com.dragonminez.common.network.S2C.SyncWishesS2C;
 import com.dragonminez.common.dragonball.DragonDefinitionReloadListener;
 import com.dragonminez.common.wish.DragonWishRegistry;
+import com.dragonminez.common.dialogue.DialogueRegistry;
 import com.dragonminez.common.quest.QuestRegistry;
 import com.dragonminez.common.stats.character.Cooldowns;
 import com.dragonminez.common.stats.StatsCapability;
+import com.dragonminez.common.stats.StatsData;
 import com.dragonminez.common.stats.StatsProvider;
 import com.dragonminez.common.util.BetaWhitelist;
 import com.dragonminez.common.wish.WishManager;
@@ -46,6 +50,7 @@ import com.dragonminez.server.commands.DMZPermissions;
 import com.dragonminez.server.commands.LocateCommand;
 import com.dragonminez.server.events.DragonBallsHandler;
 import com.dragonminez.server.storage.StorageManager;
+import com.dragonminez.server.world.raid.RaidTypes;
 import com.dragonminez.server.util.FusionLogic;
 import com.dragonminez.server.world.data.DragonBallSavedData;
 import com.dragonminez.server.world.dimension.*;
@@ -71,6 +76,7 @@ import net.minecraft.util.profiling.ProfilerFiller;
 import net.minecraft.world.entity.*;
 import net.minecraft.world.entity.ai.attributes.AttributeModifier;
 import net.minecraft.world.entity.ai.attributes.Attributes;
+import net.minecraft.world.entity.decoration.ArmorStand;
 import net.minecraft.world.entity.npc.VillagerTrades;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.entity.projectile.AbstractArrow;
@@ -79,6 +85,7 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.level.GameType;
 import net.minecraft.world.level.Level;
+import net.minecraft.world.level.chunk.LevelChunk;
 import net.minecraft.world.level.levelgen.structure.Structure;
 import net.minecraft.world.level.saveddata.maps.MapDecorationTypes;
 import net.minecraft.world.phys.AABB;
@@ -86,6 +93,7 @@ import net.neoforged.neoforge.common.NeoForge;
 import net.neoforged.neoforge.event.*;
 import net.neoforged.neoforge.event.village.VillagerTradesEvent;
 import net.neoforged.neoforge.event.entity.living.*;
+import net.neoforged.neoforge.event.level.ChunkEvent;
 import net.neoforged.neoforge.event.entity.player.AttackEntityEvent;
 import net.neoforged.neoforge.event.entity.player.CriticalHitEvent;
 import net.neoforged.neoforge.event.entity.player.PlayerEvent;
@@ -143,18 +151,19 @@ public class ForgeCommonEvents {
 				new ItemStack(Items.ENDER_PEARL, 4)));
 	}
 
-	/**
-	 * Las ofertas de los comerciantes se persisten con el mapa ya generado; si la
-	 * estructura se resolvió o reubicó después, el mapa vendido quedaría obsoleto
-	 * (sin X o apuntando al sitio viejo). Antes de abrir el menú se regeneran las
-	 * ofertas de mapas cuyo objetivo ya no coincide con el plan actual.
-	 */
 	@SubscribeEvent
 	public static void onMerchantInteract(PlayerInteractEvent.EntityInteract event) {
 		if (event.getLevel().isClientSide()) return;
 		if (!(event.getLevel() instanceof ServerLevel serverLevel)) return;
 		if (!(event.getTarget() instanceof net.minecraft.world.entity.npc.AbstractVillager merchant)) return;
 		try {
+			if (merchant instanceof net.minecraft.world.entity.npc.Villager villager
+					&& villager.getVillagerData().getProfession().equals(MainVillagers.CAPSULE_CORP_ASSISTANT.get())) {
+				int level = villager.getVillagerData().getLevel();
+				if (level >= 3) BABA_PALACE_MAP.ensureOffered(serverLevel, villager);
+				if (level >= 3) BUDOKAI_TENKAICHI_MAP.ensureOffered(serverLevel, villager);
+				if (level >= 5) BUU_HOUSE_MAP.ensureOffered(serverLevel, villager);
+			}
 			CapsuleCorpMapTrade.refreshStaleMapOffers(serverLevel, merchant);
 		} catch (Exception ignored) {}
 	}
@@ -162,12 +171,19 @@ public class ForgeCommonEvents {
 	private static final int MAP_XP = 40;
 
 	private static final int MAP_MAX_USES = 8;
+	private static final CapsuleCorpMapTrade BABA_PALACE_MAP = mapTrade(DMZStructures.BABA_PALACE,
+			"dragonminez.baba_palace", new ItemStack(Items.GLASS_BOTTLE, 6));
+	private static final CapsuleCorpMapTrade BUU_HOUSE_MAP = mapTrade(DMZStructures.BUU_HOUSE,
+			"dragonminez.buu_house", new ItemStack(Items.CAKE, 1));
+	private static final CapsuleCorpMapTrade BUDOKAI_TENKAICHI_MAP = mapTrade(DMZStructures.BUDOKAI_TENKAICHI,
+			"dragonminez.budokai_tenkaichi", new ItemStack(Items.GOLD_INGOT, 4));
+	private static final float MEDI_SHELL_DAMAGE_TAKEN = 0.7F;
 
 	private static ItemStack emptyMap() {
 		return new ItemStack(Items.MAP, 1);
 	}
 
-	private static VillagerTrades.ItemListing mapTrade(ResourceKey<Structure> destination, String displayName,
+	private static CapsuleCorpMapTrade mapTrade(ResourceKey<Structure> destination, String displayName,
 			ItemStack cost) {
 		return new CapsuleCorpMapTrade(emptyMap(), cost, destination, displayName,
 				MapDecorationTypes.RED_X, MAP_MAX_USES, MAP_XP);
@@ -185,12 +201,16 @@ public class ForgeCommonEvents {
 				if (player instanceof ServerPlayer serverPlayer) {
 					serverPlayer.connection.disconnect(Component.literal("""
 							§c[DragonMine Z]
-							
+
 							§7You are not allowed to play this Beta/Alpha version.
 							§fAre you a §cPatreon§f? Use the §cVerify here§f button to connect Discord and request access automatically.
-							
+
 							§7If you have been recently whitelisted, restart Minecraft to apply the changes!
-							§7Your Minecraft nickname is: §f""" + username));
+							§7Your Minecraft nickname is: §f""" + username + """
+
+
+							§eAn active internet connection is required to play, even in singleplayer, since your access is checked online.
+							§8We only check your Minecraft username. No other data is collected."""));
 				} else {
 					throw new IllegalStateException("DMZ: User not allowed.");
 				}
@@ -220,13 +240,20 @@ public class ForgeCommonEvents {
 	@SubscribeEvent
 	public static void onPlayerLogout(PlayerEvent.PlayerLoggedOutEvent event) {
 		if (event.getEntity() instanceof ServerPlayer player) {
-			TrainingSessionTracker.end(player.getUUID());
 			PacketRateLimiter.clear(player.getUUID());
+			com.dragonminez.common.dialogue.DialogueService.clear(player.getUUID());
+			com.dragonminez.common.network.C2S.CombatAttackRequestC2S.clearCombo(player.getUUID());
+			com.dragonminez.common.combat.logic.player.MeleeWindupTracker.clear(player.getUUID());
+			com.dragonminez.common.wish.wishes.ReCustomizeWish.clear(player.getUUID());
+			com.dragonminez.server.util.BeetleFusionTracker.clear(player.getUUID());
+			com.dragonminez.server.world.worldboss.WorldBossManager.onPlayerLogout(player);
 			StatsProvider.get(StatsCapability.INSTANCE, player).ifPresent(data -> {
 				if (ConfigManager.getCombatConfig().getKillPlayersOnCombatLogout()) {
 					if (data.getCooldowns().hasCooldown(Cooldowns.COMBAT)) player.kill();
 				}
 				endFusionIfNeeded(player);
+				com.dragonminez.common.racial.RacialRegistry.forPlayer(data).ifPresent(ability ->
+						ability.onLogout(new com.dragonminez.common.racial.RacialContext(player, data)));
 			});
 		}
 	}
@@ -238,9 +265,22 @@ public class ForgeCommonEvents {
 			StatsProvider.get(StatsCapability.INSTANCE, player).ifPresent(data -> {
 				endFusionIfNeeded(player);
 
+				data.getStatus().setDeathCount(data.getStatus().getDeathCount() + 1);
 				if (ConfigManager.getServerConfig().getWorldGen().getOtherworldActive()) {
-					if (data.getStatus().isAlive())
-						data.getCooldowns().addCooldown(Cooldowns.REVIVE_BABA, ConfigManager.getServerConfig().getGameplay().getReviveCooldownSeconds() * 20);
+					if (data.getStatus().getTempReturnTimer() > 0) {
+						com.dragonminez.server.util.BabaReviveService.markRetryAfterDay(player, data);
+					} else if (data.getStatus().isAlive()) {
+						int cooldownSeconds = ConfigManager.getServerConfig().getGameplay().getReviveCooldownSeconds();
+						if (ConfigManager.getServerConfig().getGameplay().getBabaHardcoreEnabled()) {
+							double growth = ConfigManager.getServerConfig().getGameplay().getBabaHardcoreCooldownGrowth();
+							cooldownSeconds = (int) Math.round(cooldownSeconds * (1.0 + growth * Math.max(0, data.getStatus().getDeathCount() - 1)));
+						}
+						data.getCooldowns().addCooldown(Cooldowns.REVIVE_BABA, cooldownSeconds * 20);
+					}
+					com.dragonminez.server.util.BabaReviveService.requestSpiritArrival(player);
+					data.getStatus().setTempReturnTimer(0);
+					data.getCooldowns().removeCooldown(Cooldowns.BABA_KNOCKOUT);
+					data.getCooldowns().removeCooldown(Cooldowns.BABA_AGGRO_GRACE);
 					if (data.getStatus().isHasCreatedCharacter()) data.getStatus().setAlive(false);
 					if (!data.getStatus().isInKaioPlanet()) data.getStatus().setInKaioPlanet(true);
 				}
@@ -304,7 +344,14 @@ public class ForgeCommonEvents {
 
 		if (!level.isClientSide() && level instanceof ServerLevel serverLevel) {
 			TargetHelper.Relation relation = TargetHelper.getRelation(attacker, target);
-			if (!TargetHelper.canAttack(attacker, target, attacker.distanceTo(target) + 1.0D)) {
+			boolean approved = TargetHelper.isApprovedMeleeTarget(target);
+			Entity hittable = TargetHelper.resolveHittable(target);
+			if (!approved && hittable instanceof LivingEntity && !(hittable instanceof ArmorStand)
+					&& PlayerAttackHelper.getCurrentAttack(attacker, 0) != null) {
+				event.setCanceled(true);
+				return;
+			}
+			if (!approved && !TargetHelper.canAttack(attacker, target, attacker.distanceTo(target) + 1.0D)) {
 				event.setCanceled(true);
 				return;
 			}
@@ -443,6 +490,7 @@ public class ForgeCommonEvents {
 
 	@SubscribeEvent
 	public static void onServerAboutToStart(net.neoforged.neoforge.event.server.ServerAboutToStartEvent event) {
+		if (!event.getServer().isDedicatedServer()) ConfigManager.reload();
 		if (ConfigManager.getServerConfig().getWorldGen().getOtherworldActive()) {
 			OtherworldRegionLoader.loadPreGeneratedRegions(event.getServer());
 		}
@@ -454,9 +502,11 @@ public class ForgeCommonEvents {
 	public static void onServerStarting(ServerStartingEvent event) {
 		StorageManager.init();
 		BetaWhitelist.reload();
+		RaidTypes.reload(ConfigManager.getRaids());
 		WishManager.loadWishes(event.getServer());
 		DMZPermissions.init();
 		QuestRegistry.loadAll(event.getServer());
+		DialogueRegistry.loadAll(event.getServer());
 		NpcAlignmentRules.load(event.getServer());
 		NPCPlacementManager.load(event.getServer());
 
@@ -464,12 +514,15 @@ public class ForgeCommonEvents {
 
 		if (ConfigManager.getServerConfig().getWorldGen().getGenerateDragonBalls()) {
 			for (var definition : DragonBallDefinitions.getBallSets()) {
-				ServerLevel targetLevel = event.getServer().getLevel(net.minecraft.resources.ResourceKey.create(net.minecraft.core.registries.Registries.DIMENSION, definition.getValidDimensions().iterator().next()));
+				if (!definition.isNaturalSpawn()) continue;
+				ServerLevel targetLevel = DragonBallsHandler.getHomeLevel(event.getServer(), definition);
 				if (targetLevel == null) continue;
 				DragonBallSavedData data = DragonBallSavedData.get(targetLevel);
 				if (!data.isFirstSpawnComplete(definition.getId())) {
 					DragonBallsHandler.scatterDragonBalls(targetLevel, definition.getId());
 					LogUtil.info(Env.COMMON, "First DragonBalls Spawn setup for set: " + definition.getId());
+				} else {
+					DragonBallsHandler.topUpCopies(targetLevel, definition.getId());
 				}
 			}
 		} else {
@@ -495,8 +548,49 @@ public class ForgeCommonEvents {
 	public static void onLevelTick(LevelTickEvent.Post event) {
 		if (!(event.getLevel() instanceof ServerLevel serverLevel)) return;
 		try {
+			com.dragonminez.server.world.npc.StructureNpcs.tick(serverLevel);
+		} catch (RuntimeException e) {
+			LogUtil.error(Env.SERVER, "StructureNpcs tick failed in {}", serverLevel.dimension().location(), e);
+		}
+		try {
 			com.dragonminez.server.world.structure.placement.StructureRepairManager.tick(serverLevel);
+			com.dragonminez.server.world.tournament.Tournament.Manager.tick(serverLevel);
+			com.dragonminez.server.world.worldboss.WorldBossManager.tick(serverLevel);
+			com.dragonminez.server.world.dimension.OtherworldTournamentGrounds.tick(serverLevel);
 		} catch (Throwable ignored) {
+		}
+	}
+
+	@SubscribeEvent
+	public static void onLevelUnload(LevelEvent.Unload event) {
+		if (!(event.getLevel() instanceof ServerLevel serverLevel)) return;
+		com.dragonminez.server.world.npc.StructureNpcs.onLevelUnload(serverLevel);
+		try {
+			com.dragonminez.server.world.structure.placement.StructureRepairManager.onLevelUnload(serverLevel);
+		} catch (Throwable ignored) {
+		}
+	}
+
+	@SubscribeEvent
+	public static void onStructureEntityJoin(net.neoforged.neoforge.event.entity.EntityJoinLevelEvent event) {
+		if (event.getLevel() instanceof ServerLevel level
+				&& com.dragonminez.server.world.structure.fitted.FittedTemplatePiece.hasTwin(level, event.getEntity())) {
+			event.setCanceled(true);
+		}
+	}
+
+	@SubscribeEvent
+	public static void onChunkLoad(ChunkEvent.Load event) {
+		if (!(event.getLevel() instanceof ServerLevel serverLevel)) return;
+		if (!(event.getChunk() instanceof LevelChunk chunk)) return;
+		try {
+			com.dragonminez.server.world.structure.placement.StructureRepairManager.onChunkLoad(serverLevel, chunk);
+		} catch (Throwable ignored) {
+		}
+		try {
+			com.dragonminez.server.world.npc.StructureNpcs.onChunkLoad(serverLevel, chunk);
+		} catch (RuntimeException e) {
+			LogUtil.error(Env.SERVER, "StructureNpcs chunk hook failed at {}", chunk.getPos(), e);
 		}
 	}
 
@@ -519,6 +613,7 @@ public class ForgeCommonEvents {
 	public static void onServerStopping(ServerStoppingEvent event) {
 		StorageManager.shutdown();
 		com.dragonminez.server.world.structure.placement.StructureSpawnPlanner.reset();
+		com.dragonminez.server.world.tournament.Tournament.Manager.reset();
 		com.dragonminez.server.world.structure.placement.StructureRepairManager.reset();
 	}
 
@@ -555,7 +650,8 @@ public class ForgeCommonEvents {
 	@SubscribeEvent
 	public static void onMobSpawn(MobSpawnEvent.PositionCheck event) {
 		Mob mob = event.getEntity();
-		if (mob.getType().getCategory() != MobCategory.MONSTER) return;
+		MobCategory category = mob.getType().getCategory();
+		if (category != MobCategory.MONSTER && category != MainEntities.WILD_ENEMY) return;
 		if (mob.level().dimension().equals(HTCDimension.HTC_KEY)) return;
 
 		List<MastersEntity> masters = mob.level().getEntitiesOfClass(MastersEntity.class, new AABB(mob.blockPosition()).inflate(80));
@@ -603,6 +699,9 @@ public class ForgeCommonEvents {
 			event.setCanceled(true);
 			return;
 		}
+		if (victim.hasEffect(MainEffects.MEDI_SHELL)) {
+			event.setAmount(event.getAmount() * MEDI_SHELL_DAMAGE_TAKEN);
+		}
 		if (event.getSource().is(DamageTypeTags.BYPASSES_INVULNERABILITY)) return;
 		if (!(victim instanceof Player) && !(victim instanceof DBSagasEntity)) return;
 
@@ -613,6 +712,8 @@ public class ForgeCommonEvents {
 			if (barrier.isActive() && barrier.protects(victim)) {
 				event.setCanceled(true);
 				barrier.absorbDamage(event.getAmount(), event.getSource().getEntity());
+				NeoForge.EVENT_BUS.post(new DMZEvent.BarrierAbsorbEvent(barrier.getOwner(), victim,
+						event.getSource().getEntity(), event.getAmount()));
 				return;
 			}
 		}
@@ -639,9 +740,11 @@ public class ForgeCommonEvents {
 				UUID partnerUUID = data.getStatus().getFusionPartnerUUID();
 				if (partnerUUID != null) {
 					ServerPlayer partner = player.getServer().getPlayerList().getPlayer(partnerUUID);
-					if (partner != null) {
+					StatsData partnerData = partner != null ? StatsProvider.get(StatsCapability.INSTANCE, partner).orElse(null) : null;
+					boolean linked = partnerData != null && player.getUUID().equals(partnerData.getStatus().getFusionPartnerUUID());
+					if (linked) {
 						if (!partner.isDeadOrDying()) partner.kill();
-						StatsProvider.get(StatsCapability.INSTANCE, partner).ifPresent(partnerData -> FusionLogic.endFusion(partner, partnerData, true));
+						FusionLogic.endFusion(partner, partnerData, true);
 					}
 				}
 				FusionLogic.endFusion(player, data, true);
@@ -654,6 +757,8 @@ public class ForgeCommonEvents {
 		event.addListener(SpacePodDestinationRegistry.INSTANCE);
 		event.addListener(DragonDefinitionReloadListener.INSTANCE);
 		event.addListener(DragonWishRegistry.INSTANCE);
+		event.addListener(com.dragonminez.common.training.RhythmChartRegistry.INSTANCE);
+		event.addListener(com.dragonminez.server.world.npc.StructureNpcs.INSTANCE);
 		event.addListener(new SimplePreparableReloadListener<Void>() {
 			@Override
 			protected Void prepare(ResourceManager resourceManager, ProfilerFiller profiler) {

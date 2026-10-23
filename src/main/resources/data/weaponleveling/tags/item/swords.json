@@ -28,6 +28,18 @@
     {
       "id": "dragonminez:power_pole",
       "required": false
+    },
+    {
+      "id": "dragonminez:tamagami_sword",
+      "required": false
+    },
+    {
+      "id": "dragonminez:tamagami_trident",
+      "required": false
+    },
+    {
+      "id": "dragonminez:tamagami_hammer",
+      "required": false
     }
   ]
 }

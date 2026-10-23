@@ -161,7 +161,7 @@ public class BonusCommand {
 		}
 
 		if (targets.size() == 1) source.sendSuccess(() -> Component.translatable("command.dragonminez.bonus.clear.success", finalStat, targets.iterator().next().getName().getString()), log);
-		else source.sendSuccess(() -> Component.translatable("command.dragonminez.bonus.clear.multiple", finalStat, targets.size()), log);
+		else source.sendSuccess(() -> Component.translatable("command.dragonminez.bonus.clear.multiple", targets.size(), finalStat), log);
 		return targets.size();
 	}
 

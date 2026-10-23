@@ -14,11 +14,17 @@ public class CooldownEffectHandler implements IStatusEffectHandler {
 		PotionEffectHelper.syncCooldownIndicator(player, data, Cooldowns.DOUBLEDASH_CD, MainEffects.DOUBLEDASH_CD);
 		PotionEffectHelper.syncCooldownIndicator(player, data, Cooldowns.TELEPORT_CD, MainEffects.TELEPORT_CD);
 		PotionEffectHelper.syncCooldownIndicator(player, data, Cooldowns.FUSION_CD, MainEffects.FUSION_CD);
+		PotionEffectHelper.syncCooldownIndicator(player, data, Cooldowns.GOD_RITUAL, MainEffects.GOD_RITUAL_CD);
 		PotionEffectHelper.syncCooldownIndicator(player, data, Cooldowns.KI_BLAST_CD, MainEffects.KI_BLAST_CD);
 		PotionEffectHelper.syncCooldownIndicator(player, data, Cooldowns.POISE_CD, MainEffects.POISE_CD);
 		PotionEffectHelper.syncCooldownIndicator(player, data, Cooldowns.MAJIN_REVIVE_CD, MainEffects.MAJIN_REVIVE);
 		PotionEffectHelper.syncCooldownIndicator(player, data, Cooldowns.ZENKAI, MainEffects.SAIYAN_PASSIVE);
 		PotionEffectHelper.syncCooldownIndicator(player, data, Cooldowns.DRAIN, MainEffects.BIOANDROID_PASSIVE);
+		if (data.getStatus().isKnockedDown()) {
+			PotionEffectHelper.syncCooldownIndicator(player, data, Cooldowns.KNOCKDOWN_DURATION, MainEffects.KNOCKOUT);
+		} else if (player.hasEffect(MainEffects.KNOCKOUT)) {
+			player.removeEffect(MainEffects.KNOCKOUT);
+		}
 	}
 
 	@Override

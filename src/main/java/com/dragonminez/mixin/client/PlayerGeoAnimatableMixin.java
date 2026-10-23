@@ -8,12 +8,14 @@ import com.dragonminez.common.combat.logic.player.PlayerAttackHelper;
 import com.dragonminez.common.combat.logic.player.PlayerAttackProperties;
 import com.dragonminez.common.combat.player.AttackHand;
 import com.dragonminez.common.stats.character.Cooldowns;
+import com.dragonminez.common.stats.character.Status;
 import com.dragonminez.common.stats.StatsCapability;
 import com.dragonminez.common.stats.StatsData;
 import com.dragonminez.common.stats.StatsProvider;
 import com.dragonminez.common.stats.extras.ActionMode;
 import com.dragonminez.common.util.TransformationsHelper;
 import com.dragonminez.client.render.firstperson.dto.FirstPersonManager;
+import com.dragonminez.client.render.hair.HairRenderContext;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.player.AbstractClientPlayer;
 import net.minecraft.util.Mth;
@@ -37,6 +39,7 @@ import software.bernie.geckolib.animation.RawAnimation;
 import software.bernie.geckolib.animation.PlayState;
 import software.bernie.geckolib.util.GeckoLibUtil;
 
+import com.dragonminez.common.util.lists.BioAndroidForms;
 import static com.dragonminez.client.animation.BaseAnimations.*;
 
 @Mixin(AbstractClientPlayer.class)
@@ -57,6 +60,7 @@ public abstract class PlayerGeoAnimatableMixin implements GeoAnimatable, IPlayer
 	@Unique private int dragonminez$landingTicks = 0;
 	@Unique private boolean dragonminez$wasEating = false;
 	@Unique private static final double WALK_SPEED_BASELINE = 0.2158;
+	@Unique private static final double FROZEN_SPEED_EPSILON = 0.01;
 	@Unique private static final double RUN_SPEED_BASELINE = 0.2806;
 	@Unique private static final int LANDING_ANIM_TICKS = 13;
 	@Unique private static final float FALL_TRIGGER_DISTANCE = 4.5F;
@@ -75,10 +79,13 @@ public abstract class PlayerGeoAnimatableMixin implements GeoAnimatable, IPlayer
 	@Unique private int dragonminez$miningAnimTicks = 0;
 	@Unique private int dragonminez$lastMiningTickRun = -1;
 	@Unique private boolean dragonminez$isShootingKi = false;
+	@Unique private boolean dragonminez$shootingKiLeftHand = false;
 	@Unique private String dragonminez$currentMeleeAnim = null;
 	@Unique private String dragonminez$currentPoseAnim = null;
 	@Unique private boolean dragonminez$poseInstantResume = false;
 	@Unique private float dragonminez$currentMeleeSpeed = 1.0F;
+	@Unique private AnimationController<?> dragonminez$attackController = null;
+	@Unique private float dragonminez$attackStartTime = 0.0F;
 
 	@Unique private static final int POSE_TRANSITION_TICKS = 4;
 
@@ -228,6 +235,11 @@ public abstract class PlayerGeoAnimatableMixin implements GeoAnimatable, IPlayer
 	}
 
 	@Unique
+	private static boolean dragonminez$isStunned(StatsData data) {
+		return data.getStatus().isStunEffect() && !data.getStatus().isStrikeLocked() && !data.getStatus().isKnockedDown();
+	}
+
+	@Unique
 	private static boolean dragonminez$isEatingFood(AbstractClientPlayer player) {
 		if (!player.isUsingItem()) return false;
 		UseAnim anim = player.getUseItem().getUseAnimation();
@@ -236,16 +248,33 @@ public abstract class PlayerGeoAnimatableMixin implements GeoAnimatable, IPlayer
 
 	@Override
 	public void registerControllers(AnimatableManager.ControllerRegistrar registrar) {
-		registrar.add(new AnimationController<>(this, "controller", 4, this::predicate));
-		registrar.add(new AnimationController<>(this, "attack_controller", 0, this::attackPredicate));
-		registrar.add(new AnimationController<>(this, "mining_controller", 0, this::miningPredicate));
-		registrar.add(new AnimationController<>(this, "block_controller", 3, this::blockPredicate));
-		registrar.add(new AnimationController<>(this, "shield_controller", 3, this::shieldPredicate));
-		registrar.add(new AnimationController<>(this, "tailcontroller", 0, this::tailpredicate));
-		registrar.add(new AnimationController<>(this, "dash_controller", 0, this::dashPredicate));
-		registrar.add(new AnimationController<>(this, "pose_controller", POSE_TRANSITION_TICKS, this::posePredicate));
-		registrar.add(new AnimationController<>(this, "ki_controller", 4, this::kiPredicate));
-		registrar.add(new AnimationController<>(this, "eat_controller", 3, this::eatPredicate));
+		registrar.add(new AnimationController<>(this, "controller", 4, dragonminez$gated(this::predicate)));
+		AnimationController<PlayerGeoAnimatableMixin> attackController = new AnimationController<>(this, "attack_controller", 0, dragonminez$gated(this::attackPredicate));
+		dragonminez$attackController = attackController;
+		registrar.add(attackController);
+		registrar.add(new AnimationController<>(this, "mining_controller", 0, dragonminez$gated(this::miningPredicate)));
+		registrar.add(new AnimationController<>(this, "block_controller", 3, dragonminez$gated(this::blockPredicate)));
+		registrar.add(new AnimationController<>(this, "shield_controller", 3, dragonminez$gated(this::shieldPredicate)));
+		registrar.add(new AnimationController<>(this, "tailcontroller", 0, dragonminez$gated(this::tailpredicate)));
+		registrar.add(new AnimationController<>(this, "dash_controller", 0, dragonminez$gated(this::dashPredicate)));
+		registrar.add(new AnimationController<>(this, "pose_controller", POSE_TRANSITION_TICKS, dragonminez$gated(this::posePredicate)));
+		registrar.add(new AnimationController<>(this, "eat_controller", 3, dragonminez$gated(this::eatPredicate)));
+		// Registered last so its bone changes (root/waist) are applied after every other
+		// controller and always win — evasion techniques must always show their pose.
+		registrar.add(new AnimationController<>(this, "ki_controller", 4, dragonminez$gated(this::kiPredicate)));
+	}
+
+	// Hair editor preview: with physics off the model also stops animating (client-side preview only).
+	@Unique
+	private <T extends GeoAnimatable> AnimationController.AnimationStateHandler<T> dragonminez$gated(AnimationController.AnimationStateHandler<T> handler) {
+		return state -> dragonminez$previewAnimationsPaused() ? PlayState.STOP : handler.handle(state);
+	}
+
+	@Unique
+	private static boolean dragonminez$previewAnimationsPaused() {
+		if (HairRenderContext.mode() != HairRenderContext.Mode.EDITOR_PREVIEW) return false;
+		HairRenderContext.Preview preview = HairRenderContext.preview();
+		return preview != null && !preview.physicsEnabled();
 	}
 
 	@Unique
@@ -285,7 +314,7 @@ public abstract class PlayerGeoAnimatableMixin implements GeoAnimatable, IPlayer
 		IPlayerAnimatable animatable = (IPlayerAnimatable) this;
 		if (dragonminez$dashAnimTicks > 0) return PlayState.STOP;
 
-		boolean isMoving = dragonminez$isActuallyMoving(player);
+		boolean movedRecently = dragonminez$isActuallyMoving(player);
 		dragonminez$currentPoseAnim = CombatAnimationResolver.resolvePlayerPose(player);
 
 		StatsData data = StatsProvider.get(StatsCapability.INSTANCE, player).orElse(null);
@@ -304,6 +333,11 @@ public abstract class PlayerGeoAnimatableMixin implements GeoAnimatable, IPlayer
 			return state.setAndContinue(FUSION_POTHALA_RIGHT);
 		}
 
+		if (data.getStatus().isInGodRitual()) {
+			if (data.getStatus().getGodRitualRole() != Status.GOD_RITUAL_RECIPIENT) return state.setAndContinue(IDLE);
+			return state.setAndContinue(data.getResources().getActionCharge() >= 100 ? FLY_IDLE : KI_CHARGE);
+		}
+
 		boolean isDraining = data.getCooldowns().hasCooldown(Cooldowns.DRAIN_ACTIVE);
 		boolean flySkillActive = data.getSkills().isSkillActive("fly");
 		boolean isChargingKi = data.getStatus().isChargingKi();
@@ -314,15 +348,24 @@ public abstract class PlayerGeoAnimatableMixin implements GeoAnimatable, IPlayer
 		var nextStackFormConfig = TransformationsHelper.getNextAvailableStackForm(data);
 		String nextForm = nextFormConfig != null ? nextFormConfig.getName().toLowerCase() : "";
 		boolean isTransforming = data.getStatus().isActionCharging();
+		boolean isMoving = movedRecently && !((isChargingKi || isTransforming) && dragonminez$horizSpeed < FROZEN_SPEED_EPSILON);
 		ActionMode actionMode = data.getStatus().getSelectedAction();
 
 		if (isKnockedDown) return state.setAndContinue(KNOCKBACK_HORIZONTAL);
+		if (dragonminez$isStunned(data)) return state.setAndContinue(STUNNED);
 
-		if (isDraining) return state.setAndContinue(DRAIN);
+		if (isDraining) {
+			boolean semiPerfect = "bioandroid".equalsIgnoreCase(data.getCharacter().getRaceName())
+					&& BioAndroidForms.SEMI_PERFECT.equalsIgnoreCase(data.getCharacter().getActiveForm());
+			return state.setAndContinue(semiPerfect ? DRAIN_SEMIPERFECT : DRAIN);
+		}
 
 		if (player.isPassenger()) return state.setAndContinue(SIT);
 
-		if (isChargingKi && !isMoving && !isBlocking) return state.setAndContinue(KI_CHARGE);
+		if (isChargingKi && !isMoving && !isBlocking) {
+			boolean surgeCharging = data.getStatus().isKiBurstArmed() || data.getStatus().isSurgeActive();
+			return state.setAndContinue(surgeCharging ? KI_OVERCHARGE : kiChargeFor(data.getCharacter().getRaceName()));
+		}
 
 		if (isTransforming && actionMode.equals(ActionMode.FORM)) {
 			if (nextFormConfig != null && nextFormConfig.hasTransformationAnimation()) {
@@ -361,7 +404,7 @@ public abstract class PlayerGeoAnimatableMixin implements GeoAnimatable, IPlayer
 			return state.setAndContinue(CRAWLING);
 		}
 
-		if (flySkillActive || player.isFallFlying() || animatable.dragonminez$isFlying() || player.getAbilities().flying) {
+		if (flySkillActive || FlySkillEvent.isStrikeRushing(player) || player.isFallFlying() || animatable.dragonminez$isFlying() || player.getAbilities().flying) {
 			if (FlySkillEvent.getInstance().isFlyingFast(player)) return state.setAndContinue(FLY_FAST);
 			return state.setAndContinue(dragonminez$resolveFlyAnimation(player));
 		}
@@ -445,7 +488,8 @@ public abstract class PlayerGeoAnimatableMixin implements GeoAnimatable, IPlayer
 		if (player.isSwimming() || player.isVisuallyCrawling() || player.isPassenger()) return PlayState.STOP;
 
 		StatsData data = StatsProvider.get(StatsCapability.INSTANCE, player).orElse(null);
-		if (data != null && (data.getStatus().isBlocking() || data.getStatus().isChargingKi())) return PlayState.STOP;
+		if (data != null && (data.getStatus().isBlocking() || data.getStatus().isChargingKi() || dragonminez$isStunned(data)
+				|| data.getStatus().isKiShareLocked())) return PlayState.STOP;
 
 		if (dragonminez$currentPoseAnim == null || dragonminez$currentPoseAnim.isEmpty()) return PlayState.STOP;
 
@@ -494,6 +538,7 @@ public abstract class PlayerGeoAnimatableMixin implements GeoAnimatable, IPlayer
 
 			ctl.forceAnimationReset();
 			dragonminez$currentMeleeAnim = null;
+			dragonminez$attackStartTime = player.tickCount + state.getPartialTick();
 			dragonminez$attackAnimTicks = Math.max(8, Math.round(12.0F / Math.max(dragonminez$currentMeleeSpeed, 0.1F)));
 			return PlayState.CONTINUE;
 		}
@@ -506,7 +551,10 @@ public abstract class PlayerGeoAnimatableMixin implements GeoAnimatable, IPlayer
 			return PlayState.CONTINUE;
 		}
 
-		if (dragonminez$attackAnimTicks > 0) return PlayState.CONTINUE;
+		if (dragonminez$attackAnimTicks > 0) {
+			if (ctl.getAnimationState() != AnimationController.State.STOPPED) return PlayState.CONTINUE;
+			dragonminez$attackAnimTicks = 0;
+		}
 
 		ctl.setAnimationSpeed(1.0D);
 		return PlayState.STOP;
@@ -535,6 +583,11 @@ public abstract class PlayerGeoAnimatableMixin implements GeoAnimatable, IPlayer
 			}
 			dragonminez$miningAnimTicks = 8;
 			return PlayState.CONTINUE;
+		}
+
+		if (dragonminez$attackAnimTicks > 0) {
+			dragonminez$miningAnimTicks = 0;
+			return PlayState.STOP;
 		}
 
 		if (hasMiningSwing && isUsingTool(player) && !isPlacingBlock(player) && !isBlocking(player)) {
@@ -741,9 +794,9 @@ public abstract class PlayerGeoAnimatableMixin implements GeoAnimatable, IPlayer
 	}
 
 	@Override
-	public void dragonminez$triggerEvasion() {
+	public void dragonminez$triggerEvasion(int variant) {
 		this.dragonminez$isEvading = true;
-		this.dragonminez$evasionVariant = (int) (Math.random() * 4) + 1;
+		this.dragonminez$evasionVariant = variant >= 1 && variant <= 4 ? variant : (int) (Math.random() * 4) + 1;
 	}
 
 	@Override
@@ -754,6 +807,16 @@ public abstract class PlayerGeoAnimatableMixin implements GeoAnimatable, IPlayer
 	@Override
 	public boolean dragonminez$isShootingKi() {
 		return dragonminez$isShootingKi;
+	}
+
+	@Override
+	public void dragonminez$setShootingKiHand(boolean leftHand) {
+		this.dragonminez$shootingKiLeftHand = leftHand;
+	}
+
+	@Override
+	public boolean dragonminez$isShootingKiLeftHand() {
+		return dragonminez$shootingKiLeftHand;
 	}
 
 	@Override
@@ -798,7 +861,19 @@ public abstract class PlayerGeoAnimatableMixin implements GeoAnimatable, IPlayer
 	public float dragonminez$getCombatPlacementWeight() {
 		// Snap the held item between combat placement and its rest grip: full weight while the
 		// attack animation plays, none the moment it ends (no eased "swing back" of the item).
-		return dragonminez$attackAnimTicks > 0 ? 1.0F : 0.0F;
+		if (dragonminez$attackAnimTicks <= 0) return 0.0F;
+		if (dragonminez$attackController != null && dragonminez$attackController.getAnimationState() == AnimationController.State.STOPPED) return 0.0F;
+		return 1.0F;
+	}
+
+	@Override
+	public float dragonminez$getAttackProgress(float partialTick) {
+		if (dragonminez$getCombatPlacementWeight() <= 0.0F || dragonminez$attackController == null) return -1.0F;
+		var current = dragonminez$attackController.getCurrentAnimation();
+		if (current == null || current.animation().length() <= 0.0D) return -1.0F;
+		AbstractClientPlayer player = (AbstractClientPlayer) (Object) this;
+		double elapsed = (player.tickCount + partialTick - dragonminez$attackStartTime) * dragonminez$currentMeleeSpeed;
+		return (float) Mth.clamp(elapsed / current.animation().length(), 0.0D, 1.0D);
 	}
 
 	@Override
@@ -806,6 +881,7 @@ public abstract class PlayerGeoAnimatableMixin implements GeoAnimatable, IPlayer
 		this.dragonminez$currentKiAnim = animationName;
 		this.dragonminez$kiAnimHold = hold;
 		this.dragonminez$kiAnimTicks = 0;
+		if (animationName != null && animationName.endsWith("_fire")) this.dragonminez$lastKiCtlAnim = null;
 	}
 
 	@Override
@@ -820,6 +896,11 @@ public abstract class PlayerGeoAnimatableMixin implements GeoAnimatable, IPlayer
 	@Override
 	public AnimatableInstanceCache getAnimatableInstanceCache() {
 		return this.geoCache;
+	}
+
+	@Override
+	public String dragonminez$getCurrentKiAnimation() {
+		return this.dragonminez$currentKiAnim != null ? this.dragonminez$currentKiAnim : "";
 	}
 
 	@Override

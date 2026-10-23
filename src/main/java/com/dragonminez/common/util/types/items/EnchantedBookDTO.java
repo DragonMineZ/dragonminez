@@ -1,52 +1,24 @@
 package com.dragonminez.common.util.types.items;
 
-import com.google.gson.GsonBuilder;
-import net.minecraft.world.item.ItemStack;
-import net.minecraft.world.item.Items;
-import java.util.HashMap;
+import net.minecraft.core.component.DataComponentType;
+import net.minecraft.core.component.DataComponents;
+import net.minecraft.resources.ResourceLocation;
+import net.minecraft.world.item.enchantment.ItemEnchantments;
 import java.util.Map;
 
 public class EnchantedBookDTO extends EnchantedItemDTO {
-    protected String itemType;
-    protected Map<String, Integer> enchantments = new HashMap<>();
+	public static final String ITEM_TYPE = "enchanted_book";
+	private static final ResourceLocation ENCHANTED_BOOK_ID = ResourceLocation.fromNamespaceAndPath("minecraft", "enchanted_book");
 
-    public EnchantedBookDTO(Map<String, Integer> enchantments) {
-        super("enchanted_book", "minecraft:enchanted_book", 1, enchantments);
-        this.enchantments = enchantments;
-    }
+	public EnchantedBookDTO(Map<ResourceLocation, Integer> enchantments) {
+		super(ITEM_TYPE, ENCHANTED_BOOK_ID, 1, enchantments);
+	}
 
-    @Override
-    public ItemStack getItemStack() {
-        // Enchantment holders require registry access at apply time; return book base item.
-        return new ItemStack(Items.ENCHANTED_BOOK);
-    }
+	@Override
+	protected DataComponentType<ItemEnchantments> enchantmentComponent() {
+		return DataComponents.STORED_ENCHANTMENTS;
+	}
 
-    @Override
-    public String toJson() {
-        return new GsonBuilder().setPrettyPrinting().create().toJson(this, EnchantedBookDTO.class);
-    }
-
-    @java.lang.SuppressWarnings("all")
-    public String getItemType() {
-        return this.itemType;
-    }
-
-    @java.lang.SuppressWarnings("all")
-    public Map<String, Integer> getEnchantments() {
-        return this.enchantments;
-    }
-
-    @java.lang.SuppressWarnings("all")
-    public void setItemType(final String itemType) {
-        this.itemType = itemType;
-    }
-
-    @java.lang.SuppressWarnings("all")
-    public void setEnchantments(final Map<String, Integer> enchantments) {
-        this.enchantments = enchantments;
-    }
-
-    @java.lang.SuppressWarnings("all")
-    public EnchantedBookDTO() {
-    }
+	public EnchantedBookDTO() {
+	}
 }

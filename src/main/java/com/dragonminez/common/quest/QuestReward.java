@@ -1,25 +1,42 @@
 package com.dragonminez.common.quest;
 
-import lombok.Getter;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerPlayer;
-
+import com.dragonminez.common.stats.StatsData;
 import java.util.EnumSet;
+import java.util.List;
 import java.util.Set;
 
-@Getter
 public abstract class QuestReward {
 	private final RewardType type;
 	private Set<Difficulty> difficulties = EnumSet.allOf(Difficulty.class);
+	private String customType = null;
 
 	public QuestReward(RewardType type) {
 		this.type = type;
 	}
 
+	/**
+	 * Constructor for addon-registered reward types (see QuestRewardRegistry).
+	 */
+	protected QuestReward(String customType) {
+		this(RewardType.CUSTOM);
+		this.customType = customType;
+	}
+
+	/**
+	 * Stable string key: the enum name for built-ins, the registered key for addon rewards.
+	 */
+	public String getTypeKey() {
+		return type == RewardType.CUSTOM && customType != null ? customType : type.name();
+	}
+
+	public boolean isPlaceholder() {
+		return type == RewardType.PLACEHOLDER;
+	}
+
 	public void setDifficulties(Set<Difficulty> difficulties) {
-		this.difficulties = (difficulties == null || difficulties.isEmpty())
-				? EnumSet.allOf(Difficulty.class)
-				: EnumSet.copyOf(difficulties);
+		this.difficulties = (difficulties == null || difficulties.isEmpty()) ? EnumSet.allOf(Difficulty.class) : EnumSet.copyOf(difficulties);
 	}
 
 	public abstract void giveReward(ServerPlayer player);
@@ -34,18 +51,29 @@ public abstract class QuestReward {
 		return getDescription();
 	}
 
+	public List<Component> getTooltipLines(double rewardMultiplier, StatsData data) {
+		return List.of(getDescription(rewardMultiplier));
+	}
+
 	public boolean isUnlockedFor(Difficulty difficulty) {
+		if (isPlaceholder()) return false;
 		return difficulties.contains(difficulty != null ? difficulty : Difficulty.NORMAL);
 	}
 
+
 	public enum RewardType {
-		ITEM,
-		GENERIC_ITEM,
-		COMMAND,
-		TPS,
-		SKILL,
-		ALIGNMENT,
-		TRANSFORMATION,
-		KI_TECHNIQUE
+		ITEM, GENERIC_ITEM, COMMAND, TPS, SKILL, ALIGNMENT, TRANSFORMATION, KI_TECHNIQUE, CUSTOM, ATTRIBUTES, ATTRIBUTE_POINTS, PLACEHOLDER;
+	}
+
+	public RewardType getType() {
+		return this.type;
+	}
+
+	public Set<Difficulty> getDifficulties() {
+		return this.difficulties;
+	}
+
+	public String getCustomType() {
+		return this.customType;
 	}
 }

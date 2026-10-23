@@ -2,6 +2,7 @@ package com.dragonminez.client.render.layer;
 
 import com.dragonminez.Reference;
 import com.dragonminez.common.combat.logic.weapon.KiWeaponHelper;
+import com.dragonminez.client.render.effects.KiWeaponRenderer;
 import com.dragonminez.common.stats.StatsCapability;
 import com.dragonminez.common.stats.StatsData;
 import com.dragonminez.common.stats.StatsProvider;
@@ -41,9 +42,10 @@ public class DMZWeaponsLayer<T extends AbstractClientPlayer & GeoAnimatable> ext
         if (animatable.isSpectator()) return;
 
         var stats = StatsProvider.get(StatsCapability.INSTANCE, animatable).orElse(null);
-        if (stats == null || !stats.getSkills().isSkillActive("kimanipulation")) return;
+        boolean forcedBlade = KiWeaponRenderer.forcesBlade(animatable);
+        if (stats == null || (!forcedBlade && !stats.getSkills().isSkillActive("kimanipulation"))) return;
 
-        String weaponType = stats.getStatus().getKiWeaponType();
+        String weaponType = forcedBlade ? "blade" : stats.getStatus().getKiWeaponType();
         if (weaponType == null || weaponType.equalsIgnoreCase("none")) return;
 
         if (!animatable.getMainHandItem().isEmpty()) return;

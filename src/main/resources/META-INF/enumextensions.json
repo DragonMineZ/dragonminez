@@ -1,0 +1,10 @@
+{
+  "entries": [
+    {
+      "enum": "net/minecraft/world/entity/MobCategory",
+      "name": "dragonminez_WILD_ENEMY",
+      "constructor": "(Ljava/lang/String;IZZI)V",
+      "parameters": ["dragonminez:wild_enemy", 14, false, false, 128]
+    }
+  ]
+}

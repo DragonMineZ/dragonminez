@@ -3,6 +3,8 @@ package com.dragonminez.client.render.layer;
 import com.dragonminez.Reference;
 import com.dragonminez.client.model.DMZPlayerModel;
 import com.dragonminez.client.render.compat.CosmeticArmorCompat;
+import com.dragonminez.client.render.util.ArmorPieceInflation;
+import com.dragonminez.client.render.util.BoneRenderState;
 import com.dragonminez.client.util.ArmorTextureResolver;
 import com.dragonminez.client.util.SkinGathererProvider;
 import com.dragonminez.common.config.ConfigManager;
@@ -24,8 +26,8 @@ import net.minecraft.world.item.ArmorItem;
 import net.minecraft.core.component.DataComponents;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.component.DyedItemColor;
-import net.neoforged.neoforge.common.CommonHooks;
 import net.minecraft.core.registries.BuiltInRegistries;
+import org.joml.Vector3f;
 import software.bernie.geckolib.cache.object.BakedGeoModel;
 import software.bernie.geckolib.cache.object.GeoBone;
 import software.bernie.geckolib.animatable.GeoAnimatable;
@@ -38,7 +40,6 @@ public class DMZCustomArmorLayer<T extends AbstractClientPlayer & GeoAnimatable>
 
     private static final ResourceLocation MAJIN_ARMOR_MODEL = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "geo/armor/armormajinfat.geo.json");
     private static final ResourceLocation MAJIN_SLIM_ARMOR_MODEL = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "geo/armor/armormajinslim.geo.json");
-    private static final ResourceLocation OOZARU_ARMOR_MODEL = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "geo/armor/armoroozaru.geo.json");
 
     private static final Set<String> SLIM_SUPPORTED_MODELS = Set.of(
             "majin_evil", "majin_kid", "majin_super", "majin_ultra", "majin", "saiyan", "human", "ssj4gt", "ssj4d"
@@ -64,7 +65,7 @@ public class DMZCustomArmorLayer<T extends AbstractClientPlayer & GeoAnimatable>
         if (ctx.isDbzArmor()) {
             ResourceLocation texture = getDbzArmorTexture((DbzArmorTextured) stack.getItem(), stack);
             float translateY = resolveCustomArmorTranslateY(ctx);
-            float inflation = ctx.isOozaruTarget() ? 1.021f : 1.035f;
+            float inflation = 1.045f;
 
             poseStack.pushPose();
             poseStack.translate(0, translateY, 0);
@@ -82,14 +83,12 @@ public class DMZCustomArmorLayer<T extends AbstractClientPlayer & GeoAnimatable>
             if (armorLeggingsBody != null) armorLeggingsBody.setHidden(true);
             if (bodyLayer != null) bodyLayer.setHidden(true);
 
-            float bX = 1f, bY = 1f, bZ = 1f;
+            BoneRenderState savedBoobas = null;
             if (boobasBone != null) {
-                bX = boobasBone.getScaleX();
-                bY = boobasBone.getScaleY();
-                bZ = boobasBone.getScaleZ();
-                boobasBone.setScaleX(bX * 1.03f);
-                boobasBone.setScaleY(bY * 1.06f);
-                boobasBone.setScaleZ(bZ * 1.15f);
+                savedBoobas = BoneRenderState.capture(boobasBone);
+                boobasBone.setScaleX(boobasBone.getScaleX() * 1.03f);
+                boobasBone.setScaleY(boobasBone.getScaleY() * 1.06f);
+                boobasBone.setScaleZ(boobasBone.getScaleZ() * 1.15f);
             }
 
             renderRootBoneInflated(playerBone, poseStack, bufferSource, animatable, texture, partialTick, packedLight, inflation);
@@ -97,18 +96,14 @@ public class DMZCustomArmorLayer<T extends AbstractClientPlayer & GeoAnimatable>
             if (armorBody != null) armorBody.setHidden(ob1);
             if (armorLeggingsBody != null) armorLeggingsBody.setHidden(ob2);
             if (bodyLayer != null) bodyLayer.setHidden(ob3);
-            if (boobasBone != null) {
-                boobasBone.setScaleX(bX);
-                boobasBone.setScaleY(bY);
-                boobasBone.setScaleZ(bZ);
-            }
+            if (savedBoobas != null) savedBoobas.restore();
 
             poseStack.popPose();
             if (renderType != null) bufferSource.getBuffer(renderType);
             return;
         }
 
-        ResourceLocation targetModelLoc = ctx.isOozaruTarget() ? OOZARU_ARMOR_MODEL : (ctx.isSlimTarget() ? MAJIN_SLIM_ARMOR_MODEL : MAJIN_ARMOR_MODEL);
+        ResourceLocation targetModelLoc = ctx.isSlimTarget() ? MAJIN_SLIM_ARMOR_MODEL : MAJIN_ARMOR_MODEL;
         BakedGeoModel vanillaArmorModel = getGeoModel().getBakedModel(targetModelLoc);
         if (vanillaArmorModel == null) return;
 
@@ -122,16 +117,14 @@ public class DMZCustomArmorLayer<T extends AbstractClientPlayer & GeoAnimatable>
 
         GeoBone armorBoobas = findBoneDeep(armorBodyBone, "boobas");
         float boobFactor = resolveBoobScale(stats);
-        float savedBoobX = 1f, savedBoobY = 1f, savedBoobZ = 1f;
+        BoneRenderState savedArmorBoobas = null;
         if (armorBoobas != null) {
-            savedBoobX = armorBoobas.getScaleX();
-            savedBoobY = armorBoobas.getScaleY();
-            savedBoobZ = armorBoobas.getScaleZ();
+            savedArmorBoobas = BoneRenderState.capture(armorBoobas);
 
             float[] axis = DMZPlayerModel.computeBoobAxisScale(boobFactor);
-            armorBoobas.setScaleX(savedBoobX * axis[0] * 1.03f);
-            armorBoobas.setScaleY(savedBoobY * axis[1] * 1.06f);
-            armorBoobas.setScaleZ(savedBoobZ * axis[2] * 1.15f);
+            armorBoobas.setScaleX(armorBoobas.getScaleX() * axis[0] * 1.03f);
+            armorBoobas.setScaleY(armorBoobas.getScaleY() * axis[1] * 1.06f);
+            armorBoobas.setScaleZ(armorBoobas.getScaleZ() * axis[2] * 1.15f);
         }
 
         float translateY = resolveCustomArmorTranslateY(ctx);
@@ -149,11 +142,7 @@ public class DMZCustomArmorLayer<T extends AbstractClientPlayer & GeoAnimatable>
             poseStack.popPose();
         }
 
-        if (armorBoobas != null) {
-            armorBoobas.setScaleX(savedBoobX);
-            armorBoobas.setScaleY(savedBoobY);
-            armorBoobas.setScaleZ(savedBoobZ);
-        }
+        if (savedArmorBoobas != null) savedArmorBoobas.restore();
 
         if (renderType != null) bufferSource.getBuffer(renderType);
     }
@@ -190,45 +179,48 @@ public class DMZCustomArmorLayer<T extends AbstractClientPlayer & GeoAnimatable>
         boolean isDbzArmor = stack.getItem() instanceof DbzArmorTextured;
         boolean isPothala = stack.getDescriptionId().contains("pothala");
         if (isPothala || (!isVanilla && !isDbzArmor)) {
-            return new ArmorRenderContext(false, false, false, false, isDbzArmor);
+            return new ArmorRenderContext(false, false, false, isDbzArmor);
         }
 
         boolean shouldRender = false;
         boolean isSlimTarget = false;
-        boolean isOozaruTarget = false;
         boolean isMajinGordoTarget = false;
 
         if (character.isOozaruCached() || logicKey.equals("oozaru")) {
-            shouldRender = true;
-            isOozaruTarget = true;
+            if (isDbzArmor) shouldRender = true;
         }
         else if (SLIM_SUPPORTED_MODELS.contains(logicKey) && gender.equals(Character.GENDER_FEMALE)) {
             shouldRender = true;
             isSlimTarget = true;
         }
         else if (logicKey.contains("buffed") || logicKey.contains("frostdemon_fp") || logicKey.contains("majin_ultra")
-                || logicKey.contains("namekian_orange") || logicKey.contains("bioandroid_ultra") || logicKey.contains("ssj4gt") || logicKey.contains("ssj4d")
+                || logicKey.contains("namekian_orange") || logicKey.startsWith("bioandroid") || logicKey.contains("ssj4gt") || logicKey.contains("ssj4d")
                 || logicKey.contains("frostdemon_fifth") || logicKey.contains("frostdemon_metalcore") || logicKey.contains("namekian_buffed")
-                || logicKey.contains("4arms") || logicKey.contains("bioandroid_xeno") || logicKey.equals("janemba_super")) {
+                || logicKey.contains("4arms") || logicKey.equals("janemba_super") || logicKey.equals("frostdemon_second") || logicKey.equals("glindtrueform") || logicKey.equals("trascended")
+                || logicKey.equals("glinddark")) {
             if (isDbzArmor) shouldRender = true;
         }
         else if (logicKey.equals("majin") && gender.equals(Character.GENDER_MALE) && bodyType != 2) {
             shouldRender = true;
             isMajinGordoTarget = true;
         }
-        else if (logicKey.equals("janemba_fat")) {
+        else if (logicKey.equals("janemba_imperfect")) {
             shouldRender = true;
             isMajinGordoTarget = true;
+        }
+        else if (logicKey.equals("janemba_fat")) {
+            isMajinGordoTarget = true;
+            if (isDbzArmor) shouldRender = true;
         }
         else if (SkinGathererProvider.modelFamily(logicKey).equals("custom")) {
             if (isDbzArmor) shouldRender = true;
         }
 
-        return new ArmorRenderContext(shouldRender, isSlimTarget, isOozaruTarget, isMajinGordoTarget, isDbzArmor);
+        return new ArmorRenderContext(shouldRender, isSlimTarget, isMajinGordoTarget, isDbzArmor);
     }
 
     private float resolveCustomArmorTranslateY(ArmorRenderContext ctx) {
-        if (ctx.isOozaruTarget() || ctx.isMajinGordoTarget()) return 0.03f;
+        if (ctx.isMajinGordoTarget()) return 0.03f;
         return 0.001f;
     }
 
@@ -281,15 +273,7 @@ public class DMZCustomArmorLayer<T extends AbstractClientPlayer & GeoAnimatable>
     private static final Set<String> EXCLUDED_BONES = Set.of("tail1", "tail1m", "arm", "arm2", "arm3");
 
     private void renderRootBoneInflated(GeoBone targetBone, PoseStack poseStack, MultiBufferSource bufferSource, T animatable, ResourceLocation texture, float partialTick, int packedLight, float inflation) {
-        float rotX = targetBone.getRotX();
-        float rotY = targetBone.getRotY();
-        float rotZ = targetBone.getRotZ();
-        float posX = targetBone.getPosX();
-        float posY = targetBone.getPosY();
-        float posZ = targetBone.getPosZ();
-        float scaleX = targetBone.getScaleX();
-        float scaleY = targetBone.getScaleY();
-        float scaleZ = targetBone.getScaleZ();
+        BoneRenderState saved = BoneRenderState.capture(targetBone);
 
         targetBone.setRotX(0);
         targetBone.setRotY(0);
@@ -300,6 +284,14 @@ public class DMZCustomArmorLayer<T extends AbstractClientPlayer & GeoAnimatable>
         targetBone.setScaleX(inflation);
         targetBone.setScaleY(inflation);
         targetBone.setScaleZ(inflation);
+
+        Vector3f centre = ArmorPieceInflation.cubeTopCentreFromPivot(targetBone);
+        if (centre != null) {
+            float k = 1f - inflation;
+            targetBone.setPosX(-k * centre.x);
+            targetBone.setPosY(k * centre.y);
+            targetBone.setPosZ(k * centre.z);
+        }
 
         java.util.List<GeoBone> excludedFound = new java.util.ArrayList<>();
         java.util.List<Boolean> excludedHidden = new java.util.ArrayList<>();
@@ -319,15 +311,7 @@ public class DMZCustomArmorLayer<T extends AbstractClientPlayer & GeoAnimatable>
             excludedFound.get(i).setHidden(excludedHidden.get(i));
         }
 
-        targetBone.setRotX(rotX);
-        targetBone.setRotY(rotY);
-        targetBone.setRotZ(rotZ);
-        targetBone.setPosX(posX);
-        targetBone.setPosY(posY);
-        targetBone.setPosZ(posZ);
-        targetBone.setScaleX(scaleX);
-        targetBone.setScaleY(scaleY);
-        targetBone.setScaleZ(scaleZ);
+        saved.restore();
     }
 
     private GeoBone findBoneDeep(GeoBone parent, String name) {
@@ -340,20 +324,16 @@ public class DMZCustomArmorLayer<T extends AbstractClientPlayer & GeoAnimatable>
     }
 
     private void renderChildBoneInflated(GeoBone targetBone, PoseStack poseStack, MultiBufferSource bufferSource, T animatable, ResourceLocation texture, float partialTick, int packedLight, float inflation) {
-        float scaleX = targetBone.getScaleX();
-        float scaleY = targetBone.getScaleY();
-        float scaleZ = targetBone.getScaleZ();
+        BoneRenderState saved = BoneRenderState.capture(targetBone);
 
-        targetBone.setScaleX(scaleX * inflation);
-        targetBone.setScaleY(scaleY * inflation);
-        targetBone.setScaleZ(scaleZ * inflation);
+        targetBone.setScaleX(targetBone.getScaleX() * inflation);
+        targetBone.setScaleY(targetBone.getScaleY() * inflation);
+        targetBone.setScaleZ(targetBone.getScaleZ() * inflation);
 
         RenderType armorRenderType = RenderType.armorCutoutNoCull(texture);
         getRenderer().renderRecursively(poseStack, animatable, targetBone, armorRenderType, bufferSource, bufferSource.getBuffer(armorRenderType), true, partialTick, packedLight, OverlayTexture.NO_OVERLAY, -1);
 
-        targetBone.setScaleX(scaleX);
-        targetBone.setScaleY(scaleY);
-        targetBone.setScaleZ(scaleZ);
+        saved.restore();
     }
 
     private ResourceLocation getDbzArmorTexture(DbzArmorTextured item, ItemStack stack) {
@@ -381,7 +361,7 @@ public class DMZCustomArmorLayer<T extends AbstractClientPlayer & GeoAnimatable>
         return ResourceLocation.parse(textureLocation);
     }
 
-    private record ArmorRenderContext(boolean shouldRender, boolean isSlimTarget, boolean isOozaruTarget,
+    private record ArmorRenderContext(boolean shouldRender, boolean isSlimTarget,
                                       boolean isMajinGordoTarget, boolean isDbzArmor) {
     }
 

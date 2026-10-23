@@ -1,7 +1,12 @@
 package com.dragonminez.common.quest;
 
 import com.dragonminez.common.quest.objectives.BiomeObjective;
+import com.dragonminez.common.quest.objectives.CheckpointRaceObjective;
 import com.dragonminez.common.quest.objectives.CoordsObjective;
+import com.dragonminez.common.quest.objectives.DeliverObjective;
+import com.dragonminez.common.quest.objectives.EscortObjective;
+import com.dragonminez.common.quest.objectives.SparObjective;
+import com.dragonminez.common.quest.objectives.SurviveWavesObjective;
 import com.dragonminez.common.quest.objectives.DimensionObjective;
 import com.dragonminez.common.quest.objectives.DragonSummonObjective;
 import com.dragonminez.common.quest.objectives.InteractObjective;
@@ -27,6 +32,7 @@ import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 import java.util.regex.Matcher;
@@ -35,6 +41,11 @@ import java.util.regex.Pattern;
 public final class QuestTextFormatter {
 
 	private static final String OBJECTIVE_DEFEAT = "dmz.quest.defeat.obj";
+	private static final String OBJECTIVE_DELIVER = "dmz.quest.deliver.obj";
+	private static final String OBJECTIVE_SPAR = "dmz.quest.spar.obj";
+	private static final String OBJECTIVE_WAVES = "dmz.quest.waves.obj";
+	private static final String OBJECTIVE_ESCORT = "dmz.quest.escort.obj";
+	private static final String OBJECTIVE_CHECKPOINTS = "dmz.quest.checkpoints.obj";
 	private static final String OBJECTIVE_OBTAIN = "dmz.quest.obtain.obj";
 	private static final String OBJECTIVE_TALK_TO = "dmz.quest.talk_to.obj";
 	private static final String OBJECTIVE_GO_TO = "dmz.quest.go_to.obj";
@@ -67,12 +78,24 @@ public final class QuestTextFormatter {
 	}
 
 	public static Component describeObjective(QuestObjective objective) {
-		if (objective == null) {
+		if (objective == null || objective.isPlaceholder()) {
 			return Component.empty();
 		}
 
+		if (objective instanceof SparObjective spar) {
+			return Component.translatable(OBJECTIVE_SPAR, resolveEntityName(spar.getEntityId()));
+		}
 		if (objective instanceof KillObjective kill) {
 			return Component.translatable(OBJECTIVE_DEFEAT, resolveEntityName(kill.getEntityId()));
+		}
+		if (objective instanceof SurviveWavesObjective waves) {
+			return Component.translatable(OBJECTIVE_WAVES, waves.getWaves(), resolveEntityName(waves.getEntityId()));
+		}
+		if (objective instanceof EscortObjective escort) {
+			return Component.translatable(OBJECTIVE_ESCORT, resolveEntityName(escort.getEntityId()));
+		}
+		if (objective instanceof CheckpointRaceObjective race) {
+			return Component.translatable(OBJECTIVE_CHECKPOINTS, race.getCheckpoints().size());
 		}
 		if (objective instanceof ItemObjective item) {
 			return Component.translatable(OBJECTIVE_OBTAIN, resolveItemName(item.getItemId()));
@@ -103,7 +126,15 @@ public final class QuestTextFormatter {
 					coords.getTargetPos().getX() + ", " + coords.getTargetPos().getY() + ", " + coords.getTargetPos().getZ()
 			));
 		}
-		return Component.literal(objective.getType() != null ? humanizeIdentifier(objective.getType().name()) : "?");
+		if (objective instanceof DeliverObjective deliver) {
+			return Component.translatable(OBJECTIVE_DELIVER,
+					resolveItemName(deliver.getItemId()), resolveNpcName(deliver.getNpcId()));
+		}
+		Component registered = QuestObjectiveRegistry.describe(objective);
+		if (registered != null) {
+			return registered;
+		}
+		return Component.literal(objective.getType() != null ? humanizeIdentifier(objective.getTypeKey()) : "?");
 	}
 
 	public static Component describeRequirement(QuestPrerequisites.Condition condition, RequirementContext context) {
@@ -114,11 +145,11 @@ public final class QuestTextFormatter {
 		return switch (condition.getType()) {
 			case SAGA_QUEST -> Component.translatable(
 					"gui.dragonminez.quests.requirement.complete_saga",
-					resolveSagaQuestName(condition.getSagaId(), condition.getQuestId())
+					resolveSagaQuestName(condition.getSagaId(), condition.getQuestId(), isClientContext(context))
 			);
 			case QUEST -> Component.translatable(
 					"gui.dragonminez.quests.requirement.complete_quest",
-					resolveQuestName(condition.getRequiredQuestId())
+					resolveQuestName(condition.getRequiredQuestId(), isClientContext(context))
 			);
 			case STAT -> Component.translatable(
 					"gui.dragonminez.quests.requirement.stat",
@@ -296,7 +327,7 @@ public final class QuestTextFormatter {
 			return Component.literal("?");
 		}
 		String normalized = skill.contains(":") ? skill.substring(skill.indexOf(':') + 1) : skill;
-		String key = normalized.contains(".") ? normalized : "skill.dragonminez." + normalized.toLowerCase();
+		String key = normalized.contains(".") ? normalized : "skill.dragonminez." + normalized.toLowerCase(Locale.ROOT);
 		Component translated = Component.translatable(key);
 		return translated.getString().equals(key)
 				? Component.literal(humanizeIdentifier(normalized))
@@ -312,6 +343,9 @@ public final class QuestTextFormatter {
 
 	public static Component resolveBiomeName(String biomeId) {
 		ResourceLocation id = safeParse(biomeId != null && biomeId.startsWith("#") ? biomeId.substring(1) : biomeId);
+		if ("#dragonminez:is_plains".equals(biomeId)) {
+			return Component.translatable("gui.dragonminez.quests.biome.any_plains");
+		}
 		if (biomeId != null && biomeId.startsWith("#")) {
 			return Component.literal(humanizeResourceIdentifier(biomeId));
 		}
@@ -409,15 +443,16 @@ public final class QuestTextFormatter {
 		return Component.translatable("gui.dragonminez.quests.requirement.alignment");
 	}
 
-	private static Component resolveSagaQuestName(String sagaId, Integer questId) {
+	private static boolean isClientContext(RequirementContext context) {
+		return context != null && context.level() != null && context.level().isClientSide;
+	}
+
+	private static Component resolveSagaQuestName(String sagaId, Integer questId, boolean clientSide) {
 		if (sagaId == null || questId == null) {
 			return Component.literal("?");
 		}
 
-		Saga saga = QuestRegistry.getSaga(sagaId);
-		if (saga == null) {
-			saga = QuestRegistry.getClientSaga(sagaId);
-		}
+		Saga saga = clientSide ? QuestRegistry.getClientSaga(sagaId) : QuestRegistry.getSaga(sagaId);
 		if (saga != null) {
 			Quest quest = saga.getQuestById(questId);
 			if (quest != null) {
@@ -427,15 +462,12 @@ public final class QuestTextFormatter {
 		return Component.literal(humanizeIdentifier(sagaId) + " " + questId);
 	}
 
-	private static Component resolveQuestName(String questId) {
+	private static Component resolveQuestName(String questId, boolean clientSide) {
 		if (questId == null || questId.isBlank()) {
 			return Component.literal("?");
 		}
 
-		Quest quest = QuestRegistry.getQuest(questId);
-		if (quest == null) {
-			quest = QuestRegistry.getClientQuest(questId);
-		}
+		Quest quest = clientSide ? QuestRegistry.getClientQuest(questId) : QuestRegistry.getQuest(questId);
 		if (quest != null) {
 			return displayText(quest.getTitle());
 		}
@@ -489,6 +521,7 @@ public final class QuestTextFormatter {
 		LinkedHashMap<Set<Difficulty>, List<QuestReward>> grouped = new LinkedHashMap<>();
 		if (rewards != null) {
 			for (QuestReward reward : rewards) {
+				if (reward.isPlaceholder()) continue;
 				if (excludeCommands && reward.getType() == QuestReward.RewardType.COMMAND) continue;
 				grouped.computeIfAbsent(reward.getDifficulties(), key -> new ArrayList<>()).add(reward);
 			}
@@ -516,7 +549,7 @@ public final class QuestTextFormatter {
 	public static boolean hasRewardTiers(List<QuestReward> rewards) {
 		if (rewards == null) return false;
 		for (QuestReward reward : rewards) {
-			if (reward.getType() == QuestReward.RewardType.COMMAND) continue;
+			if (reward.isPlaceholder() || reward.getType() == QuestReward.RewardType.COMMAND) continue;
 			if (!isUniversalDifficulty(reward.getDifficulties())) return true;
 		}
 		return false;
@@ -531,7 +564,7 @@ public final class QuestTextFormatter {
 		for (Difficulty difficulty : Difficulty.values()) {
 			if (!difficulties.contains(difficulty)) continue;
 			if (!first) joined.append(", ");
-			joined.append(Component.translatable("gui.dragonminez.quest_tree.difficulty." + difficulty.name().toLowerCase()));
+			joined.append(Component.translatable("gui.dragonminez.quest_tree.difficulty." + difficulty.name().toLowerCase(Locale.ROOT)));
 			first = false;
 		}
 		return Component.translatable("gui.dragonminez.quests.rewards.tier.only", joined);

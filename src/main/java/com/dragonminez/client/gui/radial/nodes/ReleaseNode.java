@@ -13,12 +13,8 @@ import java.util.List;
 
 public class ReleaseNode extends AbstractRadialNode {
 
-	private static int potentialUnlockLevel(StatsData stats) {
-		return stats.getSkills().hasSkill("potentialunlock") ? stats.getSkills().getSkillLevel("potentialunlock") : 0;
-	}
-
 	public static int maxRelease(StatsData stats) {
-		return 50 + potentialUnlockLevel(stats) * 5;
+		return stats.getMaxPowerRelease();
 	}
 
 	private int currentLimit(StatsData stats) {
@@ -68,6 +64,17 @@ public class ReleaseNode extends AbstractRadialNode {
 	public void onSelect(StatsData stats) {
 		NetworkHandler.sendToServer(new SetReleaseLimitC2S(0));
 		playToggle(false);
+	}
+
+	public void adjustByWheel(StatsData stats, double delta) {
+		if (delta == 0) return;
+		int max = maxRelease(stats);
+		int current = currentLimit(stats) > 0 ? currentLimit(stats) : max;
+		int next = Math.max(5, Math.min(max, current + (delta > 0 ? 5 : -5)));
+		if (next != current) {
+			NetworkHandler.sendToServer(new SetReleaseLimitC2S(next));
+			playClick();
+		}
 	}
 
 	public List<RadialNode> buildOptions(StatsData stats) {

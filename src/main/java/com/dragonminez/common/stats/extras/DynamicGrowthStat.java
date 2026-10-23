@@ -6,4 +6,15 @@ public enum DynamicGrowthStat {
 	public String key() {
 		return name();
 	}
+
+	public DynamicGrowthStat linked() {
+		return switch (this) {
+			case STR -> SKP;
+			case SKP -> STR;
+			case RES -> VIT;
+			case VIT -> RES;
+			case PWR -> ENE;
+			case ENE -> PWR;
+		};
+	}
 }

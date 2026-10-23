@@ -22,6 +22,10 @@
       "required": false
     },
     {
+      "id": "dragonminez:master_uranai_earth",
+      "required": false
+    },
+    {
       "id": "dragonminez:master_enma",
       "required": false
     },
@@ -43,6 +47,14 @@
     },
     {
       "id": "dragonminez:master_toribot",
+      "required": false
+    },
+    {
+      "id": "dragonminez:master_grandkai",
+      "required": false
+    },
+    {
+      "id": "dragonminez:master_otherworld_announcer",
       "required": false
     },
     {
@@ -83,6 +95,10 @@
     },
     {
       "id": "dragonminez:master_krillin",
+      "required": false
+    },
+    {
+      "id": "dragonminez:master_tien",
       "required": false
     },
     {

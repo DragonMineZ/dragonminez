@@ -6,18 +6,23 @@ public interface IPlayerAnimatable {
 	boolean dragonminez$isFlying();
 
 	void dragonminez$triggerDash(int direction);
-	void dragonminez$triggerEvasion();
+	void dragonminez$triggerEvasion(int variant);
 
 	void dragonminez$setShootingKi(boolean shootingKi);
 	boolean dragonminez$isShootingKi();
+	void dragonminez$setShootingKiHand(boolean leftHand);
+	boolean dragonminez$isShootingKiLeftHand();
 
 	void dragonminez$playMeleeAnimation(String animationName, boolean isOffhand, float speedMultiplier);
 	boolean dragonminez$isPlayingCombatAnimation();
 	boolean dragonminez$isAttackingWithOffhand();
 	float dragonminez$getCombatPlacementWeight();
+	float dragonminez$getAttackProgress(float partialTick);
 
 	void dragonminez$playKiAnimation(String animationName, boolean hold);
 	void dragonminez$stopKiAnimation();
 
 	String dragonminez$getCurrentPlayingAnimation();
+
+	String dragonminez$getCurrentKiAnimation();
 }

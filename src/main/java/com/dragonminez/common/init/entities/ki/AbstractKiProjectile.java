@@ -1,12 +1,15 @@
 package com.dragonminez.common.init.entities.ki;
 
 import com.dragonminez.client.util.ColorUtils;
+import com.dragonminez.common.combat.HealContext;
+import com.dragonminez.common.combat.util.KiTerrainDestruction;
 import com.dragonminez.common.combat.logic.player.TargetHelper;
 import com.dragonminez.common.config.ConfigManager;
 import com.dragonminez.common.init.MainDamageTypes;
 import com.dragonminez.common.init.MainEffects;
 import com.dragonminez.common.init.MainGameRules;
 import com.dragonminez.common.init.block.custom.DragonBallBlock;
+import com.dragonminez.common.init.entities.MastersEntity;
 import com.dragonminez.common.network.NetworkHandler;
 import com.dragonminez.common.network.S2C.TriggerAnimationS2C;
 import com.dragonminez.common.passives.ClassPassives;
@@ -32,12 +35,16 @@ import net.minecraft.world.entity.projectile.Projectile;
 import net.minecraft.world.entity.projectile.ProjectileUtil;
 import net.minecraft.world.level.ClipContext;
 import net.minecraft.world.level.Level;
+import net.minecraft.util.Mth;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.HitResult;
 import net.minecraft.world.phys.Vec3;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.UUID;
 
 public abstract class AbstractKiProjectile extends Projectile {
@@ -119,6 +126,14 @@ public abstract class AbstractKiProjectile extends Projectile {
 	private transient UUID clashOpponentId = null;
 	private transient int strikeStunTicks = 0;
 	private transient UUID strikeStunExcludeId = null;
+    private static final float VANILLA_PLAYER_HEIGHT = 1.8F;
+    private static final float VANILLA_PLAYER_WIDTH = 0.6F;
+    /** Ceiling so an absurdly tall caster cannot fling the cast point off into space. */
+    private static final float MAX_OWNER_SCALE = 6.0F;
+    /** Floor for the render-distance calculation, in vanilla's "box size" units: 2 = 128 blocks. */
+    private static final double MIN_RENDER_SIZE = 2.0;
+    /** Embers fly out to several ball radii, so the culling box has to cover more than the ball. */
+    private static final double CULLING_INFLATE = 5.0;
 
 	public void setStrikeStun(int ticks, UUID excludeMainTargetId) {
 		this.strikeStunTicks = Math.max(0, ticks);
@@ -138,23 +153,6 @@ public abstract class AbstractKiProjectile extends Projectile {
 		this.noCulling = true;
 	}
 
-	public abstract int getMaxHits();
-
-	protected int firingWindowTicks() {
-		int fireTick = this.getFireTick();
-		int window = fireTick >= 0 ? this.getMaxLife() - fireTick : this.getMaxLife();
-		return Math.max(1, window);
-	}
-
-
-	public enum ClashRole {
-		NONE, MAJOR, MINOR;
-	}
-
-	public ClashRole getClashRole() {
-		return ClashRole.NONE;
-	}
-
 	public boolean isMinorClashAttack() {
 		return this.getClashRole() == ClashRole.MINOR;
 	}
@@ -163,324 +161,487 @@ public abstract class AbstractKiProjectile extends Projectile {
 		return this.getClashRole() == ClashRole.MAJOR && this.isFiring();
 	}
 
-	/**
-	 * Yaw of the fired beam axis (clash test for head-on opposition).
-	 */
-	public float getClashYaw() {
-		return this.getYRot();
+    private transient int clashFrozenWindow = -1;
+    private transient UUID breakthroughTargetId = null;
+    private final transient Set<UUID> beamHitTargets = new HashSet<>();
+
+    public abstract int getMaxHits();
+
+    protected int firingWindowTicks() {
+        if (this.clashFrozenWindow > 0) return this.clashFrozenWindow;
+        int fireTick = this.getFireTick();
+        int window = fireTick >= 0 ? this.getMaxLife() - fireTick : this.getMaxLife();
+        return Math.max(1, window);
+    }
+
+    public enum ClashRole { NONE, MAJOR, MINOR }
+
+    public ClashRole getClashRole() {
+        return ClashRole.NONE;
+    }
+
+    public int getClashFrozenWindow() {
+        return this.clashFrozenWindow;
+    }
+
+    /** Yaw of the fired beam axis (clash test for head-on opposition). */
+    public float getClashYaw() {
+        return this.getYRot();
+    }
+
+    /** Pitch of the fired beam axis. */
+    public float getClashPitch() {
+        return this.getXRot();
+    }
+
+    /** Current rendered length of the beam from its origin. */
+    public float getClashBeamLength() {
+        return 0.0F;
+    }
+
+    /** Locks this beam to a fixed length at the clash point. Length < 0 means unlocked. */
+    public void setClashLock(float lockedLength, java.util.UUID opponentId) {
+        if (this.clashFrozenWindow < 0) this.clashFrozenWindow = this.firingWindowTicks();
+        this.clashLockedLength = lockedLength;
+        this.clashOpponentId = opponentId;
+    }
+
+    public void clearClashLock() {
+        this.clashLockedLength = -1.0F;
+        this.clashOpponentId = null;
+    }
+
+	public float getClashLockedLength() {
+		return this.clashLockedLength;
 	}
 
-	/**
-	 * Pitch of the fired beam axis.
-	 */
-	public float getClashPitch() {
-		return this.getXRot();
+	public UUID getClashOpponentId() {
+		return this.clashOpponentId;
 	}
 
-	/**
-	 * Current rendered length of the beam from its origin.
-	 */
-	public float getClashBeamLength() {
-		return 0.0F;
-	}
 
-	/**
-	 * Locks this beam to a fixed length at the clash point. Length < 0 means unlocked.
-	 */
-	public void setClashLock(float lockedLength, java.util.UUID opponentId) {
-		this.clashLockedLength = lockedLength;
-		this.clashOpponentId = opponentId;
-	}
-
-	public void clearClashLock() {
-		this.clashLockedLength = -1.0F;
-		this.clashOpponentId = null;
-	}
-
-	public boolean isClashLocked() {
-		return this.clashLockedLength >= 0.0F;
-	}
+    public boolean isClashLocked() {
+        return this.clashLockedLength >= 0.0F;
+    }
 
 	public float getDamagePerHit() {
-		return this.getKiDamage() / Math.max(1.0F, (float) this.getMaxHits());
-	}
+        return this.getKiDamage() / Math.max(1.0F, (float)this.getMaxHits());
+    }
 
-	public static final int CONTINUOUS_HIT_INTERVAL = 20;
-	private static final float BARRAGE_XP_HIT_WEIGHT = 0.34F;
+    public void setBreakthroughTarget(UUID targetId) {
+        this.breakthroughTargetId = targetId;
+    }
 
-	protected boolean applyContinuousDamage(Entity target) {
-		if (target.invulnerableTime > 0) return false;
-		boolean hit = this.applyDamageOrHeal(target, this.getDamagePerHit());
-		if (hit) target.invulnerableTime = CONTINUOUS_HIT_INTERVAL;
-		return hit;
-	}
+    protected boolean isBreakthroughTarget(Entity target) {
+        return this.breakthroughTargetId != null && TargetHelper.resolveHittable(target).getUUID().equals(this.breakthroughTargetId);
+    }
 
-	/**
-	 * Drags an entity toward {@code desired} while respecting block collision, so grab-and-carry
-	 * moves can't pull a target through a wall the caster themselves would be stopped by. Uses
-	 * {@link Entity#move} (the same collision-clipped movement mobs use) instead of a hard
-	 * {@code setPos} teleport.
-	 */
-	protected void moveEntityTowards(Entity target, Vec3 desired) {
-		target.move(MoverType.SELF, desired.subtract(target.position()));
-	}
+    protected boolean applyBeamHit(LivingEntity target) {
+        Entity hittable = TargetHelper.resolveHittable(target);
+        boolean breakthrough = this.isBreakthroughTarget(target);
+        float amount = this.getDamagePerHit();
+        if (breakthrough) {
+            hittable.invulnerableTime = 0;
+            amount = this.getKiDamage();
+        } else if (!this.isHeal() && !this.beamHitTargets.contains(hittable.getUUID())) {
+            amount = Math.max(amount, this.getKiDamage() * BEAM_FIRST_HIT_SHARE);
+        }
+        boolean hit = this.applyDamageOrHeal(target, amount);
+        if (hit) {
+            this.beamHitTargets.add(hittable.getUUID());
+            if (breakthrough) this.breakthroughTargetId = null;
+        }
+        return hit;
+    }
 
-	/**
-	 * Clips a straight path from {@code from} to {@code to} against block collision and returns the
-	 * furthest point that stays on the near side of any solid block. Keeps visual projectiles that
-	 * are offset ahead of the caster from poking through a wall the caster is pressed against.
-	 */
-	protected Vec3 clipAgainstBlocks(Vec3 from, Vec3 to) {
-		BlockHitResult hit = this.level().clip(new ClipContext(from, to, ClipContext.Block.COLLIDER, ClipContext.Fluid.NONE, this));
-		return hit.getType() == HitResult.Type.MISS ? to : hit.getLocation();
-	}
+    public static final int CONTINUOUS_HIT_INTERVAL = 20;
+    private static final float BEAM_FIRST_HIT_SHARE = 0.75F;
 
-	/**
-	 * Hard-locks a grabbed target onto {@code desiredFeet} (the caster's own feet position) each
-	 * tick, but never lets it cross a solid block to get there. The target's full bounding box is
-	 * swept toward the destination with {@link Entity#collideBoundingBox} — the exact same block
-	 * collision the player itself uses — so if a wall sits between them the target stops at it
-	 * instead of teleporting through. Positioning is authoritative ({@code setPos}) so the target
-	 * does not drift ahead from entity push/physics while it is held.
-	 */
-	protected void holdTargetAtCaster(Entity target, Vec3 desiredFeet) {
-		Vec3 delta = new Vec3(desiredFeet.x - target.getX(), desiredFeet.y - target.getY(), desiredFeet.z - target.getZ());
-		Vec3 collided = Entity.collideBoundingBox(target, delta, target.getBoundingBox(), this.level(), List.of());
-		target.setPos(target.getX() + collided.x, target.getY() + collided.y, target.getZ() + collided.z);
-	}
+    private static final float BARRAGE_XP_HIT_WEIGHT = 0.34f;
 
-	public void setup(LivingEntity owner, float damage, float size, float speed, int colorMain, int colorBorder, int colorOutline) {
-		this.setOwner(owner);
-		this.setKiDamage(damage);
-		this.setSize(size);
-		this.setKiSpeed(speed);
-		this.setColors(colorMain, colorBorder, colorOutline);
-	}
+    protected boolean applyContinuousDamage(Entity target) {
+        if (target.invulnerableTime > 0) return false;
+        boolean hit = this.applyDamageOrHeal(target, this.getDamagePerHit());
+        if (hit) target.invulnerableTime = CONTINUOUS_HIT_INTERVAL;
+        return hit;
+    }
 
-	public void setup(LivingEntity owner, float damage, float size, float speed, int colorMain, int colorBorder) {
-		this.setup(owner, damage, size, speed, colorMain, colorBorder, 16777215);
-	}
+    /**
+     * Drags an entity toward {@code desired} while respecting block collision, so grab-and-carry
+     * moves can't pull a target through a wall the caster themselves would be stopped by. Uses
+     * {@link Entity#move} (the same collision-clipped movement mobs use) instead of a hard
+     * {@code setPos} teleport.
+     */
+    protected void moveEntityTowards(Entity target, Vec3 desired) {
+        target.move(MoverType.SELF, desired.subtract(target.position()));
+    }
 
-	public boolean shouldDamage(Entity target) {
-		target = TargetHelper.resolveHittable(target);
-		if (target == this) return false;
-		Entity owner = this.getOwner();
-		if (target instanceof AbstractKiProjectile kiProj && kiProj.getOwner() == owner) return false;
-		if (this.isOwner(target)) return this.isHeal();
-		if (owner instanceof Player playerOwner) {
-			TargetHelper.Relation relation = TargetHelper.getRelation(playerOwner, target);
-			if (this.isHeal()) return relation == TargetHelper.Relation.FRIENDLY;
-			 else {
-				if (relation == TargetHelper.Relation.FRIENDLY) return false;
-				if (relation == TargetHelper.Relation.NEUTRAL) {
-					Vec3 viewVector = playerOwner.getViewVector(1.0F).normalize();
-					Vec3 toTarget = target.position().add(0, target.getBbHeight() / 2.0, 0).subtract(playerOwner.getEyePosition()).normalize();
-					double dotProduct = viewVector.dot(toTarget);
-					return dotProduct > 0.95;
-				}
-				return true;
-			}
-		} else if (this.getOwner() instanceof LivingEntity ownerLiving && target instanceof LivingEntity targetLiving) {
-			if (this.isHeal()) return ownerLiving.isAlliedTo(targetLiving);
-			 else return !ownerLiving.isAlliedTo(targetLiving);
-		}
-		return !this.isHeal();
-	}
+    /**
+     * Clips a straight path from {@code from} to {@code to} against block collision and returns the
+     * furthest point that stays on the near side of any solid block. Keeps visual projectiles that
+     * are offset ahead of the caster from poking through a wall the caster is pressed against.
+     */
+    protected Vec3 clipAgainstBlocks(Vec3 from, Vec3 to) {
+        BlockHitResult hit = this.level().clip(new ClipContext(
+                from, to, ClipContext.Block.COLLIDER, ClipContext.Fluid.NONE, this));
+        return hit.getType() == HitResult.Type.MISS ? to : hit.getLocation();
+    }
 
-	@Override
-	public void setOwner(Entity owner) {
-		super.setOwner(owner);
-		if (owner != null) this.cachedOwnerUUID = owner.getUUID();
-	}
+    /**
+     * Hard-locks a grabbed target onto {@code desiredFeet} (the caster's own feet position) each
+     * tick, but never lets it cross a solid block to get there. The target's full bounding box is
+     * swept toward the destination with {@link Entity#collideBoundingBox} — the exact same block
+     * collision the player itself uses — so if a wall sits between them the target stops at it
+     * instead of teleporting through. Positioning is authoritative ({@code setPos}) so the target
+     * does not drift ahead from entity push/physics while it is held.
+     */
+    protected void holdTargetAtCaster(Entity target, Vec3 desiredFeet) {
+        if (target instanceof MastersEntity) return;
+        Vec3 delta = new Vec3(
+                desiredFeet.x - target.getX(),
+                desiredFeet.y - target.getY(),
+                desiredFeet.z - target.getZ());
+        Vec3 collided = Entity.collideBoundingBox(target, delta, target.getBoundingBox(), this.level(), List.of());
+        target.setPos(target.getX() + collided.x, target.getY() + collided.y, target.getZ() + collided.z);
+    }
 
-	/**
-	 * Owner UUID, falling back to the cached value if the live owner reference can't be resolved.
-	 */
-	public UUID getOwnerUUID() {
-		Entity owner = this.getOwner();
-		return owner != null ? owner.getUUID() : this.cachedOwnerUUID;
-	}
+    public void setup(LivingEntity owner, float damage, float size, float speed, int colorMain, int colorBorder, int colorOutline) {
+        this.setOwner(owner);
+        this.setKiDamage(damage);
+        this.setSize(size);
+        this.setKiSpeed(speed);
+        this.setColors(colorMain, colorBorder, colorOutline);
 
-	/**
-	 * True if the entity is this projectile's caster (by reference or UUID).
-	 */
-	public boolean isOwner(Entity target) {
-		if (target == null) return false;
-		Entity owner = this.getOwner();
-		if (owner != null && (target == owner || target.is(owner))) return true;
-		UUID ownerUUID = this.cachedOwnerUUID;
-		return ownerUUID != null && target.getUUID().equals(ownerUUID);
-	}
+    }
 
-	@Override
-	protected boolean canHitEntity(Entity target) {
-		if (!super.canHitEntity(target)) return false;
-		// The caster's own attacks should never collide with them (no self-detonation/self-hit),
-		// except for healing attacks which are meant to be able to target the caster.
-		if (!this.isHeal() && this.isOwner(target)) return false;
-		return true;
-	}
+    public void setup(LivingEntity owner, float damage, float size, float speed, int colorMain, int colorBorder) {
+        this.setup(owner, damage, size, speed, colorMain, colorBorder, 0xFFFFFF);
+    }
 
-	public void playInitialSound(SoundEvent sound) {
-		this.level().playSound(null, this.getX(), this.getY(), this.getZ(), sound, SoundSource.PLAYERS, 0.7F, 0.8F + (this.random.nextFloat() * 0.2F));
-	}
+    public boolean shouldDamage(Entity target) {
+        target = TargetHelper.resolveHittable(target);
+        if (target == this) return false;
+        Entity owner = this.getOwner();
+        if (target instanceof AbstractKiProjectile kiProj && kiProj.getOwner() == owner) return false;
+        if (this.isOwner(target)) return this.isHeal();
 
-	public boolean applyDamageOrHeal(Entity target, float amount) {
-		target = TargetHelper.resolveHittable(target);
-		if (target instanceof LivingEntity livingTarget) {
-			if (this.isHeal()) {
-				if ((livingTarget.getHealth() < livingTarget.getMaxHealth() && this.getOwner() instanceof Player playerOwner && TargetHelper.getRelation(playerOwner, target) == TargetHelper.Relation.FRIENDLY) || (livingTarget.getHealth() < livingTarget.getMaxHealth() && target.isAlliedTo(this.getOwner()))) {
-					livingTarget.heal(amount);
-					return true;
-				}
-				return false;
-			} else {
-				if (!this.level().isClientSide && this.getOwner() instanceof Player ownerPlayer) {
-					float[] mod = {amount};
-					StatsProvider.get(StatsCapability.INSTANCE, ownerPlayer).ifPresent(stats -> {
-						mod[0] *= (float) stats.getKiAttackDamageModifier();
-						double bonusDmg = ownerPlayer.getPersistentData().getDouble("dmz_human_ki_bonus_dmg");
-						if (bonusDmg > 0.0) {
-							mod[0] += (float) bonusDmg;
-							ownerPlayer.getPersistentData().remove("dmz_human_ki_bonus_dmg");
-						}
-					});
-					amount = mod[0];
-				}
-				return livingTarget.hurt(MainDamageTypes.kiblast(this.level(), this, this.getOwner()), amount);
-			}
-		}
-		return false;
-	}
+        if (owner instanceof Player playerOwner) {
+            TargetHelper.Relation relation = TargetHelper.getRelation(playerOwner, target);
 
-	protected Entity getKiGriefingSource() {
-		Entity owner = this.getOwner();
-		return owner != null ? owner : this;
-	}
+            if (this.isHeal()) return relation == TargetHelper.Relation.FRIENDLY;
+            else {
+                if (relation == TargetHelper.Relation.FRIENDLY) return false;
 
-	// Per-instance override to fully suppress block destruction for a specific projectile,
-	// regardless of griefing gamerules (e.g. the cosmetic kamehameha fired during oozaru_fist).
-	private transient boolean blockDestructionEnabled = true;
+                if (relation == TargetHelper.Relation.NEUTRAL) {
+                    Vec3 viewVector = playerOwner.getViewVector(1.0F).normalize();
+                    Vec3 toTarget = target.position().add(0, target.getBbHeight() / 2.0, 0).subtract(playerOwner.getEyePosition()).normalize();
 
-	public void setBlockDestructionEnabled(boolean enabled) {
-		this.blockDestructionEnabled = enabled;
-	}
+                    double dotProduct = viewVector.dot(toTarget);
+                    return dotProduct > 0.95;
+                }
 
-	public boolean isBlockDestructionEnabled() {
-		return this.blockDestructionEnabled;
-	}
+                return true;
+            }
+        } else if (this.getOwner() instanceof LivingEntity ownerLiving && target instanceof LivingEntity targetLiving) {
+            if (this.isHeal()) return ownerLiving.isAlliedTo(targetLiving);
+            else return !ownerLiving.isAlliedTo(targetLiving);
+        }
 
-	protected boolean canKiDestroyBlock(BlockPos pos) {
-		if (!this.blockDestructionEnabled) return false;
-		BlockState state = this.level().getBlockState(pos);
-		if (state.getBlock() instanceof DragonBallBlock) return false;
-		if (state.getExplosionResistance(this.level(), pos, null) >= KI_INDESTRUCTIBLE_RESISTANCE) return false;
-		return MainGameRules.canKiGrief(this.level(), pos, this.getKiGriefingSource());
-	}
+        return !this.isHeal();
+    }
 
-	public double getDestructionMultiplier() {
-		KiAttackData.KiType type;
-		try {
-			type = KiAttackData.KiType.valueOf(this.getKiType().name());
-		} catch (IllegalArgumentException e) {
-			type = KiAttackData.KiType.SMALL_BALL;
-		}
-		return Math.max(0.0, ConfigManager.getTechniqueConfig().getKiTypeConfig(type).getDestructionMultiplier());
-	}
+    @Override
+    public void setOwner(Entity owner) {
+        super.setOwner(owner);
+        if (owner != null) this.cachedOwnerUUID = owner.getUUID();
+    }
 
-	protected float scaledDestructionRadius(float baseRadius) {
-		return (float) (baseRadius * this.getDestructionMultiplier());
-	}
+    /** Owner UUID, falling back to the cached value if the live owner reference can't be resolved. */
+    public UUID getOwnerUUID() {
+        Entity owner = this.getOwner();
+        return owner != null ? owner.getUUID() : this.cachedOwnerUUID;
+    }
 
-	protected boolean destroyKiBlock(BlockPos pos, boolean dropBlock) {
-		if (!this.canKiDestroyBlock(pos)) return false;
-		return this.level().destroyBlock(pos, dropBlock);
-	}
+    /** True if the entity is this projectile's caster (by reference or UUID). */
+    public boolean isOwner(Entity target) {
+        if (target == null) return false;
+        Entity owner = this.getOwner();
+        if (owner != null && (target == owner || target.is(owner))) return true;
+        UUID ownerUUID = this.cachedOwnerUUID;
+        return ownerUUID != null && target.getUUID().equals(ownerUUID);
+    }
 
-	protected boolean setKiBlockToAir(BlockPos pos, int flags) {
-		if (!this.canKiDestroyBlock(pos)) return false;
-		return this.level().setBlock(pos, Blocks.AIR.defaultBlockState(), flags);
-	}
+    @Override
+    protected boolean canHitEntity(Entity target) {
+        if (!super.canHitEntity(target)) return false;
+        // The caster's own attacks should never collide with them (no self-detonation/self-hit),
+        // except for healing attacks which are meant to be able to target the caster.
+        if (!this.isHeal() && this.isOwner(target)) return false;
+        return true;
+    }
 
-	protected Level.ExplosionInteraction getKiExplosionInteraction(BlockPos pos) {
-		return this.canKiDestroyBlock(pos) ? Level.ExplosionInteraction.MOB : Level.ExplosionInteraction.NONE;
-	}
+    public void playInitialSound(SoundEvent sound) {
+        this.level().playSound(null, this.getX(), this.getY(), this.getZ(), sound, SoundSource.PLAYERS, 0.7F, 0.8F + (this.random.nextFloat() * 0.2F));
+    }
 
-	public void onSuccessfulHit(Entity target) {
-		// Once the homed (main) target is struck, stop chasing and continue straight. This stops
-		// penetrating projectiles like the Disk from orbiting a target they already passed through.
-		if (target != null && this.homingTargetId >= 0 && target.getId() == this.homingTargetId) {
-			this.homingTargetId = -1;
-		}
-		if (!this.level().isClientSide && this.getOwner() instanceof net.minecraft.world.entity.player.Player player) {
-			String techId = this.getTechniqueId();
-			if (techId != null && !techId.isEmpty()) {
-				StatsProvider.get(StatsCapability.INSTANCE, player).ifPresent(stats -> {
-					TechniqueData tech = stats.getTechniques().getUnlockedTechniques().get(techId);
-					if (tech instanceof KiAttackData kiAttackData) {
-						if (kiAttackData.getKiType() == KiAttackData.KiType.BARRAGE) {
-							stats.getTechniques().addFractionalExperienceToTechnique(techId, kiAttackData.getXpGainPerHit() * BARRAGE_XP_HIT_WEIGHT);
-						} else {
-							stats.getTechniques().addExperienceToTechnique(techId, kiAttackData.getXpGainPerHit());
-						}
-						applySecondaryEffect(target, kiAttackData, stats);
-					} else if (tech != null) {
-						stats.getTechniques().addExperienceToTechnique(techId, 1);
-					}
-				});
-			}
-		}
-	}
+    public boolean applyDamageOrHeal(Entity target, float amount) {
+        target = TargetHelper.resolveHittable(target);
+        if (target instanceof LivingEntity livingTarget) {
+            if (this.isHeal()) {
+                if ((livingTarget.getHealth() < livingTarget.getMaxHealth() && this.getOwner() instanceof Player playerOwner
+                        && TargetHelper.getRelation(playerOwner, target) == TargetHelper.Relation.FRIENDLY) ||
+                        (livingTarget.getHealth() < livingTarget.getMaxHealth() && target.isAlliedTo(this.getOwner()))) {
+                    final float healed = resolveMajinKiHealBonus(this.getOwner(), livingTarget, amount);
+                    HealContext.asAllyHeal(this.getOwner(), livingTarget, () -> livingTarget.heal(healed));
+                    return true;
+                }
+                return false;
+            } else {
+                if (!this.level().isClientSide && this.getOwner() instanceof Player ownerPlayer) {
+                    float[] mod = { amount };
+                    StatsProvider.get(StatsCapability.INSTANCE, ownerPlayer).ifPresent(stats -> {
+                        mod[0] *= (float) stats.getKiAttackDamageModifier();
+                        double bonusDmg = ownerPlayer.getPersistentData().getDouble("dmz_human_ki_bonus_dmg");
+                        if (bonusDmg > 0.0) {
+                            mod[0] += (float) bonusDmg;
+                            ownerPlayer.getPersistentData().remove("dmz_human_ki_bonus_dmg");
+                        }
+                    });
+                    amount = mod[0];
+                }
+                return livingTarget.hurt(MainDamageTypes.kiblast(this.level(), this, this.getOwner()), amount);
+            }
+        }
+        return false;
+    }
 
-	public void applyTechniqueSecondaryEffect(Entity target) {
-		if (this.level().isClientSide) return;
-		if (!(this.getOwner() instanceof Player player)) return;
-		String techId = this.getTechniqueId();
-		if (techId == null || techId.isEmpty()) return;
-		StatsProvider.get(StatsCapability.INSTANCE, player).ifPresent(stats -> {
-			TechniqueData tech = stats.getTechniques().getUnlockedTechniques().get(techId);
-			if (tech instanceof KiAttackData kiAttackData) {
-				this.applySecondaryEffect(target, kiAttackData, stats);
-			}
-		});
-	}
 
-	private void applySecondaryEffect(Entity target, KiAttackData kiAttack, StatsData casterStats) {
-		if (!kiAttack.hasValidSecondaryEffect()) return;
-		if (!(target instanceof LivingEntity living)) return;
-		KiAttackData.AffectedStat affected = kiAttack.getAffectedStat();
-		if (affected == null) return;
-		boolean isBuff = kiAttack.getSecondaryEffectType() == KiAttackData.SecondaryEffectType.BUFF;
-		if (!secondaryRelationAllows(target, isBuff)) return;
-		double magnitude = kiAttack.getSecondaryIntensity() / 100.0;
-		double factor = isBuff ? magnitude : -magnitude;
-		double durationMult = ClassPassives.get(casterStats).secondaryDurationMultiplier(casterStats, kiAttack);
-		int durationTicks = Math.max(1, (int) Math.round(kiAttack.getSecondaryDuration() * 20 * durationMult));
-		var targetStatsOpt = StatsProvider.get(StatsCapability.INSTANCE, living).resolve();
-		if (targetStatsOpt.isPresent()) {
-			var effects = targetStatsOpt.get().getSecondaryStatEffects();
-			if (isBuff && effects.hasOtherActiveBuff(affected.name())) return;
-			effects.apply(affected.name(), factor, durationTicks);
-		} else if (!isBuff && EntityStatDebuffs.isSupported(affected.name())) {
-			EntityStatDebuffs.applyDebuff(living, affected.name(), factor, durationTicks);
-		}
-	}
+    /**
+     * How much bigger the caster is than a normal player, used to keep ki attacks in proportion.
+     *
+     * The cast offsets and cast sizes throughout the mod are authored against a 1.8-block player,
+     * so on an Oozaru or a fat Janemba the ball ended up buried near the body's centre at a size
+     * meant for a human hand. Height is the reference rather than width because these casters are
+     * humanoid: a wide model is not necessarily holding its hands further out.
+     */
+    public float getOwnerScale() {
+        return ownerScaleOf(this.getOwner() instanceof LivingEntity living ? living : null);
+    }
 
-	private boolean secondaryRelationAllows(Entity target, boolean isBuff) {
-		Entity owner = this.getOwner();
-		if (target == owner) return isBuff;
-		if (owner instanceof Player playerOwner) {
-			TargetHelper.Relation relation = TargetHelper.getRelation(playerOwner, target);
-			return isBuff ? relation != TargetHelper.Relation.HOSTILE : relation != TargetHelper.Relation.FRIENDLY;
-		}
-		if (owner instanceof LivingEntity ownerLiving && target instanceof LivingEntity targetLiving) {
-			boolean allied = ownerLiving.isAlliedTo(targetLiving);
-			return isBuff ? allied : !allied;
-		}
-		return false;
-	}
+    public static double ownerCastCenterY(LivingEntity owner) {
+        if (owner.isMultipartEntity()) return owner.getEyeY();
+        return owner.getY() + (owner.getBbHeight() / 2.0D);
+    }
 
-	@Override
+    public static float ownerScaleOf(LivingEntity owner) {
+        if (owner == null) return 1.0F;
+        return Mth.clamp(owner.getBbHeight() / VANILLA_PLAYER_HEIGHT, 1.0F, MAX_OWNER_SCALE);
+    }
+
+
+    /** Width ratio against a normal player, for the axes that have to clear the body sideways. */
+    public static float ownerWidthScale(LivingEntity owner) {
+        if (owner == null) return 1.0F;
+        return Mth.clamp(owner.getBbWidth() / VANILLA_PLAYER_WIDTH, 1.0F, MAX_OWNER_SCALE);
+    }
+
+    /**
+     * Places a cast offset on a caster of any size.
+     *
+     * The three axes do not share a scale on purpose: a wide but short caster (a fat Janemba)
+     * needs the attack pushed further out to its side and further forward to clear its body, but
+     * NOT further up. Using one factor for all three put the ball above the shoulder on wide
+     * models and inside the chest on tall ones.
+     *
+     * Offsets that already derive from the hitbox must be passed in player-equivalent units, or
+     * they get scaled twice.
+     */
+    protected Vec3 castOffset(LivingEntity owner, Vec3 right, Vec3 up, Vec3 look,
+                              float offsetX, float offsetY, float offsetZ) {
+        float widthScale = ownerWidthScale(owner);
+        float heightScale = ownerScaleOf(owner);
+        // The offset places the attack's CENTRE, so its own radius has to be added or a
+        // power-scaled attack forms around the caster instead of in front of them.
+        return right.scale(offsetX * widthScale)
+                .add(up.scale(offsetY * heightScale))
+                .add(look.scale(offsetZ * widthScale + this.castClearanceRadius()));
+    }
+
+    /** Radius of what actually gets drawn, so the attack clears the body it comes from. */
+    protected float castClearanceRadius() {
+        return this.getSize() * 0.5F;
+    }
+
+    protected static float resolveMajinKiHealBonus(Entity owner, LivingEntity target, float amount) {
+        if (!(owner instanceof Player casterPlayer)) return amount;
+        var casterData = StatsProvider.get(StatsCapability.INSTANCE, casterPlayer).resolve().orElse(null);
+        var targetData = target instanceof Player targetPlayer
+                ? StatsProvider.get(StatsCapability.INSTANCE, targetPlayer).resolve().orElse(null)
+                : null;
+        return (float) com.dragonminez.common.racial.impl.MajinAbsorption.applyKiHealBonus(casterData, targetData, amount);
+    }
+
+    protected Entity getKiGriefingSource() {
+        Entity owner = this.getOwner();
+        return owner != null ? owner : this;
+    }
+
+    private transient boolean blockDestructionEnabled = true;
+
+    public void setBlockDestructionEnabled(boolean enabled) { this.blockDestructionEnabled = enabled; }
+    public boolean isBlockDestructionEnabled() { return this.blockDestructionEnabled; }
+
+    protected boolean canKiDestroyBlock(BlockPos pos) {
+        if (!this.blockDestructionEnabled) return false;
+        BlockState state = this.level().getBlockState(pos);
+        if (state.getBlock() instanceof DragonBallBlock) return false;
+        if (state.getExplosionResistance(this.level(), pos, null) >= KI_INDESTRUCTIBLE_RESISTANCE) return false;
+        return MainGameRules.canKiGrief(this.level(), pos, this.getKiGriefingSource());
+    }
+
+    public double getDestructionMultiplier() {
+        KiAttackData.KiType type;
+        try {
+            type = KiAttackData.KiType.valueOf(this.getKiType().name());
+        } catch (IllegalArgumentException e) {
+            type = KiAttackData.KiType.SMALL_BALL;
+        }
+        return Math.max(0.0, ConfigManager.getTechniqueConfig().getKiTypeConfig(type).getDestructionMultiplier());
+    }
+
+    protected float scaledDestructionRadius(float baseRadius) {
+        float scaled = (float) (baseRadius * this.getDestructionMultiplier());
+        return Math.min(scaled, (float) this.getMaxDestructionRadius());
+    }
+
+    private double getMaxDestructionRadius() {
+        KiAttackData.KiType type;
+        try {
+            type = KiAttackData.KiType.valueOf(this.getKiType().name());
+        } catch (IllegalArgumentException e) {
+            type = KiAttackData.KiType.SMALL_BALL;
+        }
+        double configured = ConfigManager.getTechniqueConfig().getKiTypeConfig(type).getMaxDestructionRadius();
+        return configured > 0.0 ? configured : Double.MAX_VALUE;
+    }
+
+
+    protected void carveKiSphere(BlockPos center, float radius, int flags) {
+        this.carveKiSphere(center, 0.0F, radius, flags);
+    }
+
+    protected void carveKiSphere(BlockPos center, float innerRadius, float radius, int flags) {
+        if (!this.blockDestructionEnabled || radius <= 0.0F || !(this.level() instanceof ServerLevel serverLevel)) return;
+        KiTerrainDestruction.carve(serverLevel, center, innerRadius, radius, flags, this.getKiGriefingSource());
+    }
+
+    private transient BlockPos lastEatCenter;
+    private transient float lastEatRadius;
+
+    protected boolean eatKiSphere(BlockPos center, float radius) {
+        if (!this.blockDestructionEnabled || radius <= 0.0F || !(this.level() instanceof ServerLevel serverLevel)) return false;
+        boolean ate = KiTerrainDestruction.eat(serverLevel, center, radius, this.lastEatCenter, this.lastEatRadius, this.getKiGriefingSource());
+        this.lastEatCenter = center.immutable();
+        this.lastEatRadius = radius;
+        return ate;
+    }
+
+    protected boolean destroyKiBlock(BlockPos pos, boolean dropBlock) {
+        if (!this.canKiDestroyBlock(pos)) return false;
+        return this.level().destroyBlock(pos, dropBlock);
+    }
+
+    protected boolean setKiBlockToAir(BlockPos pos, int flags) {
+        if (!this.canKiDestroyBlock(pos)) return false;
+        return this.level().setBlock(pos, Blocks.AIR.defaultBlockState(), flags);
+    }
+
+    protected Level.ExplosionInteraction getKiExplosionInteraction(BlockPos pos) {
+        return this.canKiDestroyBlock(pos) ? Level.ExplosionInteraction.MOB : Level.ExplosionInteraction.NONE;
+    }
+
+    public void onSuccessfulHit(Entity target) {
+        // Once the homed (main) target is struck, stop chasing and continue straight. This stops
+        // penetrating projectiles like the Disk from orbiting a target they already passed through.
+        if (target != null && this.homingTargetId >= 0 && target.getId() == this.homingTargetId) {
+            this.homingTargetId = -1;
+        }
+
+        if (!this.level().isClientSide && this.getOwner() instanceof net.minecraft.world.entity.player.Player player) {
+            String techId = this.getTechniqueId();
+            if (techId != null && !techId.isEmpty()) {
+                StatsProvider.get(StatsCapability.INSTANCE, player).ifPresent(stats -> {
+                    TechniqueData tech = stats.getTechniques().getUnlockedTechniques().get(techId);
+                    if (tech instanceof KiAttackData kiAttackData) {
+                        if (kiAttackData.getKiType() == KiAttackData.KiType.BARRAGE) {
+                            float barrageXp = com.dragonminez.common.racial.RacialStatUtil.applyTechniqueXpBonus(stats, kiAttackData.getXpGainPerHit() * BARRAGE_XP_HIT_WEIGHT);
+                            stats.getTechniques().addFractionalExperienceToTechnique(techId, barrageXp);
+                        } else {
+                            int hitXp = com.dragonminez.common.racial.RacialStatUtil.applyTechniqueXpBonus(stats, kiAttackData.getXpGainPerHit());
+                            stats.getTechniques().addExperienceToTechnique(techId, hitXp);
+                        }
+                        applySecondaryEffect(target, kiAttackData, stats);
+                    } else if (tech != null) {
+                        stats.getTechniques().addExperienceToTechnique(techId, 1);
+                    }
+                });
+            }
+        }
+    }
+
+    public void applyTechniqueSecondaryEffect(Entity target) {
+        if (this.level().isClientSide) return;
+        if (!(this.getOwner() instanceof Player player)) return;
+        String techId = this.getTechniqueId();
+        if (techId == null || techId.isEmpty()) return;
+        StatsProvider.get(StatsCapability.INSTANCE, player).ifPresent(stats -> {
+            TechniqueData tech = stats.getTechniques().getUnlockedTechniques().get(techId);
+            if (tech instanceof KiAttackData kiAttackData) {
+                this.applySecondaryEffect(target, kiAttackData, stats);
+            }
+        });
+    }
+
+    private void applySecondaryEffect(Entity target, KiAttackData kiAttack, StatsData casterStats) {
+        if (!kiAttack.hasValidSecondaryEffect()) return;
+        if (!(target instanceof LivingEntity living)) return;
+        KiAttackData.AffectedStat affected = kiAttack.getAffectedStat();
+        if (affected == null) return;
+
+        boolean isBuff = kiAttack.getSecondaryEffectType() == KiAttackData.SecondaryEffectType.BUFF;
+        if (!secondaryRelationAllows(target, isBuff)) return;
+
+        double magnitude = kiAttack.getSecondaryIntensity() / 100.0;
+        double factor = isBuff ? magnitude : -magnitude;
+        double durationMult = ClassPassives.get(casterStats).secondaryDurationMultiplier(casterStats, kiAttack);
+        int durationTicks = Math.max(1, (int) Math.round(kiAttack.getSecondaryDuration() * 20 * durationMult));
+
+        var targetStatsOpt = StatsProvider.get(StatsCapability.INSTANCE, living).resolve();
+        if (targetStatsOpt.isPresent()) {
+            var effects = targetStatsOpt.get().getSecondaryStatEffects();
+            if (isBuff && effects.hasOtherActiveBuff(affected.name())) return;
+            effects.apply(affected.name(), factor, durationTicks);
+        } else if (!isBuff && EntityStatDebuffs.isSupported(affected.name())) {
+            EntityStatDebuffs.applyDebuff(living, affected.name(), factor, durationTicks);
+        }
+    }
+
+    private boolean secondaryRelationAllows(Entity target, boolean isBuff) {
+        Entity owner = this.getOwner();
+        if (target == owner) return isBuff;
+        if (owner instanceof Player playerOwner) {
+            TargetHelper.Relation relation = TargetHelper.getRelation(playerOwner, target);
+            return isBuff ? relation != TargetHelper.Relation.HOSTILE
+                          : relation != TargetHelper.Relation.FRIENDLY;
+        }
+        if (owner instanceof LivingEntity ownerLiving && target instanceof LivingEntity targetLiving) {
+            boolean allied = ownerLiving.isAlliedTo(targetLiving);
+            return isBuff ? allied : !allied;
+        }
+        return false;
+    }
+
+    @Override
 	protected void defineSynchedData(net.minecraft.network.syncher.SynchedEntityData.Builder builder) {
 		builder.define(COLOR_MAIN, 16777215);
 		builder.define(COLOR_BORDER, 16777215);
@@ -498,7 +659,7 @@ public abstract class AbstractKiProjectile extends Projectile {
 		builder.define(FIRE_TICK, -1);
 	}
 
-	@Override
+    @Override
 	public void tick() {
 		if (!this.level().isClientSide) {
 			Entity owner = this.getOwner();
@@ -537,234 +698,187 @@ public abstract class AbstractKiProjectile extends Projectile {
 		this.onKiTick();
 	}
 
+    public enum KiType { SMALL_BALL, MEDIUM_BALL, GIANT_BALL, WAVE, LASER, BEAM, DISK, EXPLOSION, SHIELD, BARRAGE, AREA }
 
-	public enum KiType {
-		SMALL_BALL, MEDIUM_BALL, GIANT_BALL, WAVE, LASER, BEAM, DISK, EXPLOSION, SHIELD, BARRAGE, AREA;
-	}
+    public KiType getKiType() {
+        return KiType.values()[this.entityData.get(KI_TYPE)];
+    }
 
-	public KiType getKiType() {
-		return KiType.values()[this.entityData.get(KI_TYPE)];
-	}
+    public void setKiType(KiType type) {
+        this.entityData.set(KI_TYPE, type.ordinal());
+    }
 
-	public void setKiType(KiType type) {
-		this.entityData.set(KI_TYPE, type.ordinal());
-	}
+    public void setKiType(int type) {
+        this.entityData.set(KI_TYPE, type);
+    }
 
-	public void setKiType(int type) {
-		this.entityData.set(KI_TYPE, type);
-	}
+    protected void onKiTick() {}
 
-	protected void onKiTick() {
-	}
+    public void setColors(int colorMain, int colorBorder) {
+        this.setColors(colorMain, colorBorder, 0xFFFFFF);
+    }
 
-	public void setColors(int colorMain, int colorBorder) {
-		this.setColors(colorMain, colorBorder, 16777215);
-	}
+    public void setColors(int main, int border, int outline) {
+        this.entityData.set(COLOR_MAIN, main);
+        this.entityData.set(COLOR_BORDER, border);
+        this.entityData.set(COLOR_OUTLINE, outline);
+        this.cachedColorMainRgb = ColorUtils.rgbIntToFloat(main);
+        this.cachedColorBorderRgb = ColorUtils.rgbIntToFloat(border);
+        this.cachedColorOutlineRgb = ColorUtils.rgbIntToFloat(outline);
+    }
 
-	public void setColors(int main, int border, int outline) {
-		this.entityData.set(COLOR_MAIN, main);
-		this.entityData.set(COLOR_BORDER, border);
-		this.entityData.set(COLOR_OUTLINE, outline);
-		this.cachedColorMainRgb = ColorUtils.rgbIntToFloat(main);
-		this.cachedColorBorderRgb = ColorUtils.rgbIntToFloat(border);
-		this.cachedColorOutlineRgb = ColorUtils.rgbIntToFloat(outline);
-	}
+    public void setColorOutline(int outline) {
+        this.entityData.set(COLOR_OUTLINE, outline);
+        this.cachedColorOutlineRgb = ColorUtils.rgbIntToFloat(outline);
+    }
 
-	public void setColorOutline(int outline) {
-		this.entityData.set(COLOR_OUTLINE, outline);
-		this.cachedColorOutlineRgb = ColorUtils.rgbIntToFloat(outline);
-	}
+    public int getColor() { return this.entityData.get(COLOR_MAIN); }
+    public int getColorBorder() { return this.entityData.get(COLOR_BORDER); }
+    public int getColorOutline() { return this.entityData.get(COLOR_OUTLINE); }
 
-	public int getColor() {
-		return this.entityData.get(COLOR_MAIN);
-	}
+    public float[] getRgbColorMain() {
+        if (this.cachedColorMainRgb == null) this.cachedColorMainRgb = ColorUtils.rgbIntToFloat(this.getColor());
+        return this.cachedColorMainRgb;
+    }
 
-	public int getColorBorder() {
-		return this.entityData.get(COLOR_BORDER);
-	}
+    public float[] getRgbColorBorder() {
+        if (this.cachedColorBorderRgb == null) this.cachedColorBorderRgb = ColorUtils.rgbIntToFloat(this.getColorBorder());
+        return this.cachedColorBorderRgb;
+    }
 
-	public int getColorOutline() {
-		return this.entityData.get(COLOR_OUTLINE);
-	}
+    public float[] getRgbColorOutline() {
+        if (this.cachedColorOutlineRgb == null) this.cachedColorOutlineRgb = ColorUtils.rgbIntToFloat(this.getColorOutline());
+        return this.cachedColorOutlineRgb;
+    }
 
-	public float[] getRgbColorMain() {
-		if (this.cachedColorMainRgb == null) this.cachedColorMainRgb = ColorUtils.rgbIntToFloat(this.getColor());
-		return this.cachedColorMainRgb;
-	}
+    public void setKiDamage(float damage) { this.entityData.set(DAMAGE, damage); }
+    public float getKiDamage() { return this.entityData.get(DAMAGE); }
+    public void setSize(float size) { this.entityData.set(SIZE, size); this.refreshDimensions();}
+    public float getSize() { return this.entityData.get(SIZE); }
+    public void setKiSpeed(float speed) { this.entityData.set(SPEED, speed); }
+    public float getKiSpeed() { return this.entityData.get(SPEED); }
+    public void setKiRenderType(int type) { this.entityData.set(KI_BALL_RENDER_TYPE, type); }
+    public int getKiRenderType() { return this.entityData.get(KI_BALL_RENDER_TYPE); }
+    public String getTechniqueId() { return this.entityData.get(TECHNIQUE_ID); }
+    public void setTechniqueId(String id) {
+        this.setTechniqueIdInternal(id, true);
+    }
 
-	public float[] getRgbColorBorder() {
-		if (this.cachedColorBorderRgb == null) this.cachedColorBorderRgb = ColorUtils.rgbIntToFloat(this.getColorBorder());
-		return this.cachedColorBorderRgb;
-	}
+    private void setTechniqueIdInternal(String id, boolean triggerAnimation) {
+        this.entityData.set(TECHNIQUE_ID, id);
+        if (!triggerAnimation || id.isEmpty() || this.level().isClientSide || this.isFiring()) return;
+        this.triggerAnimationPacket("_cast");
+    }
+    public int getArmorPenetration() { return this.entityData.get(ARMOR_PENETRATION); }
+    public void setArmorPenetration(int pen) { this.entityData.set(ARMOR_PENETRATION, pen); }
+    public boolean isHeal() { return this.entityData.get(IS_HEAL); }
+    public void setHeal(boolean heal) { this.entityData.set(IS_HEAL, heal); }
+    public void setMaxLife(int lifeInTicks) {this.entityData.set(MAX_LIFE, lifeInTicks); }
+    public int getMaxLife() {return this.entityData.get(MAX_LIFE); }
 
-	public float[] getRgbColorOutline() {
-		if (this.cachedColorOutlineRgb == null) this.cachedColorOutlineRgb = ColorUtils.rgbIntToFloat(this.getColorOutline());
-		return this.cachedColorOutlineRgb;
-	}
+    public boolean isFiring() { return this.entityData.get(IS_FIRING); }
+    public void setFiring(boolean firing) { this.entityData.set(IS_FIRING, firing); }
+    public int getFireTick() { return this.entityData.get(FIRE_TICK); }
+    public void setFireTick(int tick) { this.entityData.set(FIRE_TICK, tick); }
 
-	public void setKiDamage(float damage) {
-		this.entityData.set(DAMAGE, damage);
-	}
+    @Override
+    protected void addAdditionalSaveData(CompoundTag pCompound) {
+        super.addAdditionalSaveData(pCompound);
+        pCompound.putInt("ColorMain", getColor());
+        pCompound.putInt("ColorBorder", getColorBorder());
+        pCompound.putInt("ColorOutline", getColorOutline());
+        pCompound.putFloat("Damage", getKiDamage());
+        pCompound.putFloat("Size", getSize());
+        pCompound.putFloat("Speed", getKiSpeed());
+        pCompound.putString("TechniqueId", getTechniqueId());
+        pCompound.putInt("ArmorPenetration", getArmorPenetration());
+        pCompound.putBoolean("IsHeal", isHeal());
+        pCompound.putBoolean("IsFiring", isFiring());
+        pCompound.putInt("FireTick", getFireTick());
+    }
 
-	public float getKiDamage() {
-		return this.entityData.get(DAMAGE);
-	}
+    @Override
+    protected void readAdditionalSaveData(CompoundTag pCompound) {
+        super.readAdditionalSaveData(pCompound);
+        if (pCompound.contains("ColorMain")) {
+            int outline = pCompound.contains("ColorOutline") ? pCompound.getInt("ColorOutline") : 0xFFFFFF;
+            this.setColors(pCompound.getInt("ColorMain"), pCompound.getInt("ColorBorder"), outline);
+        }
+        if (pCompound.contains("Damage")) setKiDamage(pCompound.getFloat("Damage"));
+        if (pCompound.contains("Size")) setSize(pCompound.getFloat("Size"));
+        if (pCompound.contains("Speed")) setKiSpeed(pCompound.getFloat("Speed"));
+        if (pCompound.contains("TechniqueId")) setTechniqueIdInternal(pCompound.getString("TechniqueId"), false);
+        if (pCompound.contains("ArmorPenetration")) setArmorPenetration(pCompound.getInt("ArmorPenetration"));
+        if (pCompound.contains("IsHeal")) setHeal(pCompound.getBoolean("IsHeal"));
+        if (pCompound.contains("IsFiring")) setFiring(pCompound.getBoolean("IsFiring"));
+        if (pCompound.contains("FireTick")) setFireTick(pCompound.getInt("FireTick"));
+    }
 
-	public void setSize(float size) {
-		this.entityData.set(SIZE, size);
-		this.refreshDimensions();
-	}
+    @Override
+    public void onSyncedDataUpdated(EntityDataAccessor<?> pKey) {
+        super.onSyncedDataUpdated(pKey);
+        if (SIZE.equals(pKey)) {
+            this.refreshDimensions();
+        }
+        if (COLOR_MAIN.equals(pKey)) this.cachedColorMainRgb = null;
+        if (COLOR_BORDER.equals(pKey)) this.cachedColorBorderRgb = null;
+        if (COLOR_OUTLINE.equals(pKey)) this.cachedColorOutlineRgb = null;
+    }
 
-	public float getSize() {
-		return this.entityData.get(SIZE);
-	}
 
-	public void setKiSpeed(float speed) {
-		this.entityData.set(SPEED, speed);
-	}
+    /**
+     * Ki attacks are drawn far larger than they collide.
+     *
+     * Vanilla decides render distance from the collision box ({@code boxSize * 64}), and these
+     * entities scale that box by their size -- a small blast ends up with a box of ~0.4, so it
+     * vanished about 25 blocks out while still plainly visible on screen. The drawn effect is
+     * what matters here, so the distance keys off the attack's size with a generous floor.
+     */
+    @Override
+    public boolean shouldRenderAtSqrDistance(double distanceSq) {
+        double visible = Math.max(this.getSize(), MIN_RENDER_SIZE) * 64.0 * getViewScale();
+        return distanceSq < visible * visible;
+    }
 
-	public float getKiSpeed() {
-		return this.entityData.get(SPEED);
-	}
+    /**
+     * Frustum culling uses the collision box too, which makes the effect pop out at the edge of
+     * the screen: the shed embers alone reach several times the ball's radius, and a beam is
+     * drawn along its whole length. Inflating the culling box keeps it on screen.
+     */
+    @Override
+    public AABB getBoundingBoxForCulling() {
+        return this.getBoundingBox().inflate(Math.max(this.getSize() * CULLING_INFLATE, 2.0D));
+    }
 
-	public void setKiRenderType(int type) {
-		this.entityData.set(KI_BALL_RENDER_TYPE, type);
-	}
+    @Override
+    public EntityDimensions getDimensions(Pose pPose) {
+        return super.getDimensions(pPose).scale(this.getSize());
+    }
 
-	public int getKiRenderType() {
-		return this.entityData.get(KI_BALL_RENDER_TYPE);
-	}
+    public boolean isMovementRestrictedType() {
+        return switch (getKiType()) {
+            case GIANT_BALL, WAVE, BEAM, EXPLOSION, BARRAGE -> true;
+            default -> false;
+        };
+    }
 
-	public String getTechniqueId() {
-		return this.entityData.get(TECHNIQUE_ID);
-	}
+    public void triggerAnimationPacket(String suffix) {
+        if (!this.level().isClientSide && this.getOwner() instanceof ServerPlayer sp) {
+            String techId = this.getTechniqueId();
+            if (techId != null && !techId.isEmpty()) {
+                StatsProvider.get(StatsCapability.INSTANCE, sp).ifPresent(data -> {
+                    TechniqueData tech = data.getTechniques().getUnlockedTechniques().get(techId);
+                    if (tech instanceof KiAttackData kiData) {
+                        if ("_cast".equals(suffix) && kiData.getKiType() == KiAttackData.KiType.LASER) return;
+                        String fullAnim = kiData.getAnimationPrefix() + suffix;
+                        int hold = this.isMovementRestrictedType() ? 1 : 0;
+                        NetworkHandler.sendToTrackingEntityAndSelf(new TriggerAnimationS2C(sp.getUUID(), TriggerAnimationS2C.AnimationType.KI_ANIMATION, hold, -1, fullAnim), sp);
+                    }
+                });
+            }
+        }
+    }
 
-	public void setTechniqueId(String id) {
-		this.setTechniqueIdInternal(id, true);
-	}
 
-	private void setTechniqueIdInternal(String id, boolean triggerAnimation) {
-		this.entityData.set(TECHNIQUE_ID, id);
-		if (!triggerAnimation || id.isEmpty() || this.level().isClientSide || this.isFiring()) return;
-		this.triggerAnimationPacket("_cast");
-	}
 
-	public int getArmorPenetration() {
-		return this.entityData.get(ARMOR_PENETRATION);
-	}
-
-	public void setArmorPenetration(int pen) {
-		this.entityData.set(ARMOR_PENETRATION, pen);
-	}
-
-	public boolean isHeal() {
-		return this.entityData.get(IS_HEAL);
-	}
-
-	public void setHeal(boolean heal) {
-		this.entityData.set(IS_HEAL, heal);
-	}
-
-	public void setMaxLife(int lifeInTicks) {
-		this.entityData.set(MAX_LIFE, lifeInTicks);
-	}
-
-	public int getMaxLife() {
-		return this.entityData.get(MAX_LIFE);
-	}
-
-	public boolean isFiring() {
-		return this.entityData.get(IS_FIRING);
-	}
-
-	public void setFiring(boolean firing) {
-		this.entityData.set(IS_FIRING, firing);
-	}
-
-	public int getFireTick() {
-		return this.entityData.get(FIRE_TICK);
-	}
-
-	public void setFireTick(int tick) {
-		this.entityData.set(FIRE_TICK, tick);
-	}
-
-	@Override
-	protected void addAdditionalSaveData(CompoundTag pCompound) {
-		super.addAdditionalSaveData(pCompound);
-		pCompound.putInt("ColorMain", getColor());
-		pCompound.putInt("ColorBorder", getColorBorder());
-		pCompound.putInt("ColorOutline", getColorOutline());
-		pCompound.putFloat("Damage", getKiDamage());
-		pCompound.putFloat("Size", getSize());
-		pCompound.putFloat("Speed", getKiSpeed());
-		pCompound.putString("TechniqueId", getTechniqueId());
-		pCompound.putInt("ArmorPenetration", getArmorPenetration());
-		pCompound.putBoolean("IsHeal", isHeal());
-		pCompound.putBoolean("IsFiring", isFiring());
-		pCompound.putInt("FireTick", getFireTick());
-	}
-
-	@Override
-	protected void readAdditionalSaveData(CompoundTag pCompound) {
-		super.readAdditionalSaveData(pCompound);
-		if (pCompound.contains("ColorMain")) {
-			int outline = pCompound.contains("ColorOutline") ? pCompound.getInt("ColorOutline") : 16777215;
-			this.setColors(pCompound.getInt("ColorMain"), pCompound.getInt("ColorBorder"), outline);
-		}
-		if (pCompound.contains("Damage")) setKiDamage(pCompound.getFloat("Damage"));
-		if (pCompound.contains("Size")) setSize(pCompound.getFloat("Size"));
-		if (pCompound.contains("Speed")) setKiSpeed(pCompound.getFloat("Speed"));
-		if (pCompound.contains("TechniqueId")) setTechniqueIdInternal(pCompound.getString("TechniqueId"), false);
-		if (pCompound.contains("ArmorPenetration")) setArmorPenetration(pCompound.getInt("ArmorPenetration"));
-		if (pCompound.contains("IsHeal")) setHeal(pCompound.getBoolean("IsHeal"));
-		if (pCompound.contains("IsFiring")) setFiring(pCompound.getBoolean("IsFiring"));
-		if (pCompound.contains("FireTick")) setFireTick(pCompound.getInt("FireTick"));
-	}
-
-	@Override
-	public void onSyncedDataUpdated(EntityDataAccessor<?> pKey) {
-		super.onSyncedDataUpdated(pKey);
-		if (SIZE.equals(pKey)) {
-			this.refreshDimensions();
-		}
-	}
-
-	@Override
-	public EntityDimensions getDimensions(Pose pPose) {
-		return super.getDimensions(pPose).scale(this.getSize());
-	}
-
-	public boolean isMovementRestrictedType() {
-		return switch (getKiType()) {
-			case GIANT_BALL, WAVE, BEAM, EXPLOSION, BARRAGE -> true;
-			default -> false;
-		};
-	}
-
-	public void triggerAnimationPacket(String suffix) {
-		if (!this.level().isClientSide && this.getOwner() instanceof ServerPlayer sp) {
-			String techId = this.getTechniqueId();
-			if (techId != null && !techId.isEmpty()) {
-				StatsProvider.get(StatsCapability.INSTANCE, sp).ifPresent(data -> {
-					TechniqueData tech = data.getTechniques().getUnlockedTechniques().get(techId);
-					if (tech instanceof KiAttackData kiData) {
-						String fullAnim = kiData.getAnimationPrefix() + suffix;
-						int hold = this.isMovementRestrictedType() ? 1 : 0;
-						NetworkHandler.sendToTrackingEntityAndSelf(new TriggerAnimationS2C(sp.getUUID(), TriggerAnimationS2C.AnimationType.KI_ANIMATION, hold, -1, fullAnim), sp);
-					}
-				});
-			}
-		}
-	}
-
-	@java.lang.SuppressWarnings("all")
-	public float getClashLockedLength() {
-		return this.clashLockedLength;
-	}
-
-	@java.lang.SuppressWarnings("all")
-	public UUID getClashOpponentId() {
-		return this.clashOpponentId;
-	}
 }

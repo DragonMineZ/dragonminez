@@ -1,5 +1,6 @@
 package com.dragonminez.common.network.C2S;
 
+import com.dragonminez.common.network.PacketRateLimiter;
 import com.dragonminez.Env;
 import com.dragonminez.LogUtil;
 import com.dragonminez.common.init.MainEntities;
@@ -45,6 +46,7 @@ public class SummonPlayerShadowDummyC2S {
 		ctx.get().enqueueWork(() -> {
 			ServerPlayer player = ctx.get().getSender();
 			if (player == null) return;
+			if (!PacketRateLimiter.allow(player.getUUID(), "summonplayershadowdummyc2s", player.level().getGameTime(), 40)) return;
 
 			StatsProvider.get(StatsCapability.INSTANCE, player).ifPresent(data -> {
 				String playerName = player.getGameProfile().getName();

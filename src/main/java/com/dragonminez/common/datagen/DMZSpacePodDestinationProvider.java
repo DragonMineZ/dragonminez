@@ -39,6 +39,7 @@ public class DMZSpacePodDestinationProvider implements DataProvider {
 		// Bulma rigs a dimensional anchor so the space pod can reach the Hyperbolic Time Chamber
 		// (sidequest "bulma_time_chamber_link"). Lands at the chamber's fallback entry point.
 		destinations.add(destination("time_chamber", "gui.dragonminez.spacepod.time_chamber", true, "dragonminez:time_chamber", 2, null, 0.5, 130.0, 0.5, true, quest("bulma_time_chamber_link")));
+		destinations.add(destination("demon_realm", "gui.dragonminez.spacepod.demon_realm", true, "dragonminez:demon_realm", 6, null, 160.5, 745.0, 0.5, true, quest("daima_saga:3")));
 		root.add("destinations", destinations);
 
 		Path path = this.output.getOutputFolder(PackOutput.Target.DATA_PACK)

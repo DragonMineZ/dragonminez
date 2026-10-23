@@ -21,5 +21,10 @@
     "weight": 10,
     "minCount": 1,
     "maxCount": 3
+  },{
+    "type": "dragonminez:giran",
+    "weight": 6,
+    "minCount": 1,
+    "maxCount": 1
   }]
 }

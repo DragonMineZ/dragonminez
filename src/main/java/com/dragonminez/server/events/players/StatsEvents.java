@@ -7,12 +7,17 @@ import com.dragonminez.common.config.ConfigManager;
 import com.dragonminez.common.config.FormConfig;
 import com.dragonminez.common.config.GeneralServerConfig.FoodConfig;
 import com.dragonminez.common.init.MainDamageTypes;
+import com.dragonminez.common.racial.RacialContext;
+import com.dragonminez.common.racial.RacialRegistry;
+import com.dragonminez.common.racial.RacialStatUtil;
+import com.dragonminez.common.racial.impl.BioAndroidEvolution;
 import com.dragonminez.common.init.MainEffects;
 import com.dragonminez.common.init.MainFluids;
 import com.dragonminez.common.init.MainItems;
 import com.dragonminez.common.init.entities.ki.AbstractKiProjectile;
 import com.dragonminez.common.init.entities.ShadowDummyEntity;
 import com.dragonminez.common.network.C2S.SummonPlayerShadowDummyC2S;
+import com.dragonminez.common.init.entities.demon.DemonVillagersEntity;
 import com.dragonminez.common.init.entities.namek.NamekTraderEntity;
 import com.dragonminez.common.init.entities.namek.NamekWarriorEntity;
 import com.dragonminez.common.init.entities.redribbon.BanditEntity;
@@ -21,20 +26,25 @@ import com.dragonminez.common.init.entities.redribbon.RobotEntity;
 import com.dragonminez.common.init.entities.sagas.SagaFriezaSoldier01Entity;
 import com.dragonminez.common.init.entities.sagas.SagaFriezaSoldier02Entity;
 import com.dragonminez.common.network.NetworkHandler;
-import com.dragonminez.common.network.S2C.AppearanceSyncS2C;
-import com.dragonminez.common.network.S2C.StatsSyncS2C;
+import com.dragonminez.common.network.StatsDeltaSync;
 import com.dragonminez.common.passives.PassiveEventHandler;
+import com.dragonminez.common.network.S2C.StatsSyncS2C;
+import com.dragonminez.common.racial.impl.MajinAbsorption;
+import com.dragonminez.common.racial.impl.NamekAssimilation;
+import com.dragonminez.common.stats.FormTransition;
 import com.dragonminez.common.stats.StatsCapability;
+import com.dragonminez.common.stats.StatsData;
 import com.dragonminez.common.stats.StatsProvider;
+import com.dragonminez.common.stats.character.Character;
 import com.dragonminez.common.stats.character.SecondaryStatEffects;
 import com.dragonminez.common.stats.techniques.KiAttackData;
 import com.dragonminez.common.stats.techniques.TechniqueData;
-import com.dragonminez.common.util.lists.SaiyanForms;
 import com.dragonminez.server.events.DragonBallsHandler;
 import com.dragonminez.server.util.FusionLogic;
 import com.dragonminez.server.util.GravityLogic;
 import com.dragonminez.server.util.MutantManager;
 import com.dragonminez.server.util.PotionEffectHelper;
+import com.dragonminez.server.util.TriggerFormMarker;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.util.Mth;
@@ -50,6 +60,7 @@ import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.food.FoodProperties;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.material.FluidState;
+import net.minecraft.world.phys.Vec3;
 import net.neoforged.neoforge.client.event.ClientTickEvent;
 import net.neoforged.neoforge.event.tick.PlayerTickEvent;
 import net.neoforged.neoforge.event.tick.ServerTickEvent;
@@ -61,13 +72,13 @@ import net.neoforged.neoforge.event.entity.player.PlayerEvent;
 import net.neoforged.neoforge.event.entity.player.PlayerInteractEvent;
 import net.neoforged.bus.api.EventPriority;
 import net.neoforged.bus.api.SubscribeEvent;
-import net.neoforged.neoforge.common.NeoForgeMod;
 import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.fml.common.Mod;
 import net.minecraft.core.registries.BuiltInRegistries;
 import com.dragonminez.common.util.CuriosUtil;
-import top.theillusivec4.curios.api.CuriosApi;
+import com.dragonminez.common.init.item.consumables.SenzuBeanItem;
 import com.dragonminez.common.init.item.WeightItem;
+import top.theillusivec4.curios.api.CuriosApi;
 
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
@@ -76,9 +87,13 @@ import java.util.concurrent.ConcurrentHashMap;
 public class StatsEvents {
 
 	public static final UUID DMZ_HEALTH_MODIFIER_UUID = UUID.fromString("b065b873-f4c8-4a0f-aa8c-6e778cd410e0");
-	public static final UUID FORM_SPEED_UUID = UUID.fromString("c8c07577-3365-4b1c-9917-26b237da6e08");
+	public static final UUID SPEED_UUID = UUID.fromString("c8c07577-3365-4b1c-9917-26b237da6e08");
 	public static final UUID TURBO_SPEED_UUID = UUID.fromString("b3f4a1d2-6c8e-4b0a-9f21-7d5e3c9a1b64");
+	public static final UUID SPEED_STEP_HEIGHT_UUID = UUID.fromString("5a2f8c14-7b93-4e6d-b0a5-8c3f1e94d762");
+	public static final UUID SURGE_SPEED_UUID = UUID.fromString("7d41b9a6-0e52-4c37-8fb0-3a6c15d9e824");
+	public static final UUID SURGE_ATTACK_SPEED_UUID = UUID.fromString("4e83c027-9a1b-4d65-b3f8-6c20d74a1e9b");
 	private static final double TURBO_SPEED_BONUS = 0.30;
+	private static final float MEDI_ANT_RESTORE = 0.85F;
 	public static final UUID FORM_REACH_UUID = UUID.fromString("d8d18684-4476-5c2d-ba28-37c348eb521f");
 	public static final UUID FORM_ATTACK_SPEED_UUID = UUID.fromString("f2e0aaf0-a4ab-4921-a5b0-f34cf1c3533b");
 	public static final UUID KI_WEAPON_ATTACK_SPEED_UUID = UUID.fromString("a3b1c5d7-9e2f-4a6b-8c1d-5f7e9a0b2c4d");
@@ -88,8 +103,8 @@ public class StatsEvents {
 
 	private static double getWeightStatMultiplier(int level, int weight) {
 		if (weight <= 0) return 1.0;
-		double x = (double) level;
-		double w = (double) weight;
+		double x = level;
+		double w = weight;
 		double penalty;
 		if (x <= 2 * w) {
 			penalty = 10.5 * (1.0 - Math.sqrt(x / (4.0 * w)));
@@ -98,12 +113,21 @@ public class StatsEvents {
 			double innerDiv = (-w / (w + 10.0)) + 1.0;
 			double top = f2w / innerDiv;
 			double slope = -(top / (2.0 * (w + 10.0)));
-			double intercept = top;
-			double result = slope * x + intercept;
-			penalty = Math.max(0, result);
+			double result = slope * x + top;
+			penalty = Math.max(0.0, result);
 		}
-		double multiplier = 1.0 - (penalty / 10.5);
-		return Math.max(0.001, multiplier);
+		return Math.max(0.001, 1.0 - penalty / 10.5);
+	}
+
+	private static void applySpeedModifier(AttributeInstance attribute, UUID uuid, String name, double amount) {
+		AttributeModifier existing = attribute.getModifier(com.dragonminez.common.util.AttributeMods.id(uuid));
+		double current = existing != null ? existing.amount() : 0.0;
+		if (Math.abs(amount - current) <= 1.0E-9) return;
+
+		attribute.removeModifier(com.dragonminez.common.util.AttributeMods.id(uuid));
+		if (amount != 0.0) {
+			attribute.addTransientModifier(com.dragonminez.common.util.AttributeMods.of(uuid, name, amount, AttributeModifier.Operation.ADD_MULTIPLIED_TOTAL));
+		}
 	}
 
 	private static void applyWeightAttributeModifier(Player player, net.minecraft.core.Holder<net.minecraft.world.entity.ai.attributes.Attribute> attribute, UUID uuid, String name, double amount) {
@@ -119,6 +143,16 @@ public class StatsEvents {
 				}
 			}
 		}
+	}
+
+	private static final String[] LEGACY_WEIGHT_BONUS_STATS = {"STR", "SKP", "PWR", "DEF", "STM"};
+
+	private static void clearLegacyWeightPenalty(ServerPlayer player, StatsData data) {
+		for (String stat : LEGACY_WEIGHT_BONUS_STATS) {
+			if (data.getBonusStats().hasBonus(stat, "Weights")) data.getBonusStats().removeBonus(stat, "Weights");
+		}
+		applyWeightAttributeModifier(player, Attributes.MOVEMENT_SPEED, WEIGHT_MOVEMENT_SPEED_MOD_UUID, "Weight Speed Penalty", 0);
+		applyWeightAttributeModifier(player, Attributes.ATTACK_SPEED, WEIGHT_ATTACK_SPEED_MOD_UUID, "Weight Attack Speed Penalty", 0);
 	}
 
 	private static final Map<UUID, List<FoodRegenTask>> FOOD_REGEN_QUEUE = new ConcurrentHashMap<>();
@@ -364,7 +398,8 @@ public class StatsEvents {
 	}
 
 	private static boolean removesAlignment(Entity entity) {
-		return entity instanceof NamekWarriorEntity || entity instanceof Villager || entity instanceof NamekTraderEntity;
+		return entity instanceof NamekWarriorEntity || entity instanceof Villager || entity instanceof NamekTraderEntity
+				|| entity instanceof DemonVillagersEntity.Resident;
 	}
 
 	@SubscribeEvent
@@ -408,6 +443,9 @@ public class StatsEvents {
 					victimData.getSkills().setSkillActive("kisense", false);
 					FOOD_REGEN_QUEUE.remove(victim.getUUID());
 				}
+				if (victim instanceof ServerPlayer serverVictim) {
+					RacialRegistry.forPlayer(victimData).ifPresent(ability -> ability.onDeath(new RacialContext(serverVictim, victimData)));
+				}
 			});
 		}
 
@@ -449,7 +487,7 @@ public class StatsEvents {
 		return null;
 	}
 
-	private static void grantTechniqueKillXp(com.dragonminez.common.stats.StatsData data, Entity directEntity) {
+	private static void grantTechniqueKillXp(StatsData data, Entity directEntity) {
 		if (!(directEntity instanceof AbstractKiProjectile projectile)) return;
 
 		String techniqueId = projectile.getTechniqueId();
@@ -458,7 +496,7 @@ public class StatsEvents {
 		TechniqueData techniqueData = data.getTechniques().getUnlockedTechniques().get(techniqueId);
 		if (!(techniqueData instanceof KiAttackData kiAttackData)) return;
 
-		int xpGain = kiAttackData.getXpGainPerKill();
+		int xpGain = RacialStatUtil.applyTechniqueXpBonus(data, kiAttackData.getXpGainPerKill());
 		if (xpGain > 0) data.getTechniques().addExperienceToTechnique(techniqueId, xpGain);
 	}
 
@@ -474,7 +512,7 @@ public class StatsEvents {
 
 						if (attackerData.getCharacter().hasActiveForm()) {
 							FormConfig.FormData activeForm = attackerData.getCharacter().getActiveFormData();
-							if (activeForm != null && attackerData.getResources().getPowerRelease() >= 50) {
+							if (activeForm != null && attackerData.getResources().getPowerRelease() >= 50 && !TriggerFormMarker.isTriggeredForm(attacker, attackerData)) {
 								String formGroup = attackerData.getCharacter().getActiveFormGroup();
 								String formName = attackerData.getCharacter().getActiveForm();
 								double bonus = 1.0 + (GravityLogic.getBonusGravity(attacker) * ConfigManager.getServerConfig().getGravity().getMasteryBonusPerGravity());
@@ -484,7 +522,7 @@ public class StatsEvents {
 
 						if (attackerData.getCharacter().hasActiveStackForm()) {
 							FormConfig.FormData activeStackForm = attackerData.getCharacter().getActiveStackFormData();
-							if (activeStackForm != null && attackerData.getResources().getPowerRelease() >= 50) {
+							if (activeStackForm != null && attackerData.getResources().getPowerRelease() >= 50 && !TriggerFormMarker.isTriggeredStack(attacker, attackerData)) {
 								String stackFormGroup = attackerData.getCharacter().getActiveStackFormGroup();
 								String stackForm = attackerData.getCharacter().getActiveStackForm();
 								double bonus = 1.0 + (GravityLogic.getBonusGravity(attacker) * ConfigManager.getServerConfig().getGravity().getMasteryBonusPerGravity());
@@ -493,7 +531,7 @@ public class StatsEvents {
 						}
 					}
 				}
-				NetworkHandler.sendToTrackingEntityAndSelf(new AppearanceSyncS2C(attacker), attacker);
+				StatsDeltaSync.markDirty(attacker);
 			});
 		}
 
@@ -506,7 +544,7 @@ public class StatsEvents {
 
 						if (victimData.getCharacter().hasActiveForm()) {
 							FormConfig.FormData activeForm = victimData.getCharacter().getActiveFormData();
-							if (activeForm != null && victimData.getResources().getPowerRelease() >= 50) {
+							if (activeForm != null && victimData.getResources().getPowerRelease() >= 50 && !TriggerFormMarker.isTriggeredForm(victim, victimData)) {
 								String formGroup = victimData.getCharacter().getActiveFormGroup();
 								String formName = victimData.getCharacter().getActiveForm();
 								double bonus = 1.0 + (GravityLogic.getBonusGravity(victim) * ConfigManager.getServerConfig().getGravity().getMasteryBonusPerGravity());
@@ -516,7 +554,7 @@ public class StatsEvents {
 
 						if (victimData.getCharacter().hasActiveStackForm()) {
 							FormConfig.FormData activeStackForm = victimData.getCharacter().getActiveStackFormData();
-							if (activeStackForm != null && victimData.getResources().getPowerRelease() >= 50) {
+							if (activeStackForm != null && victimData.getResources().getPowerRelease() >= 50 && !TriggerFormMarker.isTriggeredStack(victim, victimData)) {
 								String stackFormGroup = victimData.getCharacter().getActiveStackFormGroup();
 								String stackForm = victimData.getCharacter().getActiveStackForm();
 								double bonus = 1.0 + (GravityLogic.getBonusGravity(victim) * ConfigManager.getServerConfig().getGravity().getMasteryBonusPerGravity());
@@ -525,7 +563,7 @@ public class StatsEvents {
 						}
 					}
 				}
-				NetworkHandler.sendToTrackingEntityAndSelf(new AppearanceSyncS2C(victim), victim);
+				StatsDeltaSync.markDirty(victim);
 			});
 		}
 	}
@@ -585,7 +623,8 @@ public class StatsEvents {
 				if (healStamina > maxStamina) healStamina = maxStamina;
 
 				if (hasCreatedChar) {
-					serverPlayer.setHealth(player.getHealth() + healHp);
+					if (com.dragonminez.server.util.BabaReviveService.isHealingBlocked(data)) return;
+					if (!BioAndroidEvolution.isExplosionRecovering(data)) serverPlayer.setHealth(player.getHealth() + healHp);
 					data.getResources().addEnergy(healKi);
 					data.getResources().addStamina(healStamina);
 				}
@@ -634,6 +673,13 @@ public class StatsEvents {
 		String itemId = itemKey.toString();
 		String namespace = itemKey.getNamespace();
 
+		if (stack.getItem() instanceof net.minecraft.world.item.PotionItem) {
+			StatsProvider.get(StatsCapability.INSTANCE, player).ifPresent(data -> {
+				if ("namekian".equals(data.getCharacter().getRaceName()))
+					NamekAssimilation.refreshWaterRegenBuff(data, ConfigManager.getServerConfig().getRacialSkills().getNamekian());
+			});
+		}
+
 		FoodConfig foodConfig = ConfigManager.getServerConfig().getGameplay().getFood();
 
 		boolean isModBlacklisted = !foodConfig.getBlacklistedNamespaces().isEmpty() && foodConfig.getBlacklistedNamespaces().contains(namespace);
@@ -641,10 +687,12 @@ public class StatsEvents {
 
 		if (!isModBlacklisted && !isItemBlacklisted) {
 			StatsProvider.get(StatsCapability.INSTANCE, player).ifPresent(data -> {
-				boolean isSenzu = itemId.equals("dragonminez:senzu_bean");
+				SenzuBeanItem senzu = stack.getItem() instanceof SenzuBeanItem bean ? bean : null;
+				boolean isSenzu = senzu != null;
 				boolean isHeartMedicine = itemId.equals("dragonminez:heart_medicine");
+				boolean isMediAnt = stack.is(MainItems.MEDI_BUG_ANT.get());
 
-				if ((isSenzu || isHeartMedicine) && player.getCooldowns().isOnCooldown(stack.getItem())) return;
+				if ((isSenzu || isHeartMedicine || isMediAnt) && player.getCooldowns().isOnCooldown(stack.getItem())) return;
 
 				FoodProperties foodProperties = stack.getFoodProperties(player);
 				if (foodProperties == null) return;
@@ -680,19 +728,38 @@ public class StatsEvents {
 				float maxEnergy = data.getMaxEnergy();
 				float maxStamina = data.getMaxStamina();
 
-				float healAmount = (maxHealth * healthTotalRecoveryPercentage);
+				float healAmount = MajinAbsorption.applyFoodHealBonus(data, maxHealth * healthTotalRecoveryPercentage);
 				float energyAmount = (maxEnergy * kiTotalRecoveryPercentage);
 				float staminaAmount = (maxStamina * staminaTotalRecoveryPercentage);
 
 				if (isSenzu || isHeartMedicine) {
-					PassiveEventHandler.suppressHealingBonus = true;
-					player.heal(maxHealth - player.getHealth());
-					PassiveEventHandler.suppressHealingBonus = false;
-					data.getResources().setCurrentEnergy(maxEnergy);
-					data.getResources().setCurrentStamina(maxStamina);
+					// La medicina del corazón y la senzu verde restauran todo; las de color solo su recurso.
+					SenzuBeanItem.SenzuType senzuType = isSenzu ? senzu.getSenzuType() : SenzuBeanItem.SenzuType.ALL;
+
+					if (senzuType.restoresHealth()) {
+						PassiveEventHandler.suppressHealingBonus = true;
+						player.heal(maxHealth - player.getHealth());
+						PassiveEventHandler.suppressHealingBonus = false;
+					}
+					if (senzuType.restoresKi()) data.getResources().setCurrentEnergy(maxEnergy);
+					if (senzuType.restoresStamina()) data.getResources().setCurrentStamina(maxStamina);
 
 					int cooldownTicks = ConfigManager.getServerConfig().getGameplay().getSenzuCooldownTicks();
-					player.getCooldowns().addCooldown(stack.getItem(), cooldownTicks);
+					if (isSenzu) {
+						// Cooldown compartido: no se puede encadenar una senzu de cada color.
+						for (SenzuBeanItem bean : SenzuBeanItem.all()) {
+							player.getCooldowns().addCooldown(bean, cooldownTicks);
+						}
+					} else {
+						player.getCooldowns().addCooldown(stack.getItem(), cooldownTicks);
+					}
+				} else if (isMediAnt) {
+					PassiveEventHandler.suppressHealingBonus = true;
+					player.heal(maxHealth * MEDI_ANT_RESTORE);
+					PassiveEventHandler.suppressHealingBonus = false;
+					data.getResources().setCurrentEnergy(data.getResources().getCurrentEnergy() + maxEnergy * MEDI_ANT_RESTORE);
+					data.getResources().setCurrentStamina(data.getResources().getCurrentStamina() + maxStamina * MEDI_ANT_RESTORE);
+					player.getCooldowns().addCooldown(stack.getItem(), ConfigManager.getServerConfig().getGameplay().getSenzuCooldownTicks());
 				} else {
 					int durationSeconds = 6;
 					FOOD_REGEN_QUEUE.computeIfAbsent(player.getUUID(), k -> new ArrayList<>()).add(new FoodRegenTask(durationSeconds, healAmount, energyAmount, staminaAmount));
@@ -714,19 +781,27 @@ public class StatsEvents {
 			if (player.getCooldowns().isOnCooldown(stack.getItem()) || player.hasEffect(MainEffects.STUN))
 				event.setCanceled(true);
 			else event.setDuration(1);
+		} else if (stack.is(MainItems.MEDI_BUG_ANT.get()) && player.getCooldowns().isOnCooldown(stack.getItem())) {
+			event.setCanceled(true);
 		}
+	}
+
+	private static boolean isStunnedOrDowned(LivingEntity entity) {
+		if (entity.hasEffect(MainEffects.STUN)) return true;
+		if (!(entity instanceof Player player)) return false;
+		return StatsProvider.get(StatsCapability.INSTANCE, player).map(data -> data.getStatus().isKnockedDown()).orElse(false);
 	}
 
 	@SubscribeEvent
 	public static void onPlayerAttack(AttackEntityEvent event) {
 		if (event.getEntity().level().isClientSide) return;
-		if (event.getEntity().hasEffect(MainEffects.STUN)) event.setCanceled(true);
+		if (isStunnedOrDowned(event.getEntity())) event.setCanceled(true);
 	}
 
 	@SubscribeEvent
 	public static void onLivingAttack(LivingIncomingDamageEvent event) {
 		if (event.getEntity().level().isClientSide) return;
-		if (event.getSource().getEntity() instanceof LivingEntity attacker && attacker.hasEffect(MainEffects.STUN))
+		if (event.getSource().getEntity() instanceof LivingEntity attacker && isStunnedOrDowned(attacker))
 			event.setCanceled(true);
 	}
 
@@ -758,7 +833,7 @@ public class StatsEvents {
 	private static void handlePlayerInteract(PlayerInteractEvent event) {
 		if (event.getLevel().isClientSide) return;
 		if (event.getEntity() == null) return;
-		if (event.getEntity().hasEffect(MainEffects.STUN)
+		if (isStunnedOrDowned(event.getEntity())
 				&& event instanceof net.neoforged.bus.api.ICancellableEvent cancellable) {
 			if (event instanceof PlayerInteractEvent.RightClickBlock rightClickBlock) {
 				rightClickBlock.setCancellationResult(net.minecraft.world.InteractionResult.FAIL);
@@ -777,7 +852,7 @@ public class StatsEvents {
 	public static void onLivingJump(LivingEvent.LivingJumpEvent event) {
 		if (event.getEntity().level().isClientSide) return;
 
-		if (event.getEntity().hasEffect(MainEffects.STUN))
+		if (isStunnedOrDowned(event.getEntity()))
 			event.getEntity().setDeltaMovement(event.getEntity().getDeltaMovement().multiply(1, 0, 1));
 	}
 
@@ -816,22 +891,35 @@ public class StatsEvents {
 				AttributeInstance speedAttr = serverPlayer.getAttribute(Attributes.MOVEMENT_SPEED);
 				AttributeInstance attackSpeedAttr = serverPlayer.getAttribute(Attributes.ATTACK_SPEED);
 				if (speedAttr != null) {
-					double expectedBonus = 0.0;
-					if (data.getCharacter().hasActiveForm()) {
-						FormConfig.FormData activeForm = data.getCharacter().getActiveFormData();
-						if (activeForm != null) {
-							double multiplier = activeForm.getSpeedMultiplier();
-							if (multiplier != 1.0) expectedBonus = multiplier - 1.0;
+					// Redondeado para no reinstalar el modificador cada tick por ruido decimal.
+					double expectedBonus = Math.round((data.getMovementSpeedMultiplier() - 1.0) * 1000.0) / 1000.0;
+
+					AttributeModifier existingSpeed = speedAttr.getModifier(com.dragonminez.common.util.AttributeMods.id(SPEED_UUID));
+					double currentBonus = existingSpeed != null ? existingSpeed.amount() : 0.0;
+
+					if (Math.abs(expectedBonus - currentBonus) > 1.0E-9) {
+						speedAttr.removeModifier(com.dragonminez.common.util.AttributeMods.id(SPEED_UUID));
+						if (expectedBonus != 0.0) {
+							speedAttr.addTransientModifier(com.dragonminez.common.util.AttributeMods.of(SPEED_UUID, "DMZ Speed", expectedBonus, AttributeModifier.Operation.ADD_MULTIPLIED_TOTAL));
 						}
 					}
 
-					AttributeModifier existingSpeed = speedAttr.getModifier(com.dragonminez.common.util.AttributeMods.id(FORM_SPEED_UUID));
-					double currentBonus = existingSpeed != null ? existingSpeed.amount() : 0.0;
+					AttributeInstance stepHeightAttr = serverPlayer.getAttribute(Attributes.STEP_HEIGHT);
+					if (stepHeightAttr != null) {
+						var combatCfg = ConfigManager.getCombatConfig();
+						double expectedStep = 0.0;
+						if (combatCfg != null && combatCfg.getEnableSpeedSystem()
+								&& data.getSpeed() >= combatCfg.getSpeedStepAssistThreshold()) {
+							expectedStep = combatCfg.getSpeedStepAssistBonus();
+						}
 
-					if (expectedBonus != currentBonus) {
-						speedAttr.removeModifier(com.dragonminez.common.util.AttributeMods.id(FORM_SPEED_UUID));
-						if (expectedBonus > 0) {
-							speedAttr.addTransientModifier(com.dragonminez.common.util.AttributeMods.of(FORM_SPEED_UUID, "Form Speed Bonus", expectedBonus, AttributeModifier.Operation.ADD_MULTIPLIED_TOTAL));
+						AttributeModifier existingStep = stepHeightAttr.getModifier(com.dragonminez.common.util.AttributeMods.id(SPEED_STEP_HEIGHT_UUID));
+						double currentStep = existingStep != null ? existingStep.amount() : 0.0;
+						if (Math.abs(expectedStep - currentStep) > 1.0E-9) {
+							stepHeightAttr.removeModifier(com.dragonminez.common.util.AttributeMods.id(SPEED_STEP_HEIGHT_UUID));
+							if (expectedStep > 0) {
+								stepHeightAttr.addTransientModifier(com.dragonminez.common.util.AttributeMods.of(SPEED_STEP_HEIGHT_UUID, "DMZ Speed Step Assist", expectedStep, AttributeModifier.Operation.ADD_VALUE));
+							}
 						}
 					}
 
@@ -846,6 +934,18 @@ public class StatsEvents {
 							speedAttr.addTransientModifier(com.dragonminez.common.util.AttributeMods.of(TURBO_SPEED_UUID, "Turbo Speed Bonus", expectedTurboBonus, AttributeModifier.Operation.ADD_MULTIPLIED_TOTAL));
 						}
 					}
+
+					double expectedSurgeBonus = data.getStatus().isSurgeActive()
+							? Math.max(0.0, ConfigManager.getCombatConfig().getSurgeMoveSpeedMultiplier() - 1.0)
+							: 0.0;
+					applySpeedModifier(speedAttr, SURGE_SPEED_UUID, "Ki Surge Speed", expectedSurgeBonus);
+				}
+
+				if (attackSpeedAttr != null) {
+					double expectedSurgeAttackSpeed = data.getStatus().isSurgeActive()
+							? Math.max(0.0, ConfigManager.getCombatConfig().getSurgeAttackSpeedMultiplier() - 1.0)
+							: 0.0;
+					applySpeedModifier(attackSpeedAttr, SURGE_ATTACK_SPEED_UUID, "Ki Surge Attack Speed", expectedSurgeAttackSpeed);
 				}
 
 				if (attackSpeedAttr != null) {
@@ -933,32 +1033,30 @@ public class StatsEvents {
 		}
 	}
 
+	private static final float FALL_KI_PER_DAMAGE = 3.0f;
+	private static final float FALL_KI_MAX_FRACTION = 0.10f;
+
 	@SubscribeEvent
 	public static void onFall(LivingFallEvent event) {
 		if (!(event.getEntity() instanceof ServerPlayer player)) return;
 
-		final int[] jumpLevel = {0};
 		StatsProvider.get(StatsCapability.INSTANCE, player).ifPresent(data -> {
 			if (!data.getStatus().isHasCreatedCharacter()) return;
-			if (!data.getSkills().hasSkill("jump") || !data.getSkills().isSkillActive("jump")) return;
-			jumpLevel[0] = data.getSkills().getSkillLevel("jump");
+
+			if (data.getSkills().hasSkill("jump") && data.getSkills().isSkillActive("jump")) {
+				int jumpLevel = data.getSkills().getSkillLevel("jump");
+				if (jumpLevel > 0) {
+					float safeHeight = 1.25f + jumpLevel + 1.0f;
+					if (event.getDistance() <= safeHeight) {
+						player.resetFallDistance();
+						event.setCanceled(true);
+						return;
+					}
+					event.setDistance(event.getDistance() - safeHeight);
+				}
+			}
+
 		});
-
-		if (jumpLevel[0] <= 0) return;
-
-		float maxHeight = 1.25f + (jumpLevel[0] * 1.0f);
-		float safeHeight = maxHeight + 1.0f;
-
-		float fallDistance = event.getDistance();
-
-		if (fallDistance <= safeHeight) {
-			player.resetFallDistance();
-			event.setCanceled(true);
-			event.setDamageMultiplier(0f);
-		} else {
-			float reducedDistance = fallDistance - safeHeight;
-			event.setDistance(reducedDistance);
-		}
 	}
 
 	@SubscribeEvent
@@ -975,21 +1073,21 @@ public class StatsEvents {
 			float currentKi = data.getResources().getCurrentEnergy();
 			if (currentKi <= 0) return;
 
-			float kiPerDamage = 3.0f;
-			float fullCost = damage * kiPerDamage;
+			float cost = Math.min(damage * FALL_KI_PER_DAMAGE, data.getMaxEnergy() * FALL_KI_MAX_FRACTION);
+			if (cost <= 0.0f) return;
+			float paid = Math.min(currentKi, cost);
+			data.getResources().removeEnergy(paid);
 
-			if (currentKi >= fullCost) {
-				data.getResources().removeEnergy(fullCost);
+			if (paid >= cost) {
 				event.setNewDamage(0f);
 			} else {
-				float negatableDamage = currentKi / kiPerDamage;
-				data.getResources().removeEnergy(currentKi);
-				event.setNewDamage(damage - negatableDamage);
+				event.setNewDamage(damage * (1.0f - paid / cost));
 			}
 
-			NetworkHandler.sendToTrackingEntityAndSelf(new StatsSyncS2C(player), player);
+			StatsDeltaSync.markDirty(player);
 		});
 	}
+
 
     @SubscribeEvent
     public static void onEntitySize(EntityEvent.Size event) {
@@ -1000,35 +1098,6 @@ public class StatsEvents {
         if (player.getAttributes() == null) return;
 
         StatsProvider.get(StatsCapability.INSTANCE, entity).ifPresent(data -> {
-            var character = data.getCharacter();
-            String currentForm = character.getActiveForm();
-            String race = character.getRaceName().toLowerCase();
-
-            String logicKey = character.getRenderLogicKey();
-
-            Float[] resolved = character.getResolvedModelScaling();
-            float configScaleX = resolved[0];
-            float configScaleY = resolved[1];
-
-            float scalingX = configScaleX;
-            float scalingY = configScaleY;
-
-            boolean isOozaru = logicKey.startsWith("oozaru") ||
-                    (race.equals("saiyan") && (Objects.equals(currentForm, SaiyanForms.OOZARU) || Objects.equals(currentForm, SaiyanForms.GOLDEN_OOZARU)));
-
-            if (isOozaru) {
-                float baseOozaruSize = 3.8f;
-
-                float visualScaleX = Math.max(0.1f, configScaleX - 2.8f);
-                float visualScaleY = Math.max(0.1f, configScaleY - 2.8f);
-
-                scalingX = visualScaleX * baseOozaruSize;
-                scalingY = visualScaleY * baseOozaruSize;
-            } else {
-                scalingX = configScaleX;
-                scalingY = configScaleY;
-            }
-
             Pose pose = event.getPose();
 
             if (pose == Pose.DYING || pose == Pose.SLEEPING) {
@@ -1037,33 +1106,54 @@ public class StatsEvents {
                 return;
             }
 
-            float rawWidth = 0.6F * scalingX;
-            float rawHeight = 1.9F * scalingY;
+            Character character = data.getCharacter();
+            Float[] scaling = character.getResolvedModelScaling();
+            float[] dimensions = formDimensions(scaling, pose);
+            float[] attachmentScale = {scaling[0], scaling[1], scaling[2]};
 
-            float finalWidth = Math.round(rawWidth * 10.0F) / 10.0F;
-            float finalHeight = Math.round(rawHeight * 10.0F) / 10.0F;
-
-            float poseHeightMultiplier = 1.0F;
-            float eyeHeightMultiplier = 1.0F;
-
-            if (pose == Pose.CROUCHING) {
-                poseHeightMultiplier = 1.5F / 1.8F;
-                eyeHeightMultiplier = 1.27F / 1.62F;
-            } else if (pose == Pose.SWIMMING || pose == Pose.FALL_FLYING || pose == Pose.SPIN_ATTACK) {
-                poseHeightMultiplier = 0.6F / 1.8F;
-                eyeHeightMultiplier = 0.4F / 1.62F;
+            FormTransition transition = data.getFormTransition();
+            if (transition.isReady()) {
+                double time = transition.observe(data, transition.now());
+                FormTransition.Charge charge = transition.charge(character, time);
+                if (charge != null) {
+                    Float[] target = charge.look().modelScaling(character);
+                    dimensions = FormTransition.lerp(dimensions, formDimensions(target, pose), charge.factor());
+                    attachmentScale = FormTransition.lerp(attachmentScale, new float[]{target[0], target[1], target[2]}, charge.factor());
+                }
+                FormTransition.Revert revert = transition.revert(time);
+                if (revert != null) {
+                    Float[] target = revert.look().modelScaling(character);
+                    dimensions = FormTransition.lerp(dimensions, formDimensions(target, pose), revert.factor());
+                    attachmentScale = FormTransition.lerp(attachmentScale, new float[]{target[0], target[1], target[2]}, revert.factor());
+                }
             }
 
-            float heightConPose = finalHeight * poseHeightMultiplier;
-            float alturaSegura = Math.round(heightConPose * 10.0F) / 10.0F;
-
-            EntityDimensions newDims = EntityDimensions.fixed(finalWidth, alturaSegura);
-            event.setNewSize(newDims);
-
-            float rawEyeHeight = 1.7F * scalingY * eyeHeightMultiplier;
-            float finalEyeHeight = Math.round(rawEyeHeight * 10.0F) / 10.0F;
-
-            event.setNewSize(event.getNewSize().withEyeHeight(finalEyeHeight));
+            // 1.21 seats subtract this player attachment; rebuilding dimensions without
+            // it replaces the seated hip anchor with the default point at the feet.
+            Vec3 vehicleAttachment = event.getNewSize().attachments().get(EntityAttachment.VEHICLE, 0, 0.0F)
+                    .multiply(attachmentScale[0], attachmentScale[1], attachmentScale[2]);
+            event.setNewSize(EntityDimensions.fixed(dimensions[0], dimensions[1]).withEyeHeight(dimensions[2])
+                    .withAttachments(EntityAttachments.builder().attach(EntityAttachment.VEHICLE, vehicleAttachment)));
         });
+    }
+
+    private static float[] formDimensions(Float[] scaling, Pose pose) {
+        float finalWidth = Math.round(0.6F * scaling[0] * 10.0F) / 10.0F;
+        float finalHeight = Math.round(1.9F * scaling[1] * 10.0F) / 10.0F;
+
+        float poseHeightMultiplier = 1.0F;
+        float eyeHeightMultiplier = 1.0F;
+
+        if (pose == Pose.CROUCHING) {
+            poseHeightMultiplier = 1.5F / 1.8F;
+            eyeHeightMultiplier = 1.27F / 1.62F;
+        } else if (pose == Pose.SWIMMING || pose == Pose.FALL_FLYING || pose == Pose.SPIN_ATTACK) {
+            poseHeightMultiplier = 0.6F / 1.8F;
+            eyeHeightMultiplier = 0.4F / 1.62F;
+        }
+
+        float alturaSegura = Math.round(finalHeight * poseHeightMultiplier * 10.0F) / 10.0F;
+        float finalEyeHeight = Math.round(1.7F * scaling[1] * eyeHeightMultiplier * 10.0F) / 10.0F;
+        return new float[]{finalWidth, alturaSegura, finalEyeHeight};
     }
 }
