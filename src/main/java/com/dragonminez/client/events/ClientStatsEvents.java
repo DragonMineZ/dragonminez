@@ -519,8 +519,6 @@ public class ClientStatsEvents {
 					net.neoforged.neoforge.common.NeoForge.EVENT_BUS.post(new DMZClientEvent.StrikeAttack(player, targetId));
 				} else if (t instanceof EvasionAttackData) {
 						if (data.getCooldowns().hasCooldown("TechniqueCooldown_" + id)) continue;
-				} else if (t instanceof KiAttackData && "taiyoken".equals(id)) {
-						if (data.getCooldowns().hasCooldown("TechniqueCooldown_taiyoken")) continue;
 						techniques.selectSlot(i);
 						NetworkHandler.sendToServer(new SelectTechniqueSlotC2S(i));
 						var lockedEvasionTarget = LockOnEvent.getLockedTarget();
