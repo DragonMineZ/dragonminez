@@ -418,12 +418,18 @@ public class KiWeaponRenderer {
 		Vector3f dir = new Vector3f(axis).normalize();
 		Vector3f mid = new Vector3f(head).add(butt).mul(0.5f);
 		Vector3f toCamera = new Vector3f(camera).sub(mid);
-		Vector3f side = new Vector3f(dir).cross(toCamera);
+		// An asymmetric scythe blade must keep its orientation relative to the arm.
+		// Camera-facing rods can rotate freely, but doing that here swings the hook.
+		Vector3f side = sideRef != null
+				? new Vector3f(sideRef).sub(new Vector3f(dir).mul(sideRef.dot(dir)))
+				: new Vector3f(dir).cross(toCamera);
 		if (side.lengthSquared() < 1.0E-10f) return;
 		side.normalize();
-		if (sideRef != null && side.dot(sideRef) < 0.0f) side.negate();
 
-		Vector3f front = new Vector3f(toCamera).sub(new Vector3f(dir).mul(toCamera.dot(dir)));
+		Vector3f front = sideRef != null
+				? new Vector3f(dir).cross(side)
+				: new Vector3f(toCamera).sub(new Vector3f(dir).mul(toCamera.dot(dir)));
+		if (sideRef != null && front.dot(toCamera) < 0.0f) front.negate();
 		if (front.lengthSquared() > 1.0E-10f) front.normalize(frontOffset);
 		if (fixedFront != null) front.set(fixedFront);
 		Vector3f origin = new Vector3f(head).add(front);

@@ -5,6 +5,7 @@ import com.dragonminez.client.clash.BeamClashCinematicCamera;
 import com.dragonminez.client.events.FlySkillEvent;
 import com.dragonminez.client.events.LockOnEvent;
 import com.dragonminez.client.flight.RollCamera;
+import com.dragonminez.client.render.CameraProjectionCapture;
 import com.dragonminez.common.combat.logic.player.TargetHelper;
 import com.dragonminez.common.combat.util.Minecraft_DMZ;
 import com.dragonminez.common.config.ConfigManager;
@@ -254,6 +255,16 @@ public final class OverShoulderCamera {
 			return new float[] {0.0F, 0.0F};
 		}
 		float partialTick = mc.getTimer().getGameTimeDeltaPartialTick(false);
+		LivingEntity locked = LockOnEvent.getLockedTarget();
+		if (locked != null && locked.isAlive() && locked.level() == mc.level) {
+			// The lock marker uses the target centre, not the mouse pick distance.
+			// Keep close-range hit tests and free-aim centring out of the locked aim.
+			crosshairPlaced = false;
+			Vec3 target = locked.getPosition(partialTick).add(0.0, locked.getBbHeight() * 0.5, 0.0);
+			float[] screen = new float[4];
+			if (!CameraProjectionCapture.project(target, guiWidth, guiHeight, screen)) return new float[] {0.0F, 0.0F};
+			return new float[] {screen[0] - guiWidth * 0.5F, screen[1] - guiHeight * 0.5F};
+		}
 		Vec3 eye = player.getEyePosition(partialTick);
 		HitResult pick = mc.hitResult;
 		double distance = pick != null && pick.getType() != HitResult.Type.MISS ? pick.getLocation().distanceTo(eye) : lookDistance > 0.0 ? lookDistance : AIM_BLOCK_RANGE * 4.0;
