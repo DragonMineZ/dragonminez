@@ -7,6 +7,7 @@ import com.dragonminez.mixin.client.CompositeRenderTypeAccessor;
 import com.dragonminez.mixin.client.CompositeStateAccessor;
 import com.dragonminez.mixin.client.TextureStateShardInvoker;
 import com.mojang.blaze3d.systems.RenderSystem;
+import com.mojang.blaze3d.platform.GlStateManager;
 import org.joml.Matrix4fStack;
 import com.mojang.blaze3d.vertex.DefaultVertexFormat;
 import com.mojang.blaze3d.vertex.PoseStack;
@@ -301,9 +302,19 @@ public class ModRenderTypes extends RenderType {
                     .setOverlayState(OVERLAY)
                     .createCompositeState(false)));
 
+    // Shader JSON blend settings are no longer applied by ShaderInstance in 1.21.
+    // Preserve the original ki_blade shader's alpha factors for its bloom mask.
+    private static final TransparencyStateShard KI_BLADE_TRANSPARENCY = new TransparencyStateShard("dmz_ki_blade_transparency", () -> {
+        RenderSystem.enableBlend();
+        RenderSystem.blendFunc(GlStateManager.SourceFactor.SRC_ALPHA, GlStateManager.DestFactor.ONE_MINUS_SRC_ALPHA);
+    }, () -> {
+        RenderSystem.disableBlend();
+        RenderSystem.defaultBlendFunc();
+    });
+
     private static final RenderType KI_BLADE = create("dmz_ki_blade", DefaultVertexFormat.POSITION_TEX_COLOR, VertexFormat.Mode.QUADS, 256, false, true, CompositeState.builder()
             .setShaderState(new RenderStateShard.ShaderStateShard(() -> DMZShaders.kiBladeShader))
-            .setTransparencyState(TRANSLUCENT_TRANSPARENCY)
+            .setTransparencyState(KI_BLADE_TRANSPARENCY)
             .setCullState(NO_CULL)
             .setWriteMaskState(COLOR_WRITE)
             .createCompositeState(false));

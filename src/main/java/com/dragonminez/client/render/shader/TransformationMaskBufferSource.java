@@ -4,6 +4,7 @@ import com.dragonminez.client.render.util.ModRenderTypes;
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.BufferBuilder;
 import com.mojang.blaze3d.vertex.ByteBufferBuilder;
+import com.mojang.blaze3d.vertex.DefaultVertexFormat;
 import com.mojang.blaze3d.vertex.MeshData;
 import com.mojang.blaze3d.vertex.VertexConsumer;
 import com.mojang.blaze3d.vertex.VertexMultiConsumer;
@@ -149,18 +150,9 @@ public final class TransformationMaskBufferSource implements MultiBufferSource {
 	 * into the transformation mask NEW_ENTITY format.
 	 */
 	private static boolean isNonGeometryRenderType(RenderType renderType) {
-		if (renderType == null) return true;
-		String name = renderType.toString();
-		// RenderType.toString() typically includes the debug name (e.g. "text", "text_see_through").
-		return name.contains("text")
-				|| name.contains("Text")
-				|| name.contains("lines")
-				|| name.contains("line_strip")
-				|| name.contains("particle")
-				|| name.contains("lightning")
-				|| name.contains("leash")
-				|| name.contains("water_mask")
-				|| name.contains("gui");
+		// The debug string includes texture state, so searching for "text" also
+		// rejects textured entity geometry. Only entity vertices fit the mask.
+		return renderType == null || renderType.format() != DefaultVertexFormat.NEW_ENTITY;
 	}
 
 	private static final class MaskBuffer {

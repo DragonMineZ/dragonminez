@@ -3,7 +3,7 @@
   "fragment": "dragonminez:claw_slash",
   "attributes": [
     "Position",
-    "UV"
+    "UV0"
   ],
   "samplers": [],
   "uniforms": [

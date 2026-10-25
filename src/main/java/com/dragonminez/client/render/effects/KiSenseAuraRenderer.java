@@ -54,7 +54,7 @@ public final class KiSenseAuraRenderer {
 		if (mc.level == null || mc.player == null) return;
 
 		boolean iris = IrisCompat.isShaderPackInUse(mc.level.getGameTime());
-		RenderLevelStageEvent.Stage targetStage = iris ? RenderLevelStageEvent.Stage.AFTER_LEVEL : RenderLevelStageEvent.Stage.AFTER_WEATHER;
+		RenderLevelStageEvent.Stage targetStage = RenderLevelStageEvent.Stage.AFTER_LEVEL;
 		if (event.getStage() != targetStage) return;
 
 		if (!KiSenseState.isSearch()) {
@@ -65,14 +65,14 @@ public final class KiSenseAuraRenderer {
 		if (iris) {
 			mc.getMainRenderTarget().bindWrite(false);
 			SearchGrayscaleManager.process(event.getPartialTick().getGameTimeDeltaPartialTick(false), false);
-			renderAuras(mc, event, true);
+			renderAuras(mc, event);
 		} else {
 			SearchGrayscaleManager.process(event.getPartialTick().getGameTimeDeltaPartialTick(false));
-			renderAuras(mc, event, false);
+			renderAuras(mc, event);
 		}
 	}
 
-	private static void renderAuras(Minecraft mc, RenderLevelStageEvent event, boolean iris) {
+	private static void renderAuras(Minecraft mc, RenderLevelStageEvent event) {
 		StatsData myData = StatsProvider.get(StatsCapability.INSTANCE, mc.player).orElse(null);
 		if (myData == null) return;
 
@@ -91,7 +91,9 @@ public final class KiSenseAuraRenderer {
 		long gameTime = mc.level.getGameTime();
 
 		Frustum frustum = event.getFrustum();
-		PoseStack poseStack = iris ? viewStack(mc) : event.getPoseStack();
+		PoseStack poseStack = new PoseStack();
+		poseStack.last().pose().set(event.getModelViewMatrix());
+		poseStack.last().normal().set(event.getModelViewMatrix());
 		VertexBuffer mesh = AuraMeshFactory.getBillboardQuad();
 		RenderType renderType = auraType(tex);
 
@@ -169,14 +171,6 @@ public final class KiSenseAuraRenderer {
 
 	private static boolean isPassive(LivingEntity entity) {
 		return !(entity instanceof Player) && !(entity instanceof Enemy) && !(entity instanceof NeutralMob);
-	}
-
-	private static PoseStack viewStack(Minecraft mc) {
-		PoseStack stack = new PoseStack();
-		Camera cam = mc.gameRenderer.getMainCamera();
-		stack.mulPose(Axis.XP.rotationDegrees(cam.getXRot()));
-		stack.mulPose(Axis.YP.rotationDegrees(cam.getYRot() + 180.0F));
-		return stack;
 	}
 
 	private static RenderType auraType(ResourceLocation texture) {

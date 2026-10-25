@@ -29,9 +29,9 @@ public final class CameraProjectionCapture {
 		if (event.getStage() != RenderLevelStageEvent.Stage.AFTER_SKY) return;
 		Minecraft mc = Minecraft.getInstance();
 		if (mc.level == null) return;
-		VIEW_PROJECTION.set(event.getProjectionMatrix()).mul(event.getPoseStack().last().pose());
-		VIEW.set(event.getPoseStack().last().pose());
-		VIEW_NORMAL.set(event.getPoseStack().last().normal());
+		VIEW.set(event.getModelViewMatrix());
+		VIEW_NORMAL.set(VIEW);
+		VIEW_PROJECTION.set(event.getProjectionMatrix()).mul(VIEW);
 		cameraPosition = event.getCamera().getPosition();
 		capturedFrame = ++frameCounter;
 	}

@@ -153,10 +153,9 @@ public final class AuraBorderRenderer {
 		int bound = GlStateManager.getBoundFramebuffer();
 		try {
 			ensureTargets(main);
-			captureMask(main);
-			bindScene(bound, main);
-
 			Matrix4f view = viewMatrix(mc, poseStack);
+			captureMask(main, view);
+			bindScene(bound, main);
 			Vec3 camera = mc.gameRenderer.getMainCamera().getPosition();
 			REQUESTS.sort(Comparator.comparingDouble((Request request) -> request.entity().distanceToSqr(camera)).reversed());
 			for (Request request : REQUESTS) {
@@ -177,7 +176,7 @@ public final class AuraBorderRenderer {
 		}
 	}
 
-	private static void captureMask(RenderTarget main) {
+	private static void captureMask(RenderTarget main, Matrix4f view) {
 		RenderSystem.depthMask(true);
 		RenderSystem.colorMask(true, true, true, true);
 		mask.setClearColor(0.0f, 0.0f, 0.0f, 0.0f);
@@ -186,7 +185,9 @@ public final class AuraBorderRenderer {
 
 		Matrix4fStack modelView = RenderSystem.getModelViewStack();
 		modelView.pushMatrix();
-		modelView.identity();
+		// Entity vertices are camera-relative; GeckoLib 4.9 applies the view
+		// through RenderSystem instead of baking it into each entity PoseStack.
+		modelView.set(view);
 		RenderSystem.applyModelViewMatrix();
 		TransformationMaskRenderState.setCurrentTargets(mask);
 		try {

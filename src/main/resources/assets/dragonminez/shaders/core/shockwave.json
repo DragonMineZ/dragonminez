@@ -3,7 +3,7 @@
   "fragment": "dragonminez:shockwave",
   "attributes": [
     "Position",
-    "UV"
+    "UV0"
   ],
   "samplers": [
     {

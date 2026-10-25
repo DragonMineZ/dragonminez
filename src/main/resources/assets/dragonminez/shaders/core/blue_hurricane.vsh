@@ -1,7 +1,7 @@
 #version 150
 
 in vec3 Position;
-in vec2 UV;
+in vec2 UV0;
 
 uniform mat4 modelMatrix;
 uniform mat4 ProjMat;
@@ -26,8 +26,8 @@ void main() {
         pos = vec3(Position.x * radiusBase, 0.0, Position.z * radiusBase);
         normal = vec3(0.0, 1.0, 0.0);
     } else {
-        float v = UV.y;
-        float a = UV.x * 6.2831853;
+        float v = UV0.y;
+        float a = UV0.x * 6.2831853;
 
         float r = radiusBase + (radiusTop - radiusBase) * pow(v, 1.35) + skirt * exp(-v * 9.0);
         r *= 1.0 + 0.05 * sin(v * 11.0 - time * 5.0 + a * 2.0 + seed)
@@ -42,7 +42,7 @@ void main() {
     vec4 viewPos = modelMatrix * vec4(pos, 1.0);
     gl_Position = ProjMat * viewPos;
 
-    vUv = UV;
+    vUv = UV0;
     vNormal = normalize(mat3(modelMatrix) * normal);
     vViewDir = normalize(-viewPos.xyz);
 }

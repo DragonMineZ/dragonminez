@@ -1,6 +1,7 @@
 package com.dragonminez.client.render.util;
 
 import com.mojang.blaze3d.vertex.PoseStack;
+import com.mojang.blaze3d.systems.RenderSystem;
 import net.minecraft.client.player.AbstractClientPlayer;
 import org.joml.Matrix4f;
 import software.bernie.geckolib.cache.object.BakedGeoModel;
@@ -29,7 +30,7 @@ public class PlayerEffectQueue {
 	}
 
 	public static synchronized void addWeapon(AbstractClientPlayer player, BakedGeoModel playerModel, PoseStack currentStack, String weaponType, float[] color, float partialTick, int packedLight) {
-		WEAPON_QUEUE.add(new WeaponRenderEntry(player, playerModel, new Matrix4f(currentStack.last().pose()), weaponType, color, partialTick, packedLight));
+		WEAPON_QUEUE.add(new WeaponRenderEntry(player, playerModel, new Matrix4f(RenderSystem.getModelViewMatrix()).mul(currentStack.last().pose()), weaponType, color, partialTick, packedLight));
 	}
 
 	public static synchronized void addSpark(AbstractClientPlayer player, BakedGeoModel playerModel, PoseStack currentStack, float partialTick, int packedLight) {

@@ -57,6 +57,16 @@ public abstract class ScaledScreen extends Screen implements TutorialHost {
 		}
 	}
 
+	@Override
+	public void renderBackground(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
+		if (this.minecraft != null && this.minecraft.level != null) {
+			// Match the in-world gradient used by Screen in 1.20.1, without 1.21's blur.
+			renderTransparentBackground(graphics);
+		} else {
+			super.renderBackground(graphics, mouseX, mouseY, partialTick);
+		}
+	}
+
 	protected void updateUiScale() {
 		if (this.minecraft == null) {
 			uiScale = 1.0f;
@@ -74,10 +84,6 @@ public abstract class ScaledScreen extends Screen implements TutorialHost {
 
 		float newScale = calculateUiScale(Math.max(1, currentWidth), Math.max(1, currentHeight), multiplier);
 		if (newScale <= 0.0f || Float.isNaN(newScale) || Float.isInfinite(newScale)) newScale = 1.0f;
-		// GUI textures and the DMZ bitmap font are pixel art. Fractional pose scales
-		// make every texel span a non-integral number of screen pixels and blur the
-		// dialogue text, player preview, and panel borders.
-		newScale = Math.max(1.0f, (float) Math.floor(newScale));
 
 		uiScale = newScale;
 		uiWidth = Math.max(1, Math.round(currentWidth / uiScale));

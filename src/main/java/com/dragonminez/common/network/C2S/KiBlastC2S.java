@@ -141,8 +141,10 @@ public class KiBlastC2S {
 						worldAim = worldAim.normalize();
 					}
 					Vec3 localAim = SableCompat.worldDirectionToEntitySpace(player, worldAim).normalize();
+					Vec3 right = Vec3.directionFromRotation(0.0F, player.getYRot() + 90.0F);
+					double side = (leftHand ? -1.0 : 1.0) * HAND_OFFSET;
 					Vec3 localSpawnOffset = SableCompat.worldDirectionToEntitySpace(
-							player, worldAim.scale(0.5D).add(0.0D, -0.4D, 0.0D));
+							player, worldAim.scale(0.5D).add(0.0D, -0.4D, 0.0D)).add(right.scale(side));
 					Vec3 spawn = player.getEyePosition().add(localSpawnOffset);
 					kiBlast.setPos(spawn.x, spawn.y, spawn.z);
 					kiBlast.shoot(localAim.x, localAim.y, localAim.z, kiBlast.getKiSpeed(), 0.5F);

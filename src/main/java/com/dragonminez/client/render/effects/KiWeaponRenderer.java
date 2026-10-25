@@ -95,7 +95,7 @@ public class KiWeaponRenderer {
 	private static final List<EntityBladeEntry> ENTITY_BLADES = new ArrayList<>();
 
 	public static void queueEntityBlade(Entity entity, BakedGeoModel model, PoseStack poseStack, float[] color, float partialTick) {
-		ENTITY_BLADES.add(new EntityBladeEntry(entity, model, new Matrix4f(poseStack.last().pose()), color, partialTick));
+		ENTITY_BLADES.add(new EntityBladeEntry(entity, model, new Matrix4f(RenderSystem.getModelViewMatrix()).mul(poseStack.last().pose()), color, partialTick));
 	}
 
 	private static void processEntityBlades(MultiBufferSource.BufferSource buffers) {

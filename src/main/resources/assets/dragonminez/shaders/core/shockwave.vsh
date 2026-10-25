@@ -1,7 +1,7 @@
 #version 150
 
 in vec3 Position;
-in vec2 UV;
+in vec2 UV0;
 
 out vec2 vLocal;
 

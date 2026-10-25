@@ -3,7 +3,7 @@
   "fragment": "dragonminez:charge_rays",
   "attributes": [
     "Position",
-    "UV"
+    "UV0"
   ],
   "samplers": [],
   "uniforms": [

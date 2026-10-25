@@ -3,7 +3,7 @@
   "fragment": "dragonminez:impact_burst",
   "attributes": [
     "Position",
-    "UV"
+    "UV0"
   ],
   "samplers": [],
   "uniforms": [
