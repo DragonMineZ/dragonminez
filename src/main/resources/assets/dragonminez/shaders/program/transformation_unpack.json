@@ -39,6 +39,14 @@
 			"values": [
 				0.0
 			]
+		},
+		{
+			"name": "ColorChannel",
+			"type": "float",
+			"count": 1,
+			"values": [
+				0.0
+			]
 		}
 	]
 }

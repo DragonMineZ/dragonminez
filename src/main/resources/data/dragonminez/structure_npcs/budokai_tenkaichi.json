@@ -1,0 +1,31 @@
+{
+  "structure": "dragonminez:budokai_tenkaichi",
+  "npcs": [
+    {
+      "id": "npc_world_tournament_announcer",
+      "entity": "dragonminez:saga_world_tournament_announcer",
+      "pos": [86.5, 27.0, 231.5],
+      "yaw": 0.0
+    },
+    {
+      "id": "npc_mr_satan",
+      "entity": "dragonminez:quest_npc",
+      "npc_id": "mr_satan",
+      "pos": [80.5, 24.0, 222.5],
+      "yaw": 0.0
+    },
+    {
+      "id": "master_tien",
+      "entity": "dragonminez:master_tien",
+      "pos": [78.5, 24.0, 95.5],
+      "yaw": 270.0
+    },
+    {
+      "id": "npc_chiaotzu",
+      "entity": "dragonminez:quest_npc",
+      "npc_id": "chiaotzu",
+      "pos": [80.5, 24.0, 98.5],
+      "yaw": 270.0
+    }
+  ]
+}

@@ -1,0 +1,65 @@
+{
+	"format_version": "1.12.0",
+	"minecraft:geometry": [
+		{
+			"description": {
+				"identifier": "geometry.freeza_capsule",
+				"texture_width": 64,
+				"texture_height": 64,
+				"visible_bounds_width": 2,
+				"visible_bounds_height": 2.5,
+				"visible_bounds_offset": [0, 0.75, 0]
+			},
+			"bones": [
+				{
+					"name": "capsulef",
+					"pivot": [0, 0.66667, 0]
+				},
+				{
+					"name": "propeller",
+					"parent": "capsulef",
+					"pivot": [0, 0, 0],
+					"cubes": [
+						{"origin": [-5, 4, -2], "size": [1, 4, 4], "pivot": [-3.5, 6, 0], "rotation": [0, 0, -10], "uv": [14, 30], "mirror": true},
+						{"origin": [3.8, 4, -2], "size": [1, 4, 4], "pivot": [3, 4, -1], "rotation": [0, 0, 10], "uv": [14, 30]},
+						{"origin": [-2, 4.1, 2.5], "size": [4, 4, 1], "pivot": [1, 4, 3], "rotation": [-5, 0, 0], "uv": [16, 23]}
+					]
+				},
+				{
+					"name": "base",
+					"parent": "capsulef",
+					"pivot": [0, 1, 0],
+					"cubes": [
+						{"origin": [-3, 4.2, 1.9], "size": [6, 6, 1], "pivot": [0, 7.2, 2.5], "rotation": [0, 180, 0], "uv": [24, 8]},
+						{"origin": [-3, 3.84967, -4.00435], "size": [6, 6, 2], "pivot": [0, 6.84967, -3.00435], "rotation": [10, 0, 0], "uv": [24, 0]},
+						{"origin": [-4.29086, 3.82451, -3], "size": [2, 6, 6], "pivot": [-3.29086, 6.82451, 0], "rotation": [0, 0, -10], "uv": [0, 18], "mirror": true},
+						{"origin": [2.3, 3.86083, -3], "size": [2, 6, 6], "pivot": [3.50318, 6.86083, 0], "rotation": [0, 0, 10], "uv": [0, 18]},
+						{"origin": [-3, 9.2, 2.01], "size": [6, 4, 1], "uv": [0, 30]},
+						{"origin": [-3.8, 8.51921, 1.99], "size": [4, 4, 1], "pivot": [-1.86063, 10.41921, 2.4], "rotation": [0, 0, -67.5], "uv": [16, 18], "mirror": true},
+						{"origin": [-0.08254, 8.56662, 2.009], "size": [4, 4, 1], "pivot": [1.91746, 10.56662, 2.5], "rotation": [0, 0, 67.5], "uv": [16, 18]},
+						{"origin": [-2.5, 6.1, -4.5], "size": [1, 1, 1], "inflate": -0.2, "pivot": [-2.5, 6.5, -4.5], "rotation": [10, 0, 0], "uv": [40, 0]},
+						{"origin": [1.5, 6.1, -4.5], "size": [1, 1, 1], "inflate": -0.2, "pivot": [1.5, 6.5, -4.5], "rotation": [10, 0, 0], "uv": [40, 0]}
+					]
+				},
+				{
+					"name": "spike",
+					"parent": "capsulef",
+					"pivot": [0, 1, 0],
+					"cubes": [
+						{"origin": [-3, 2, -3], "size": [6, 3, 6], "inflate": -0.3, "uv": [0, 0]},
+						{"origin": [-1.38823, 0.94889, -1.5], "size": [2, 2, 3], "pivot": [-0.38823, 2.44889, 0], "rotation": [0, 0, -15], "uv": [0, 35], "mirror": true},
+						{"origin": [-0.61177, 0.94889, -1.499], "size": [2, 2, 3], "pivot": [0.38823, 2.44889, 0], "rotation": [0, 0, 15], "uv": [0, 35]},
+						{"origin": [-1, 0, -1], "size": [2, 2, 2], "inflate": -0.3, "pivot": [0, 1, 0], "rotation": [0, 0, -45], "uv": [26, 15]}
+					]
+				},
+				{
+					"name": "passenger1",
+					"pivot": [0, 0, 0],
+					"cubes": [
+						{"origin": [-3, 4, -3], "size": [6, 3, 6], "uv": [0, 9]}
+					]
+				}
+			]
+		}
+	]
+}

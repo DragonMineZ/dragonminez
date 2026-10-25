@@ -2,6 +2,7 @@ package com.dragonminez.common.init;
 
 import com.dragonminez.Reference;
 import com.dragonminez.server.recipes.KikonoRecipe;
+import com.dragonminez.server.recipes.PatternRecipe;
 import net.minecraft.world.item.crafting.RecipeSerializer;
 import net.minecraft.world.item.crafting.RecipeType;
 import net.neoforged.bus.api.IEventBus;
@@ -23,6 +24,17 @@ public class MainRecipes {
 				@Override
 				public String toString() {
 					return "kikono_crafting";
+				}
+			});
+
+	public static final DeferredHolder<RecipeSerializer<?>, RecipeSerializer<PatternRecipe>> PATTERN_SERIALIZER =
+			SERIALIZERS.register("pattern_crafting", () -> PatternRecipe.Serializer.INSTANCE);
+
+	public static final DeferredHolder<RecipeType<?>, RecipeType<PatternRecipe>> PATTERN_TYPE =
+			TYPES.register("pattern_crafting", () -> new RecipeType<PatternRecipe>() {
+				@Override
+				public String toString() {
+					return "pattern_crafting";
 				}
 			});
 

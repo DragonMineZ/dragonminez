@@ -6,17 +6,16 @@ import com.dragonminez.common.diagnostics.JsonLoadReport;
 import com.dragonminez.common.diagnostics.JsonSchema;
 import com.google.gson.Gson;
 import com.google.gson.JsonElement;
+import com.google.gson.JsonObject;
 import com.google.gson.JsonSyntaxException;
-import lombok.AllArgsConstructor;
-
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.Map;
 
-@AllArgsConstructor
 public class ConfigLoader {
 	private final Gson gson;
 
@@ -24,7 +23,7 @@ public class ConfigLoader {
 		try {
 			String content = Files.readString(path, StandardCharsets.UTF_8);
 			JsonElement tree = gson.fromJson(content, JsonElement.class);
-			if (tree != null && tree.isJsonObject()) {
+			if (tree != null && tree.isJsonObject() && !isAboutToBeRegenerated(tree.getAsJsonObject())) {
 				JsonSchema.check("config", path.getFileName().toString(), "", tree.getAsJsonObject(), clazz);
 			}
 			return gson.fromJson(tree, clazz);
@@ -35,6 +34,11 @@ public class ConfigLoader {
 		}
 	}
 
+	private static boolean isAboutToBeRegenerated(JsonObject tree) {
+		JsonElement version = tree.get("configVersion");
+		return version != null && version.isJsonPrimitive() && ConfigManager.isOutdated(version.getAsString());
+	}
+
 	public void saveConfig(Path path, Object config) throws IOException {
 		String jsonContent = gson.toJson(config);
 		Files.writeString(path, jsonContent, StandardCharsets.UTF_8);
@@ -42,66 +46,52 @@ public class ConfigLoader {
 
 	public Map<String, FormConfig> loadRaceForms(String raceName, Path formsPath) throws IOException {
 		Map<String, FormConfig> forms = new HashMap<>();
-
 		if (!Files.exists(formsPath)) {
 			return forms;
 		}
-
 		try (var stream = Files.list(formsPath)) {
-			stream.filter(path -> path.toString().endsWith(".json"))
-					.filter(path -> !path.getFileName().toString().toLowerCase().startsWith("old_"))
-					.forEach(formFile -> {
-						try {
-							FormConfig formConfig = loadConfig(formFile, FormConfig.class);
-							if (formConfig == null) {
-								LogUtil.error(Env.COMMON, "Form file '{}' is empty or null.", formFile.getFileName());
-								return;
-							}
-
-							String groupName = formConfig.getGroupName();
-							if (groupName != null && !groupName.isEmpty()) {
-								forms.put(groupName.toLowerCase(), formConfig);
-								LogUtil.info(Env.COMMON, "Form group '{}' loaded for race '{}'", groupName, raceName);
-							}
-						} catch (IOException e) {
-							LogUtil.error(Env.COMMON, "Error loading form file '{}' for race '{}': {}", formFile.getFileName(), raceName, e.getMessage());
-							JsonLoadReport.error("config", "races/" + raceName + "/forms/" + formFile.getFileName(),
-									"Malformed form JSON, file skipped: " + JsonLoadReport.rootCause(e));
-						}
-					});
+			stream.filter(path -> path.toString().endsWith(".json")).filter(path -> !path.getFileName().toString().toLowerCase().startsWith("old_")).sorted(Comparator.comparing(path -> path.getFileName().toString())).forEach(formFile -> {
+				try {
+					FormConfig formConfig = loadConfig(formFile, FormConfig.class);
+					if (formConfig == null) {
+						LogUtil.error(Env.COMMON, "Form file \'{}\' is empty or null.", formFile.getFileName());
+						return;
+					}
+					String groupName = formConfig.getGroupName();
+					if (groupName != null && !groupName.isEmpty()) {
+						forms.put(groupName.toLowerCase(), formConfig);
+						LogUtil.info(Env.COMMON, "Form group \'{}\' loaded for race \'{}\'", groupName, raceName);
+					}
+				} catch (IOException e) {
+					LogUtil.error(Env.COMMON, "Error loading form file \'{}\' for race \'{}\': {}", formFile.getFileName(), raceName, e.getMessage());
+					JsonLoadReport.error("config", "races/" + raceName + "/forms/" + formFile.getFileName(), "Malformed form JSON, file skipped: " + JsonLoadReport.rootCause(e));
+				}
+			});
 		}
-
 		return forms;
 	}
 
 	public Map<String, FormConfig> loadStackForms(Path formsPath) throws IOException {
 		Map<String, FormConfig> forms = new HashMap<>();
-
 		if (!Files.exists(formsPath)) {
 			return forms;
 		}
-
 		try (var stream = Files.list(formsPath)) {
-			stream.filter(path -> path.toString().endsWith(".json"))
-					.filter(path -> !path.getFileName().toString().toLowerCase().startsWith("old_"))
-					.forEach(formFile -> {
-						try {
-							FormConfig formConfig = loadConfig(formFile, FormConfig.class);
-							if (formConfig == null) return;
-
-							String groupName = formConfig.getGroupName();
-							if (groupName != null && !groupName.isEmpty()) {
-								forms.put(groupName.toLowerCase(), formConfig);
-								LogUtil.info(Env.COMMON, "Form group '{}' loaded for stack forms", groupName);
-							}
-						} catch (IOException e) {
-							LogUtil.error(Env.COMMON, "Error loading stack form file '{}': {}", formFile.getFileName(), e.getMessage());
-							JsonLoadReport.error("config", "forms/" + formFile.getFileName(),
-									"Malformed stack-form JSON, file skipped: " + JsonLoadReport.rootCause(e));
-						}
-					});
+			stream.filter(path -> path.toString().endsWith(".json")).filter(path -> !path.getFileName().toString().toLowerCase().startsWith("old_")).sorted(Comparator.comparing(path -> path.getFileName().toString())).forEach(formFile -> {
+				try {
+					FormConfig formConfig = loadConfig(formFile, FormConfig.class);
+					if (formConfig == null) return;
+					String groupName = formConfig.getGroupName();
+					if (groupName != null && !groupName.isEmpty()) {
+						forms.put(groupName.toLowerCase(), formConfig);
+						LogUtil.info(Env.COMMON, "Form group \'{}\' loaded for stack forms", groupName);
+					}
+				} catch (IOException e) {
+					LogUtil.error(Env.COMMON, "Error loading stack form file \'{}\': {}", formFile.getFileName(), e.getMessage());
+					JsonLoadReport.error("config", "forms/" + formFile.getFileName(), "Malformed stack-form JSON, file skipped: " + JsonLoadReport.rootCause(e));
+				}
+			});
 		}
-
 		return forms;
 	}
 
@@ -122,9 +112,12 @@ public class ConfigLoader {
 		if (!Files.exists(directory)) {
 			return false;
 		}
-
 		try (var stream = Files.list(directory)) {
 			return stream.anyMatch(path -> path.toString().endsWith(".json"));
 		}
+	}
+
+	public ConfigLoader(final Gson gson) {
+		this.gson = gson;
 	}
 }

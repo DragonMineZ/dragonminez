@@ -1,0 +1,84 @@
+package com.dragonminez.client.gui.radial.nodes;
+
+import com.dragonminez.client.gui.radial.AbstractRadialNode;
+import com.dragonminez.client.gui.radial.RadialNode;
+import com.dragonminez.common.network.C2S.SetFlightSpeedLimitC2S;
+import com.dragonminez.common.network.NetworkHandler;
+import com.dragonminez.common.stats.StatsData;
+import net.minecraft.network.chat.Component;
+import net.minecraft.resources.ResourceLocation;
+
+import java.util.ArrayList;
+import java.util.List;
+
+public class FlightSpeedNode extends AbstractRadialNode {
+
+    public static int maxFlightSpeed() {
+        return 100;
+    }
+
+    private int currentFlightSpeed(StatsData stats) {
+        return stats.getResources().getFlightSpeedLimit();
+    }
+
+    @Override
+    public Component label(StatsData stats) {
+        return Component.translatable("gui.action.dragonminez.flightspeed");
+    }
+
+    @Override
+    public ResourceLocation icon(StatsData stats) {
+        return null;
+    }
+
+    @Override
+    public String faceText(StatsData stats) {
+        int limit = currentFlightSpeed(stats);
+        int value = limit > 0 ? limit : maxFlightSpeed();
+        return value + "%";
+    }
+
+    @Override
+    public boolean visible(StatsData stats) {
+        return FlyNode.canFly(stats);
+    }
+
+    @Override
+    public boolean active(StatsData stats) {
+        return currentFlightSpeed(stats) > 0 && currentFlightSpeed(stats) < 100;
+    }
+
+    @Override
+    public int labelColor(StatsData stats) {
+        return active(stats) ? GREEN : 0xFFFFFF;
+    }
+
+    @Override
+    public boolean expandable(StatsData stats) {
+        return false;
+    }
+
+    @Override
+    public void onSelect(StatsData stats) {
+        NetworkHandler.sendToServer(new SetFlightSpeedLimitC2S(100));
+        playToggle(false);
+    }
+
+    public List<RadialNode> buildOptions() {
+        List<RadialNode> out = new ArrayList<>();
+        for (int value = maxFlightSpeed(); value >= 5; value -= 5) {
+            out.add(new FlightSpeedLimitOptionNode(value));
+        }
+        return out;
+    }
+
+    public void adjustByWheel(StatsData stats, double delta) {
+        if (delta == 0) return;
+        int current = currentFlightSpeed(stats) > 0 ? currentFlightSpeed(stats) : maxFlightSpeed();
+        int next = Math.max(5, Math.min(maxFlightSpeed(), current + (delta > 0 ? 5 : -5)));
+        if (next != current) {
+            NetworkHandler.sendToServer(new SetFlightSpeedLimitC2S(next));
+            playClick();
+        }
+    }
+}

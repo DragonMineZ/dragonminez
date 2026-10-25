@@ -1,5 +1,9 @@
 package com.dragonminez.client.util;
 
+import com.dragonminez.common.util.DMZTextPlaceholders;
+import net.minecraft.client.Minecraft;
+import com.dragonminez.common.util.DMZTextPlaceholders;
+import net.minecraft.client.Minecraft;
 import net.minecraft.locale.Language;
 import net.minecraft.network.chat.Component;
 
@@ -19,8 +23,10 @@ public final class LocalizationUtil {
 
 	public static Component localizedOrReadable(String raw) {
 		if (raw == null || raw.isBlank()) return Component.empty();
-		if (Language.getInstance().has(raw)) return Component.translatable(raw);
-		return Component.literal(humanize(raw));
+		Component resolved = Language.getInstance().has(raw)
+				? Component.translatable(raw)
+				: Component.literal(humanize(raw));
+		return DMZTextPlaceholders.apply(resolved, Minecraft.getInstance().player);
 	}
 
 	public static String localizedOrReadableText(String raw) {

@@ -7,6 +7,7 @@ import com.dragonminez.common.combat.logic.player.TargetHelper;
 import com.dragonminez.common.network.S2C.OpenQuestNPCDialogueS2C;
 import com.dragonminez.common.quest.QuestService;
 import com.dragonminez.common.stats.StatsCapability;
+import com.dragonminez.common.dialogue.DialogueService;
 import com.dragonminez.common.stats.StatsProvider;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
@@ -18,14 +19,15 @@ import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.damagesource.DamageTypes;
+import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.entity.*;
 import net.minecraft.world.entity.ai.attributes.AttributeSupplier;
 import net.minecraft.world.entity.ai.attributes.Attributes;
-import net.minecraft.world.entity.ai.goal.FloatGoal;
 import net.minecraft.world.entity.ai.goal.LookAtPlayerGoal;
 import net.minecraft.world.entity.ai.goal.RandomLookAroundGoal;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.Level;
+import net.minecraft.world.phys.Vec3;
 import software.bernie.geckolib.animatable.GeoEntity;
 import software.bernie.geckolib.animatable.instance.AnimatableInstanceCache;
 import software.bernie.geckolib.animatable.instance.SingletonAnimatableInstanceCache;
@@ -45,7 +47,6 @@ public class MastersEntity extends PathfinderMob implements GeoEntity {
 
 	@Override
 	protected void registerGoals() {
-		this.goalSelector.addGoal(0, new FloatGoal(this));
 		this.goalSelector.addGoal(1, new LookAtPlayerGoal(this, Player.class, 8.0F));
 		this.goalSelector.addGoal(2, new RandomLookAroundGoal(this));
 	}
@@ -79,6 +80,47 @@ public class MastersEntity extends PathfinderMob implements GeoEntity {
 	}
 
 	@Override
+	public void setDeltaMovement(Vec3 motion) {
+		super.setDeltaMovement(new Vec3(0.0D, Math.min(motion.y, 0.0D), 0.0D));
+	}
+
+	@Override
+	public void move(MoverType type, Vec3 movement) {
+		if (type != MoverType.SELF) return;
+		super.move(type, new Vec3(0.0D, Math.min(movement.y, 0.0D), 0.0D));
+	}
+
+	@Override
+	public boolean isPushedByFluid() {
+		return false;
+	}
+
+	@Override
+	public boolean ignoreExplosion(net.minecraft.world.level.Explosion explosion) {
+		return true;
+	}
+
+	@Override
+	public boolean canBeLeashed() {
+		return false;
+	}
+
+	@Override
+	public boolean startRiding(Entity vehicle, boolean force) {
+		return false;
+	}
+
+	@Override
+	public boolean canBeAffected(MobEffectInstance effect) {
+		return false;
+	}
+
+	@Override
+	public boolean fireImmune() {
+		return true;
+	}
+
+	@Override
 	public boolean hurt(DamageSource source, float amount) {
 		if (source.is(DamageTypes.FELL_OUT_OF_WORLD) || source.is(DamageTypes.GENERIC_KILL)) {
 			return super.hurt(source, amount);
@@ -89,7 +131,16 @@ public class MastersEntity extends PathfinderMob implements GeoEntity {
 	@Override
 	public void registerControllers(AnimatableManager.ControllerRegistrar controllers) {
 		controllers.add(new AnimationController<>(this, "controller", 0, event -> {
-			return event.setAndContinue(RawAnimation.begin().thenLoop("idle"));
+			String idleAnim = "idle";
+			if (this.masterName != null) {
+				switch (this.masterName) {
+					case "guru" -> idleAnim = "guru_idle";
+					case "baba", "baba_earth" -> idleAnim = "uranai_idle";
+					case "toribot" -> idleAnim = "tori_idle";
+					case "roshi" -> idleAnim = "roshi_idle";
+				}
+			}
+			return event.setAndContinue(RawAnimation.begin().thenLoop(idleAnim));
 		}));
 		if ("frieza".equals(this.masterName)) controllers.add(new AnimationController<>(this, "tail_controller", 5, DBSagasAnimationHandler::tailPredicate));
 	}
@@ -151,8 +202,14 @@ public class MastersEntity extends PathfinderMob implements GeoEntity {
 					serverPlayer.displayClientMessage(blocker, true);
 					return;
 				}
+				if (DialogueService.openDialogue(serverPlayer, masterName, getId())) return;
+
 				QuestService.NPCQuestOptions options = QuestService.collectNpcQuestOptions(masterName, data);
-				NetworkHandler.sendToPlayer(new OpenQuestNPCDialogueS2C(masterName, options.offerableQuestIds(), options.turnInQuestIds(), options.inProgressQuestIds(), true, getId()), serverPlayer);
+				NetworkHandler.sendToPlayer(
+						new OpenQuestNPCDialogueS2C(masterName, options, true,
+								NpcDispositionService.dislikes(serverPlayer, this, masterName), getId()),
+						serverPlayer
+				);
 			});
 			return InteractionResult.SUCCESS;
 		}

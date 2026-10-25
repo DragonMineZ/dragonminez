@@ -9,11 +9,7 @@ import com.google.gson.GsonBuilder;
 import com.google.gson.JsonObject;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
-import net.minecraft.server.packs.resources.ResourceManager;
-import net.minecraft.server.packs.resources.SimplePreparableReloadListener;
-import net.minecraft.util.profiling.ProfilerFiller;
 import net.minecraft.world.level.Level;
-import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.io.*;
@@ -63,7 +59,7 @@ import java.util.*;
  *
  * @since 2.1
  */
-public class QuestRegistry extends SimplePreparableReloadListener<Map<String, Quest>> {
+public class QuestRegistry {
 
 	private static final Gson GSON = new GsonBuilder().setPrettyPrinting().create();
 
@@ -100,6 +96,9 @@ public class QuestRegistry extends SimplePreparableReloadListener<Map<String, Qu
 
 	/** NPC ID → list of quest IDs where that NPC is the turn-in target. */
 	private static final Map<String, List<String>> TURN_IN_INDEX = new HashMap<>();
+
+	private static final Comparator<Path> QUEST_FILE_ORDER =
+			Comparator.comparing((Path path) -> path.getFileName().toString(), QuestRegistry::compareQuestFileNames);
 
 	/** Cached world folder path for resolving quest folders during saga loading. */
 	private static Path cachedWorldFolder = null;
@@ -154,6 +153,11 @@ public class QuestRegistry extends SimplePreparableReloadListener<Map<String, Qu
 		QuestUpgrader.setAutoUpdateEnabled(
 				ConfigManager.getServerConfig().getGameplay().getAutoUpdateQuests());
 
+		boolean storyMode = ConfigManager.getServerConfig().getGameplay().getStoryModeEnabled();
+		QuestUpgrader.retireObsoleteDefaults(worldFolder.resolve("dragonminez"),
+				storyMode && ConfigManager.getServerConfig().getGameplay().getCreateDefaultSagas(),
+				ConfigManager.getServerConfig().getGameplay().getCreateDefaultSideQuests());
+
 		// --- Step 1: Generate default quest files (before sagas, so sagas can reference them) ---
 		Path questsDir = worldFolder.resolve(QUESTS_FOLDER);
 		try {
@@ -164,7 +168,7 @@ public class QuestRegistry extends SimplePreparableReloadListener<Map<String, Qu
 		}
 
 		// --- Step 2: Load sagas (reads quest files from quests/ subfolders) ---
-		if (ConfigManager.getServerConfig().getGameplay().getStoryModeEnabled()) {
+		if (storyMode) {
 			loadSagaFiles(worldFolder.resolve(SAGA_FOLDER));
 		}
 
@@ -193,20 +197,39 @@ public class QuestRegistry extends SimplePreparableReloadListener<Map<String, Qu
 
 		int applied = QuestUpdateReport.totalApplied();
 		int conflicts = QuestUpdateReport.totalConflicts();
-		LogUtil.info(Env.COMMON, "QuestRegistry: quest defaults upgraded — {} value(s) auto-updated, {} conflict(s) kept as your edits across {} file(s)",
-				applied, conflicts, QuestUpdateReport.changedFiles().size());
-		JsonLoadReport.update("quests", "quest defaults", updateReportSummary());
+		int keptDeletions = QuestUpdateReport.totalKeptDeletions();
+		List<QuestUpdateReport.Retired> retired = QuestUpdateReport.retiredFiles();
+		LogUtil.info(Env.COMMON, "QuestRegistry: quest defaults upgraded — {} value(s) auto-updated, {} conflict(s) kept as your edits, {} deletion(s) kept across {} file(s); {} obsolete default file(s) retired",
+				applied, conflicts, keptDeletions, QuestUpdateReport.changedFiles().size(), retired.size());
+		if (!QuestUpdateReport.changedFiles().isEmpty()) {
+			JsonLoadReport.update("quests", "quest defaults", updateReportSummary());
+		}
 
 		StringBuilder sb = new StringBuilder();
 		sb.append("DragonMineZ quest update report\n");
 		sb.append("Target defaults version: ").append(QuestUpgrader.DEFAULTS_VERSION).append('\n');
 		sb.append(applied).append(" value(s) auto-updated to the new defaults; ")
-				.append(conflicts).append(" conflict(s) left as your edits.\n");
+				.append(conflicts).append(" conflict(s) left as your edits; ")
+				.append(keptDeletions).append(" field(s) you deleted were left deleted.\n");
 		sb.append("Originals were backed up under dragonminez/oldBackup/.\n\n");
+		if (!retired.isEmpty()) {
+			sb.append("Obsolete default files from an older version (moved out so they no longer collide with the current defaults):\n");
+			for (QuestUpdateReport.Retired file : retired) {
+				sb.append("  ").append(file.relativePath()).append(" (").append(file.fromVersion()).append(") -> ")
+						.append(file.backupPath()).append('\n');
+			}
+			sb.append('\n');
+		}
 		for (QuestUpdateReport.FileReport file : QuestUpdateReport.changedFiles()) {
 			sb.append(file.relativePath).append(" (").append(file.fromVersion).append(" -> ").append(file.toVersion).append(")\n");
 			if (file.appliedCount > 0) {
 				sb.append("  auto-updated ").append(file.appliedCount).append(" field(s) you had left at the old default\n");
+			}
+			for (String note : file.notes) {
+				sb.append("  ").append(note).append('\n');
+			}
+			for (String deleted : file.keptDeletions) {
+				sb.append("  KEPT DELETION at '").append(deleted).append("': you removed it, so the new default was not added back\n");
 			}
 			for (QuestUpdateReport.Conflict c : file.conflicts) {
 				sb.append("  CONFLICT at '").append(c.path()).append("': kept your value ").append(c.userValue())
@@ -229,8 +252,9 @@ public class QuestRegistry extends SimplePreparableReloadListener<Map<String, Qu
 	}
 
 	public static String updateReportSummary() {
-		return String.format("DragonMineZ upgraded %d quest file(s): %d value(s) auto-updated, %d conflict(s) kept as your edits. See dragonminez/quest_update_report.txt.",
-				QuestUpdateReport.changedFiles().size(), QuestUpdateReport.totalApplied(), QuestUpdateReport.totalConflicts());
+		return String.format("DragonMineZ upgraded %d quest file(s): %d value(s) auto-updated, %d conflict(s) kept as your edits, %d deletion(s) kept. See dragonminez/quest_update_report.txt.",
+				QuestUpdateReport.changedFiles().size(), QuestUpdateReport.totalApplied(), QuestUpdateReport.totalConflicts(),
+				QuestUpdateReport.totalKeptDeletions());
 	}
 
 	// ========================================================================================
@@ -247,9 +271,16 @@ public class QuestRegistry extends SimplePreparableReloadListener<Map<String, Qu
 			}
 			SagaDefaults.createDefaultSagaFiles(sagaDir);
 
+			List<Path> files;
 			try (var stream = Files.walk(sagaDir)) {
-				stream.filter(path -> path.toString().endsWith(".json"))
-						.forEach(QuestRegistry::loadSingleSagaFile);
+				files = stream.filter(Files::isRegularFile)
+						.filter(path -> path.toString().endsWith(".json"))
+						.sorted(Comparator.comparing(path -> relativeName(sagaDir, path)))
+						.toList();
+			}
+			Map<String, String> sagaSources = new HashMap<>();
+			for (Path file : files) {
+				loadSingleSagaFile(sagaDir, file, sagaSources);
 			}
 		} catch (IOException e) {
 			LogUtil.error(Env.COMMON, "Failed to load saga files from {}", sagaDir, e);
@@ -259,23 +290,40 @@ public class QuestRegistry extends SimplePreparableReloadListener<Map<String, Qu
 	/**
 	 * Loads a Single Default Saga File, used in loadSagaFiles.
 	 */
-	private static void loadSingleSagaFile(Path file) {
+	private static void loadSingleSagaFile(Path sagaDir, Path file, Map<String, String> sagaSources) {
+		String display = "sagas/" + relativeName(sagaDir, file);
 		try (Reader reader = Files.newBufferedReader(file, StandardCharsets.UTF_8)) {
 			JsonObject root = GSON.fromJson(reader, JsonObject.class);
-			QuestParser.validateSaga("quests", "sagas/" + file.getFileName(), root);
+			if (root == null) {
+				reportError(display, "the file is empty, saga skipped");
+				return;
+			}
+			QuestParser.validateSaga("quests", display, root);
+			for (String key : new String[]{"id", "name"}) {
+				if (!root.has(key) || !root.get(key).isJsonPrimitive() || root.get(key).getAsString().isBlank()) {
+					reportError(display, "missing required field '" + key + "', saga skipped");
+					return;
+				}
+			}
+
+			String sagaId = root.get("id").getAsString();
+			String previous = sagaSources.putIfAbsent(sagaId, display);
+			if (previous != null) {
+				reportError(display, "duplicate saga id '" + sagaId + "' (already loaded from " + previous + "), saga skipped");
+				return;
+			}
+
 			Saga saga = parseSagaFromJson(root, cachedWorldFolder);
 			LOADED_SAGAS.put(saga.getId(), saga);
 
-			// Index each saga quest by composite key
 			for (Quest quest : saga.getQuests()) {
-				String effectiveId = saga.getId() + ":" + quest.getId();
-				LOADED_QUESTS.put(effectiveId, quest);
+				LOADED_QUESTS.put(saga.getId() + ":" + quest.getId(), quest);
 			}
 
 			LogUtil.info(Env.COMMON, "Loaded saga: {} ({} quests)", saga.getName(), saga.getQuests().size());
 		} catch (Exception e) {
-			LogUtil.error(Env.COMMON, "Failed to load saga file: {}", file.getFileName(), e);
-			JsonLoadReport.error("quests", "sagas/" + file.getFileName(), "Malformed saga JSON, file skipped: " + JsonLoadReport.rootCause(e));
+			LogUtil.error(Env.COMMON, "Failed to load saga file: {}", display, e);
+			JsonLoadReport.error("quests", display, "Malformed saga JSON, file skipped: " + JsonLoadReport.rootCause(e));
 		}
 	}
 
@@ -330,35 +378,77 @@ public class QuestRegistry extends SimplePreparableReloadListener<Map<String, Qu
 		return new Saga(id, name, quests, requirements);
 	}
 
-	/**
-	 * Loads quest files from a folder, sorted by filename. Each file is parsed as a saga quest
-	 * (numeric ID format). Files are sorted alphabetically so numeric prefixes control ordering
-	 * (e.g. {@code 01_find_roshi.json} loads before {@code 02_defeat_raditz.json}).
-	 */
 	private static List<Quest> loadQuestsFromFolder(Path folder) {
 		List<Quest> quests = new ArrayList<>();
+		Map<Integer, String> idSources = new HashMap<>();
 		try (var stream = Files.list(folder)) {
 			List<Path> files = stream
+					.filter(Files::isRegularFile)
 					.filter(p -> p.toString().endsWith(".json"))
-					.sorted()
+					.sorted(QUEST_FILE_ORDER)
 					.toList();
 
 			for (Path file : files) {
+				String display = "quests/" + folder.getFileName() + "/" + file.getFileName();
 				try (Reader reader = Files.newBufferedReader(file, StandardCharsets.UTF_8)) {
 					JsonObject root = GSON.fromJson(reader, JsonObject.class);
-					QuestParser.validate("quests", "quests/" + folder.getFileName() + "/" + file.getFileName(), root);
-					Quest quest = QuestParser.parseQuest(root);
-					if (quest != null) quests.add(quest);
+					QuestParser.validate("quests", display, root);
+					Quest quest = parseQuestOrReport(display, root);
+					if (quest == null) continue;
+
+					if (quest.getStringId() != null) {
+						reportError(display, "saga quests need a numeric 'id' (found \"" + quest.getStringId() + "\"), file skipped");
+						continue;
+					}
+					String previous = idSources.putIfAbsent(quest.getId(), display);
+					if (previous != null) {
+						reportError(display, "duplicate quest id " + quest.getId() + " (already used by " + previous + "), file skipped");
+						continue;
+					}
+
+					quests.add(quest);
+					reportIssues(display, root, quest);
 				} catch (Exception e) {
-					LogUtil.error(Env.COMMON, "Failed to load quest file: {}", file.getFileName(), e);
-					JsonLoadReport.error("quests", "quests/" + folder.getFileName() + "/" + file.getFileName(),
-							"Malformed quest JSON, file skipped: " + JsonLoadReport.rootCause(e));
+					LogUtil.error(Env.COMMON, "Failed to load quest file: {}", display, e);
+					JsonLoadReport.error("quests", display, "Malformed quest JSON, file skipped: " + JsonLoadReport.rootCause(e));
 				}
 			}
 		} catch (IOException e) {
 			LogUtil.error(Env.COMMON, "Failed to list quest files in folder: {}", folder, e);
 		}
 		return quests;
+	}
+
+	static int compareQuestFileNames(String a, String b) {
+		int digitsA = leadingDigits(a);
+		int digitsB = leadingDigits(b);
+		if (digitsA > 0 && digitsB == 0) return -1;
+		if (digitsA == 0 && digitsB > 0) return 1;
+		if (digitsA > 0) {
+			int numeric = compareDigitRuns(a.substring(0, digitsA), b.substring(0, digitsB));
+			if (numeric != 0) return numeric;
+		}
+		int rest = a.substring(digitsA).toLowerCase(Locale.ROOT).compareTo(b.substring(digitsB).toLowerCase(Locale.ROOT));
+		return rest != 0 ? rest : a.compareTo(b);
+	}
+
+	private static int leadingDigits(String value) {
+		int i = 0;
+		while (i < value.length() && value.charAt(i) >= '0' && value.charAt(i) <= '9') i++;
+		return i;
+	}
+
+	private static int compareDigitRuns(String a, String b) {
+		String x = stripLeadingZeros(a);
+		String y = stripLeadingZeros(b);
+		if (x.length() != y.length()) return Integer.compare(x.length(), y.length());
+		return x.compareTo(y);
+	}
+
+	private static String stripLeadingZeros(String digits) {
+		int i = 0;
+		while (i < digits.length() - 1 && digits.charAt(i) == '0') i++;
+		return digits.substring(i);
 	}
 
 	// ========================================================================================
@@ -375,29 +465,77 @@ public class QuestRegistry extends SimplePreparableReloadListener<Map<String, Qu
 			}
 			SideQuestDefaults.createDefaultSideQuestFiles(sideQuestDir);
 
+			List<Path> files;
 			try (var stream = Files.walk(sideQuestDir)) {
-				stream.filter(path -> path.toString().endsWith(".json"))
-						.forEach(QuestRegistry::loadSingleSideQuestFile);
+				files = stream.filter(Files::isRegularFile)
+						.filter(path -> path.toString().endsWith(".json"))
+						.sorted(Comparator.comparing(path -> relativeName(sideQuestDir, path)))
+						.toList();
+			}
+			Map<String, String> idSources = new HashMap<>();
+			for (Path file : files) {
+				loadSingleSideQuestFile(sideQuestDir, file, idSources);
 			}
 		} catch (IOException e) {
 			LogUtil.error(Env.COMMON, "Failed to load side-quest files from {}", sideQuestDir, e);
 		}
 	}
 
-	private static void loadSingleSideQuestFile(Path file) {
+	private static void loadSingleSideQuestFile(Path sideQuestDir, Path file, Map<String, String> idSources) {
+		String display = "sidequests/" + relativeName(sideQuestDir, file);
 		try (Reader reader = Files.newBufferedReader(file, StandardCharsets.UTF_8)) {
 			JsonObject root = GSON.fromJson(reader, JsonObject.class);
-			QuestParser.validate("quests", "sidequests/" + file.getFileName(), root);
-			Quest quest = QuestParser.parseQuest(root);
+			QuestParser.validate("quests", display, root);
+			Quest quest = parseQuestOrReport(display, root);
+			if (quest == null) return;
 
-			if (quest != null) {
-				String effectiveId = quest.getStringId() != null ? quest.getStringId() : quest.getEffectiveId();
-				LOADED_QUESTS.put(effectiveId, quest);
+			String effectiveId = quest.getEffectiveId();
+			if (effectiveId.indexOf(':') >= 0) {
+				reportError(display, "side quest id '" + effectiveId + "' must not contain ':' (reserved for saga quest keys), file skipped");
+				return;
 			}
+			String previous = idSources.putIfAbsent(effectiveId, display);
+			if (previous != null) {
+				reportError(display, "duplicate side quest id '" + effectiveId + "' (already loaded from " + previous + "), file skipped");
+				return;
+			}
+
+			LOADED_QUESTS.put(effectiveId, quest);
+			reportIssues(display, root, quest);
 		} catch (Exception e) {
-			LogUtil.error(Env.COMMON, "Failed to load side-quest file: {}", file.getFileName(), e);
-			JsonLoadReport.error("quests", "sidequests/" + file.getFileName(), "Malformed side-quest JSON, file skipped: " + JsonLoadReport.rootCause(e));
+			LogUtil.error(Env.COMMON, "Failed to load side-quest file: {}", display, e);
+			JsonLoadReport.error("quests", display, "Malformed side-quest JSON, file skipped: " + JsonLoadReport.rootCause(e));
 		}
+	}
+
+	@Nullable
+	private static Quest parseQuestOrReport(String display, @Nullable JsonObject root) {
+		String rejection = QuestParser.rejectionReason(root);
+		if (rejection != null) {
+			reportError(display, rejection + ", file skipped");
+			return null;
+		}
+		Quest quest = QuestParser.parseQuest(root);
+		if (quest == null) {
+			reportError(display, "the quest could not be parsed, file skipped");
+		}
+		return quest;
+	}
+
+	private static void reportIssues(String display, JsonObject root, Quest quest) {
+		for (String issue : QuestParser.describeIssues(root, quest)) {
+			LogUtil.warn(Env.COMMON, "Quest file '{}': {}", display, issue);
+			JsonLoadReport.error("quests", display, issue);
+		}
+	}
+
+	private static void reportError(String display, String message) {
+		LogUtil.error(Env.COMMON, "Quest file '{}': {}", display, message);
+		JsonLoadReport.error("quests", display, message);
+	}
+
+	private static String relativeName(Path base, Path file) {
+		return base.relativize(file).toString().replace('\\', '/');
 	}
 
 
@@ -412,6 +550,7 @@ public class QuestRegistry extends SimplePreparableReloadListener<Map<String, Qu
 
 			// Objective type index
 			for (QuestObjective objective : quest.getObjectives()) {
+				if (objective.isPlaceholder()) continue;
 				OBJECTIVE_INDEX.computeIfAbsent(objective.getType(), k -> new ArrayList<>()).add(questId);
 			}
 
@@ -522,21 +661,5 @@ public class QuestRegistry extends SimplePreparableReloadListener<Map<String, Qu
 		CLIENT_SAGAS.clear();
 		CLIENT_SAGAS.putAll(sagas);
 		LogUtil.info(Env.CLIENT, "QuestRegistry: synced {} saga(s) from server", sagas.size());
-	}
-
-	// ========================================================================================
-	// Resource Reload Listener
-	// ========================================================================================
-
-	@Override
-	protected @NotNull Map<String, Quest> prepare(@NotNull ResourceManager pResourceManager, @NotNull ProfilerFiller pProfiler) {
-		return new HashMap<>(LOADED_QUESTS);
-	}
-
-	@Override
-	protected void apply(@NotNull Map<String, Quest> pObject, @NotNull ResourceManager pResourceManager, @NotNull ProfilerFiller pProfiler) {
-		LOADED_QUESTS.clear();
-		LOADED_QUESTS.putAll(pObject);
-		buildIndexes();
 	}
 }

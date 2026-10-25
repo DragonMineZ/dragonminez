@@ -3,6 +3,7 @@ package com.dragonminez.client.events;
 import com.dragonminez.Reference;
 import com.dragonminez.common.stats.StatsCapability;
 import com.dragonminez.common.stats.StatsProvider;
+import com.dragonminez.client.render.shader.ClientGravityState;
 import com.dragonminez.server.util.GravityLogic;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.player.LocalPlayer;
@@ -24,6 +25,7 @@ import java.util.UUID;
 @EventBusSubscriber(modid = Reference.MOD_ID, bus = EventBusSubscriber.Bus.GAME, value = Dist.CLIENT)
 public class MovementSkillsHandler {
 	public static final UUID SPRINT_SPEED_UUID = UUID.fromString("c4c4e8b0-5f21-4f16-9a2d-123456789abc");
+	private static final double SPRINT_BOOST_PER_LEVEL = 0.06;
 	private static int airTicks = 0;
 	private static boolean wasJumping = false;
 	private static boolean hasAppliedBaseBoost = false;
@@ -61,7 +63,7 @@ public class MovementSkillsHandler {
 		if (speedAttr != null) {
 			AttributeModifier existingSprint = speedAttr.getModifier(com.dragonminez.common.util.AttributeMods.id(SPRINT_SPEED_UUID));
 			if (sprintLevel[0] > 0 && !isStunned[0]) {
-				double boost = sprintLevel[0] * 0.1;
+				double boost = sprintLevel[0] * SPRINT_BOOST_PER_LEVEL;
 				if (existingSprint == null || existingSprint.amount() != boost) {
 					speedAttr.removeModifier(com.dragonminez.common.util.AttributeMods.id(SPRINT_SPEED_UUID));
 					speedAttr.addTransientModifier(com.dragonminez.common.util.AttributeMods.of(SPRINT_SPEED_UUID, "Sprint Skill Boost", boost, AttributeModifier.Operation.ADD_MULTIPLIED_TOTAL));
@@ -100,7 +102,7 @@ public class MovementSkillsHandler {
 				float blocksToAdd = targetBlocks - 1.25f;
 				float baseBoost = blocksToAdd * 0.18f;
 
-				baseBoost *= (float) GravityLogic.getJumpFactor(player);
+				baseBoost *= (float) GravityLogic.getJumpFactor(ClientGravityState.getNetGravity());
 
 				player.setDeltaMovement(player.getDeltaMovement().add(0, baseBoost, 0));
 				hasAppliedBaseBoost = true;
@@ -132,7 +134,7 @@ public class MovementSkillsHandler {
 		// descent for everyone (independent of the jump skill). Skipped while flying / in creative
 		// flight / in water / on a ladder.
 		if (!isOnGround && !isFlying[0] && !player.getAbilities().flying && !player.isInWater() && !player.onClimbable()) {
-			double fallExtra = GravityLogic.getFallExtra(player);
+			double fallExtra = GravityLogic.getFallExtra(ClientGravityState.getNetGravity());
 			if (fallExtra > 0) player.setDeltaMovement(player.getDeltaMovement().add(0, -fallExtra, 0));
 		}
 	}

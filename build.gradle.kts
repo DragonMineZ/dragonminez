@@ -178,9 +178,6 @@ dependencies {
     compileOnly("top.theillusivec4.curios:curios-neoforge:$curiosVersion:api")
     runtimeOnly("top.theillusivec4.curios:curios-neoforge:$curiosVersion")
 
-    // Source: https://mvnrepository.com/artifact/org.projectlombok/lombok
-    compileOnly("org.projectlombok:lombok:1.18.46")
-    annotationProcessor("org.projectlombok:lombok:1.18.46")
 
     // Database libraries (pure Java; jar-in-jar for distribution).
     // Exclude HikariCP's slf4j pin so it does not fight Minecraft's strictly 2.0.9.

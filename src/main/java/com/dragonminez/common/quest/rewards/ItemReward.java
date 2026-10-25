@@ -1,16 +1,16 @@
 package com.dragonminez.common.quest.rewards;
 
 import com.dragonminez.common.quest.QuestReward;
-import lombok.Getter;
 import net.minecraft.network.chat.Component;
+import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.core.registries.BuiltInRegistries;
+import net.minecraft.world.item.Items;
 
-@Getter
 public class ItemReward extends QuestReward {
 	private final String itemId;
 	private final int count;
@@ -56,12 +56,22 @@ public class ItemReward extends QuestReward {
 	}
 
 	private Component describe(int shownCount) {
-		return Component.translatable(
-				"gui.dragonminez.quests.rewards.item",
-				shownCount,
-				Component.translatable(
-						"item." + ResourceLocation.parse(itemId).toLanguageKey()
-				)
-		);
+		return Component.translatable("gui.dragonminez.quests.rewards.item", shownCount, itemName());
+	}
+
+	public MutableComponent itemName() {
+		ResourceLocation id = ResourceLocation.tryParse(itemId);
+		if (id == null) return Component.literal(itemId);
+		Item item = BuiltInRegistries.ITEM.get(id);
+		if (item == null || item == Items.AIR) return Component.translatable("item." + id.toLanguageKey());
+		return new ItemStack(item).getHoverName().copy();
+	}
+
+	public String getItemId() {
+		return this.itemId;
+	}
+
+	public int getCount() {
+		return this.count;
 	}
 }

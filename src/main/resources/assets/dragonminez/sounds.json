@@ -161,6 +161,69 @@
       "dragonminez:ship_landing_open"
     ]
   },
+  "vehicle.car.engine": {
+    "subtitle": "sounds.dragonminez.vehicle.car.engine",
+    "sounds": [
+      {
+        "name": "minecraft:entity.minecart.inside",
+        "type": "event"
+      }
+    ]
+  },
+  "vehicle.cc576.engine": {
+    "subtitle": "sounds.dragonminez.vehicle.cc576.engine",
+    "sounds": [
+      {
+        "name": "minecraft:item.elytra.flying",
+        "type": "event"
+      }
+    ]
+  },
+  "vehicle.spacepod.engine": {
+    "subtitle": "sounds.dragonminez.vehicle.spacepod.engine",
+    "sounds": [
+      {
+        "name": "minecraft:block.beacon.ambient",
+        "type": "event"
+      }
+    ]
+  },
+  "vehicle.frieza_capsule.engine": {
+    "subtitle": "sounds.dragonminez.vehicle.frieza_capsule.engine",
+    "sounds": [
+      {
+        "name": "minecraft:block.beacon.ambient",
+        "type": "event"
+      }
+    ]
+  },
+  "vehicle.frieza_capsule.takeoff": {
+    "subtitle": "sounds.dragonminez.vehicle.frieza_capsule.takeoff",
+    "sounds": [
+      {
+        "name": "minecraft:block.beacon.activate",
+        "type": "event"
+      }
+    ]
+  },
+  "vehicle.frieza_capsule.land": {
+    "subtitle": "sounds.dragonminez.vehicle.frieza_capsule.land",
+    "sounds": [
+      {
+        "name": "minecraft:block.beacon.deactivate",
+        "type": "event"
+      }
+    ]
+  },
+  "vehicle.door": {
+    "subtitle": "sounds.dragonminez.vehicle.door",
+    "sounds": [
+      {
+        "name": "minecraft:block.iron_door.close",
+        "type": "event"
+      }
+    ]
+  },
   "nube": {
     "subtitle": "sounds.dragonminez.nube",
     "sounds": [
@@ -1175,6 +1238,94 @@
     "subtitle": "sounds.dragonminez.stack_form",
     "sounds": [
       "dragonminez:stack_form"
+    ]
+  },
+  "raid_ost_1": {
+    "subtitle": "sounds.dragonminez.raid_ost_1",
+    "sounds": [
+      {
+        "name": "dragonminez:raid_ost_1",
+        "stream": true
+      }
+    ]
+  },
+  "worldboss_music.janemba": {
+    "subtitle": "sounds.dragonminez.worldboss_music",
+    "sounds": [
+      {
+        "name": "dragonminez:raid_ost_1",
+        "stream": true
+      }
+    ]
+  },
+  "worldboss_music.turles": {
+    "subtitle": "sounds.dragonminez.worldboss_music",
+    "sounds": [
+      {
+        "name": "dragonminez:raid_ost_1",
+        "stream": true
+      }
+    ]
+  },
+  "worldboss_music.metal_cooler_core": {
+    "subtitle": "sounds.dragonminez.worldboss_music",
+    "sounds": [
+      {
+        "name": "dragonminez:raid_ost_1",
+        "stream": true
+      }
+    ]
+  },
+  "worldboss_music.tamagami_3": {
+    "subtitle": "sounds.dragonminez.worldboss_music",
+    "sounds": [
+      {
+        "name": "dragonminez:raid_ost_1",
+        "stream": true
+      }
+    ]
+  },
+  "worldboss_music.tamagami_2": {
+    "subtitle": "sounds.dragonminez.worldboss_music",
+    "sounds": [
+      {
+        "name": "dragonminez:raid_ost_1",
+        "stream": true
+      }
+    ]
+  },
+  "worldboss_music.tamagami_1": {
+    "subtitle": "sounds.dragonminez.worldboss_music",
+    "sounds": [
+      {
+        "name": "dragonminez:raid_ost_1",
+        "stream": true
+      }
+    ]
+  },
+  "worldboss_music.gomah": {
+    "subtitle": "sounds.dragonminez.worldboss_music",
+    "sounds": [
+      {
+        "name": "dragonminez:raid_ost_1",
+        "stream": true
+      }
+    ]
+  },
+  "minigame.ill_forget_about_you_in_time": {
+    "sounds": [
+      {
+        "name": "dragonminez:minigame/ill_forget_about_you_in_time",
+        "stream": true
+      }
+    ]
+  },
+  "minigame.oh_yeah": {
+    "sounds": [
+      {
+        "name": "dragonminez:minigame/oh_yeah",
+        "stream": true
+      }
     ]
   }
 }

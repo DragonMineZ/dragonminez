@@ -3,9 +3,6 @@ package com.dragonminez.common.quest;
 import com.dragonminez.common.config.ConfigManager;
 import com.dragonminez.common.quest.objectives.ItemObjective;
 import com.dragonminez.common.quest.objectives.KillObjective;
-import lombok.Getter;
-import lombok.Setter;
-
 import java.util.ArrayList;
 import java.util.List;
 
@@ -14,19 +11,15 @@ import java.util.List;
  *
  * @since 2.0
  */
-@Getter
 public class Quest {
 
 	public enum QuestType {
-		SAGA,
-		SIDEQUEST,
-		DAILY,
-		EVENT
+		SAGA, SIDEQUEST, DAILY, EVENT;
 	}
 
+
 	public enum ClaimMode {
-		TREE_OR_NPC,
-		NPC_ONLY
+		TREE_OR_NPC, NPC_ONLY;
 	}
 
 	private final int id;
@@ -36,13 +29,8 @@ public class Quest {
 	private final String description;
 	private final List<QuestObjective> objectives;
 	private final List<QuestReward> rewards;
-
-	@Setter
 	private boolean completed;
-
-	@Setter
 	private int currentObjectiveIndex;
-
 	private final String category;
 	private final boolean parallelObjectives;
 	private final boolean partyScaling;
@@ -52,25 +40,18 @@ public class Quest {
 	private final QuestPrerequisites startRequirements;
 	private final boolean secret;
 	private final ClaimMode claimMode;
+	private boolean repeatable;
+	private int repeatCooldownSeconds;
+	private int timeLimitSeconds;
 
 	/**
 	 * Universal constructor for quests.
 	 */
-	public Quest(int id, String stringId, QuestType type, String title, String description,
-				 String category, boolean parallelObjectives, boolean partyScaling,
-				 List<QuestObjective> objectives, List<QuestReward> rewards,
-				 QuestPrerequisites prerequisites, QuestPrerequisites startRequirements,
-				 String questGiver, String turnIn) {
-		this(id, stringId, type, title, description, category, parallelObjectives, partyScaling,
-				objectives, rewards, prerequisites, startRequirements, questGiver, turnIn,
-				false, ClaimMode.TREE_OR_NPC);
+	public Quest(int id, String stringId, QuestType type, String title, String description, String category, boolean parallelObjectives, boolean partyScaling, List<QuestObjective> objectives, List<QuestReward> rewards, QuestPrerequisites prerequisites, QuestPrerequisites startRequirements, String questGiver, String turnIn) {
+		this(id, stringId, type, title, description, category, parallelObjectives, partyScaling, objectives, rewards, prerequisites, startRequirements, questGiver, turnIn, false, ClaimMode.TREE_OR_NPC);
 	}
 
-	public Quest(int id, String stringId, QuestType type, String title, String description,
-				 String category, boolean parallelObjectives, boolean partyScaling,
-				 List<QuestObjective> objectives, List<QuestReward> rewards,
-				 QuestPrerequisites prerequisites, QuestPrerequisites startRequirements,
-				 String questGiver, String turnIn, boolean secret, ClaimMode claimMode) {
+	public Quest(int id, String stringId, QuestType type, String title, String description, String category, boolean parallelObjectives, boolean partyScaling, List<QuestObjective> objectives, List<QuestReward> rewards, QuestPrerequisites prerequisites, QuestPrerequisites startRequirements, String questGiver, String turnIn, boolean secret, ClaimMode claimMode) {
 		this.id = id;
 		this.stringId = stringId;
 		this.type = type != null ? type : QuestType.SAGA;
@@ -88,7 +69,42 @@ public class Quest {
 		this.prerequisites = prerequisites;
 		this.startRequirements = startRequirements;
 		this.secret = secret;
-		this.claimMode = claimMode != null ? claimMode : ClaimMode.TREE_OR_NPC;
+		this.claimMode = claimMode == ClaimMode.NPC_ONLY && (turnIn == null || turnIn.isBlank()) ? ClaimMode.TREE_OR_NPC : claimMode != null ? claimMode : ClaimMode.TREE_OR_NPC;
+	}
+
+	/**
+	 * Set post-construction by the parser; DAILY quests are always repeatable.
+	 */
+	public void setRepeatConfig(boolean repeatable, int repeatCooldownSeconds) {
+		this.repeatable = repeatable;
+		this.repeatCooldownSeconds = Math.max(0, repeatCooldownSeconds);
+	}
+
+	/**
+	 * Set post-construction by the parser. 0 = no time limit; counted in game time from accept.
+	 */
+	public void setTimeLimitSeconds(int timeLimitSeconds) {
+		this.timeLimitSeconds = Math.max(0, timeLimitSeconds);
+	}
+
+	public boolean hasTimeLimit() {
+		return timeLimitSeconds > 0;
+	}
+
+	public boolean isRepeatable() {
+		return repeatable || type == QuestType.DAILY;
+	}
+
+	public boolean isRepeatReady(long lastCompletedRealMs, long nowMs) {
+		if (!isRepeatable()) return false;
+		if (lastCompletedRealMs <= 0) return true;
+		if (type == QuestType.DAILY) return !isSameLocalDay(lastCompletedRealMs, nowMs);
+		return repeatCooldownSeconds <= 0 || nowMs - lastCompletedRealMs >= repeatCooldownSeconds * 1000L;
+	}
+
+	private static boolean isSameLocalDay(long aMs, long bMs) {
+		java.time.ZoneId zone = java.time.ZoneId.systemDefault();
+		return java.time.Instant.ofEpochMilli(aMs).atZone(zone).toLocalDate().equals(java.time.Instant.ofEpochMilli(bMs).atZone(zone).toLocalDate());
 	}
 
 	public boolean hasPrerequisites() {
@@ -116,12 +132,13 @@ public class Quest {
 		if (objectiveIndex < 0 || objectiveIndex >= objectives.size()) {
 			return 0;
 		}
-
 		QuestObjective objective = objectives.get(objectiveIndex);
+		if (objective.isPlaceholder()) {
+			return 0;
+		}
 		if (pqd == null) {
 			return objective.getRequired();
 		}
-
 		return pqd.getObjectiveRequired(questId, objectiveIndex, objective.getRequired());
 	}
 
@@ -129,7 +146,6 @@ public class Quest {
 		if (pqd == null || questId == null || questId.isBlank()) {
 			return;
 		}
-
 		int safePartySize = Math.max(1, partySize);
 		for (int i = 0; i < objectives.size(); i++) {
 			pqd.setObjectiveRequired(questId, i, getScaledObjectiveRequired(objectives.get(i), safePartySize));
@@ -137,36 +153,30 @@ public class Quest {
 	}
 
 	public double getScaledKillHealth(KillObjective objective, int partySize) {
-		return objective.getHealth() * enemyPartyMultiplier(partySize,
-				ConfigManager.getServerConfig().getGameplay().getEnemyHealthPerPartyPlayer());
+		return objective.getHealth() * enemyPartyMultiplier(partySize, ConfigManager.getServerConfig().getGameplay().getEnemyHealthPerPartyPlayer());
 	}
 
 	public double getScaledKillMeleeDamage(KillObjective objective, int partySize) {
-		return objective.getMeleeDamage() * enemyPartyMultiplier(partySize,
-				ConfigManager.getServerConfig().getGameplay().getEnemyDamagePerPartyPlayer());
+		return objective.getMeleeDamage() * enemyPartyMultiplier(partySize, ConfigManager.getServerConfig().getGameplay().getEnemyDamagePerPartyPlayer());
 	}
 
 	public double getScaledKillKiDamage(KillObjective objective, int partySize) {
-		return objective.getKiDamage() * enemyPartyMultiplier(partySize,
-				ConfigManager.getServerConfig().getGameplay().getEnemyDamagePerPartyPlayer());
+		return objective.getKiDamage() * enemyPartyMultiplier(partySize, ConfigManager.getServerConfig().getGameplay().getEnemyDamagePerPartyPlayer());
 	}
 
 	public Double getScaledTransformHealth(KillObjective objective, int partySize) {
 		Double base = objective.getTransformHealth();
-		return base == null ? null : base * enemyPartyMultiplier(partySize,
-				ConfigManager.getServerConfig().getGameplay().getEnemyHealthPerPartyPlayer());
+		return base == null ? null : base * enemyPartyMultiplier(partySize, ConfigManager.getServerConfig().getGameplay().getEnemyHealthPerPartyPlayer());
 	}
 
 	public Double getScaledTransformMeleeDamage(KillObjective objective, int partySize) {
 		Double base = objective.getTransformMeleeDamage();
-		return base == null ? null : base * enemyPartyMultiplier(partySize,
-				ConfigManager.getServerConfig().getGameplay().getEnemyDamagePerPartyPlayer());
+		return base == null ? null : base * enemyPartyMultiplier(partySize, ConfigManager.getServerConfig().getGameplay().getEnemyDamagePerPartyPlayer());
 	}
 
 	public Double getScaledTransformKiDamage(KillObjective objective, int partySize) {
 		Double base = objective.getTransformKiDamage();
-		return base == null ? null : base * enemyPartyMultiplier(partySize,
-				ConfigManager.getServerConfig().getGameplay().getEnemyDamagePerPartyPlayer());
+		return base == null ? null : base * enemyPartyMultiplier(partySize, ConfigManager.getServerConfig().getGameplay().getEnemyDamagePerPartyPlayer());
 	}
 
 	private int getScaledObjectiveRequired(QuestObjective objective, int partySize) {
@@ -174,15 +184,12 @@ public class Quest {
 		if (!partyScaling || partySize <= 1 || baseRequired <= 0) {
 			return baseRequired;
 		}
-
 		int extraMembers = partySize - 1;
 		double configuredMultiplier = ConfigManager.getServerConfig().getGameplay().getDefaultQuestPartyMultiplier();
-
 		if (objective instanceof ItemObjective) {
 			double scaled = baseRequired * Math.pow(configuredMultiplier, extraMembers);
 			return roundUpCount(Math.max(baseRequired, scaled), resolveItemCountStep(baseRequired));
 		}
-
 		if (objective instanceof KillObjective) {
 			if (baseRequired <= 1) {
 				return baseRequired;
@@ -190,7 +197,6 @@ public class Quest {
 			double scaled = baseRequired * Math.pow(configuredMultiplier, extraMembers * 0.75);
 			return Math.max(baseRequired, (int) Math.ceil(scaled));
 		}
-
 		return baseRequired;
 	}
 
@@ -220,5 +226,93 @@ public class Quest {
 			return (int) Math.ceil(value);
 		}
 		return (int) (Math.ceil(value / step) * step);
+	}
+
+	public int getId() {
+		return this.id;
+	}
+
+	public String getStringId() {
+		return this.stringId;
+	}
+
+	public QuestType getType() {
+		return this.type;
+	}
+
+	public String getTitle() {
+		return this.title;
+	}
+
+	public String getDescription() {
+		return this.description;
+	}
+
+	public List<QuestObjective> getObjectives() {
+		return this.objectives;
+	}
+
+	public List<QuestReward> getRewards() {
+		return this.rewards;
+	}
+
+	public boolean isCompleted() {
+		return this.completed;
+	}
+
+	public int getCurrentObjectiveIndex() {
+		return this.currentObjectiveIndex;
+	}
+
+	public String getCategory() {
+		return this.category;
+	}
+
+	public boolean isParallelObjectives() {
+		return this.parallelObjectives;
+	}
+
+	public boolean isPartyScaling() {
+		return this.partyScaling;
+	}
+
+	public String getQuestGiver() {
+		return this.questGiver;
+	}
+
+	public String getTurnIn() {
+		return this.turnIn;
+	}
+
+	public QuestPrerequisites getPrerequisites() {
+		return this.prerequisites;
+	}
+
+	public QuestPrerequisites getStartRequirements() {
+		return this.startRequirements;
+	}
+
+	public boolean isSecret() {
+		return this.secret;
+	}
+
+	public ClaimMode getClaimMode() {
+		return this.claimMode;
+	}
+
+	public int getRepeatCooldownSeconds() {
+		return this.repeatCooldownSeconds;
+	}
+
+	public int getTimeLimitSeconds() {
+		return this.timeLimitSeconds;
+	}
+
+	public void setCompleted(final boolean completed) {
+		this.completed = completed;
+	}
+
+	public void setCurrentObjectiveIndex(final int currentObjectiveIndex) {
+		this.currentObjectiveIndex = currentObjectiveIndex;
 	}
 }

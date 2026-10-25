@@ -9,6 +9,7 @@ import com.dragonminez.common.passives.handlers.MartialArtistPassive;
 import com.dragonminez.common.passives.handlers.PaladinPassive;
 import com.dragonminez.common.passives.handlers.SpiritualistPassive;
 import com.dragonminez.common.passives.handlers.TankPassive;
+import com.dragonminez.common.passives.handlers.UnversedPassive;
 import com.dragonminez.common.passives.handlers.WarriorPassive;
 import com.dragonminez.common.stats.StatsData;
 
@@ -29,6 +30,7 @@ public final class ClassPassives {
 		register(new PaladinPassive());
 		register(new TankPassive());
 		register(new ClericPassive());
+		register(new UnversedPassive());
 	}
 
 	private ClassPassives() {}

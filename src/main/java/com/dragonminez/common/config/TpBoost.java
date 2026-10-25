@@ -6,6 +6,7 @@ public enum TpBoost {
 	@SerializedName("class") CLASS,
 	@SerializedName("racialskill") RACIALSKILL,
 	@SerializedName("htc") HTC,
+	@SerializedName("otherworld") OTHERWORLD,
 	@SerializedName("gravity") GRAVITY,
 	@SerializedName("weights") WEIGHTS,
 	@SerializedName("global") GLOBAL,

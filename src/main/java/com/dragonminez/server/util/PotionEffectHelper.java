@@ -38,6 +38,8 @@ public final class PotionEffectHelper {
 
 	public static double applyTpGainMultiplier(LivingEntity entity, double baseValue) {
 		double multiplier = getMultiplierFromEffect(entity, MainEffects.TP_GAIN, "tp_gain");
+		multiplier *= getMultiplierFromEffect(entity, MainEffects.WORLD_HERO, "world_hero");
+		multiplier *= getKamiBlessMultiplier(entity);
 		return baseValue * multiplier;
 	}
 
@@ -62,6 +64,13 @@ public final class PotionEffectHelper {
 		double bonus = getBonusFromAmplifier(amplifier);
 
 		return 1.0D + bonus;
+	}
+
+	public static double getKamiBlessMultiplier(LivingEntity entity) {
+		var serverConfig = ConfigManager.getServerConfig();
+		if (entity == null || serverConfig == null || serverConfig.getGameplay() == null
+				|| !entity.hasEffect(MainEffects.KAMI_BLESS)) return 1.0D;
+		return serverConfig.getGameplay().getKamiBlessTpMultiplier();
 	}
 
 	private static double getBonusFromAmplifier(int amplifier) {

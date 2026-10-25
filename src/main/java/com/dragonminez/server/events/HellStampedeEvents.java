@@ -1,0 +1,135 @@
+package com.dragonminez.server.events;
+
+import com.dragonminez.Reference;
+import com.dragonminez.common.init.MainEntities;
+import com.dragonminez.common.init.entities.sagas.MiniJanembaStampedeEntity;
+import com.dragonminez.server.world.dimension.OtherworldDimension;
+import com.dragonminez.server.world.gen.OtherworldGeneration;
+import net.minecraft.core.BlockPos;
+import net.minecraft.core.Direction;
+import net.minecraft.network.chat.Component;
+import net.minecraft.server.level.ServerLevel;
+import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.sounds.SoundEvents;
+import net.minecraft.sounds.SoundSource;
+import net.minecraft.util.Mth;
+import net.minecraft.util.RandomSource;
+import net.minecraft.world.Difficulty;
+import net.minecraft.world.phys.Vec3;
+import net.neoforged.neoforge.event.tick.PlayerTickEvent;
+import net.neoforged.neoforge.event.entity.player.PlayerEvent;
+import net.neoforged.bus.api.SubscribeEvent;
+import net.neoforged.fml.common.EventBusSubscriber;
+
+import java.util.HashMap;
+import java.util.Map;
+import java.util.UUID;
+
+@EventBusSubscriber(modid = Reference.MOD_ID, bus = EventBusSubscriber.Bus.GAME)
+public class HellStampedeEvents {
+
+	private static final int CHECK_INTERVAL_TICKS = 20;
+	private static final int MIN_TICKS_BEFORE_STAMPEDE = 20 * 60 * 8;
+	private static final int MAX_TICKS_BEFORE_STAMPEDE = 20 * 60 * 14;
+	private static final int MIN_JANEMBAS = 20;
+	private static final int MAX_JANEMBAS = 20;
+	private static final double SPAWN_DISTANCE = 20.0D;
+	private static final double SPAWN_WIDTH = 16.0D;
+	private static final double SPAWN_DEPTH = 6.0D;
+	private static final int GROUND_SEARCH_UP = 6;
+	private static final int GROUND_SEARCH_DOWN = 10;
+
+	private static final Map<UUID, Integer> TICKS_UNTIL_STAMPEDE = new HashMap<>();
+
+	@SubscribeEvent
+	public static void onPlayerTick(PlayerTickEvent.Post event) {
+		if (!(event.getEntity() instanceof ServerPlayer player)) return;
+		if (player.tickCount % CHECK_INTERVAL_TICKS != 0) return;
+
+		UUID id = player.getUUID();
+		if (!isInHell(player)) {
+			TICKS_UNTIL_STAMPEDE.remove(id);
+			return;
+		}
+
+		Integer stored = TICKS_UNTIL_STAMPEDE.get(id);
+		int remaining = (stored != null ? stored : rollDelay(player.getRandom())) - CHECK_INTERVAL_TICKS;
+		if (remaining > 0) {
+			TICKS_UNTIL_STAMPEDE.put(id, remaining);
+			return;
+		}
+
+		TICKS_UNTIL_STAMPEDE.remove(id);
+		spawnStampede(player);
+	}
+
+	@SubscribeEvent
+	public static void onPlayerLogout(PlayerEvent.PlayerLoggedOutEvent event) {
+		TICKS_UNTIL_STAMPEDE.remove(event.getEntity().getUUID());
+	}
+
+	private static int rollDelay(RandomSource random) {
+		return Mth.randomBetweenInclusive(random, MIN_TICKS_BEFORE_STAMPEDE, MAX_TICKS_BEFORE_STAMPEDE);
+	}
+
+	private static boolean isInHell(ServerPlayer player) {
+		if (player.isSpectator() || player.isCreative()) return false;
+		if (player.level().getDifficulty() == Difficulty.PEACEFUL) return false;
+		return player.level().dimension().equals(OtherworldDimension.OTHERWORLD_KEY)
+				&& player.getY() < OtherworldGeneration.HELL_CEILING;
+	}
+
+	private static void spawnStampede(ServerPlayer player) {
+		ServerLevel level = player.serverLevel();
+		RandomSource random = player.getRandom();
+
+		float angle = random.nextFloat() * Mth.TWO_PI;
+		Vec3 forward = new Vec3(Mth.cos(angle), 0.0D, Mth.sin(angle));
+		Vec3 side = new Vec3(-forward.z, 0.0D, forward.x);
+		Vec3 origin = player.position().add(forward.scale(SPAWN_DISTANCE));
+
+		int count = MIN_JANEMBAS + random.nextInt(MAX_JANEMBAS - MIN_JANEMBAS + 1);
+		int spawned = 0;
+
+		for (int i = 0; i < count; i++) {
+			Vec3 spot = origin
+					.add(side.scale((random.nextDouble() - 0.5D) * SPAWN_WIDTH))
+					.add(forward.scale(random.nextDouble() * SPAWN_DEPTH));
+			BlockPos ground = findGround(level, BlockPos.containing(spot.x, player.getY(), spot.z));
+			if (ground == null) continue;
+
+			MiniJanembaStampedeEntity janemba = MainEntities.MINI_JANEMBA_STAMPEDE.get().create(level);
+			if (janemba == null) continue;
+
+			double dx = player.getX() - (ground.getX() + 0.5D);
+			double dz = player.getZ() - (ground.getZ() + 0.5D);
+			float yaw = (float) (Mth.atan2(dz, dx) * Mth.RAD_TO_DEG) - 90.0F;
+			janemba.moveTo(ground.getX() + 0.5D, ground.getY(), ground.getZ() + 0.5D, yaw, 0.0F);
+			janemba.setYHeadRot(yaw);
+
+			if (!level.addFreshEntity(janemba)) continue;
+			janemba.charge(player);
+			spawned++;
+		}
+
+		if (spawned == 0) return;
+
+		player.displayClientMessage(Component.translatable("message.dragonminez.hell_stampede"), true);
+		level.playSound(null, BlockPos.containing(origin), SoundEvents.RAVAGER_ROAR, SoundSource.HOSTILE, 1.5F, 1.6F);
+	}
+
+	private static BlockPos findGround(ServerLevel level, BlockPos start) {
+		if (!level.isLoaded(start)) return null;
+
+		for (int dy = GROUND_SEARCH_UP; dy >= -GROUND_SEARCH_DOWN; dy--) {
+			BlockPos feet = start.above(dy);
+			BlockPos below = feet.below();
+			if (!level.getBlockState(below).isFaceSturdy(level, below, Direction.UP)) continue;
+			if (!level.getBlockState(feet).getCollisionShape(level, feet).isEmpty()) continue;
+			if (!level.getBlockState(feet.above()).getCollisionShape(level, feet.above()).isEmpty()) continue;
+			if (!level.getFluidState(feet).isEmpty()) continue;
+			return feet;
+		}
+		return null;
+	}
+}

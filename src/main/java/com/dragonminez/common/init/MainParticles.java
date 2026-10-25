@@ -1,7 +1,11 @@
 package com.dragonminez.common.init;
 
 import com.dragonminez.Reference;
+import com.dragonminez.common.init.particles.VehicleSmokeOptions;
+import net.minecraft.network.RegistryFriendlyByteBuf;
+import net.minecraft.core.particles.BlockParticleOption;
 import net.minecraft.core.particles.ParticleType;
+import net.minecraft.network.codec.StreamCodec;
 import net.minecraft.core.particles.SimpleParticleType;
 import net.neoforged.bus.api.IEventBus;
 import net.neoforged.neoforge.registries.DeferredRegister;
@@ -51,6 +55,34 @@ public class MainParticles {
             PARTICLE_TYPES.register("aura_particle", () -> new SimpleParticleType(true));
     public static final DeferredHolder<ParticleType<?>, SimpleParticleType> DIVINE =
             PARTICLE_TYPES.register("divine_particle", () -> new SimpleParticleType(true));
+    public static final DeferredHolder<ParticleType<?>, SimpleParticleType> STARDUST =
+            PARTICLE_TYPES.register("stardust", () -> new SimpleParticleType(true));
+    public static final DeferredHolder<ParticleType<?>, ParticleType<VehicleSmokeOptions>> VEHICLE_SMOKE =
+            PARTICLE_TYPES.register("vehicle_smoke", () -> new ParticleType<VehicleSmokeOptions>(false) {
+                @Override
+                public com.mojang.serialization.MapCodec<VehicleSmokeOptions> codec() {
+                    return VehicleSmokeOptions.CODEC;
+                }
+
+                @Override
+                public StreamCodec<RegistryFriendlyByteBuf, VehicleSmokeOptions> streamCodec() {
+                    return VehicleSmokeOptions.STREAM_CODEC;
+                }
+            });
+    public static final DeferredHolder<ParticleType<?>, SimpleParticleType> SLEEP_Z =
+            PARTICLE_TYPES.register("sleep_z", () -> new SimpleParticleType(true));
+    public static final DeferredHolder<ParticleType<?>, ParticleType<BlockParticleOption>> FLYING_BLOCK =
+            PARTICLE_TYPES.register("flying_block", () -> new ParticleType<BlockParticleOption>(false) {
+                @Override
+                public com.mojang.serialization.MapCodec<BlockParticleOption> codec() {
+                    return BlockParticleOption.codec(this);
+                }
+
+                @Override
+                public StreamCodec<? super RegistryFriendlyByteBuf, BlockParticleOption> streamCodec() {
+                    return BlockParticleOption.streamCodec(this);
+                }
+            });
 
 
     public static void register(IEventBus eventBus) {
