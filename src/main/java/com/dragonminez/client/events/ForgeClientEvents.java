@@ -3,7 +3,7 @@ package com.dragonminez.client.events;
 import com.dragonminez.client.gui.hud.PartyHudCache;
 import com.dragonminez.client.gui.hud.NotificationHUD;
 import com.dragonminez.Reference;
-import com.dragonminez.client.crowdin.CrowdinManager;
+import com.dragonminez.client.lang.LiveTranslationManager;
 import com.dragonminez.client.gui.UtilityMenuScreen;
 import com.dragonminez.client.gui.SpacePodScreen;
 import com.dragonminez.client.gui.character.util.BaseMenuScreen;
@@ -50,7 +50,6 @@ import org.lwjgl.glfw.GLFW;
 @Mod.EventBusSubscriber(modid = Reference.MOD_ID, bus = Mod.EventBusSubscriber.Bus.FORGE, value = Dist.CLIENT)
 public class ForgeClientEvents {
 	public static boolean isHasCreatedCharacterCache = false;
-	private static String lastLang = "";
 	private static boolean pendingCharacterCreationReopen = false;
 	private static int characterCreationOpenCooldownTicks = 0;
 	private static final int CHARACTER_CREATION_OPEN_COOLDOWN = 8;
@@ -187,6 +186,7 @@ public class ForgeClientEvents {
 		Minecraft mc = Minecraft.getInstance();
 		TransformationPostShaderManager.tick();
 		DragonSkyState.tick();
+		LiveTranslationManager.clientTick();
 		if (mc.player == null || mc.level == null) return;
 		if (characterCreationOpenCooldownTicks > 0) characterCreationOpenCooldownTicks--;
 		handleUtilityMenuHold(mc);
@@ -226,14 +226,6 @@ public class ForgeClientEvents {
 				if (!data.isDataLoaded()) return;
 				if (data.getStatus().isHasCreatedCharacter()) return;
 			});
-		}
-
-		String current = mc.options.languageCode;
-		if (!current.equals(lastLang)) {
-			lastLang = current;
-			if (CrowdinManager.isLiveTranslationsEnabled()) {
-				CrowdinManager.fetchLanguage(current);
-			}
 		}
 	}
 

@@ -28,7 +28,7 @@ Use the Gradle wrapper from the repo root (PowerShell on Windows):
 - `src/generated/resources/` is a main resource source set; `build` re-runs `runData`.
 - Gradle is configured **offline** (`org.gradle.offline=true` in `gradle.properties`) — dependency changes may require toggling this.
 - There is **no committed `src/test` suite** despite the JUnit dependency. Validate gameplay changes with `build` and, when practical, `runClient`/`runServer`. Do not claim the build passes unless it passed this session.
-- Language JSON: validate with `scripts/check_lang.sh` (needs `jq`). Source locale is `src/main/resources/assets/dragonminez/lang/en_us.json` (Crowdin source; CI validates and uploads it via `.github/workflows/languages.yml`).
+- Language JSON: validate with `scripts/check_lang.sh` (needs `jq`; CI runs it on pushes and PRs via `.github/workflows/languages.yml`). Source locale is `src/main/resources/assets/dragonminez/lang/en_us.json`, the only locale bundled in the jar. Translations live in the repo-root `lang/` folder (not bundled) and are edited through PRs; `client/lang/LiveTranslationManager` downloads the selected locale from `main` at runtime (GitHub commits API for the file's latest commit SHA, then raw.githubusercontent at that SHA; ETag `If-None-Match` fallback when the API is rate-limited), caches it in `<gameDir>/dmz_langcache/`, and serves it through the `dmz_live_translations` built-in pack. `es_ar/es_cl/es_ec/es_uy/es_ve` alias to `es_mx.json`. Disable with `-Ddmz.translations.enabled=false`.
 - Client-only dev mods (JEI runtime, Oculus, etc.) are excluded from `runServer`/`runData` task graphs on purpose — some mixin into vanilla codecs and would poison generated JSON. See the `includeClientOnlyDevMods` logic in `build.gradle.kts`.
 - The shippable jar is the no-classifier `jarJar` output (bundles MariaDB + HikariCP); the plain `jar` gets a `-slim` classifier. PackSquash resource optimization runs on CI and on jar packaging (off locally by default); force with `-PoptimizeResources=true|false`.
 
@@ -39,7 +39,7 @@ Use the Gradle wrapper from the repo root (PowerShell on Windows):
 `DMZCommon.init()` is the central registration point: `ConfigManager.initialize()`, `QuestRegistry.init()`, `WishManager.init()`, `NetworkHandler.register()`, GeckoLib, and all deferred registries. Server lifecycle (storage init, quest/wish/NPC loading, dragonball first-spawn, reload listeners, command registration) lives in `common/events/ForgeCommonEvents`.
 
 **Source layout (`com.dragonminez`):**
-- `client` — rendering, GUI, models, animation, flight, collision, clash minigames, client systems (kisense, taiyoken, impact frames), Crowdin support, client events.
+- `client` — rendering, GUI, models, animation, flight, collision, clash minigames, client systems (kisense, taiyoken, impact frames), live translations (`lang`), client events.
 - `common` — config, registries (`init/Main*`), stats/capability, networking, quests, wishes, dragonballs, combat, alignment, passives, hair, space pods, datagen, compat. Shared code.
 - `server` — commands, recipes, storage, worldgen/dimensions/raids, dynamic growth, server events.
 - `mixin` — common + client mixins (declared in `src/main/resources/dragonminez.mixins.json`).

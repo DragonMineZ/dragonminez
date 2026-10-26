@@ -2,7 +2,7 @@
 
 FALLIDO=0
 
-for i in ./src/main/resources/assets/dragonminez/lang/*.json
+for i in ./src/main/resources/assets/dragonminez/lang/*.json ./lang/*.json
 do
     if ! jq . "${i}" > /dev/null
     then

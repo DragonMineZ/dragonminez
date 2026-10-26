@@ -166,6 +166,7 @@ Important systems:
 ### Localization
 
 - Source locale: `src/main/resources/assets/dragonminez/lang/en_us.json`.
+- Translations: repo-root `lang/<code>.json`, downloaded at runtime from GitHub `main` by `client/lang/LiveTranslationManager` (not bundled in the jar). Add new keys to `en_us.json` only; translators update `lang/` through PRs.
 - Keep localization keys stable unless intentionally renaming.
 - Update language entries when adding user-visible text.
 - Validate language JSON when possible.

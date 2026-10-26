@@ -1,4 +1,4 @@
-package com.dragonminez.client.crowdin;
+package com.dragonminez.client.lang;
 
 import com.dragonminez.Reference;
 import com.google.gson.JsonObject;
@@ -17,12 +17,14 @@ import java.nio.charset.StandardCharsets;
 import java.util.Collections;
 import java.util.Set;
 
-public class CrowdinPackResources implements PackResources {
+public class LiveTranslationPackResources implements PackResources {
+	private static final String LANG_PREFIX = "lang/";
+	private static final String LANG_SUFFIX = ".json";
 
 	private final String packId;
 	private final byte[] packMcmetaBytes;
 
-	public CrowdinPackResources(String packId) {
+	public LiveTranslationPackResources(String packId) {
 		this.packId = packId;
 
 		JsonObject packInfo = new JsonObject();
@@ -47,21 +49,15 @@ public class CrowdinPackResources implements PackResources {
 	@Nullable
 	@Override
 	public IoSupplier<InputStream> getResource(PackType type, ResourceLocation location) {
-		if (!CrowdinManager.isLiveTranslationsEnabled()) return null;
+		if (type != PackType.CLIENT_RESOURCES || !location.getNamespace().equals(Reference.MOD_ID)) return null;
 
-		if (type == PackType.CLIENT_RESOURCES &&
-				location.getNamespace().equals(Reference.MOD_ID) &&
-				location.getPath().startsWith("lang/")) {
+		String path = location.getPath();
+		if (!path.startsWith(LANG_PREFIX) || !path.endsWith(LANG_SUFFIX)) return null;
 
-			String expectedPath = "lang/" + CrowdinManager.getCachedLangCode() + ".json";
-
-			if (location.getPath().equals(expectedPath)) {
-				if (CrowdinManager.hasData()) {
-					return CrowdinManager::getStream;
-				}
-			}
-		}
-		return null;
+		String languageCode = path.substring(LANG_PREFIX.length(), path.length() - LANG_SUFFIX.length());
+		byte[] data = LiveTranslationManager.getLanguageData(languageCode);
+		if (data == null) return null;
+		return () -> new ByteArrayInputStream(data);
 	}
 
 	@Override

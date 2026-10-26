@@ -1,9 +1,9 @@
 package com.dragonminez.client.events;
 
 import com.dragonminez.Reference;
-import com.dragonminez.client.crowdin.CrowdinManager;
-import com.dragonminez.client.crowdin.CrowdinPackResources;
 import com.dragonminez.client.dragonball.DragonBallPackResources;
+import com.dragonminez.client.lang.LiveTranslationManager;
+import com.dragonminez.client.lang.LiveTranslationPackResources;
 import com.dragonminez.client.animation.CombatAnimationResolver;
 import com.dragonminez.client.animation.EvasionAnimations;
 import com.dragonminez.client.animation.KiAnimations;
@@ -139,15 +139,12 @@ public class ModClientEvents {
 	@SubscribeEvent
 	public static void onAddPackFinders(AddPackFindersEvent event) {
 		if (event.getPackType() == PackType.CLIENT_RESOURCES) {
-			if (CrowdinManager.isLiveTranslationsEnabled()) {
-				String currentLang = Minecraft.getInstance().options.languageCode;
-				CrowdinManager.fetchLanguage(currentLang);
-			}
+			LiveTranslationManager.requestLanguage(Minecraft.getInstance().options.languageCode);
 
 			event.addRepositorySource((packConsumer) -> {
-				Pack crowdinPack = Pack.readMetaAndCreate("dmz_crowdin_ota", Component.literal("DMZ Live Translations"), true,
-						CrowdinPackResources::new, PackType.CLIENT_RESOURCES, Pack.Position.TOP, PackSource.BUILT_IN);
-				if (crowdinPack != null) packConsumer.accept(crowdinPack);
+				Pack translationsPack = Pack.readMetaAndCreate("dmz_live_translations", Component.literal("DMZ Live Translations"), true,
+						LiveTranslationPackResources::new, PackType.CLIENT_RESOURCES, Pack.Position.TOP, PackSource.BUILT_IN);
+				if (translationsPack != null) packConsumer.accept(translationsPack);
 
 				Pack dragonBallRuntimePack = Pack.readMetaAndCreate("dmz_dragonballs_runtime", Component.literal("DMZ Dragonballs Runtime Resources"), true,
 						DragonBallPackResources::new, PackType.CLIENT_RESOURCES, Pack.Position.TOP, PackSource.BUILT_IN);

@@ -1,20 +1,25 @@
-name: Crowdin Check & Upload (GitHub -> Crowdin)
+name: Language Files Check
 
 on:
   push:
     branches:
       - main
     paths:
+      - lang/**
       - src/main/resources/assets/dragonminez/lang/**
-  schedule:
-    - cron: '0 8 */2 * *' # Cada 2 dias a las 08:00 AM
+      - scripts/check_lang.sh
+  pull_request:
+    paths:
+      - lang/**
+      - src/main/resources/assets/dragonminez/lang/**
+      - scripts/check_lang.sh
   workflow_dispatch: {}
 
 permissions:
   contents: read
 
 jobs:
-  crowdin-upload:
+  check-languages:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
@@ -22,17 +27,3 @@ jobs:
 
       - name: Localization Syntax Check
         run: ./scripts/check_lang.sh
-
-      - name: Crowdin Upload (sources only)
-        uses: crowdin/github-action@v3
-        with:
-          upload_sources: true
-          #Will only upload the source file en_us.json to Crowdin, nothing more.
-          upload_translations: false
-          download_translations: false
-          download_sources: false
-          create_pull_request: false
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          CROWDIN_PROJECT_ID: ${{ secrets.CROWDIN_PROJECT_ID }}
-          CROWDIN_PERSONAL_TOKEN: ${{ secrets.CROWDIN_PERSONAL_TOKEN }}

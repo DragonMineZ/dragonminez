@@ -71,8 +71,8 @@ Trabajamos bastante para permitir que el jugador pueda modificar casi cualquier 
 
 El mod ha sido probado tanto en singleplayer como en multiplayer. A partir de la versión más reciente, salvo que se indique lo contrario, DragonMine Z es compatible con servidores dedicados de Forge.
 
-**Idiomas compatibles:** Son demasiados para listarlos aquí. ¡Echa un vistazo a nuestro [dashboard de DragonMineZ en Crowdin](https://crowdin.com/project/dragonminez)!  
-¡También puedes añadir el tuyo!
+**Idiomas compatibles:** Inglés, español (España y Latinoamérica) y portugués (Brasil). ¡Echa un vistazo a nuestras [traducciones en GitHub](https://github.com/DragonMineZ/dragonminez/tree/main/lang)!  
+¡También puedes añadir el tuyo con un pull request!
 
 <p align="center">
   <img src="https://media.forgecdn.net/attachments/description/1136088/description_8db54c73-713b-4076-a1ff-76b0ca188a32.png" alt="Comunidad" width="270" height="152">
