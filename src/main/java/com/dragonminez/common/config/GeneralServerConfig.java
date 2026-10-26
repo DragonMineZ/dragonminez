@@ -385,6 +385,7 @@ public class GeneralServerConfig {
 		private Boolean ultimateFormFixedValue = false;
 		private Integer partyMaxMembers = -1;
 		private Integer partyMaxLevelGap = 500;
+		private Integer partyQuestShareRange = 256;
 		private Double partyTpShareRatio = 0.5;
 		private Double enemyHealthPerPartyPlayer = 1.25;
 		private Double enemyDamagePerPartyPlayer = 1.1;
@@ -641,6 +642,10 @@ public class GeneralServerConfig {
 		public Integer getPartyMaxMembers() {
 			if (partyMaxMembers == null) return -1;
 			return partyMaxMembers < -1 ? -1 : partyMaxMembers;
+		}
+
+		public Integer getPartyQuestShareRange() {
+			return partyQuestShareRange != null ? Math.max(1, partyQuestShareRange) : 256;
 		}
 
 		public Integer getPartyMaxLevelGap() {

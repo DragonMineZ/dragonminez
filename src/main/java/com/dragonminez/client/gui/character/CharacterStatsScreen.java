@@ -337,18 +337,8 @@ public class CharacterStatsScreen extends BaseMenuScreen {
 
 	private double[] getDamageReductionPercentages() {
 		double baseDefense = statsData.getDefense();
-
-		int maxValue = statsData.getConfiguredMaxValue();
-		double expectedMaxStats = statsData.isMaxLevelValueInsteadOfStats() ? (maxValue * 6.0) / 2.0 : maxValue;
-		double expectedMaxDef = expectedMaxStats * statsData.getStatScaling("DEF");
-		double k_factor = Math.max(12.0, expectedMaxDef * ConfigManager.getCombatConfig().getDefenseReductionScale());
-
-		double baseReduction;
-		if (baseDefense >= 0) baseReduction = baseDefense / (k_factor + baseDefense);
-		else baseReduction = baseDefense / (k_factor - baseDefense);
-
 		double baseCap = ConfigManager.getCombatConfig().getBaseDamageReductionCap();
-		baseReduction = Mth.clamp(baseReduction, 0.0, baseCap);
+		double baseReduction = Mth.clamp(statsData.getBaseDamageReduction(baseDefense), 0.0, baseCap);
 
 		int totalProtection = 0;
 		if (Minecraft.getInstance().player != null) {

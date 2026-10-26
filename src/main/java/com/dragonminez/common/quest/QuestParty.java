@@ -1,5 +1,6 @@
 package com.dragonminez.common.quest;
 
+import com.dragonminez.common.config.ConfigManager;
 import com.dragonminez.common.stats.StatsCapability;
 import com.dragonminez.common.stats.StatsData;
 import com.dragonminez.common.stats.StatsProvider;
@@ -15,8 +16,6 @@ import java.util.ArrayList;
 import java.util.List;
 
 public final class QuestParty {
-	public static final double SHARE_RANGE = 128.0;
-	private static final double SHARE_RANGE_SQR = SHARE_RANGE * SHARE_RANGE;
 
 	private QuestParty() {
 	}
@@ -24,7 +23,8 @@ public final class QuestParty {
 	public static boolean inShareRange(ServerPlayer a, ServerPlayer b) {
 		if (a == null || b == null) return false;
 		if (a == b) return true;
-		return a.level() == b.level() && a.distanceToSqr(b) <= SHARE_RANGE_SQR;
+		double range = ConfigManager.getServerConfig().getGameplay().getPartyQuestShareRange();
+		return a.level() == b.level() && a.distanceToSqr(b) <= range * range;
 	}
 
 	public static PlayerQuestData questData(ServerPlayer player) {

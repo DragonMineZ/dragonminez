@@ -698,17 +698,7 @@ public class StatsData {
 		double flatMitigation = Math.min(rawFlatMitigation, flatAbsorbCap);
 		double postFlatDamage = Math.max(0.0, incomingDamage - flatMitigation);
 
-		int maxValue = getConfiguredMaxValue();
-		double expectedMaxStats = isMaxLevelValueInsteadOfStats() ? (maxValue * 6.0) / 2.0 : maxValue;
-		double expectedMaxDef = expectedMaxStats * getStatScaling("DEF");
-		double k_factor = Math.max(12.0, expectedMaxDef * ConfigManager.getCombatConfig().getDefenseReductionScale());
-
-		double baseReduction;
-		if (baseDefense >= 0) baseReduction = baseDefense / (k_factor + baseDefense);
-		else baseReduction = baseDefense / (k_factor - baseDefense);
-
-		double baseCap = ConfigManager.getCombatConfig().getBaseDamageReductionCap();
-		baseReduction = Math.min(baseReduction, baseCap);
+		double baseReduction = getBaseDamageReduction(baseDefense);
 
 		double remainingDamage = postFlatDamage * (1.0 - baseReduction);
 
@@ -743,6 +733,24 @@ public class StatsData {
 		}
 
 		return afterEnchant;
+	}
+
+	public double getBaseDamageReduction(double baseDefense) {
+		CombatConfig cfg = ConfigManager.getCombatConfig();
+		int maxValue = getConfiguredMaxValue();
+		double expectedMaxStats = isMaxLevelValueInsteadOfStats() ? (maxValue * 6.0) / 2.0 : maxValue;
+		double expectedMaxDef = expectedMaxStats * getStatScaling("DEF");
+		double cap = cfg.getBaseDamageReductionCap();
+		double softcapReduction = Math.min(cfg.getDefenseSoftcapReduction(), cap);
+		double softcap = Math.max(12.0, expectedMaxDef * cfg.getDefenseSoftcapStatFraction());
+		double hardcap = Math.max(softcap * 1.01, expectedMaxDef * cfg.getDefenseHardcapStatFraction());
+		double k = softcap * (1.0 - softcapReduction) / softcapReduction;
+
+		if (baseDefense < 0) return baseDefense / (k - baseDefense);
+		if (baseDefense <= softcap) return Math.min(baseDefense / (k + baseDefense), cap);
+		if (baseDefense >= hardcap) return cap;
+		double progress = (baseDefense - softcap) / (hardcap - softcap);
+		return softcapReduction + (cap - softcapReduction) * (1.0 - (1.0 - progress) * (1.0 - progress));
 	}
 
 	private double computeAdaptativeDefenseMitigation(double ratio) {

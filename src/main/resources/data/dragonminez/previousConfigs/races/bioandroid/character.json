@@ -1,6 +1,5 @@
 {
-  "configVersion": "2.1.2",
-  "raceName": "bioandroid",
+  "configVersion": "2.2.0",
   "hasGender": false,
   "useVanillaSkin": false,
   "customModel": "",
@@ -9,36 +8,73 @@
   "racialSkill": "bioandroid",
   "hasSaiyanTail": false,
   "auraType": "kakarot",
+  "auraType3D": "userPreference",
+  "aura3DStyle": {
+    "size": [
+      1.1,
+      1.17,
+      1.02
+    ],
+    "flamePeaks": 12,
+    "waveFrequency": 2.0,
+    "waveSpeed": 5.0,
+    "waveAmplitude": 0.75,
+    "noiseDetail": 0.1,
+    "upwardBias": 0.54,
+    "coreAlpha": 0.05,
+    "rimAlpha": 1.0,
+    "rimPower": 4.0,
+    "rimThreshold": 0.05,
+    "coreColor": "",
+    "rimColor": "",
+    "noiseColor": "",
+    "bloomIntensity": 1.0,
+    "spikeDensity": 32,
+    "spikeBurstRate": 3.0,
+    "spikeRarity": 3.0,
+    "bandStart": 0.5,
+    "secondBorderColor": ""
+  },
   "defaultModelScaling": [
     0.9375,
     0.9375,
     0.9375
   ],
   "defaultBodyType": 0,
+  "slimBodyTypes": [],
   "defaultHairType": 0,
   "defaultEyesType": 0,
   "defaultNoseType": 0,
   "defaultMouthType": 0,
   "defaultTattooType": 0,
-  "defaultBodyColor": "#187600",
-  "defaultBodyColor2": "#9FE321",
-  "defaultBodyColor3": "#FF7600",
-  "defaultHairColor": "#187600",
+  "defaultBodyColor": "#396E14",
+  "defaultBodyColor2": "#c7b022",
+  "defaultBodyColor3": "#fa9a02",
+  "defaultHairColor": "#38628F",
   "defaultEye1Color": "#2E2424",
   "defaultEye2Color": "#F06F6E",
   "defaultAuraColor": "#1AA700",
   "formSkillsCosts": {
-    "legendaryforms": [
-      -1,
-      -1,
-      -1
-    ],
-    "godforms": [],
-    "superforms": [
-      26000,
-      57000,
-      88000,
-      125000
-    ]
+    "legendaryforms": {
+      "buyFromMaster": false,
+      "prices": [
+        -1,
+        -1,
+        -1
+      ]
+    },
+    "godforms": {
+      "buyFromMaster": false,
+      "prices": []
+    },
+    "superforms": {
+      "buyFromMaster": false,
+      "prices": [
+        26000,
+        57000,
+        88000,
+        125000
+      ]
+    }
   }
 }
