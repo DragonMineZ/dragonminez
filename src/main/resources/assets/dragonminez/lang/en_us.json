@@ -315,6 +315,7 @@
   "gui.dragonminez.bonus.cell_jr": "Cell Jr.",
   "dynamicgrowth.dragonminez.title": "Dynamic Growth:",
   "dynamicgrowth.dragonminez.maxed": "Limit reached",
+  "dynamicgrowth.dragonminez.disabled": "Disabled in your settings",
   "dynamicgrowth.dragonminez.stat_gain": "%s increased to %s",
   "gui.dragonminez.character_stats.form.mastery": "Mastery:",
   "gui.dragonminez.character_stats.alignment": "Alignment",

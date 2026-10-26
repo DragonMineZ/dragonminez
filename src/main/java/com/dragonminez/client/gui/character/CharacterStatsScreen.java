@@ -760,6 +760,10 @@ public class CharacterStatsScreen extends BaseMenuScreen {
 		}
 
 		extras.add(tr("dynamicgrowth.dragonminez.title").withStyle(ChatFormatting.AQUA));
+		if (!statsData.getDynamicGrowth().isGrowthEnabled(stat)) {
+			extras.add(txt("  ").append(tr("dynamicgrowth.dragonminez.disabled")).withStyle(ChatFormatting.GRAY));
+			return;
+		}
 		if (statsData.getMaxAllowedIncreaseForStat(statName, 1) <= 0) {
 			extras.add(txt("  ").append(tr("dynamicgrowth.dragonminez.maxed")).withStyle(ChatFormatting.GREEN));
 			return;
