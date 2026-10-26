@@ -40,7 +40,7 @@ import java.util.List;
 
 @OnlyIn(Dist.CLIENT)
 public class NpcDialogueScreen extends ScaledScreen {
-	static final ResourceLocation FONT = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "smooth");
+	public static final ResourceLocation FONT =ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "smooth");
 
 	private static final int MARGIN = 16;
 	private static final int GAP = 14;

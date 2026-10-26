@@ -5,6 +5,7 @@ import com.dragonminez.LogUtil;
 import com.dragonminez.common.hair.HairStyleSlot;
 import com.dragonminez.common.hair.HairSanitizer;
 import com.dragonminez.common.config.ConfigManager;
+import com.dragonminez.common.events.DMZEvent;
 import com.dragonminez.common.hair.CustomHair;
 import com.dragonminez.common.network.NetworkHandler;
 import com.dragonminez.common.network.S2C.StatsSyncS2C;
@@ -16,6 +17,7 @@ import com.dragonminez.common.util.TransformationsHelper;
 import com.dragonminez.server.util.MutantManager;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.network.NetworkEvent;
 
 import java.util.function.Supplier;
@@ -197,6 +199,7 @@ public class CreateCharacterC2S {
 					player.setHealth(player.getMaxHealth());
 					NetworkHandler.sendToTrackingEntityAndSelf(new StatsSyncS2C(player), player);
 					MutantManager.rollForPlayer(player, data);
+					MinecraftForge.EVENT_BUS.post(new DMZEvent.CharacterCreatedEvent(player, data));
 				}
 			});
 		});

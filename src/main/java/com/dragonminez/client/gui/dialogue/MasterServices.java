@@ -1,5 +1,6 @@
 package com.dragonminez.client.gui.dialogue;
 
+import com.dragonminez.client.events.DMZClientEvent;
 import com.dragonminez.client.gui.character.minigames.UltimateChallenge;
 import com.dragonminez.client.gui.hair.HairEditorScreen;
 import com.dragonminez.common.alignment.AlignmentBand;
@@ -14,6 +15,7 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.world.item.ItemStack;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
+import net.minecraftforge.common.MinecraftForge;
 
 import java.util.List;
 
@@ -77,6 +79,7 @@ final class MasterServices {
 			default -> {
 			}
 		}
+		MinecraftForge.EVENT_BUS.post(new DMZClientEvent.NpcDialogueOptionsEvent(npcId, stats, player, host, options));
 	}
 
 	private void karin(List<DialogueOption> options, StatsData stats, LocalPlayer player) {

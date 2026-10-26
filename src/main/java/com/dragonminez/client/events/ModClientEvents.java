@@ -8,6 +8,7 @@ import com.dragonminez.client.animation.CombatAnimationResolver;
 import com.dragonminez.client.animation.EvasionAnimations;
 import com.dragonminez.client.animation.KiAnimations;
 import com.dragonminez.client.gui.UtilityMenuScreen;
+import com.dragonminez.client.gui.character.tab.CharacterTabs;
 import com.dragonminez.client.gui.hud.*;
 import com.dragonminez.client.gui.tooltip.*;
 import com.dragonminez.client.init.blocks.renderer.DragonBallBlockRenderer;
@@ -162,6 +163,7 @@ public class ModClientEvents {
 			BetaWhitelist.reload();
 			SkinCacheManager.init();
 			DBSagasEntity.setRenderExtentsProvider(GiantRenderBounds::extentsFor);
+			CharacterTabs.postRegistrationEvent();
 
 			//Bloques
 			BlockEntityRenderers.register(MainBlockEntities.DRAGON_BALL_BLOCK_ENTITY.get(), DragonBallBlockRenderer::new);

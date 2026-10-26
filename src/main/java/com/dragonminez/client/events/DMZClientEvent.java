@@ -1,6 +1,9 @@
 package com.dragonminez.client.events;
 
+import com.dragonminez.client.gui.dialogue.DialogueOption;
+import com.dragonminez.client.gui.dialogue.NpcDialogueScreen;
 import com.dragonminez.common.combat.player.AttackHand;
+import com.dragonminez.common.stats.StatsData;
 import lombok.Getter;
 import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.world.entity.Entity;
@@ -86,5 +89,22 @@ public class DMZClientEvent {
 			this.targetId = targetId;
 		}
 
+	}
+
+	@Getter
+	public static class NpcDialogueOptionsEvent extends Event {
+		private final String npcId;
+		private final StatsData stats;
+		private final LocalPlayer player;
+		private final NpcDialogueScreen screen;
+		private final List<DialogueOption> options;
+
+		public NpcDialogueOptionsEvent(String npcId, StatsData stats, LocalPlayer player, NpcDialogueScreen screen, List<DialogueOption> options) {
+			this.npcId = npcId;
+			this.stats = stats;
+			this.player = player;
+			this.screen = screen;
+			this.options = options;
+		}
 	}
 }

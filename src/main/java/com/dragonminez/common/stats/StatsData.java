@@ -737,9 +737,7 @@ public class StatsData {
 
 	public double getBaseDamageReduction(double baseDefense) {
 		CombatConfig cfg = ConfigManager.getCombatConfig();
-		int maxValue = getConfiguredMaxValue();
-		double expectedMaxStats = isMaxLevelValueInsteadOfStats() ? (maxValue * 6.0) / 2.0 : maxValue;
-		double expectedMaxDef = expectedMaxStats * getStatScaling("DEF");
+		double expectedMaxDef = getConfiguredMaxValue() * getStatScaling("DEF");
 		double cap = cfg.getBaseDamageReductionCap();
 		double softcapReduction = Math.min(cfg.getDefenseSoftcapReduction(), cap);
 		double softcap = Math.max(12.0, expectedMaxDef * cfg.getDefenseSoftcapStatFraction());
