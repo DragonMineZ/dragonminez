@@ -328,7 +328,7 @@ public class FlySkillEvent {
 		Minecraft mc = Minecraft.getInstance();
 		LocalPlayer player = mc.player;
 
-		if (player == null) return;
+		if (player == null || mc.isPaused()) return;
 
 		boolean startedGroundActivation = false;
 		if (pendingGroundActivation) {

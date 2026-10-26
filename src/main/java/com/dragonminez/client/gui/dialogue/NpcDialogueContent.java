@@ -145,6 +145,11 @@ final class NpcDialogueContent {
 		host.refreshOptions();
 	}
 
+	void replaceQuests(List<DialogueQuest> fresh) {
+		quests.clear();
+		quests.addAll(fresh);
+	}
+
 	void accept(DialogueQuest quest) {
 		String key = DialogueResultS2C.questStart(quest.id);
 		if (pending.containsKey(key)) return;

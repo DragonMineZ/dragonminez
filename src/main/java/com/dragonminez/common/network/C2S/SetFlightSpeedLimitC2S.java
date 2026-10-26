@@ -35,18 +35,8 @@ public class SetFlightSpeedLimitC2S {
 			StatsProvider.get(StatsCapability.INSTANCE, player).ifPresent(data -> {
 				int maxFlightSpeed = 100;
 
-				int newFlightSpeed;
-				if (flightSpeed <= 0) {
-					newFlightSpeed = 0;
-				} else {
-					int snapped = (flightSpeed / 5) * 5;
-					newFlightSpeed = Math.max(5, Math.min(maxFlightSpeed, snapped));
-				}
-
+				int newFlightSpeed = flightSpeed <= 0 ? maxFlightSpeed : Math.max(5, Math.min(maxFlightSpeed, (flightSpeed / 5) * 5));
 				data.getResources().setFlightSpeedLimit(newFlightSpeed);
-				if (newFlightSpeed > 0 && data.getResources().getFlightSpeedLimit() > newFlightSpeed) {
-					data.getResources().setFlightSpeedLimit(newFlightSpeed);
-				}
 
 				StatsSyncS2C.sendRequested(player);
 			});

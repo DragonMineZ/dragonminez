@@ -3,6 +3,7 @@ package com.dragonminez.server.world.structure.placement;
 import com.dragonminez.Env;
 import com.dragonminez.LogUtil;
 import com.dragonminez.common.config.ConfigManager;
+import com.dragonminez.server.world.npc.StructureNpcs;
 import com.dragonminez.server.world.data.StructurePlanSavedData;
 import net.minecraft.core.Holder;
 import net.minecraft.core.SectionPos;
@@ -214,6 +215,8 @@ public final class StructureRepairManager {
 				result.put(placement.placementSalt(), set.structures().get(0).structure());
 			} else if (set.placement() instanceof UniqueNearSpawnPlacement placement) {
 				result.put(placement.placementSalt(), set.structures().get(0).structure());
+			} else if (set.placement() instanceof FixedStructurePlacement placement) {
+				result.put(placement.placementSalt(), set.structures().get(0).structure());
 			}
 		}
 		return result;
@@ -226,6 +229,8 @@ public final class StructureRepairManager {
 			if (set.structures().isEmpty()) continue;
 			if (set.placement() instanceof UniqueNearSpawnPlacement placement) {
 				result.put(placement.placementSalt(), placement.getStructureChunk(level.getSeed()));
+			} else if (set.placement() instanceof FixedStructurePlacement placement) {
+				result.put(placement.placementSalt(), new ChunkPos(placement.getFixedX(), placement.getFixedZ()));
 			}
 		}
 		return result;
@@ -613,6 +618,7 @@ public final class StructureRepairManager {
 				work.start.placeInChunk(level, level.structureManager(), generator, level.getRandom(), sliceBox, work.pos);
 				if (--work.remaining <= 0) {
 					chunk.addReferenceForStructure(work.structure, work.start.getChunkPos().toLong());
+					StructureNpcs.onChunkLoad(level, chunk);
 					this.active.remove(key);
 					if (work.forced != null) completeForced(level, work.forced, key);
 				}

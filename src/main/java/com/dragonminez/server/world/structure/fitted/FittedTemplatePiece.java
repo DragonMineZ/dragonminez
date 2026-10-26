@@ -1,10 +1,16 @@
 package com.dragonminez.server.world.structure.fitted;
 
+import com.dragonminez.Env;
+import com.dragonminez.LogUtil;
+import com.dragonminez.common.init.entities.MastersEntity;
+import com.dragonminez.common.init.entities.questnpc.QuestNPCEntity;
 import com.dragonminez.mixin.common.StructureTemplateAccessor;
 import com.dragonminez.mixin.common.StructureTemplatePaletteInvoker;
 import com.dragonminez.server.world.structure.helper.MainStructureTypes;
 import com.dragonminez.server.world.structure.processor.ExteriorAirProcessor;
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.SectionPos;
+import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.DoubleTag;
 import net.minecraft.nbt.ListTag;
@@ -42,11 +48,16 @@ import net.minecraft.world.phys.Vec3;
 import java.util.ArrayList;
 import java.util.ConcurrentModificationException;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
+import java.util.concurrent.ConcurrentHashMap;
 
 public class FittedTemplatePiece extends TemplateStructurePiece {
 	public static final String ENTITY_KEY_TAG = "dmz_structure_entity";
 	private static final double TWIN_RADIUS = 4.0D;
+	private static final int NPC_SEARCH_RADIUS = 16;
+	private static final int NPC_SEARCH_HEIGHT = 32;
+	private static final Map<EntityType<?>, Boolean> RESTORABLE = new ConcurrentHashMap<>();
 	private static final int GAP_MARGIN = 8;
 	private static final int PLACE_FLAGS = Block.UPDATE_CLIENTS | Block.UPDATE_KNOWN_SHAPE;
 	private static final BlockState AIR = Blocks.AIR.defaultBlockState();
@@ -174,24 +185,79 @@ public class FittedTemplatePiece extends TemplateStructurePiece {
 			String key = this.templateName + "@" + this.templatePosition.asLong() + "#" + i;
 			Vec3 pos = StructureTemplate.transform(info.pos, Mirror.NONE, this.rotation, BlockPos.ZERO).add(origin);
 			if (isPlaced(level, pos, key)) continue;
-
-			CompoundTag tag = info.nbt.copy();
-			ListTag position = new ListTag();
-			position.add(DoubleTag.valueOf(pos.x));
-			position.add(DoubleTag.valueOf(pos.y));
-			position.add(DoubleTag.valueOf(pos.z));
-			tag.put("Pos", position);
-			tag.remove("UUID");
-			create(level, tag).ifPresent(entity -> {
-				float yaw = entity.rotate(this.rotation);
-				entity.moveTo(pos.x, pos.y, pos.z, yaw, entity.getXRot());
-				entity.getPersistentData().putString(ENTITY_KEY_TAG, key);
-				if (entity instanceof Mob mob) {
-					mob.finalizeSpawn(level, level.getCurrentDifficultyAt(BlockPos.containing(pos)), MobSpawnType.STRUCTURE, null, tag);
-				}
-				level.addFreshEntityWithPassengers(entity);
-			});
+			spawnTemplateEntity(level, info, pos, key);
 		}
+	}
+
+	public void restoreMissingNpcs(ServerLevel level, ChunkPos chunk) {
+		List<StructureTemplate.StructureEntityInfo> entities = ((StructureTemplateAccessor) this.template).getEntityInfoList();
+		Vec3 origin = Vec3.atLowerCornerOf(this.templatePosition);
+		for (int i = 0; i < entities.size(); i++) {
+			StructureTemplate.StructureEntityInfo info = entities.get(i);
+			BlockPos blockPos = StructureTemplate.transform(info.blockPos, Mirror.NONE, this.rotation, BlockPos.ZERO).offset(this.templatePosition);
+			if (SectionPos.blockToSectionCoord(blockPos.getX()) != chunk.x || SectionPos.blockToSectionCoord(blockPos.getZ()) != chunk.z) continue;
+			EntityType<?> type = EntityType.by(info.nbt).orElse(null);
+			if (type == null || !isRestorableNpc(level, type)) continue;
+			if (!entitiesLoadedAround(level, blockPos)) continue;
+			String key = this.templateName + "@" + this.templatePosition.asLong() + "#" + i;
+			String npcId = info.nbt.getString("QuestNpcId");
+			AABB area = new AABB(blockPos).inflate(NPC_SEARCH_RADIUS, NPC_SEARCH_HEIGHT, NPC_SEARCH_RADIUS);
+			boolean present = !level.getEntitiesOfClass(Entity.class, area, entity -> !entity.isRemoved()
+					&& (key.equals(entity.getPersistentData().getString(ENTITY_KEY_TAG)) || isSameNpc(entity, type, npcId))).isEmpty();
+			if (present) continue;
+			Vec3 pos = StructureTemplate.transform(info.pos, Mirror.NONE, this.rotation, BlockPos.ZERO).add(origin);
+			if (spawnTemplateEntity(level, info, pos, key)) {
+				LogUtil.info(Env.SERVER, "Restored missing structure NPC {} in {} at {}", BuiltInRegistries.ENTITY_TYPE.getKey(type), this.templateName, blockPos);
+			}
+		}
+	}
+
+	private static boolean isSameNpc(Entity entity, EntityType<?> type, String npcId) {
+		if (entity.getType() != type) return false;
+		return !(entity instanceof QuestNPCEntity questNpc) || npcId.isEmpty() || npcId.equals(questNpc.getNpcId());
+	}
+
+	private static boolean isRestorableNpc(ServerLevel level, EntityType<?> type) {
+		return RESTORABLE.computeIfAbsent(type, key -> {
+			Entity sample = key.create(level);
+			boolean npc = sample instanceof MastersEntity || sample instanceof QuestNPCEntity;
+			if (sample != null) sample.discard();
+			return npc;
+		});
+	}
+
+	private static boolean entitiesLoadedAround(ServerLevel level, BlockPos pos) {
+		int minX = SectionPos.blockToSectionCoord(pos.getX() - NPC_SEARCH_RADIUS);
+		int maxX = SectionPos.blockToSectionCoord(pos.getX() + NPC_SEARCH_RADIUS);
+		int minZ = SectionPos.blockToSectionCoord(pos.getZ() - NPC_SEARCH_RADIUS);
+		int maxZ = SectionPos.blockToSectionCoord(pos.getZ() + NPC_SEARCH_RADIUS);
+		for (int x = minX; x <= maxX; x++) {
+			for (int z = minZ; z <= maxZ; z++) {
+				if (!level.areEntitiesLoaded(ChunkPos.asLong(x, z))) return false;
+			}
+		}
+		return true;
+	}
+
+	private boolean spawnTemplateEntity(WorldGenLevel level, StructureTemplate.StructureEntityInfo info, Vec3 pos, String key) {
+		CompoundTag tag = info.nbt.copy();
+		ListTag position = new ListTag();
+		position.add(DoubleTag.valueOf(pos.x));
+		position.add(DoubleTag.valueOf(pos.y));
+		position.add(DoubleTag.valueOf(pos.z));
+		tag.put("Pos", position);
+		tag.remove("UUID");
+		Optional<Entity> created = create(level, tag);
+		if (created.isEmpty()) return false;
+		Entity entity = created.get();
+		float yaw = entity.rotate(this.rotation);
+		entity.moveTo(pos.x, pos.y, pos.z, yaw, entity.getXRot());
+		entity.getPersistentData().putString(ENTITY_KEY_TAG, key);
+		if (entity instanceof Mob mob) {
+			mob.finalizeSpawn(level, level.getCurrentDifficultyAt(BlockPos.containing(pos)), MobSpawnType.STRUCTURE, null, tag);
+		}
+		level.addFreshEntityWithPassengers(entity);
+		return true;
 	}
 
 	private static Optional<Entity> create(WorldGenLevel level, CompoundTag tag) {

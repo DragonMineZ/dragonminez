@@ -6,6 +6,8 @@ import com.dragonminez.common.alignment.NpcDispositionService;
 import com.dragonminez.common.diagnostics.JsonKeys;
 import com.dragonminez.common.diagnostics.JsonLoadReport;
 import com.dragonminez.common.init.entities.questnpc.QuestNPCEntity;
+import com.dragonminez.server.world.structure.fitted.FittedTemplatePiece;
+import com.dragonminez.server.world.structure.fitted.FittedTemplateStructure;
 import com.dragonminez.server.world.structure.helper.StructureFrame;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
@@ -28,7 +30,9 @@ import net.minecraft.world.level.ChunkPos;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.chunk.LevelChunk;
 import net.minecraft.world.level.levelgen.structure.Structure;
+import net.minecraft.world.level.levelgen.structure.StructurePiece;
 import net.minecraft.world.level.levelgen.structure.StructureStart;
+import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
 import net.minecraft.resources.ResourceKey;
 import net.minecraftforge.registries.ForgeRegistries;
@@ -42,6 +46,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedQueue;
 
@@ -57,6 +62,8 @@ public final class StructureNpcs extends SimpleJsonResourceReloadListener {
 	private static final int CHUNKS_PER_TICK = 8;
 	private static final int MAX_RETRIES = 100;
 	private static final int RESCAN_RADIUS = 8;
+	private static final int RESCAN_INTERVAL_TICKS = 1200;
+	private static final int TRACKED_SEARCH_RADIUS = 16;
 
 	private static volatile Map<ResourceLocation, List<Definition>> definitions = Map.of();
 	private static volatile int generation;
@@ -142,11 +149,10 @@ public final class StructureNpcs extends SimpleJsonResourceReloadListener {
 
 	public static void onChunkLoad(ServerLevel level, LevelChunk chunk) {
 		Map<ResourceLocation, List<Definition>> current = definitions;
-		if (current.isEmpty()) return;
 		var registry = level.registryAccess().registryOrThrow(Registries.STRUCTURE);
 		for (Structure structure : chunk.getAllReferences().keySet()) {
 			ResourceLocation id = registry.getKey(structure);
-			if (id != null && current.containsKey(id)) {
+			if (structure instanceof FittedTemplateStructure || (id != null && current.containsKey(id))) {
 				PENDING.computeIfAbsent(level.dimension(), key -> new ConcurrentLinkedQueue<>()).add(chunk.getPos().toLong());
 				return;
 			}
@@ -160,8 +166,7 @@ public final class StructureNpcs extends SimpleJsonResourceReloadListener {
 	}
 
 	public static void tick(ServerLevel level) {
-		if (definitions.isEmpty()) return;
-		if (SCANNED_GENERATION.getOrDefault(level.dimension(), -1) != generation) {
+		if (SCANNED_GENERATION.getOrDefault(level.dimension(), -1) != generation || level.getGameTime() % RESCAN_INTERVAL_TICKS == 0) {
 			SCANNED_GENERATION.put(level.dimension(), generation);
 			rescanAroundPlayers(level);
 		}
@@ -174,7 +179,7 @@ public final class StructureNpcs extends SimpleJsonResourceReloadListener {
 		for (long packed : batch) {
 			ChunkPos pos = new ChunkPos(packed);
 			LevelChunk chunk = level.getChunkSource().getChunkNow(pos.x, pos.z);
-			if (chunk == null) {
+			if (chunk == null || !level.areEntitiesLoaded(packed)) {
 				if (retries.merge(packed, 1, Integer::sum) <= MAX_RETRIES) queue.add(packed);
 				else retries.remove(packed);
 				continue;
@@ -207,10 +212,15 @@ public final class StructureNpcs extends SimpleJsonResourceReloadListener {
 			ResourceLocation id = registry.getKey(structure);
 			if (id == null) continue;
 			List<Definition> list = definitionsFor(id);
-			if (list.isEmpty()) continue;
+			boolean fitted = structure instanceof FittedTemplateStructure;
+			if (list.isEmpty() && !fitted) continue;
 			for (StructureStart start : level.structureManager().startsForStructure(chunk.getPos(), candidate -> candidate == structure)) {
 				if (!start.isValid()) continue;
 				for (Definition definition : list) spawnIfMissing(level, chunk.getPos(), start, definition);
+				if (!fitted) continue;
+				for (StructurePiece piece : start.getPieces()) {
+					if (piece instanceof FittedTemplatePiece template) template.restoreMissingNpcs(level, chunk.getPos());
+				}
 			}
 		}
 	}
@@ -228,7 +238,8 @@ public final class StructureNpcs extends SimpleJsonResourceReloadListener {
 
 		String key = definition.trackingKey(start);
 		NPCPlacementSavedData tracking = NPCPlacementSavedData.get(level);
-		if (tracking.hasPlacement(key)) return;
+		Optional<UUID> tracked = tracking.getEntityUuid(key);
+		if (tracked.isPresent() && (level.getEntity(tracked.get()) != null || isPlacedNear(level, block, definition.id()))) return;
 
 		EntityType<?> type = ForgeRegistries.ENTITY_TYPES.getValue(definition.entity());
 		if (type == null) {
@@ -256,7 +267,22 @@ public final class StructureNpcs extends SimpleJsonResourceReloadListener {
 		}
 		if (!level.addFreshEntity(entity)) return;
 		tracking.markSpawned(key, entity.getUUID());
-		LogUtil.info(Env.SERVER, "StructureNpcs: spawned '{}' in {} at {}, {}, {}", definition.id(), definition.structure(),
-				Math.round(pos.x), Math.round(pos.y), Math.round(pos.z));
+		LogUtil.info(Env.SERVER, "StructureNpcs: {} '{}' in {} at {}, {}, {}", tracked.isPresent() ? "respawned" : "spawned",
+				definition.id(), definition.structure(), Math.round(pos.x), Math.round(pos.y), Math.round(pos.z));
+	}
+
+	private static boolean isPlacedNear(ServerLevel level, BlockPos pos, String placementId) {
+		int minX = SectionPos.blockToSectionCoord(pos.getX() - TRACKED_SEARCH_RADIUS);
+		int maxX = SectionPos.blockToSectionCoord(pos.getX() + TRACKED_SEARCH_RADIUS);
+		int minZ = SectionPos.blockToSectionCoord(pos.getZ() - TRACKED_SEARCH_RADIUS);
+		int maxZ = SectionPos.blockToSectionCoord(pos.getZ() + TRACKED_SEARCH_RADIUS);
+		for (int x = minX; x <= maxX; x++) {
+			for (int z = minZ; z <= maxZ; z++) {
+				if (!level.areEntitiesLoaded(ChunkPos.asLong(x, z))) return true;
+			}
+		}
+		AABB area = new AABB(pos).inflate(TRACKED_SEARCH_RADIUS);
+		return !level.getEntitiesOfClass(Entity.class, area,
+				entity -> !entity.isRemoved() && placementId.equals(entity.getPersistentData().getString(NPCPlacementManager.PLACEMENT_TAG))).isEmpty();
 	}
 }

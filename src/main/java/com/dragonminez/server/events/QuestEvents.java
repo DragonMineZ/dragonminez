@@ -6,6 +6,7 @@ import com.dragonminez.common.events.DMZEvent;
 import com.dragonminez.common.init.entities.MastersEntity;
 import com.dragonminez.common.init.entities.questnpc.QuestNPCEntity;
 import com.dragonminez.common.network.NetworkHandler;
+import com.dragonminez.common.network.StatsDeltaSync;
 import com.dragonminez.common.network.S2C.ProgressionSyncS2C;
 import com.dragonminez.common.network.S2C.StoryToastS2C;
 import com.dragonminez.common.quest.PartyManager;
@@ -32,10 +33,14 @@ import com.dragonminez.common.quest.objectives.TalkToObjective;
 import com.dragonminez.common.stats.StatsCapability;
 import com.dragonminez.common.stats.StatsData;
 import com.dragonminez.common.stats.StatsProvider;
+import com.dragonminez.common.stats.character.Cooldowns;
 import com.dragonminez.server.storage.StorageManager;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.tags.DamageTypeTags;
+import net.minecraft.world.damagesource.DamageSource;
+import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraftforge.common.MinecraftForge;
@@ -134,6 +139,50 @@ public class QuestEvents {
 		attacker.displayClientMessage(Component.translatable("message.dragonminez.quest.spar_won",
 				target.getDisplayName()), true);
 		target.discard();
+	}
+
+	@SubscribeEvent(priority = EventPriority.HIGHEST)
+	public static void onSparDeath(LivingDeathEvent event) {
+		if (!(event.getEntity() instanceof ServerPlayer player)) return;
+		StatsData data = StatsProvider.get(StatsCapability.INSTANCE, player).orElse(null);
+		if (data == null || !tryKnockOutSpar(player, data, event.getSource())) return;
+		event.setCanceled(true);
+		player.setHealth(1.0F);
+	}
+
+	public static boolean tryKnockOutSpar(ServerPlayer player, StatsData data, DamageSource source) {
+		if (source.is(DamageTypeTags.BYPASSES_INVULNERABILITY)) return false;
+		if (!(source.getEntity() instanceof LivingEntity partner) || !QuestService.isSparPartner(partner)) return false;
+		String owner = partner.getPersistentData().getString(QuestService.QUEST_OWNER_TAG);
+		if (PartyManager.getAllPartyMembers(player).stream().noneMatch(member -> member.getStringUUID().equals(owner))) return false;
+
+		int knockdownTicks = ConfigManager.getCombatConfig().getKnockdownDurationSeconds() * 20;
+		data.getStatus().setKnockedDown(true);
+		data.getCooldowns().setCooldown(Cooldowns.KNOCKDOWN_DURATION, knockdownTicks);
+		data.getCooldowns().setCooldown(Cooldowns.KNOCKDOWN_INVULN, knockdownTicks);
+		data.getCharacter().clearActiveForm(player);
+		data.getCharacter().clearActiveStackForm(player);
+		StatsDeltaSync.markDirty(player);
+
+		String questKey = partner.getPersistentData().getString(QuestService.QUEST_KEY_TAG);
+		Quest quest = QuestRegistry.getQuest(questKey);
+		for (ServerPlayer member : QuestParty.allParticipants(player, questKey)) {
+			PlayerQuestData memberData = QuestParty.questData(member);
+			if (memberData == null || !memberData.isQuestAccepted(questKey)) continue;
+			if (failQuestFor(member, memberData, questKey, quest, DMZEvent.QuestFailEvent.FailureReason.SPAR_LOST)) {
+				NetworkHandler.sendToPlayer(StoryToastS2C.questFailed(questKey), member);
+				QuestService.syncQuestState(member);
+			}
+		}
+
+		for (Entity entity : player.serverLevel().getAllEntities()) {
+			if (!(entity instanceof LivingEntity) || entity instanceof ServerPlayer) continue;
+			if (!questKey.equals(entity.getPersistentData().getString(QuestService.QUEST_KEY_TAG))) continue;
+			if (owner.equals(entity.getPersistentData().getString(QuestService.QUEST_OWNER_TAG))) entity.discard();
+		}
+
+		player.displayClientMessage(Component.translatable("message.dragonminez.quest.spar_lost", partner.getDisplayName()), true);
+		return true;
 	}
 
 	@SubscribeEvent
@@ -414,9 +463,6 @@ public class QuestEvents {
 	}
 
 	private static void processDeliveries(ServerPlayer player, PlayerQuestData pqd, String questKey, Quest quest, String npcId) {
-		if (QuestService.requiresTurnInAction(quest) && npcId.equalsIgnoreCase(quest.getTurnIn())) {
-			return;
-		}
 		QuestService.ResolvedQuest resolved = QuestService.resolveQuest(questKey);
 		if (resolved == null) {
 			return;
@@ -430,7 +476,7 @@ public class QuestEvents {
 			if (pqd.getObjectiveProgress(questKey, i) >= quest.getObjectiveRequired(pqd, questKey, i)) {
 				continue;
 			}
-			if (!quest.isParallelObjectives() && !isFirstUncompleted(pqd, questKey, quest, i)) {
+			if (!isDeliverObjectiveUnlocked(pqd, questKey, quest, i)) {
 				continue;
 			}
 			Component blocker = QuestService.deliverOnInteract(player, pqd, resolved, npcId, i);
@@ -631,6 +677,18 @@ public class QuestEvents {
 			killBlockStart--;
 		}
 		return isFirstUncompleted(pqd, questKey, quest, killBlockStart);
+	}
+
+	static boolean isDeliverObjectiveUnlocked(PlayerQuestData pqd, String questKey, Quest quest, int objectiveIndex) {
+		if (quest.isParallelObjectives()) {
+			return true;
+		}
+
+		int deliverBlockStart = objectiveIndex;
+		while (deliverBlockStart > 0 && quest.getObjectives().get(deliverBlockStart - 1) instanceof DeliverObjective) {
+			deliverBlockStart--;
+		}
+		return isFirstUncompleted(pqd, questKey, quest, deliverBlockStart);
 	}
 
 	static boolean isFirstUncompleted(PlayerQuestData pqd, String questKey, Quest quest, int targetIndex) {

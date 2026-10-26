@@ -844,6 +844,11 @@ public abstract class AbstractKiProjectile extends Projectile {
         return distanceSq < visible * visible;
     }
 
+    @Override
+    public boolean isPushedByFluid() {
+        return false;
+    }
+
     /**
      * Frustum culling uses the collision box too, which makes the effect pop out at the edge of
      * the screen: the shed embers alone reach several times the ball's radius, and a beam is

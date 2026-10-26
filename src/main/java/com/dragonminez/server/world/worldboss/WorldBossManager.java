@@ -20,18 +20,25 @@ import net.minecraft.world.entity.MobSpawnType;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.ChunkPos;
 import net.minecraft.world.level.Level;
+import net.minecraft.world.level.dimension.DimensionType;
 import net.minecraft.world.level.levelgen.structure.Structure;
 import net.minecraft.world.level.levelgen.structure.StructureStart;
 import net.minecraft.world.level.saveddata.SavedData;
 import net.minecraft.world.level.storage.DimensionDataStorage;
+import net.minecraft.world.level.storage.LevelResource;
 import net.minecraft.world.phys.Vec3;
 
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
+import java.util.stream.Stream;
 
 public final class WorldBossManager {
 
@@ -58,10 +65,50 @@ public final class WorldBossManager {
 
     private record Truce(Set<UUID> members, long expiresAt) {}
 
+    private static final Set<ResourceKey<Level>> WIPED_DIMENSIONS = new HashSet<>();
+
     private WorldBossManager() {}
 
     public static List<WorldBossLair> lairs() {
         return LAIRS;
+    }
+
+    public static void detectWipedDimensions(MinecraftServer server) {
+        WIPED_DIMENSIONS.clear();
+        Path root = server.getWorldPath(LevelResource.ROOT);
+        for (WorldBossLair lair : LAIRS) {
+            if (lair.dimension().equals(Level.OVERWORLD)) continue;
+            if (!hasRegionFiles(DimensionType.getStorageFolder(lair.dimension(), root).resolve("region"))) {
+                WIPED_DIMENSIONS.add(lair.dimension());
+            }
+        }
+    }
+
+    private static boolean hasRegionFiles(Path region) {
+        if (!Files.isDirectory(region)) return false;
+        try (Stream<Path> files = Files.list(region)) {
+            return files.anyMatch(file -> file.getFileName().toString().endsWith(".mca"));
+        } catch (IOException e) {
+            return true;
+        }
+    }
+
+    public static void resetLairsInWipedDimensions(MinecraftServer server) {
+        if (WIPED_DIMENSIONS.isEmpty()) return;
+        Data data = Data.get(server);
+        for (WorldBossLair lair : LAIRS) {
+            if (!WIPED_DIMENSIONS.contains(lair.dimension())) continue;
+            Data.Entry entry = data.peek(lair.key());
+            if (entry == null || (entry.lair == null && !entry.arenaBuilt && entry.bossId == null)) continue;
+            entry.lair = null;
+            entry.lairResolved = false;
+            entry.arenaBuilt = false;
+            entry.bossId = null;
+            entry.nextRespawnTick = 0L;
+            data.markDirty();
+            LogUtil.info(Env.SERVER, "World boss {} lair reset: {} has no generated chunks anymore", lair.key(), lair.dimension().location());
+        }
+        WIPED_DIMENSIONS.clear();
     }
 
     public static WorldBossLair lair(String key) {

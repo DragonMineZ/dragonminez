@@ -17,6 +17,8 @@ import com.dragonminez.client.util.TextUtil;
 import com.dragonminez.common.combat.logic.player.PlayerAttackHelper;
 import com.dragonminez.common.combat.player.AttackHand;
 import com.dragonminez.common.config.ConfigManager;
+import com.dragonminez.common.config.TpBoost;
+import com.dragonminez.common.config.TpSource;
 import com.dragonminez.common.config.RaceStatsConfig;
 import com.dragonminez.common.init.MainEnchants;
 import com.dragonminez.common.init.MainSounds;
@@ -61,6 +63,8 @@ import java.util.Locale;
 
 @OnlyIn(Dist.CLIENT)
 public class CharacterStatsScreen extends BaseMenuScreen {
+
+	private static final TpSource DISPLAYED_TP_SOURCE = TpSource.KILL;
 
 	private static final ResourceLocation MENU_BIG = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID,
 			"textures/gui/menu/menubig.png");
@@ -1553,41 +1557,60 @@ public class CharacterStatsScreen extends BaseMenuScreen {
 
 		double eps = 0.005;
 		List<Component> extras = new ArrayList<>();
+		List<TpBoost> boosts = ConfigManager.getServerConfig().getGameplay().getTpGainBoosts(DISPLAYED_TP_SOURCE);
 
-		double general = statsData.getTpGlobalMultiplier();
-		extras.add(tr("gui.dragonminez.character_stats.tp_multiplier.tooltip.general", NumberFormattingUtil.formatUpToTwoDecimals(general)).withStyle(ChatFormatting.GRAY));
+		if (boosts.contains(TpBoost.GLOBAL)) {
+			double general = statsData.getTpGlobalMultiplier();
+			extras.add(tr("gui.dragonminez.character_stats.tp_multiplier.tooltip.general", NumberFormattingUtil.formatUpToTwoDecimals(general)).withStyle(ChatFormatting.GRAY));
+		}
 
-		double clazz = statsData.getTpClassMultiplier();
-		extras.add(tr("gui.dragonminez.character_stats.tp_multiplier.tooltip.class", NumberFormattingUtil.formatUpToTwoDecimals(clazz)).withStyle(ChatFormatting.AQUA));
+		if (boosts.contains(TpBoost.CLASS)) {
+			double clazz = statsData.getTpClassMultiplier();
+			extras.add(tr("gui.dragonminez.character_stats.tp_multiplier.tooltip.class", NumberFormattingUtil.formatUpToTwoDecimals(clazz)).withStyle(ChatFormatting.AQUA));
+		}
 
-		if (statsData.isFrostDemonTpPassiveActive()) {
+		if (boosts.contains(TpBoost.RACIALSKILL) && statsData.isFrostDemonTpPassiveActive()) {
 			double frost = statsData.getTpFrostDemonMultiplier();
 			extras.add(tr("gui.dragonminez.character_stats.tp_multiplier.tooltip.frost_demon", NumberFormattingUtil.formatUpToTwoDecimals(frost)).withStyle(ChatFormatting.LIGHT_PURPLE));
 		}
 
 		double htc = statsData.getTpHTCMultiplier();
-		if (Math.abs(htc - 1.0) > eps) {
+		if (boosts.contains(TpBoost.HTC) && Math.abs(htc - 1.0) > eps) {
 			extras.add(tr("gui.dragonminez.character_stats.tp_multiplier.tooltip.htc", NumberFormattingUtil.formatUpToTwoDecimals(htc)).withStyle(ChatFormatting.GOLD));
 		}
 
+		double otherworld = statsData.getTpOtherworldMultiplier();
+		if (boosts.contains(TpBoost.OTHERWORLD) && Math.abs(otherworld - 1.0) > eps) {
+			extras.add(tr("gui.dragonminez.character_stats.tp_multiplier.tooltip.otherworld", NumberFormattingUtil.formatUpToTwoDecimals(otherworld)).withStyle(ChatFormatting.DARK_AQUA));
+		}
+
 		double gravity = ClientGravityState.getTpGravityMult();
-		if (Math.abs(gravity - 1.0) > eps) {
+		if (boosts.contains(TpBoost.GRAVITY) && ConfigManager.getServerConfig().getGameplay().getGravityBonusEnabled() && Math.abs(gravity - 1.0) > eps) {
 			extras.add(tr("gui.dragonminez.character_stats.tp_multiplier.tooltip.gravity", NumberFormattingUtil.formatUpToTwoDecimals(gravity)).withStyle(ChatFormatting.GREEN));
 		}
 
 		double weightBell = ClientGravityState.getWeightTpMult();
-		if (Math.abs(weightBell - 1.0) > eps) {
+		if (boosts.contains(TpBoost.WEIGHTS) && Math.abs(weightBell - 1.0) > eps) {
 			extras.add(tr("gui.dragonminez.character_stats.tp_multiplier.tooltip.weight", NumberFormattingUtil.formatUpToTwoDecimals(weightBell)).withStyle(ChatFormatting.YELLOW));
 		}
 
 		double potionEffect = statsData.getTpPotionEffectMultiplier();
-		if (Math.abs(potionEffect - 1.0) > eps) {
+		if (boosts.contains(TpBoost.POTION) && Math.abs(potionEffect - 1.0) > eps) {
 			extras.add(tr("gui.dragonminez.character_stats.tp_multiplier.tooltip.effect", NumberFormattingUtil.formatUpToTwoDecimals(potionEffect)).withStyle(ChatFormatting.LIGHT_PURPLE));
 		}
 
 		double mutantTp = statsData.getMutantTpMultiplier();
-		if (Math.abs(mutantTp - 1.0) > eps) {
+		if (boosts.contains(TpBoost.MUTANT) && Math.abs(mutantTp - 1.0) > eps) {
 			extras.add(tr("gui.dragonminez.character_stats.tp_multiplier.tooltip.mutant", NumberFormattingUtil.formatUpToTwoDecimals(mutantTp)).withStyle(ChatFormatting.DARK_PURPLE));
+		}
+
+		double difficultyTp = statsData.getDifficultyTpMultiplier();
+		if (Math.abs(difficultyTp - 1.0) > eps) {
+			if (boosts.contains(TpBoost.DIFFICULTY)) {
+				extras.add(tr("gui.dragonminez.character_stats.tp_multiplier.tooltip.difficulty", NumberFormattingUtil.formatUpToTwoDecimals(difficultyTp)).withStyle(ChatFormatting.RED));
+			} else if (ConfigManager.getServerConfig().getGameplay().getTpGainBoosts(TpSource.STORY).contains(TpBoost.DIFFICULTY)) {
+				extras.add(tr("gui.dragonminez.character_stats.tp_multiplier.tooltip.difficulty_story", NumberFormattingUtil.formatUpToTwoDecimals(difficultyTp)).withStyle(ChatFormatting.DARK_GRAY));
+			}
 		}
 
 		double progressionTp = statsData.getProgressionTpGainMultiplier();
@@ -1595,7 +1618,7 @@ public class CharacterStatsScreen extends BaseMenuScreen {
 			extras.add(tr("gui.dragonminez.character_stats.tp_multiplier.tooltip.progression", NumberFormattingUtil.formatUpToTwoDecimals(progressionTp)).withStyle(ChatFormatting.GOLD));
 		}
 
-		double totalMultiplier = statsData.getTpTotalMultiplier();
+		double totalMultiplier = statsData.getTpSourceMultiplier(DISPLAYED_TP_SOURCE);
 		String totalMult = NumberFormattingUtil.formatUpToTwoDecimals(totalMultiplier);
 
 		Component label = tr("gui.dragonminez.character_stats.tp_multiplier");

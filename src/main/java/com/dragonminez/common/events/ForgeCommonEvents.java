@@ -494,6 +494,7 @@ public class ForgeCommonEvents {
 	@SubscribeEvent
 	public static void onServerAboutToStart(net.minecraftforge.event.server.ServerAboutToStartEvent event) {
 		if (!event.getServer().isDedicatedServer()) ConfigManager.reload();
+		com.dragonminez.server.world.worldboss.WorldBossManager.detectWipedDimensions(event.getServer());
 		if (ConfigManager.getServerConfig().getWorldGen().getOtherworldActive()) {
 			OtherworldRegionLoader.loadPreGeneratedRegions(event.getServer());
 		}
@@ -512,6 +513,7 @@ public class ForgeCommonEvents {
 		DialogueRegistry.loadAll(event.getServer());
 		NpcAlignmentRules.load(event.getServer());
 		NPCPlacementManager.load(event.getServer());
+		com.dragonminez.server.world.worldboss.WorldBossManager.resetLairsInWipedDimensions(event.getServer());
 
 		WorldGuardCompat.init();
 

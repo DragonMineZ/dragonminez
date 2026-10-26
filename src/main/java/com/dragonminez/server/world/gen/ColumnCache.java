@@ -3,15 +3,25 @@ package com.dragonminez.server.world.gen;
 import net.minecraft.util.KeyDispatchDataCodec;
 import net.minecraft.world.level.levelgen.DensityFunction;
 
+import java.util.Arrays;
+import java.util.concurrent.atomic.AtomicLong;
+
 public final class ColumnCache implements DensityFunction {
 	public static final KeyDispatchDataCodec<ColumnCache> CODEC = KeyDispatchDataCodec.of(
 			DensityFunction.HOLDER_HELPER_CODEC.fieldOf("argument").xmap(ColumnCache::new, ColumnCache::argument));
 
+	private static final int SLOTS = 16;
+	private static final long EMPTY = Long.MIN_VALUE;
+	private static final long UNOWNED = -1L;
+
 	private final DensityFunction argument;
-	private final Column[] columns = new Column[16];
+	private final AtomicLong owner = new AtomicLong(UNOWNED);
+	private final long[] keys = new long[SLOTS];
+	private final double[] values = new double[SLOTS];
 
 	public ColumnCache(DensityFunction argument) {
 		this.argument = argument;
+		Arrays.fill(this.keys, EMPTY);
 	}
 
 	public DensityFunction argument() {
@@ -20,13 +30,18 @@ public final class ColumnCache implements DensityFunction {
 
 	@Override
 	public double compute(FunctionContext context) {
+		long thread = Thread.currentThread().getId();
+		if (this.owner.get() != thread && !this.owner.compareAndSet(UNOWNED, thread)) {
+			return this.argument.compute(context);
+		}
 		int x = context.blockX();
 		int z = context.blockZ();
-		int slot = (x & 3) | (z & 3) << 2;
-		Column column = this.columns[slot];
-		if (column != null && column.x == x && column.z == z) return column.value;
+		long key = (long) x << 32 | (z & 0xFFFFFFFFL);
+		int slot = ((x ^ x >> 2) & 3) | ((z ^ z >> 2) & 3) << 2;
+		if (this.keys[slot] == key) return this.values[slot];
 		double value = this.argument.compute(context);
-		this.columns[slot] = new Column(x, z, value);
+		this.keys[slot] = key;
+		this.values[slot] = value;
 		return value;
 	}
 
@@ -53,8 +68,5 @@ public final class ColumnCache implements DensityFunction {
 	@Override
 	public KeyDispatchDataCodec<? extends DensityFunction> codec() {
 		return CODEC;
-	}
-
-	private record Column(int x, int z, double value) {
 	}
 }

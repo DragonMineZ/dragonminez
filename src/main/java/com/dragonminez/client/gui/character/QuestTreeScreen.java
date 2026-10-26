@@ -2504,6 +2504,7 @@ public class QuestTreeScreen extends BaseMenuScreen {
 		int required = selectedQuest != null ? selectedQuest.getObjectiveRequired(pqd, questKey, objectiveIndex) : objective.getRequired();
 		if (objective.getType() == QuestObjective.ObjectiveType.KILL
 				|| objective.getType() == QuestObjective.ObjectiveType.ITEM
+				|| objective.getType() == QuestObjective.ObjectiveType.DELIVER
 				|| objective.getType() == QuestObjective.ObjectiveType.SKILL) {
 			return description + " (" + currentProgress + "/" + required + ")";
 		}

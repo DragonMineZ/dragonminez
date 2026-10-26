@@ -111,7 +111,6 @@ public final class NotificationFeeds {
 			Component waypoint = waypointLine(objective, progress);
 			if (waypoint != null) text.append("\n").append(waypoint);
 			any = true;
-			if (!quest.isParallelObjectives()) break;
 		}
 		return any ? text : Component.translatable("gui.dragonminez.quests.status.complete");
 	}

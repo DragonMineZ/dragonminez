@@ -6,6 +6,7 @@ import com.dragonminez.common.init.MainItems;
 import com.dragonminez.common.init.MainParticles;
 import com.dragonminez.common.init.MainSounds;
 import com.dragonminez.common.init.entities.IBattlePower;
+import com.dragonminez.common.quest.QuestService;
 import com.dragonminez.common.stats.StatsCapability;
 import com.dragonminez.common.stats.StatsData;
 import com.dragonminez.common.stats.StatsProvider;
@@ -326,10 +327,10 @@ public class SagaZFightersEntity {
 
             float healthThreshold = this.getMaxHealth() * 0.25f;
 
-            if (this.getHealth() <= healthThreshold && !this.hasCheckedExplosionChance && !isExploding()) {
+            if (!this.level().isClientSide && this.getHealth() <= healthThreshold && !this.hasCheckedExplosionChance && !isExploding()) {
                 this.hasCheckedExplosionChance = true;
 
-                if (this.random.nextFloat() < 1.0F) {
+                if (this.random.nextFloat() < 0.5F && !QuestService.isSparPartner(this)) {
                     this.setExploding(true);
                 }
             }

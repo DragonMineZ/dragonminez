@@ -129,7 +129,7 @@ public class CharacterCustomizationScreen extends ScaledScreen {
 	private String currentColorField = "";
 	private boolean isUpdatingFromCode = false;
 
-	private enum TabId { PRESET, HAIR, EYES, FACE, BODY, AURA_CLASS }
+	public enum TabId { PRESET, HAIR, EYES, FACE, BODY, AURA_CLASS }
 
 	private enum PreviewRenderMode {
 		FULL_BODY, HAIR_ONLY, EYES_ONLY, NOSE_ONLY, MOUTH_ONLY, TATTOO_ONLY

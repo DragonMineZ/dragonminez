@@ -371,7 +371,7 @@ public class Character {
 
 	public static CustomHair resolveOwnStyle(Map<HairStyleSlot, CustomHair> styles, HairStyleSlot slot) {
 		CustomHair own = styles.get(slot);
-		if (own != null && !own.isEmpty()) return own;
+		if (own != null && (!own.isEmpty() || own.isKeptEmpty())) return own;
 		CustomHair base = styles.get(HairStyleSlot.BASE);
 		if (base == null) base = new CustomHair();
 		CustomHair ssj = styles.get(HairStyleSlot.SSJ);

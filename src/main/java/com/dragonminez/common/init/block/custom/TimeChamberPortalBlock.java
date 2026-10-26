@@ -14,6 +14,7 @@ import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.ChunkPos;
 import net.minecraft.world.level.Level;
+import net.minecraft.world.level.levelgen.Heightmap;
 import net.minecraft.world.level.block.BaseEntityBlock;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
@@ -75,7 +76,8 @@ public class TimeChamberPortalBlock extends BaseEntityBlock {
                         BlockPos kami = StructureLocator.locateStructure(targetLevel, DMZStructures.KAMILOOKOUT, BlockPos.ZERO);
                         backup = kami != null ? kami : targetLevel.getSharedSpawnPos();
                     } else {
-                        backup = new BlockPos(0, 130, 0);
+                        BlockPos surface = targetLevel.getHeightmapPos(Heightmap.Types.MOTION_BLOCKING_NO_LEAVES, BlockPos.ZERO);
+                        backup = new BlockPos(0, Math.min(surface.getY(), targetLevel.getMaxBuildHeight() - 2), 0);
                     }
                     teleportPlayer(pPlayer, targetLevel, backup, 90);
                 }

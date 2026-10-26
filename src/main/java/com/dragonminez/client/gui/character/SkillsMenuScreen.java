@@ -1232,7 +1232,7 @@ public class SkillsMenuScreen extends BaseMenuScreen {
 
 				if (currentCategory == SkillCategory.KI || currentCategory == SkillCategory.STRIKE || currentCategory == SkillCategory.EVASION) {
 					TechniqueData technique = NEW_SKILL_ENTRY.equals(skillName) || SAMPLE_ENTRY.equals(skillName) ? null : statsData.getTechniques().getUnlockedTechniques().get(skillName);
-					if (technique != null) {
+					if (technique != null && !PredefinedTechniques.isPredefinedTechnique(technique)) {
 						String xpText = String.valueOf(technique.getExperience());
 						int xpX = listRight - TextUtil.width(this.font, xpText, DMZ_FONT);
 						TextUtil.drawStringWithBorder(graphics, this.font, txt(xpText), xpX, itemY + 5, color);
@@ -1315,7 +1315,9 @@ public class SkillsMenuScreen extends BaseMenuScreen {
 
 		TextUtil.drawCenteredStringWithBorder(graphics, this.font, tr(tech.getName()).withStyle(ChatFormatting.BOLD), panelX + 70, yOffset, 0xFFFFFFFF);
 		yOffset += 12;
-		TextUtil.drawCenteredStringWithBorder(graphics, this.font, tr("gui.dragonminez.technique.xp", tech.getExperience()), panelX + 70, yOffset, 0xFF55FF55);
+		if (!PredefinedTechniques.isPredefinedTechnique(tech)) {
+			TextUtil.drawCenteredStringWithBorder(graphics, this.font, tr("gui.dragonminez.technique.xp", tech.getExperience()), panelX + 70, yOffset, 0xFF55FF55);
+		}
 		yOffset += 16;
 
 		if (tech instanceof KiAttackData ki) {

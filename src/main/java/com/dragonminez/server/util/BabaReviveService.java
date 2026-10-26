@@ -188,6 +188,7 @@ public class BabaReviveService {
 	}
 
 	public static double escalationMultiplier(StatsData data) {
+		if (!ConfigManager.getServerConfig().getGameplay().getBabaHardcoreEnabled()) return 1.0;
 		int repeats = Math.max(0, data.getStatus().getTempReturnsUsed() - 1);
 		return Math.min(ESCALATION_CAP, Math.pow(ESCALATION_STEP, repeats));
 	}

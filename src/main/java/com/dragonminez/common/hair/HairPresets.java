@@ -119,7 +119,7 @@ public final class HairPresets {
 	public static synchronized CustomHair get(int presetId, HairStyleSlot slot) {
 		EnumMap<HairStyleSlot, CustomHair> styles = CACHE.computeIfAbsent(presetId, HairPresets::decode);
 		CustomHair hair = styles.get(slot);
-		if (slot == HairStyleSlot.SSJ4) return hair != null && !hair.isEmpty() ? hair : getSsj4(presetId);
+		if (slot == HairStyleSlot.SSJ4) return hair != null && (!hair.isEmpty() || hair.isKeptEmpty()) ? hair : getSsj4(presetId);
 		return hair != null ? hair : styles.get(HairStyleSlot.BASE);
 	}
 

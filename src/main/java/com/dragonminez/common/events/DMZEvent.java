@@ -385,7 +385,8 @@ public abstract class DMZEvent extends Event {
 			FORCED_RESET,
 			SCRIPT,
 			TIME_EXPIRED,
-			ESCORT_FAILED
+			ESCORT_FAILED,
+			SPAR_LOST
 		}
 	}
 

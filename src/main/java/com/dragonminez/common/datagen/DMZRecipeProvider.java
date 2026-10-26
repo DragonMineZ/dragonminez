@@ -185,6 +185,10 @@ public class DMZRecipeProvider extends RecipeProvider implements IConditionBuild
 				.requires(Items.SCUTE)
 				.unlockedBy(getHasName(Items.SCUTE), has(Items.SCUTE)).group(Reference.MOD_ID)
 				.save(pWriter, ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "turtle_scale"));
+		ShapelessRecipeBuilder.shapeless(RecipeCategory.MISC, Items.SCUTE)
+				.requires(MainItems.TURTLE_SCALE.get())
+				.unlockedBy(getHasName(MainItems.TURTLE_SCALE.get()), has(MainItems.TURTLE_SCALE.get())).group(Reference.MOD_ID)
+				.save(pWriter, ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "scute_from_turtle_scale"));
 		ShapedRecipeBuilder.shaped(RecipeCategory.MISC, MainItems.EMPTY_CAPSULE.get())
 				.pattern("G").pattern("R").pattern("I")
 				.define('G', Items.GLASS_PANE).define('R', Items.REDSTONE).define('I', Items.IRON_INGOT)

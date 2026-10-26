@@ -185,6 +185,7 @@ final class QuestSheet {
 	private static boolean isCounted(QuestObjective objective) {
 		return objective.getType() == QuestObjective.ObjectiveType.KILL
 				|| objective.getType() == QuestObjective.ObjectiveType.ITEM
+				|| objective.getType() == QuestObjective.ObjectiveType.DELIVER
 				|| objective.getType() == QuestObjective.ObjectiveType.SKILL;
 	}
 

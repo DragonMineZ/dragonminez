@@ -181,9 +181,11 @@ public class StatsSyncC2S {
 
 				if (!created) {
 					character.setRace(msg.raceName);
-					character.setGender(AppearanceValidator.gender(msg.gender));
-					character.setCharacterClass(AppearanceValidator.characterClass(msg.raceName, msg.characterClass, character.getCharacterClass()));
 					if (ConfigManager.getRaceCharacter(msg.raceName) != null) character.setHasSaiyanTail(ConfigManager.getRaceCharacter(msg.raceName).getHasSaiyanTail());
+				}
+				if (fullAppearance) {
+					character.setGender(AppearanceValidator.gender(msg.gender));
+					character.setCharacterClass(AppearanceValidator.characterClass(character.getRaceName(), msg.characterClass, character.getCharacterClass()));
 				}
 				character.setHairId(AppearanceValidator.hairId(msg.hairId, character.getHairId()));
 				if (msg.customHair != null) HairSanitizer.sanitizeAndLog(msg.customHair, HairStyleSlot.BASE, player.getGameProfile().getName());

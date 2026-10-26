@@ -15,6 +15,7 @@ import com.dragonminez.common.network.S2C.StoryToastS2C;
 import com.dragonminez.common.quest.objectives.DeliverObjective;
 import com.dragonminez.common.quest.objectives.ItemObjective;
 import com.dragonminez.common.quest.objectives.KillObjective;
+import com.dragonminez.common.quest.objectives.SparObjective;
 import com.dragonminez.common.quest.objectives.TalkToObjective;
 import com.dragonminez.common.quest.rewards.KiTechniqueReward;
 import com.dragonminez.common.stats.StatsCapability;
@@ -55,6 +56,14 @@ public final class QuestService {
 	private static final double TURN_IN_NPC_RANGE = 10.0;
 	public static final String SAGA_ID_TAG = "dmz_saga_id";
 	public static final String QUEST_TEAM_TAG = "dmz_quest_team";
+
+	public static boolean isSparPartner(Entity entity) {
+		if (entity == null || !entity.getPersistentData().contains(QUEST_KEY_TAG)) return false;
+		Quest quest = QuestRegistry.getQuest(entity.getPersistentData().getString(QUEST_KEY_TAG));
+		int index = entity.getPersistentData().getInt(QUEST_OBJECTIVE_INDEX_TAG);
+		return quest != null && index >= 0 && index < quest.getObjectives().size()
+				&& quest.getObjectives().get(index) instanceof SparObjective;
+	}
 
 	private static final long RESUMMON_MIN_INTERVAL_MS = 1500L;
 	private static final Map<UUID, Long> resummonAntiSpam = new ConcurrentHashMap<>();

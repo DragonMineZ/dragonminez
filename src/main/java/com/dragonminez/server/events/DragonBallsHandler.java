@@ -6,6 +6,7 @@ import com.dragonminez.Reference;
 import com.dragonminez.common.config.ConfigManager;
 import com.dragonminez.common.dragonball.DragonBallDefinitions;
 import com.dragonminez.common.dragonball.DragonBallSetDefinition;
+import com.dragonminez.common.init.MainGameRules;
 import com.dragonminez.common.init.block.entity.DragonBallBlockEntity;
 import com.dragonminez.common.init.entities.dragon.DragonWishEntity;
 import com.dragonminez.common.network.NetworkHandler;
@@ -188,6 +189,15 @@ public class DragonBallsHandler {
 		syncRadar(level);
 	}
 
+	private static void relocateBall(ServerLevel level, DragonBallSavedData data, DragonBallSetDefinition definition, int star, BlockPos pos) {
+		if (!data.getActiveBalls(definition.getId(), star).remove(pos)) return;
+		level.removeBlock(pos, false);
+		data.setDirty();
+		LogUtil.info(Env.SERVER, "Dragon Ball [" + star + "] of set " + definition.getId() + " was inside a master structure at " + pos + ", moving it");
+		respawnBall(level.getServer(), definition, star, level);
+		syncRadar(level);
+	}
+
 	private static void validateLoadedActiveBalls(ServerLevel level, DragonBallSavedData data, DragonBallSetDefinition definition) {
 		ServerChunkCache chunks = level.getChunkSource();
 		for (int star : definition.getStars()) {
@@ -195,7 +205,9 @@ public class DragonBallsHandler {
 			if (expected == null) continue;
 			for (BlockPos pos : new ArrayList<>(data.getActiveBalls(definition.getId(), star))) {
 				LevelChunk chunk = chunks.getChunkNow(pos.getX() >> 4, pos.getZ() >> 4);
-				if (chunk != null && !chunk.getBlockState(pos).is(expected)) dropStaleBall(level, data, definition, star, pos);
+				if (chunk == null) continue;
+				if (!chunk.getBlockState(pos).is(expected)) dropStaleBall(level, data, definition, star, pos);
+				else if (MainGameRules.isInMasterStructure(level, pos)) relocateBall(level, data, definition, star, pos);
 			}
 		}
 	}
@@ -374,6 +386,13 @@ public class DragonBallsHandler {
 		}
 
 		if (level.isOutsideBuildHeight(realPos)) return;
+		if (MainGameRules.isInMasterStructure(level, realPos)) {
+			pendingForStar.remove(targetXZ);
+			data.setDirty();
+			LogUtil.debug(Env.SERVER, "Dragon Ball [" + star + "] target " + realPos + " is inside a master structure, rerolling it");
+			addPendingBall(level, data, definition, star);
+			return;
+		}
 
 		BlockState below = level.getBlockState(realPos.below());
 		if (below.isAir() || below.is(Blocks.WATER)) {

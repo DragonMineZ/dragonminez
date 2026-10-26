@@ -41,6 +41,10 @@ public class FixedStructurePlacement extends StructurePlacement {
 		this(locateOffset, frequencyReductionMethod, frequency, salt, exclusionZone, fixedX, fixedZ, Rotation.NONE);
 	}
 
+	public int placementSalt() {
+		return this.salt();
+	}
+
 	@Override
 	protected boolean isPlacementChunk(@NonNull ChunkGeneratorStructureState structureState, int x, int z) {
 		if (!ConfigManager.getServerConfig().getWorldGen().getGenerateCustomStructures()) {

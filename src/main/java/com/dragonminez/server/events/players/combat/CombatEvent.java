@@ -917,8 +917,10 @@ public class CombatEvent {
 								&& com.dragonminez.server.world.worldboss.WorldBossManager.tryKnockOut(bossVictim, stats, event.getSource());
 						boolean babaKnockout = !racialCancelled && !worldBossKnockout && victim instanceof ServerPlayer babaVictim
 								&& com.dragonminez.server.util.BabaReviveService.tryKnockOut(babaVictim, stats, event.getSource());
+						boolean sparKnockout = !racialCancelled && !worldBossKnockout && !babaKnockout && victim instanceof ServerPlayer sparVictim
+								&& com.dragonminez.server.events.QuestEvents.tryKnockOutSpar(sparVictim, stats, event.getSource());
 
-						if (racialCancelled || worldBossKnockout || babaKnockout) {
+						if (racialCancelled || worldBossKnockout || babaKnockout || sparKnockout) {
 							finalDamage = Math.max(0.0F, victim.getHealth() - 1.0F);
 						} else {
 							boolean shadowKnockdown = damageSource instanceof ShadowDummyEntity dummy

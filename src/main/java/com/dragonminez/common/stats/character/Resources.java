@@ -64,20 +64,25 @@ public class Resources {
         return (float) (Math.round(value * 4.0) / 4.0);
     }
 
+    private static float clampToMax(float value, float max) {
+        float limit = Math.max(0, max);
+        if (value >= limit) return limit;
+        return Math.min(roundToQuarter(Math.max(0, value)), limit);
+    }
+
     public int getPowerRelease() { return release; }
 
     public void setCurrentEnergy(float energy) {
         if (energy <= 1) setPowerRelease(0);
-        this.currentEnergy = roundToQuarter(Math.min(Math.max(0, energy), statsData.getMaxEnergy()));
+        this.currentEnergy = clampToMax(energy, statsData.getMaxEnergy());
     }
 
     public void setCurrentStamina(float stamina) {
-        float max = Math.max(0, statsData.getMaxStamina());
-        this.currentStamina = roundToQuarter(Math.min(Math.max(0, stamina), max));
+        this.currentStamina = clampToMax(stamina, statsData.getMaxStamina());
     }
 
     public void setCurrentPoise(float poise) {
-        this.currentPoise = roundToQuarter(Math.min(Math.max(0, poise), statsData.getMaxPoise()));
+        this.currentPoise = clampToMax(poise, statsData.getMaxPoise());
     }
 
     public void setSurgeCharge(float surgeCharge) {
@@ -232,6 +237,10 @@ public class Resources {
         }
     }
     public void removePoise(float amount) { setCurrentPoise(currentPoise - amount); }
+    public void setFlightSpeedLimit(int flightSpeedLimit) {
+        this.flightSpeedLimit = flightSpeedLimit <= 0 ? 100 : Math.min(100, flightSpeedLimit);
+    }
+
     public void removeAlignment(int amount) { setAlignment(alignment - amount); }
     public void removeTrainingPoints(float amount) { setTrainingPointsExact(trainingPoints - amount); }
 
@@ -269,7 +278,7 @@ public class Resources {
 
         this.release = tag.getInt("Release");
         this.releaseLimit = tag.getInt("ReleaseLimit");
-        this.flightSpeedLimit = tag.getInt("FlightSpeed");
+        setFlightSpeedLimit(tag.contains("FlightSpeed") ? tag.getInt("FlightSpeed") : 100);
         this.actionCharge = tag.getInt("FormRelease");
         this.alignment = tag.getInt("Alignment");
 

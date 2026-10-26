@@ -88,7 +88,7 @@ public class FittedTemplateStructure extends Structure {
 		HeightSampler sampler = HeightSampler.direct(context.chunkGenerator(), context.heightAccessor(), context.randomState());
 		if (!this.biomeAllowsSite(context, sampler)) return Optional.empty();
 		if (!this.roughlyAcceptable(templates, sampler, context.chunkPos())) return Optional.empty();
-		return this.plan(templates, sampler, context.chunkPos())
+		return this.plan(templates, sampler, context.chunkPos(), context.heightAccessor().getMaxBuildHeight())
 				.filter(this::acceptsSite)
 				.map(site -> new GenerationStub(site.center(), builder -> this.addPieces(builder, templates, site)));
 	}
@@ -120,15 +120,19 @@ public class FittedTemplateStructure extends Structure {
 	}
 
 	public Optional<SitePlan> plan(StructureTemplateManager templates, HeightSampler sampler, ChunkPos chunk) {
-		return this.plan(templates, sampler, chunk, this.fixedRotation.map(rotation -> new Rotation[]{rotation}).orElse(ROTATIONS), 1);
+		return this.plan(templates, sampler, chunk, Integer.MAX_VALUE);
+	}
+
+	public Optional<SitePlan> plan(StructureTemplateManager templates, HeightSampler sampler, ChunkPos chunk, int maxBuildHeight) {
+		return this.plan(templates, sampler, chunk, this.fixedRotation.map(rotation -> new Rotation[]{rotation}).orElse(ROTATIONS), 1, maxBuildHeight);
 	}
 
 	public Optional<SitePlan> estimate(StructureTemplateManager templates, HeightSampler sampler, ChunkPos chunk) {
-		return this.plan(templates, sampler, chunk, new Rotation[]{this.fixedRotation.orElse(Rotation.NONE)}, this.estimateCoarseness());
+		return this.plan(templates, sampler, chunk, new Rotation[]{this.fixedRotation.orElse(Rotation.NONE)}, this.estimateCoarseness(), Integer.MAX_VALUE);
 	}
 
 	private Optional<SitePlan> plan(StructureTemplateManager templates, HeightSampler sampler, ChunkPos chunk,
-									Rotation[] rotations, int coarseness) {
+									Rotation[] rotations, int coarseness, int maxBuildHeight) {
 		StructureTemplate structureTemplate = templates.getOrCreate(this.template);
 		Vec3i size = structureTemplate.getSize();
 		if (size.getX() <= 0 || size.getY() <= 0 || size.getZ() <= 0) return Optional.empty();
@@ -139,14 +143,14 @@ public class FittedTemplateStructure extends Structure {
 
 		SitePlan best = null;
 		for (Rotation rotation : rotations) {
-			SitePlan site = this.evaluate(structureTemplate, ground, rotation, sampler, chunk, samples);
+			SitePlan site = this.evaluate(structureTemplate, ground, rotation, sampler, chunk, samples, maxBuildHeight);
 			if (best == null || site.deviation() < best.deviation() - 1.0E-6D) best = site;
 		}
 		return Optional.ofNullable(best);
 	}
 
 	private SitePlan evaluate(StructureTemplate structureTemplate, int ground, Rotation rotation, HeightSampler sampler,
-							  ChunkPos chunk, int[][] samples) {
+							  ChunkPos chunk, int[][] samples, int maxBuildHeight) {
 		StructurePlaceSettings settings = new StructurePlaceSettings().setRotation(rotation);
 		BoundingBox local = structureTemplate.getBoundingBox(settings, BlockPos.ZERO);
 		int centerX = chunk.getMiddleBlockX();
@@ -178,6 +182,9 @@ public class FittedTemplateStructure extends Structure {
 		int groundY = sorted[count / 2];
 		if (wet > 0) groundY = Math.max(groundY, highestWater + 1);
 		groundY += this.fit.yOffset();
+		if (maxBuildHeight != Integer.MAX_VALUE) {
+			groundY = Math.min(groundY, maxBuildHeight - 1 - local.maxY() + ground);
+		}
 
 		double deviation = 0.0D;
 		for (int top : tops) deviation += Math.abs(top - groundY);

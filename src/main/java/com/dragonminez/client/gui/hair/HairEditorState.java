@@ -378,6 +378,7 @@ final class HairEditorState implements HairRenderContext.Preview {
 	void clearStyle() {
 		recordStep();
 		style().clear();
+		style().setKeepEmpty(true);
 		selectedSegment = -1;
 	}
 

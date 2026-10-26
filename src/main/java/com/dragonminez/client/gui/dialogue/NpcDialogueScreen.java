@@ -117,6 +117,14 @@ public class NpcDialogueScreen extends ScaledScreen {
 		Minecraft minecraft = Minecraft.getInstance();
 		if (minecraft.player == null) return;
 		List<DialogueQuest> quests = DialogueQuest.from(msg);
+		if (msg.getEntityId() == OpenQuestNPCDialogueS2C.REFRESH_ENTITY_ID) {
+			if (minecraft.screen instanceof NpcDialogueScreen current && !current.treeMode && current.closingAt == 0L
+					&& current.content.npcId().equals(msg.getNpcId())) {
+				current.content.replaceQuests(quests);
+				current.refreshOptions();
+			}
+			return;
+		}
 		if (minecraft.screen instanceof NpcDialogueScreen current && current.treeMode && current.entityId == msg.getEntityId()) {
 			current.treeMode = false;
 			current.awaitingServer = false;

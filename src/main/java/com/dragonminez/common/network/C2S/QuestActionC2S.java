@@ -5,6 +5,7 @@ import com.dragonminez.LogUtil;
 import com.dragonminez.common.alignment.NpcDispositionService;
 import com.dragonminez.common.network.NetworkHandler;
 import com.dragonminez.common.network.S2C.DialogueResultS2C;
+import com.dragonminez.common.network.S2C.OpenQuestNPCDialogueS2C;
 import com.dragonminez.common.network.S2C.QuestActionFeedbackS2C;
 import com.dragonminez.common.quest.QuestService;
 import com.dragonminez.common.stats.StatsCapability;
@@ -96,5 +97,9 @@ public class QuestActionC2S {
 		if (npcId.isBlank() || actionType == ActionType.RESUMMON) return;
 		String action = actionType == ActionType.START ? DialogueResultS2C.questStart(questId) : DialogueResultS2C.questTurnIn(questId);
 		NetworkHandler.sendToPlayer(new DialogueResultS2C(npcId, action, success, success ? null : reason), player);
+		if (!success) return;
+		StatsProvider.get(StatsCapability.INSTANCE, player).ifPresent(data -> NetworkHandler.sendToPlayer(
+				new OpenQuestNPCDialogueS2C(npcId, QuestService.collectNpcQuestOptions(npcId, data), false, false,
+						OpenQuestNPCDialogueS2C.REFRESH_ENTITY_ID), player));
 	}
 }
