@@ -913,14 +913,20 @@ public class CombatEvent {
 									.orElse(false);
 						}
 
-						boolean worldBossKnockout = !racialCancelled && victim instanceof ServerPlayer bossVictim
+						boolean tournamentKnockout = !racialCancelled && victim instanceof ServerPlayer tournamentVictim
+								&& Tournament.Manager.isInNonLethalMatch(tournamentVictim);
+						if (tournamentKnockout) Tournament.Manager.knockOut((ServerPlayer) victim);
+
+						boolean worldBossKnockout = !racialCancelled && !tournamentKnockout && victim instanceof ServerPlayer bossVictim
 								&& com.dragonminez.server.world.worldboss.WorldBossManager.tryKnockOut(bossVictim, stats, event.getSource());
-						boolean babaKnockout = !racialCancelled && !worldBossKnockout && victim instanceof ServerPlayer babaVictim
+						boolean babaKnockout = !racialCancelled && !tournamentKnockout && !worldBossKnockout && victim instanceof ServerPlayer babaVictim
 								&& com.dragonminez.server.util.BabaReviveService.tryKnockOut(babaVictim, stats, event.getSource());
-						boolean sparKnockout = !racialCancelled && !worldBossKnockout && !babaKnockout && victim instanceof ServerPlayer sparVictim
+						boolean sparKnockout = !racialCancelled && !tournamentKnockout && !worldBossKnockout && !babaKnockout && victim instanceof ServerPlayer sparVictim
 								&& com.dragonminez.server.events.QuestEvents.tryKnockOutSpar(sparVictim, stats, event.getSource());
 
-						if (racialCancelled || worldBossKnockout || babaKnockout || sparKnockout) {
+						if (tournamentKnockout) {
+							finalDamage = 0.0F;
+						} else if (racialCancelled || worldBossKnockout || babaKnockout || sparKnockout) {
 							finalDamage = Math.max(0.0F, victim.getHealth() - 1.0F);
 						} else {
 							boolean shadowKnockdown = damageSource instanceof ShadowDummyEntity dummy
