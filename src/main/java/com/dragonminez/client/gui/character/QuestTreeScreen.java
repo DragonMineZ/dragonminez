@@ -1825,13 +1825,26 @@ public class QuestTreeScreen extends BaseMenuScreen {
 		}
 	}
 
+	private static int nearbyPartySize(PlayerQuestData questData) {
+		Minecraft mc = Minecraft.getInstance();
+		if (mc.player == null || mc.level == null) return 1;
+		double range = ConfigManager.getServerConfig().getGameplay().getPartyQuestShareRange();
+		int size = 1;
+		for (UUID memberId : questData.getPartyMemberIds()) {
+			if (memberId.equals(mc.player.getUUID())) continue;
+			var member = mc.level.getPlayerByUUID(memberId);
+			if (member != null && member.distanceToSqr(mc.player) <= range * range) size++;
+		}
+		return size;
+	}
+
 	private void renderEnemyPreview(GuiGraphics graphics, int mouseX, int mouseY, float dt) {
 		Difficulty previewDifficulty = Difficulty.NORMAL;
 		int previewPartySize = 1;
 		if (statsData != null) {
 			PlayerQuestData questData = statsData.getPlayerQuestData();
 			previewDifficulty = questData.getDifficulty();
-			previewPartySize = Math.max(1, questData.getPartyMemberIds().size());
+			previewPartySize = nearbyPartySize(questData);
 		}
 		enemyPreview.setQuest(selectedQuest, previewDifficulty, previewPartySize);
 		if (!enemyPreview.isActive()) return;

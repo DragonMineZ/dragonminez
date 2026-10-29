@@ -240,6 +240,7 @@
   "gui.dragonminez.character_stats.protection": "Protection",
   "gui.dragonminez.character_stats.flat_mitigation": "Flat Mitigation",
   "gui.dragonminez.character_stats.dmg_reduction": "Damage Reduction",
+  "gui.dragonminez.character_stats.adaptive_mitigation": "Adaptive Mitigation: %s%% vs hits close to your Flat Mitigation, fading out at %s damage",
   "gui.dragonminez.character_stats.power_divider": "Power Divider",
   "gui.dragonminez.character_stats.dmg_taken": "Damage Taken",
   "gui.dragonminez.character_stats.shift_hint": "Press [SHIFT] to show Advanced Descriptions",

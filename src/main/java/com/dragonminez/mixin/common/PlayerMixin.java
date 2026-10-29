@@ -1,5 +1,6 @@
 package com.dragonminez.mixin.common;
 
+import com.dragonminez.Reference;
 import com.dragonminez.common.combat.logic.player.PlayerAttackHelper;
 import com.dragonminez.common.combat.logic.player.PlayerAttackProperties;
 import com.dragonminez.common.combat.player.AttackHand;
@@ -8,8 +9,11 @@ import com.dragonminez.common.combat.util.Player_DMZ;
 import net.minecraft.core.particles.ParticleOptions;
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.world.Difficulty;
 import net.minecraft.world.InteractionHand;
+import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import org.jetbrains.annotations.Nullable;
@@ -102,6 +106,14 @@ public abstract class PlayerMixin implements Player_DMZ, PlayerAttackProperties 
 			this.dragonminez$critTick = currentTick;
 		}
 		return this.dragonminez$critActive;
+	}
+
+	@Redirect(method = "hurt", at = @At(value = "INVOKE", target = "Lnet/minecraft/world/damagesource/DamageSource;scalesWithDifficulty()Z"))
+	private boolean dragonminez$ignoreVanillaDifficultyForDmzMobs(DamageSource source) {
+		Entity attacker = source.getEntity();
+		if (attacker == null || ((Player) (Object) this).level().getDifficulty() == Difficulty.PEACEFUL) return source.scalesWithDifficulty();
+		if (Reference.MOD_ID.equals(EntityType.getKey(attacker.getType()).getNamespace())) return false;
+		return source.scalesWithDifficulty();
 	}
 
 	@Inject(method = "crit", at = @At("HEAD"), cancellable = true)

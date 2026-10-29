@@ -928,6 +928,15 @@ public class CharacterStatsScreen extends BaseMenuScreen {
 								.append(tr("gui.dragonminez.character_stats.dmg_reduction"))
 								.withStyle(ChatFormatting.AQUA));
 
+						if (ConfigManager.getCombatConfig().getEnableAdaptativeDefenseMitigation() && flatMitigation > 0.0) {
+							double adaptive = Math.min(ConfigManager.getCombatConfig().getAdaptativeMitigationParityValue(),
+									ConfigManager.getCombatConfig().getAdaptativeDefenseMitigationCap()) * 100.0;
+							double fadeAt = flatMitigation * ConfigManager.getCombatConfig().getAdaptativeMitigationZeroRatio();
+							extras.add(tr("gui.dragonminez.character_stats.adaptive_mitigation",
+									NumberFormattingUtil.formatUpToTwoDecimals(adaptive), NumberFormattingUtil.formatUpToOneDecimal(fadeAt))
+									.withStyle(ChatFormatting.DARK_AQUA));
+						}
+
 						if (pcts[1] > 0) {
 							extras.add(tr("gui.dragonminez.character_stats.protection").append(": ")
 									.append(txt(NumberFormattingUtil.formatUpToTwoDecimals(pcts[1]) + "% "))

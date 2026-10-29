@@ -45,7 +45,7 @@ public class CombatConfig {
 
 	private Boolean enableAdaptativeDefenseMitigation = true;
 	private Double adaptativeMitigationParityRatio = 1.0;
-	private Double adaptativeMitigationParityValue = 0.35;
+	private Double adaptativeMitigationParityValue = 0.15;
 	private Double adaptativeMitigationZeroRatio = 14.0;
 	private Double adaptativeDefenseMitigationCap = 0.65;
 
@@ -306,7 +306,7 @@ public class CombatConfig {
 	}
 
 	public double getAdaptativeMitigationParityValue() {
-		return adaptativeMitigationParityValue != null ? Math.max(0.0, Math.min(1.0, adaptativeMitigationParityValue)) : 0.25;
+		return adaptativeMitigationParityValue != null ? Math.max(0.0, Math.min(1.0, adaptativeMitigationParityValue)) : 0.15;
 	}
 
 	public double getAdaptativeMitigationZeroRatio() {
