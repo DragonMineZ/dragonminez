@@ -7,6 +7,7 @@ import com.dragonminez.common.stats.StatsProvider;
 import com.dragonminez.common.stats.character.Character;
 import net.minecraft.ChatFormatting;
 import net.minecraft.network.chat.Component;
+import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.InteractionHand;
@@ -20,9 +21,10 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.List;
+import java.util.Map;
 
 
-public class MasteryCapsuleItem extends Item {
+public class MasteryCapsuleItem extends Item implements CapsuleUseTracker.SummaryItem {
 
 	private static final double MASTERY_GAIN = 5.0;
 
@@ -77,7 +79,28 @@ public class MasteryCapsuleItem extends Item {
 
 		character.getFormMasteries().addMastery(group, form, MASTERY_GAIN, maxMastery);
 		capsule.shrink(1);
-		player.displayClientMessage(Component.translatable("item.dragonminez.mastery_capsule.use", (int) MASTERY_GAIN).withStyle(ChatFormatting.LIGHT_PURPLE), true);
+		int total = CapsuleUseTracker.add(CapsuleUseTracker.getStreak(player, this), group + ":" + form, (int) MASTERY_GAIN);
+		player.displayClientMessage(Component.translatable("item.dragonminez.mastery_capsule.use", total).withStyle(ChatFormatting.LIGHT_PURPLE), true);
+	}
+
+	@Override
+	public Component getStreakSummary(ServerPlayer player, Map<String, Integer> totals) {
+		if (totals.isEmpty()) return null;
+		// Key format is "group:form", set in applyMastery
+		String[] key = totals.keySet().iterator().next().split(":", 2);
+		if (key.length < 2) return null;
+		String group = key[0];
+		String form = key[1];
+
+		return StatsProvider.get(StatsCapability.INSTANCE, player).map(data -> {
+			Character character = data.getCharacter();
+			var formConfig = ConfigManager.getFormGroup(character.getRaceName(), group);
+			if (formConfig == null || formConfig.getForm(form) == null) return null;
+			int mastery = (int) character.getFormMasteries().getMastery(group, form);
+			int maxMastery = (int) (double) formConfig.getForm(form).getMaxMastery();
+			return (Component) Component.translatable("item.dragonminez.mastery_capsule.current", mastery, maxMastery)
+					.withStyle(ChatFormatting.RED);
+		}).orElse(null);
 	}
 
 	@Override
