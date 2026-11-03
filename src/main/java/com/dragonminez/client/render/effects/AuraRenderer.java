@@ -20,6 +20,7 @@ import com.dragonminez.common.compat.SableCompat;
 import com.dragonminez.common.util.GodRitualHelper;
 import com.dragonminez.common.util.TransformationsHelper;
 import com.mojang.blaze3d.pipeline.RenderTarget;
+import com.mojang.blaze3d.platform.GlStateManager;
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
@@ -132,6 +133,12 @@ public class AuraRenderer {
 			RenderSystem.setShader(() -> shader);
 		} else {
 			type.setupRenderState();
+		}
+		if (shader == DMZShaders.auraShader || shader == DMZShaders.auraSparking3DShader) {
+			// 1.20 applied these factors from the shader JSON to RGB and alpha.
+			// 1.21 ignores that JSON state; bloom needs the original mask coverage.
+			RenderSystem.blendFuncSeparate(GlStateManager.SourceFactor.SRC_ALPHA, GlStateManager.DestFactor.ONE_MINUS_SRC_ALPHA,
+					GlStateManager.SourceFactor.SRC_ALPHA, GlStateManager.DestFactor.ONE_MINUS_SRC_ALPHA);
 		}
 	}
 

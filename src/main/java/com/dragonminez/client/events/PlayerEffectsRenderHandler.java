@@ -89,7 +89,7 @@ public class PlayerEffectsRenderHandler {
 				mc.getMainRenderTarget().bindWrite(false);
 				renderWeapons(mc, event);
 				renderEffects(mc, event);
-				TransformationPostShaderManager.processShaderpackOutline(event.getPartialTick().getGameTimeDeltaPartialTick(false));
+				TransformationPostShaderManager.processShaderpackOutline(event.getPartialTick().getGameTimeDeltaPartialTick(false), event.getModelViewMatrix());
 			}
 			return;
 		}

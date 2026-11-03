@@ -3,7 +3,7 @@ package com.dragonminez.client.events;
 import com.dragonminez.client.gui.hud.PartyHudCache;
 import com.dragonminez.client.gui.hud.NotificationHUD;
 import com.dragonminez.Reference;
-import com.dragonminez.client.crowdin.CrowdinManager;
+import com.dragonminez.client.lang.LiveTranslationManager;
 import com.dragonminez.client.gui.UtilityMenuScreen;
 import com.dragonminez.client.gui.SpacePodScreen;
 import com.dragonminez.client.gui.character.util.BaseMenuScreen;
@@ -285,10 +285,9 @@ public class ForgeClientEvents {
 		String current = mc.options.languageCode;
 		if (!current.equals(lastLang)) {
 			lastLang = current;
-			if (CrowdinManager.isLiveTranslationsEnabled()) {
-				CrowdinManager.fetchLanguage(current);
-			}
+			LiveTranslationManager.requestLanguage(current);
 		}
+		LiveTranslationManager.clientTick();
 	}
 
 	private static Vec3 cameraAim(Minecraft mc) {

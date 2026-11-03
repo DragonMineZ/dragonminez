@@ -1,0 +1,145 @@
+{
+  "configVersion": "2.2.0",
+  "enabled": true,
+  "displayName": "raid.dragonminez.gomah_assault",
+  "activationRadius": 48.0,
+  "leashDistance": 80.0,
+  "interWaveDelaySeconds": 5,
+  "music": {
+    "preparation": "dragonminez:menu_music_11",
+    "battle": "dragonminez:raid_ost_1"
+  },
+  "trigger": {
+    "entityId": "#dragonminez:gomah_soldiers",
+    "dimension": "dragonminez:demon_realm",
+    "spawnChance": 0.0,
+    "supervillain": true,
+    "preparationSeconds": 60,
+    "omenMessage": "raid.dragonminez.gomah_assault.omen",
+    "startMessage": "raid.dragonminez.gomah_assault.start",
+    "announceMessage": "raid.dragonminez.gomah_assault.camp",
+    "health": 10000.0,
+    "meleeDamage": 900.0,
+    "kiDamage": 800.0,
+    "aiTier": 2
+  },
+  "waves": [
+    {
+      "spawns": [
+        {
+          "entityId": "#dragonminez:gomah_soldiers",
+          "count": 6,
+          "health": 8000.0,
+          "meleeDamage": 750.0,
+          "kiDamage": 650.0,
+          "aiTier": 1
+        }
+      ]
+    },
+    {
+      "spawns": [
+        {
+          "entityId": "#dragonminez:gomah_soldiers",
+          "count": 8,
+          "health": 10000.0,
+          "meleeDamage": 900.0,
+          "kiDamage": 800.0,
+          "aiTier": 1
+        }
+      ]
+    },
+    {
+      "spawns": [
+        {
+          "entityId": "#dragonminez:gomah_soldiers",
+          "count": 10,
+          "health": 12000.0,
+          "meleeDamage": 1100.0,
+          "kiDamage": 950.0,
+          "aiTier": 2
+        }
+      ]
+    },
+    {
+      "spawns": [
+        {
+          "entityId": "#dragonminez:gomah_soldiers",
+          "count": 10,
+          "health": 14000.0,
+          "meleeDamage": 1300.0,
+          "kiDamage": 1100.0,
+          "aiTier": 2
+        },
+        {
+          "entityId": "dragonminez:saga_glorio",
+          "count": 1,
+          "health": 450000.0,
+          "meleeDamage": 19000.0,
+          "kiDamage": 17000.0,
+          "aiTier": 3,
+          "dormantUntilEscortDead": true
+        }
+      ]
+    },
+    {
+      "spawns": [
+        {
+          "entityId": "#dragonminez:gomah_soldiers",
+          "count": 10,
+          "health": 16000.0,
+          "meleeDamage": 1500.0,
+          "kiDamage": 1300.0,
+          "aiTier": 2
+        },
+        {
+          "entityId": "dragonminez:saga_majin_kuu",
+          "count": 1,
+          "health": 750000.0,
+          "meleeDamage": 31000.0,
+          "kiDamage": 28000.0,
+          "aiTier": 3,
+          "dormantUntilEscortDead": true
+        },
+        {
+          "entityId": "dragonminez:saga_majin_duu",
+          "count": 1,
+          "health": 800000.0,
+          "meleeDamage": 33000.0,
+          "kiDamage": 30000.0,
+          "aiTier": 3,
+          "dormantUntilEscortDead": true
+        }
+      ]
+    }
+  ],
+  "rewards": {
+    "trainingPoints": 350000.0,
+    "effects": [
+      {
+        "id": "minecraft:hero_of_the_village",
+        "seconds": 600,
+        "amplifier": 0
+      },
+      {
+        "id": "dragonminez:world_hero",
+        "seconds": 600,
+        "amplifier": 2
+      }
+    ],
+    "items": [
+      {
+        "id": "minecraft:golden_carrot",
+        "count": 16
+      },
+      {
+        "id": "dragonminez:medi_bug_ant",
+        "count": 4
+      }
+    ]
+  },
+  "defeat": {
+    "title": "raid.dragonminez.defeat.title",
+    "subtitle": "raid.dragonminez.gomah_assault.defeat",
+    "alignment": -30
+  }
+}

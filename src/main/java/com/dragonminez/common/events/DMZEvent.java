@@ -598,7 +598,7 @@ public abstract class DMZEvent extends Event {
 
 
 		public enum FailureReason {
-			PLAYER_DEATH, FORCED_RESET, SCRIPT, TIME_EXPIRED, ESCORT_FAILED;
+			PLAYER_DEATH, FORCED_RESET, SCRIPT, TIME_EXPIRED, ESCORT_FAILED, SPAR_LOST;
 		}
 
 		public FailureReason getReason() {
@@ -1112,6 +1112,36 @@ public abstract class DMZEvent extends Event {
 
 		public String getNewForm() {
 			return this.newForm;
+		}
+	}
+
+	public abstract static class CharacterConfirmedEvent extends Event {
+		private final ServerPlayer player;
+		private final StatsData statsData;
+
+		protected CharacterConfirmedEvent(ServerPlayer player, StatsData statsData) {
+			this.player = player;
+			this.statsData = statsData;
+		}
+
+		public ServerPlayer getPlayer() {
+			return this.player;
+		}
+
+		public StatsData getStatsData() {
+			return this.statsData;
+		}
+	}
+
+	public static class CharacterCreatedEvent extends CharacterConfirmedEvent {
+		public CharacterCreatedEvent(ServerPlayer player, StatsData statsData) {
+			super(player, statsData);
+		}
+	}
+
+	public static class CharacterRecustomizedEvent extends CharacterConfirmedEvent {
+		public CharacterRecustomizedEvent(ServerPlayer player, StatsData statsData) {
+			super(player, statsData);
 		}
 	}
 }

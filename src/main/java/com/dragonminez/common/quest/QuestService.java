@@ -57,6 +57,14 @@ public final class QuestService {
 	public static final String SAGA_ID_TAG = "dmz_saga_id";
 	public static final String QUEST_TEAM_TAG = "dmz_quest_team";
 
+	public static boolean isSparPartner(Entity entity) {
+		if (entity == null || !entity.getPersistentData().contains(QUEST_KEY_TAG)) return false;
+		Quest quest = QuestRegistry.getQuest(entity.getPersistentData().getString(QUEST_KEY_TAG));
+		int index = entity.getPersistentData().getInt(QUEST_OBJECTIVE_INDEX_TAG);
+		return quest != null && index >= 0 && index < quest.getObjectives().size()
+				&& quest.getObjectives().get(index) instanceof com.dragonminez.common.quest.objectives.SparObjective;
+	}
+
 	private static final long RESUMMON_MIN_INTERVAL_MS = 1500L;
 	private static final Map<UUID, Long> resummonAntiSpam = new ConcurrentHashMap<>();
 

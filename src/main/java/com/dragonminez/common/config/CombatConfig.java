@@ -8,7 +8,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-@RemovedConfigKeys({"flatMitigationFactor"})
+@RemovedConfigKeys({"flatMitigationFactor", "defenseReductionScale"})
 public class CombatConfig {
 	public static final String CURRENT_VERSION = ConfigManager.CONFIG_VERSION;
 	private String configVersion;
@@ -26,10 +26,12 @@ public class CombatConfig {
 	private Double enchantmentDamageReductionCap = 0.93;
 	private Double defenseDecayOnGuardBreak = 0.66;
 	private Double flatMitigationMaxAbsorbFraction = 0.82;
-	private Double defenseReductionScale = 0.11;
+	private Double defenseSoftcapStatFraction = 0.015;
+	private Double defenseSoftcapReduction = 0.5;
+	private Double defenseHardcapStatFraction = 0.05;
 	private Boolean enableAdaptativeDefenseMitigation = true;
 	private Double adaptativeMitigationParityRatio = 1.0;
-	private Double adaptativeMitigationParityValue = 0.35;
+	private Double adaptativeMitigationParityValue = 0.15;
 	private Double adaptativeMitigationZeroRatio = 14.0;
 	private Double adaptativeDefenseMitigationCap = 0.65;
 	private Boolean cancelDamageEventIfMitigationTooHigh = true;
@@ -231,8 +233,17 @@ public class CombatConfig {
 		return flatMitigationMaxAbsorbFraction != null ? Math.max(0.0, Math.min(1.0, flatMitigationMaxAbsorbFraction)) : 0.82;
 	}
 
-	public double getDefenseReductionScale() {
-		return defenseReductionScale != null ? Math.max(0.01, defenseReductionScale) : 0.11;
+	public double getDefenseSoftcapStatFraction() {
+		return defenseSoftcapStatFraction != null ? Math.max(0.0001, Math.min(1.0, defenseSoftcapStatFraction)) : 0.015;
+	}
+
+	public double getDefenseSoftcapReduction() {
+		return defenseSoftcapReduction != null ? Math.max(0.01, Math.min(0.99, defenseSoftcapReduction)) : 0.5;
+	}
+
+	public double getDefenseHardcapStatFraction() {
+		double hardcap = defenseHardcapStatFraction != null ? Math.min(1.0, defenseHardcapStatFraction) : 0.05;
+		return Math.max(getDefenseSoftcapStatFraction() * 1.01, hardcap);
 	}
 
 	public boolean getEnableAdaptativeDefenseMitigation() {
@@ -244,7 +255,7 @@ public class CombatConfig {
 	}
 
 	public double getAdaptativeMitigationParityValue() {
-		return adaptativeMitigationParityValue != null ? Math.max(0.0, Math.min(1.0, adaptativeMitigationParityValue)) : 0.25;
+		return adaptativeMitigationParityValue != null ? Math.max(0.0, Math.min(1.0, adaptativeMitigationParityValue)) : 0.15;
 	}
 
 	public double getAdaptativeMitigationZeroRatio() {

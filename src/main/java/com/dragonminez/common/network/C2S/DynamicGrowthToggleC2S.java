@@ -24,7 +24,7 @@ public class DynamicGrowthToggleC2S {
 	}
 
 	public DynamicGrowthToggleC2S(FriendlyByteBuf buffer) {
-		this.stat = buffer.readUtf();
+		this.stat = buffer.readUtf(16);
 		this.enabled = buffer.readBoolean();
 	}
 
@@ -49,6 +49,7 @@ public class DynamicGrowthToggleC2S {
 			}
 
 			StatsProvider.get(StatsCapability.INSTANCE, player).ifPresent(data -> {
+				if (data.getDynamicGrowth().isGrowthEnabled(parsed) == enabled) return;
 				data.getDynamicGrowth().setGrowthEnabled(parsed, enabled);
 				NetworkHandler.sendToTrackingEntityAndSelf(new StatsSyncS2C(player), player);
 			});

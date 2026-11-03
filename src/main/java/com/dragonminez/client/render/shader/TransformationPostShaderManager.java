@@ -17,6 +17,7 @@ import com.dragonminez.mixin.client.PostChainAccessor;
 import com.dragonminez.server.events.players.statuseffect.RelicItemsStatusHandler;
 import com.mojang.blaze3d.pipeline.RenderTarget;
 import com.mojang.blaze3d.shaders.Uniform;
+import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.PoseStack;
 import net.minecraft.client.Camera;
 import net.minecraft.client.Minecraft;
@@ -27,6 +28,8 @@ import net.minecraft.client.renderer.culling.Frustum;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.player.Player;
+import org.joml.Matrix4f;
+import org.joml.Matrix4fStack;
 
 import javax.annotation.Nullable;
 import java.util.HashMap;
@@ -154,7 +157,7 @@ public final class TransformationPostShaderManager {
 		applyRuntimeUniforms(postChain, partialTicks, mc);
 	}
 
-	public static void processShaderpackOutline(float partialTicks) {
+	public static void processShaderpackOutline(float partialTicks, Matrix4f view) {
 		Minecraft mc = Minecraft.getInstance();
 		if (mc.player == null || mc.level == null || mc.gameRenderer == null) return;
 		if (ACTIVE_MASK_PLAYERS.isEmpty() || activeUniformState == null || !ModRenderTypes.hasTransformationMaskShader()) return;
@@ -169,11 +172,19 @@ public final class TransformationPostShaderManager {
 		maskTarget.clear(Minecraft.ON_OSX);
 		maskTarget.copyDepthFrom(main);
 
+		// The queued entity vertices are camera-relative. AFTER_LEVEL has already
+		// restored the global model-view, so apply the world view for this draw.
+		Matrix4fStack modelView = RenderSystem.getModelViewStack();
+		modelView.pushMatrix();
+		modelView.set(view);
+		RenderSystem.applyModelViewMatrix();
 		TransformationMaskRenderState.setCurrentTargets(maskTarget);
 		try {
 			maskBufferSource.endMaskBatch();
 		} finally {
 			TransformationMaskRenderState.setCurrentTargets(null);
+			modelView.popMatrix();
+			RenderSystem.applyModelViewMatrix();
 			main.bindWrite(false);
 		}
 

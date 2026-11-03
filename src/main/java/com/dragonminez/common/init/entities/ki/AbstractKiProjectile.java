@@ -855,6 +855,11 @@ public abstract class AbstractKiProjectile extends Projectile {
         return super.getDimensions(pPose).scale(this.getSize());
     }
 
+    @Override
+    public boolean isPushedByFluid() {
+        return false;
+    }
+
     public boolean isMovementRestrictedType() {
         return switch (getKiType()) {
             case GIANT_BALL, WAVE, BEAM, EXPLOSION, BARRAGE -> true;

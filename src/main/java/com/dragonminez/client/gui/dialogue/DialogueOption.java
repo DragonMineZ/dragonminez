@@ -8,8 +8,8 @@ import java.util.List;
 import java.util.function.IntSupplier;
 
 @OnlyIn(Dist.CLIENT)
-final class DialogueOption {
-	enum Tone { NORMAL, PRIMARY, DANGER, DONE }
+public final class DialogueOption {
+	public enum Tone { NORMAL, PRIMARY, DANGER, DONE }
 
 	final String id;
 	final Component label;
@@ -31,8 +31,12 @@ final class DialogueOption {
 		this.action = action;
 	}
 
-	static DialogueOption of(String id, Component label, Runnable action) {
+	public static DialogueOption of(String id, Component label, Runnable action) {
 		return new DialogueOption(id, label, action);
+	}
+
+	public String getId() {
+		return id;
 	}
 
 	DialogueOption icon(DialogueSkin.Icon icon, int color) {
@@ -41,39 +45,39 @@ final class DialogueOption {
 		return this;
 	}
 
-	DialogueOption tone(Tone tone) {
+	public DialogueOption tone(Tone tone) {
 		this.tone = tone;
 		return this;
 	}
 
-	DialogueOption submenu() {
+	public DialogueOption submenu() {
 		this.submenu = true;
 		return this;
 	}
 
-	DialogueOption enabled(boolean enabled) {
+	public DialogueOption enabled(boolean enabled) {
 		this.enabled = enabled;
 		return this;
 	}
 
-	DialogueOption locked(Component title, List<Component> lines) {
+	public DialogueOption locked(Component title, List<Component> lines) {
 		this.enabled = false;
 		this.lockTitle = title;
 		this.lockLines = lines;
 		return this;
 	}
 
-	DialogueOption onLocked(Runnable action) {
+	public DialogueOption onLocked(Runnable action) {
 		this.lockedAction = action;
 		return this;
 	}
 
-	DialogueOption cooldown(IntSupplier syncedTicks) {
+	public DialogueOption cooldown(IntSupplier syncedTicks) {
 		this.cooldownTicks = syncedTicks;
 		return this;
 	}
 
-	DialogueOption cooldownUntil(long endMs) {
+	public DialogueOption cooldownUntil(long endMs) {
 		this.cooldownEndMs = endMs;
 		return this;
 	}

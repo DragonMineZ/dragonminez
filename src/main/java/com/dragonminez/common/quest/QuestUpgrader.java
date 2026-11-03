@@ -22,7 +22,7 @@ import java.util.List;
 import java.util.Locale;
 
 public final class QuestUpgrader {
-	public static final String DEFAULTS_VERSION = "2.2.0";
+	public static final String DEFAULTS_VERSION = "2.2.1";
 	static final String VERSION_KEY = "defaultsVersion";
 	private static final String PREVIOUS_QUESTS_ROOT = "/data/dragonminez/previousQuests/";
 	private static final String OLD_BACKUP_DIR = "oldBackup";
@@ -105,6 +105,9 @@ public final class QuestUpgrader {
 			QuestUpdateReport.FileReport report = QuestUpdateReport.forFile(relative, userVersion == null || userVersion.isBlank() ? "unversioned" : userVersion, DEFAULTS_VERSION);
 			JsonObject merged = deepCopy(newDefault);
 			mergeInto(userObj, baseline, merged, "", report);
+			if (migrateSnowyBiomeTag(relative, merged)) {
+				report.appliedCount++;
+			}
 			merged.addProperty(VERSION_KEY, DEFAULTS_VERSION);
 			if (report.hasChanges()) {
 				backup(dmzBase, file);
@@ -114,6 +117,32 @@ public final class QuestUpgrader {
 		} catch (Exception e) {
 			LogUtil.error(Env.COMMON, "Failed to upgrade quest file \'{}\': {}", file.getFileName(), e.toString());
 		}
+	}
+
+	private static boolean migrateSnowyBiomeTag(String relative, JsonObject quest) {
+		if (!"quests/saga_classic/14_sergeant_metallic.json".equals(relative)
+				&& !"quests/saga_gt/37_eis_shenron.json".equals(relative)) {
+			return false;
+		}
+
+		JsonElement requirements = quest.get("requirements");
+		if (requirements == null || !requirements.isJsonObject()) return false;
+		JsonElement conditions = requirements.getAsJsonObject().get("conditions");
+		if (conditions == null || !conditions.isJsonArray()) return false;
+
+		boolean changed = false;
+		for (JsonElement condition : conditions.getAsJsonArray()) {
+			if (!condition.isJsonObject()) continue;
+			JsonObject object = condition.getAsJsonObject();
+			JsonElement type = object.get("type");
+			JsonElement biome = object.get("biome");
+			if (type != null && type.isJsonPrimitive() && "BIOME".equalsIgnoreCase(type.getAsString())
+					&& biome != null && biome.isJsonPrimitive() && "#neoforge:is_snowy".equals(biome.getAsString())) {
+				object.addProperty("biome", "#c:is_snowy");
+				changed = true;
+			}
+		}
+		return changed;
 	}
 
 	static int compareVersions(String a, String b) {

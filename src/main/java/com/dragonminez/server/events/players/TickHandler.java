@@ -500,6 +500,7 @@ public class TickHandler {
 	private static void handleOtherworldTransfer(ServerPlayer serverPlayer, StatsData data, UUID playerId) {
 		boolean inOtherworld = serverPlayer.serverLevel().dimension().equals(OtherworldDimension.OTHERWORLD_KEY);
 		boolean shouldTransfer = ConfigManager.getServerConfig().getWorldGen().getOtherworldActive()
+				&& serverPlayer.isAlive()
 				&& !data.getStatus().isAlive()
 				&& data.getStatus().getTempReturnTimer() <= 0
 				&& !serverPlayer.isSpectator() && !serverPlayer.isCreative()
@@ -577,6 +578,7 @@ public class TickHandler {
 		UUID playerId = event.getEntity().getUUID();
 		MeleeWindupTracker.clear(playerId);
 		forceKillGraceByPlayer.put(playerId, FORCED_KILL_GRACE_TICKS);
+		otherworldTpGraceByPlayer.put(playerId, OTHERWORLD_TP_GRACE_TICKS - 1);
 		playerTickCounters.remove(playerId);
 	}
 

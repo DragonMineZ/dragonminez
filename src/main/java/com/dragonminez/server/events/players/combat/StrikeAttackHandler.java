@@ -1348,11 +1348,11 @@ public class StrikeAttackHandler {
 
 				applyStrikeDamage(player, target, active.finalDamage() * 0.1, active.techniqueId(), false);
 
+				faceStrikeTarget(player, target);
 				KiWaveEntity kamehameha = new KiWaveEntity(player.level(), player);
 				kamehameha.setupKiHame(player, (float) active.finalDamage() * 0.9F, 2.0F, 1.0F, 10);
 				kamehameha.setFiring(true);
 				kamehameha.setMaxLife(40);
-				player.level().addFreshEntity(kamehameha);
 
 				player.level().playSound(null, player.getX(), player.getY(), player.getZ(), MainSounds.KI_KAME_FIRE.get(), net.minecraft.sounds.SoundSource.PLAYERS, 2.0F, 1.0F);
 			}

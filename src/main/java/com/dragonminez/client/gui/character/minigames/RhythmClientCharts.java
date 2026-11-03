@@ -64,7 +64,7 @@ final class RhythmClientCharts {
 	static CompletableFuture<RhythmChart> analyze(String key, ResourceLocation soundId, IntConsumer phase) {
 		WeighedSoundEvents events = Minecraft.getInstance().getSoundManager().getSoundEvent(soundId);
 		if (events == null) return CompletableFuture.completedFuture(null);
-		Sound sound = events.getSound(RandomSource.create());
+		Sound sound = events.getSound(RandomSource.create(soundId.hashCode()));
 		ResourceLocation file = sound.getPath();
 		return CompletableFuture.supplyAsync(() -> {
 			try {
@@ -84,9 +84,7 @@ final class RhythmClientCharts {
 				}
 
 				float[][] channels = null;
-				if (bundled != null) {
-					channels = decode(bytes);
-					if (channels == null) return null;
+				if (bundled != null && (channels = decode(bytes)) != null) {
 					int actualMs = (int) (channels[0].length * 1000L / RhythmAutoCharter.SAMPLE_RATE);
 					String actualPrint = RhythmAudioPrint.compute(channels[0], channels[1], RhythmAutoCharter.SAMPLE_RATE);
 					String mismatch = RhythmAudioPrint.compare(bundled.audioPrint, bundled.durationMs, actualPrint, actualMs);

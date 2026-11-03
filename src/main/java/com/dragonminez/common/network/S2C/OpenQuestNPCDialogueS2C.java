@@ -13,6 +13,7 @@ import java.util.List;
 import java.util.function.Supplier;
 
 public class OpenQuestNPCDialogueS2C {
+	public static final int REFRESH_ENTITY_ID = -1;
 	private final String npcId;
 	private final List<String> offerableQuestIds;
 	private final List<String> turnInQuestIds;

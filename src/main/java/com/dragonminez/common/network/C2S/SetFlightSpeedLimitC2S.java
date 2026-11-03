@@ -37,7 +37,7 @@ public class SetFlightSpeedLimitC2S {
 
 				int newFlightSpeed;
 				if (flightSpeed <= 0) {
-					newFlightSpeed = 0;
+					newFlightSpeed = 100;
 				} else {
 					int snapped = (flightSpeed / 5) * 5;
 					newFlightSpeed = Math.max(5, Math.min(maxFlightSpeed, snapped));

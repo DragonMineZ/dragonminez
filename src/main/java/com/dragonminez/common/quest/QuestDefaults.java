@@ -396,7 +396,7 @@ final class QuestDefaults {
 	}
 
 	private static JsonObject inSnow() {
-		return condBiome("#neoforge:is_snowy");
+		return condBiome("#c:is_snowy");
 	}
 
 	private static JsonObject atTournament() {
@@ -1842,7 +1842,7 @@ final class QuestDefaults {
 						new JsonObject[]{ transformStats(objKill("dragonminez:saga_neo_shenron", 1, 975000, 81920, 74140), 1462500, 94210, 85260) },
 						rewAttributes(230)),
 				step("gt", 37, "37_eis_shenron.json",
-						earthReq(condBiome("#neoforge:is_snowy")),
+						earthReq(condBiome("#c:is_snowy")),
 						new JsonObject[]{ objKill("dragonminez:saga_eis_shenron", 1, 1995000, 83820, 75850) },
 						rewAttributes(230)),
 				step("gt", 38, "38_syn_shenron.json",

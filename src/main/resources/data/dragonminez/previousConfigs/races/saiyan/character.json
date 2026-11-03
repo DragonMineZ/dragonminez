@@ -1,6 +1,5 @@
 {
-  "configVersion": "2.1.2",
-  "raceName": "saiyan",
+  "configVersion": "2.2.0",
   "hasGender": true,
   "useVanillaSkin": true,
   "customModel": "",
@@ -11,12 +10,40 @@
   "racialSkill": "saiyan",
   "hasSaiyanTail": true,
   "auraType": "kakarot",
+  "auraType3D": "userPreference",
+  "aura3DStyle": {
+    "size": [
+      1.1,
+      1.17,
+      1.02
+    ],
+    "flamePeaks": 12,
+    "waveFrequency": 2.0,
+    "waveSpeed": 5.0,
+    "waveAmplitude": 0.75,
+    "noiseDetail": 0.1,
+    "upwardBias": 0.54,
+    "coreAlpha": 0.05,
+    "rimAlpha": 1.0,
+    "rimPower": 4.0,
+    "rimThreshold": 0.05,
+    "coreColor": "",
+    "rimColor": "",
+    "noiseColor": "",
+    "bloomIntensity": 1.0,
+    "spikeDensity": 32,
+    "spikeBurstRate": 3.0,
+    "spikeRarity": 3.0,
+    "bandStart": 0.5,
+    "secondBorderColor": ""
+  },
   "defaultModelScaling": [
     0.9375,
     0.9375,
     0.9375
   ],
   "defaultBodyType": 0,
+  "slimBodyTypes": [],
   "defaultHairType": 1,
   "defaultEyesType": 0,
   "defaultNoseType": 0,
@@ -30,21 +57,30 @@
   "defaultEye2Color": "#222629",
   "defaultAuraColor": "#7FFFFF",
   "formSkillsCosts": {
-    "legendaryforms": [
-      -1,
-      -1,
-      -1
-    ],
-    "godforms": [],
-    "superforms": [
-      13000,
-      21000,
-      31000,
-      42000,
-      52000,
-      65000,
-      78000,
-      104000
-    ]
+    "legendaryforms": {
+      "buyFromMaster": false,
+      "prices": [
+        -1,
+        -1,
+        -1
+      ]
+    },
+    "godforms": {
+      "buyFromMaster": false,
+      "prices": []
+    },
+    "superforms": {
+      "buyFromMaster": false,
+      "prices": [
+        13000,
+        21000,
+        31000,
+        42000,
+        52000,
+        65000,
+        78000,
+        104000
+      ]
+    }
   }
 }

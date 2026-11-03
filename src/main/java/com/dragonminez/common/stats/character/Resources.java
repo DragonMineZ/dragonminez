@@ -354,7 +354,8 @@ public class Resources {
         setRage(tag.getFloat("Rage"));
         this.release = tag.getInt("Release");
         this.releaseLimit = tag.getInt("ReleaseLimit");
-        this.flightSpeedLimit = tag.getInt("FlightSpeed");
+		int flightSpeed = tag.contains("FlightSpeed", 3) ? tag.getInt("FlightSpeed") : 100;
+		setFlightSpeedLimit(flightSpeed);
         this.actionCharge = tag.getInt("FormRelease");
         this.alignment = tag.getInt("Alignment");
         if (tag.contains("TrainingPointsD", 6)) this.trainingPoints = tag.getDouble("TrainingPointsD");
@@ -372,7 +373,7 @@ public class Resources {
         this.rage = other.rage;
         this.release = other.release;
         this.releaseLimit = other.releaseLimit;
-        this.flightSpeedLimit = other.flightSpeedLimit;
+        setFlightSpeedLimit(other.flightSpeedLimit);
         this.actionCharge = other.actionCharge;
         this.alignment = other.alignment;
         this.trainingPoints = other.trainingPoints;
@@ -410,7 +411,7 @@ public class Resources {
     }
 
     public void setFlightSpeedLimit(int flightSpeedLimit) {
-        this.flightSpeedLimit = flightSpeedLimit;
+        this.flightSpeedLimit = flightSpeedLimit <= 0 ? 100 : Math.min(100, flightSpeedLimit);
     }
 
     @java.lang.SuppressWarnings("all")

@@ -315,6 +315,7 @@ public class KiAttackData extends TechniqueData {
 	}
 
 	public boolean canUpgradeStat(String statName) {
+		if (PredefinedTechniques.isPredefinedTechniqueId(getId())) return false;
 		KiType type = this.kiType != null ? this.kiType : KiType.SMALL_BALL;
 		if ("damage".equals(statName) || "cooldown".equals(statName)) return true;
 		return switch (type) {
@@ -607,10 +608,17 @@ public class KiAttackData extends TechniqueData {
 
 		KiAttackData template = PredefinedTechniques.REGISTRY.get(this.id);
 		if (template != null && template != this) {
-			this.damageMultiplier = template.getDamageMultiplier() + Math.max(0, this.damageLevel) * 0.05f;
-			this.size = template.getSize() + Math.max(0, this.sizeLevel) * 0.1f;
-			this.speed = template.getSpeed() + Math.max(0, this.speedLevel) * 0.05f;
-			this.armorPenetration = template.getArmorPenetration() + Math.max(0, this.armorPenLevel);
+			this.experience = 0;
+			this.damageLevel = 0;
+			this.castTimeLevel = 0;
+			this.cooldownLevel = 0;
+			this.speedLevel = 0;
+			this.sizeLevel = 0;
+			this.armorPenLevel = 0;
+			this.damageMultiplier = template.getDamageMultiplier();
+			this.size = template.getSize();
+			this.speed = template.getSpeed();
+			this.armorPenetration = template.getArmorPenetration();
 			this.cooldown = template.getCooldown();
 		}
 

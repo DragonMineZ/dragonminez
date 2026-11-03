@@ -1831,7 +1831,7 @@ public class QuestTreeScreen extends BaseMenuScreen {
 		if (statsData != null) {
 			PlayerQuestData questData = statsData.getPlayerQuestData();
 			previewDifficulty = questData.getDifficulty();
-			previewPartySize = Math.max(1, questData.getPartyMemberIds().size());
+			previewPartySize = nearbyPartySize(questData);
 		}
 		enemyPreview.setQuest(selectedQuest, previewDifficulty, previewPartySize);
 		if (!enemyPreview.isActive()) return;
@@ -1844,6 +1844,19 @@ public class QuestTreeScreen extends BaseMenuScreen {
 		}
 		enemyPreview.render(graphics, this.font, base.x, base.y, base.width, base.height,
 				mouseX, mouseY, dt, visibility);
+	}
+
+	private static int nearbyPartySize(PlayerQuestData questData) {
+		Minecraft mc = Minecraft.getInstance();
+		if (mc.player == null || mc.level == null) return 1;
+		double range = ConfigManager.getServerConfig().getGameplay().getPartyQuestShareRange();
+		int size = 1;
+		for (UUID memberId : questData.getPartyMemberIds()) {
+			if (memberId.equals(mc.player.getUUID())) continue;
+			var member = mc.level.getPlayerByUUID(memberId);
+			if (member != null && member.distanceToSqr(mc.player) <= range * range) size++;
+		}
+		return size;
 	}
 
 	private void renderLeftNavigatorPanel(GuiGraphics graphics, int mouseX, int mouseY, float dt) {
@@ -2507,6 +2520,7 @@ public class QuestTreeScreen extends BaseMenuScreen {
 		int required = selectedQuest != null ? selectedQuest.getObjectiveRequired(pqd, questKey, objectiveIndex) : objective.getRequired();
 		if (objective.getType() == QuestObjective.ObjectiveType.KILL
 				|| objective.getType() == QuestObjective.ObjectiveType.ITEM
+				|| objective.getType() == QuestObjective.ObjectiveType.DELIVER
 				|| objective.getType() == QuestObjective.ObjectiveType.SKILL) {
 			return description + " (" + currentProgress + "/" + required + ")";
 		}

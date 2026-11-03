@@ -1,23 +1,38 @@
 {
-  "configVersion": "2.1.2",
+  "configVersion": "2.2.0",
   "worldGen": {
     "generateCustomStructures": true,
     "generateDragonBalls": true,
     "otherworldActive": true,
     "dbSpawnRange": 1000,
     "dragonBallSets": 1,
-    "structureMinDistanceFromSpawn": 0,
-    "structureMaxDistanceFromSpawn": 4000,
-    "structureMinDistanceBetween": 250,
+    "structureMinDistanceFromSpawn": 500,
+    "structureMaxDistanceFromSpawn": 10000,
+    "structureMinDistanceBetween": 500,
     "structureSpacing": 6000,
     "structureSeparation": 2000
   },
   "gameplay": {
     "forceCharacterCreation": true,
     "commandOutputOnConsole": true,
-    "reviveCooldownSeconds": 300,
+    "reviveCooldownSeconds": 180,
+    "babaTemporaryRevive": true,
+    "babaTempReturnSeconds": 3600,
+    "babaTimeMultiplierPerWorld": {
+      "minecraft:overworld": 1.0,
+      "minecraft:the_nether": 2.0,
+      "minecraft:the_end": 3.0,
+      "dragonminez:namek": 1.0,
+      "dragonminez:time_chamber": 5.0,
+      "dragonminez:sacredkaiplanet": 1.0
+    },
+    "defaultBabaTimeMultiplier": 1.0,
+    "babaHardcoreEnabled": false,
+    "babaHardcoreCooldownGrowth": 0.5,
     "tpGainMultiplier": 1.0,
-    "increaseTPGainRelativeToTPCost": 0.5,
+    "increaseTPGainRelativeToTPCost": 0.75,
+    "progressionReferenceLevel": 10000,
+    "attributeRewardPointRatio": 0.5,
     "globalTPCostMultiplier": 1.0,
     "minTPCost": 16,
     "maxTPDiscount": 140,
@@ -29,33 +44,36 @@
     "tpPerItemCrafted": 1,
     "gravityBonusEnabled": true,
     "HTCTpMultiplier": 1.75,
+    "otherworldDeadTpMultiplier": 2.0,
     "maxLevelValueInsteadOfStats": true,
-    "maxValue": 10000,
+    "maxValue": 1000000,
+    "vitCurveKnee": 16000.0,
+    "defCurveKnee": 20000.0,
     "capsules": {
       "statSeparator": ", ",
       "values": {
+        "SKP": {
+          "stats": "SKP",
+          "points": 5
+        },
         "PWR": {
           "stats": "PWR",
+          "points": 5
+        },
+        "ENE": {
+          "stats": "ENE",
           "points": 5
         },
         "STR": {
           "stats": "STR",
           "points": 5
         },
-        "SKP": {
-          "stats": "SKP",
-          "points": 5
-        },
-        "RES": {
-          "stats": "RES",
-          "points": 5
-        },
         "VIT": {
           "stats": "VIT",
           "points": 5
         },
-        "ENE": {
-          "stats": "ENE",
+        "RES": {
+          "stats": "RES",
           "points": 5
         }
       }
@@ -64,10 +82,17 @@
     "createDefaultSagas": true,
     "sideQuestsEnabled": true,
     "createDefaultSideQuests": true,
+    "autoUpdateQuests": true,
+    "levelFormRequisiteEnabled": true,
+    "sagaFormRequisiteEnabled": true,
+    "pixelTattooPaintingEnabled": true,
     "defaultQuestPartyMultiplier": 1.45,
     "senzuCooldownTicks": 240,
     "senzuGiftCooldownTicks": 18000,
     "senzuGiftAmount": 5,
+    "kamiBlessTpMultiplier": 1.2,
+    "kamiBlessDurationSeconds": 300,
+    "kamiBlessCooldownSeconds": 1800,
     "food": {
       "minHungerPoints": 2,
       "maxHungerPoints": 20,
@@ -84,6 +109,15 @@
     },
     "mightFruitPower": 1.2,
     "majinPower": 1.3,
+    "sacredWaterMultiplier": 1.1,
+    "demonEyeMultiplier": 1.5,
+    "demonEyeKiDrainPercent": 0.02,
+    "demonEyeHealthDrainPercent": 0.02,
+    "demonEyeAlignmentLossIntervalSeconds": 10,
+    "demonEyeMaxGrowth": 0.5,
+    "demonEyeGrowthSeconds": 300,
+    "demonEyeBackHitsToRemove": 3,
+    "demonEyeBackHitWindowSeconds": 10,
     "metamoruFusionThreshold": 0.5,
     "fusionBoosts": [
       "STR",
@@ -100,6 +134,7 @@
     "enemyHealthPerPartyPlayer": 1.25,
     "enemyDamagePerPartyPlayer": 1.1,
     "instantTransmissionPlayerRangePerLevel": 200,
+    "partyMarkerRange": 2000,
     "easyModeHPMultiplier": 0.75,
     "easyModeDamageMultiplier": 0.5,
     "easyModeTPMultiplier": 1.25,
@@ -108,15 +143,18 @@
     "hardModeDamageMultiplier": 1.5,
     "hardModeTPMultiplier": 1.25,
     "hardModeQuestRewardMultiplier": 1.25,
+    "storyResetTPMultiplier": 0.5,
     "helmetsThatKeepHair": [
       "dragonminez:invencible_armor_helmet",
-      "dragonminez:invencible_blue_armor_helmet"
+      "dragonminez:invencible_blue_armor_helmet",
+      "dragonminez:broly_z_armor_helmet"
     ],
     "tpGainBoosts": {
       "STORY": [
         "class",
         "racialskill",
         "htc",
+        "otherworld",
         "gravity",
         "weights",
         "global",
@@ -128,6 +166,7 @@
         "class",
         "racialskill",
         "htc",
+        "otherworld",
         "gravity",
         "weights",
         "global",
@@ -138,6 +177,7 @@
         "class",
         "racialskill",
         "htc",
+        "otherworld",
         "gravity",
         "weights",
         "global",
@@ -148,6 +188,7 @@
         "class",
         "racialskill",
         "htc",
+        "otherworld",
         "gravity",
         "weights",
         "global",
@@ -158,6 +199,7 @@
         "class",
         "racialskill",
         "htc",
+        "otherworld",
         "gravity",
         "weights",
         "global",
@@ -168,6 +210,7 @@
         "class",
         "racialskill",
         "htc",
+        "otherworld",
         "gravity",
         "weights",
         "global",
@@ -178,6 +221,18 @@
         "class",
         "racialskill",
         "htc",
+        "otherworld",
+        "gravity",
+        "weights",
+        "global",
+        "potion",
+        "mutant"
+      ],
+      "TRAINING": [
+        "class",
+        "racialskill",
+        "htc",
+        "otherworld",
         "gravity",
         "weights",
         "global",
@@ -188,50 +243,145 @@
   },
   "racialSkills": {
     "enableRacialSkills": true,
-    "humanRacialSkill": true,
-    "humanKiRegenBoost": 1.4,
-    "saiyanRacialSkill": true,
-    "saiyanZenkaiAmount": 3,
-    "saiyanZenkaiHealthRegen": 0.2,
-    "saiyanZenkaiStatBoost": 0.1,
-    "saiyanZenkaiBoosts": [
-      "STR",
-      "SKP",
-      "PWR"
-    ],
-    "saiyanZenkaiCooldownSeconds": 900,
-    "namekianRacialSkill": true,
-    "namekianAssimilationAmount": 4,
-    "namekianAssimilationHealthRegen": 0.35,
-    "namekianAssimilationStatBoost": 0.15,
-    "namekianAssimilationBoosts": [
-      "STR",
-      "SKP",
-      "PWR"
-    ],
-    "namekianAssimilationOnNamekNpcs": true,
-    "frostDemonRacialSkill": true,
-    "frostDemonTPBoost": 1.25,
-    "bioAndroidRacialSkill": true,
-    "bioAndroidCooldownSeconds": 180,
-    "bioAndroidDrainRatio": 0.25,
-    "majinAbsoprtionSkill": true,
-    "majinReviveSkill": true,
-    "majinAbsorptionAmount": 3,
-    "majinAbsorptionHealthRegen": 0.3,
-    "majinAbsorptionStatsCopy": 0.04,
-    "majinAbsorptionBoosts": [
-      "STR",
-      "SKP",
-      "PWR"
-    ],
-    "majinAbsorptionOnMobs": true,
-    "majinReviveCooldownSeconds": 3600,
-    "majinReviveHealthRatioPerBlop": 0.25
+    "saiyan": {
+      "enabled": true,
+      "minLevel": 100,
+      "cooldownSeconds": 900,
+      "knockoutSeconds": 10,
+      "knockoutHealthRegen": 0.4,
+      "knockoutStaminaRegen": 0.8,
+      "knockoutEnergyRegen": 0.8,
+      "overkillThreshold": 1.0,
+      "peakWindowSeconds": 10,
+      "maxBuffHitRatio": 0.25,
+      "minBuffPct": 0.01,
+      "maxBuffPct": 0.1,
+      "permanentMaxBuffs": 3,
+      "tempBuffMinSeconds": 120,
+      "tempBuffMaxSeconds": 240,
+      "releaseBonusPerZenkai": 0.05,
+      "releaseBonusCap": 0.15,
+      "buffStats": [
+        "STR",
+        "SKP",
+        "PWR"
+      ]
+    },
+    "namekian": {
+      "enabled": true,
+      "assimilationAmount": 4,
+      "assimilationCooldownSeconds": 600,
+      "assimilationHealthRegen": 0.35,
+      "assimilationStatBoost": 0.075,
+      "assimilationBoosts": [
+        "STR",
+        "SKP",
+        "PWR"
+      ],
+      "assimilationOnNamekNpcs": true,
+      "assimilationRequestTimeoutSeconds": 30,
+      "regenChannelSeconds": 3,
+      "regenHealthRatio": 0.25,
+      "regenEnergyCost": 0.3,
+      "regenStaminaCost": 0.2,
+      "regenCooldownSeconds": 45,
+      "waterRegenBonus": 0.25,
+      "waterRegenSeconds": 5
+    },
+    "majin": {
+      "enabled": true,
+      "absorptionAmount": 3,
+      "absorptionCooldownSeconds": 600,
+      "absorptionHealthRegen": 0.3,
+      "absorptionStatCopy": 0.04,
+      "absorptionBoosts": [
+        "STR",
+        "SKP",
+        "PWR"
+      ],
+      "absorptionOnMobs": true,
+      "slotEjectCooldownSeconds": 300,
+      "foodHealBonus": 0.25,
+      "kiHealReceivedBonus": 0.25,
+      "kiHealDealtBonus": 0.25,
+      "healTechniqueCooldownReduction": 0.1,
+      "healTechniqueCostReduction": 0.1
+    },
+    "human": {
+      "enabled": true,
+      "techniqueXpBonus": 0.35,
+      "adrenalineThreshold": 0.25,
+      "adrenalineSeconds": 15,
+      "adrenalineDamageReduction": 0.3,
+      "adrenalineAttackSpeed": 0.25,
+      "adrenalineMoveSpeed": 0.25,
+      "adrenalineCooldownSeconds": 180,
+      "androidBarrierEnabled": true,
+      "androidBarrierMaxSeconds": 10,
+      "androidBarrierCooldownSeconds": 30,
+      "androidBarrierBrokenCooldownSeconds": 180,
+      "androidBarrierKiConversion": 0.5,
+      "androidBarrierSurgeOverflow": 0.5,
+      "androidBarrierBreakOverflow": 0.75,
+      "androidBarrierSize": 2.6,
+      "androidKiRegenMultiplier": 2.0
+    },
+    "frostdemon": {
+      "enabled": true,
+      "tpBoost": 1.25,
+      "masteryGainBonus": 0.25,
+      "kiTechniqueResistance": 0.125,
+      "strikeTechniqueResistance": 0.05,
+      "reserveChargeReleaseThreshold": 25,
+      "reserveMaxRatio": 0.5,
+      "reserveFullChargeSeconds": 30,
+      "reserveDurationSeconds": 10,
+      "reserveFormBonus": 0.15,
+      "reserveChargeForms": [
+        "second",
+        "third",
+        "final"
+      ]
+    },
+    "bioandroid": {
+      "enabled": true,
+      "cooldownSeconds": 180,
+      "drainRatio": 0.25,
+      "drainTpRatio": 0.5,
+      "explodeChargeSeconds": 5,
+      "explodeRevertSeconds": 4,
+      "explodeDamageRatio": 5.0,
+      "explodeRadius": 36,
+      "explodeKillsUser": false,
+      "explodeKnockdownSeconds": 30,
+      "explodeCooldownSeconds": 600,
+      "cellJrMax": 3,
+      "cellJrStatRatio": 0.2,
+      "cellJrOwnerPenalty": 0.1,
+      "cellJrChargeCooldownSeconds": 240,
+      "cellJrLeashRange": 64,
+      "cellJrGlobalCap": 30
+    },
+    "glind": {
+      "enabled": true,
+      "divineKi": true,
+      "meditationDodgeMultiplier": 1.5,
+      "regenMultiplier": 1.25,
+      "healingReductionBase": 0.2,
+      "healingReductionStackEfficiency": 0.5,
+      "evilAttackerMaxAlignment": 25,
+      "goodTargetMinAlignment": 60,
+      "goodAttackerMinAlignment": 75,
+      "evilTargetMaxAlignment": 40,
+      "playerDamageBonus": 0.1,
+      "frostDemonDamageBonus": 0.15,
+      "majinDamageBonus": 0.05,
+      "npcDamageBonus": 0.075
+    }
   },
   "dynamicGrowth": {
     "enabled": true,
-    "debugChat": false,
+    "growthStatsCountForTpCost": false,
     "practiceCurveEnabled": true,
     "practiceXpMultiplier": 2.0,
     "strPracticeMultiplier": 1.0,
@@ -243,6 +393,7 @@
     "staminaSpentXpRatio": 0.1,
     "energySpentXpRatio": 0.1,
     "kiWeaponMeleePwrShare": 0.25,
+    "linkedStatXpShare": 0.5,
     "naturalCombatTpMultiplier": 1.0,
     "manualTpPurchasesEnabled": true,
     "attributeTpCostMultiplier": 1.0,
@@ -295,7 +446,6 @@
     "maxFlyPenalty": 0.95,
     "tpEnabled": true,
     "tpPeakMultiplier": 2.0,
-    "tpCurveWidth": 7.0,
     "tpGravityBonusPerGravity": 0.025,
     "masteryBonusPerGravity": 0.0025,
     "tpIdealBaseDivisor": 2.0,
@@ -308,6 +458,11 @@
     "tpComfortMultiplier": 1.5,
     "tpHeavyMultiplier": 2.5,
     "maxWeightPenalty": 0.6,
+    "maxWeightRequested": 100000.0,
+    "gravityRoomMk2Relief": 0.5,
+    "gravityRoomMk2Falloff": 3.0,
+    "gravityRoomMk3Relief": 0.8,
+    "gravityRoomMk3Falloff": 1.5,
     "loadDrainComfort": 1.15,
     "loadDrainIdeal": 1.3,
     "loadDrainHeavy": 1.5,
@@ -329,9 +484,281 @@
     "legendaryGroupName": "legendaryforms",
     "tpGainMultiplier": 1.25,
     "masteryGainMultiplier": 1.5,
-    "powerBonusReductionNoSkill": 0.67,
     "powerBonusBoostWithSkill": 0.33,
-    "keepMutantOnDeath": false
+    "rageBorrowedFormBonus": 0.5,
+    "keepMutantOnDeath": false,
+    "rage": {
+      "gainPerDealtHealthFraction": 60.0,
+      "gainPerReceivedHealthFraction": 150.0,
+      "maxGainPerHit": 25.0,
+      "significantTargetHealthRatio": 0.1,
+      "significantDamageTakenRatio": 0.01,
+      "varietyBonusPerStep": 0.25,
+      "varietyMaxSteps": 4,
+      "varietyWindowSeconds": 4.0,
+      "activeDurationSeconds": 10.0,
+      "activeGainMultiplier": 0.35,
+      "fullIdleSeconds": 15.0,
+      "partialIdleSeconds": 8.0,
+      "idleDrainSeconds": 3.0
+    }
+  },
+  "falseSuperSaiyan": {
+    "enabled": true,
+    "groupName": "falseform",
+    "formName": "falsesupersaiyan",
+    "minLevel": 100,
+    "maxLevel": 200,
+    "healthThreshold": 0.25,
+    "requireZenkaiSpent": false,
+    "gainPerDealtHealthFraction": 60.0,
+    "gainPerReceivedHealthFraction": 150.0,
+    "maxGainPerHit": 25.0,
+    "significantTargetHealthRatio": 0.1,
+    "significantDamageTakenRatio": 0.01,
+    "activeGainMultiplier": 0.5,
+    "idleGainPerSecond": 10.0,
+    "combatGraceSeconds": 2.0,
+    "drainSeconds": 8.0,
+    "activeDrainSeconds": 12.0
+  },
+  "kiTransfer": {
+    "enabled": true,
+    "kiPercentPerSecond": 0.025,
+    "boostDelaySeconds": 1.0,
+    "boostPerDonor": 0.05,
+    "maxBoostDonors": 5,
+    "donorSpeedMultiplier": 0.4,
+    "interruptDamageRatio": 0.1,
+    "startRange": 8.0,
+    "maxLinkDistance": 32.0,
+    "attackChargeCreditRatio": 1.0,
+    "intervalSeconds": 3.0,
+    "retainSecondsPerInterval": 5.0,
+    "donorPenaltyPerInterval": 0.05,
+    "donorPenaltyMax": 0.25,
+    "restartCooldownSeconds": 2.0
+  },
+  "superSaiyanGodRitual": {
+    "enabled": true,
+    "groupName": "godritual",
+    "formName": "supersaiyangodritual",
+    "donorForms": [
+      "ssgrades.supersaiyan",
+      "supersaiyan.supersaiyanmastered"
+    ],
+    "recipientForms": [
+      "supersaiyan.supersaiyanmastered"
+    ],
+    "requiredDonors": 5,
+    "pureGoodMinAlignment": 90,
+    "pureEvilMaxAlignment": 10,
+    "ritualRadius": 5.0,
+    "ritualVerticalRange": 3.0,
+    "ringRadius": 2.5,
+    "channelSeconds": 10.0,
+    "liftHeight": 6.0,
+    "liftSeconds": 2.0,
+    "glowInSeconds": 1.0,
+    "glowOutSeconds": 1.5,
+    "shellColor": "#6FD8FF",
+    "interruptDamageRatio": 0.25,
+    "interruptCooldownSeconds": 30.0,
+    "cooldownMinutes": 30.0,
+    "durationMinutes": 5.0,
+    "powerBonus": 0.3,
+    "mutantPowerBonus": 0.45
+  },
+  "worldBoss": {
+    "contributionRange": 150,
+    "audienceRefreshSeconds": 5,
+    "meterLingerSeconds": 15,
+    "damageWeight": 1.0,
+    "mitigatedWeight": 1.0,
+    "receivedWeight": 1.0,
+    "healedWeight": 1.0,
+    "lives": 3,
+    "reviveSlot": 4,
+    "reviveCastSeconds": 15,
+    "reviveCooldownSeconds": 90,
+    "reviveInterruptCooldownSeconds": 15,
+    "reviveInterruptDamageRatio": 0.1,
+    "reviveDecayMultiplier": 3.0,
+    "truceGraceSeconds": 15,
+    "reviveRange": 6.0,
+    "reviveRestoreRatio": 0.25,
+    "knockoutTitleSeconds": 5,
+    "rankChanceBonus": [
+      0.25,
+      0.15,
+      0.1
+    ],
+    "guaranteedRewardMinRatio": 0.5,
+    "minContributionShare": 0.075,
+    "healthPerExtraMember": 0.5,
+    "damagePerExtraMember": 0.25,
+    "rewards": {
+      "janemba": [
+        {
+          "type": "ATTRIBUTES",
+          "amount": 500,
+          "chance": 1.0
+        },
+        {
+          "type": "ITEM",
+          "item": "dragonminez:dimensional_sword",
+          "count": 1,
+          "chance": 0.5
+        },
+        {
+          "type": "SKILL",
+          "skill": "dimensional_teleport",
+          "level": 1,
+          "chance": 0.2
+        }
+      ],
+      "turles": [
+        {
+          "type": "ATTRIBUTES",
+          "amount": 50,
+          "chance": 1.0
+        },
+        {
+          "type": "ITEM",
+          "item": "dragonminez:might_tree_fruit",
+          "count": 1,
+          "chance": 0.5
+        },
+        {
+          "type": "SKILL",
+          "skill": "kill_driver",
+          "level": 1,
+          "chance": 0.25
+        },
+        {
+          "type": "SKILL",
+          "skill": "meteor_burst",
+          "level": 1,
+          "chance": 0.15
+        }
+      ],
+      "metal_cooler_core": [
+        {
+          "type": "ATTRIBUTES",
+          "amount": 105,
+          "chance": 1.0
+        },
+        {
+          "type": "SKILL",
+          "skill": "supernova_cooler",
+          "level": 1,
+          "chance": 0.2
+        },
+        {
+          "type": "ITEM",
+          "item": "dragonminez:gete_ingot",
+          "count": 4,
+          "chance": 1.0
+        },
+        {
+          "type": "ITEM",
+          "item": "dragonminez:gete_red_capsule",
+          "count": 1,
+          "chance": 0.12
+        },
+        {
+          "type": "ITEM",
+          "item": "dragonminez:gete_purple_capsule",
+          "count": 1,
+          "chance": 0.12
+        },
+        {
+          "type": "ITEM",
+          "item": "dragonminez:gete_yellow_capsule",
+          "count": 1,
+          "chance": 0.12
+        },
+        {
+          "type": "ITEM",
+          "item": "dragonminez:gete_green_capsule",
+          "count": 1,
+          "chance": 0.12
+        },
+        {
+          "type": "ITEM",
+          "item": "dragonminez:gete_orange_capsule",
+          "count": 1,
+          "chance": 0.12
+        },
+        {
+          "type": "ITEM",
+          "item": "dragonminez:gete_blue_capsule",
+          "count": 1,
+          "chance": 0.12
+        }
+      ],
+      "tamagami_3": [
+        {
+          "type": "ATTRIBUTES",
+          "amount": 90,
+          "chance": 1.0
+        },
+        {
+          "type": "ITEM",
+          "item": "dragonminez:tamagami_hammer",
+          "count": 1,
+          "chance": 0.3
+        }
+      ],
+      "tamagami_2": [
+        {
+          "type": "ATTRIBUTES",
+          "amount": 300,
+          "chance": 1.0
+        },
+        {
+          "type": "ITEM",
+          "item": "dragonminez:tamagami_trident",
+          "count": 1,
+          "chance": 0.3
+        }
+      ],
+      "tamagami_1": [
+        {
+          "type": "ATTRIBUTES",
+          "amount": 360,
+          "chance": 1.0
+        },
+        {
+          "type": "ITEM",
+          "item": "dragonminez:tamagami_sword",
+          "count": 1,
+          "chance": 0.3
+        }
+      ],
+      "gomah": [
+        {
+          "type": "ATTRIBUTES",
+          "amount": 435,
+          "chance": 1.0
+        },
+        {
+          "type": "ITEM",
+          "item": "dragonminez:demon_eye",
+          "count": 1,
+          "chance": 0.02
+        }
+      ]
+    }
+  },
+  "crafting": {
+    "copyEnchantmentsFromTemplate": true,
+    "copyWeaponLevelFromTemplate": false,
+    "copyWeaponLevelProgressFromTemplate": false,
+    "copyApotheosisRarityFromTemplate": false,
+    "copyApotheosisAffixesFromTemplate": false,
+    "copyApotheosisSocketsFromTemplate": false,
+    "copyApotheosisGemsFromTemplate": false
   },
   "storage": {
     "storageType": "NBT",
@@ -343,5 +770,21 @@
     "password": "password",
     "poolSize": 10,
     "threadPoolSize": 4
+  },
+  "developer": {
+    "reportJsonProblemsInChat": true
+  },
+  "hair": {
+    "maxSegmentsPerStrand": 12,
+    "maxStrandLength": {
+      "base": 20.0,
+      "ssj": 20.0,
+      "ssj2": 20.0,
+      "ssj3": 20.0,
+      "ssj4": 20.0
+    },
+    "maxStrandWidth": 8.0,
+    "maxRootOffset": 2.0,
+    "maxTotalSegmentsPerStyle": 600
   }
 }

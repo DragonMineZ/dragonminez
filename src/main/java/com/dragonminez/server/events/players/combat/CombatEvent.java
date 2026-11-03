@@ -47,6 +47,7 @@ import com.dragonminez.server.events.players.KiSurgeService;
 import com.dragonminez.server.util.GravityLogic;
 import com.dragonminez.server.world.dimension.OtherworldDimension;
 import com.dragonminez.server.world.tournament.Tournament;
+import com.dragonminez.server.events.QuestEvents;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundEvent;
@@ -927,12 +928,20 @@ public class CombatEvent {
 									.orElse(false);
 						}
 
-						boolean worldBossKnockout = !racialCancelled && victim instanceof ServerPlayer bossVictim
-								&& com.dragonminez.server.world.worldboss.WorldBossManager.tryKnockOut(bossVictim, stats, event.getSource());
-						boolean babaKnockout = !racialCancelled && !worldBossKnockout && victim instanceof ServerPlayer babaVictim
-								&& com.dragonminez.server.util.BabaReviveService.tryKnockOut(babaVictim, stats, event.getSource());
+						boolean tournamentKnockout = !racialCancelled && victim instanceof ServerPlayer tournamentVictim
+								&& Tournament.Manager.isInNonLethalMatch(tournamentVictim);
+						if (tournamentKnockout) Tournament.Manager.knockOut((ServerPlayer) victim);
 
-						if (racialCancelled || worldBossKnockout || babaKnockout) {
+						boolean worldBossKnockout = !racialCancelled && !tournamentKnockout && victim instanceof ServerPlayer bossVictim
+								&& com.dragonminez.server.world.worldboss.WorldBossManager.tryKnockOut(bossVictim, stats, event.getSource());
+						boolean babaKnockout = !racialCancelled && !tournamentKnockout && !worldBossKnockout && victim instanceof ServerPlayer babaVictim
+								&& com.dragonminez.server.util.BabaReviveService.tryKnockOut(babaVictim, stats, event.getSource());
+						boolean sparKnockout = !racialCancelled && !tournamentKnockout && !worldBossKnockout && !babaKnockout
+								&& victim instanceof ServerPlayer sparVictim && QuestEvents.tryKnockOutSpar(sparVictim, stats, event.getSource());
+
+						if (tournamentKnockout) {
+							finalDamage = 0.0F;
+						} else if (racialCancelled || worldBossKnockout || babaKnockout || sparKnockout) {
 							finalDamage = Math.max(0.0F, victim.getHealth() - 1.0F);
 						} else {
 							boolean shadowKnockdown = damageSource instanceof ShadowDummyEntity dummy

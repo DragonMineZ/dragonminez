@@ -54,6 +54,7 @@ public class CustomHair {
 	private final Map<HairFace, HairStrand[]> strandsByFace = new EnumMap<>(HairFace.class);
 	private String globalColor = "#000000";
 	private String name = "Custom";
+	private boolean keepEmpty = false;
 	private long revision = REVISIONS.incrementAndGet();
 
 	public CustomHair() {
@@ -169,6 +170,15 @@ public class CustomHair {
 		return getVisibleStrandCount() == 0;
 	}
 
+	public boolean isKeptEmpty() {
+		return keepEmpty && isEmpty();
+	}
+
+	public void setKeepEmpty(boolean keepEmpty) {
+		this.keepEmpty = keepEmpty;
+		markChanged();
+	}
+
 	public String getGlobalColor() {
 		return globalColor;
 	}
@@ -205,6 +215,7 @@ public class CustomHair {
 	public void copyFrom(CustomHair other) {
 		this.name = other.name;
 		this.globalColor = other.globalColor;
+		this.keepEmpty = other.keepEmpty;
 		for (HairFace face : HairFace.values()) {
 			HairStrand[] source = other.strandsByFace.get(face);
 			HairStrand[] target = strandsByFace.get(face);
@@ -224,6 +235,7 @@ public class CustomHair {
 		tag.putInt("v", VERSION);
 		if (name != null && !name.isEmpty()) tag.putString("n", name);
 		tag.putString("gc", globalColor);
+		if (isKeptEmpty()) tag.putBoolean("e", true);
 		for (HairFace face : HairFace.values()) {
 			ListTag strandList = new ListTag();
 			for (HairStrand strand : strandsByFace.get(face)) {
@@ -238,6 +250,7 @@ public class CustomHair {
 		int version = tag.contains("v") ? tag.getInt("v") : (tag.contains("Version") ? tag.getInt("Version") : 1);
 		this.name = tag.contains("n") ? tag.getString("n") : (tag.contains("Name") ? tag.getString("Name") : "Custom");
 		setGlobalColor(tag.contains("gc") ? tag.getString("gc") : tag.getString("GlobalColor"));
+		this.keepEmpty = tag.getBoolean("e");
 
 		for (HairFace face : HairFace.values()) {
 			HairStrand[] strands = strandsByFace.get(face);

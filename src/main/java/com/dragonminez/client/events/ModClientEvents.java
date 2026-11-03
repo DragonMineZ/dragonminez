@@ -1,8 +1,9 @@
 package com.dragonminez.client.events;
 
 import com.dragonminez.Reference;
-import com.dragonminez.client.crowdin.CrowdinManager;
-import com.dragonminez.client.crowdin.CrowdinPackResources;
+import com.dragonminez.client.lang.LiveTranslationManager;
+import com.dragonminez.client.lang.LiveTranslationPackResources;
+import com.dragonminez.client.gui.character.tab.CharacterTabs;
 import com.dragonminez.client.dragonball.DragonBallPackResources;
 import com.dragonminez.client.animation.CombatAnimationResolver;
 import com.dragonminez.client.animation.EvasionAnimations;
@@ -144,20 +145,15 @@ public class ModClientEvents {
 	@SubscribeEvent
 	public static void onAddPackFinders(AddPackFindersEvent event) {
 		if (event.getPackType() == PackType.CLIENT_RESOURCES) {
-			if (CrowdinManager.isLiveTranslationsEnabled()) {
-				String currentLang = Minecraft.getInstance().options.languageCode;
-				CrowdinManager.fetchLanguage(currentLang);
-			}
-
 			event.addRepositorySource((packConsumer) -> {
-				PackLocationInfo crowdinInfo = new PackLocationInfo("dmz_crowdin_ota", Component.literal("DMZ Live Translations"), PackSource.BUILT_IN, java.util.Optional.empty());
-				Pack.ResourcesSupplier crowdinSupplier = new Pack.ResourcesSupplier() {
-					@Override public net.minecraft.server.packs.PackResources openPrimary(PackLocationInfo location) { return new CrowdinPackResources(location); }
+				PackLocationInfo translationsInfo = new PackLocationInfo("dmz_live_translations", Component.literal("DMZ Live Translations"), PackSource.BUILT_IN, java.util.Optional.empty());
+				Pack.ResourcesSupplier translationsSupplier = new Pack.ResourcesSupplier() {
+					@Override public net.minecraft.server.packs.PackResources openPrimary(PackLocationInfo location) { return new LiveTranslationPackResources(location); }
 					@Override public net.minecraft.server.packs.PackResources openFull(PackLocationInfo location, Pack.Metadata metadata) { return openPrimary(location); }
 				};
-				Pack crowdinPack = Pack.readMetaAndCreate(crowdinInfo, crowdinSupplier, PackType.CLIENT_RESOURCES,
+				Pack translationsPack = Pack.readMetaAndCreate(translationsInfo, translationsSupplier, PackType.CLIENT_RESOURCES,
 						new PackSelectionConfig(true, Pack.Position.TOP, false));
-				if (crowdinPack != null) packConsumer.accept(crowdinPack);
+				if (translationsPack != null) packConsumer.accept(translationsPack);
 
 				PackLocationInfo dragonballInfo = new PackLocationInfo("dmz_dragonballs_runtime", Component.literal("DMZ Dragonballs Runtime Resources"), PackSource.BUILT_IN, java.util.Optional.empty());
 				Pack.ResourcesSupplier dragonballSupplier = new Pack.ResourcesSupplier() {
@@ -188,6 +184,7 @@ public class ModClientEvents {
 			BetaWhitelist.reload();
 			SkinCacheManager.init();
 			DBSagasEntity.setRenderExtentsProvider(GiantRenderBounds::extentsFor);
+			CharacterTabs.postRegistrationEvent();
 
 			//Bloques
 			BlockEntityRenderers.register(MainBlockEntities.DRAGON_BALL_BLOCK_ENTITY.get(), DragonBallBlockRenderer::new);

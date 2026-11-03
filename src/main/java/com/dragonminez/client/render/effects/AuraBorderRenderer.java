@@ -17,7 +17,6 @@ import com.mojang.blaze3d.platform.GlStateManager;
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexBuffer;
-import net.minecraft.client.Camera;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.ShaderInstance;
@@ -153,7 +152,9 @@ public final class AuraBorderRenderer {
 		int bound = GlStateManager.getBoundFramebuffer();
 		try {
 			ensureTargets(main);
-			Matrix4f view = viewMatrix(mc, poseStack);
+			// Use the world pass transform for both the mask and its screen bounds.
+			// Reconstructing yaw/pitch for shader packs drops other camera transforms.
+			Matrix4f view = new Matrix4f(poseStack.last().pose());
 			captureMask(main, view);
 			bindScene(bound, main);
 			Vec3 camera = mc.gameRenderer.getMainCamera().getPosition();
@@ -202,14 +203,6 @@ public final class AuraBorderRenderer {
 	private static void bindScene(int framebuffer, RenderTarget main) {
 		GlStateManager._glBindFramebuffer(GL30.GL_FRAMEBUFFER, framebuffer);
 		GlStateManager._viewport(0, 0, main.viewWidth, main.viewHeight);
-	}
-
-	private static Matrix4f viewMatrix(Minecraft mc, PoseStack poseStack) {
-		if (!IrisCompat.isShaderPackInUse()) return new Matrix4f(poseStack.last().pose());
-		Camera camera = mc.gameRenderer.getMainCamera();
-		return new Matrix4f()
-				.rotateX(camera.getXRot() * Mth.DEG_TO_RAD)
-				.rotateY((camera.getYRot() + 180.0f) * Mth.DEG_TO_RAD);
 	}
 
 	private record Placement(float centerX, float centerY, float upX, float upY, float thickness, float alpha,

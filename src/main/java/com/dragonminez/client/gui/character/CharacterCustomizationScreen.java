@@ -4,6 +4,9 @@ import com.dragonminez.Reference;
 import com.dragonminez.client.events.ForgeClientEvents;
 import com.dragonminez.client.gui.hair.HairEditorScreen;
 import com.dragonminez.client.gui.character.pixel.PixelEditorScreen;
+import com.dragonminez.client.gui.character.tab.CharacterTab;
+import com.dragonminez.client.gui.character.tab.CharacterTabs;
+import com.dragonminez.client.gui.character.tab.TabContext;
 import com.dragonminez.client.util.SkinGathererProvider;
 import com.dragonminez.client.gui.buttons.ColorSlider;
 import com.dragonminez.client.gui.buttons.CustomTextureButton;
@@ -44,6 +47,10 @@ import com.mojang.blaze3d.systems.RenderSystem;
 import net.minecraft.ChatFormatting;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.Font;
+import net.minecraft.client.gui.components.Renderable;
+import net.minecraft.client.gui.components.events.GuiEventListener;
+import net.minecraft.client.gui.narration.NarratableEntry;
 import net.minecraft.client.gui.components.EditBox;
 import net.minecraft.client.gui.screens.PauseScreen;
 import net.minecraft.client.gui.screens.Screen;
@@ -52,6 +59,7 @@ import net.minecraft.client.renderer.CubeMap;
 import net.minecraft.client.renderer.PanoramaRenderer;
 import net.minecraft.client.resources.language.I18n;
 import net.minecraft.network.chat.Component;
+import net.minecraft.network.chat.Style;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.Mth;
 import net.minecraft.world.entity.LivingEntity;
@@ -95,7 +103,9 @@ public class CharacterCustomizationScreen extends ScaledScreen {
 	private float frameEase;
 	private int passiveInfoBottom;
 	private static final List<String> PREVIEW_FORM_TYPE_ORDER = List.of("superforms", "androidforms", "legendaryforms", "godforms");
-	private final List<TabId> activeTabs = new ArrayList<>();
+	private final List<CharacterTab> activeTabs = new ArrayList<>();
+	private final Set<CharacterTab> openedAddonTabs = new LinkedHashSet<>();
+	private final TabContext tabContext = new ScreenTabContext();
 
 	private final Map<String, PanoramaRenderer> panoramaCache = new HashMap<>();
 
@@ -129,7 +139,6 @@ public class CharacterCustomizationScreen extends ScaledScreen {
 	private boolean colorPickerVisible = false;
 	private String currentColorField = "";
 	private boolean isUpdatingFromCode = false;
-
 	private enum TabId { PRESET, HAIR, EYES, FACE, BODY, AURA_CLASS }
 
 	private enum PreviewRenderMode {
@@ -161,6 +170,34 @@ public class CharacterCustomizationScreen extends ScaledScreen {
 		}
 	}
 
+	private final class ScreenTabContext implements TabContext {
+		public Character character() { return character; }
+		public CharacterCustomizationScreen screen() { return CharacterCustomizationScreen.this; }
+		public boolean isRecustomization() { return previousScreen == null; }
+		public <T extends GuiEventListener & Renderable & NarratableEntry> T addWidget(T widget) { return addRenderableWidget(widget); }
+		public Font font() { return CharacterCustomizationScreen.this.font; }
+		public Style textStyle() { return Style.EMPTY.withFont(DMZ_FONT); }
+		public int panelX() { return LEFT_PANEL_X; }
+		public int panelY() { return getUiHeight() / 2 - LEFT_PANEL_HEIGHT / 2; }
+		public int panelWidth() { return LEFT_PANEL_WIDTH; }
+		public int panelHeight() { return LEFT_PANEL_HEIGHT; }
+		public int contentTop() { return panelY() + LEFT_PANEL_PADDING; }
+		public int uiWidth() { return getUiWidth(); }
+		public int uiHeight() { return getUiHeight(); }
+		public void markChanged() { syncCharacter(); }
+		public void refreshWidgets() { refreshScreenWidgets(); }
+	}
+
+	private static TabId tabId(CharacterTab tab) {
+		if (tab == CharacterTab.PRESET) return TabId.PRESET;
+		if (tab == CharacterTab.HAIR) return TabId.HAIR;
+		if (tab == CharacterTab.EYES) return TabId.EYES;
+		if (tab == CharacterTab.FACE) return TabId.FACE;
+		if (tab == CharacterTab.BODY) return TabId.BODY;
+		if (tab == CharacterTab.AURA_CLASS) return TabId.AURA_CLASS;
+		return null;
+	}
+
 	public CharacterCustomizationScreen(Screen previousScreen, Character character) {
 		super(Component.translatable("gui.dragonminez.customization.title"));
 		this.previousScreen = previousScreen;
@@ -172,13 +209,20 @@ public class CharacterCustomizationScreen extends ScaledScreen {
 	protected void init() {
 		UtilityMenuBlur.stop();
 		super.init();
+		CharacterTab previousTab = activeTabs.isEmpty() ? null : activeTabs.get(currentTabIndex);
 		activeTabs.clear();
-		activeTabs.add(TabId.PRESET);
-		if (getMaxHairForCurrentState() > 0) activeTabs.add(TabId.HAIR);
-		activeTabs.add(TabId.EYES);
-		activeTabs.add(TabId.FACE);
-		activeTabs.add(TabId.BODY);
-		activeTabs.add(TabId.AURA_CLASS);
+		activeTabs.add(CharacterTab.PRESET);
+		if (getMaxHairForCurrentState() > 0) activeTabs.add(CharacterTab.HAIR);
+		activeTabs.add(CharacterTab.EYES);
+		activeTabs.add(CharacterTab.FACE);
+		activeTabs.add(CharacterTab.BODY);
+		activeTabs.add(CharacterTab.AURA_CLASS);
+		CharacterTabs.insertAvailableTabs(activeTabs, character);
+		for (CharacterTab tab : activeTabs) {
+			if (!tab.isBuiltIn() && openedAddonTabs.add(tab)) tab.getDefinition().onOpen(tabContext);
+		}
+		int previousIndex = previousTab == null ? -1 : activeTabs.indexOf(previousTab);
+		currentTabIndex = previousIndex >= 0 ? previousIndex : Mth.clamp(currentTabIndex, 0, activeTabs.size() - 1);
 
 		resolveClassIndex();
 		reloadPreviewFormOptions();
@@ -205,7 +249,7 @@ public class CharacterCustomizationScreen extends ScaledScreen {
 		initTabWidgets();
 		initNavigationButtons();
 		initColorPickerSliders();
-		if (activeTabs.get(currentTabIndex) == TabId.AURA_CLASS) TutorialManager.request(this, TutorialManager.CUSTOMIZATION_CLASS, tutorialSteps());
+		if (activeTabs.get(currentTabIndex) == CharacterTab.AURA_CLASS) TutorialManager.request(this, TutorialManager.CUSTOMIZATION_CLASS, tutorialSteps());
 	}
 
 	private List<TutorialStep> tutorialSteps() {
@@ -231,14 +275,13 @@ public class CharacterCustomizationScreen extends ScaledScreen {
 
 	private void initTabWidgets() {
 		int top = getUiHeight() / 2 - LEFT_PANEL_HEIGHT / 2 + LEFT_PANEL_PADDING;
-		TabId tab = activeTabs.get(currentTabIndex);
-		switch (tab) {
-			case PRESET -> initPresetTab(top);
-			case HAIR -> initHairTab(top);
-			case EYES -> initEyesTab(top);
-			case BODY -> initBodyTab(top);
-			case AURA_CLASS -> initAuraClassTab(top);
-		}
+		CharacterTab tab = activeTabs.get(currentTabIndex);
+		if (tab == CharacterTab.PRESET) initPresetTab(top);
+		else if (tab == CharacterTab.HAIR) initHairTab(top);
+		else if (tab == CharacterTab.EYES) initEyesTab(top);
+		else if (tab == CharacterTab.BODY) initBodyTab(top);
+		else if (tab == CharacterTab.AURA_CLASS) initAuraClassTab(top);
+		else if (!tab.isBuiltIn()) tab.getDefinition().initWidgets(tabContext);
 	}
 
 	private void initPresetTab(int top) {
@@ -319,7 +362,7 @@ public class CharacterCustomizationScreen extends ScaledScreen {
 	}
 
 	private boolean shouldRenderFormPreviewInPreset() {
-		return !activeTabs.contains(TabId.HAIR);
+		return !activeTabs.contains(CharacterTab.HAIR);
 	}
 
 	private int presetGridRows() {
@@ -471,7 +514,7 @@ public class CharacterCustomizationScreen extends ScaledScreen {
 
 	private void onTabChanged() {
 		hideColorPicker();
-		TabId newTab = activeTabs.get(currentTabIndex);
+		TabId newTab = tabId(activeTabs.get(currentTabIndex));
 		if (newTab != TabId.HAIR && !(newTab == TabId.PRESET && shouldRenderFormPreviewInPreset())) {
 			previewFormIndex = previewFormOptions.isEmpty() ? -1 : 0;
 		}
@@ -642,7 +685,7 @@ public class CharacterCustomizationScreen extends ScaledScreen {
 		int panelY = getUiHeight() / 2 - LEFT_PANEL_HEIGHT / 2;
 		int centerX = LEFT_PANEL_X + LEFT_PANEL_WIDTH / 2;
 		int top = panelY + LEFT_PANEL_PADDING;
-		TabId tab = activeTabs.get(currentTabIndex);
+		CharacterTab activeTab = activeTabs.get(currentTabIndex);
 
 		bodyTypeBar.clear();
 		hairBar.clear();
@@ -651,14 +694,14 @@ public class CharacterCustomizationScreen extends ScaledScreen {
 		mouthBar.clear();
 		tattooBar.clear();
 
-		switch (tab) {
-			case PRESET -> renderPresetText(graphics, centerX, top);
-			case HAIR -> renderHairText(graphics, centerX, top);
-			case EYES -> renderEyesText(graphics, centerX, top);
-			case FACE -> renderFaceText(graphics, centerX, top);
-			case BODY -> renderBodyText(graphics, centerX, top);
-			case AURA_CLASS -> renderAuraClassText(graphics, centerX, top, mouseX, mouseY);
-		}
+		TabId tab = tabId(activeTab);
+		if (tab == TabId.PRESET) renderPresetText(graphics, centerX, top);
+		else if (tab == TabId.HAIR) renderHairText(graphics, centerX, top);
+		else if (tab == TabId.EYES) renderEyesText(graphics, centerX, top);
+		else if (tab == TabId.FACE) renderFaceText(graphics, centerX, top);
+		else if (tab == TabId.BODY) renderBodyText(graphics, centerX, top);
+		else if (tab == TabId.AURA_CLASS) renderAuraClassText(graphics, centerX, top, mouseX, mouseY);
+		else if (!activeTab.isBuiltIn()) activeTab.getDefinition().render(graphics, tabContext, mouseX, mouseY);
 
 		for (ScrollbarState bar : previewGridBars) bar.renderBar(graphics, mouseX, mouseY);
 	}
@@ -896,8 +939,8 @@ public class CharacterCustomizationScreen extends ScaledScreen {
 		float targetScale = 95.0f;
 		float targetBaseY = getUiHeight() / 2 + 112;
 
-		TabId tab = activeTabs.get(currentTabIndex);
-		if (tab == TabId.HAIR || tab == TabId.EYES || tab == TabId.FACE) {
+		TabId tab = tabId(activeTabs.get(currentTabIndex));
+		if (tab == TabId.HAIR || tab == TabId.EYES || tab == TabId.FACE || (!activeTabs.get(currentTabIndex).isBuiltIn() && activeTabs.get(currentTabIndex).getModelView() == CharacterTab.ModelView.HEAD)) {
 			targetScale = 150.0f;
 			targetBaseY = getUiHeight() / 2 + 246;
 		}
@@ -1011,7 +1054,8 @@ public class CharacterCustomizationScreen extends ScaledScreen {
 		int previewZoneRight = getUiWidth() - 16;
 		int centerX = previewZoneLeft + (previewZoneRight - previewZoneLeft) / 2;
 		int centerY = getUiHeight() / 2 + 112;
-		if (activeTabs.get(currentTabIndex) == TabId.HAIR || activeTabs.get(currentTabIndex) == TabId.EYES || activeTabs.get(currentTabIndex) == TabId.FACE) {
+		TabId tab = tabId(activeTabs.get(currentTabIndex));
+		if (tab == TabId.HAIR || tab == TabId.EYES || tab == TabId.FACE || (!activeTabs.get(currentTabIndex).isBuiltIn() && activeTabs.get(currentTabIndex).getModelView() == CharacterTab.ModelView.HEAD)) {
 			centerY = getUiHeight() / 2 + 246;
 		}
 
@@ -1076,6 +1120,7 @@ public class CharacterCustomizationScreen extends ScaledScreen {
 				if (!data.getStatus().isHasCreatedCharacter()) creationRequired[0] = true;
 			});
 			if (creationRequired[0]) {
+				cancelAddonTabs();
 				ForgeClientEvents.requestCharacterCreationReopen();
 				this.minecraft.setScreen(new PauseScreen(true));
 				return true;
@@ -1100,6 +1145,7 @@ public class CharacterCustomizationScreen extends ScaledScreen {
 
 	@Override
 	public void onClose() {
+		cancelAddonTabs();
 		clearLocalPlayerTransformState();
 		previewFormIndex = -1;
 		previewFormOptions.clear();
@@ -1112,12 +1158,25 @@ public class CharacterCustomizationScreen extends ScaledScreen {
 	}
 
 	private void closeToPrevious() {
+		cancelAddonTabs();
 		if (this.minecraft != null) this.minecraft.setScreen(previousScreen);
+	}
+
+	private void cancelAddonTabs() {
+		List<CharacterTab> opened = new ArrayList<>(openedAddonTabs);
+		openedAddonTabs.clear();
+		for (CharacterTab tab : opened) tab.getDefinition().onCancel();
 	}
 
 	private void finish() {
 		if (this.minecraft != null) {
 			clearAllTransformSelections(character);
+			List<CharacterTab> opened = new ArrayList<>(openedAddonTabs);
+			openedAddonTabs.clear();
+			for (CharacterTab tab : opened) {
+				if (activeTabs.contains(tab)) tab.getDefinition().onConfirm(character);
+				else tab.getDefinition().onCancel();
+			}
 			clearLocalPlayerTransformState();
 			previewFormIndex = -1;
 			previewFormOptions.clear();
@@ -1706,7 +1765,7 @@ public class CharacterCustomizationScreen extends ScaledScreen {
 
 	private boolean handlePreviewGridClick(double uiMouseX, double uiMouseY) {
 		int top = getUiHeight() / 2 - LEFT_PANEL_HEIGHT / 2 + LEFT_PANEL_PADDING;
-		TabId tab = activeTabs.get(currentTabIndex);
+		TabId tab = tabId(activeTabs.get(currentTabIndex));
 
 		return switch (tab) {
 			case PRESET -> handlePreviewGridSelection(uiMouseX, uiMouseY, top + 40, character.getMinBodyType(), getCombinedBodyTypeCount(), presetGridRows(), bodyTypeBar, this::setBodyTypeFromPreview);

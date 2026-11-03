@@ -13,6 +13,8 @@ import net.minecraft.world.level.Level;
 import net.neoforged.neoforge.event.entity.EntityMobGriefingEvent;
 import net.neoforged.neoforge.event.entity.living.LivingDamageEvent;
 import net.neoforged.neoforge.event.entity.living.LivingIncomingDamageEvent;
+import net.neoforged.neoforge.event.entity.living.LivingDeathEvent;
+import net.neoforged.bus.api.EventPriority;
 import net.neoforged.neoforge.event.entity.living.LivingChangeTargetEvent;
 import net.neoforged.neoforge.event.entity.living.LivingEntityUseItemEvent;
 import net.neoforged.neoforge.event.entity.player.PlayerInteractEvent;
@@ -115,14 +117,7 @@ public class ArenaProtectionHandler {
 		LivingEntity target = event.getEntity();
 		if (target == null || target.level().isClientSide()) return;
 
-		if (target instanceof ServerPlayer player) {
-			if (!Tournament.Manager.isInNonLethalMatch(player)) return;
-			if (player.getHealth() - event.getNewDamage() > 0.0F) return;
-
-			event.setNewDamage(0.0F);
-			Tournament.Manager.knockOut(player);
-			return;
-		}
+		if (target instanceof ServerPlayer) return;
 
 		if (!(target instanceof net.minecraft.world.entity.Mob mob)) return;
 		if (!Tournament.Manager.isNonLethalOpponent(mob)) return;
@@ -130,6 +125,15 @@ public class ArenaProtectionHandler {
 
 		event.setNewDamage(0.0F);
 		Tournament.Manager.knockOutOpponent(mob);
+	}
+
+	@SubscribeEvent(priority = EventPriority.HIGHEST)
+	public static void onPlayerDeath(LivingDeathEvent event) {
+		if (!(event.getEntity() instanceof ServerPlayer player) || player.level().isClientSide()) return;
+		if (event.getSource().is(net.minecraft.tags.DamageTypeTags.BYPASSES_INVULNERABILITY)) return;
+		if (!Tournament.Manager.isInNonLethalMatch(player)) return;
+		event.setCanceled(true);
+		Tournament.Manager.knockOut(player);
 	}
 
 	@SubscribeEvent

@@ -35,7 +35,7 @@ public class MovementSkillsHandler {
 
 		Minecraft mc = Minecraft.getInstance();
 		LocalPlayer player = mc.player;
-		if (player == null) return;
+		if (player == null || mc.isPaused()) return;
 
 		final int[] jumpLevel = {0};
 		final int[] sprintLevel = {0};

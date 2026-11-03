@@ -1,6 +1,9 @@
 package com.dragonminez.client.events;
 
+import com.dragonminez.client.gui.dialogue.DialogueOption;
+import com.dragonminez.client.gui.dialogue.NpcDialogueScreen;
 import com.dragonminez.common.combat.player.AttackHand;
+import com.dragonminez.common.stats.StatsData;
 import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.world.entity.Entity;
 import net.neoforged.bus.api.Event;
@@ -123,6 +126,46 @@ public class DMZClientEvent {
 
 		public int getTargetId() {
 			return this.targetId;
+		}
+	}
+
+	/**
+	 * Fired client-side after the built-in options of an NPC dialogue are built.
+	 * Listeners may add to {@link #getOptions()}.
+	 */
+	public static class NpcDialogueOptionsEvent extends Event {
+		private final String npcId;
+		private final StatsData stats;
+		private final LocalPlayer player;
+		private final NpcDialogueScreen screen;
+		private final List<DialogueOption> options;
+
+		public NpcDialogueOptionsEvent(String npcId, StatsData stats, LocalPlayer player, NpcDialogueScreen screen, List<DialogueOption> options) {
+			this.npcId = npcId;
+			this.stats = stats;
+			this.player = player;
+			this.screen = screen;
+			this.options = options;
+		}
+
+		public String getNpcId() {
+			return this.npcId;
+		}
+
+		public StatsData getStats() {
+			return this.stats;
+		}
+
+		public LocalPlayer getPlayer() {
+			return this.player;
+		}
+
+		public NpcDialogueScreen getScreen() {
+			return this.screen;
+		}
+
+		public List<DialogueOption> getOptions() {
+			return this.options;
 		}
 	}
 }

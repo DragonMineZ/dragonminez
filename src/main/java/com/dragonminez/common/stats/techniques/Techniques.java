@@ -251,17 +251,17 @@ public class Techniques {
 
 	public void addExperienceToSelected(int amount) {
 		TechniqueData active = getSelectedTechnique();
-		if (active != null) active.addExperience(amount);
+		if (active != null && !PredefinedTechniques.isPredefinedTechnique(active)) active.addExperience(amount);
 	}
 
 	public void addExperienceToTechnique(String id, int amount) {
-		if (unlockedTechniques.containsKey(id)) {
+		if (unlockedTechniques.containsKey(id) && !PredefinedTechniques.isPredefinedTechniqueId(id)) {
 			unlockedTechniques.get(id).addExperience(amount);
 		}
 	}
 
 	public void addFractionalExperienceToTechnique(String id, float amount) {
-		if (amount <= 0.0F || !unlockedTechniques.containsKey(id)) return;
+		if (amount <= 0.0F || !unlockedTechniques.containsKey(id) || PredefinedTechniques.isPredefinedTechniqueId(id)) return;
 		float total = fractionalXpRemainder.merge(id, amount, Float::sum);
 		int whole = (int) total;
 		if (whole > 0) {

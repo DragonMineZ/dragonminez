@@ -49,7 +49,7 @@ public class MainGameRules {
 		return WorldGuardCompat.canGrief(level, pos, source);
 	}
 
-	private static boolean isInMasterStructure(Level level, BlockPos pos) {
+	public static boolean isInMasterStructure(Level level, BlockPos pos) {
 		return isInsideTaggedStructure(level, pos, MainTags.Structures.KI_GRIEFING_PROTECTED)
 				|| OtherworldTournamentGrounds.isProtected(level, pos)
 				|| OtherworldLandmarks.isProtected(level, pos);
