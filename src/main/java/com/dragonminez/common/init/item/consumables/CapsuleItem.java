@@ -7,6 +7,7 @@ import com.dragonminez.common.stats.StatsData;
 import com.dragonminez.common.stats.StatsProvider;
 import net.minecraft.ChatFormatting;
 import net.minecraft.network.chat.Component;
+import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.InteractionHand;
@@ -21,8 +22,9 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.List;
+import java.util.Map;
 
-public class CapsuleItem extends Item {
+public class CapsuleItem extends Item implements CapsuleUseTracker.SummaryItem {
 	private final CapsuleType type;
 	private ChatFormatting tierColor = ChatFormatting.WHITE;
 	private String tierLabel = null;
@@ -74,9 +76,10 @@ public class CapsuleItem extends Item {
 					String statSeparator = ConfigManager.getServerConfig().getGameplay().getCapsules().getStatSeparator();
 					String[] split = values.getStats().split(separator);
 					boolean[] anyApplied = {false};
+					Map<String, Integer> streak = CapsuleUseTracker.getStreak(pPlayer, this);
 					for (int i = 0; i < split.length; i++) {
 						String statName = split[i];
-						capsuleComponent.append(applyCapsuleStats(data, statName, anyApplied));
+						capsuleComponent.append(applyCapsuleStats(data, statName, anyApplied, streak));
 						if (i < split.length - 1) {
 							capsuleComponent.append(Component.literal(statSeparator).withStyle(ChatFormatting.GRAY));
 						}
@@ -93,7 +96,28 @@ public class CapsuleItem extends Item {
 		}
 	}
 
-	private Component applyCapsuleStats(StatsData data, String statName, boolean[] anyApplied) {
+	@Override
+	public Component getStreakSummary(ServerPlayer player, Map<String, Integer> totals) {
+		return StatsProvider.get(StatsCapability.INSTANCE, player).map(data -> {
+			if (!data.getStatus().isHasCreatedCharacter()) return null;
+			String separator = ConfigManager.getServerConfig().getGameplay().getCapsules().getStatSeparator();
+			CapsuleValues values = ConfigManager.getServerConfig().getGameplay().getCapsules().getCapsuleValues(type);
+
+			var summary = Component.empty();
+			String[] split = values.getStats().split(separator);
+			for (int i = 0; i < split.length; i++) {
+				String statName = split[i];
+				summary.append(Component.translatable("item.dragonminez.capsule.current", statName, data.getCurrentStatValue(statName))
+						.withStyle(ChatFormatting.RED));
+				if (i < split.length - 1) {
+					summary.append(Component.literal(separator).withStyle(ChatFormatting.GRAY));
+				}
+			}
+			return (Component) summary;
+		}).orElse(null);
+	}
+
+	private Component applyCapsuleStats(StatsData data, String statName, boolean[] anyApplied, Map<String, Integer> streak) {
 		CapsuleValues values = ConfigManager.getServerConfig().getGameplay().getCapsules().getCapsuleValues(type);
 		int requested = values.getPoints() * tierMultiplier;
 		int increment = data.getMaxAllowedIncreaseForStat(statName, requested);
@@ -101,13 +125,20 @@ public class CapsuleItem extends Item {
 		if (increment > 0) {
 			addToStat(data, statName, increment);
 			anyApplied[0] = true;
+			int total = CapsuleUseTracker.add(streak, statName, increment);
 
-			return Component.translatable("item.dragonminez.capsule.use", increment, statName)
+			return Component.translatable("item.dragonminez.capsule.use", total, statName)
 					.withStyle(ChatFormatting.GREEN);
-		} else {
-			return Component.translatable("item.dragonminez.capsule.full", statName)
-					.withStyle(ChatFormatting.RED);
 		}
+
+		Component full = Component.translatable("item.dragonminez.capsule.full", statName).withStyle(ChatFormatting.RED);
+		int total = streak.getOrDefault(statName, 0);
+		if (total <= 0) return full;
+		// Keep showing what this hold already gave, plus why it stopped growing
+		return Component.translatable("item.dragonminez.capsule.use", total, statName).withStyle(ChatFormatting.GREEN)
+				.append(Component.literal(" (").withStyle(ChatFormatting.RED))
+				.append(full)
+				.append(Component.literal(")").withStyle(ChatFormatting.RED));
 	}
 
 
