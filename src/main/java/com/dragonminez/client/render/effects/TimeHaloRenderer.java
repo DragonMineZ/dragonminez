@@ -75,7 +75,8 @@ public final class TimeHaloRenderer {
 			return;
 		}
 
-		Matrix4f pose = new Matrix4f(poseStack.last().pose());
+		// Entity pose stacks exclude the camera view in 1.21.1; same fix as the Ki weapons (2ff95d3c).
+		Matrix4f pose = new Matrix4f(RenderSystem.getModelViewMatrix()).mul(poseStack.last().pose());
 		Matrix4f projection = new Matrix4f(RenderSystem.getProjectionMatrix());
 		float time = (player.tickCount % TIME_WRAP_TICKS + partialTick) / 20.0f;
 		float intensity = state.intensity;
