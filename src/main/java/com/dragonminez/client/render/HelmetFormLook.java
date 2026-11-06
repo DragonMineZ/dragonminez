@@ -101,6 +101,7 @@ public final class HelmetFormLook {
 			ItemStack cosmetic = CosmeticArmorCompat.getCosmeticStack(player, EquipmentSlot.HEAD);
 			if (cosmetic != null) head = cosmetic;
 		}
-		return !head.isEmpty() && head.is(MainItems.BROLY_Z_ARMOR.get(ArmorItem.Type.HELMET).get());
+		var brolyZHelmet = MainItems.BROLY_Z_ARMOR.get(ArmorItem.Type.HELMET);
+		return !head.isEmpty() && brolyZHelmet != null && head.is(brolyZHelmet.get());
 	}
 }
