@@ -19,6 +19,7 @@ public class DynamicGrowthData {
 	private final Map<String, TargetHistory> targetHistory = new HashMap<>();
 	private final Set<String> disabledStats = new HashSet<>();
 	private long lastCombatMs;
+	private int growthStats;
 
 	public boolean isGrowthEnabled(DynamicGrowthStat stat) {
 		return !disabledStats.contains(stat.key());
@@ -46,6 +47,23 @@ public class DynamicGrowthData {
 
 	public void consumePracticeXp(DynamicGrowthStat stat, double amount) {
 		practiceXp.put(stat.key(), Math.max(0.0, getPracticeXp(stat) - amount));
+	}
+
+	public int getGrowthStats() {
+		return growthStats;
+	}
+
+	public void addGrowthStats(int amount) {
+		if (amount <= 0) return;
+		growthStats = (int) Math.min(Integer.MAX_VALUE, (long) growthStats + amount);
+	}
+
+	public void scaleGrowthStats(int percentage) {
+		growthStats = (int) Math.max(0L, (long) growthStats * Math.max(0, percentage) / 100);
+	}
+
+	public void clearGrowthStats() {
+		growthStats = 0;
 	}
 
 	public double recordTargetAndGetMultiplier(String targetKey, long nowMs, int windowSeconds,
@@ -118,6 +136,7 @@ public class DynamicGrowthData {
 			xpTag.putDouble(entry.getKey(), entry.getValue());
 		}
 		tag.put("PracticeXp", xpTag);
+		tag.putInt("GrowthStats", growthStats);
 		if (!disabledStats.isEmpty()) {
 			ListTag disabledTag = new ListTag();
 			for (String key : disabledStats) disabledTag.add(StringTag.valueOf(key));
@@ -136,6 +155,7 @@ public class DynamicGrowthData {
 		disabledStats.clear();
 		ListTag disabledTag = tag.getList("DisabledStats", Tag.TAG_STRING);
 		for (int i = 0; i < disabledTag.size(); i++) disabledStats.add(disabledTag.getString(i));
+		growthStats = Math.max(0, tag.getInt("GrowthStats"));
 	}
 
 	public void toBytes(FriendlyByteBuf buf) {
@@ -146,6 +166,7 @@ public class DynamicGrowthData {
 		}
 		buf.writeInt(disabledStats.size());
 		for (String key : disabledStats) buf.writeUtf(key);
+		buf.writeInt(growthStats);
 	}
 
 	public void fromBytes(FriendlyByteBuf buf) {
@@ -159,6 +180,7 @@ public class DynamicGrowthData {
 		disabledStats.clear();
 		int disabledSize = buf.readInt();
 		for (int i = 0; i < disabledSize; i++) disabledStats.add(buf.readUtf());
+		growthStats = Math.max(0, buf.readInt());
 	}
 
 	public void copyFrom(DynamicGrowthData other) {
@@ -172,6 +194,7 @@ public class DynamicGrowthData {
 			this.targetHistory.put(entry.getKey(), entry.getValue().copy());
 		}
 		this.lastCombatMs = other.lastCombatMs;
+		this.growthStats = other.growthStats;
 	}
 
 	public void clear() {

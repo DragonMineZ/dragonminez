@@ -55,6 +55,9 @@ public class GravityDeviceBlockEntity extends BlockEntity implements MenuProvide
 	private BlockPos roomMin = BlockPos.ZERO;
 	private BlockPos roomMax = BlockPos.ZERO;
 	private double energyAccumulator = 0.0;
+	private static final long ROOM_RECOMPUTE_MIN_INTERVAL_TICKS = 10L;
+	private boolean roomDirty = false;
+	private long lastRoomRecompute = Long.MIN_VALUE / 2;
 
 	public GravityDeviceBlockEntity(BlockPos pPos, BlockState pBlockState) {
 		super(MainBlockEntities.GRAVITY_DEVICE_BE.get(), pPos, pBlockState);
@@ -112,9 +115,12 @@ public class GravityDeviceBlockEntity extends BlockEntity implements MenuProvide
 
 	public void applyMenuInput(boolean active, int gravity) {
 		int max = cfg().getDeviceMaxGravity();
-		this.targetGravity = Math.max(1, Math.min(gravity, max));
+		int newGravity = Math.max(1, Math.min(gravity, max));
+		boolean changed = newGravity != this.targetGravity || active != this.active;
+		this.targetGravity = newGravity;
 		this.active = active;
-		recomputeRoom();
+		this.roomDirty = true;
+		if (!changed) return;
 		setChanged();
 		if (level != null) level.sendBlockUpdated(worldPosition, getBlockState(), getBlockState(), 3);
 	}
@@ -125,8 +131,15 @@ public class GravityDeviceBlockEntity extends BlockEntity implements MenuProvide
 		long time = pLevel.getGameTime();
 		boolean nowRunning = false;
 
+		if (roomDirty && time - lastRoomRecompute >= ROOM_RECOMPUTE_MIN_INTERVAL_TICKS) {
+			roomDirty = false;
+			lastRoomRecompute = time;
+			recomputeRoom();
+			pLevel.sendBlockUpdated(pPos, getBlockState(), getBlockState(), 3);
+		}
+
 		if (active) {
-			if (time % 100 == 0) recomputeRoom();
+			if (time % 100 == 0 && lastRoomRecompute != time) recomputeRoom();
 
 			if (roomValid) {
 				double perSecond = cfg().getDeviceEnergyPerGravityPerSecond() * targetGravity;

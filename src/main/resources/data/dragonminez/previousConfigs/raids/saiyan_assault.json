@@ -1,0 +1,153 @@
+{
+  "configVersion": "2.2.0",
+  "enabled": true,
+  "displayName": "raid.dragonminez.saiyan_assault",
+  "activationRadius": 48.0,
+  "leashDistance": 80.0,
+  "interWaveDelaySeconds": 5,
+  "music": {
+    "preparation": "dragonminez:menu_music_11",
+    "battle": "dragonminez:raid_ost_1"
+  },
+  "trigger": {
+    "entityId": "dragonminez:saga_saiyan_soldier",
+    "dimension": "minecraft:overworld",
+    "spawnChance": 0.0,
+    "supervillain": true,
+    "preparationSeconds": 60,
+    "omenMessage": "raid.dragonminez.saiyan_assault.omen",
+    "startMessage": "raid.dragonminez.saiyan_assault.start",
+    "announceMessage": "raid.dragonminez.saiyan_assault.crater",
+    "health": 500.0,
+    "meleeDamage": 12.0,
+    "kiDamage": 10.0,
+    "aiTier": 1
+  },
+  "waves": [
+    {
+      "spawns": [
+        {
+          "entityId": "dragonminez:saga_saiyan_soldier",
+          "count": 4,
+          "health": 500.0,
+          "meleeDamage": 12.0,
+          "kiDamage": 10.0,
+          "aiTier": 1
+        }
+      ]
+    },
+    {
+      "spawns": [
+        {
+          "entityId": "dragonminez:saga_saiyan_soldier",
+          "count": 6,
+          "health": 550.0,
+          "meleeDamage": 14.0,
+          "kiDamage": 11.0,
+          "aiTier": 1
+        }
+      ]
+    },
+    {
+      "spawns": [
+        {
+          "entityId": "dragonminez:saga_saiyan_soldier",
+          "count": 6,
+          "health": 600.0,
+          "meleeDamage": 15.0,
+          "kiDamage": 12.0,
+          "aiTier": 1
+        },
+        {
+          "entityId": "dragonminez:saga_saiyan_elite",
+          "count": 2,
+          "health": 700.0,
+          "meleeDamage": 17.0,
+          "kiDamage": 14.0,
+          "aiTier": 2,
+          "canTransform": false
+        }
+      ]
+    },
+    {
+      "spawns": [
+        {
+          "entityId": "dragonminez:saga_saiyan_soldier",
+          "count": 6,
+          "health": 650.0,
+          "meleeDamage": 16.0,
+          "kiDamage": 13.0,
+          "aiTier": 1
+        },
+        {
+          "entityId": "dragonminez:saga_saiyan_elite",
+          "count": 4,
+          "health": 750.0,
+          "meleeDamage": 18.0,
+          "kiDamage": 15.0,
+          "aiTier": 2,
+          "canTransform": false
+        }
+      ]
+    },
+    {
+      "spawns": [
+        {
+          "entityId": "dragonminez:saga_saiyan_soldier",
+          "count": 6,
+          "health": 700.0,
+          "meleeDamage": 17.0,
+          "kiDamage": 14.0,
+          "aiTier": 1
+        },
+        {
+          "entityId": "dragonminez:saga_saiyan_elite",
+          "count": 3,
+          "health": 800.0,
+          "meleeDamage": 20.0,
+          "kiDamage": 16.0,
+          "aiTier": 2,
+          "canTransform": true,
+          "dormantUntilEscortDead": true,
+          "transformHealth": 1500.0,
+          "transformMeleeDamage": 55.0,
+          "transformKiDamage": 45.0
+        }
+      ]
+    }
+  ],
+  "rewards": {
+    "trainingPoints": 10000.0,
+    "effects": [
+      {
+        "id": "minecraft:hero_of_the_village",
+        "seconds": 600,
+        "amplifier": 0
+      },
+      {
+        "id": "dragonminez:world_hero",
+        "seconds": 600,
+        "amplifier": 0
+      }
+    ],
+    "items": [
+      {
+        "id": "minecraft:golden_carrot",
+        "count": 8
+      },
+      {
+        "id": "dragonminez:senzu_bean",
+        "count": 2
+      },
+      {
+        "id": "dragonminez:green_scouter",
+        "count": 1
+      }
+    ]
+  },
+  "defeat": {
+    "title": "raid.dragonminez.defeat.title",
+    "subtitle": "raid.dragonminez.saiyan_assault.defeat",
+    "alignment": -10
+  }
+}

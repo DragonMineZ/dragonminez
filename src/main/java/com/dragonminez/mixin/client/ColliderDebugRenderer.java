@@ -1,6 +1,6 @@
 package com.dragonminez.mixin.client;
 
-import com.dragonminez.client.collision.OrientedBoundingBox;
+import com.dragonminez.common.combat.collision.OrientedBoundingBox;
 import com.dragonminez.client.collision.TargetFinder;
 import com.dragonminez.common.combat.logic.player.PlayerAttackHelper;
 import com.dragonminez.common.combat.util.Minecraft_DMZ;

@@ -9,6 +9,8 @@ import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.screens.inventory.tooltip.ClientTooltipComponent;
 import net.minecraft.client.gui.screens.inventory.tooltip.ClientTooltipPositioner;
 import net.minecraft.network.chat.Component;
+import net.minecraft.network.chat.FormattedText;
+import net.minecraft.locale.Language;
 import net.minecraft.network.chat.Style;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.FormattedCharSequence;
@@ -47,6 +49,58 @@ public class TextUtil {
         if (out.isEmpty()) out.add("");
         return out;
     }
+    public static List<FormattedCharSequence> split(Font font, FormattedText text, int maxWidth) {
+        List<FormattedCharSequence> lines = splitKeepingStyle(font, text, maxWidth);
+        return lines.isEmpty() ? List.of(FormattedCharSequence.EMPTY) : lines;
+    }
+
+    private static List<FormattedCharSequence> splitKeepingStyle(Font font, FormattedText text, int maxWidth) {
+        Style resetStyle = text instanceof Component component ? component.getStyle() : Style.EMPTY;
+        return Language.getInstance().getVisualOrder(font.getSplitter().splitLines(text, Math.max(1, maxWidth), resetStyle));
+    }
+
+    public static List<FormattedCharSequence> sequences(List<String> lines, Style style) {
+        List<FormattedCharSequence> out = new ArrayList<>(lines.size());
+        for (String line : lines) out.add(Component.literal(line).setStyle(style).getVisualOrderText());
+        return out;
+    }
+
+    public static List<FormattedCharSequence> wrapScrollable(Font font, FormattedText text, int width, int height, int lineHeight, ScrollbarState scroll) {
+        List<FormattedCharSequence> lines = split(font, text, width);
+        if (lines.size() * lineHeight > height) lines = split(font, text, width - scroll.reserve());
+        return lines;
+    }
+
+    public static List<FormattedCharSequence> wrapScrollable(Font font, List<? extends FormattedText> paragraphs, int width, int height, int lineHeight, ScrollbarState scroll) {
+        List<FormattedCharSequence> lines = splitAll(font, paragraphs, width);
+        if (lines.size() * lineHeight > height) lines = splitAll(font, paragraphs, width - scroll.reserve());
+        return lines;
+    }
+
+    private static List<FormattedCharSequence> splitAll(Font font, List<? extends FormattedText> paragraphs, int width) {
+        List<FormattedCharSequence> lines = new ArrayList<>();
+        for (FormattedText paragraph : paragraphs) lines.addAll(splitKeepingStyle(font, paragraph, width));
+        return lines;
+    }
+
+    public static void renderScrollableText(GuiGraphics graphics, Font font, ScrollbarState scroll, FormattedText text, int x, int y, int width, int height, int lineHeight, int color, boolean centered, double mouseX, double mouseY) {
+        renderScrollableText(graphics, font, scroll, wrapScrollable(font, text, width, height, lineHeight, scroll), x, y, width, height, lineHeight, color, centered, mouseX, mouseY);
+    }
+
+    public static void renderScrollableText(GuiGraphics graphics, Font font, ScrollbarState scroll, List<FormattedCharSequence> lines, int x, int y, int width, int height, int lineHeight, int color, boolean centered, double mouseX, double mouseY) {
+        scroll.layout(x, y, width, height, lines.size() * lineHeight);
+        int textWidth = scroll.canScroll() ? width - scroll.reserve() : width;
+        scroll.beginClip(graphics);
+        for (int i = 0; i < lines.size(); i++) {
+            int lineY = y + i * lineHeight;
+            if (!scroll.isVisible(lineY, lineHeight)) continue;
+            if (centered) drawCenteredStringWithBorder(graphics, font, lines.get(i), x + textWidth / 2, lineY, color);
+            else drawStringWithBorder(graphics, font, lines.get(i), x, lineY, color);
+        }
+        scroll.endClip(graphics);
+        scroll.renderBar(graphics, mouseX, mouseY);
+    }
+
     public static FormattedCharSequence overrideColor(FormattedCharSequence sequence, int color) {
         return sink -> sequence.accept((index, style, codePoint) ->
                 sink.accept(index, style.withColor(net.minecraft.network.chat.TextColor.fromRgb(color)), codePoint)
@@ -188,50 +242,6 @@ public class TextUtil {
             ((GuiGraphicsInvoker) graphics).invokeRenderTooltipInternal(font, components, mouseX, mouseY, positioner);
         } finally {
             TooltipDecor.forceCustomBorder = false;
-        }
-    }
-
-    public static boolean overScrollBar(double mouseX, double mouseY, int barX, int barWidth, int trackY, int trackHeight) {
-        return mouseX >= barX - 4 && mouseX <= barX + barWidth + 4 && mouseY >= trackY && mouseY <= trackY + trackHeight;
-    }
-
-    public static float scrollFromBar(double mouseY, int trackY, int trackHeight, float maxScroll) {
-        if (trackHeight <= 0 || maxScroll <= 0) return 0f;
-        float percent = Mth.clamp((float) (mouseY - trackY) / trackHeight, 0f, 1f);
-        return percent * maxScroll;
-    }
-
-    public static void renderScrollableText(GuiGraphics graphics, Font font, List<String> lines, int x, int y, int width, int height, float currentScroll, float maxScroll, int color) {
-        renderScrollableText(graphics, font, lines, x, y, width, height, currentScroll, maxScroll, color, net.minecraft.network.chat.Style.EMPTY);
-    }
-
-    public static void renderScrollableText(GuiGraphics graphics, Font font, ScrollbarState bar, List<String> lines, int x, int y, int width, int height, float currentScroll, float maxScroll, int color, net.minecraft.network.chat.Style style) {
-        bar.update(x + width - 4, 3, y, height, maxScroll);
-        renderScrollableText(graphics, font, lines, x, y, width, height, currentScroll, maxScroll, color, style);
-    }
-
-    public static void renderScrollableText(GuiGraphics graphics, Font font, List<String> lines, int x, int y, int width, int height, float currentScroll, float maxScroll, int color, net.minecraft.network.chat.Style style) {
-        int lineHeight = font.lineHeight + 2;
-        int viewHeight = height;
-        int totalContentHeight = lines.size() * lineHeight;
-
-        graphics.pose().pushPose();
-        graphics.pose().translate(0, -currentScroll, 0);
-
-        for (int i = 0; i < lines.size(); i++) {
-            float lineY = y + (i * lineHeight);
-            if (lineY + lineHeight >= y + currentScroll && lineY <= y + viewHeight + currentScroll) drawStringWithBorder(graphics, font, Component.literal(lines.get(i)).setStyle(style), x, (int)lineY, color);
-        }
-
-        graphics.pose().popPose();
-
-        if (maxScroll > 0) {
-            int scrollBarX = x + width - 4;
-            graphics.fill(scrollBarX, y, scrollBarX + 3, y + height, 0xFF333333);
-            float scrollPercent = maxScroll == 0 ? 0.0f : currentScroll / maxScroll;
-            int indicatorHeight = Math.max(10, (int) ((float) viewHeight / totalContentHeight * height));
-            int indicatorY = y + (int) ((height - indicatorHeight) * scrollPercent);
-            graphics.fill(scrollBarX, indicatorY, scrollBarX + 3, indicatorY + indicatorHeight, 0xFFAAAAAA);
         }
     }
 }

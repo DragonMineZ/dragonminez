@@ -13,6 +13,13 @@ public class PassiveRuntimeState {
 	public long warriorStacksExpireTick = 0L;
 	public long warriorComboExpireTick = 0L;
 
+	public int unversedPhysicalCharges = 0;
+	public long unversedPhysicalUntil = 0L;
+	public long unversedStrikeBoostUntil = 0L;
+	public long unversedKiPrimedUntil = 0L;
+	public int unversedMeleeProgress = 0;
+	public long unversedMeleeProgressUntil = 0L;
+
 	public static PassiveRuntimeState get(UUID id) {
 		return STATES.computeIfAbsent(id, k -> new PassiveRuntimeState());
 	}

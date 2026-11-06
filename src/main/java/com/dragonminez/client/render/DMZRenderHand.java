@@ -8,6 +8,8 @@ import com.dragonminez.client.render.layer.AuraTintTracker;
 import com.dragonminez.client.render.layer.BodyLayerFadeTracker;
 import com.dragonminez.client.render.layer.DMZSkinLayer;
 import com.dragonminez.client.render.util.ModRenderTypes;
+import com.dragonminez.client.render.effects.KiWeaponRenderer;
+import org.joml.Vector3f;
 import com.dragonminez.client.render.util.PlayerEffectQueue;
 import com.dragonminez.client.util.SkinGathererProvider;
 import com.dragonminez.common.config.ConfigManager;
@@ -88,7 +90,7 @@ public class DMZRenderHand extends LivingEntityRenderer<AbstractClientPlayer, Pl
 
 		this.renderKiWeapon(pPoseStack, pBuffer, pCombinedLight, pPlayer, stats, HumanoidArm.RIGHT);
 
-		if ((stats.getStatus().isAuraActive() || stats.getStatus().isPermanentAura()) && !stats.getStatus().isAndroidUpgraded())
+		if ((stats.getStatus().isAuraActive() || stats.getStatus().isPermanentAura() || stats.getStatus().isForcedAura()) && !stats.getStatus().isAndroidUpgraded())
 			queueFirstPersonAura(pPlayer, pPoseStack, pCombinedLight);
 	}
 
@@ -153,7 +155,7 @@ public class DMZRenderHand extends LivingEntityRenderer<AbstractClientPlayer, Pl
 
 		float pt = Minecraft.getInstance().getTimer().getGameTimeDeltaPartialTick(false);
 		SkinGathererProvider.INSTANCE.gatherBodyLayers(pPlayer, stats, pt, layerConsumer);
-		addSsj4HandFur(stats, fadingLayers);
+		addSsj4HandFur(pPlayer, stats, fadingLayers);
 		SkinGathererProvider.INSTANCE.gatherAndroidLayers(pPlayer, stats, pt, layerConsumer);
 		SkinGathererProvider.INSTANCE.gatherTattooLayers(pPlayer, stats, pt, layerConsumer);
 		SkinGathererProvider.INSTANCE.gatherEffectLayers(pPlayer, stats, pt, layerConsumer);
@@ -163,11 +165,20 @@ public class DMZRenderHand extends LivingEntityRenderer<AbstractClientPlayer, Pl
 	}
 
 	private void renderKiWeapon(PoseStack ps, MultiBufferSource buffer, int light, AbstractClientPlayer player, StatsData stats, HumanoidArm arm) {
-		if (!stats.getSkills().isSkillActive("kimanipulation")) return;
-		String type = stats.getStatus().getKiWeaponType();
+		boolean forcedBlade = KiWeaponRenderer.forcesBlade(player);
+		if (!forcedBlade && !stats.getSkills().isSkillActive("kimanipulation")) return;
+		String type = forcedBlade ? "blade" : stats.getStatus().getKiWeaponType();
 		if (type == null || type.equalsIgnoreCase("none")) return;
 		float[] color = KiWeaponHelper.resolveColorForType(type, getKiColor(stats));
 		String lower = type.toLowerCase();
+
+		if (KiWeaponRenderer.usesShaderBlade(type) || KiWeaponRenderer.usesShaderScythe(type) || KiWeaponRenderer.usesShaderClawLance(type)) {
+			ps.pushPose();
+			(arm == HumanoidArm.RIGHT ? this.model.rightArm : this.model.leftArm).translateAndRotate(ps);
+			KiWeaponRenderer.renderFirstPerson(ps.last().pose(), buffer, type, arm == HumanoidArm.RIGHT, player, color, Minecraft.getInstance().getTimer().getGameTimeDeltaPartialTick(false));
+			ps.popPose();
+			return;
+		}
 
 		ModelPart geoPart = KiWeaponModelLoader.get(lower);
 		if (geoPart == null) return;
@@ -221,11 +232,13 @@ public class DMZRenderHand extends LivingEntityRenderer<AbstractClientPlayer, Pl
         }
     }
 
-	private void addSsj4HandFur(StatsData stats, List<BodyLayerFadeTracker.FadingLayer> out) {
-		DMZSkinLayer.Ssj4Overlay ssj4 = DMZSkinLayer.resolveSsj4Overlay(stats);
+	private void addSsj4HandFur(AbstractClientPlayer player, StatsData stats, List<BodyLayerFadeTracker.FadingLayer> out) {
+		DMZSkinLayer.Ssj4Overlay ssj4 = DMZSkinLayer.resolveSsj4Overlay(player, stats);
 		if (ssj4 == null) return;
 		ResourceLocation tex = DMZSkinLayer.getSafeTexture(SkinGathererProvider.getCachedTexture("textures/entity/races/humansaiyan/" + ssj4.key() + "_layer1.png"));
 		out.add(new BodyLayerFadeTracker.FadingLayer("ssj4fur", tex, ssj4.color(), ssj4.target()));
+		BodyLayerFadeTracker.FadingLayer furShadow = DMZSkinLayer.ssj4FurShadowLayer(ssj4);
+		if (furShadow != null) out.add(furShadow);
 	}
 
 	private void renderFadingHandLayers(PoseStack ps, MultiBufferSource buffer, int light, AbstractClientPlayer player, ModelPart arm, float[] formTintColor, float formTintIntensity, List<BodyLayerFadeTracker.FadingLayer> active) {

@@ -16,21 +16,37 @@ import net.minecraft.world.level.levelgen.RandomState;
 import net.minecraft.world.level.levelgen.WorldgenRandom;
 import net.minecraft.world.level.levelgen.structure.placement.StructurePlacement;
 import net.minecraft.world.level.levelgen.structure.placement.StructurePlacementType;
-import org.jetbrains.annotations.NotNull;
 import java.lang.reflect.Field;
 import java.util.Optional;
 
 public class BiomeAwareUniquePlacement extends StructurePlacement {
-	public static final MapCodec<BiomeAwareUniquePlacement> CODEC = RecordCodecBuilder.mapCodec(instance -> placementCodec(instance).and(instance.group(RegistryCodecs.homogeneousList(Registries.BIOME).fieldOf("valid_biomes").forGetter(BiomeAwareUniquePlacement::getValidBiomes), Rotation.CODEC.optionalFieldOf("rotation", Rotation.NONE).forGetter(BiomeAwareUniquePlacement::getRotation))).apply(instance, BiomeAwareUniquePlacement::new));
+	public static final MapCodec<BiomeAwareUniquePlacement> CODEC = RecordCodecBuilder.mapCodec(instance ->
+			placementCodec(instance).and(instance.group(
+					RegistryCodecs.homogeneousList(Registries.BIOME)
+							.fieldOf("valid_biomes")
+							.forGetter(BiomeAwareUniquePlacement::getValidBiomes),
+					Rotation.CODEC.optionalFieldOf("rotation", Rotation.NONE)
+							.forGetter(BiomeAwareUniquePlacement::getRotation),
+					Codec.intRange(0, 30_000_000).optionalFieldOf("min_distance_from_spawn", 0)
+							.forGetter(BiomeAwareUniquePlacement::getMinDistanceFromSpawn)
+			)).apply(instance, BiomeAwareUniquePlacement::new));
+
 	private final HolderSet<Biome> validBiomes;
 	private final Rotation rotation;
+	private final int minDistanceFromSpawn;
+
 	private static Field biomeSourceField = null;
 
-	public BiomeAwareUniquePlacement(Vec3i locateOffset, FrequencyReductionMethod frequencyReductionMethod, float frequency, int salt, Optional<ExclusionZone> exclusionZone, HolderSet<Biome> validBiomes, Rotation rotation) {
+	public BiomeAwareUniquePlacement(Vec3i locateOffset, FrequencyReductionMethod frequencyReductionMethod, float frequency, int salt, Optional<ExclusionZone> exclusionZone, HolderSet<Biome> validBiomes, Rotation rotation, int minDistanceFromSpawn) {
 		super(locateOffset, frequencyReductionMethod, frequency, salt, exclusionZone);
 		this.validBiomes = validBiomes;
 		this.rotation = rotation;
+		this.minDistanceFromSpawn = minDistanceFromSpawn;
 		StructureSpawnPlanner.register(this);
+	}
+
+	public BiomeAwareUniquePlacement(Vec3i locateOffset, FrequencyReductionMethod frequencyReductionMethod, float frequency, int salt, Optional<ExclusionZone> exclusionZone, HolderSet<Biome> validBiomes, Rotation rotation) {
+		this(locateOffset, frequencyReductionMethod, frequency, salt, exclusionZone, validBiomes, rotation, 0);
 	}
 
 	public int placementSalt() {
@@ -38,7 +54,7 @@ public class BiomeAwareUniquePlacement extends StructurePlacement {
 	}
 
 	public BiomeAwareUniquePlacement(Vec3i locateOffset, FrequencyReductionMethod frequencyReductionMethod, float frequency, int salt, Optional<ExclusionZone> exclusionZone, HolderSet<Biome> validBiomes) {
-		this(locateOffset, frequencyReductionMethod, frequency, salt, exclusionZone, validBiomes, Rotation.NONE);
+		this(locateOffset, frequencyReductionMethod, frequency, salt, exclusionZone, validBiomes, Rotation.NONE, 0);
 	}
 
 	private BiomeSource getBiomeSourceReflection(ChunkGeneratorStructureState state) {
@@ -59,10 +75,27 @@ public class BiomeAwareUniquePlacement extends StructurePlacement {
 		return null;
 	}
 
+	private record CachedChunk(ChunkGeneratorStructureState state, int epoch, int version, ChunkPos pos) {}
+
+	private volatile CachedChunk cached;
+
 	@Override
 	protected boolean isPlacementChunk(ChunkGeneratorStructureState structureState, int x, int z) {
 		if (!ConfigManager.getServerConfig().getWorldGen().getGenerateCustomStructures()) return false;
-		ChunkPos pos = getStructureChunk(structureState.getLevelSeed(), getBiomeSourceReflection(structureState), structureState.randomState(), structureState);
+
+		CachedChunk snapshot = this.cached;
+		if (snapshot != null && snapshot.state() == structureState
+				&& snapshot.epoch() == StructureSpawnPlanner.currentEpoch()
+				&& snapshot.version() == StructureSpawnPlanner.positionsVersion()) {
+			ChunkPos pos = snapshot.pos();
+			return pos != null && pos.x == x && pos.z == z;
+		}
+
+		int epoch = StructureSpawnPlanner.currentEpoch();
+		int version = StructureSpawnPlanner.positionsVersion();
+		ChunkPos pos = getStructureChunk(structureState.getLevelSeed(), getBiomeSourceReflection(structureState),
+				structureState.randomState(), structureState);
+		if (pos != null) this.cached = new CachedChunk(structureState, epoch, version, pos);
 		return pos != null && pos.x == x && pos.z == z;
 	}
 
@@ -74,7 +107,6 @@ public class BiomeAwareUniquePlacement extends StructurePlacement {
 	public StructurePlacementType<?> type() {
 		return MainStructurePlacements.BIOME_AWARE_PLACEMENT.get();
 	}
-
 	@java.lang.SuppressWarnings("all")
 	public HolderSet<Biome> getValidBiomes() {
 		return this.validBiomes;
@@ -83,5 +115,9 @@ public class BiomeAwareUniquePlacement extends StructurePlacement {
 	@java.lang.SuppressWarnings("all")
 	public Rotation getRotation() {
 		return this.rotation;
+	}
+
+	public int getMinDistanceFromSpawn() {
+		return this.minDistanceFromSpawn;
 	}
 }

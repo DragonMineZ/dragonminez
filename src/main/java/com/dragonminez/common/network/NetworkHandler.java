@@ -15,17 +15,26 @@ public class NetworkHandler {
 	public static final String PROTOCOL_VERSION = "1.0";
 	public static SimpleChannel INSTANCE;
 	private static int packetId = 0;
+	private static final int NETWORK_REVISION = 1;
 
 	private static int id() {
 		return packetId++;
 	}
 
+	public static String protocolVersion() {
+		return Reference.VERSION + "+" + NETWORK_REVISION + "-" + NetworkFingerprint.get();
+	}
+
+	private static boolean isSameProtocol(String remoteVersion) {
+		return protocolVersion().equals(remoteVersion);
+	}
+
 	public static void register() {
 		SimpleChannel net = NetworkRegistry.ChannelBuilder
 				.named(ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "network"))
-				.networkProtocolVersion(() -> PROTOCOL_VERSION)
-				.clientAcceptedVersions(PROTOCOL_VERSION::equals)
-				.serverAcceptedVersions(PROTOCOL_VERSION::equals)
+				.networkProtocolVersion(NetworkHandler::protocolVersion)
+				.clientAcceptedVersions(NetworkHandler::isSameProtocol)
+				.serverAcceptedVersions(NetworkHandler::isSameProtocol)
 				.simpleChannel();
 
 		INSTANCE = net;
@@ -109,6 +118,12 @@ public class NetworkHandler {
 				.decoder(SetReleaseLimitC2S::new)
 				.encoder(SetReleaseLimitC2S::encode)
 				.consumerMainThread(SetReleaseLimitC2S::handle)
+				.add();
+
+		net.messageBuilder(SetFlightSpeedLimitC2S.class, id(), NetworkDirection.PLAY_TO_SERVER)
+				.decoder(SetFlightSpeedLimitC2S::new)
+				.encoder(SetFlightSpeedLimitC2S::encode)
+				.consumerMainThread(SetFlightSpeedLimitC2S::handle)
 				.add();
 
 		net.messageBuilder(SelectFormC2S.class, id(), NetworkDirection.PLAY_TO_SERVER)
@@ -285,12 +300,6 @@ public class NetworkHandler {
 				.consumerMainThread(com.dragonminez.common.network.C2S.StrikeAttackC2S::handle)
 				.add();
 
-		net.messageBuilder(TaiyokenCastC2S.class, id(), NetworkDirection.PLAY_TO_SERVER)
-				.decoder(TaiyokenCastC2S::new)
-				.encoder(TaiyokenCastC2S::toBytes)
-				.consumerMainThread(TaiyokenCastC2S::handle)
-				.add();
-
 		net.messageBuilder(CombatAttackRequestC2S.class, id(), NetworkDirection.PLAY_TO_SERVER)
 				.decoder(CombatAttackRequestC2S::new)
 				.encoder(CombatAttackRequestC2S::encode)
@@ -355,6 +364,12 @@ public class NetworkHandler {
 				.decoder(DynamicGrowthToggleC2S::new)
 				.encoder(DynamicGrowthToggleC2S::encode)
 				.consumerMainThread(DynamicGrowthToggleC2S::handle)
+				.add();
+
+		net.messageBuilder(EvasionCastC2S.class, id(), NetworkDirection.PLAY_TO_SERVER)
+				.decoder(EvasionCastC2S::new)
+				.encoder(EvasionCastC2S::toBytes)
+				.consumerMainThread(EvasionCastC2S::handle)
 				.add();
 
 		/*
@@ -444,6 +459,24 @@ public class NetworkHandler {
 				.consumerMainThread(StoryToastS2C::handle)
 				.add();
 
+		net.messageBuilder(SagaTitleCardS2C.class, id(), NetworkDirection.PLAY_TO_CLIENT)
+				.decoder(SagaTitleCardS2C::decode)
+				.encoder(SagaTitleCardS2C::encode)
+				.consumerMainThread(SagaTitleCardS2C::handle)
+				.add();
+
+		net.messageBuilder(OpenDialogueNodeS2C.class, id(), NetworkDirection.PLAY_TO_CLIENT)
+				.decoder(OpenDialogueNodeS2C::decode)
+				.encoder(OpenDialogueNodeS2C::encode)
+				.consumerMainThread(OpenDialogueNodeS2C::handle)
+				.add();
+
+		net.messageBuilder(DialogueChoiceC2S.class, id(), NetworkDirection.PLAY_TO_SERVER)
+				.decoder(DialogueChoiceC2S::decode)
+				.encoder(DialogueChoiceC2S::encode)
+				.consumerMainThread(DialogueChoiceC2S::handle)
+				.add();
+
 		net.messageBuilder(PartyInviteToastS2C.class, id(), NetworkDirection.PLAY_TO_CLIENT)
 				.decoder(PartyInviteToastS2C::new)
 				.encoder(PartyInviteToastS2C::encode)
@@ -515,6 +548,385 @@ public class NetworkHandler {
 				.encoder(KnockbackFlightS2C::encode)
 				.consumerMainThread(KnockbackFlightS2C::handle)
 				.add();
+
+		net.messageBuilder(RageScreamVfxS2C.class, id(), NetworkDirection.PLAY_TO_CLIENT)
+				.decoder(RageScreamVfxS2C::new)
+				.encoder(RageScreamVfxS2C::encode)
+				.consumerMainThread(RageScreamVfxS2C::handle)
+				.add();
+
+		net.messageBuilder(RacialDataSyncS2C.class, id(), NetworkDirection.PLAY_TO_CLIENT)
+				.decoder(RacialDataSyncS2C::decode)
+				.encoder(RacialDataSyncS2C::encode)
+				.consumerMainThread(RacialDataSyncS2C::handle)
+				.add();
+
+		net.messageBuilder(RacialRequestS2C.class, id(), NetworkDirection.PLAY_TO_CLIENT)
+				.decoder(RacialRequestS2C::new)
+				.encoder(RacialRequestS2C::encode)
+				.consumerMainThread(RacialRequestS2C::handle)
+				.add();
+
+		net.messageBuilder(RacialRequestReplyC2S.class, id(), NetworkDirection.PLAY_TO_SERVER)
+				.decoder(RacialRequestReplyC2S::new)
+				.encoder(RacialRequestReplyC2S::encode)
+				.consumerMainThread(RacialRequestReplyC2S::handle)
+				.add();
+
+		net.messageBuilder(RacialSlotActionC2S.class, id(), NetworkDirection.PLAY_TO_SERVER)
+				.decoder(RacialSlotActionC2S::new)
+				.encoder(RacialSlotActionC2S::encode)
+				.consumerMainThread(RacialSlotActionC2S::handle)
+				.add();
+
+		net.messageBuilder(NamekRegenC2S.class, id(), NetworkDirection.PLAY_TO_SERVER)
+				.decoder(NamekRegenC2S::new)
+				.encoder(NamekRegenC2S::encode)
+				.consumerMainThread(NamekRegenC2S::handle)
+				.add();
+
+		net.messageBuilder(RacialSecondaryActionC2S.class, id(), NetworkDirection.PLAY_TO_SERVER)
+				.decoder(RacialSecondaryActionC2S::new)
+				.encoder(RacialSecondaryActionC2S::encode)
+				.consumerMainThread(RacialSecondaryActionC2S::handle)
+				.add();
+
+		net.messageBuilder(RaidMusicS2C.class, id(), NetworkDirection.PLAY_TO_CLIENT)
+				.decoder(RaidMusicS2C::new)
+				.encoder(RaidMusicS2C::encode)
+				.consumerMainThread(RaidMusicS2C::handle)
+				.add();
+
+		net.messageBuilder(TournamentPackets.OpenBracketS2C.class, id(), NetworkDirection.PLAY_TO_CLIENT)
+				.decoder(TournamentPackets.OpenBracketS2C::decode)
+				.encoder(TournamentPackets.OpenBracketS2C::encode)
+				.consumerMainThread(TournamentPackets.OpenBracketS2C::handle)
+				.add();
+
+		net.messageBuilder(TournamentPackets.PhaseS2C.class, id(), NetworkDirection.PLAY_TO_CLIENT)
+				.decoder(TournamentPackets.PhaseS2C::decode)
+				.encoder(TournamentPackets.PhaseS2C::encode)
+				.consumerMainThread(TournamentPackets.PhaseS2C::handle)
+				.add();
+
+		net.messageBuilder(com.dragonminez.common.network.TournamentPackets.ActionC2S.class, id(),
+						NetworkDirection.PLAY_TO_SERVER)
+				.decoder(com.dragonminez.common.network.TournamentPackets.ActionC2S::new)
+				.encoder(com.dragonminez.common.network.TournamentPackets.ActionC2S::encode)
+				.consumerMainThread(com.dragonminez.common.network.TournamentPackets.ActionC2S::handle)
+				.add();
+
+		net.messageBuilder(PartyPackets.RequestStatsC2S.class, id(), NetworkDirection.PLAY_TO_SERVER)
+				.decoder(PartyPackets.RequestStatsC2S::new)
+				.encoder(PartyPackets.RequestStatsC2S::encode)
+				.consumerMainThread(PartyPackets.RequestStatsC2S::handle)
+				.add();
+
+		net.messageBuilder(PartyPackets.StatsS2C.class, id(), NetworkDirection.PLAY_TO_CLIENT)
+				.decoder(PartyPackets.StatsS2C::decode)
+				.encoder(PartyPackets.StatsS2C::encode)
+				.consumerMainThread(PartyPackets.StatsS2C::handle)
+				.add();
+
+		net.messageBuilder(KiBurstVfxS2C.class, id(), NetworkDirection.PLAY_TO_CLIENT)
+				.decoder(KiBurstVfxS2C::new)
+				.encoder(KiBurstVfxS2C::encode)
+				.consumerMainThread(KiBurstVfxS2C::handle)
+				.add();
+
+		net.messageBuilder(AuraModeC2S.class, id(), NetworkDirection.PLAY_TO_SERVER)
+				.decoder(AuraModeC2S::new)
+				.encoder(AuraModeC2S::encode)
+				.consumerMainThread(AuraModeC2S::handle)
+				.add();
+
+		net.messageBuilder(ShockwaveVfxS2C.class, id(), NetworkDirection.PLAY_TO_CLIENT)
+				.decoder(ShockwaveVfxS2C::new)
+				.encoder(ShockwaveVfxS2C::encode)
+				.consumerMainThread(ShockwaveVfxS2C::handle)
+				.add();
+
+		net.messageBuilder(ClawSlashVfxS2C.class, id(), NetworkDirection.PLAY_TO_CLIENT)
+				.decoder(ClawSlashVfxS2C::new)
+				.encoder(ClawSlashVfxS2C::encode)
+				.consumerMainThread(ClawSlashVfxS2C::handle)
+				.add();
+
+		net.messageBuilder(ImpactBurstVfxS2C.class, id(), NetworkDirection.PLAY_TO_CLIENT)
+				.decoder(ImpactBurstVfxS2C::new)
+				.encoder(ImpactBurstVfxS2C::encode)
+				.consumerMainThread(ImpactBurstVfxS2C::handle)
+				.add();
+
+		net.messageBuilder(AfterimageVfxS2C.class, id(), NetworkDirection.PLAY_TO_CLIENT)
+				.decoder(AfterimageVfxS2C::new)
+				.encoder(AfterimageVfxS2C::encode)
+				.consumerMainThread(AfterimageVfxS2C::handle)
+				.add();
+
+		net.messageBuilder(PartyPackets.HudSyncS2C.class, id(), NetworkDirection.PLAY_TO_CLIENT)
+				.decoder(PartyPackets.HudSyncS2C::decode)
+				.encoder(PartyPackets.HudSyncS2C::encode)
+				.consumerMainThread(PartyPackets.HudSyncS2C::handle)
+				.add();
+
+		net.messageBuilder(BossTelegraphS2C.class, id(), NetworkDirection.PLAY_TO_CLIENT)
+				.decoder(BossTelegraphS2C::new)
+				.encoder(BossTelegraphS2C::encode)
+				.consumerMainThread(BossTelegraphS2C::handle)
+				.add();
+
+		net.messageBuilder(WorldBossStateS2C.class, id(), NetworkDirection.PLAY_TO_CLIENT)
+				.decoder(WorldBossStateS2C::new)
+				.encoder(WorldBossStateS2C::encode)
+				.consumerMainThread(WorldBossStateS2C::handle)
+				.add();
+
+		net.messageBuilder(DimensionalFistS2C.class, id(), NetworkDirection.PLAY_TO_CLIENT)
+				.decoder(DimensionalFistS2C::new)
+				.encoder(DimensionalFistS2C::encode)
+				.consumerMainThread(DimensionalFistS2C::handle)
+				.add();
+
+		net.messageBuilder(DimensionalShatterS2C.class, id(), NetworkDirection.PLAY_TO_CLIENT)
+				.decoder(DimensionalShatterS2C::new)
+				.encoder(DimensionalShatterS2C::encode)
+				.consumerMainThread(DimensionalShatterS2C::handle)
+				.add();
+
+		net.messageBuilder(SwordSlashS2C.class, id(), NetworkDirection.PLAY_TO_CLIENT)
+				.decoder(SwordSlashS2C::new)
+				.encoder(SwordSlashS2C::encode)
+				.consumerMainThread(SwordSlashS2C::handle)
+				.add();
+
+		net.messageBuilder(WorldBossContributionS2C.class, id(), NetworkDirection.PLAY_TO_CLIENT)
+				.decoder(WorldBossContributionS2C::new)
+				.encoder(WorldBossContributionS2C::encode)
+				.consumerMainThread(WorldBossContributionS2C::handle)
+				.add();
+
+		net.messageBuilder(WorldBossPlayerStateS2C.class, id(), NetworkDirection.PLAY_TO_CLIENT)
+				.decoder(WorldBossPlayerStateS2C::new)
+				.encoder(WorldBossPlayerStateS2C::encode)
+				.consumerMainThread(WorldBossPlayerStateS2C::handle)
+				.add();
+
+		net.messageBuilder(WorldBossResultsS2C.class, id(), NetworkDirection.PLAY_TO_CLIENT)
+				.decoder(WorldBossResultsS2C::new)
+				.encoder(WorldBossResultsS2C::encode)
+				.consumerMainThread(WorldBossResultsS2C::handle)
+				.add();
+
+		net.messageBuilder(WorldBossReviveC2S.class, id(), NetworkDirection.PLAY_TO_SERVER)
+				.decoder(WorldBossReviveC2S::new)
+				.encoder(WorldBossReviveC2S::encode)
+				.consumerMainThread(WorldBossReviveC2S::handle)
+				.add();
+
+		net.messageBuilder(TournamentPackets.RivalS2C.class, id(), NetworkDirection.PLAY_TO_CLIENT)
+				.decoder(TournamentPackets.RivalS2C::decode)
+				.encoder(TournamentPackets.RivalS2C::encode)
+				.consumerMainThread(TournamentPackets.RivalS2C::handle)
+				.add();
+
+		net.messageBuilder(TriBeamPackets.FollowUpWindowS2C.class, id(), NetworkDirection.PLAY_TO_CLIENT)
+				.decoder(TriBeamPackets.FollowUpWindowS2C::decode)
+				.encoder(TriBeamPackets.FollowUpWindowS2C::encode)
+				.consumerMainThread(TriBeamPackets.FollowUpWindowS2C::handle)
+				.add();
+
+		net.messageBuilder(TriBeamPackets.FollowUpC2S.class, id(), NetworkDirection.PLAY_TO_SERVER)
+				.decoder(TriBeamPackets.FollowUpC2S::decode)
+				.encoder(TriBeamPackets.FollowUpC2S::encode)
+				.consumerMainThread(TriBeamPackets.FollowUpC2S::handle)
+				.add();
+
+		net.messageBuilder(RequestReviveTargetsC2S.class, id(), NetworkDirection.PLAY_TO_SERVER)
+				.decoder(RequestReviveTargetsC2S::new)
+				.encoder(RequestReviveTargetsC2S::encode)
+				.consumerMainThread(RequestReviveTargetsC2S::handle)
+				.add();
+
+		net.messageBuilder(ReviveTargetsS2C.class, id(), NetworkDirection.PLAY_TO_CLIENT)
+				.decoder(ReviveTargetsS2C::new)
+				.encoder(ReviveTargetsS2C::encode)
+				.consumerMainThread(ReviveTargetsS2C::handle)
+				.add();
+
+		net.messageBuilder(MinigameStartC2S.class, id(), NetworkDirection.PLAY_TO_SERVER)
+				.decoder(MinigameStartC2S::new)
+				.encoder(MinigameStartC2S::encode)
+				.consumerMainThread(MinigameStartC2S::handle)
+				.add();
+
+		net.messageBuilder(MinigameInputC2S.class, id(), NetworkDirection.PLAY_TO_SERVER)
+				.decoder(MinigameInputC2S::new)
+				.encoder(MinigameInputC2S::encode)
+				.consumerMainThread(MinigameInputC2S::handle)
+				.add();
+
+		net.messageBuilder(MinigameStartS2C.class, id(), NetworkDirection.PLAY_TO_CLIENT)
+				.decoder(MinigameStartS2C::new)
+				.encoder(MinigameStartS2C::encode)
+				.consumerMainThread(MinigameStartS2C::handle)
+				.add();
+
+		net.messageBuilder(MinigameResultS2C.class, id(), NetworkDirection.PLAY_TO_CLIENT)
+				.decoder(MinigameResultS2C::new)
+				.encoder(MinigameResultS2C::encode)
+				.consumerMainThread(MinigameResultS2C::handle)
+				.add();
+
+		net.messageBuilder(OpenMinigameS2C.class, id(), NetworkDirection.PLAY_TO_CLIENT)
+				.decoder(OpenMinigameS2C::new)
+				.encoder(OpenMinigameS2C::encode)
+				.consumerMainThread(OpenMinigameS2C::handle)
+				.add();
+
+		net.messageBuilder(UpdateSkinPixelsC2S.class, id(), NetworkDirection.PLAY_TO_SERVER)
+				.decoder(UpdateSkinPixelsC2S::decode)
+				.encoder(UpdateSkinPixelsC2S::encode)
+				.consumerMainThread(UpdateSkinPixelsC2S::handle)
+				.add();
+
+		net.messageBuilder(SkinPixelsSyncS2C.class, id(), NetworkDirection.PLAY_TO_CLIENT)
+				.decoder(SkinPixelsSyncS2C::decode)
+				.encoder(SkinPixelsSyncS2C::encode)
+				.consumerMainThread(SkinPixelsSyncS2C::handle)
+				.add();
+
+		net.messageBuilder(DialogueResultS2C.class, id(), NetworkDirection.PLAY_TO_CLIENT)
+				.decoder(DialogueResultS2C::new)
+				.encoder(DialogueResultS2C::encode)
+				.consumerMainThread(DialogueResultS2C::handle)
+				.add();
+
+		net.messageBuilder(DragonSkyS2C.class, id(), NetworkDirection.PLAY_TO_CLIENT)
+				.decoder(DragonSkyS2C::new)
+				.encoder(DragonSkyS2C::encode)
+				.consumerMainThread(DragonSkyS2C::handle)
+				.add();
+
+		net.messageBuilder(BossVfxPackets.LaneTelegraphS2C.class, id(), NetworkDirection.PLAY_TO_CLIENT)
+				.decoder(BossVfxPackets.LaneTelegraphS2C::new)
+				.encoder(BossVfxPackets.LaneTelegraphS2C::encode)
+				.consumerMainThread(BossVfxPackets.LaneTelegraphS2C::handle)
+				.add();
+
+		net.messageBuilder(BossVfxPackets.GaleS2C.class, id(), NetworkDirection.PLAY_TO_CLIENT)
+				.decoder(BossVfxPackets.GaleS2C::new)
+				.encoder(BossVfxPackets.GaleS2C::encode)
+				.consumerMainThread(BossVfxPackets.GaleS2C::handle)
+				.add();
+
+		net.messageBuilder(FlightModeLockC2S.class, id(), NetworkDirection.PLAY_TO_SERVER)
+				.decoder(FlightModeLockC2S::decode)
+				.encoder(FlightModeLockC2S::encode)
+				.consumerMainThread(FlightModeLockC2S::handle)
+				.add();
+
+		net.messageBuilder(MeleeAttackStartC2S.class, id(), NetworkDirection.PLAY_TO_SERVER)
+				.decoder(MeleeAttackStartC2S::new)
+				.encoder(MeleeAttackStartC2S::encode)
+				.consumerMainThread(MeleeAttackStartC2S::handle)
+				.add();
+
+		net.messageBuilder(ReserveFirstHotbarSlotC2S.class, id(), NetworkDirection.PLAY_TO_SERVER)
+				.decoder(ReserveFirstHotbarSlotC2S::new)
+				.encoder(ReserveFirstHotbarSlotC2S::encode)
+				.consumerMainThread(ReserveFirstHotbarSlotC2S::handle)
+				.add();
+
+		net.messageBuilder(SilentDamageS2C.class, id(), NetworkDirection.PLAY_TO_CLIENT)
+				.decoder(SilentDamageS2C::new)
+				.encoder(SilentDamageS2C::encode)
+				.consumerMainThread(SilentDamageS2C::handle)
+				.add();
+
+		net.messageBuilder(KiShareC2S.class, id(), NetworkDirection.PLAY_TO_SERVER)
+				.decoder(KiShareC2S::new)
+				.encoder(KiShareC2S::encode)
+				.consumerMainThread(KiShareC2S::handle)
+				.add();
+
+		net.messageBuilder(StrikeRushS2C.class, id(), NetworkDirection.PLAY_TO_CLIENT)
+				.decoder(StrikeRushS2C::new)
+				.encoder(StrikeRushS2C::encode)
+				.consumerMainThread(StrikeRushS2C::handle)
+				.add();
+
+		net.messageBuilder(StrikeClashHoldS2C.class, id(), NetworkDirection.PLAY_TO_CLIENT)
+				.decoder(StrikeClashHoldS2C::new)
+				.encoder(StrikeClashHoldS2C::encode)
+				.consumerMainThread(StrikeClashHoldS2C::handle)
+				.add();
+
+		net.messageBuilder(KickPartyMemberC2S.class, id(), NetworkDirection.PLAY_TO_SERVER)
+				.decoder(KickPartyMemberC2S::new)
+				.encoder(KickPartyMemberC2S::encode)
+				.consumerMainThread(KickPartyMemberC2S::handle)
+				.add();
+
+		net.messageBuilder(DebugFileS2C.class, id(), NetworkDirection.PLAY_TO_CLIENT)
+				.decoder(DebugFileS2C::new)
+				.encoder(DebugFileS2C::encode)
+				.consumerMainThread(DebugFileS2C::handle)
+				.add();
+
+		net.messageBuilder(VehicleFlightModeC2S.class, id(), NetworkDirection.PLAY_TO_SERVER)
+				.decoder(VehicleFlightModeC2S::new)
+				.encoder(VehicleFlightModeC2S::encode)
+				.consumerMainThread(VehicleFlightModeC2S::handle)
+				.add();
+
+		net.messageBuilder(StatsDeltaS2C.class, id(), NetworkDirection.PLAY_TO_CLIENT)
+				.decoder(StatsDeltaS2C::decode)
+				.encoder(StatsDeltaS2C::encode)
+				.consumerMainThread(StatsDeltaS2C::handle)
+				.add();
+
+		net.messageBuilder(AssimilationVfxS2C.class, id(), NetworkDirection.PLAY_TO_CLIENT)
+				.decoder(AssimilationVfxS2C::new)
+				.encoder(AssimilationVfxS2C::encode)
+				.consumerMainThread(AssimilationVfxS2C::handle)
+				.add();
+
+		net.messageBuilder(InstantTransmissionVfxS2C.class, id(), NetworkDirection.PLAY_TO_CLIENT)
+				.decoder(InstantTransmissionVfxS2C::new)
+				.encoder(InstantTransmissionVfxS2C::encode)
+				.consumerMainThread(InstantTransmissionVfxS2C::handle)
+				.add();
+
+		net.messageBuilder(CandyVfxS2C.class, id(), NetworkDirection.PLAY_TO_CLIENT)
+				.decoder(CandyVfxS2C::new)
+				.encoder(CandyVfxS2C::encode)
+				.consumerMainThread(CandyVfxS2C::handle)
+				.add();
+
+		net.messageBuilder(KiBladeExtendS2C.class, id(), NetworkDirection.PLAY_TO_CLIENT)
+				.decoder(KiBladeExtendS2C::new)
+				.encoder(KiBladeExtendS2C::encode)
+				.consumerMainThread(KiBladeExtendS2C::handle)
+				.add();
+
+		net.messageBuilder(GumStruggleC2S.class, id(), NetworkDirection.PLAY_TO_SERVER)
+				.decoder(GumStruggleC2S::new)
+				.encoder(GumStruggleC2S::encode)
+				.consumerMainThread(GumStruggleC2S::handle)
+				.add();
+
+		net.messageBuilder(VehicleSeatC2S.class, id(), NetworkDirection.PLAY_TO_SERVER)
+				.decoder(VehicleSeatC2S::new)
+				.encoder(VehicleSeatC2S::encode)
+				.consumerMainThread(VehicleSeatC2S::handle)
+				.add();
+
+		net.messageBuilder(StrikeCinematicS2C.class, id(), NetworkDirection.PLAY_TO_CLIENT)
+				.decoder(StrikeCinematicS2C::new)
+				.encoder(StrikeCinematicS2C::encode)
+				.consumerMainThread(StrikeCinematicS2C::handle)
+				.add();
 	}
 
 	public static <MSG> void sendToServer(MSG message) {
@@ -523,6 +935,11 @@ public class NetworkHandler {
 
 	public static <MSG> void sendToPlayer(MSG message, ServerPlayer player) {
 		INSTANCE.sendToPlayer(message, player);
+		StatsDeltaSync.onSent(player, message, false);
+	}
+
+	private static <MSG> void sendToSelf(MSG message, ServerPlayer player) {
+		INSTANCE.sendToPlayer(message, player);
 	}
 
 	public static <MSG> void sendToAllPlayers(MSG message) {
@@ -530,6 +947,19 @@ public class NetworkHandler {
 	}
 
 	public static <MSG> void sendToTrackingEntityAndSelf(MSG message, Entity entity) {
+		if (entity instanceof ServerPlayer player) {
+			Object trackerCopy = message instanceof StatsSyncS2C stats ? stats.forTrackers()
+					: message instanceof ProgressionSyncS2C progression ? progression.forTrackers()
+					: message instanceof StatsDeltaS2C delta ? delta.forTrackers() : null;
+			if (trackerCopy != null) {
+				sendToSelf(message, player);
+				INSTANCE.sendToTrackingEntity(trackerCopy, player);
+			} else {
+				INSTANCE.sendToTrackingEntityAndSelf(message, player);
+			}
+			StatsDeltaSync.onSent(player, message, true);
+			return;
+		}
 		INSTANCE.sendToTrackingEntityAndSelf(message, entity);
 	}
 

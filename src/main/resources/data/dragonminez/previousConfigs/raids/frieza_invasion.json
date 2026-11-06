@@ -1,0 +1,196 @@
+{
+  "configVersion": "2.2.0",
+  "enabled": true,
+  "displayName": "raid.dragonminez.frieza_invasion",
+  "activationRadius": 48.0,
+  "leashDistance": 80.0,
+  "interWaveDelaySeconds": 5,
+  "music": {
+    "preparation": "dragonminez:menu_music_11",
+    "battle": "dragonminez:raid_ost_1"
+  },
+  "trigger": {
+    "entityId": "#dragonminez:frieza_soldiers",
+    "dimension": "dragonminez:namek",
+    "spawnChance": 0.0,
+    "supervillain": true,
+    "preparationSeconds": 60,
+    "omenMessage": "raid.dragonminez.frieza_invasion.omen",
+    "startMessage": "raid.dragonminez.frieza_invasion.start",
+    "announceMessage": "raid.dragonminez.frieza_invasion.ruins",
+    "health": 400.0,
+    "meleeDamage": 18.0,
+    "kiDamage": 12.0,
+    "aiTier": 1
+  },
+  "waves": [
+    {
+      "spawns": [
+        {
+          "entityId": "#dragonminez:frieza_soldiers",
+          "count": 5,
+          "health": 100.0,
+          "meleeDamage": 15.0,
+          "kiDamage": 10.0,
+          "aiTier": 1
+        }
+      ]
+    },
+    {
+      "spawns": [
+        {
+          "entityId": "#dragonminez:frieza_soldiers",
+          "count": 10,
+          "health": 130.0,
+          "meleeDamage": 18.0,
+          "kiDamage": 12.0,
+          "aiTier": 1
+        }
+      ]
+    },
+    {
+      "spawns": [
+        {
+          "entityId": "#dragonminez:frieza_soldiers",
+          "count": 15,
+          "health": 160.0,
+          "meleeDamage": 22.0,
+          "kiDamage": 15.0,
+          "aiTier": 1
+        },
+        {
+          "entityId": "dragonminez:saga_cui",
+          "count": 1,
+          "health": 5500.0,
+          "meleeDamage": 45.0,
+          "kiDamage": 40.0,
+          "aiTier": 2,
+          "dormantUntilEscortDead": true
+        }
+      ]
+    },
+    {
+      "spawns": [
+        {
+          "entityId": "#dragonminez:frieza_soldiers",
+          "count": 15,
+          "health": 190.0,
+          "meleeDamage": 26.0,
+          "kiDamage": 18.0,
+          "aiTier": 1
+        },
+        {
+          "entityId": "dragonminez:saga_dodoria",
+          "count": 1,
+          "health": 7000.0,
+          "meleeDamage": 60.0,
+          "kiDamage": 50.0,
+          "aiTier": 2,
+          "dormantUntilEscortDead": true
+        },
+        {
+          "entityId": "dragonminez:saga_zarbon",
+          "count": 1,
+          "health": 6800.0,
+          "meleeDamage": 65.0,
+          "kiDamage": 55.0,
+          "aiTier": 2,
+          "canTransform": true,
+          "dormantUntilEscortDead": true,
+          "transformHealth": 10200.0
+        }
+      ]
+    },
+    {
+      "spawns": [
+        {
+          "entityId": "#dragonminez:frieza_soldiers",
+          "count": 15,
+          "health": 220.0,
+          "meleeDamage": 30.0,
+          "kiDamage": 20.0,
+          "aiTier": 1
+        },
+        {
+          "entityId": "dragonminez:saga_guldo",
+          "count": 1,
+          "health": 6000.0,
+          "meleeDamage": 55.0,
+          "kiDamage": 60.0,
+          "aiTier": 2,
+          "dormantUntilEscortDead": true
+        },
+        {
+          "entityId": "dragonminez:saga_recoome",
+          "count": 1,
+          "health": 10000.0,
+          "meleeDamage": 90.0,
+          "kiDamage": 50.0,
+          "aiTier": 2,
+          "dormantUntilEscortDead": true
+        },
+        {
+          "entityId": "dragonminez:saga_burter",
+          "count": 1,
+          "health": 10000.0,
+          "meleeDamage": 70.0,
+          "kiDamage": 55.0,
+          "aiTier": 3,
+          "dormantUntilEscortDead": true
+        },
+        {
+          "entityId": "dragonminez:saga_jeice",
+          "count": 1,
+          "health": 10000.0,
+          "meleeDamage": 70.0,
+          "kiDamage": 65.0,
+          "aiTier": 3,
+          "dormantUntilEscortDead": true
+        },
+        {
+          "entityId": "dragonminez:saga_ginyu",
+          "count": 1,
+          "health": 14000.0,
+          "meleeDamage": 110.0,
+          "kiDamage": 85.0,
+          "aiTier": 3,
+          "dormantUntilEscortDead": true
+        }
+      ]
+    }
+  ],
+  "rewards": {
+    "trainingPoints": 30000.0,
+    "effects": [
+      {
+        "id": "minecraft:hero_of_the_village",
+        "seconds": 600,
+        "amplifier": 0
+      },
+      {
+        "id": "dragonminez:world_hero",
+        "seconds": 600,
+        "amplifier": 1
+      }
+    ],
+    "items": [
+      {
+        "id": "minecraft:golden_carrot",
+        "count": 16
+      },
+      {
+        "id": "dragonminez:senzu_bean",
+        "count": 3
+      },
+      {
+        "id": "dragonminez:blaster_cannon",
+        "count": 1
+      }
+    ]
+  },
+  "defeat": {
+    "title": "raid.dragonminez.defeat.title",
+    "subtitle": "raid.dragonminez.frieza_invasion.defeat",
+    "alignment": -20
+  }
+}

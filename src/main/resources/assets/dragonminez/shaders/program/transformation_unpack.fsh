@@ -2,6 +2,7 @@
 
 uniform sampler2D DiffuseSampler;
 uniform float AnimationTime;
+uniform float ColorChannel;
 
 in vec2 texCoord;
 out vec4 fragColor;
@@ -48,6 +49,15 @@ void main() {
 
     vec3 primaryColor = vec3(rPair.x, gPair.x, bPair.x);
     vec3 secondaryColor = vec3(rPair.y, gPair.y, bPair.y);
+
+    if (ColorChannel > 1.5) {
+        fragColor = vec4(secondaryColor, packedMask.a);
+        return;
+    }
+    if (ColorChannel > 0.5) {
+        fragColor = vec4(primaryColor, packedMask.a);
+        return;
+    }
 
     vec2 noiseUv = texCoord * max(0.01, NoiseScale) + NoiseScroll * AnimationTime * 20.0;
     float noise = valueNoise(noiseUv);

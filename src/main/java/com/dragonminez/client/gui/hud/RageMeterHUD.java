@@ -1,0 +1,55 @@
+package com.dragonminez.client.gui.hud;
+
+import com.dragonminez.client.gui.hud.layout.HudElement;
+import com.dragonminez.client.gui.hud.layout.HudLayout;
+import com.dragonminez.common.stats.StatsCapability;
+import com.dragonminez.common.stats.StatsProvider;
+import com.dragonminez.common.util.FalseSuperSaiyanHelper;
+import com.dragonminez.common.util.FusionForms;
+import net.minecraft.client.Minecraft;
+import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.LayeredDraw;
+import net.minecraft.util.Mth;
+
+public class RageMeterHUD {
+	private static final int RAGE_COLOR = 0x1F8F3A;
+	private static final int RAGE_READY_COLOR = 0x6BFF4A;
+	private static final int FALSE_RAGE_COLOR = 0xE01010;
+	private static final int FALSE_RAGE_READY_COLOR = 0xFF5040;
+
+	private static final HudBar RAGE_BAR = new HudBar(HudStatNumberAnimator.StatKind.KI);
+	private static final HudSmoother VISIBILITY = new HudSmoother(0.18f, 0.01f);
+	private static final HudSmoother READY = new HudSmoother(0.15f);
+
+	public static final LayeredDraw.Layer HUD_RAGE_METER = (guiGraphics, deltaTracker) -> {
+		if (!HudLayout.isPreview()) render(guiGraphics, deltaTracker.getGameTimeDeltaPartialTick(false), guiGraphics.guiWidth(), guiGraphics.guiHeight());
+	};
+
+	public static void render(GuiGraphics guiGraphics, float partialTicks, int width, int height) {
+		Minecraft mc = Minecraft.getInstance();
+		if (mc.getDebugOverlay().showDebugScreen() || mc.player == null) return;
+
+		StatsProvider.get(StatsCapability.INSTANCE, mc.player).ifPresent(data -> {
+			if (!data.getStatus().isHasCreatedCharacter()) return;
+			boolean mutant = FusionForms.hasAnyMutant(data);
+			boolean falseSaiyan = !mutant && FalseSuperSaiyanHelper.ownsRageBar(data);
+			boolean applicable = mutant || falseSaiyan;
+
+			float rage = applicable ? data.getResources().getRage() : 0.0f;
+			boolean active = applicable && data.getStatus().isRageActive();
+			boolean full = applicable && data.getResources().isRageFull();
+
+			RAGE_BAR.update(rage, 100.0f);
+			float visibility = HudSideMeters.update(HudElement.RAGE, VISIBILITY, applicable, rage > 0.0f || active, width, height);
+			float ready = READY.update(full || active ? 1.0f : 0.0f);
+
+			float seconds = HudBar.time();
+			float pulse = ready * (0.5f + 0.5f * Mth.sin(seconds * (active ? 11.0f : 6.0f)));
+			int baseColor = falseSaiyan ? FALSE_RAGE_COLOR : RAGE_COLOR;
+			int readyColor = falseSaiyan ? FALSE_RAGE_READY_COLOR : RAGE_READY_COLOR;
+			int color = HudRender.mix(baseColor, readyColor, ready * (0.35f + 0.35f * pulse));
+
+			HudSideMeters.draw(guiGraphics, HudElement.RAGE, width, height, RAGE_BAR, HudSprites.RAGE_ICON, visibility, color, pulse);
+		});
+	}
+}

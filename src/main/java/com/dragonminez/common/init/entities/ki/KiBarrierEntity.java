@@ -1,6 +1,7 @@
 package com.dragonminez.common.init.entities.ki;
 
 import com.dragonminez.client.util.ColorUtils;
+import com.dragonminez.common.combat.HealContext;
 import com.dragonminez.common.init.MainDamageTypes;
 import com.dragonminez.common.init.MainEntities;
 import com.dragonminez.common.init.MainParticles;
@@ -35,6 +36,7 @@ public class KiBarrierEntity extends AbstractKiProjectile {
     private static final EntityDataAccessor<Integer> SHIELD_HOST = SynchedEntityData.defineId(KiBarrierEntity.class, EntityDataSerializers.INT);
     private static final EntityDataAccessor<Float> BARRIER_HP = SynchedEntityData.defineId(KiBarrierEntity.class, EntityDataSerializers.FLOAT);
     private static final EntityDataAccessor<Float> BARRIER_MAX_HP = SynchedEntityData.defineId(KiBarrierEntity.class, EntityDataSerializers.FLOAT);
+    private static final EntityDataAccessor<Boolean> DECORATIVE = SynchedEntityData.defineId(KiBarrierEntity.class, EntityDataSerializers.BOOLEAN);
 
     private static final float CONTACT_DAMAGE_RATIO = 0.1F;
     private static final float HEAL_EXPIRE_RATIO = 0.5F;
@@ -123,6 +125,7 @@ public class KiBarrierEntity extends AbstractKiProjectile {
         builder.define(SHIELD_HOST, -1);
         builder.define(BARRIER_HP, 0.0F);
         builder.define(BARRIER_MAX_HP, 0.0F);
+        builder.define(DECORATIVE, false);
     }
 
     public void setBarrierMaxHp(float hp) { this.entityData.set(BARRIER_MAX_HP, Math.max(0.0F, hp)); }
@@ -134,7 +137,16 @@ public class KiBarrierEntity extends AbstractKiProjectile {
         return this.isFiring() && this.getBarrierHp() > 0.0F;
     }
 
+    public void setDecorative(boolean decorative) {
+        this.entityData.set(DECORATIVE, decorative);
+    }
+
+    public boolean isDecorative() {
+        return this.entityData.get(DECORATIVE);
+    }
+
     public boolean protects(Entity entity) {
+        if (this.isDecorative()) return false;
         LivingEntity anchor = this.getAnchor();
         return anchor != null && anchor.is(entity);
     }
@@ -167,7 +179,10 @@ public class KiBarrierEntity extends AbstractKiProjectile {
             LivingEntity anchor = this.getAnchor();
             if (anchor != null && anchor.isAlive()) {
                 float healAmount = this.getBarrierHp() * HEAL_EXPIRE_RATIO;
-                if (healAmount > 0.0F) anchor.heal(healAmount);
+                if (healAmount > 0.0F) {
+                    final float healed = resolveMajinKiHealBonus(this.getOwner(), anchor, healAmount);
+                    HealContext.asAllyHeal(this.getOwner(), anchor, () -> anchor.heal(healed));
+                }
             }
         }
         this.playEndEffects(0.9F);

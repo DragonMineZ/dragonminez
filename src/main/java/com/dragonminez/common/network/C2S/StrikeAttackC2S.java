@@ -1,6 +1,7 @@
 package com.dragonminez.common.network.C2S;
 
 import com.dragonminez.server.events.players.combat.StrikeAttackHandler;
+import com.dragonminez.common.training.MinigameSessionManager;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.server.level.ServerPlayer;
 import com.dragonminez.compat.network.NetworkEvent;
@@ -25,7 +26,9 @@ public class StrikeAttackC2S {
 	public void handle(Supplier<NetworkEvent.Context> ctx) {
 		ctx.get().enqueueWork(() -> {
 			ServerPlayer player = ctx.get().getSender();
-			if (player != null) StrikeAttackHandler.requestStrike(player, targetId);
+			if (player == null) return;
+			MinigameSessionManager.onPlayerAction(player, "strike");
+			StrikeAttackHandler.requestStrike(player, targetId);
 		});
 		ctx.get().setPacketHandled(true);
 	}

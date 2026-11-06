@@ -5,6 +5,7 @@ import com.dragonminez.client.gui.radial.RadialNode;
 import com.dragonminez.common.config.ConfigManager;
 import com.dragonminez.common.config.FormConfig;
 import com.dragonminez.common.stats.StatsData;
+import com.dragonminez.common.util.FusionForms;
 import com.dragonminez.common.util.TransformationsHelper;
 
 import java.util.ArrayList;
@@ -34,7 +35,7 @@ public final class RadialForms {
 		Map<String, FormConfig> groups = ConfigManager.getAllStackForms();
 		if (groups != null) {
 			for (String group : groups.keySet()) {
-				if (!ConfigManager.getSkillsConfig().isSkillAllowedForRace(group, race)) continue;
+				if (!FusionForms.isSkillAllowed(stats, group)) continue;
 				List<String> formNames = TransformationsHelper.getSelectableStackFormNames(stats, group);
 				RadialNode head = buildGroupHead(stats, race, group, formNames, "stackforms", true);
 				if (head != null) heads.add(head);
@@ -46,14 +47,14 @@ public final class RadialForms {
 	private static List<RadialNode> forms(StatsData stats, String categoryKey, Predicate<String> typeFilter) {
 		String race = stats.getCharacter().getRaceName();
 		List<RadialNode> heads = new ArrayList<>();
-		Map<String, FormConfig> groups = ConfigManager.getAllFormsForRace(race);
+		Map<String, FormConfig> groups = FusionForms.allFormGroups(stats);
 		if (groups != null) {
 			for (String group : groups.keySet()) {
 				FormConfig config = ConfigManager.getFormGroup(race, group);
 				if (config == null) continue;
 				String type = config.getFormType() != null ? config.getFormType().toLowerCase(Locale.ROOT) : "";
 				if (!typeFilter.test(type)) continue;
-				if (!ConfigManager.getSkillsConfig().isSkillAllowedForRace(TransformationsHelper.getSkillNameForType(type), race)) continue;
+				if (!ConfigManager.getSkillsConfig().isSkillAllowedForRace(TransformationsHelper.getSkillNameForType(type), FusionForms.raceOf(stats, group))) continue;
 				List<String> formNames = TransformationsHelper.getSelectableFormNames(stats, race, group);
 				RadialNode head = buildGroupHead(stats, race, group, formNames, categoryKey, false);
 				if (head != null) heads.add(head);

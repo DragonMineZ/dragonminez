@@ -31,6 +31,7 @@ public class SagaNappaEntity extends DBSagasEntity{
         this.setDBZStyle(1);
 
         this.getAttribute(Attributes.MOVEMENT_SPEED).setBaseValue(0.20D);
+        this.setDefaultMovementSpeed(0.20D);
         this.getAttribute(Attributes.KNOCKBACK_RESISTANCE).setBaseValue(0.20D);
 
     }

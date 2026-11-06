@@ -1,6 +1,6 @@
 package com.dragonminez.common.init.entities.sagas;
 
-import com.dragonminez.common.init.MainEntities; // Asegúrate de importar tus entidades
+import com.dragonminez.common.init.MainEntities;
 import com.dragonminez.common.init.entities.IBattlePower;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.ai.attributes.AttributeSupplier;

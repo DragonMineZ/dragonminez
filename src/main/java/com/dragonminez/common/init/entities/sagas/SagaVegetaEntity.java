@@ -178,7 +178,7 @@ public class SagaVegetaEntity{
             this.setEvade(true, 60);
             this.setWildSense(true, 100);
 
-            this.setAllowedCombos(120, ComboType.AIR, ComboType.KI_CHARGE_ATTACK);
+            this.setAllowedCombos(120, ComboType.AIR, ComboType.KI_CHARGE_ATTACK, ComboType.SPIRIT_BREAKING_CANNON);
 
             this.addKiSkill(KiSkillType.KI_SMALL, 80, 1.2F, 0xFFE657, 0xFFE657);
             this.addKiSkill(KiSkillType.BIG_BANG, 200, 1.5F, 0xE3FFFF, 0xE3FFFF);
@@ -291,7 +291,7 @@ public class SagaVegetaEntity{
             this.setKiBlastSpeed(1.6F);
             this.setDBZStyle(0);
             this.setWildSense(true, 100);
-            this.setZanzoken(true, 200);
+            this.setZanzoken(3, 200);
             this.setLightning(true);
 
             this.setAllowedCombos(120, ComboType.AIR, ComboType.KI_CHARGE_ATTACK);
@@ -321,7 +321,7 @@ public class SagaVegetaEntity{
             this.setKiBlastSpeed(1.6F);
             this.setDBZStyle(0);
             this.setWildSense(true, 600);
-            this.setZanzoken(true, 200);
+            this.setZanzoken(3, 200);
             this.setLightning(true);
 
             this.setAllowedCombos(120, ComboType.AIR, ComboType.KI_CHARGE_ATTACK);
@@ -377,7 +377,7 @@ public class SagaVegetaEntity{
             this.setEvade(true, 60);
             this.setWildSense(true, 100);
 
-            this.setAllowedCombos(120, ComboType.AIR);
+            this.setAllowedCombos(120, ComboType.AIR, ComboType.DEADLY_DANCE_VEGETTO, ComboType.BEAM_SWORD_SLASH);
 
             this.addKiSkill(KiSkillType.KI_VOLLEY, 200, 1.2F, 0x00C0FF, 0x00C0FF);
             this.addKiSkill(KiSkillType.BIG_BANG, 340, 1.7F, 0xE3FFFF, 0xE3FFFF);
@@ -397,9 +397,9 @@ public class SagaVegetaEntity{
             this.setKiBlastSpeed(1.6F);
             this.setDBZStyle(0);
             this.setWildSense(true, 100);
-            this.setZanzoken(true, 200);
+            this.setZanzoken(3, 200);
 
-            this.setAllowedCombos(120, ComboType.AIR, ComboType.KI_CHARGE_ATTACK);
+            this.setAllowedCombos(120, ComboType.AIR, ComboType.KI_CHARGE_ATTACK, ComboType.DEADLY_DANCE_VEGETTO, ComboType.BEAM_SWORD_SLASH);
 
             this.addKiSkill(KiSkillType.KI_VOLLEY, 260, 1.2F, 0xFFE657, 0xFFE657);
             this.addKiSkill(KiSkillType.BIG_BANG, 340, 1.7F, 0xE3FFFF, 0xE3FFFF);

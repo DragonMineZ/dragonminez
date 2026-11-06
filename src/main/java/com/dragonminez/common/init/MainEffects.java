@@ -35,6 +35,12 @@ public class MainEffects {
 	public static final DeferredHolder<MobEffect, MobEffect> MAJIN_REVIVE = EFFECTS.register("majin_revive", () -> new DMZEffect());
 	public static final DeferredHolder<MobEffect, MobEffect> KI_BLAST_CD = EFFECTS.register("ki_blast_cd", () -> new DMZEffect());
 	public static final DeferredHolder<MobEffect, MobEffect> POISE_CD = EFFECTS.register("poise_cd", () -> new DMZEffect());
+	public static final DeferredHolder<MobEffect, MobEffect> KNOCKOUT = EFFECTS.register("knockout", () -> new DMZEffect(MobEffectCategory.HARMFUL, 0xD62020).uncurable());
+	public static final DeferredHolder<MobEffect, MobEffect> BIOANDROID_EXPLODE_CD = EFFECTS.register("bioandroid_explode_cd", () -> new DMZEffect());
+	public static final DeferredHolder<MobEffect, MobEffect> GOD_RITUAL_CD = EFFECTS.register("god_ritual_cd", () -> new DMZEffect());
+	public static final DeferredHolder<MobEffect, MobEffect> KI_TRANSFER_DRAIN = EFFECTS.register("ki_transfer_drain", () -> new DMZEffect(MobEffectCategory.HARMFUL, 0x5A6B85));
+	public static final DeferredHolder<MobEffect, MobEffect> KI_TRANSFER_BOOST = EFFECTS.register("ki_transfer_boost", () -> new DMZEffect(MobEffectCategory.BENEFICIAL, 0x5CE1FF));
+	public static final DeferredHolder<MobEffect, MobEffect> ADRENALINE = EFFECTS.register("adrenaline", () -> new DMZEffect(true));
 
 	// Status Effects | Beneficial
 	public static final DeferredHolder<MobEffect, MobEffect> KICHARGE = EFFECTS.register("kicharge", () -> new DMZEffect(true));
@@ -52,6 +58,16 @@ public class MainEffects {
 	public static final DeferredHolder<MobEffect, MobEffect> TP_GAIN = EFFECTS.register("tp_gain", () -> new DMZEffect(MobEffectCategory.BENEFICIAL, 0xF29B38));
 	public static final DeferredHolder<MobEffect, MobEffect> MASTERY_GAIN = EFFECTS.register("mastery_gain", () -> new DMZEffect(MobEffectCategory.BENEFICIAL, 0x9B59D0));
 	public static final DeferredHolder<MobEffect, MobEffect> MUTANT = EFFECTS.register("mutant", () -> new DMZEffect(MobEffectCategory.BENEFICIAL, 0xB14CE0));
+	public static final DeferredHolder<MobEffect, MobEffect> KAMI_BLESS = EFFECTS.register("kami_bless", () -> new DMZEffect(MobEffectCategory.BENEFICIAL, 0x7FE08A));
+	public static final DeferredHolder<MobEffect, MobEffect> MEDI_SHELL = EFFECTS.register("medi_shell", () -> new DMZEffect(MobEffectCategory.BENEFICIAL, 0xE0559B));
+	public static final DeferredHolder<MobEffect, MobEffect> RAID_WRATH = EFFECTS.register("raid_wrath", () -> new DMZEffect(MobEffectCategory.HARMFUL, 0x9B30D9));
+	public static final DeferredHolder<MobEffect, MobEffect> WORLD_HERO = EFFECTS.register("world_hero", () -> new DMZEffect(MobEffectCategory.BENEFICIAL, 0xF2C438));
+	public static final DeferredHolder<MobEffect, MobEffect> OOZARU_ROOT = EFFECTS.register("oozaru_root", () -> new DMZEffect(MobEffectCategory.BENEFICIAL, 0xC0392B));
+	public static final DeferredHolder<MobEffect, MobEffect> KATCHIN_SPROUT = EFFECTS.register("katchin_sprout", () -> new DMZEffect(MobEffectCategory.BENEFICIAL, 0x95A5A6));
+	public static final DeferredHolder<MobEffect, MobEffect> METEOR_FLOWER = EFFECTS.register("meteor_flower", () -> new DMZEffect(MobEffectCategory.BENEFICIAL, 0xE67E22));
+	public static final DeferredHolder<MobEffect, MobEffect> AURA_LILY = EFFECTS.register("aura_lily", () -> new DMZEffect(MobEffectCategory.BENEFICIAL, 0xF1C40F));
+	public static final DeferredHolder<MobEffect, MobEffect> HERMIT_FERN = EFFECTS.register("hermit_fern", () -> new DMZEffect(MobEffectCategory.BENEFICIAL, 0x27AE60));
+	public static final DeferredHolder<MobEffect, MobEffect> KAIOSHIN_FRUIT = EFFECTS.register("kaioshin_fruit", () -> new DMZEffect(MobEffectCategory.BENEFICIAL, 0x3C7DFF));
 
     public static void register(IEventBus eventBus) { EFFECTS.register(eventBus); }
 }

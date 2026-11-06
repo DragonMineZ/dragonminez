@@ -8,6 +8,7 @@ public class PredefinedTechniques {
 
 	public static final Map<String, KiAttackData> REGISTRY = new HashMap<>();
 	public static final Map<String, StrikeAttackData> STRIKE_REGISTRY = new HashMap<>();
+	public static final Map<String, EvasionAttackData> EVASION_REGISTRY = new HashMap<>();
 	public static final List<String> STRIKE_IDS = java.util.List.of(
 			"meteor",
 			"dragon_fist",
@@ -16,38 +17,96 @@ public class PredefinedTechniques {
 			"kaioken_attack",
 			"wolf_fang",
 			"oozaru_fist",
-			"super_god_fist"
+			"super_god_fist",
+			"oozaru_slam",
+			"gum_punch",
+			"blue_hurricane",
+			"dimensional_punch",
+			"dimensional_sword_attack",
+			"spirit_breaking_cannon",
+			"grab",
+			"shining_sword_attack",
+			"combo_meteor",
+			"meteor_burst",
+			"mystic_ball",
+			"darkness_eye_beam",
+			"death_chaser",
+			"android_combo",
+			"beam_sword_slash",
+			"perfect_rush",
+			"spirit_breaker"
+	);
+	public static final List<String> EVASION_IDS = java.util.List.of(
+			"taiyoken",
+			"rage_scream",
+			"afterimage",
+			"sleep_recovery",
+			"dimensional_teleport",
+			"candy_beam",
+			"gum_bind"
 	);
 
 	public void init() {
-		registerKi("spiritbomb", "technique.dragonminez.spiritbomb", "Goku", KiAttackData.KiType.GIANT_BALL, 3.00F, 0x30FFF1, 0x00F8FF, 5.0F, 0.5F, 10, "ki.large_ball");
-		registerKi("supernova", "technique.dragonminez.supernova", "Frieza", KiAttackData.KiType.GIANT_BALL, 3.00F, 0xFF9900, 0xFF4400, 5.0F, 0.5F, 10, "ki.large_ball");
-		registerKi("supernova_cooler", "technique.dragonminez.supernova_cooler", "Cooler", KiAttackData.KiType.GIANT_BALL, 3.50F, 0xFFAA00, 0xFFAA00, 5.5F, 0.5F, 10, "ki.large_ball");
-		registerKi("big_bang", "technique.dragonminez.big_bang", "Vegeta", KiAttackData.KiType.MEDIUM_BALL, 2.00F, 0x4FF7FF, 0x4FF7FF, 2.0F, 1.5F, 10, "ki.bigbang");
-		registerKi("burning_attack", "technique.dragonminez.burning_attack", "Trunks", KiAttackData.KiType.MEDIUM_BALL, 1.50F, 0xFFAA00, 0xFFAA00, 1.5F, 1.5F, 10, "ki.masenko");
-		registerKi("sokidan", "technique.dragonminez.sokidan", "Yamcha", KiAttackData.KiType.MEDIUM_BALL, 1.25F, 0x4FA9FF, 0x4FA9FF, 1.5F, 1.0F, 12, "ki.bigbang");
-		registerKi("final_flash", "technique.dragonminez.final_flash", "Vegeta", KiAttackData.KiType.WAVE, 2.50F, 0xFF9900, 0xFF9900, 1.5F, 1.2F, 10, "ki.finalflash");
-		registerKi("kamehameha", "technique.dragonminez.kamehameha", "Goku", KiAttackData.KiType.WAVE, 2.00F, 0x4FF7FF, 0x4FF7FF, 1.0F, 1.2F, 10, "ki.kameha");
-		registerKi("galick_gun", "technique.dragonminez.galick_gun", "Vegeta", KiAttackData.KiType.WAVE, 2.00F, 0xCE10E3, 0xAE10E3, 1.0F, 1.2F, 10, "ki.galick");
-		registerKi("masenko", "technique.dragonminez.masenko", "Gohan", KiAttackData.KiType.WAVE, 1.50F, 0xFFEA00, 0xFFEA00, 1.0F, 1.2F, 10, "ki.masenko");
-		registerKi("kienzan", "technique.dragonminez.kienzan", "Krilin", KiAttackData.KiType.DISK, 1.50F, 0xFFEA00, 0xFFEA00, 1.0F, 1.5F, 10, "ki.kienzan");
-		registerKi("kienzan_doble", "technique.dragonminez.double_kienzan", "Krilin", KiAttackData.KiType.DISK, 1.75F, 0xFF00AA, 0xFF00AA, 1.0F, 1.5F, 10, "ki.kienzandoble");
-		registerKi("death_beam", "technique.dragonminez.death_beam", "Frieza", KiAttackData.KiType.LASER, 0.75F, 0xCE10E3, 0xCE10E3, 0.5F, 2.0F, 10, "ki.makkako");
-		registerKi("emperor_death_beam", "technique.dragonminez.emperor_death_beam", "Frieza", KiAttackData.KiType.LASER, 1.25F, 0xCE10E3, 0xCE10E3, 0.6F, 2.0F, 10, "ki.makkako");
-        registerKi("makkanko", "technique.dragonminez.makkankosanpo", "Piccolo", KiAttackData.KiType.BEAM, 0.75F, 0xFFE53B, 0xC43BFF, 0.8F, 2.0F, 10, "ki.makkako");
-        registerKi("ki_barrage", "technique.dragonminez.barrage", "Vegeta", KiAttackData.KiType.BARRAGE, 1.00F, 0xFFFF00, 0xFFFF00, 0.4F, 1.5F, 10, "ki.barrage");
-		registerKi("final_explosion", "technique.dragonminez.final_explosion", "Vegeta", KiAttackData.KiType.EXPLOSION, 2.25F, 0xFFFF00, 0xFFFF00, 15.0F, 0.0F, 10, "ki.explosion");
-		registerKi("soul_punisher", "technique.dragonminez.soul_punisher", "Gogeta", KiAttackData.KiType.MEDIUM_BALL, 3.50F, 0xFFFFFF, 0xFFFFFF, 5.0F, 0.5F, 45, "ki.kienzan");
-		registerKi("fake_moon", "technique.dragonminez.fake_moon", "Vegeta", KiAttackData.KiType.MEDIUM_BALL, 0.00F, 0xF5F3D0, 0xFFFFFF, 2.0F, 0.8F, 45, "ki.bigbang");
-		registerKi("taiyoken", "technique.dragonminez.taiyoken", "Tenshinhan", KiAttackData.KiType.SMALL_BALL, 0.00F, 0xFFFFFF, 0xFFFFFF, 1.0F, 0.1F, 45, "ki.bigbang");
+		registerKi("spiritbomb", "technique.dragonminez.spiritbomb", "Goku", KiAttackData.KiType.GIANT_BALL, 3.00F, 0xC4FFFD, 0x00F8FF, 0xFFFFFF, 10.0F, 0.5F, 10, "ki.large_ball");
+		registerKi("supernova", "technique.dragonminez.supernova", "Frieza", KiAttackData.KiType.GIANT_BALL, 3.00F, 0xFF7438, 0xC92620, 0x800E0E, 10.0F, 0.5F, 10, "ki.large_ball");
+		registerKi("supernova_cooler", "technique.dragonminez.supernova_cooler", "Cooler", KiAttackData.KiType.GIANT_BALL, 3.50F, 0xFF3866, 0xA3143A, 0x4A0316, 10.5F, 0.5F, 10, "ki.supernova_cooler");
+		registerKi("big_bang", "technique.dragonminez.big_bang", "Vegeta", KiAttackData.KiType.MEDIUM_BALL, 2.00F, 0xE3FFFF, 0xE3FFFF, 0x889999, 2.5F, 1.7F, 10, "ki.bigbang");
+		registerKi("burning_attack", "technique.dragonminez.burning_attack", "Trunks", KiAttackData.KiType.MEDIUM_BALL, 1.50F, 0xFFF3D0, 0xFF7A1A, 0xC43A00, 2.5F, 1.5F, 10, "ki.burning_attack");
+		registerKi("sokidan", "technique.dragonminez.sokidan", "Yamcha", KiAttackData.KiType.MEDIUM_BALL, 1.25F, 0xFCFC5D, 0xF7F723, 0xF7B736, 1.5F, 1.0F, 12, "ki.bigbang");
+		registerKi("final_flash", "technique.dragonminez.final_flash", "Vegeta", KiAttackData.KiType.WAVE, 2.50F, 0xFFFCD6, 0xFFEB52, 0xF5C020, 0.7F, 1.2F, 10, "ki.finalflash");
+		registerKi("kamehameha", "technique.dragonminez.kamehameha", "Goku", KiAttackData.KiType.WAVE, 2.00F, 0xEDF4FF, 0x29D8FF, 0x0077FF, 0.6F, 1.2F, 10, "ki.kameha");
+		registerKi("galick_gun", "technique.dragonminez.galick_gun", "Vegeta", KiAttackData.KiType.WAVE, 2.00F, 0xFAE5FF, 0xA63EF0, 0x7106BD, 0.6F, 1.2F, 10, "ki.galick");
+		registerKi("heat_dome", "technique.dragonminez.heat_dome", "Trunks", KiAttackData.KiType.WAVE, 2.25F, 0xFFF6C2, 0xFFD23F, 0xF29E0C, 1.0F, 1.8F, 12, "ki.cupula");
+		registerKi("kikoho", "technique.dragonminez.kikoho", "Tien", KiAttackData.KiType.LASER, 2.00F, 0xFFFBD6, 0xFFE45C, 0xF2A900, 0.9F, 1.8F, 12, "ki.kikohu");
+		registerKi("neo_kikoho", "technique.dragonminez.neo_kikoho", "Tien", KiAttackData.KiType.MEDIUM_BALL, 2.50F, 0xFFF4B0, 0xFFB22E, 0xFF6F00, 0.9F, 1.6F, 15, "ki.neo_kikohu");
+		registerKi("masenko", "technique.dragonminez.masenko", "Gohan", KiAttackData.KiType.WAVE, 1.50F, 0xFFFC85, 0xFCE062, 0xFFFFFF, 0.4F, 1.2F, 10, "ki.masenko");
+		registerKi("kienzan", "technique.dragonminez.kienzan", "Krilin", KiAttackData.KiType.DISK, 1.50F, 0xFFFB7D, 0xFFEA00, 0xFFFFFF, 1.0F, 1.5F, 10, "ki.kienzan");
+		registerKi("kienzan_doble", "technique.dragonminez.double_kienzan", "Krilin", KiAttackData.KiType.DISK, 1.75F, 0xFF00AA, 0xFF00AA, 0xA30070, 1.0F, 1.5F, 10, "ki.kienzandoble");
+		registerKi("death_beam", "technique.dragonminez.death_beam", "Frieza", KiAttackData.KiType.LASER, 0.75F, 0xFF59FF, 0xD859FF, 0x9238F2, 0.5F, 2.0F, 10, "ki.laser");
+		registerKi("emperor_death_beam", "technique.dragonminez.emperor_death_beam", "Frieza", KiAttackData.KiType.LASER, 1.25F, 0xFF6B6B, 0xFF1A1A, 0xB00000, 0.6F, 2.0F, 14, "ki.emperor_laser");
+		registerKi("dodonpa", "technique.dragonminez.dodonpa", "Tien", KiAttackData.KiType.LASER, 1.00F, 0xFFF7B0, 0xFFE657, 0xF5B800, 0.5F, 2.5F, 8, "ki.dodonpa");
+		registerKi("makkanko", "technique.dragonminez.makkankosanpo", "Piccolo", KiAttackData.KiType.BEAM, 0.75F, 0xFFE657, 0xF5A627, 0x8B17CF, 1.0F, 2.0F, 14, "ki.makkako");
+		registerKi("ki_barrage", "technique.dragonminez.barrage", "Vegeta", KiAttackData.KiType.BARRAGE, 0.50F, 0xFFFF00, 0xFFFF00, 0xC8A000, 0.4F, 1.5F, 10, "ki.barrage");
+		registerKi("final_explosion", "technique.dragonminez.final_explosion", "Vegeta", KiAttackData.KiType.EXPLOSION, 2.25F, 0xFFFA99, 0xFCF56A, 0xFFFFFC, 25.0F, 0.0F, 10, "ki.explosion");
+		registerKi("soul_punisher", "technique.dragonminez.soul_punisher", "Gogeta", KiAttackData.KiType.MEDIUM_BALL, 3.50F, 0xFFFFFF, 0xFFFFFF, 0xFFFFFF, 3.5F, 0.5F, 45, "ki.soul_punisher");
+		registerKi("mouth_blast", "technique.dragonminez.mouth_blast", "Oozaru", KiAttackData.KiType.WAVE, 1.75F, 0xF3C9FF, 0xC523DE, 0x7A0FA0, 0.8F, 1.2F, 12, "ki.mouth_blast");
+		registerKi("fake_moon", "technique.dragonminez.fake_moon", "Vegeta", KiAttackData.KiType.MEDIUM_BALL, 0.00F, 0xF5F3D0, 0xFFFFFF, 0xFFFFFF, 2.0F, 0.8F, 45, "ki.bigbang");
+		registerKi("assault_rain", "technique.dragonminez.assault_rain", "Super Buu", KiAttackData.KiType.BARRAGE, 0.70F, 0xFFB8F4, 0x8A2BE2, 0xFF38D4, 0.4F, 1.5F, 15, "ki.assault_rain");
+		registerKi("blaster_meteor", "technique.dragonminez.blaster_meteor", "Broly", KiAttackData.KiType.BARRAGE, 0.70F, 0x9DFF8A, 0x3DF54A, 0x0FBF1B, 0.4F, 1.5F, 15, "ki.blaster_meteor");
+		registerKi("kill_driver", "technique.dragonminez.kill_driver", "Turles", KiAttackData.KiType.DISK, 2.25F, 0xFFF3A0, 0xFFC400, 0xE08A00, 1.0F, 1.2F, 12, "ki.kill_driver");
+		registerKi("hellzone_grenade", "technique.dragonminez.hellzone_grenade", "Piccolo", KiAttackData.KiType.BARRAGE, 2.50F, 0xFFF6B8, 0xFFB52E, 0xFF5A14, 0.8F, 1.5F, 15, "ki.hellzone_grenade");
+		registerEvasion("taiyoken", 0.00F, 30, 900, false);
+		registerEvasion("rage_scream", 1.2F, 60, 80, true);
+		registerEvasion("afterimage", 0.00F, 60, 200, false);
+		registerEvasion("sleep_recovery", 0.00F, EvasionAttackData.SLEEP_RECOVERY_MAX_TICKS, 1200, false);
+		registerEvasion("dimensional_teleport", 0.00F, 30, 320, false);
+		registerEvasion("candy_beam", 0.00F, 28, 600, false);
+		registerEvasion("gum_bind", 0.00F, 26, 900, false);
 		registerStrike("skp.meteor", 1.25f, 40);
 		registerStrike("skp.dragon_fist", 2.5f, 50);
-		registerStrike("skp.deadly_dance_vegetto", 1.5f, 40);
-		registerStrike("skp.deadly_dance", 1.25f, 40);
+		registerStrike("skp.deadly_dance_vegetto", 1.5f, 30);
+		registerStrike("skp.deadly_dance", 1.25f, 30);
 		registerStrike("skp.kaioken_attack", 1.75f, 45);
 		registerStrike("skp.wolf_fang", 1.25f, 35);
 		registerStrike("skp.oozaru_fist", 2.25f, 35);
 		registerStrike("skp.super_god_fist", 2.0f, 25);
+		registerStrike("skp.oozaru_slam", 1.5f, 15);
+		registerStrike("skp.gum_punch", 1.5f, 20);
+		registerStrike("skp.blue_hurricane", 1.75f, 95);
+		registerStrike("skp.dimensional_punch", 2.4f, 70);
+		registerStrike("skp.dimensional_sword_attack", 2.6f, 41);
+		registerStrike("skp.spirit_breaking_cannon", 2.2f, 47);
+		registerStrike("skp.grab", 1.6f, 50);
+		registerStrike("skp.shining_sword_attack", 2.4f, 66);
+		registerStrike("skp.combo_meteor", 2.2f, 90);
+		registerStrike("skp.meteor_burst", 2.6f, 201);
+		registerStrike("skp.mystic_ball", 2.4f, 96);
+		registerStrike("skp.darkness_eye_beam", 2.6f, 102);
+		registerStrike("skp.death_chaser", 2.4f, 72);
+		registerStrike("skp.android_combo", 2.4f, 82);
+		registerStrike("skp.beam_sword_slash", 2.6f, 112);
+		registerStrike("skp.perfect_rush", 2.5f, 92);
+		registerStrike("skp.spirit_breaker", 2.8f, 148);
 	}
 
 	public static boolean isPredefinedTechniqueId(String techniqueId) {
@@ -58,7 +117,40 @@ public class PredefinedTechniques {
 		return technique != null && isPredefinedTechniqueId(technique.getId());
 	}
 
-	private void registerKi(String id, String name, String author, KiAttackData.KiType type, float dmgMult, int colorIn, int colorOut, float size, float speed, int cooldownSeconds, String animPrefix) {
+	public static String nameKey(String techniqueId) {
+		if (techniqueId == null) return null;
+		TechniqueData data = REGISTRY.get(techniqueId);
+		if (data == null) data = STRIKE_REGISTRY.get(techniqueId);
+		if (data == null) data = EVASION_REGISTRY.get(techniqueId);
+		return data != null ? data.getName() : null;
+	}
+
+	public static TechniqueData copyOf(String techniqueId) {
+		if (techniqueId == null) return null;
+		if (REGISTRY.containsKey(techniqueId)) {
+			KiAttackData copy = new KiAttackData();
+			copy.load(REGISTRY.get(techniqueId).save());
+			return copy;
+		}
+		if (STRIKE_REGISTRY.containsKey(techniqueId)) {
+			StrikeAttackData copy = new StrikeAttackData();
+			copy.load(STRIKE_REGISTRY.get(techniqueId).save());
+			return copy;
+		}
+		if (EVASION_REGISTRY.containsKey(techniqueId)) {
+			EvasionAttackData copy = new EvasionAttackData();
+			copy.load(EVASION_REGISTRY.get(techniqueId).save());
+			return copy;
+		}
+		return null;
+	}
+
+	/**
+	 * @param colorIn     core colour, the hot middle of the ball
+	 * @param colorBorder the body colour banded around the core
+	 * @param colorOut    the outline colour at the rim
+	 */
+	private void registerKi(String id, String name, String author, KiAttackData.KiType type, float dmgMult, int colorIn, int colorBorder, int colorOut, float size, float speed, int cooldownSeconds, String animPrefix) {
 		KiAttackData data = new KiAttackData();
 		data.setId(id);
 		data.setName(name);
@@ -67,7 +159,8 @@ public class PredefinedTechniques {
 		data.setUtility(KiAttackData.Utility.DAMAGE);
 		data.setDamageMultiplier(dmgMult);
 		data.setColorInterior(colorIn);
-		data.setColorExterior(colorOut);
+		data.setColorExterior(colorBorder);
+		data.setColorOutline(colorOut);
 		data.setSize(size);
 		data.setSpeed(speed);
 		data.setArmorPenetration(0);
@@ -90,5 +183,19 @@ public class PredefinedTechniques {
 		data.setDurationTicks(durationTicks);
 		data.applyConfigDefaults();
 		STRIKE_REGISTRY.put(id, data);
+	}
+
+	private void registerEvasion(String id, float damageMultiplier, int durationTicks, int cooldownTicks, boolean useSKP) {
+		EvasionAttackData data = new EvasionAttackData();
+		data.setId(id);
+		data.setName("technique.dragonminez." + id);
+		data.setAuthor("System");
+		data.setDamageMultiplier(damageMultiplier);
+		data.setDurationTicks(durationTicks);
+		data.setCooldown(cooldownTicks);
+		data.setAnimationId("evs." + id);
+		data.setUseStrikePower(useSKP);
+		data.setCastTime(0);
+		EVASION_REGISTRY.put(id, data);
 	}
 }

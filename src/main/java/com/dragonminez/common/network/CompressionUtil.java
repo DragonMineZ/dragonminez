@@ -21,14 +21,8 @@ public class CompressionUtil {
 
 	public static String decompress(byte[] bytes) {
 		if (bytes == null || bytes.length == 0) return "";
-		try (GZIPInputStream gis = new GZIPInputStream(new ByteArrayInputStream(bytes));
-			 BufferedReader br = new BufferedReader(new InputStreamReader(gis, StandardCharsets.UTF_8))) {
-			StringBuilder sb = new StringBuilder();
-			String line;
-			while ((line = br.readLine()) != null) {
-				sb.append(line);
-			}
-			return sb.toString();
+		try (GZIPInputStream gis = new GZIPInputStream(new ByteArrayInputStream(bytes))) {
+			return new String(gis.readAllBytes(), StandardCharsets.UTF_8);
 		} catch (IOException e) {
 			throw new RuntimeException("Error decompressing packet data", e);
 		}

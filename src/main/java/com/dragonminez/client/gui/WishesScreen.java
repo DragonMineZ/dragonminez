@@ -1,25 +1,33 @@
 package com.dragonminez.client.gui;
 
+import com.dragonminez.client.gui.hud.HudRender;
 import com.dragonminez.Reference;
 import com.dragonminez.client.gui.buttons.TexturedTextButton;
 import com.dragonminez.client.gui.character.util.ScaledScreen;
+import com.dragonminez.client.util.ScrollbarState;
 import com.dragonminez.client.util.TextUtil;
 import com.dragonminez.common.network.C2S.GrantWishC2S;
+import com.dragonminez.common.network.C2S.RequestReviveTargetsC2S;
 import com.dragonminez.common.network.NetworkHandler;
+import com.dragonminez.common.network.S2C.ReviveTargetsS2C;
+import com.dragonminez.common.stats.StatsCapability;
+import com.dragonminez.common.stats.StatsProvider;
 import com.dragonminez.common.wish.Wish;
 import com.dragonminez.common.wish.WishManager;
 import com.mojang.blaze3d.systems.RenderSystem;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.resources.sounds.SimpleSoundInstance;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.Style;
 import net.minecraft.resources.ResourceLocation;
-import net.minecraft.util.Mth;
+import net.minecraft.sounds.SoundEvents;
 import net.neoforged.api.distmarker.Dist;
 import net.neoforged.api.distmarker.OnlyIn;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.UUID;
 
 @OnlyIn(Dist.CLIENT)
 public class WishesScreen extends ScaledScreen {
@@ -31,22 +39,32 @@ public class WishesScreen extends ScaledScreen {
 	private static final int PANEL_HEIGHT = 213;
 	private static final int ITEM_HEIGHT = 20;
 	private static final int MAX_VISIBLE_ITEMS = 8;
+	private static final int SELECTED_FILL = 0x80D4AF37;
+	private static final int HOVER_FILL = 0x80555555;
+	private static final int SELECTED_OUTLINE = 0xFFFFD700;
+	private static final int BADGE_COLOR = 0xFFFFE680;
+	private static final int DISABLED_TEXT = 0x8A8A8A;
 
+	private final int dragonEntityId;
 	private final String dragonType;
 	private final int maxWishesToSelect;
 	private final List<Wish> availableWishes;
 	private final List<Integer> selectedIndices = new ArrayList<>();
+	private final List<List<UUID>> selectedTargets = new ArrayList<>();
+	private final List<ReviveTargetsS2C.Entry> reviveTargets = new ArrayList<>();
+
+	private boolean pickerOpen;
+	private int pickerSelection = -1;
+	private final List<UUID> pickerPicks = new ArrayList<>();
 
 	private int guiLeft, guiTop;
-	private float targetScroll = 0;
-	private float currentScroll = 0;
-	private float maxScroll = 0;
-	private boolean isScrolling = false;
+	private final ScrollbarState listBar = new ScrollbarState().minThumb(20).step(ITEM_HEIGHT * 2);
 
 	private TexturedTextButton confirmButton;
 
-	public WishesScreen(String dragonType, int wishCount) {
+	public WishesScreen(int dragonEntityId, String dragonType, int wishCount) {
 		super(Component.literal("Wishes").withStyle(Style.EMPTY.withFont(ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "smooth"))));
+		this.dragonEntityId = dragonEntityId;
 		this.dragonType = dragonType;
 		this.maxWishesToSelect = wishCount;
 		this.availableWishes = WishManager.getClientWishes(dragonType);
@@ -65,16 +83,84 @@ public class WishesScreen extends ScaledScreen {
 				.textureCoords(0, 28, 0, 48)
 				.textureSize(74, 20)
 				.message(tr("gui.dragonminez.customization.select"))
-				.onPress(btn -> confirmWishes())
+				.onPress(btn -> onConfirmPressed())
 				.build();
 
-		this.confirmButton.visible = false;
 		this.addRenderableWidget(confirmButton);
+		refreshConfirmButton();
+
+		if (availableWishes.stream().anyMatch(wish -> wish.getMaxTargets() > 0)) {
+			NetworkHandler.sendToServer(new RequestReviveTargetsC2S());
+		}
 	}
 
-	private void confirmWishes() {
-		NetworkHandler.sendToServer(new GrantWishC2S(dragonType, selectedIndices));
+	public void setReviveTargets(List<ReviveTargetsS2C.Entry> entries) {
+		reviveTargets.clear();
+		reviveTargets.addAll(entries);
+		for (int i = selectedIndices.size() - 1; i >= 0; i--) {
+			if (needsTargets(availableWishes.get(selectedIndices.get(i))) && reviveTargets.isEmpty()) removeSelectionAt(i);
+		}
+		if (pickerOpen) {
+			pickerPicks.removeIf(id -> reviveTargets.stream().noneMatch(entry -> entry.id().equals(id)));
+			if (reviveTargets.isEmpty()) closePicker();
+		}
+		refreshConfirmButton();
+	}
+
+	private boolean needsTargets(Wish wish) {
+		return wish.getMaxTargets() > 0;
+	}
+
+	private void onConfirmPressed() {
+		if (pickerOpen) {
+			if (pickerPicks.isEmpty()) return;
+			selectedTargets.set(pickerSelection, new ArrayList<>(pickerPicks));
+			closePicker();
+			refreshConfirmButton();
+			openNextPickerOrConfirm();
+			return;
+		}
+		if (selectedIndices.size() != maxWishesToSelect) return;
+		openNextPickerOrConfirm();
+	}
+
+	private void openNextPickerOrConfirm() {
+		for (int i = 0; i < selectedIndices.size(); i++) {
+			Wish wish = availableWishes.get(selectedIndices.get(i));
+			if (needsTargets(wish) && selectedTargets.get(i).isEmpty()) {
+				openPicker(i);
+				return;
+			}
+		}
+		NetworkHandler.sendToServer(new GrantWishC2S(dragonEntityId, dragonType, new ArrayList<>(selectedIndices), new ArrayList<>(selectedTargets)));
 		this.onClose();
+	}
+
+	private void openPicker(int selection) {
+		pickerOpen = true;
+		pickerSelection = selection;
+		pickerPicks.clear();
+		listBar.reset();
+		refreshConfirmButton();
+	}
+
+	private void closePicker() {
+		pickerOpen = false;
+		pickerSelection = -1;
+		pickerPicks.clear();
+		listBar.reset();
+	}
+
+	private void refreshConfirmButton() {
+		if (pickerOpen) {
+			confirmButton.visible = true;
+			confirmButton.active = !pickerPicks.isEmpty();
+			confirmButton.setMessage(tr("gui.dragonminez.wishes.revive_confirm"));
+		} else {
+			confirmButton.visible = selectedIndices.size() == maxWishesToSelect;
+			confirmButton.active = true;
+			confirmButton.setMessage(tr("gui.dragonminez.customization.select"));
+		}
 	}
 
 	@Override
@@ -87,105 +173,150 @@ public class WishesScreen extends ScaledScreen {
 		beginUiScale(graphics);
 
 		RenderSystem.setShaderColor(1.0F, 1.0F, 1.0F, 1.0F);
-		graphics.blit(MENU_TEXTURE, guiLeft, guiTop, 0, 0, PANEL_WIDTH, PANEL_HEIGHT, 256, 256);
+		HudRender.blit(graphics, MENU_TEXTURE, guiLeft, guiTop, 0, 0, PANEL_WIDTH, PANEL_HEIGHT, 256, 256);
 
-		TextUtil.drawCenteredStringWithBorder(graphics, this.font,
-				tr("gui.dragonminez.wishes_title", selectedIndices.size(), maxWishesToSelect),
-				getUiWidth() / 2, guiTop + 18, 0xFFFFD700);
-
-		renderWishesList(graphics, uiMouseX, uiMouseY);
+		if (pickerOpen) {
+			Wish wish = availableWishes.get(selectedIndices.get(pickerSelection));
+			TextUtil.drawCenteredStringWithBorder(graphics, this.font,
+					tr("gui.dragonminez.wishes.revive_title", pickerPicks.size(), wish.getMaxTargets()),
+					getUiWidth() / 2, guiTop + 18, 0xFFFFD700);
+			renderTargetList(graphics, uiMouseX, uiMouseY);
+		} else {
+			TextUtil.drawCenteredStringWithBorder(graphics, this.font,
+					tr("gui.dragonminez.wishes_title", selectedIndices.size(), maxWishesToSelect),
+					getUiWidth() / 2, guiTop + 18, 0xFFFFD700);
+			renderWishesList(graphics, uiMouseX, uiMouseY);
+		}
 
 		super.render(graphics, uiMouseX, uiMouseY, partialTick);
 
-		renderTooltip(graphics, uiMouseX, uiMouseY);
+		if (!pickerOpen) renderTooltip(graphics, uiMouseX, uiMouseY);
 
 		endUiScale(graphics);
 	}
 
+	private int listLeft() { return guiLeft + 10; }
+	private int listTop() { return guiTop + 35; }
+	private int listWidth() { return PANEL_WIDTH - 25; }
+	private int viewHeight() { return MAX_VISIBLE_ITEMS * ITEM_HEIGHT; }
+
+	private void layoutList(int rowCount) {
+		listBar.layout(listLeft(), listTop(), listWidth(), viewHeight(), rowCount * ITEM_HEIGHT).barAt(guiLeft + PANEL_WIDTH - 12);
+	}
+
 	private void renderWishesList(GuiGraphics graphics, int uiMouseX, int uiMouseY) {
-		int listLeft = guiLeft + 10;
-		int listTop = guiTop + 35;
-		int listWidth = PANEL_WIDTH - 25;
-		int viewHeight = MAX_VISIBLE_ITEMS * ITEM_HEIGHT;
-		int totalHeight = availableWishes.size() * ITEM_HEIGHT;
+		int listLeft = listLeft();
+		int listTop = listTop();
+		int listWidth = listWidth();
+		layoutList(availableWishes.size());
 
-		maxScroll = Math.max(0, totalHeight - viewHeight);
-		targetScroll = Mth.clamp(targetScroll, 0, maxScroll);
-		float tickDelta = Minecraft.getInstance().getTimer().getRealtimeDeltaTicks();
-		currentScroll = Mth.lerp(tickDelta * 0.4f, currentScroll, targetScroll);
-
-		int scLeft = toScreenCoord(listLeft);
-		int scTop = toScreenCoord(listTop);
-		int scRight = toScreenCoord(listLeft + listWidth);
-		int scBottom = toScreenCoord(listTop + viewHeight);
-
-		graphics.enableScissor(scLeft, scTop, scRight, scBottom);
-		graphics.pose().pushPose();
-		graphics.pose().translate(0, -currentScroll, 0);
+		listBar.beginClip(graphics);
+		double contentMouseY = listBar.toContent(uiMouseY);
 
 		for (int i = 0; i < availableWishes.size(); i++) {
 			int itemY = listTop + (i * ITEM_HEIGHT);
+			if (!listBar.isVisible(itemY, ITEM_HEIGHT)) continue;
 
-			if (itemY + ITEM_HEIGHT >= listTop + currentScroll && itemY <= listTop + viewHeight + currentScroll) {
-				Wish wish = availableWishes.get(i);
-				boolean isSelected = selectedIndices.contains(i);
-				boolean isHovered = uiMouseX >= listLeft && uiMouseX < listLeft + listWidth &&
-						uiMouseY >= itemY - currentScroll && uiMouseY < itemY + ITEM_HEIGHT - currentScroll;
+			Wish wish = availableWishes.get(i);
+			String badge = badgeFor(i);
+			boolean isSelected = !badge.isEmpty();
+			boolean selectable = !needsTargets(wish) || !reviveTargets.isEmpty();
+			boolean isHovered = uiMouseX >= listLeft && uiMouseX < listLeft + listWidth &&
+					contentMouseY >= itemY && contentMouseY < itemY + ITEM_HEIGHT;
 
-				int color;
-				if (isSelected) color = 0x80D4AF37;
-				else if (isHovered) color = 0x80555555;
-				else color = 0x00000000;
+			int color = isSelected ? SELECTED_FILL : (isHovered ? HOVER_FILL : 0);
+			graphics.fill(listLeft, itemY, listLeft + listWidth, itemY + ITEM_HEIGHT, color);
 
-				graphics.fill(listLeft, itemY, listLeft + listWidth, itemY + ITEM_HEIGHT, color);
+			TextUtil.drawStringWithBorder(graphics, this.font, tr(wish.getName()), listLeft + 5, itemY + 6, selectable ? 0xFFFFFF : DISABLED_TEXT);
 
-				TextUtil.drawStringWithBorder(graphics, this.font, tr(wish.getName()), listLeft + 5, itemY + 6, 0xFFFFFF);
-
-				if (isSelected) {
-					graphics.renderOutline(listLeft, itemY, listWidth, ITEM_HEIGHT, 0xFFFFD700);
-				}
+			if (isSelected) {
+				graphics.renderOutline(listLeft, itemY, listWidth, ITEM_HEIGHT, SELECTED_OUTLINE);
+				drawBadge(graphics, badge, listLeft + listWidth - 3, itemY + 2);
 			}
 		}
 
-		graphics.pose().popPose();
-		graphics.disableScissor();
+		listBar.endClip(graphics);
+		listBar.renderBar(graphics, uiMouseX, uiMouseY);
+	}
 
-		if (maxScroll > 0) {
-			int scrollBarX = guiLeft + PANEL_WIDTH - 12;
-			int scrollBarY = listTop;
+	private void renderTargetList(GuiGraphics graphics, int uiMouseX, int uiMouseY) {
+		int listLeft = listLeft();
+		int listTop = listTop();
+		int listWidth = listWidth();
 
-			graphics.fill(scrollBarX, scrollBarY, scrollBarX + 3, scrollBarY + viewHeight, 0xFF333333);
-
-			float scrollPercent = currentScroll / maxScroll;
-			float visiblePercent = (float) viewHeight / totalHeight;
-
-			int indicatorHeight = Math.max(20, (int) (viewHeight * visiblePercent));
-			int indicatorY = scrollBarY + (int) ((viewHeight - indicatorHeight) * scrollPercent);
-
-			graphics.fill(scrollBarX, indicatorY, scrollBarX + 3, indicatorY + indicatorHeight, 0xFFAAAAAA);
+		if (reviveTargets.isEmpty()) {
+			listBar.clear();
+			TextUtil.drawCenteredStringWithBorder(graphics, this.font, tr("gui.dragonminez.wishes.revive_nobody"),
+					getUiWidth() / 2, listTop + 10, 0xFFAAAAAA);
+			return;
 		}
+
+		layoutList(reviveTargets.size());
+		listBar.beginClip(graphics);
+		double contentMouseY = listBar.toContent(uiMouseY);
+
+		for (int i = 0; i < reviveTargets.size(); i++) {
+			int itemY = listTop + (i * ITEM_HEIGHT);
+			if (!listBar.isVisible(itemY, ITEM_HEIGHT)) continue;
+
+			ReviveTargetsS2C.Entry entry = reviveTargets.get(i);
+			boolean isSelected = pickerPicks.contains(entry.id());
+			boolean isHovered = uiMouseX >= listLeft && uiMouseX < listLeft + listWidth &&
+					contentMouseY >= itemY && contentMouseY < itemY + ITEM_HEIGHT;
+
+			int color = isSelected ? SELECTED_FILL : (isHovered ? HOVER_FILL : 0);
+			graphics.fill(listLeft, itemY, listLeft + listWidth, itemY + ITEM_HEIGHT, color);
+			TextUtil.drawStringWithBorder(graphics, this.font, txt(entry.name()), listLeft + 5, itemY + 6, 0xFFFFFF);
+			if (isSelected) graphics.renderOutline(listLeft, itemY, listWidth, ITEM_HEIGHT, SELECTED_OUTLINE);
+		}
+
+		listBar.endClip(graphics);
+		listBar.renderBar(graphics, uiMouseX, uiMouseY);
+	}
+
+	private void drawBadge(GuiGraphics graphics, String badge, int right, int top) {
+		graphics.pose().pushPose();
+		graphics.pose().translate(right, top, 0);
+		graphics.pose().scale(0.75f, 0.75f, 1.0f);
+		int width = this.font.width(badge);
+		TextUtil.drawStringWithBorder(graphics, this.font, txt(badge), -width, 0, BADGE_COLOR);
+		graphics.pose().popPose();
+	}
+
+	private String badgeFor(int wishIndex) {
+		StringBuilder badge = new StringBuilder();
+		for (int slot = 0; slot < selectedIndices.size(); slot++) {
+			if (selectedIndices.get(slot) != wishIndex) continue;
+			if (badge.length() > 0) badge.append(" - ");
+			badge.append(slot + 1);
+		}
+		return badge.toString();
 	}
 
 	private void renderTooltip(GuiGraphics graphics, int uiMouseX, int uiMouseY) {
-		int listLeft = guiLeft + 10;
-		int listTop = guiTop + 35;
-		int listWidth = PANEL_WIDTH - 25;
-		int viewHeight = MAX_VISIBLE_ITEMS * ITEM_HEIGHT;
-
-		if (uiMouseX >= listLeft && uiMouseX < listLeft + listWidth && uiMouseY >= listTop && uiMouseY <= listTop + viewHeight) {
-			int relativeY = (int) (uiMouseY - listTop + currentScroll);
-			int index = relativeY / ITEM_HEIGHT;
-
-			if (index >= 0 && index < availableWishes.size()) {
-				Wish wish = availableWishes.get(index);
-				graphics.renderTooltip(this.font, tr(wish.getDescription()), uiMouseX, uiMouseY);
-			}
+		int index = rowAt(uiMouseX, uiMouseY, availableWishes.size());
+		if (index < 0) return;
+		Wish wish = availableWishes.get(index);
+		List<Component> description = List.of(tr(wish.getDescription()));
+		List<Component> extraLines = new ArrayList<>();
+		if (needsTargets(wish) && reviveTargets.isEmpty()) {
+			extraLines.add(tr("gui.dragonminez.wishes.revive_nobody").withStyle(net.minecraft.ChatFormatting.RED));
 		}
+		if (Minecraft.getInstance().player != null) {
+			StatsProvider.get(StatsCapability.INSTANCE, Minecraft.getInstance().player)
+					.ifPresent(data -> extraLines.addAll(wish.getTooltipExtras(data)));
+		}
+		List<Component> extras = extraLines.isEmpty() ? null : extraLines;
+		TextUtil.renderAdvancedTooltip(graphics, this.font, uiMouseX, uiMouseY, getUiWidth(), getUiHeight(),
+				tr(wish.getName()), description, extras, 0xFFD700);
 	}
 
-	private float calculateScrollPercent(double uiY, int startY, int viewHeight) {
-		float percent = (float)(uiY - startY) / viewHeight;
-		return Mth.clamp(percent, 0.0f, 1.0f);
+	private int rowAt(double uiX, double uiY, int rowCount) {
+		int listLeft = listLeft();
+		int listTop = listTop();
+		if (uiX < listLeft || uiX >= listLeft + listWidth() || uiY < listTop || uiY > listTop + viewHeight()) return -1;
+		int index = (int) ((uiY - listTop + listBar.scroll()) / ITEM_HEIGHT);
+		return index >= 0 && index < rowCount ? index : -1;
 	}
 
 	@Override
@@ -195,75 +326,104 @@ public class WishesScreen extends ScaledScreen {
 		double uiX = toUiX(mouseX);
 		double uiY = toUiY(mouseY);
 
-		int listLeft = guiLeft + 10;
-		int listTop = guiTop + 35;
-		int listWidth = PANEL_WIDTH - 25;
-		int viewHeight = MAX_VISIBLE_ITEMS * ITEM_HEIGHT;
+		if (listBar.mouseClicked(uiX, uiY, button)) return true;
 
-		if (maxScroll > 0 && uiX >= listLeft + listWidth && uiX <= guiLeft + PANEL_WIDTH &&
-				uiY >= listTop && uiY <= listTop + viewHeight) {
-			this.isScrolling = true;
-			targetScroll = calculateScrollPercent(uiY, listTop, viewHeight) * maxScroll;
+		if (pickerOpen) {
+			int index = rowAt(uiX, uiY, reviveTargets.size());
+			if (index < 0) return false;
+			togglePick(reviveTargets.get(index).id());
+			playClick();
 			return true;
 		}
 
-		if (uiX >= listLeft && uiX < listLeft + listWidth && uiY >= listTop && uiY <= listTop + viewHeight) {
-			int relativeY = (int) (uiY - listTop + currentScroll);
-			int index = relativeY / ITEM_HEIGHT;
+		int index = rowAt(uiX, uiY, availableWishes.size());
+		if (index < 0) return false;
+		if (button == 1) removeLastSelectionOf(index);
+		else addSelection(index);
+		playClick();
+		return true;
+	}
 
-			if (index >= 0 && index < availableWishes.size()) {
-				toggleSelection(index);
-				Minecraft.getInstance().getSoundManager().play(
-						net.minecraft.client.resources.sounds.SimpleSoundInstance.forUI(net.minecraft.sounds.SoundEvents.UI_BUTTON_CLICK, 1.0F)
-				);
-				return true;
-			}
-		}
-
-		return false;
+	private void playClick() {
+		Minecraft.getInstance().getSoundManager().play(SimpleSoundInstance.forUI(SoundEvents.UI_BUTTON_CLICK, 1.0F));
 	}
 
 	@Override
 	public boolean mouseScrolled(double mouseX, double mouseY, double scrollX, double scrollY) {
-		if (maxScroll > 0) {
-			targetScroll = (float) Mth.clamp(targetScroll - (Math.signum(scrollY) * ITEM_HEIGHT * 2), 0, maxScroll);
-			return true;
-		}
+		if (listBar.scrollWheel(scrollY)) return true;
 		return super.mouseScrolled(mouseX, mouseY, scrollX, scrollY);
 	}
 
 	@Override
 	public boolean mouseReleased(double mouseX, double mouseY, int button) {
-		this.isScrolling = false;
+		listBar.mouseReleased();
 		return super.mouseReleased(mouseX, mouseY, button);
 	}
 
 	@Override
 	public boolean mouseDragged(double mouseX, double mouseY, int button, double dragX, double dragY) {
-		if (isScrolling && maxScroll > 0) {
-			double uiY = toUiY(mouseY);
-			int listTop = guiTop + 35;
-			int viewHeight = MAX_VISIBLE_ITEMS * ITEM_HEIGHT;
-			targetScroll = calculateScrollPercent(uiY, listTop, viewHeight) * maxScroll;
-			return true;
-		}
+		if (listBar.mouseDragged(toUiX(mouseX), toUiY(mouseY))) return true;
 		return super.mouseDragged(mouseX, mouseY, button, dragX, dragY);
 	}
 
-	private void toggleSelection(int index) {
-		if (selectedIndices.contains(index)) {
-			selectedIndices.remove(Integer.valueOf(index));
-		} else {
-			if (maxWishesToSelect == 1) {
-				selectedIndices.clear();
-				selectedIndices.add(index);
-			} else {
-				if (selectedIndices.size() < maxWishesToSelect) {
-					selectedIndices.add(index);
-				}
+	@Override
+	public boolean keyPressed(int keyCode, int scanCode, int modifiers) {
+		if (pickerOpen && keyCode == 256) {
+			closePicker();
+			refreshConfirmButton();
+			return true;
+		}
+		return super.keyPressed(keyCode, scanCode, modifiers);
+	}
+
+	private void addSelection(int index) {
+		Wish wish = availableWishes.get(index);
+		if (needsTargets(wish) && reviveTargets.isEmpty()) return;
+		boolean alreadyPicked = selectedIndices.contains(index);
+		if (maxWishesToSelect == 1) {
+			if (alreadyPicked) {
+				removeLastSelectionOf(index);
+				return;
+			}
+			selectedIndices.clear();
+			selectedTargets.clear();
+		} else if (alreadyPicked && !wish.isRepeatable()) {
+			removeLastSelectionOf(index);
+			return;
+		}
+		if (selectedIndices.size() >= maxWishesToSelect) return;
+		selectedIndices.add(index);
+		selectedTargets.add(new ArrayList<>());
+		refreshConfirmButton();
+	}
+
+	private void removeLastSelectionOf(int index) {
+		for (int slot = selectedIndices.size() - 1; slot >= 0; slot--) {
+			if (selectedIndices.get(slot) == index) {
+				removeSelectionAt(slot);
+				break;
 			}
 		}
-		confirmButton.visible = selectedIndices.size() == maxWishesToSelect;
+		refreshConfirmButton();
+	}
+
+	private void removeSelectionAt(int slot) {
+		selectedIndices.remove(slot);
+		selectedTargets.remove(slot);
+	}
+
+	private void togglePick(UUID id) {
+		if (pickerPicks.remove(id)) {
+			refreshConfirmButton();
+			return;
+		}
+		Wish wish = availableWishes.get(selectedIndices.get(pickerSelection));
+		if (pickerPicks.size() >= wish.getMaxTargets()) {
+			if (wish.getMaxTargets() == 1) pickerPicks.clear();
+			else return;
+		}
+		pickerPicks.add(id);
+		refreshConfirmButton();
 	}
 
 	@Override

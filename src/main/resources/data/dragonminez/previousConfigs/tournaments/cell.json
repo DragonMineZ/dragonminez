@@ -1,0 +1,116 @@
+{
+  "configVersion": "2.2.0",
+  "enabled": true,
+  "displayName": "tournament.dragonminez.cell",
+  "format": "BRACKET",
+  "difficultyStars": 4,
+  "qualifierSlots": 8,
+  "reentryCooldownSeconds": 3600,
+  "matchTimeoutSeconds": 420,
+  "nextRoundSeconds": 30,
+  "rulesAcceptSeconds": 60,
+  "returnSeconds": 15,
+  "arrivalSeconds": 60,
+  "lethal": true,
+  "ring": {
+    "x": 37,
+    "y": 6,
+    "z": 37,
+    "radius": 6
+  },
+  "champion": {
+    "entityId": "dragonminez:saga_cell_superperfect",
+    "health": 287000.0,
+    "meleeDamage": 11700.0,
+    "kiDamage": 10540.0,
+    "aiTier": 3,
+    "perRoundScaling": 1.0
+  },
+  "semifinalist": {
+    "entityId": "dragonminez:saga_gohan_mid_ssj",
+    "health": 245000.0,
+    "meleeDamage": 10200.0,
+    "kiDamage": 9180.0,
+    "aiTier": 3,
+    "perRoundScaling": 1.0
+  },
+  "contenders": [
+    {
+      "entityId": "#dragonminez:z_fighters_cell",
+      "health": 66500.0,
+      "meleeDamage": 2700.0,
+      "kiDamage": 2420.0,
+      "aiTier": 1,
+      "perRoundScaling": 1.08
+    },
+    {
+      "entityId": "#dragonminez:z_fighters_cell",
+      "health": 70000.0,
+      "meleeDamage": 2850.0,
+      "kiDamage": 2550.0,
+      "aiTier": 1,
+      "perRoundScaling": 1.08
+    },
+    {
+      "entityId": "#dragonminez:z_fighters_cell",
+      "health": 84000.0,
+      "meleeDamage": 3400.0,
+      "kiDamage": 3060.0,
+      "aiTier": 2,
+      "perRoundScaling": 1.08
+    },
+    {
+      "entityId": "#dragonminez:z_fighters_cell",
+      "health": 150500.0,
+      "meleeDamage": 5940.0,
+      "kiDamage": 6545.0,
+      "aiTier": 2,
+      "perRoundScaling": 1.08
+    },
+    {
+      "entityId": "#dragonminez:z_fighters_cell",
+      "health": 168000.0,
+      "meleeDamage": 6600.0,
+      "kiDamage": 5950.0,
+      "aiTier": 2,
+      "perRoundScaling": 1.08
+    },
+    {
+      "entityId": "#dragonminez:z_fighters_cell",
+      "health": 189000.0,
+      "meleeDamage": 7500.0,
+      "kiDamage": 6800.0,
+      "aiTier": 3,
+      "perRoundScaling": 1.08
+    },
+    {
+      "entityId": "#dragonminez:z_fighters_cell",
+      "health": 196000.0,
+      "meleeDamage": 8100.0,
+      "kiDamage": 7310.0,
+      "aiTier": 3,
+      "perRoundScaling": 1.08
+    },
+    {
+      "entityId": "#dragonminez:z_fighters_cell",
+      "health": 203000.0,
+      "meleeDamage": 8400.0,
+      "kiDamage": 7650.0,
+      "aiTier": 3,
+      "perRoundScaling": 1.08
+    },
+    {
+      "entityId": "#dragonminez:z_fighters_cell",
+      "health": 210000.0,
+      "meleeDamage": 8700.0,
+      "kiDamage": 7820.0,
+      "aiTier": 3,
+      "perRoundScaling": 1.08
+    }
+  ],
+  "rewards": {
+    "trainingPoints": 1000000,
+    "alignment": 10,
+    "commands": []
+  }
+}

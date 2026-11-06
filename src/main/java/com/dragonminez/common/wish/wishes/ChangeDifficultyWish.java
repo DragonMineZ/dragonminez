@@ -5,7 +5,6 @@ import com.dragonminez.common.network.S2C.ProgressionSyncS2C;
 import com.dragonminez.common.stats.StatsCapability;
 import com.dragonminez.common.stats.StatsProvider;
 import com.dragonminez.common.wish.Wish;
-import com.google.gson.GsonBuilder;
 import net.minecraft.server.level.ServerPlayer;
 
 public class ChangeDifficultyWish extends Wish {
@@ -22,8 +21,4 @@ public class ChangeDifficultyWish extends Wish {
 		});
 	}
 
-	@Override
-	public String toJson() {
-		return new GsonBuilder().setPrettyPrinting().create().toJson(this, ChangeDifficultyWish.class);
-	}
 }

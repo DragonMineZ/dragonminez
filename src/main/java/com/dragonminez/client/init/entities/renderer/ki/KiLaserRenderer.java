@@ -39,7 +39,9 @@ public class KiLaserRenderer extends EntityRenderer<KiLaserEntity> {
             float ageInTicks = entity.tickCount + partialTick;
 
             int maxLife = entity.getMaxLife();
-            int fadeTicks = 10;
+            int fireTick = entity.getFireTick();
+            int firingWindow = fireTick >= 0 ? maxLife - fireTick : maxLife;
+            int fadeTicks = Math.max(1, Math.min(10, firingWindow / 2));
 
             if (entity.tickCount >= maxLife - fadeTicks) {
                 alphaMultiplier = (maxLife - ageInTicks) / (float) fadeTicks;

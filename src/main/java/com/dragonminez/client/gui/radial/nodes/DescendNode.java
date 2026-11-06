@@ -35,7 +35,7 @@ public class DescendNode extends AbstractRadialNode {
 
 	@Override
 	public void onSelect(StatsData stats) {
-		NetworkHandler.sendToServer(new ExecuteActionC2S(ExecuteActionC2S.ActionType.FORCE_DESCEND, false));
+		NetworkHandler.sendToServer(new ExecuteActionC2S(ExecuteActionC2S.ActionType.MENU_DESCEND, false));
 		playToggle(false);
 	}
 }

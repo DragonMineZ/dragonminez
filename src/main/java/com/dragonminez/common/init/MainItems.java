@@ -3,22 +3,32 @@ package com.dragonminez.common.init;
 import com.dragonminez.Reference;
 import com.dragonminez.common.init.armor.DbzArmorCapeItem;
 import com.dragonminez.common.init.armor.DbzArmorItem;
+import com.dragonminez.common.init.armor.DbzArmorPatrollerItem;
 import com.dragonminez.common.init.armor.ModArmorMaterials;
 import com.dragonminez.common.init.item.*;
 import com.dragonminez.common.dragonball.DragonBallDefinitions;
 import com.dragonminez.common.dragonball.DragonBallSetDefinition;
 import com.dragonminez.common.dragonball.DragonRadarDefinition;
 import com.dragonminez.common.init.item.consumables.*;
+import com.dragonminez.common.init.item.farming.*;
 import com.dragonminez.common.init.item.entities.BlackNimbusItem;
 import com.dragonminez.common.init.item.entities.FlyingNimbusItem;
+import com.dragonminez.common.init.item.entities.VehicleItem;
+import com.dragonminez.common.init.entities.CarEntity;
+import com.dragonminez.common.init.entities.CC576Entity;
+import com.dragonminez.common.init.entities.FriezaCapsuleEntity;
 import com.dragonminez.common.init.item.entities.PunchMachineItem;
 import com.dragonminez.common.init.item.entities.SaiyanShipItem;
 import com.dragonminez.common.init.item.tools.ToolTiers;
 import com.dragonminez.common.init.item.WeightItem;
 import com.dragonminez.common.init.item.weapons.*;
 import com.dragonminez.common.init.item.weapons.DimensionalSwordItem;
+import com.dragonminez.common.init.item.weapons.TamagamiHammerItem;
+import com.dragonminez.common.init.item.weapons.TamagamiSwordItem;
+import com.dragonminez.common.init.item.weapons.TamagamiTridentItem;
 import net.minecraft.ChatFormatting;
 import net.minecraft.sounds.SoundEvent;
+import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.item.*;
 import net.neoforged.neoforge.common.DeferredSpawnEggItem;
 import net.neoforged.bus.api.IEventBus;
@@ -36,6 +46,9 @@ public final class MainItems {
 	public static final DeferredRegister<Item> ITEM_REGISTER = DeferredRegister.create(BuiltInRegistries.ITEM, Reference.MOD_ID);
 
 	public static final java.util.List<DeferredHolder<Item, ? extends Item>> MUSIC_DISCS = new java.util.ArrayList<>();
+	private static final int MEDI_SHELL_TICKS = 45 * 20;
+	private static final int MEDI_WORM_TICKS = 5 * 60 * 20;
+	private static final int MEDI_WORM_AMPLIFIER = 1;
 
 	//CAPSULAS
 	public static final DeferredHolder<Item, ? extends Item> RED_CAPSULE = ITEM_REGISTER.register("red_capsule", () -> new CapsuleItem(CapsuleType.STR));
@@ -44,20 +57,56 @@ public final class MainItems {
 	public static final DeferredHolder<Item, ? extends Item> GREEN_CAPSULE = ITEM_REGISTER.register("green_capsule", () -> new CapsuleItem(CapsuleType.VIT));
 	public static final DeferredHolder<Item, ? extends Item> ORANGE_CAPSULE = ITEM_REGISTER.register("orange_capsule", () -> new CapsuleItem(CapsuleType.PWR));
 	public static final DeferredHolder<Item, ? extends Item> BLUE_CAPSULE = ITEM_REGISTER.register("blue_capsule", () -> new CapsuleItem(CapsuleType.ENE));
-
 	public static final DeferredHolder<Item, ? extends Item> GETE_RED_CAPSULE = ITEM_REGISTER.register("gete_red_capsule", () -> new CapsuleItem(CapsuleType.STR, ChatFormatting.GOLD, "Gete", 3, Rarity.RARE));
 	public static final DeferredHolder<Item, ? extends Item> GETE_PURPLE_CAPSULE = ITEM_REGISTER.register("gete_purple_capsule", () -> new CapsuleItem(CapsuleType.SKP, ChatFormatting.GOLD, "Gete", 3, Rarity.RARE));
 	public static final DeferredHolder<Item, ? extends Item> GETE_YELLOW_CAPSULE = ITEM_REGISTER.register("gete_yellow_capsule", () -> new CapsuleItem(CapsuleType.RES, ChatFormatting.GOLD, "Gete", 3, Rarity.RARE));
 	public static final DeferredHolder<Item, ? extends Item> GETE_GREEN_CAPSULE = ITEM_REGISTER.register("gete_green_capsule", () -> new CapsuleItem(CapsuleType.VIT, ChatFormatting.GOLD, "Gete", 3, Rarity.RARE));
 	public static final DeferredHolder<Item, ? extends Item> GETE_ORANGE_CAPSULE = ITEM_REGISTER.register("gete_orange_capsule", () -> new CapsuleItem(CapsuleType.PWR, ChatFormatting.GOLD, "Gete", 3, Rarity.RARE));
 	public static final DeferredHolder<Item, ? extends Item> GETE_BLUE_CAPSULE = ITEM_REGISTER.register("gete_blue_capsule", () -> new CapsuleItem(CapsuleType.ENE, ChatFormatting.GOLD, "Gete", 3, Rarity.RARE));
+	public static final DeferredHolder<Item, ? extends Item> EMPTY_CAPSULE = regItem("empty_capsule");
+	public static final DeferredHolder<Item, ? extends Item> MASTERY_CAPSULE = ITEM_REGISTER.register("mastery_capsule",
+			MasteryCapsuleItem::new);
+
 	public static final DeferredHolder<Item, ? extends Item> SENZU_BEAN = ITEM_REGISTER.register("senzu_bean",
-			() -> new FoodItem(20, 0.0f, 16));
+			() -> new SenzuBeanItem(SenzuBeanItem.SenzuType.ALL));
+	public static final DeferredHolder<Item, ? extends Item> SENZU_BEAN_BLUE = ITEM_REGISTER.register("senzu_bean_blue",
+			() -> new SenzuBeanItem(SenzuBeanItem.SenzuType.KI));
+	public static final DeferredHolder<Item, ? extends Item> SENZU_BEAN_RED = ITEM_REGISTER.register("senzu_bean_red",
+			() -> new SenzuBeanItem(SenzuBeanItem.SenzuType.HEALTH));
+	public static final DeferredHolder<Item, ? extends Item> SENZU_BEAN_YELLOW = ITEM_REGISTER.register("senzu_bean_yellow",
+			() -> new SenzuBeanItem(SenzuBeanItem.SenzuType.STAMINA));
+
+	public static final DeferredHolder<Item, ? extends Item> SENZU_BEAN_SEEDS_BLUE = ITEM_REGISTER.register("senzu_bean_seeds_blue",
+			() -> new SenzuSeedsItem(MainBlocks.SENZU_BLUE_CROP));
+	public static final DeferredHolder<Item, ? extends Item> SENZU_BEAN_SEEDS_RED = ITEM_REGISTER.register("senzu_bean_seeds_red",
+			() -> new SenzuSeedsItem(MainBlocks.SENZU_RED_CROP));
+	public static final DeferredHolder<Item, ? extends Item> SENZU_BEAN_SEEDS_YELLOW = ITEM_REGISTER.register("senzu_bean_seeds_yellow",
+			() -> new SenzuSeedsItem(MainBlocks.SENZU_YELLOW_CROP));
+
+	public static final DeferredHolder<Item, ? extends Item> SENZU_BEAN_BAG = ITEM_REGISTER.register("senzu_bean_bag",
+			() -> new SenzuBagItem(new Item.Properties().stacksTo(1)));
+
+	public static final DeferredHolder<Item, ? extends Item> MEDI_BUG_ANT = ITEM_REGISTER.register("medi_bug_ant",
+			() -> new FoodItem(2, 1.2f, 64, "item.dragonminez.medi_bug_ant.tooltip"));
+	public static final DeferredHolder<Item, ? extends Item> MEDI_BUG_BEETLE = ITEM_REGISTER.register("medi_bug_beetle",
+			MediBugBeetleItem::new);
+	public static final DeferredHolder<Item, ? extends Item> MEDI_BUG_BEETLE_PAIR = ITEM_REGISTER.register("medi_bug_beetle_pair",
+			() -> new MediBugBeetlePairItem(new Item.Properties().stacksTo(1), () -> MEDI_BUG_BEETLE.get()));
+	public static final DeferredHolder<Item, ? extends Item> MEDI_BUG_RHINO = ITEM_REGISTER.register("medi_bug_rhino",
+			() -> new FoodItem(2, 1.2f, 64, "item.dragonminez.medi_bug_rhino.tooltip",
+					() -> new MobEffectInstance(MainEffects.MEDI_SHELL, MEDI_SHELL_TICKS, 0)));
+	public static final DeferredHolder<Item, ? extends Item> MEDI_BUG_WORM = ITEM_REGISTER.register("medi_bug_worm",
+			() -> new FoodItem(2, 1.2f, 64, "item.dragonminez.medi_bug_worm.tooltip",
+					() -> new MobEffectInstance(MainEffects.MASTERY_GAIN, MEDI_WORM_TICKS, MEDI_WORM_AMPLIFIER)));
 
 	public static final DeferredHolder<Item, ? extends Item> MIGHT_TREE_FRUIT = ITEM_REGISTER.register("might_tree_fruit",
 			MightTreeFruitItem::new);
 	public static final DeferredHolder<Item, ? extends Item> DINO_MEAT_RAW = ITEM_REGISTER.register("raw_dino_meat",
 			() -> new FoodItem(4, 3.6f, 64));
+	public static final DeferredHolder<Item, ? extends Item> SACRED_WATER = ITEM_REGISTER.register("sacred_water",
+			SacredWaterItem::new);
+	public static final DeferredHolder<Item, ? extends Item> SATAN_BADGE = ITEM_REGISTER.register("satan_badge",
+			() -> new Item(new Item.Properties()));
 	public static final DeferredHolder<Item, ? extends Item> DINO_MEAT_COOKED = ITEM_REGISTER.register("cooked_dino_meat",
 			() -> new FoodItem(8, 12.8f, 64));
 	public static final DeferredHolder<Item, ? extends Item> BABY_DINO_MEAT_RAW = ITEM_REGISTER.register("raw_baby_dino_meat",
@@ -74,6 +123,35 @@ public final class MainItems {
 			() -> new FoodItem(2, 2.4f, 64));
 	public static final DeferredHolder<Item, ? extends Item> FROG_LEGS_COOKED = ITEM_REGISTER.register("frog_legs_cooked",
 			() -> new FoodItem(5, 4.8f, 64));
+	public static final DeferredHolder<Item, ? extends Item> GIANT_FISH_RAW = ITEM_REGISTER.register("giant_fish_raw",
+			() -> new FoodItem(5, 2.4f, 64));
+	public static final DeferredHolder<Item, ? extends Item> GIANT_FISH_COOKED = ITEM_REGISTER.register("giant_fish_cooked",
+			() -> new FoodItem(12, 9.4f, 64));
+	public static final DeferredHolder<Item, ? extends Item> GIANT_TURTLE_RAW = ITEM_REGISTER.register("giant_turtle_raw",
+			() -> new FoodItem(5, 2.4f, 64));
+	public static final DeferredHolder<Item, ? extends Item> GIANT_TURTLE_COOKED = ITEM_REGISTER.register("giant_turtle_cooked",
+			() -> new FoodItem(12, 9.4f, 64));
+
+	//AGRICULTURA
+	// Escama de tortuga: ingrediente de la cápsula de RES (y del Brote Katchin). Se obtiene desde scute.
+	public static final DeferredHolder<Item, ? extends Item> TURTLE_SCALE = regItem("turtle_scale");
+	// Reactivo base (crafteo + alquimia). También plantable SOLO sobre namek_grass_block (ver NamekMossItem).
+	public static final DeferredHolder<Item, ? extends Item> NAMEK_MOSS = ITEM_REGISTER.register("namek_moss",
+			NamekMossItem::new);
+	public static final DeferredHolder<Item, ? extends Item> OOZARU_ROOT = ITEM_REGISTER.register("oozaru_root",
+			() -> new StatPlantItem(StatPlantItem.StatType.STR, MainBlocks.OOZARU_ROOT_CROP));
+	public static final DeferredHolder<Item, ? extends Item> KATCHIN_SPROUT = ITEM_REGISTER.register("katchin_sprout",
+			() -> new StatPlantItem(StatPlantItem.StatType.RES, MainBlocks.KATCHIN_SPROUT_CROP));
+	public static final DeferredHolder<Item, ? extends Item> METEOR_FLOWER = ITEM_REGISTER.register("meteor_flower",
+			() -> new StatPlantItem(StatPlantItem.StatType.SKP, MainBlocks.METEOR_FLOWER_CROP));
+	public static final DeferredHolder<Item, ? extends Item> AURA_LILY = ITEM_REGISTER.register("aura_lily",
+			() -> new StatPlantItem(StatPlantItem.StatType.PWR, MainBlocks.AURA_LILY_CROP));
+	public static final DeferredHolder<Item, ? extends Item> HERMIT_FERN = ITEM_REGISTER.register("hermit_fern",
+			() -> new StatPlantItem(StatPlantItem.StatType.VIT, MainBlocks.HERMIT_FERN_CROP));
+	public static final DeferredHolder<Item, ? extends Item> KAIOSHIN_FRUIT = ITEM_REGISTER.register("kaioshin_fruit",
+			() -> new StatPlantItem(StatPlantItem.StatType.ENE, MainBlocks.KAIOSHIN_FRUIT_CROP));
+	public static final DeferredHolder<Item, ? extends Item> ZENKAI_LOTUS = ITEM_REGISTER.register("zenkai_lotus",
+			() -> new StatPlantItem(StatPlantItem.StatType.MASTERY, MainBlocks.ZENKAI_LOTUS_CROP));
 
 	//POTHALAS
 	public static final DeferredHolder<Item, ? extends Item> POTHALA_LEFT =
@@ -110,6 +188,12 @@ public final class MainItems {
             ITEM_REGISTER.register("dimensional_sword", () -> new DimensionalSwordItem());
 	public static final DeferredHolder<Item, SwordItem> POWER_POLE =
 			ITEM_REGISTER.register("power_pole", () -> new PowerPoleItem());
+	public static final DeferredHolder<Item, SwordItem> TAMAGAMI_SWORD =
+			ITEM_REGISTER.register("tamagami_sword", () -> new TamagamiSwordItem());
+	public static final DeferredHolder<Item, SwordItem> TAMAGAMI_TRIDENT =
+			ITEM_REGISTER.register("tamagami_trident", () -> new TamagamiTridentItem());
+	public static final DeferredHolder<Item, SwordItem> TAMAGAMI_HAMMER =
+			ITEM_REGISTER.register("tamagami_hammer", () -> new TamagamiHammerItem());
 
 	//ARMAS A RANGO/PISTOLAS
 	public static final DeferredHolder<Item, ? extends Item> MERUS_LASER =
@@ -150,6 +234,8 @@ public final class MainItems {
 	// BROLY Z
 	public static final Map<ArmorItem.Type, DeferredHolder<Item, ? extends Item>> BROLY_Z_ARMOR = fullArmorNoHelmetSet("broly_z_armor", "broly_dbz");
 	public static final Map<ArmorItem.Type, DeferredHolder<Item, ? extends Item>> CAPSULE_CORP_ARMOR = fullArmorNoHelmetSet("capsule_corp_armor", "capsule_corp");
+	// BRIGHTLY'S REGULAR WEAR
+	public static final Map<ArmorItem.Type, DeferredHolder<Item, ? extends Item>> BRIGHTLYS_REGULAR_WEAR_ARMOR = fullArmorNoHelmetSet("brightlys_regular_wear_armor", "brightlys_regular_wear");
 	// CAULIFLA
 	public static final Map<ArmorItem.Type, DeferredHolder<Item, ? extends Item>> CAULIFLA_ARMOR = fullArmorNoHelmetSet("caulifla_armor", "caulifla");
 	public static final Map<ArmorItem.Type, DeferredHolder<Item, ? extends Item>> CHAOZ_ARMOR = fullArmorSet("chaoz_armor", "chaoz");
@@ -235,7 +321,10 @@ public final class MainItems {
 	public static final Map<ArmorItem.Type, DeferredHolder<Item, ? extends Item>> SUPER_BUU_ARMOR = fullArmorNoHelmetSet("super_buu_armor", "super_buu");
 	public static final Map<ArmorItem.Type, DeferredHolder<Item, ? extends Item>> THRAGG_ARMOR = fullArmorNoHelmetSet("thragg_armor", "thragg");
     public static final Map<ArmorItem.Type, DeferredHolder<Item, ? extends Item>> GILGAMESH_ARMOR = fullArmorNoHelmetSet("gilgamesh_armor", "gilgamesh");
+    public static final Map<ArmorItem.Type, DeferredHolder<Item, ? extends Item>> SCARLETBLAZE_ARMOR = fullArmorNoHelmetSet("scarletblaze_armor", "scarletblaze");
 
+	// TAIYOU GI
+	public static final Map<ArmorItem.Type, DeferredHolder<Item, ? extends Item>> TAIYOU_GI_ARMOR = fullArmorPatrollerNoHelmetSet("taiyou_gi_armor", "taiyou_gi");
     //TIEN
 	public static final Map<ArmorItem.Type, DeferredHolder<Item, ? extends Item>> TIEN_ARMOR = fullArmorNoHelmetSet("tien_armor", "tenshinhan_armor");
 	//TRUNKS KID DBZ
@@ -244,6 +333,8 @@ public final class MainItems {
 	public static final Map<ArmorItem.Type, DeferredHolder<Item, ? extends Item>> TRUNKS_SUPER_ARMOR = fullArmorNoHelmetSet("trunks_super_armor", "trunks_dbs");
 	//TRUNKS Z
 	public static final Map<ArmorItem.Type, DeferredHolder<Item, ? extends Item>> TRUNKS_Z_ARMOR = fullArmorNoHelmetSet("trunks_z_armor", "trunks_armor");
+	//TRUNKS XENO
+	public static final Map<ArmorItem.Type, DeferredHolder<Item, ? extends Item>> TRUNKS_XENO_ARMOR = fullArmorNoHelmetSet("trunks_xeno_armor", "trunks_xeno");
 	// TURLES
 	public static final Map<ArmorItem.Type, DeferredHolder<Item, ? extends Item>> TURLES_ARMOR = fullArmorNoHelmetSet("turles_armor", "turles_armor");
 	// VEGETA SAGA BUU
@@ -296,6 +387,9 @@ public final class MainItems {
 			() -> new DMZCuriosItem(new Item.Properties().stacksTo(1).fireResistant(), DMZCuriosItem.CurioType.HEAD_TECH));
 	public static final DeferredHolder<Item, ? extends Item> KIKONO_SHARD = regItem("kikono_shard");
 	public static final DeferredHolder<Item, ? extends Item> KIKONO_STICK = regItem("kikono_stick");
+	public static final DeferredHolder<Item, ? extends Item> DEMON_EYE = ITEM_REGISTER.register("demon_eye",
+			() -> new DMZCuriosItem(new Item.Properties().stacksTo(1).fireResistant().rarity(Rarity.EPIC), DMZCuriosItem.CurioType.HEAD_TECH));
+	public static final DeferredHolder<Item, ? extends Item> MAJILITE = regItem("majilite");
 
 	// WEIGHTS
 	public static final DeferredHolder<Item, ? extends Item> WEIGHT_TURTLE_SHELL = ITEM_REGISTER.register("weight_turtle_shell", () -> new WeightItem(new Item.Properties().stacksTo(1), WeightItem.WeightType.TURTLE_SHELL));
@@ -340,6 +434,22 @@ public final class MainItems {
 	public static final DeferredHolder<Item, ? extends Item> NUBE_NEGRA_ITEM = ITEM_REGISTER.register("black_nimbus", BlackNimbusItem::new);
 	public static final DeferredHolder<Item, ? extends Item> NAVE_SAIYAN_ITEM = ITEM_REGISTER.register("saiyan_ship", SaiyanShipItem::new);
 	public static final DeferredHolder<Item, ? extends Item> PUNCH_MACHINE_ITEM = ITEM_REGISTER.register("punch_machine_item", PunchMachineItem::new);
+	public static final DeferredHolder<Item, ? extends Item> VEHICLE_ENGINE = ITEM_REGISTER.register("vehicle_engine",
+			() -> new Item(new Item.Properties().stacksTo(16)));
+	public static final DeferredHolder<Item, ? extends Item> VEHICLE_PROPELLER = ITEM_REGISTER.register("vehicle_propeller",
+			() -> new Item(new Item.Properties().stacksTo(16)));
+	public static final DeferredHolder<Item, ? extends Item> VEHICLE_SEAT = ITEM_REGISTER.register("vehicle_seat",
+			() -> new Item(new Item.Properties().stacksTo(16)));
+	public static final DeferredHolder<Item, ? extends Item> VEHICLE_PLATING = ITEM_REGISTER.register("vehicle_plating",
+			() -> new Item(new Item.Properties().stacksTo(32)));
+	public static final DeferredHolder<Item, ? extends Item> CAR_RED_ITEM = ITEM_REGISTER.register("car_red",
+			() -> new VehicleItem(level -> CarEntity.create(level, CarEntity.Color.RED)));
+	public static final DeferredHolder<Item, ? extends Item> CAR_YELLOW_ITEM = ITEM_REGISTER.register("car_yellow",
+			() -> new VehicleItem(level -> CarEntity.create(level, CarEntity.Color.YELLOW)));
+	public static final DeferredHolder<Item, ? extends Item> CC576_ITEM = ITEM_REGISTER.register("cc576",
+			() -> new VehicleItem(level -> new CC576Entity(MainEntities.CC576.get(), level)));
+	public static final DeferredHolder<Item, ? extends Item> FRIEZA_CAPSULE_ITEM = ITEM_REGISTER.register("frieza_capsule",
+			() -> new VehicleItem(level -> new FriezaCapsuleEntity(MainEntities.FRIEZA_CAPSULE.get(), level)));
 
 	//MUSIC DISCS
 	public static final DeferredHolder<Item, ? extends Item> MUSIC_DISC_MENU_MUSIC_1 = regMusicDisc("music_disc_menu_music_1", MainSounds.MENU_MUSIC_1, 788);
@@ -533,6 +643,32 @@ public final class MainItems {
 			new DeferredSpawnEggItem(MainEntities.RED_RIBBON_ROBOT3, 0xe6975e, 0xe63c29, new Item.Properties()));
 	public static final DeferredHolder<Item, ? extends Item> BANDIT_SE = ITEM_REGISTER.register("bandit_spawn_egg", () ->
 			new DeferredSpawnEggItem(MainEntities.BANDIT, 0x8B4513, 0xFFFF00, new Item.Properties()));
+	public static final DeferredHolder<Item, ? extends Item> GIRAN_SE = ITEM_REGISTER.register("giran_spawn_egg", () ->
+			new DeferredSpawnEggItem(MainEntities.WILD_GIRAN, 0x4E8A3A, 0xC9A66B, new Item.Properties()));
+	public static final DeferredHolder<Item, ? extends Item> GIANT_FISH_SE = ITEM_REGISTER.register("giant_fish_spawn_egg", () ->
+			new DeferredSpawnEggItem(MainEntities.GIANT_FISH, 0x2E6E9E, 0xD9E4EC, new Item.Properties()));
+	public static final DeferredHolder<Item, ? extends Item> GIANT_TURTLE_SE = ITEM_REGISTER.register("giant_turtle_spawn_egg", () ->
+			new DeferredSpawnEggItem(MainEntities.GIANT_TURTLE, 0x4C7A3F, 0xC7B27A, new Item.Properties()));
+	public static final DeferredHolder<Item, ? extends Item> DEMON_VILLAGER_SE = ITEM_REGISTER.register("demon_villager_spawn_egg", () ->
+			new DeferredSpawnEggItem(MainEntities.DEMON_VILLAGER, 0xA1DAF0, 0xF2C2FF, new Item.Properties()));
+	public static final DeferredHolder<Item, ? extends Item> TIME_PATROLLER_SE = ITEM_REGISTER.register("time_patroller_spawn_egg", () ->
+			new DeferredSpawnEggItem(MainEntities.TIME_PATROLLER, 0xA1DAF0, 0x2B3A8C, new Item.Properties()));
+	public static final DeferredHolder<Item, ? extends Item> BIOMAN_SE = ITEM_REGISTER.register("bioman_spawn_egg", () ->
+			new DeferredSpawnEggItem(MainEntities.SAGA_BIOMAN, 0x78D4D4, 0x3E5294, new Item.Properties()));
+	public static final DeferredHolder<Item, ? extends Item> EVIL_CLONE_GOKU_SE = ITEM_REGISTER.register("evil_clone_goku_spawn_egg", () ->
+			new DeferredSpawnEggItem(MainEntities.EVIL_CLONE_GOKU, 0x2E2E33, 0xF7F0B8, new Item.Properties()));
+	public static final DeferredHolder<Item, ? extends Item> EVIL_CLONE_VEGETA_SE = ITEM_REGISTER.register("evil_clone_vegeta_spawn_egg", () ->
+			new DeferredSpawnEggItem(MainEntities.EVIL_CLONE_VEGETA, 0x2E2E33, 0x8C8C92, new Item.Properties()));
+	public static final DeferredHolder<Item, ? extends Item> EVIL_CLONE_PICCOLO_SE = ITEM_REGISTER.register("evil_clone_piccolo_spawn_egg", () ->
+			new DeferredSpawnEggItem(MainEntities.EVIL_CLONE_PICCOLO, 0x2E2E33, 0x80B240, new Item.Properties()));
+	public static final DeferredHolder<Item, ? extends Item> EVIL_CLONE_NAPPA_SE = ITEM_REGISTER.register("evil_clone_nappa_spawn_egg", () ->
+			new DeferredSpawnEggItem(MainEntities.EVIL_CLONE_NAPPA, 0x2E2E33, 0xC8C3B8, new Item.Properties()));
+	public static final DeferredHolder<Item, ? extends Item> EVIL_CLONE_KRILLIN_SE = ITEM_REGISTER.register("evil_clone_krillin_spawn_egg", () ->
+			new DeferredSpawnEggItem(MainEntities.EVIL_CLONE_KRILLIN, 0x2E2E33, 0xF0D0B8, new Item.Properties()));
+	public static final DeferredHolder<Item, ? extends Item> OGRE_RED_SE = ITEM_REGISTER.register("ogre_red_spawn_egg", () ->
+			new DeferredSpawnEggItem(MainEntities.SAGA_OGRE_RED, 0xC62828, 0xE3F2FD, new Item.Properties()));
+	public static final DeferredHolder<Item, ? extends Item> OGRE_BLUE_SE = ITEM_REGISTER.register("ogre_blue_spawn_egg", () ->
+			new DeferredSpawnEggItem(MainEntities.SAGA_OGRE_BLUE, 0x42A5F5, 0xE3F2FD, new Item.Properties()));
 
 
 	public static DeferredHolder<Item, ? extends Item> regItem(String name) {
@@ -581,6 +717,23 @@ public final class MainItems {
 		return registerArmorSetCape(itemId, textureId, false);
 	}
 
+	private static Map<ArmorItem.Type, DeferredHolder<Item, ? extends Item>> registerArmorSetPatroller(String name, String texture, boolean hasHelmet) {
+		Map<ArmorItem.Type, DeferredHolder<Item, ? extends Item>> armorPieces = new HashMap<>();
+		if (hasHelmet) armorPieces.put(ArmorItem.Type.HELMET, ITEM_REGISTER.register(name + "_helmet", () -> new DbzArmorPatrollerItem(ModArmorMaterials.KIKONO, ArmorItem.Type.HELMET, new Item.Properties().fireResistant().stacksTo(1), texture)));
+		armorPieces.put(ArmorItem.Type.CHESTPLATE, ITEM_REGISTER.register(name + "_chestplate", () -> new DbzArmorPatrollerItem(ModArmorMaterials.KIKONO, ArmorItem.Type.CHESTPLATE, new Item.Properties().fireResistant().stacksTo(1), texture)));
+		armorPieces.put(ArmorItem.Type.LEGGINGS, ITEM_REGISTER.register(name + "_leggings", () -> new DbzArmorPatrollerItem(ModArmorMaterials.KIKONO, ArmorItem.Type.LEGGINGS, new Item.Properties().fireResistant().stacksTo(1), texture)));
+		armorPieces.put(ArmorItem.Type.BOOTS, ITEM_REGISTER.register(name + "_boots", () -> new DbzArmorPatrollerItem(ModArmorMaterials.KIKONO, ArmorItem.Type.BOOTS, new Item.Properties().fireResistant().stacksTo(1), texture)));
+		return armorPieces;
+	}
+
+	public static Map<ArmorItem.Type, DeferredHolder<Item, ? extends Item>> fullArmorPatrollerSet(String itemId, String textureId) {
+		return registerArmorSetPatroller(itemId, textureId, true);
+	}
+
+	public static Map<ArmorItem.Type, DeferredHolder<Item, ? extends Item>> fullArmorPatrollerNoHelmetSet(String itemId, String textureId) {
+		return registerArmorSetPatroller(itemId, textureId, false);
+	}
+
 	private static Map<String, Map<Integer, DeferredHolder<Item, ? extends Item>>> registerDragonBallBlockItems() {
 		Map<String, Map<Integer, DeferredHolder<Item, ? extends Item>>> registered = new HashMap<>();
 		for (DragonBallSetDefinition definition : DragonBallDefinitions.getBootstrapBallSets()) {
@@ -589,7 +742,7 @@ public final class MainItems {
 				int star = entry.getKey();
 				String registryName = entry.getValue();
 				DeferredHolder<Item, ? extends Item> item = ITEM_REGISTER.register(registryName,
-						() -> new BlockItem(MainBlocks.getDragonBallBlockOrThrow(definition.getId(), star).get(), new Item.Properties().stacksTo(1).fireResistant()));
+						() -> new DragonBallBlockItem(MainBlocks.getDragonBallBlockOrThrow(definition.getId(), star).get(), new Item.Properties().stacksTo(1).fireResistant()));
 				setItems.put(star, item);
 			}
 			registered.put(definition.getId(), Map.copyOf(setItems));

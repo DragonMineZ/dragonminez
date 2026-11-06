@@ -33,12 +33,15 @@ final class SagaDefaults {
 
 		Path dmzBase = sagaDir.getParent(); // <world>/dragonminez
 
-		writeSagaManifest(dmzBase, sagaDir, "saiyan_saga.json", "saiyan_saga", "dmz.saga.saiyan_saga", "", "saga_saiyan");
+		writeSagaManifest(dmzBase, sagaDir, "classic_saga.json", "classic_saga", "dmz.saga.classic_saga", "", "saga_classic");
+		writeSagaManifest(dmzBase, sagaDir, "saiyan_saga.json", "saiyan_saga", "dmz.saga.saiyan_saga", "classic_saga", "saga_saiyan");
 		writeSagaManifest(dmzBase, sagaDir, "frieza_saga.json", "frieza_saga", "dmz.saga.frieza_saga", "saiyan_saga", "saga_frieza");
 		writeSagaManifest(dmzBase, sagaDir, "android_saga.json", "android_saga", "dmz.saga.android_saga", "frieza_saga", "saga_android");
 		writeSagaManifest(dmzBase, sagaDir, "future_saga.json", "future_saga", "dmz.saga.future_saga", "android_saga", "saga_future");
 		writeSagaManifest(dmzBase, sagaDir, "buu_saga.json", "buu_saga", "dmz.saga.buu_saga", "android_saga", "saga_buu");
 		writeSagaManifest(dmzBase, sagaDir, "movies_saga.json", "movies_saga", "dmz.saga.movies_saga", "", "saga_movies");
+		writeSagaManifest(dmzBase, sagaDir, "gt_saga.json", "gt_saga", "dmz.saga.gt_saga", "buu_saga", "saga_gt");
+		writeSagaManifest(dmzBase, sagaDir, "daima_saga.json", "daima_saga", "dmz.saga.daima_saga", "buu_saga", "saga_daima");
 	}
 
 	/**

@@ -4,6 +4,7 @@ import com.dragonminez.Reference;
 import com.dragonminez.client.render.shader.DMZShaders;
 import com.dragonminez.client.render.util.KiMeshFactory;
 import com.dragonminez.client.render.util.PlayerEffectQueue;
+import com.dragonminez.client.systems.FormVisualTransition;
 import com.dragonminez.common.init.entities.ki.KiBarrierEntity;
 import com.dragonminez.common.stats.StatsCapability;
 import com.dragonminez.common.stats.StatsProvider;
@@ -93,7 +94,7 @@ public class KiBarrierRenderer extends EntityRenderer<KiBarrierEntity> {
         var statsOpt = StatsProvider.get(StatsCapability.INSTANCE, anchor).resolve();
         if (statsOpt.isEmpty()) return 1.0f;
 
-        Float[] resolved = statsOpt.get().getCharacter().getResolvedModelScaling();
+        float[] resolved = FormVisualTransition.modelScale(statsOpt.get());
         return Math.max(resolved[0], Math.max(resolved[1], resolved[2]));
     }
 

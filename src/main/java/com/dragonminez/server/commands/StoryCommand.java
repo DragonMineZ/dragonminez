@@ -4,6 +4,7 @@ import com.dragonminez.common.config.ConfigManager;
 import com.dragonminez.common.events.DMZEvent;
 import com.dragonminez.common.init.MainEntities;
 import com.dragonminez.common.init.entities.questnpc.QuestNPCEntity;
+import com.dragonminez.common.quest.Difficulty;
 import com.dragonminez.common.quest.PartyManager;
 import com.dragonminez.common.quest.PlayerQuestData;
 import com.dragonminez.common.quest.Quest;
@@ -13,6 +14,7 @@ import com.dragonminez.common.quest.QuestService;
 import com.dragonminez.common.quest.QuestTextFormatter;
 import com.dragonminez.common.quest.Saga;
 import com.dragonminez.common.stats.StatsCapability;
+import com.dragonminez.common.stats.StatsData;
 import com.dragonminez.common.stats.StatsProvider;
 import com.mojang.brigadier.CommandDispatcher;
 import com.mojang.brigadier.arguments.StringArgumentType;
@@ -28,11 +30,16 @@ import net.minecraft.world.phys.AABB;
 import net.neoforged.neoforge.common.NeoForge;
 
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
 import java.util.Comparator;
+import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
+import java.util.UUID;
 
 public class StoryCommand {
 
@@ -58,6 +65,9 @@ public class StoryCommand {
 		suggestions.add("all");
 		return SharedSuggestionProvider.suggest(suggestions, builder);
 	};
+
+	private static final SuggestionProvider<CommandSourceStack> DIFFICULTY_SUGGESTIONS = (context, builder) ->
+			SharedSuggestionProvider.suggest(Arrays.stream(Difficulty.values()).map(d -> d.name().toLowerCase(Locale.ROOT)), builder);
 
 	public static void register(CommandDispatcher<CommandSourceStack> dispatcher) {
 		dispatcher.register(Commands.literal("dmzquest")
@@ -157,6 +167,17 @@ public class StoryCommand {
 										.requires(source -> DMZPermissions.hasPermission(source, DMZPermissions.QUEST_RESETSAGA_OTHERS))
 										.executes(context -> resetSaga(context, EntityArgument.getPlayer(context, "player"))))))
 
+				// difficulty [easy|normal|hard] [targets]
+				.then(Commands.literal("difficulty")
+						.requires(source -> DMZPermissions.check(source, DMZPermissions.QUEST_DIFFICULTY_SELF, DMZPermissions.QUEST_DIFFICULTY_OTHERS))
+						.executes(context -> showDifficulty(context, List.of(context.getSource().getPlayerOrException())))
+						.then(Commands.argument("difficulty", StringArgumentType.word())
+								.suggests(DIFFICULTY_SUGGESTIONS)
+								.executes(context -> setDifficulty(context, List.of(context.getSource().getPlayerOrException())))
+								.then(Commands.argument("targets", EntityArgument.players())
+										.requires(source -> DMZPermissions.hasPermission(source, DMZPermissions.QUEST_DIFFICULTY_OTHERS))
+										.executes(context -> setDifficulty(context, EntityArgument.getPlayers(context, "targets"))))))
+
 				// questnpc spawn/list/remove
 				.then(Commands.literal("questnpc")
 						.requires(source -> source.hasPermission(2))
@@ -250,7 +271,7 @@ public class StoryCommand {
 			Quest quest = QuestRegistry.getQuest(questKey);
 			if (quest == null) {
 				context.getSource().sendFailure(Component.literal("Quest not found: " + questKey
-						+ "  (tip: use '.' instead of ':' — e.g. saiyan_saga.1)"));
+						+ "  (tip: use '.' instead of ':' — e.g. classic_saga.1)"));
 				return 0;
 			}
 
@@ -313,7 +334,7 @@ public class StoryCommand {
 				Quest quest = QuestRegistry.getQuest(questKey);
 				if (quest == null) {
 					context.getSource().sendFailure(Component.literal("Quest not found: " + questKey
-							+ "  (tip: use '.' instead of ':' — e.g. saiyan_saga.1)"));
+							+ "  (tip: use '.' instead of ':' — e.g. classic_saga.1)"));
 					return 0;
 				}
 				questsToStart.add(Map.entry(questKey, quest));
@@ -368,7 +389,7 @@ public class StoryCommand {
 				Quest quest = QuestRegistry.getQuest(questKey);
 				if (quest == null) {
 					context.getSource().sendFailure(Component.literal("Quest not found: " + questKey
-							+ "  (tip: use '.' instead of ':' — e.g. saiyan_saga.1)"));
+							+ "  (tip: use '.' instead of ':' — e.g. classic_saga.1)"));
 					return 0;
 				}
 				questsToFinish.add(Map.entry(questKey, quest));
@@ -413,7 +434,7 @@ public class StoryCommand {
 
 			if (!"all".equalsIgnoreCase(questKey) && QuestRegistry.getQuest(questKey) == null) {
 				context.getSource().sendFailure(Component.literal("Quest not found: " + questKey
-						+ "  (tip: use '.' instead of ':' — e.g. saiyan_saga.1)"));
+						+ "  (tip: use '.' instead of ':' — e.g. classic_saga.1)"));
 				return 0;
 			}
 
@@ -469,7 +490,7 @@ public class StoryCommand {
 
 			if (!"all".equalsIgnoreCase(questKey) && QuestRegistry.getQuest(questKey) == null) {
 				context.getSource().sendFailure(Component.literal("Quest not found: " + questKey
-						+ "  (tip: use '.' instead of ':' — e.g. saiyan_saga.1)"));
+						+ "  (tip: use '.' instead of ':' — e.g. classic_saga.1)"));
 				return 0;
 			}
 
@@ -524,7 +545,7 @@ public class StoryCommand {
 
 			if (questKey != null && QuestRegistry.getQuest(questKey) == null) {
 				context.getSource().sendFailure(Component.literal("Quest not found: " + questKey
-						+ "  (tip: use '.' instead of ':' — e.g. saiyan_saga.1)"));
+						+ "  (tip: use '.' instead of ':' — e.g. classic_saga.1)"));
 				return 0;
 			}
 
@@ -700,6 +721,76 @@ public class StoryCommand {
 			context.getSource().sendFailure(Component.literal("Failed to reset saga: " + e.getMessage()));
 			return 0;
 		}
+	}
+
+	// ============================================================
+	// difficulty
+	// ============================================================
+
+	private static int showDifficulty(CommandContext<CommandSourceStack> context, Collection<ServerPlayer> targets) {
+		for (ServerPlayer player : targets) {
+			StatsProvider.get(StatsCapability.INSTANCE, PartyManager.resolveDifficultyOwner(player)).ifPresent(data ->
+					context.getSource().sendSystemMessage(Component.translatable("command.dragonminez.quest.difficulty.current",
+							player.getName(), difficultyName(data.getPlayerQuestData().getDifficulty()))));
+		}
+		return targets.size();
+	}
+
+	private static int setDifficulty(CommandContext<CommandSourceStack> context, Collection<ServerPlayer> targets) {
+		boolean log = ConfigManager.getServerConfig().getGameplay().getCommandOutputOnConsole();
+		String raw = StringArgumentType.getString(context, "difficulty");
+		Difficulty difficulty = parseDifficulty(raw);
+		if (difficulty == null) {
+			context.getSource().sendFailure(Component.translatable("command.dragonminez.quest.difficulty.unknown", raw));
+			return 0;
+		}
+
+		Set<UUID> handledControllers = new HashSet<>();
+		int changed = 0;
+		for (ServerPlayer player : targets) {
+			ServerPlayer controller = PartyManager.resolveDifficultyOwner(player);
+			if (!handledControllers.add(controller.getUUID())) continue;
+			StatsData data = StatsProvider.get(StatsCapability.INSTANCE, controller).orElse(null);
+			if (data == null) continue;
+
+			PlayerQuestData pqd = data.getPlayerQuestData();
+			pqd.setDifficulty(difficulty);
+			pqd.setDifficultyChosen(true);
+			PartyManager.syncPartyDifficulty(controller);
+			changed++;
+
+			List<ServerPlayer> members = PartyManager.getAllPartyMembers(controller);
+			for (ServerPlayer member : members) {
+				member.sendSystemMessage(Component.translatable("command.dragonminez.quest.difficulty.notify", difficultyName(difficulty)));
+			}
+			if (members.size() > 1) {
+				context.getSource().sendSystemMessage(Component.translatable("command.dragonminez.quest.difficulty.party_note",
+						controller.getName(), members.size(), difficultyName(difficulty)));
+			}
+		}
+
+		if (targets.size() == 1) {
+			ServerPlayer target = targets.iterator().next();
+			context.getSource().sendSuccess(() -> Component.translatable("command.dragonminez.quest.difficulty.set",
+					difficultyName(difficulty), target.getName()), log);
+		} else {
+			int affected = targets.size();
+			context.getSource().sendSuccess(() -> Component.translatable("command.dragonminez.quest.difficulty.set_multiple",
+					difficultyName(difficulty), affected), log);
+		}
+		return changed;
+	}
+
+	private static Difficulty parseDifficulty(String raw) {
+		if (raw == null) return null;
+		for (Difficulty difficulty : Difficulty.values()) {
+			if (difficulty.name().equalsIgnoreCase(raw.trim())) return difficulty;
+		}
+		return null;
+	}
+
+	private static Component difficultyName(Difficulty difficulty) {
+		return Component.translatable("gui.dragonminez.quest_tree.difficulty." + difficulty.name().toLowerCase(Locale.ROOT));
 	}
 
 	// ============================================================
@@ -880,12 +971,11 @@ public class StoryCommand {
 	private static List<ServerPlayer> getTargetPlayers(CommandContext<CommandSourceStack> context, ServerPlayer targetPlayer) {
 		List<ServerPlayer> players = new ArrayList<>();
 		if (targetPlayer != null) {
-			players.addAll(PartyManager.getAllPartyMembers(targetPlayer));
+			players.add(targetPlayer);
 			return players;
 		}
 		try {
-			ServerPlayer executor = context.getSource().getPlayerOrException();
-			players.addAll(PartyManager.getAllPartyMembers(executor));
+			players.add(context.getSource().getPlayerOrException());
 		} catch (Exception ignored) {
 		}
 		return players;

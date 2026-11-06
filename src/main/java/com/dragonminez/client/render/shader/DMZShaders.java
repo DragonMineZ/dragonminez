@@ -15,10 +15,30 @@ import java.io.IOException;
 @EventBusSubscriber(modid = Reference.MOD_ID, value = Dist.CLIENT, bus = EventBusSubscriber.Bus.MOD)
 public class DMZShaders {
 	public static ShaderInstance auraShader;
+	public static ShaderInstance auraSmooth3DShader;
+	public static ShaderInstance auraSparking3DShader;
+	public static ShaderInstance auraGod3DShader;
+	public static ShaderInstance auraTrailShader;
+	public static ShaderInstance auraBorderShader;
+	public static ShaderInstance auraBorderFieldShader;
+	public static ShaderInstance bloomDownShader;
+	public static ShaderInstance bloomBlurShader;
+	public static ShaderInstance bloomCompositeShader;
 	public static ShaderInstance lightningShader;
+	public static ShaderInstance lightningBoltShader;
 	public static ShaderInstance outlineShader;
 	public static ShaderInstance outlineMaskTexShader;
 	public static ShaderInstance ki3dShader;
+	public static ShaderInstance shockwaveShader;
+	public static ShaderInstance clawSlashShader;
+	public static ShaderInstance impactBurstShader;
+	public static ShaderInstance chargeRaysShader;
+	public static ShaderInstance afterimageShader;
+	public static ShaderInstance blueHurricaneShader;
+	public static ShaderInstance kiBladeShader;
+	public static ShaderInstance solarisSmokeShader;
+	public static ShaderInstance assimilationSketchShader;
+	public static ShaderInstance timeHaloShader;
 
 	@SubscribeEvent
 	public static void onRegisterShaders(RegisterShadersEvent event) throws IOException {
@@ -29,9 +49,59 @@ public class DMZShaders {
 				shaderInstance -> auraShader = shaderInstance);
 
 		event.registerShader(new ShaderInstance(event.getResourceProvider(),
+						ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "aura_smooth"),
+						DefaultVertexFormat.POSITION),
+				shaderInstance -> auraSmooth3DShader = shaderInstance);
+
+		event.registerShader(new ShaderInstance(event.getResourceProvider(),
+						ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "aura_sparking"),
+						DefaultVertexFormat.POSITION_COLOR_NORMAL),
+				shaderInstance -> auraSparking3DShader = shaderInstance);
+
+		event.registerShader(new ShaderInstance(event.getResourceProvider(),
+						ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "aura_god"),
+						DefaultVertexFormat.POSITION_TEX),
+				shaderInstance -> auraGod3DShader = shaderInstance);
+
+		event.registerShader(new ShaderInstance(event.getResourceProvider(),
+						ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "aura_trail"),
+						DefaultVertexFormat.POSITION_COLOR_NORMAL),
+				shaderInstance -> auraTrailShader = shaderInstance);
+
+		event.registerShader(new ShaderInstance(event.getResourceProvider(),
+						ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "aura_border"),
+						DefaultVertexFormat.POSITION),
+				shaderInstance -> auraBorderShader = shaderInstance);
+
+		event.registerShader(new ShaderInstance(event.getResourceProvider(),
+						ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "aura_border_field"),
+						DefaultVertexFormat.POSITION),
+				shaderInstance -> auraBorderFieldShader = shaderInstance);
+
+		event.registerShader(new ShaderInstance(event.getResourceProvider(),
+						ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "bloom_down"),
+						DefaultVertexFormat.POSITION),
+				shaderInstance -> bloomDownShader = shaderInstance);
+
+		event.registerShader(new ShaderInstance(event.getResourceProvider(),
+						ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "bloom_blur"),
+						DefaultVertexFormat.POSITION),
+				shaderInstance -> bloomBlurShader = shaderInstance);
+
+		event.registerShader(new ShaderInstance(event.getResourceProvider(),
+						ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "bloom_composite"),
+						DefaultVertexFormat.POSITION),
+				shaderInstance -> bloomCompositeShader = shaderInstance);
+
+		event.registerShader(new ShaderInstance(event.getResourceProvider(),
 						ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "lightning"),
 						DefaultVertexFormat.POSITION_COLOR_NORMAL),
 				shaderInstance -> lightningShader = shaderInstance);
+
+		event.registerShader(new ShaderInstance(event.getResourceProvider(),
+						ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "lightning_bolt"),
+						DefaultVertexFormat.POSITION_TEX_COLOR),
+				shaderInstance -> lightningBoltShader = shaderInstance);
 
 		event.registerShader(new ShaderInstance(event.getResourceProvider(),
 						ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "transformation_mask"),
@@ -47,5 +117,55 @@ public class DMZShaders {
 						ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "kiattack"),
 						DefaultVertexFormat.NEW_ENTITY),
 				shaderInstance -> ki3dShader = shaderInstance);
+
+		event.registerShader(new ShaderInstance(event.getResourceProvider(),
+						ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "shockwave"),
+						DefaultVertexFormat.POSITION_TEX),
+				shaderInstance -> shockwaveShader = shaderInstance);
+
+		event.registerShader(new ShaderInstance(event.getResourceProvider(),
+						ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "claw_slash"),
+						DefaultVertexFormat.POSITION_TEX),
+				shaderInstance -> clawSlashShader = shaderInstance);
+
+		event.registerShader(new ShaderInstance(event.getResourceProvider(),
+						ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "impact_burst"),
+						DefaultVertexFormat.POSITION_TEX),
+				shaderInstance -> impactBurstShader = shaderInstance);
+
+		event.registerShader(new ShaderInstance(event.getResourceProvider(),
+						ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "charge_rays"),
+						DefaultVertexFormat.POSITION_TEX),
+				shaderInstance -> chargeRaysShader = shaderInstance);
+
+		event.registerShader(new ShaderInstance(event.getResourceProvider(),
+						ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "afterimage"),
+						DefaultVertexFormat.NEW_ENTITY),
+				shaderInstance -> afterimageShader = shaderInstance);
+
+		event.registerShader(new ShaderInstance(event.getResourceProvider(),
+						ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "blue_hurricane"),
+						DefaultVertexFormat.POSITION_TEX),
+				shaderInstance -> blueHurricaneShader = shaderInstance);
+
+		event.registerShader(new ShaderInstance(event.getResourceProvider(),
+						ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "ki_blade"),
+						DefaultVertexFormat.POSITION_TEX_COLOR),
+				shaderInstance -> kiBladeShader = shaderInstance);
+
+		event.registerShader(new ShaderInstance(event.getResourceProvider(),
+						ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "solaris_smoke"),
+						DefaultVertexFormat.POSITION_TEX_COLOR),
+				shaderInstance -> solarisSmokeShader = shaderInstance);
+
+		event.registerShader(new ShaderInstance(event.getResourceProvider(),
+						ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "time_halo"),
+						DefaultVertexFormat.POSITION_TEX_COLOR),
+				shaderInstance -> timeHaloShader = shaderInstance);
+
+		event.registerShader(new ShaderInstance(event.getResourceProvider(),
+						ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "assimilation_sketch"),
+						DefaultVertexFormat.NEW_ENTITY),
+				shaderInstance -> assimilationSketchShader = shaderInstance);
 	}
 }

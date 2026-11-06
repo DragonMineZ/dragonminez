@@ -1,5 +1,6 @@
 package com.dragonminez.common.network.C2S;
 
+import com.dragonminez.common.network.PacketRateLimiter;
 import com.dragonminez.common.init.entities.ki.KiBlastEntity;
 import com.dragonminez.common.compat.CameraAimHelper;
 import net.minecraft.network.FriendlyByteBuf;
@@ -46,6 +47,7 @@ public class SokidanControlC2S {
             if (player != null && player.level() != null) {
                 CameraAimHelper.store(player, new Vec3(this.aimX, this.aimY, this.aimZ));
                 if (this.action == Action.AIM) return;
+                if (!PacketRateLimiter.allow(player.getUUID(), "sokidan_control", player.level().getGameTime(), 4L)) return;
                 double searchRadius = 64.0;
                 AABB searchBox = player.getBoundingBox().inflate(searchRadius);
 

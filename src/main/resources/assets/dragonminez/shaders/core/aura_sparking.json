@@ -1,0 +1,44 @@
+{
+  "vertex": "dragonminez:aura_sparking",
+  "fragment": "dragonminez:aura_sparking",
+  "attributes": [
+    "Position",
+    "Color",
+    "Normal"
+  ],
+  "samplers": [],
+  "uniforms": [
+    { "name": "ModelViewMat", "type": "matrix4x4", "count": 16, "values": [1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 1.0] },
+    { "name": "ProjMat", "type": "matrix4x4", "count": 16, "values": [1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 1.0] },
+    { "name": "NormalMat", "type": "matrix3x3", "count": 9, "values": [1.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 1.0] },
+    { "name": "Size", "type": "float", "count": 3, "values": [1.0, 1.0, 1.0] },
+    { "name": "Time", "type": "float", "count": 1, "values": [0.0] },
+    { "name": "Growth", "type": "float", "count": 1, "values": [1.0] },
+    { "name": "SpikeDensity", "type": "float", "count": 1, "values": [32.0] },
+    { "name": "SpikeBurstRate", "type": "float", "count": 1, "values": [3.0] },
+    { "name": "SpikeRarity", "type": "float", "count": 1, "values": [3.0] },
+    { "name": "BandStart", "type": "float", "count": 1, "values": [0.5] },
+    { "name": "WaveSpeed", "type": "float", "count": 1, "values": [5.0] },
+    { "name": "WaveAmplitude", "type": "float", "count": 1, "values": [0.75] },
+    { "name": "NoiseDetail", "type": "float", "count": 1, "values": [0.1] },
+    { "name": "CoreColor", "type": "float", "count": 3, "values": [1.0, 1.0, 1.0] },
+    { "name": "RimColor", "type": "float", "count": 3, "values": [1.0, 1.0, 1.0] },
+    { "name": "SecondBorderColor", "type": "float", "count": 3, "values": [1.0, 1.0, 1.0] },
+    { "name": "SecondBorderFactor", "type": "float", "count": 1, "values": [0.0] },
+    { "name": "CoreAlpha", "type": "float", "count": 1, "values": [0.18] },
+    { "name": "RimAlpha", "type": "float", "count": 1, "values": [0.85] },
+    { "name": "RimPower", "type": "float", "count": 1, "values": [6.0] },
+    { "name": "RimThreshold", "type": "float", "count": 1, "values": [0.02] },
+    { "name": "Alpha", "type": "float", "count": 1, "values": [1.0] },
+    { "name": "BackFace", "type": "float", "count": 1, "values": [0.02] },
+    { "name": "BloomIntensity", "type": "float", "count": 1, "values": [1.0] },
+    { "name": "BloomPass", "type": "float", "count": 1, "values": [0.0] },
+    { "name": "LayerPass", "type": "float", "count": 1, "values": [0.0] }
+  ],
+  "blend": {
+    "func": "add",
+    "srcrgb": "srcalpha",
+    "dstrgb": "1-srcalpha"
+  },
+  "cull": false
+}

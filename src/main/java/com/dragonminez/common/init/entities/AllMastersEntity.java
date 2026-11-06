@@ -107,6 +107,14 @@ public class AllMastersEntity {
         }
     }
 
+    public static class MasterTien extends MastersEntity {
+        public MasterTien(EntityType<? extends PathfinderMob> pEntityType, Level pLevel) {
+            super(pEntityType, pLevel);
+            this.setPersistenceRequired();
+            this.masterName = "tien";
+        }
+    }
+
     public static class MasterDendeEntity extends MastersEntity {
         public MasterDendeEntity(EntityType<? extends PathfinderMob> pEntityType, Level pLevel) {
             super(pEntityType, pLevel);
@@ -221,6 +229,38 @@ public class AllMastersEntity {
             super(pEntityType, pLevel);
             this.setPersistenceRequired();
             this.masterName = "baba";
+        }
+    }
+
+    public static class MasterUranaiEarthEntity extends MastersEntity {
+        public MasterUranaiEarthEntity(EntityType<? extends PathfinderMob> pEntityType, Level pLevel) {
+            super(pEntityType, pLevel);
+            this.setPersistenceRequired();
+            this.masterName = "baba_earth";
+        }
+    }
+
+    public static class MasterGrandKaiEntity extends MastersEntity {
+        public MasterGrandKaiEntity(EntityType<? extends PathfinderMob> pEntityType, Level pLevel) {
+            super(pEntityType, pLevel);
+            this.setPersistenceRequired();
+            this.masterName = "grandkai";
+        }
+    }
+
+    public static class MasterOtherworldAnnouncerEntity extends MastersEntity {
+        public MasterOtherworldAnnouncerEntity(EntityType<? extends PathfinderMob> pEntityType, Level pLevel) {
+            super(pEntityType, pLevel);
+            this.setPersistenceRequired();
+            this.masterName = "otherworld_announcer";
+        }
+    }
+
+    public static class WorldTournamentAnnouncerEntity extends MastersEntity {
+        public WorldTournamentAnnouncerEntity(EntityType<? extends PathfinderMob> pEntityType, Level pLevel) {
+            super(pEntityType, pLevel);
+            this.setPersistenceRequired();
+            this.masterName = "world_tournament_announcer";
         }
     }
 

@@ -1,30 +1,26 @@
 package com.dragonminez.common.quest.objectives;
 
 import com.dragonminez.common.quest.QuestObjective;
-import lombok.Getter;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.tags.TagKey;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.core.registries.BuiltInRegistries;
-
 import javax.annotation.Nullable;
-
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ThreadLocalRandom;
 
-@Getter
 public class KillObjective extends QuestObjective {
+
 	public enum SpawnMode {
-		QUEST,
-		NATURAL
+		QUEST, NATURAL;
 	}
 
+
 	public enum CountMode {
-		QUEST_SPAWNED_ONLY,
-		ANY_MATCHING
+		QUEST_SPAWNED_ONLY, ANY_MATCHING;
 	}
 
 	private final String entityId;
@@ -37,7 +33,6 @@ public class KillObjective extends QuestObjective {
 	private final int textureVariant;
 	private final int aiTier;
 	private final boolean canTransform;
-
 	// --- Transform overrides (all nullable; null = fall back to the global EntitiesConfig defaults). ---
 	// Absolute stats for the transformed form take precedence over the multipliers when both are set.
 	private final Double transformHealth;
@@ -46,14 +41,12 @@ public class KillObjective extends QuestObjective {
 	private final Double transformHealthMultiplier;
 	private final Double transformMeleeMultiplier;
 	private final Double transformKiMultiplier;
-	/** Fraction of max health (0..1) at which this enemy triggers its transformation. */
+	/**
+	 * Fraction of max health (0..1) at which this enemy triggers its transformation.
+	 */
 	private final Double transformTriggerPercent;
 
-	public KillObjective(String entityId, int count, double health, double meleeDamage, double kiDamage,
-						 SpawnMode spawnMode, CountMode countMode, int textureVariant, int aiTier, boolean canTransform,
-						 Double transformHealth, Double transformMeleeDamage, Double transformKiDamage,
-						 Double transformHealthMultiplier, Double transformMeleeMultiplier, Double transformKiMultiplier,
-						 Double transformTriggerPercent) {
+	public KillObjective(String entityId, int count, double health, double meleeDamage, double kiDamage, SpawnMode spawnMode, CountMode countMode, int textureVariant, int aiTier, boolean canTransform, Double transformHealth, Double transformMeleeDamage, Double transformKiDamage, Double transformHealthMultiplier, Double transformMeleeMultiplier, Double transformKiMultiplier, Double transformTriggerPercent) {
 		super(ObjectiveType.KILL, count);
 		this.entityId = entityId;
 		this.count = count;
@@ -120,5 +113,76 @@ public class KillObjective extends QuestObjective {
 		} catch (Exception e) {
 			return null;
 		}
+	}
+
+	public String getEntityId() {
+		return this.entityId;
+	}
+
+	public int getCount() {
+		return this.count;
+	}
+
+	public double getHealth() {
+		return this.health;
+	}
+
+	public double getMeleeDamage() {
+		return this.meleeDamage;
+	}
+
+	public double getKiDamage() {
+		return this.kiDamage;
+	}
+
+	public SpawnMode getSpawnMode() {
+		return this.spawnMode;
+	}
+
+	public CountMode getCountMode() {
+		return this.countMode;
+	}
+
+	public int getTextureVariant() {
+		return this.textureVariant;
+	}
+
+	public int getAiTier() {
+		return this.aiTier;
+	}
+
+	public boolean isCanTransform() {
+		return this.canTransform;
+	}
+
+	public Double getTransformHealth() {
+		return this.transformHealth;
+	}
+
+	public Double getTransformMeleeDamage() {
+		return this.transformMeleeDamage;
+	}
+
+	public Double getTransformKiDamage() {
+		return this.transformKiDamage;
+	}
+
+	public Double getTransformHealthMultiplier() {
+		return this.transformHealthMultiplier;
+	}
+
+	public Double getTransformMeleeMultiplier() {
+		return this.transformMeleeMultiplier;
+	}
+
+	public Double getTransformKiMultiplier() {
+		return this.transformKiMultiplier;
+	}
+
+	/**
+	 * Fraction of max health (0..1) at which this enemy triggers its transformation.
+	 */
+	public Double getTransformTriggerPercent() {
+		return this.transformTriggerPercent;
 	}
 }

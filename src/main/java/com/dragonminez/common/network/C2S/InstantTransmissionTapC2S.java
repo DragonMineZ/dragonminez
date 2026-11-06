@@ -17,7 +17,6 @@ import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
-import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.phys.AABB;
@@ -51,6 +50,7 @@ public class InstantTransmissionTapC2S {
 			if (player == null) return;
 
 			StatsProvider.get(StatsCapability.INSTANCE, player).ifPresent(data -> {
+				if (data.getStatus().isStunned()) return;
 				int skillLevel = data.getSkills().getSkillLevel("instant_transmission");
 				if (skillLevel <= 0) return;
 
@@ -114,8 +114,9 @@ public class InstantTransmissionTapC2S {
 				double newY = finalTarget.getY();
 				double newZ = finalTarget.getZ() + zOffset;
 
+				ITTeleportHelper.departVfx(player, MainSounds.TP_SHORT.get());
 				player.teleportTo(level, newX, newY, newZ, finalTarget.getYRot(), player.getXRot());
-				player.playNotifySound(MainSounds.TP_SHORT.get(), SoundSource.PLAYERS, 1.0F, 1.0F);
+				ITTeleportHelper.arriveVfx(player, MainSounds.TP_SHORT.get());
 
 				if (!bypassCosts) {
 					int dashCdTicks = ConfigManager.getCombatConfig().getDashCooldownSeconds() * 20;

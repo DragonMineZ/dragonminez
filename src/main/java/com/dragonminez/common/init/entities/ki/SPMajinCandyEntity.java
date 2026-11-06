@@ -6,7 +6,6 @@ import com.dragonminez.common.combat.util.MultipartTargeting;
 import com.dragonminez.client.util.ColorUtils;
 import com.dragonminez.common.init.MainDamageTypes;
 import com.dragonminez.common.init.MainEntities;
-import com.dragonminez.common.init.MainEffects;
 import com.dragonminez.common.init.MainParticles;
 import com.dragonminez.common.init.MainSounds;
 import com.dragonminez.common.init.particles.KiTrailParticle;
@@ -17,7 +16,6 @@ import net.minecraft.network.syncher.EntityDataAccessor;
 import net.minecraft.network.syncher.EntityDataSerializers;
 import net.minecraft.network.syncher.SynchedEntityData;
 import net.minecraft.sounds.SoundSource;
-import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.LivingEntity;
@@ -153,7 +151,7 @@ public class SPMajinCandyEntity extends AbstractKiProjectile {
                 if (!this.level().isClientSide) {
                     // Gated to ~1s pulses; the candy effect refreshes on each landed pulse.
                     if (this.applyContinuousDamage(target)) {
-                        target.addEffect(new MobEffectInstance(MainEffects.CANDY, 200, 0, false, true));
+                        com.dragonminez.server.events.players.combat.EvasionAttackHandler.applyCandy(owner, target, 200, 0);
                     }
                 }
             } else {
@@ -177,7 +175,7 @@ public class SPMajinCandyEntity extends AbstractKiProjectile {
             if (hitEntity instanceof LivingEntity target && target != owner) {
                 target.hurt(MainDamageTypes.kiblast(this.level(), this, (LivingEntity) owner), this.getKiDamage());
 
-                target.addEffect(new MobEffectInstance(MainEffects.CANDY, 100, 0, false, true));
+                com.dragonminez.server.events.players.combat.EvasionAttackHandler.applyCandy(owner instanceof LivingEntity livingOwner ? livingOwner : null, target, 100, 0);
                 this.discard();
             }
         }

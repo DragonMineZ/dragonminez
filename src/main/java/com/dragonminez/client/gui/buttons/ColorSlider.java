@@ -12,6 +12,8 @@ import java.util.function.Consumer;
 @OnlyIn(Dist.CLIENT)
 public class ColorSlider extends AbstractSliderButton {
 
+    public enum Gradient { NONE, HUE, SATURATION, VALUE }
+
     private final int minValue;
     private final int maxValue;
     private final Consumer<Integer> onValueChange;
@@ -22,6 +24,7 @@ public class ColorSlider extends AbstractSliderButton {
     private final int sliderHeight;
     private float currentHue = 0;
     private float currentSaturation = 100;
+    private Gradient gradient = Gradient.NONE;
 
     public ColorSlider(int x, int y, int width, int height,
                        int minValue, int maxValue, int currentValue,
@@ -83,17 +86,11 @@ public class ColorSlider extends AbstractSliderButton {
     }
 
     private void drawGradientBackground(GuiGraphics graphics) {
-        Component msg = this.getMessage();
-        String messageText = msg.getString();
-
-        if (messageText.equalsIgnoreCase("Hue") || messageText.equalsIgnoreCase("H")) {
-            drawHueGradient(graphics);
-        } else if (messageText.equalsIgnoreCase("Saturation") || messageText.equalsIgnoreCase("S")) {
-            drawSaturationGradient(graphics);
-        } else if (messageText.equalsIgnoreCase("Value") || messageText.equalsIgnoreCase("V")) {
-            drawValueGradient(graphics);
-        } else {
-            graphics.fill(this.getX(), this.getY(), this.getX() + this.width, this.getY() + this.height, 0xFF808080);
+        switch (gradient) {
+            case HUE -> drawHueGradient(graphics);
+            case SATURATION -> drawSaturationGradient(graphics);
+            case VALUE -> drawValueGradient(graphics);
+            default -> graphics.fill(this.getX(), this.getY(), this.getX() + this.width, this.getY() + this.height, 0xFF808080);
         }
     }
 
@@ -162,6 +159,10 @@ public class ColorSlider extends AbstractSliderButton {
         this.currentSaturation = saturation;
     }
 
+    public void setGradient(Gradient gradient) {
+        this.gradient = gradient == null ? Gradient.NONE : gradient;
+    }
+
     public static class Builder {
         private int x, y, width, height;
         private int minValue = 0;
@@ -173,6 +174,7 @@ public class ColorSlider extends AbstractSliderButton {
         private int sliderWidth = 0;
         private int sliderHeight = 0;
         private Component message = Component.empty();
+        private Gradient gradient = Gradient.NONE;
         private Consumer<Integer> onValueChange;
 
         public Builder position(int x, int y) {
@@ -212,19 +214,24 @@ public class ColorSlider extends AbstractSliderButton {
             return this;
         }
 
+        public Builder gradient(Gradient gradient) {
+            this.gradient = gradient;
+            return this;
+        }
+
         public Builder onValueChange(Consumer<Integer> onValueChange) {
             this.onValueChange = onValueChange;
             return this;
         }
 
         public ColorSlider build() {
-            if (texture != null) {
-                return new ColorSlider(x, y, width, height, minValue, maxValue, currentValue,
-                        texture, sliderU, sliderV, sliderWidth, sliderHeight, message, onValueChange);
-            } else {
-                return new ColorSlider(x, y, width, height, minValue, maxValue, currentValue,
-                        message, onValueChange);
-            }
+            ColorSlider slider = texture != null
+                    ? new ColorSlider(x, y, width, height, minValue, maxValue, currentValue,
+                            texture, sliderU, sliderV, sliderWidth, sliderHeight, message, onValueChange)
+                    : new ColorSlider(x, y, width, height, minValue, maxValue, currentValue,
+                            message, onValueChange);
+            slider.setGradient(gradient);
+            return slider;
         }
     }
 }

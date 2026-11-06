@@ -13,6 +13,8 @@ public class MainStructureProcessors {
 
 	public static final DeferredHolder<StructureProcessorType<?>, StructureProcessorType<FoundationProcessor>> FOUNDATION =
 			PROCESSORS.register("foundation", () -> () -> FoundationProcessor.CODEC);
+	public static final DeferredHolder<StructureProcessorType<?>, StructureProcessorType<ExteriorAirProcessor>> EXTERIOR_AIR =
+			PROCESSORS.register("exterior_air", () -> () -> ExteriorAirProcessor.CODEC);
 
 	public static void register(IEventBus eventBus) {
 		PROCESSORS.register(eventBus);

@@ -2,7 +2,6 @@ package com.dragonminez.server.commands;
 
 import com.dragonminez.common.config.ConfigManager;
 import com.dragonminez.common.config.RaceCharacterConfig;
-import com.dragonminez.common.hair.CustomHair;
 import com.dragonminez.common.network.NetworkHandler;
 import com.dragonminez.common.network.S2C.AppearanceSyncS2C;
 import com.dragonminez.common.network.S2C.StatsSyncS2C;
@@ -63,10 +62,7 @@ public class HairCommand {
 			} else {
 				character.setHairId(0);
 			}
-			character.setHairBase(new CustomHair());
-			character.setHairSSJ(new CustomHair());
-			character.setHairSSJ2(new CustomHair());
-			character.setHairSSJ3(new CustomHair());
+			character.clearHairStyles();
 
 			NetworkHandler.sendToTrackingEntityAndSelf(new StatsSyncS2C(player), player);
 			NetworkHandler.sendToTrackingEntityAndSelf(new AppearanceSyncS2C(player), player);

@@ -1,5 +1,7 @@
 package com.dragonminez.common.init.block.entity;
 
+import com.dragonminez.common.compat.ApotheosisCompat;
+import com.dragonminez.common.compat.WeaponLevelingCompat;
 import com.dragonminez.common.config.ConfigManager;
 import com.dragonminez.common.init.MainRecipes;
 import com.dragonminez.common.init.MainBlockEntities;
@@ -217,13 +219,36 @@ public class KikonoStationBlockEntity extends BlockEntity implements MenuProvide
 
 	private ItemStack getOutputWithEnchantments(ItemStack itemStack, ItemStack template) {
 		var output = itemStack.copy();
+		var crafting = ConfigManager.getServerConfig().getCrafting();
 
-		// Soft-deps for WeaponLeveling/Apotheosis removed in NeoForge port.
-		// Preserve vanilla enchantment copy from template when enabled.
-		if (ConfigManager.getServerConfig().getCrafting().getCopyEnchantmentsFromTemplate()) {
+		if (crafting.getCopyEnchantmentsFromTemplate()) {
 			ItemEnchantments enchantments = template.getOrDefault(DataComponents.ENCHANTMENTS, ItemEnchantments.EMPTY);
 			if (!enchantments.isEmpty()) {
 				output.set(DataComponents.ENCHANTMENTS, enchantments);
+			}
+		}
+
+		if (crafting.getCopyWeaponLevelFromTemplate()) {
+			WeaponLevelingCompat.copyLevel(template, output);
+		}
+
+		if (crafting.getCopyWeaponLevelProgressFromTemplate()) {
+			WeaponLevelingCompat.copyLevelProgress(template, output);
+		}
+
+		if (crafting.getCopyApotheosisRarityFromTemplate()) {
+			ApotheosisCompat.copyRarity(template, output);
+		}
+
+		if (crafting.getCopyApotheosisAffixesFromTemplate()) {
+			ApotheosisCompat.copyAffixes(template, output);
+		}
+
+		if (crafting.getCopyApotheosisSocketsFromTemplate()) {
+			ApotheosisCompat.copySockets(template, output);
+
+			if (crafting.getCopyApotheosisGemsFromTemplate()) {
+				ApotheosisCompat.copyGems(template, output);
 			}
 		}
 

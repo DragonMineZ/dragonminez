@@ -7,6 +7,7 @@ import com.dragonminez.common.alignment.NpcDispositionService;
 import com.dragonminez.common.diagnostics.JsonKeys;
 import com.dragonminez.common.diagnostics.JsonLoadReport;
 import com.dragonminez.common.init.entities.questnpc.QuestNPCEntity;
+import com.dragonminez.server.world.dimension.OtherworldTournamentGrounds;
 import com.dragonminez.server.world.structure.helper.DMZStructures;
 import com.dragonminez.server.world.structure.helper.StructureLocator;
 import com.google.gson.Gson;
@@ -36,7 +37,9 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -116,6 +119,10 @@ public final class NPCPlacementManager {
 			if (!placement.enabled() || !placement.dimension().equals(level.dimension())) {
 				continue;
 			}
+			if (OtherworldTournamentGrounds.ANNOUNCER_PLACEMENT_ID.equals(placement.id())
+					&& !OtherworldTournamentGrounds.isBuilt(level)) {
+				continue;
+			}
 			spawnOrUpdate(level, placement);
 		}
 	}
@@ -141,7 +148,9 @@ public final class NPCPlacementManager {
 		JsonLoadReport.clear("npcs");
 		JsonKeys.checkObject("npcs", PLACEMENTS_LABEL, "", root, ROOT_KEYS);
 
-		List<NPCPlacement> parsed = new ArrayList<>();
+		// Keyed by id: two placements sharing an id would fight over the same tagged entity every
+		// spawn pass (each one moves it to its own coordinates), so the last entry wins.
+		Map<String, NPCPlacement> parsed = new LinkedHashMap<>();
 		int index = 0;
 		for (JsonElement element : root.getAsJsonArray("placements")) {
 			if (!element.isJsonObject()) {
@@ -150,11 +159,11 @@ public final class NPCPlacementManager {
 
 			JsonKeys.checkObject("npcs", PLACEMENTS_LABEL, "placements[" + index++ + "]", element.getAsJsonObject(), PLACEMENT_KEYS);
 			NPCPlacement placement = parsePlacement(element.getAsJsonObject());
-			if (placement != null) {
-				parsed.add(placement);
+			if (placement != null && parsed.put(placement.id(), placement) != null) {
+				LogUtil.warn(Env.SERVER, "NPCPlacementManager: duplicate placement id '{}' in {}, keeping the last entry", placement.id(), PLACEMENTS_LABEL);
 			}
 		}
-		return List.copyOf(parsed);
+		return List.copyOf(parsed.values());
 	}
 
 	@Nullable
@@ -378,10 +387,13 @@ public final class NPCPlacementManager {
 		addMasterInStructure(placements, "master_popo", "dragonminez:master_popo", "minecraft:overworld", "kamilookout", 0.0, 0.0, 0.0, true, 135);
 		addMasterInStructure(placements, "master_gero", "dragonminez:master_gero", "minecraft:overworld", "gero_lab", 0.0, 0.0, 0.0, true, 315);
 		addMasterInStructure(placements, "master_guru", "dragonminez:master_guru", "dragonminez:namek", "elder_guru", 0.0, 0.0, 0.0, true, 180);
-		addManualMaster(placements, "master_kaiosama", "dragonminez:master_kaiosama", "dragonminez:otherworld", false, 54.5, 190, 1082.5, false, 180);
-		addManualMaster(placements, "master_enma", "dragonminez:master_enma", "dragonminez:otherworld", false, 0.5, 41, 66.5, false, 180);
-		addManualMaster(placements, "master_baba", "dragonminez:master_uranai", "dragonminez:otherworld", false, 6.5, 41, 53.5, false, 180);
-		addManualMaster(placements, "master_toribot", "dragonminez:master_toribot", "dragonminez:otherworld", false, 50.5, 190, 1079.5, false, 180);
+		addManualMaster(placements, "master_kaiosama", "dragonminez:master_kaiosama", "dragonminez:otherworld", false, 54.5, 299, 1031.5, false, 180);
+		addManualMaster(placements, "master_enma", "dragonminez:master_enma", "dragonminez:otherworld", false, 0.5, 150, 17.5, false, 180);
+		addManualMaster(placements, "master_baba", "dragonminez:master_uranai", "dragonminez:otherworld", false, 9.5, 150, 3.5, false, 180);
+		addManualMaster(placements, "master_toribot", "dragonminez:master_toribot", "dragonminez:otherworld", false, 50.5, 298, 1030.5, false, 180);
+		addManualMaster(placements, "master_grandkai", "dragonminez:master_grandkai", "dragonminez:otherworld", false, -30.5, 150, 12.5, false, 180);
+		addManualMaster(placements, "master_otherworld_announcer", "dragonminez:master_otherworld_announcer", "dragonminez:otherworld", false, -25.5, 352, -1164.5, false, 0);
+		addManualQuestNPC(placements, "npc_hell_ogre", "hell_ogre", "dragonminez:otherworld", 9.5, 150, 16.5, 200);
 
 		// Quest NPCs (TALK_TO / quest-giver / turn-in targets) are no longer spawned at runtime here:
 		// they are baked directly into structure NBT via structure blocks (mirroring the namek_trader
@@ -417,6 +429,16 @@ public final class NPCPlacementManager {
 										 boolean surface, float yaw) {
 		JsonObject placement = basePlacement(id, entity, dimension, false, offsetX, offsetY, offsetZ, surface, yaw);
 		placement.addProperty("structure", structureId);
+		placements.add(placement);
+	}
+
+	private static void addManualQuestNPC(JsonArray placements, String id, String npcId, String dimension,
+										  double x, double y, double z, float yaw) {
+		JsonObject placement = basePlacement(id, Reference.MOD_ID + ":quest_npc", dimension, false, x, y, z, false, yaw);
+		placement.addProperty("npc_id", npcId);
+		placement.addProperty("model", "");
+		placement.addProperty("texture", "");
+		placement.addProperty("override", true);
 		placements.add(placement);
 	}
 
@@ -492,7 +514,8 @@ public final class NPCPlacementManager {
 		}
 
 		return switch (placement.id()) {
-			case "master_kaiosama", "master_enma", "master_baba", "master_toribot" -> true;
+			case "master_kaiosama", "master_enma", "master_baba", "master_toribot", "master_grandkai",
+				 "master_otherworld_announcer", "npc_hell_ogre" -> true;
 			default -> false;
 		};
 	}

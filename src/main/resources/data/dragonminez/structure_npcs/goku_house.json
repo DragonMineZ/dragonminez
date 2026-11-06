@@ -1,0 +1,14 @@
+{
+  "structure": "dragonminez:goku_house",
+  "npcs": [
+    {
+      "id": "npc_chi_chi",
+      "entity": "dragonminez:quest_npc",
+      "npc_id": "chi_chi",
+      "model": "saga_videl",
+      "texture": "saga_chichi",
+      "pos": [67.5, 5.0, 50.5],
+      "yaw": 90.0
+    }
+  ]
+}

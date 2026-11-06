@@ -1,24 +1,21 @@
 package com.dragonminez.common.init.entities;
 
-import com.dragonminez.client.util.KeyBinds;
 import com.dragonminez.common.init.MainItems;
 import com.dragonminez.common.init.MainSounds;
+import com.dragonminez.client.util.KeyBinds;
+import com.dragonminez.common.init.entities.vehicle.VehicleEntity;
+import com.dragonminez.common.init.entities.vehicle.VehicleProperties;
 import net.minecraft.network.syncher.EntityDataAccessor;
 import net.minecraft.network.syncher.EntityDataSerializers;
 import net.minecraft.network.syncher.SynchedEntityData;
 import net.minecraft.sounds.SoundSource;
-import net.minecraft.util.Mth;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
-import net.minecraft.world.damagesource.DamageSource;
-import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.LivingEntity;
-import net.minecraft.world.entity.Mob;
-import net.minecraft.world.entity.ai.attributes.AttributeSupplier;
 import net.minecraft.world.entity.ai.attributes.Attributes;
-import net.minecraft.world.entity.ai.goal.FloatGoal;
 import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.item.Item;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.Vec3;
 import software.bernie.geckolib.animatable.GeoEntity;
@@ -28,37 +25,32 @@ import software.bernie.geckolib.animatable.instance.SingletonAnimatableInstanceC
 import software.bernie.geckolib.animation.*;
 import software.bernie.geckolib.animation.PlayState;
 
-public class SpacePodEntity extends Mob implements GeoEntity {
+public class SpacePodEntity extends VehicleEntity {
+
+    private static final VehicleProperties.Smoke WISP = new VehicleProperties.Smoke(0.14F, 0.85F, 0.28F, 14, 0.3F, 0.25D, 1.08D);
+
+    private static final VehicleProperties PROPERTIES = VehicleProperties.builder(VehicleProperties.Mobility.FLYING)
+            .speed(1.08D)
+            .verticalSpeed(0.35D)
+            .model("spacepod", 1.1F)
+            .seatBones(1)
+            .fallbackSeat(0.0D, 10.9D, -1.0D)
+            .exhaust(WISP, 0.0D, 10.0D, 18.0D)
+            .tilt(8.0F, 5.0F, 0.0F, 1.0D)
+            .engine(() -> MainSounds.VEHICLE_SPACEPOD_ENGINE.get(), 0.12F, 0.5F, 0.8F, 1.25F)
+            .build();
 
     private static final EntityDataAccessor<Boolean> IS_OPEN = SynchedEntityData.defineId(SpacePodEntity.class, EntityDataSerializers.BOOLEAN);
     private static final RawAnimation ANIM_ABIERTO = RawAnimation.begin().then("open", Animation.LoopType.HOLD_ON_LAST_FRAME);
     private static final RawAnimation ANIM_CERRADO = RawAnimation.begin().then("close", Animation.LoopType.HOLD_ON_LAST_FRAME);
 
-    private final AnimatableInstanceCache geoCache = new SingletonAnimatableInstanceCache(this);
-
-    public SpacePodEntity(EntityType<? extends Mob> pEntityType, Level pLevel) {
-        super(pEntityType, pLevel);
-
-        this.setNoGravity(true);
-        this.setPersistenceRequired();
+    public SpacePodEntity(EntityType<? extends VehicleEntity> pEntityType, Level pLevel) {
+        super(pEntityType, pLevel, PROPERTIES);
     }
 
     @Override
-    public boolean removeWhenFarAway(double pDistanceToClosestPlayer) {
-        return false;
-    }
-
-    public static AttributeSupplier createAttributes() {
-        return Mob.createMobAttributes()
-                .add(Attributes.MAX_HEALTH, 50.0D)
-                .add(Attributes.ATTACK_DAMAGE, 50.0D)
-                .add(Attributes.MOVEMENT_SPEED, 0.5F)
-                .add(Attributes.FLYING_SPEED, 2.4F).build();
-    }
-
-    @Override
-    protected void registerGoals() {
-        this.goalSelector.addGoal(1, new FloatGoal(this));
+    protected Item getVehicleItem() {
+        return MainItems.NAVE_SAIYAN_ITEM.get();
     }
 
     @Override
@@ -118,23 +110,6 @@ public class SpacePodEntity extends Mob implements GeoEntity {
     public LivingEntity getControllingPassenger() {
         return this.getFirstPassenger() instanceof LivingEntity entity ? entity : null;
     }
-    @Override
-    protected net.minecraft.world.phys.Vec3 getPassengerAttachmentPoint(Entity entity, net.minecraft.world.entity.EntityDimensions dimensions, float partialTick) {
-        return new net.minecraft.world.phys.Vec3(0.0D, 0.4D, 0.0D);
-    }
-
-	@Override
-	public void positionRider(Entity passenger, MoveFunction callback) {
-		if (this.hasPassenger(passenger)) {
-			double yOffset = 0.4D;
-			Vec3 vec3 = (new Vec3(0.0D, 0.0D, 0.0D)).yRot(-this.getYRot() * ((float)Math.PI / 180F) - ((float)Math.PI / 2F));
-			callback.accept(passenger, this.getX() + vec3.x, this.getY() + yOffset, this.getZ() + vec3.z);
-			if (passenger instanceof LivingEntity livingPassenger) {
-				livingPassenger.yBodyRot = this.getYRot();
-				livingPassenger.setYHeadRot(livingPassenger.getYHeadRot());
-			}
-		}
-	}
 
     @Override
     protected InteractionResult mobInteract(Player player, InteractionHand hand) {
@@ -146,9 +121,7 @@ public class SpacePodEntity extends Mob implements GeoEntity {
                 }
             } else {
                 setOpenNave(false);
-                if (!player.isPassenger()) {
-                    player.startRiding(this);
-                }
+                tryMount(player);
             }
         }
         return InteractionResult.SUCCESS;
@@ -160,28 +133,6 @@ public class SpacePodEntity extends Mob implements GeoEntity {
 
     public void setOpenNave(boolean open) {
         this.entityData.set(IS_OPEN, open);
-    }
-
-    @Override
-    public boolean hurt(DamageSource pSource, float pAmount) {
-        if ("player".equals(pSource.getMsgId()) && pSource.getEntity() instanceof Player) {
-            if (!this.level().isClientSide && isAlive()) {
-                this.spawnAtLocation(MainItems.NAVE_SAIYAN_ITEM.get());
-                this.remove(RemovalReason.KILLED);
-            }
-            return true;
-        }
-        return false;
-    }
-
-    @Override
-    public boolean isInvulnerableTo(DamageSource pSource) {
-        return !"player".equals(pSource.getMsgId()) || super.isInvulnerableTo(pSource);
-    }
-
-    @Override
-    public boolean causeFallDamage(float pFallDistance, float pMultiplier, DamageSource pSource) {
-        return false;
     }
 
     @Override
@@ -199,10 +150,5 @@ public class SpacePodEntity extends Mob implements GeoEntity {
         }
 
         return PlayState.CONTINUE;
-    }
-
-    @Override
-    public AnimatableInstanceCache getAnimatableInstanceCache() {
-        return geoCache;
     }
 }

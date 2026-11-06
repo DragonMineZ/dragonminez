@@ -1,13 +1,16 @@
 package com.dragonminez.common.init.entities.redribbon;
 
-import net.minecraft.core.BlockPos;
-import net.minecraft.core.Direction;
-import net.minecraft.util.RandomSource;
+import net.minecraft.nbt.CompoundTag;
+import net.minecraft.network.syncher.EntityDataAccessor;
+import net.minecraft.network.syncher.EntityDataSerializers;
+import net.minecraft.network.syncher.SynchedEntityData;
 import net.minecraft.world.Difficulty;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.MobSpawnType;
 import net.minecraft.world.entity.ai.attributes.AttributeSupplier;
 import net.minecraft.world.entity.ai.attributes.Attributes;
+import com.dragonminez.common.init.entities.ai.EnemyMeleeBrainGoal;
+import com.dragonminez.common.init.entities.ai.PartyAwareTargetGoal;
 import net.minecraft.world.entity.ai.goal.*;
 import net.minecraft.world.entity.ai.goal.target.HurtByTargetGoal;
 import net.minecraft.world.entity.ai.goal.target.NearestAttackableTargetGoal;
@@ -16,10 +19,6 @@ import net.minecraft.world.entity.npc.Villager;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.LevelAccessor;
-import net.minecraft.world.level.LightLayer;
-import net.minecraft.world.level.ServerLevelAccessor;
-import net.minecraft.world.level.block.state.BlockState;
-import net.minecraft.world.phys.shapes.CollisionContext;
 import software.bernie.geckolib.animatable.GeoEntity;
 import software.bernie.geckolib.animatable.GeoAnimatable;
 import software.bernie.geckolib.animatable.instance.AnimatableInstanceCache;
@@ -31,6 +30,9 @@ import software.bernie.geckolib.animation.RawAnimation;
 import software.bernie.geckolib.animation.PlayState;
 
 public class RedRibbonEntity extends Monster implements GeoEntity {
+
+    private static final EntityDataAccessor<Boolean> SUPERVILLAIN = SynchedEntityData.defineId(RedRibbonEntity.class, EntityDataSerializers.BOOLEAN);
+    private static final String NBT_SUPERVILLAIN = "Supervillain";
 
     private final AnimatableInstanceCache geoCache = new SingletonAnimatableInstanceCache(this);
     private boolean isAttacking = false;
@@ -51,17 +53,43 @@ public class RedRibbonEntity extends Monster implements GeoEntity {
     protected void registerGoals() {
         this.goalSelector.addGoal(1, new FloatGoal(this));
 
-        this.goalSelector.addGoal(2, new MeleeAttackGoal(this, 1.6D, false));
+        this.goalSelector.addGoal(2, new EnemyMeleeBrainGoal(this, 1.6D, true, false, false));
 
         this.goalSelector.addGoal(3, new WaterAvoidingRandomStrollGoal(this, 1.0D));
 
         this.goalSelector.addGoal(4, new LookAtPlayerGoal(this, Player.class, 15.0F));
         this.goalSelector.addGoal(5, new RandomLookAroundGoal(this));
 
-        this.targetSelector.addGoal(1, (new HurtByTargetGoal(this)));
-        this.targetSelector.addGoal(2, new NearestAttackableTargetGoal<>(this, Player.class, true));
+        this.targetSelector.addGoal(1, new HurtByTargetGoal(this).setAlertOthers(RedRibbonEntity.class));
+        this.targetSelector.addGoal(2, new PartyAwareTargetGoal(this, true));
         this.targetSelector.addGoal(3, new NearestAttackableTargetGoal<>(this, Villager.class, true));
 
+    }
+
+    @Override
+    protected void defineSynchedData(SynchedEntityData.Builder builder) {
+        super.defineSynchedData(builder);
+        builder.define(SUPERVILLAIN, false);
+    }
+
+    @Override
+    public void addAdditionalSaveData(CompoundTag pCompound) {
+        super.addAdditionalSaveData(pCompound);
+        pCompound.putBoolean(NBT_SUPERVILLAIN, isSupervillain());
+    }
+
+    @Override
+    public void readAdditionalSaveData(CompoundTag pCompound) {
+        super.readAdditionalSaveData(pCompound);
+        setSupervillain(pCompound.getBoolean(NBT_SUPERVILLAIN));
+    }
+
+    public boolean isSupervillain() {
+        return this.entityData.get(SUPERVILLAIN);
+    }
+
+    public void setSupervillain(boolean supervillain) {
+        this.entityData.set(SUPERVILLAIN, supervillain);
     }
 
     @Override
@@ -119,19 +147,5 @@ public class RedRibbonEntity extends Monster implements GeoEntity {
     @Override
     public boolean checkSpawnRules(LevelAccessor pLevel, MobSpawnType reason) {
         return pLevel.getDifficulty() != Difficulty.PEACEFUL && this.checkSpawnObstruction(pLevel);
-    }
-
-    public static boolean canSpawnHere(EntityType<? extends RedRibbonEntity> entity, ServerLevelAccessor world, MobSpawnType spawn, BlockPos pos, RandomSource random) {
-        if (world.getDifficulty() == Difficulty.PEACEFUL) return false;
-
-        if (world.getBrightness(LightLayer.BLOCK, pos) > 7) return false;
-
-        BlockState stateAtPos = world.getBlockState(pos);
-        if (!stateAtPos.isAir() && !stateAtPos.canBeReplaced()) return false;
-
-        BlockState ground = world.getBlockState(pos.below());
-        if (!ground.isFaceSturdy(world, pos.below(), Direction.UP)) return false;
-
-        return world.noCollision(entity.getDimensions().makeBoundingBox(pos.getX() + 0.5, pos.getY(), pos.getZ() + 0.5));
     }
 }

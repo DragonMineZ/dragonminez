@@ -2,6 +2,7 @@ package com.dragonminez.common.init.item;
 
 import net.minecraft.world.item.Item;
 
+import com.dragonminez.client.util.NumberFormattingUtil;
 import net.minecraft.ChatFormatting;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
@@ -15,9 +16,16 @@ import software.bernie.geckolib.animation.AnimatableManager;
 import software.bernie.geckolib.animation.AnimationController;
 import software.bernie.geckolib.animation.RawAnimation;
 import software.bernie.geckolib.util.GeckoLibUtil;
+
+import java.text.DecimalFormat;
+import java.text.DecimalFormatSymbols;
+import java.text.NumberFormat;
 import java.util.List;
+import java.util.Locale;
 
 public class WeightItem extends DMZCuriosItem implements GeoItem {
+	private final NumberFormat numberFormatter = NumberFormat.getInstance(Locale.US);
+	private final DecimalFormat compactBpFormatter = new DecimalFormat("0.##", DecimalFormatSymbols.getInstance(Locale.US));
 
 	public enum WeightType {
 		TURTLE_SHELL, WORKOUT_WEIGHTS, PICCOLO_CAPE;
@@ -45,7 +53,7 @@ public class WeightItem extends DMZCuriosItem implements GeoItem {
 		super.appendHoverText(stack, context, tooltip, flag);
 		int weight = getWeight(stack);
 		if (weight > 0) {
-			tooltip.add(Component.translatable("item.dragonminez.weight.tooltip", weight).withStyle(ChatFormatting.GOLD));
+			tooltip.add(Component.translatable("item.dragonminez.weight.tooltip", NumberFormattingUtil.formatLargeNumber(weight)).withStyle(ChatFormatting.GOLD));
 		}
 	}
 

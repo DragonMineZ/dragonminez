@@ -171,7 +171,7 @@ public class WeaponRegistry {
 
         for (var entry : containers.entrySet()) resolveAndRegisterAttributes(entry.getKey(), entry.getValue());
 
-        WeaponAttributesFallback.initialize();
+        if (!Boolean.FALSE.equals(ConfigManager.getCombatConfig().getFallbackCompatibilityEnabled())) WeaponAttributesFallback.initialize();
         encodeRegistry();
     }
 

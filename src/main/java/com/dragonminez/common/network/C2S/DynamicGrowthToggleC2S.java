@@ -1,5 +1,6 @@
 package com.dragonminez.common.network.C2S;
 
+import com.dragonminez.common.network.PacketRateLimiter;
 import com.dragonminez.common.config.ConfigManager;
 import com.dragonminez.common.network.NetworkHandler;
 import com.dragonminez.common.network.S2C.StatsSyncS2C;
@@ -23,7 +24,7 @@ public class DynamicGrowthToggleC2S {
 	}
 
 	public DynamicGrowthToggleC2S(FriendlyByteBuf buffer) {
-		this.stat = buffer.readUtf();
+		this.stat = buffer.readUtf(16);
 		this.enabled = buffer.readBoolean();
 	}
 
@@ -37,6 +38,7 @@ public class DynamicGrowthToggleC2S {
 		context.enqueueWork(() -> {
 			ServerPlayer player = context.getSender();
 			if (player == null) return;
+			if (!PacketRateLimiter.allow(player.getUUID(), "dynamicgrowthtogglec2s", player.level().getGameTime(), 4)) return;
 			if (!ConfigManager.getServerConfig().getDynamicGrowth().isEnabled()) return;
 
 			DynamicGrowthStat parsed;
@@ -47,6 +49,7 @@ public class DynamicGrowthToggleC2S {
 			}
 
 			StatsProvider.get(StatsCapability.INSTANCE, player).ifPresent(data -> {
+				if (data.getDynamicGrowth().isGrowthEnabled(parsed) == enabled) return;
 				data.getDynamicGrowth().setGrowthEnabled(parsed, enabled);
 				NetworkHandler.sendToTrackingEntityAndSelf(new StatsSyncS2C(player), player);
 			});

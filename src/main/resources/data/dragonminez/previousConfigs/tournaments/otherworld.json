@@ -1,0 +1,125 @@
+{
+  "configVersion": "2.2.0",
+  "enabled": true,
+  "displayName": "tournament.dragonminez.otherworld",
+  "format": "BRACKET",
+  "difficultyStars": 5,
+  "qualifierSlots": 8,
+  "reentryCooldownSeconds": 5400,
+  "matchTimeoutSeconds": 480,
+  "nextRoundSeconds": 30,
+  "rulesAcceptSeconds": 60,
+  "returnSeconds": 15,
+  "arrivalSeconds": 60,
+  "lethal": false,
+  "ring": {
+    "x": 110,
+    "y": 98,
+    "z": 110,
+    "radius": 8
+  },
+  "champion": {
+    "entityId": "dragonminez:saga_gogeta_ssj",
+    "health": 1330000.0,
+    "meleeDamage": 55800.0,
+    "kiDamage": 50700.0,
+    "aiTier": 4,
+    "perRoundScaling": 1.0
+  },
+  "semifinalist": {
+    "entityId": "dragonminez:saga_paikuhan",
+    "health": 805000.0,
+    "meleeDamage": 33600.0,
+    "kiDamage": 30600.0,
+    "aiTier": 3,
+    "perRoundScaling": 1.0
+  },
+  "finalist": {
+    "entityId": "dragonminez:saga_goku_end_ssj",
+    "health": 900000.0,
+    "meleeDamage": 37800.0,
+    "kiDamage": 34200.0,
+    "aiTier": 3,
+    "perRoundScaling": 1.0,
+    "halo": true
+  },
+  "contenders": [
+    {
+      "entityId": "#dragonminez:npc_buusaga",
+      "health": 238000.0,
+      "meleeDamage": 9900.0,
+      "kiDamage": 8840.0,
+      "aiTier": 2,
+      "perRoundScaling": 1.08
+    },
+    {
+      "entityId": "#dragonminez:npc_buusaga",
+      "health": 273000.0,
+      "meleeDamage": 11400.0,
+      "kiDamage": 10370.0,
+      "aiTier": 2,
+      "perRoundScaling": 1.08
+    },
+    {
+      "entityId": "#dragonminez:npc_buusaga",
+      "health": 308000.0,
+      "meleeDamage": 12900.0,
+      "kiDamage": 11730.0,
+      "aiTier": 2,
+      "perRoundScaling": 1.08
+    },
+    {
+      "entityId": "#dragonminez:npc_buusaga",
+      "health": 343000.0,
+      "meleeDamage": 14400.0,
+      "kiDamage": 12920.0,
+      "aiTier": 2,
+      "perRoundScaling": 1.08
+    },
+    {
+      "entityId": "#dragonminez:npc_buusaga",
+      "health": 402500.0,
+      "meleeDamage": 16800.0,
+      "kiDamage": 15300.0,
+      "aiTier": 3,
+      "perRoundScaling": 1.08
+    },
+    {
+      "entityId": "#dragonminez:npc_buusaga",
+      "health": 472500.0,
+      "meleeDamage": 19800.0,
+      "kiDamage": 17850.0,
+      "aiTier": 3,
+      "perRoundScaling": 1.08
+    },
+    {
+      "entityId": "#dragonminez:npc_buusaga",
+      "health": 507500.0,
+      "meleeDamage": 21300.0,
+      "kiDamage": 19380.0,
+      "aiTier": 3,
+      "perRoundScaling": 1.08
+    },
+    {
+      "entityId": "#dragonminez:npc_buusaga",
+      "health": 542500.0,
+      "meleeDamage": 22800.0,
+      "kiDamage": 20740.0,
+      "aiTier": 3,
+      "perRoundScaling": 1.08
+    },
+    {
+      "entityId": "#dragonminez:npc_buusaga",
+      "health": 612500.0,
+      "meleeDamage": 25800.0,
+      "kiDamage": 23460.0,
+      "aiTier": 3,
+      "perRoundScaling": 1.08
+    }
+  ],
+  "rewards": {
+    "trainingPoints": 3000000,
+    "alignment": 10,
+    "commands": []
+  }
+}

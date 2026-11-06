@@ -9,5 +9,6 @@ public enum TpSource {
 	@SerializedName(value = "mined", alternate = "MINED") MINED,
 	@SerializedName(value = "crafted", alternate = "CRAFTED") CRAFTED,
 	@SerializedName(value = "kill", alternate = "KILL") KILL,
-	@SerializedName(value = "hit", alternate = "HIT") HIT
+	@SerializedName(value = "hit", alternate = "HIT") HIT,
+	@SerializedName(value = "training", alternate = "TRAINING") TRAINING
 }

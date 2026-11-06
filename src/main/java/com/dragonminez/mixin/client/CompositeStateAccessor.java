@@ -9,4 +9,7 @@ import org.spongepowered.asm.mixin.gen.Accessor;
 public interface CompositeStateAccessor {
 	@Accessor("textureState")
 	RenderStateShard.EmptyTextureStateShard dmz$textureState();
+
+	@Accessor("transparencyState")
+	RenderStateShard.TransparencyStateShard dmz$transparencyState();
 }

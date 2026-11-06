@@ -4,12 +4,15 @@ import net.minecraft.nbt.CompoundTag;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Set;
 
 public class Cooldowns {
     private final Map<String, Integer> cooldowns;
 
     public static final String SENZU_KARIN = "SenzuKarin";
     public static final String REVIVE_BABA = "Revive";
+    public static final String BABA_KNOCKOUT = "BabaKnockout";
+    public static final String BABA_AGGRO_GRACE = "BabaAggroGrace";
     public static final String ZENKAI = "Zenkai";
 	public static final String DRAIN = "Drain";
 	public static final String COMBAT = "CombatTimer";
@@ -21,12 +24,32 @@ public class Cooldowns {
 	public static final String TELEPORT_CD = "TeleportCooldown";
 	public static final String DASH_ACTIVE = "DashActive";
 	public static final String KI_BLAST_CD = "KiBlastCooldown";
+	public static final String KI_VOLLEY_CD = "KiVolleyCooldown";
 	public static final String MAJIN_REVIVE_ACTIVE = "MajinReviveActive";
 	public static final String MAJIN_REVIVE_CD = "MajinReviveCooldown";
 	public static final String KNOCKDOWN_DURATION = "KnockdownDuration";
+	public static final String KNOCKDOWN_INVULN = "KnockdownInvulnerability";
 	public static final String STAMINA_PAUSE = "StaminaPause";
 	public static final String COMBAT_FLY_LOCK = "CombatFlyLock";
 	public static final String COMBATFLY_IMPULSE_CD = "CombatFlyImpulseCd";
+	public static final String ASSIMILATION = "Assimilation";
+	public static final String ABSORPTION = "Absorption";
+	public static final String ZENKAI_KNOCKOUT = "ZenkaiKnockout";
+	public static final String ZENKAI_TEMP_BUFF = "ZenkaiTempBuff";
+	public static final String ADRENALINE = "Adrenaline";
+	public static final String ADRENALINE_ACTIVE = "AdrenalineActive";
+	public static final String ANDROID_BARRIER_CD = "AndroidBarrierCooldown";
+	public static final String NAMEK_REGEN = "NamekRegen";
+	public static final String NAMEK_REGEN_ACTIVE = "NamekRegenActive";
+	public static final String BIO_EXPLODE_CD = "BioExplodeCooldown";
+	public static final String BIO_EXPLODE_RECOVERY = "BioExplodeRecovery";
+	public static final String STRIKE_GLOBAL = "StrikeGlobalCooldown";
+	public static final String KI_SURGE_CD = "KiSurgeCooldown";
+	public static final String KAMI_BLESS = "KamiBlessCooldown";
+	public static final String OLDKAI_ZSWORD = "OldKaiZSword";
+	public static final String KARIN_NIMBUS = "KarinNimbus";
+	public static final String PERFECT_EVASION_CD = "PerfectEvasionCooldown";
+	public static final String GOD_RITUAL = "GodRitualCooldown";
 
     public Cooldowns() {
         this.cooldowns = new HashMap<>();
@@ -64,6 +87,10 @@ public class Cooldowns {
 
 	public void clearCooldowns() {
 		cooldowns.clear();
+	}
+
+	public void clearCooldownsExcept(Set<String> keptKeys, String keptSuffix) {
+		cooldowns.keySet().removeIf(key -> !keptKeys.contains(key) && !key.endsWith(keptSuffix));
 	}
 
     public void tick() {

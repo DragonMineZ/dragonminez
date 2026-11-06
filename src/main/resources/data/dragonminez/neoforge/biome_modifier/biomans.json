@@ -1,0 +1,10 @@
+{
+  "type": "neoforge:add_spawns",
+  "biomes": "#c:is_snowy",
+  "spawners": [{
+    "type": "dragonminez:saga_bioman",
+    "weight": 60,
+    "minCount": 2,
+    "maxCount": 4
+  }]
+}

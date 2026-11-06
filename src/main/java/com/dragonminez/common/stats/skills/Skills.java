@@ -104,6 +104,7 @@ public class Skills {
 		validNames.addAll(config.getStackSkills());
 		validNames.addAll(config.getKiSkills());
 		validNames.addAll(config.getStrikeSkills());
+		validNames.addAll(config.getEvasionSkills());
 		if (validNames.isEmpty()) return renamed;
 
 		List<String> invalidKeys = new ArrayList<>();
@@ -192,6 +193,18 @@ public class Skills {
 	public void toggleSkillActive(String name) {
 		Skill skill = skillMap.get(name.toLowerCase());
 		if (skill != null) skill.setActive(!skill.isActive());
+	}
+
+	public void mergeMax(Skill other) {
+		String key = other.getName().toLowerCase();
+		Skill mine = skillMap.get(key);
+		if (mine == null) {
+			skillMap.put(key, new Skill(other.getName(), other.getLevel(), other.isActive(), other.getMaxLevel()));
+			return;
+		}
+		if (mine.getLevel() <= 0) mine.setActive(other.isActive());
+		mine.setMaxLevel(Math.max(mine.getMaxLevel(), other.getMaxLevel()));
+		mine.setLevel(Math.max(mine.getLevel(), other.getLevel()));
 	}
 
 	public Map<String, Skill> getAllSkills() {

@@ -3,16 +3,28 @@ package com.dragonminez.common.init.entities.sagas;
 import com.dragonminez.common.config.ConfigManager;
 import com.dragonminez.common.init.MainEntities;
 import com.dragonminez.common.init.MainItems;
+import com.dragonminez.common.init.entities.namek.NamekWarriorEntity;
 import com.dragonminez.common.stats.StatsCapability;
 import com.dragonminez.common.stats.StatsProvider;
+import net.minecraft.core.BlockPos;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.sounds.SoundEvents;
+import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntityDimensions;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.EquipmentSlot;
+import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.ai.attributes.Attributes;
+import net.minecraft.world.entity.ai.goal.Goal;
+import net.minecraft.world.entity.ai.goal.target.NearestAttackableTargetGoal;
+import net.minecraft.world.entity.ai.util.DefaultRandomPos;
 import net.minecraft.world.entity.monster.Monster;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
+import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.phys.Vec3;
+
+import java.util.EnumSet;
 
 public class SagaMoviesEntity {
 
@@ -23,7 +35,7 @@ public class SagaMoviesEntity {
 
             this.setAuraColor(0xFFFFFF);
             this.setKiBlastSpeed(1.4F);
-            this.setZanzoken(true, 100);
+            this.setZanzoken(1, 100);
             this.addKiSkill(KiSkillType.KI_BARRIER, 200, 2.3F, 0xCC3ED6, 0x8B1094);
             this.addKiSkill(KiSkillType.KI_VOLLEY, 170, 1.0F, 0xCC3ED6, 0x8B1094);
         }
@@ -36,7 +48,7 @@ public class SagaMoviesEntity {
 
             this.setAuraColor(0x99112A);
             this.setKiBlastSpeed(1.4F);
-            this.setZanzoken(true, 100);
+            this.setZanzoken(1, 100);
             this.setScaleVal(1.2f);
             this.setAllowedCombos(150, ComboType.AIR);
             this.addKiSkill(KiSkillType.KI_BARRIER, 200, 2.3F, 0xCC3ED6, 0x8B1094);
@@ -58,6 +70,7 @@ public class SagaMoviesEntity {
             this.addKiSkill(KiSkillType.KI_VOLLEY, 170, 1.0F, 0xCC3ED6, 0x8B1094);
             this.addKiSkill(KiSkillType.KI_SMALL, 80, 1.0F, 0xCC3ED6, 0x8B1094);
             this.getAttribute(Attributes.MOVEMENT_SPEED).setBaseValue(0.4D);
+            this.setDefaultMovementSpeed(0.4D);
 
         }
 
@@ -74,14 +87,14 @@ public class SagaMoviesEntity {
             this.setAuraColor(0xF52727);
             this.setKiBlastSpeed(2.0f);
 
-            this.setAllowedCombos(150, ComboType.AIR, ComboType.BASIC, ComboType.KI_CHARGE_ATTACK);
+            this.setAllowedCombos(150, ComboType.AIR, ComboType.BASIC, ComboType.KI_CHARGE_ATTACK, ComboType.METEOR_BURST);
 
             this.addKiSkill(KiSkillType.GENERIC_KI_WAVE, 450, 1.0F, 0xA946E3, 0x671199);
             this.addKiSkill(KiSkillType.KI_AIR_VOLLEY, 300 //uff
                     , 0.5F, 0xA946E3, 0x671199);
 
             this.setWildSense(true, 100);
-            this.setZanzoken(true, 100);
+            this.setZanzoken(1, 100);
 
             this.getAttribute(Attributes.MOVEMENT_SPEED).setBaseValue(0.3D);
             this.setDefaultMovementSpeed(0.3D);
@@ -101,7 +114,7 @@ public class SagaMoviesEntity {
 
             this.setKiBlastSpeed(1.4F);
             this.setCanFly(true);
-            this.setZanzoken(true, 100);
+            this.setZanzoken(1, 100);
             this.addKiSkill(KiSkillType.KI_SMALL, 40, 1.5F, 0xD58AFF, 0x9B4EC7);
         }
     }
@@ -123,7 +136,7 @@ public class SagaMoviesEntity {
             this.addKiSkill(KiSkillType.MASENKO, 250, 2.0F);
 
             this.setWildSense(true, 100);
-            this.setZanzoken(true, 100);
+            this.setZanzoken(1, 100);
 
             this.getAttribute(Attributes.MOVEMENT_SPEED).setBaseValue(0.3D);
             this.setDefaultMovementSpeed(0.3D);
@@ -156,7 +169,7 @@ public class SagaMoviesEntity {
             this.addKiSkill(KiSkillType.MASENKO, 250, 2.0F);
 
             this.setWildSense(true, 100);
-            this.setZanzoken(true, 100);
+            this.setZanzoken(1, 100);
 
             this.getAttribute(Attributes.MOVEMENT_SPEED).setBaseValue(0.3D);
             this.setDefaultMovementSpeed(0.3D);
@@ -170,6 +183,26 @@ public class SagaMoviesEntity {
         public String getGeckolibModelName() {
             return "saga_slug";
         }
+
+        @Override
+        public boolean hasHitboxParts() {
+            return true;
+        }
+
+        @Override
+        protected EntityDimensions getCoreDimensions() {
+            return EntityDimensions.scalable(2.5F, 5.0F);
+        }
+
+        @Override
+        protected DBSagasPart[] createHitboxParts() {
+            // Tall, slim giant (registered 4.5x12). Tune offsets/sizes in-game.
+            return new DBSagasPart[] {
+                    new DBSagasPart(this, "legs", 4.0F, 5.0F, 0.0F, 0.0F, 2.5F),
+                    new DBSagasPart(this, "torso", 4.5F, 5.0F, 0.0F, 0.0F, 7.0F),
+                    new DBSagasPart(this, "head", 4.0F, 4.0F, 0.5F, 0.0F, 11.0F)
+            };
+        }
     }
 
     public static class CoolerSoldierEntity extends DBSagasEntity {
@@ -179,7 +212,7 @@ public class SagaMoviesEntity {
 
             this.setKiBlastSpeed(1.4F);
             this.setCanFly(true);
-            this.setZanzoken(true, 100);
+            this.setZanzoken(1, 100);
             this.addKiSkill(KiSkillType.KI_SMALL, 40, 1.5F, 0xDD85FF, 0x9122BD);
             this.addKiSkill(KiSkillType.GENERIC_KI_WAVE, 250, 1.0F, 0xDD85FF, 0x9122BD);
 
@@ -200,11 +233,11 @@ public class SagaMoviesEntity {
 
             this.addKiSkill(KiSkillType.KI_LASER, 60, 1.0F, 0xAA00FF, 0x6C00A3);
             this.addKiSkill(KiSkillType.KI_SMALL, 200, 1.0F, 0xAA00FF, 0x6C00A3);
-            this.addKiSkill(KiSkillType.DEATH_BALL, 450, 1.1F, 0xEB1E1E, 0x9E1818);
+            this.addKiSkill(KiSkillType.SUPERNOVA_COOLER, 450, 1.1F);
 
 
             this.setWildSense(true, 100);
-            this.setZanzoken(true, 100);
+            this.setZanzoken(1, 100);
 
             this.getAttribute(Attributes.MOVEMENT_SPEED).setBaseValue(0.3D);
             this.setDefaultMovementSpeed(0.3D);
@@ -231,10 +264,10 @@ public class SagaMoviesEntity {
 
             this.addKiSkill(KiSkillType.KI_LASER, 60, 1.0F, 0xBF0F18, 0x991219);
             this.addKiSkill(KiSkillType.KI_SMALL, 200, 1.0F, 0xBF0F18, 0x991219);
-            this.addKiSkill(KiSkillType.DEATH_BALL, 450, 1.1F, 0xBF0F18, 0x991219);
+            this.addKiSkill(KiSkillType.SUPERNOVA_COOLER, 450, 1.1F);
 
             this.setWildSense(true, 100);
-            this.setZanzoken(true, 100);
+            this.setZanzoken(1, 100);
 
             this.getAttribute(Attributes.MOVEMENT_SPEED).setBaseValue(0.3D);
             this.setDefaultMovementSpeed(0.3D);
@@ -246,11 +279,115 @@ public class SagaMoviesEntity {
 
     public static class GeteRobotEntity extends DBSagasEntity {
 
+        public static final String VILLAGE_TAG = "dmz_gete_village";
+
+        private static final double WALK_SPEED = 0.14D;
+        private static final double LAUNCH_POWER = 0.45D;
+
         public GeteRobotEntity(EntityType<? extends Monster> pEntityType, Level pLevel) {
             super(pEntityType, pLevel);
 
-            this.setZanzoken(true, 100);
+            this.setCanFly(false);
             this.setDBZStyle(2);
+
+            this.getAttribute(Attributes.MAX_HEALTH).setBaseValue(400.0D);
+            this.getAttribute(Attributes.ATTACK_DAMAGE).setBaseValue(25.0D);
+            this.getAttribute(Attributes.KNOCKBACK_RESISTANCE).setBaseValue(1.0D);
+            this.getAttribute(Attributes.MOVEMENT_SPEED).setBaseValue(WALK_SPEED);
+            this.setDefaultMovementSpeed(WALK_SPEED);
+            this.setHealth(this.getMaxHealth());
+        }
+
+        @Override
+        protected void registerGoals() {
+            super.registerGoals();
+            this.goalSelector.addGoal(4, new MarchOnVillageGoal(this));
+            this.targetSelector.addGoal(4, new NearestAttackableTargetGoal<>(this, NamekWarriorEntity.class, false));
+        }
+
+        @Override
+        public boolean doHurtTarget(Entity pTarget) {
+            boolean hurt = super.doHurtTarget(pTarget);
+
+            if (hurt && !this.level().isClientSide && pTarget instanceof LivingEntity victim) {
+                victim.setDeltaMovement(victim.getDeltaMovement().add(0.0D, LAUNCH_POWER, 0.0D));
+                victim.hurtMarked = true;
+                this.playSound(SoundEvents.IRON_GOLEM_ATTACK, 1.0F, 0.8F);
+            }
+            return hurt;
+        }
+
+        @Override
+        protected void playStepSound(BlockPos pPos, BlockState pState) {
+            this.playSound(SoundEvents.IRON_GOLEM_STEP, 1.0F, 0.9F);
+        }
+
+        @Override
+        protected boolean brainMovementAllowed() {
+            return false;
+        }
+
+        @Override
+        public boolean isDashReady() {
+            return false;
+        }
+
+        @Override
+        public void performSidestep(Vec3 approachDir) {
+        }
+
+        static class MarchOnVillageGoal extends Goal {
+
+            private static final double ARRIVAL_DISTANCE = 12.0D;
+            private static final int REPATH_TICKS = 40;
+
+            private final GeteRobotEntity robot;
+            private BlockPos village;
+            private int repathTicks;
+
+            MarchOnVillageGoal(GeteRobotEntity robot) {
+                this.robot = robot;
+                this.setFlags(EnumSet.of(Flag.MOVE));
+            }
+
+            @Override
+            public boolean canUse() {
+                if (this.robot.getTarget() != null || !this.robot.getPersistentData().contains(VILLAGE_TAG)) return false;
+                this.village = BlockPos.of(this.robot.getPersistentData().getLong(VILLAGE_TAG));
+                return !this.arrived();
+            }
+
+            @Override
+            public boolean canContinueToUse() {
+                return this.robot.getTarget() == null && !this.arrived();
+            }
+
+            @Override
+            public void start() {
+                this.repathTicks = 0;
+            }
+
+            @Override
+            public void stop() {
+                this.robot.getNavigation().stop();
+            }
+
+            @Override
+            public void tick() {
+                if (--this.repathTicks > 0 && !this.robot.getNavigation().isDone()) return;
+                this.repathTicks = REPATH_TICKS;
+
+                Vec3 goal = Vec3.atBottomCenterOf(this.village);
+                Vec3 step = DefaultRandomPos.getPosTowards(this.robot, 16, 7, goal, Math.PI / 2.0D);
+                if (step == null) step = goal;
+                this.robot.getNavigation().moveTo(step.x, step.y, step.z, 1.0D);
+            }
+
+            private boolean arrived() {
+                double dx = this.robot.getX() - (this.village.getX() + 0.5D);
+                double dz = this.robot.getZ() - (this.village.getZ() + 0.5D);
+                return dx * dx + dz * dz <= ARRIVAL_DISTANCE * ARRIVAL_DISTANCE;
+            }
         }
     }
 
@@ -268,11 +405,11 @@ public class SagaMoviesEntity {
 
             this.addKiSkill(KiSkillType.KI_LASER, 60, 1.0F, 0xAA00FF, 0x6C00A3);
             this.addKiSkill(KiSkillType.KI_SMALL, 200, 1.0F, 0xAA00FF, 0x6C00A3);
-            this.addKiSkill(KiSkillType.DEATH_BALL, 450, 1.1F, 0xEB1E1E, 0x9E1818);
+            this.addKiSkill(KiSkillType.SUPERNOVA_COOLER, 450, 1.1F);
 
 
             this.setWildSense(true, 100);
-            this.setZanzoken(true, 200);
+            this.setZanzoken(2, 200);
             this.setEvade(true, 60);
 
             this.getAttribute(Attributes.MOVEMENT_SPEED).setBaseValue(0.3D);
@@ -304,13 +441,13 @@ public class SagaMoviesEntity {
 
             this.addKiSkill(KiSkillType.KI_LASER, 60, 1.0F, 0xAA00FF, 0x6C00A3);
             this.addKiSkill(KiSkillType.KI_SMALL, 200, 1.0F, 0xAA00FF, 0x6C00A3);
-            this.addKiSkill(KiSkillType.DEATH_BALL, 450, 1.1F, 0xEB1E1E, 0x9E1818);
+            this.addKiSkill(KiSkillType.SUPERNOVA_COOLER, 450, 1.1F);
             this.addKiSkill(KiSkillType.KI_AIR_VOLLEY, 300 //uff
                     , 0.5F, 0xEB1E1E, 0x9E1818);
 
 
             this.setWildSense(true, 100);
-            this.setZanzoken(true, 200);
+            this.setZanzoken(2, 200);
             this.setEvade(true, 60);
 
             this.getAttribute(Attributes.MOVEMENT_SPEED).setBaseValue(0.3D);
@@ -318,6 +455,26 @@ public class SagaMoviesEntity {
 
             this.getAttribute(Attributes.KNOCKBACK_RESISTANCE).setBaseValue(0.20D);
 
+        }
+
+        @Override
+        public boolean hasHitboxParts() {
+            return true;
+        }
+
+        @Override
+        protected EntityDimensions getCoreDimensions() {
+            return EntityDimensions.scalable(2.5F, 5.0F);
+        }
+
+        @Override
+        protected DBSagasPart[] createHitboxParts() {
+            // Tall, slim giant (registered 4.5x12). Tune offsets/sizes in-game.
+            return new DBSagasPart[] {
+                    new DBSagasPart(this, "legs", 4.0F, 5.0F, 0.0F, 0.0F, 2.5F),
+                    new DBSagasPart(this, "torso", 4.5F, 5.0F, 0.0F, 0.0F, 7.0F),
+                    new DBSagasPart(this, "head", 4.0F, 4.0F, 0.5F, 0.0F, 11.0F)
+            };
         }
     }
 
@@ -388,7 +545,7 @@ public class SagaMoviesEntity {
             this.addKiSkill(KiSkillType.DEATH_BALL, 450, 1.1F, 0xEB1E1E, 0x9E1818);
 
             this.setWildSense(true, 100);
-            this.setZanzoken(true, 200);
+            this.setZanzoken(2, 200);
             this.setEvade(true, 60);
 
             this.getAttribute(Attributes.MOVEMENT_SPEED).setBaseValue(0.3D);
@@ -420,7 +577,7 @@ public class SagaMoviesEntity {
                     , 0.5F, 0xEB1E1E, 0x9E1818);
 
             this.setWildSense(true, 100);
-            this.setZanzoken(true, 200);
+            this.setZanzoken(2, 200);
             this.setEvade(true, 60);
 
             this.getAttribute(Attributes.MOVEMENT_SPEED).setBaseValue(0.3D);
@@ -448,7 +605,7 @@ public class SagaMoviesEntity {
                     , 0.5F, 0x3DF54A, 0x0FBF1B);
 
             this.setWildSense(true, 100);
-//            this.setZanzoken(true, 100);
+//            this.setZanzoken(2, 100);
 
             this.getAttribute(Attributes.MOVEMENT_SPEED).setBaseValue(0.3D);
             this.setDefaultMovementSpeed(0.3D);
@@ -499,7 +656,7 @@ public class SagaMoviesEntity {
                     , 0.5F, 0x3DF54A, 0x0FBF1B);
 
             this.setWildSense(true, 100);
-            this.setZanzoken(true, 100);
+            this.setZanzoken(2, 100);
 
             this.getAttribute(Attributes.MOVEMENT_SPEED).setBaseValue(0.3D);
             this.setDefaultMovementSpeed(0.3D);
@@ -532,7 +689,7 @@ public class SagaMoviesEntity {
             this.addKiSkill(KiSkillType.KI_SMALL, 40, 1.5F, 0x3DF54A, 0x0FBF1B);
 
 //            this.setWildSense(true, 100);
-//            this.setZanzoken(true, 100);
+//            this.setZanzoken(2, 100);
 
             this.getAttribute(Attributes.MOVEMENT_SPEED).setBaseValue(0.3D);
             this.setDefaultMovementSpeed(0.3D);
@@ -562,7 +719,7 @@ public class SagaMoviesEntity {
                     , 0.5F, 0x3DF54A, 0x0FBF1B);
 
             this.setWildSense(true, 100);
-            this.setZanzoken(true, 100);
+            this.setZanzoken(2, 100);
 
             this.getAttribute(Attributes.MOVEMENT_SPEED).setBaseValue(0.3D);
             this.setDefaultMovementSpeed(0.3D);
@@ -590,13 +747,12 @@ public class SagaMoviesEntity {
             this.setAllowedCombos(150, ComboType.AIR, ComboType.BASIC, ComboType.KI_CHARGE_ATTACK);
 
             this.addKiSkill(KiSkillType.KI_SMALL, 40, 1.5F, 0x3DF54A, 0x0FBF1B);
-            this.addKiSkill(KiSkillType.KI_AIR_VOLLEY, 400 //uff
-                    , 0.5F, 0x3DF54A, 0x0FBF1B);
+            this.addKiSkill(KiSkillType.BLASTER_METEOR, 400, 1.0F, 0x9DFF8A, 0x3DF54A, 0x0FBF1B);
             this.addKiSkill(KiSkillType.OOZARU_BEAM, 600, 1.5F, 0x3DF54A, 0x0FBF1B);
             this.addKiSkill(KiSkillType.OOZARU_ROAR, 200, 15.5F);
 
             this.setWildSense(true, 100);
-            this.setZanzoken(true, 100);
+            this.setZanzoken(2, 100);
 
             this.getAttribute(Attributes.MOVEMENT_SPEED).setBaseValue(0.3D);
             this.setDefaultMovementSpeed(0.3D);
@@ -619,8 +775,9 @@ public class SagaMoviesEntity {
             this.setAllowedCombos(120, ComboType.AIR, ComboType.BASIC);
             this.addKiSkill(KiSkillType.KI_SMALL, 60, 1.0F, 0x75B4FF, 0x3081E3);
             this.setWildSense(true, 100);
-            this.setZanzoken(true, 100);
+            this.setZanzoken(2, 100);
             this.getAttribute(Attributes.MOVEMENT_SPEED).setBaseValue(0.3D);
+            this.setDefaultMovementSpeed(0.3D);
         }
     }
 
@@ -636,6 +793,7 @@ public class SagaMoviesEntity {
             this.addKiSkill(KiSkillType.GENERIC_KI_WAVE, 200, 1.0F, 0x75B4FF, 0x3081E3);
             this.setWildSense(true, 100);
             this.getAttribute(Attributes.MOVEMENT_SPEED).setBaseValue(0.32D);
+            this.setDefaultMovementSpeed(0.32D);
             this.getAttribute(Attributes.ATTACK_DAMAGE).setBaseValue(10.0D);
         }
     }
@@ -651,6 +809,7 @@ public class SagaMoviesEntity {
             this.setAllowedCombos(120, ComboType.AIR, ComboType.BASIC);
             this.addKiSkill(KiSkillType.KI_SMALL, 80, 1.2F, 0x75B4FF, 0x3081E3);
             this.getAttribute(Attributes.MOVEMENT_SPEED).setBaseValue(0.28D);
+            this.setDefaultMovementSpeed(0.28D);
             this.getAttribute(Attributes.KNOCKBACK_RESISTANCE).setBaseValue(0.50D);
         }
     }
@@ -667,6 +826,7 @@ public class SagaMoviesEntity {
             this.addKiSkill(KiSkillType.KI_BARRIER, 200, 1.0F, 0x75B4FF, 0x3081E3);
             this.setWildSense(true, 80);
             this.getAttribute(Attributes.MOVEMENT_SPEED).setBaseValue(0.3D);
+            this.setDefaultMovementSpeed(0.3D);
         }
     }
 
@@ -684,8 +844,9 @@ public class SagaMoviesEntity {
             this.addKiSkill(KiSkillType.KI_BARRIER, 200, 2.3F, 0x5EF24E, 0x2DDE18);
 
             this.setWildSense(true, 100);
-            this.setZanzoken(true, 100);
+            this.setZanzoken(2, 100);
             this.getAttribute(Attributes.MOVEMENT_SPEED).setBaseValue(0.32D);
+            this.setDefaultMovementSpeed(0.32D);
             this.getAttribute(Attributes.KNOCKBACK_RESISTANCE).setBaseValue(0.30D);
         }
     }
@@ -705,8 +866,9 @@ public class SagaMoviesEntity {
             this.addKiSkill(KiSkillType.KI_BARRIER, 200, 2.3F, 0x5EF24E, 0x2DDE18);
 
             this.setWildSense(true, 100);
-            this.setZanzoken(true, 100);
+            this.setZanzoken(2, 100);
             this.getAttribute(Attributes.MOVEMENT_SPEED).setBaseValue(0.33D);
+            this.setDefaultMovementSpeed(0.33D);
             this.getAttribute(Attributes.KNOCKBACK_RESISTANCE).setBaseValue(0.50D);
         }
     }
@@ -724,9 +886,10 @@ public class SagaMoviesEntity {
             this.addKiSkill(KiSkillType.KI_SMALL, 100, 1.2F, 0x7D8A2E, 0x4F591A);
 
             this.setWildSense(false, 0);
-            this.setZanzoken(false, 0);
+            this.setZanzoken(0, 0);
 
             this.getAttribute(Attributes.MOVEMENT_SPEED).setBaseValue(0.25D);
+            this.setDefaultMovementSpeed(0.25D);
             this.getAttribute(Attributes.KNOCKBACK_RESISTANCE).setBaseValue(0.80D);
         }
 
@@ -752,6 +915,7 @@ public class SagaMoviesEntity {
 
             this.setWildSense(true, 150);
             this.getAttribute(Attributes.MOVEMENT_SPEED).setBaseValue(0.22D);
+            this.setDefaultMovementSpeed(0.22D);
             this.getAttribute(Attributes.KNOCKBACK_RESISTANCE).setBaseValue(1.0D);
         }
 
@@ -793,8 +957,9 @@ public class SagaMoviesEntity {
             this.addKiSkill(KiSkillType.KI_BARRIER, 200, 2.3F, 0xFF5E00, 0xCC4B00);
 
             this.setWildSense(true, 80);
-            this.setZanzoken(true, 80);
+            this.setZanzoken(3, 80);
             this.getAttribute(Attributes.MOVEMENT_SPEED).setBaseValue(0.34D);
+            this.setDefaultMovementSpeed(0.34D);
             this.getAttribute(Attributes.ATTACK_SPEED).setBaseValue(7.0D);
         }
     }
@@ -812,6 +977,7 @@ public class SagaMoviesEntity {
             this.addKiSkill(KiSkillType.OOZARU_ROAR, 200, 15.5F);
 
             this.getAttribute(Attributes.MOVEMENT_SPEED).setBaseValue(0.24D);
+            this.setDefaultMovementSpeed(0.24D);
             this.getAttribute(Attributes.KNOCKBACK_RESISTANCE).setBaseValue(0.80D);
         }
 
@@ -827,11 +993,12 @@ public class SagaMoviesEntity {
 
         @Override
         protected DBSagasPart[] createHitboxParts() {
-            // Wide, fat giant (registered 7.5x12). Tune offsets/sizes in-game.
+            // Wide, fat giant. Parts may exceed the registered width: they are separate
+            // entities, and the registered size only feeds the core when there is no override.
             return new DBSagasPart[] {
-                    new DBSagasPart(this, "legs", 6.0F, 5.0F, 0.0F, 0.0F, 2.5F),
-                    new DBSagasPart(this, "torso", 7.0F, 5.0F, 0.0F, 0.0F, 7.0F),
-                    new DBSagasPart(this, "head", 5.0F, 4.0F, 0.5F, 0.0F, 11.0F)
+                    new DBSagasPart(this, "legs", 7.5F, 5.0F, 0.0F, 0.0F, 2.5F),
+                    new DBSagasPart(this, "torso", 8.5F, 5.0F, 0.0F, 0.0F, 7.0F),
+                    new DBSagasPart(this, "head", 6.5F, 4.0F, 0.5F, 0.0F, 11.0F)
             };
         }
     }
@@ -850,11 +1017,34 @@ public class SagaMoviesEntity {
             this.addKiSkill(KiSkillType.KI_BARRIER, 200, 2.3F, 0xC22948, 0x8C1B32);
 
             this.setWildSense(true, 50);
-            this.setZanzoken(true, 40);
+            this.setZanzoken(3, 40);
             this.setEvade(true, 50);
 
             this.getAttribute(Attributes.MOVEMENT_SPEED).setBaseValue(0.42D);
+            this.setDefaultMovementSpeed(0.42D);
             this.getAttribute(Attributes.ATTACK_SPEED).setBaseValue(8.0D);
+            this.setItemSlot(EquipmentSlot.MAINHAND, new ItemStack(MainItems.DIMENSIONAL_SWORD.get()));
+        }
+    }
+
+    public static class GogetaSSJEntity extends DBSagasEntity {
+        public GogetaSSJEntity(EntityType<? extends Monster> pEntityType, Level pLevel) {
+            super(pEntityType, pLevel);
+            this.setCanFly(true);
+            this.setDBZStyle(0);
+            this.setAuraColor(0xFFE657);
+            this.setKiBlastSpeed(2.2f);
+            this.setAllowedCombos(120, ComboType.AIR, ComboType.KI_CHARGE_ATTACK, ComboType.METEOR_COMBINATION, ComboType.BASIC);
+            this.addKiSkill(KiSkillType.KI_VOLLEY, 200, 1.6F, 0xFFE657, 0xFFE657);
+            this.addKiSkill(KiSkillType.BIG_BANG, 260, 1.9F, 0xE3FFFF, 0xE3FFFF);
+            this.addKiSkill(KiSkillType.KAMEHAMEHA, 320, 2.6F, 0xFFFFFF, 0x40C4FF, 0x0D47A1);
+            this.addKiSkill(KiSkillType.SOUL_PUNISHER, 400, 3.5F);
+
+            this.setWildSense(true, 60);
+            this.setZanzoken(3, 120);
+            this.setEvade(true, 40);
+            this.getAttribute(Attributes.MOVEMENT_SPEED).setBaseValue(0.34D);
+            this.setDefaultMovementSpeed(0.34D);
         }
     }
 
@@ -875,6 +1065,7 @@ public class SagaMoviesEntity {
             this.setWildSense(true, 120);
 
             this.getAttribute(Attributes.MOVEMENT_SPEED).setBaseValue(0.28D);
+            this.setDefaultMovementSpeed(0.28D);
             this.getAttribute(Attributes.KNOCKBACK_RESISTANCE).setBaseValue(1.0D);
         }
 
@@ -896,9 +1087,9 @@ public class SagaMoviesEntity {
         @Override
         protected DBSagasPart[] createHitboxParts() {
             return new DBSagasPart[] {
-                    new DBSagasPart(this, "legs", 5.0F, 5.0F, 0.0F, 0.0F, 2.5F),
-                    new DBSagasPart(this, "torso", 5.0F, 5.0F, 0.0F, 0.0F, 7.0F),
-                    new DBSagasPart(this, "head", 5.0F, 4.0F, 0.5F, 0.0F, 11.0F)
+                    new DBSagasPart(this, "legs", 9.0F, 5.0F, 0.0F, 0.0F, 2.5F),
+                    new DBSagasPart(this, "torso", 10.0F, 5.0F, 0.0F, 0.0F, 7.0F),
+                    new DBSagasPart(this, "head", 9.0F, 4.0F, 0.5F, 0.0F, 11.0F)
             };
         }
     }
@@ -917,9 +1108,10 @@ public class SagaMoviesEntity {
             this.addKiSkill(KiSkillType.OOZARU_ROAR, 200, 15.5F);
 
             this.setWildSense(true, 80);
-            this.setZanzoken(true, 100);
+            this.setZanzoken(3, 100);
 
             this.getAttribute(Attributes.MOVEMENT_SPEED).setBaseValue(0.35D);
+            this.setDefaultMovementSpeed(0.35D);
             this.getAttribute(Attributes.KNOCKBACK_RESISTANCE).setBaseValue(1.0D);
         }
 
@@ -927,6 +1119,25 @@ public class SagaMoviesEntity {
         @Override
         public String getGeckolibModelName() {
             return "saga_hirudegarn";
+        }
+
+        @Override
+        public boolean hasHitboxParts() {
+            return true;
+        }
+
+        @Override
+        protected EntityDimensions getCoreDimensions() {
+            return EntityDimensions.scalable(3.0F, 5.0F);
+        }
+
+        @Override
+        protected DBSagasPart[] createHitboxParts() {
+            return new DBSagasPart[] {
+                    new DBSagasPart(this, "legs", 9.0F, 5.0F, 0.0F, 0.0F, 2.5F),
+                    new DBSagasPart(this, "torso", 10.0F, 5.0F, 0.0F, 0.0F, 7.0F),
+                    new DBSagasPart(this, "head", 9.0F, 4.0F, 0.5F, 0.0F, 11.0F)
+            };
         }
     }
 

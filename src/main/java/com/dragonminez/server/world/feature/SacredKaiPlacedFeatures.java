@@ -66,8 +66,11 @@ public class SacredKaiPlacedFeatures {
 		register(context, STONE_SPIKE_PLACED, configured.getOrThrow(OverworldConfiguredFeatures.STONE_SPIKE_KEY),
 				surfaceRarity(90));
 
+		// LakeFeature scans a full 16x16 area from its origin. Keep that scan within
+		// the generating chunk; a random in-square offset can make 1.21.1 request
+		// unavailable neighboring chunks while it checks the biome for freezing.
 		register(context, WATER_LAKE_PLACED, configured.getOrThrow(SacredKaiConfiguredFeatures.WATER_LAKE),
-				List.of(RarityFilter.onAverageOnceEvery(12), InSquarePlacement.spread(), PlacementUtils.RANGE_BOTTOM_TO_MAX_TERRAIN_HEIGHT, BiomeFilter.biome()));
+				List.of(RarityFilter.onAverageOnceEvery(12), PlacementUtils.RANGE_BOTTOM_TO_MAX_TERRAIN_HEIGHT, BiomeFilter.biome()));
 	}
 
 	private static List<PlacementModifier> surfaceSpread(PlacementModifier count) {

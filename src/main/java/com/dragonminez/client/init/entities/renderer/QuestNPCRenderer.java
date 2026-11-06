@@ -14,6 +14,7 @@ public class QuestNPCRenderer extends GeoEntityRenderer<QuestNPCEntity> {
 	public QuestNPCRenderer(EntityRendererProvider.Context renderManager) {
 		super(renderManager, new QuestNPCModel());
 		this.shadowRadius = 0.4f;
+		this.addRenderLayer(new HalloweenPumpkinLayer<>(this));
 	}
 
 	@Override

@@ -1,0 +1,38 @@
+{
+  "vertex": "dragonminez:aura_god",
+  "fragment": "dragonminez:aura_god",
+  "attributes": [
+    "Position",
+    "UV0"
+  ],
+  "samplers": [
+    { "name": "NoiseTex" }
+  ],
+  "uniforms": [
+    { "name": "ModelViewMat", "type": "matrix4x4", "count": 16, "values": [1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 1.0] },
+    { "name": "ProjMat", "type": "matrix4x4", "count": 16, "values": [1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 1.0] },
+    { "name": "NormalMat", "type": "matrix3x3", "count": 9, "values": [1.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 1.0] },
+    { "name": "Size", "type": "float", "count": 3, "values": [ 1.10, 1.17, 1.02 ] },
+    { "name": "Time", "type": "float", "count": 1, "values": [ 0.0 ] },
+    { "name": "Growth", "type": "float", "count": 1, "values": [ 1.0 ] },
+    { "name": "Peaks", "type": "float", "count": 1, "values": [ 12.0 ] },
+    { "name": "WaveFrequency", "type": "float", "count": 1, "values": [ 2.0 ] },
+    { "name": "WaveAmplitude", "type": "float", "count": 1, "values": [ 0.75 ] },
+    { "name": "NoiseDetail", "type": "float", "count": 1, "values": [ 0.1 ] },
+    { "name": "UpwardBias", "type": "float", "count": 1, "values": [ 0.54 ] },
+    { "name": "RimColor", "type": "float", "count": 3, "values": [ 1.0, 1.0, 1.0 ] },
+    { "name": "RimAlpha", "type": "float", "count": 1, "values": [ 1.0 ] },
+    { "name": "Alpha", "type": "float", "count": 1, "values": [ 1.0 ] },
+    { "name": "Hollow", "type": "float", "count": 1, "values": [ 0.0 ] },
+    { "name": "Layer", "type": "float", "count": 1, "values": [ 1.0 ] },
+    { "name": "Faces", "type": "float", "count": 1, "values": [ 0.0 ] },
+    { "name": "BackFace", "type": "float", "count": 1, "values": [ 0.45 ] },
+    { "name": "BloomIntensity", "type": "float", "count": 1, "values": [ 1.0 ] },
+    { "name": "BloomPass", "type": "float", "count": 1, "values": [ 0.0 ] }
+  ],
+  "blend": {
+    "func": "add",
+    "srcrgb": "srcalpha",
+    "dstrgb": "1-srcalpha"
+  }
+}

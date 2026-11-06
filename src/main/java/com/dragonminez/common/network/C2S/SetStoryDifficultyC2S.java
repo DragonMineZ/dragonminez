@@ -50,7 +50,7 @@ public class SetStoryDifficultyC2S {
 			}
 			LAST_TOGGLE.put(player.getUUID(), now);
 
-			ServerPlayer controller = PartyManager.resolveQuestController(player);
+			ServerPlayer controller = PartyManager.resolveDifficultyOwner(player);
 			if (controller == null) return;
 
 			StatsProvider.get(StatsCapability.INSTANCE, controller).ifPresent(data -> {
@@ -60,7 +60,7 @@ public class SetStoryDifficultyC2S {
 				}
 				pqd.setDifficulty(difficulty);
 				pqd.setDifficultyChosen(true);
-				PartyManager.syncPartyQuestState(controller);
+				PartyManager.syncPartyDifficulty(controller);
 			});
 		});
 		context.setPacketHandled(true);

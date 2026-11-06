@@ -1,10 +1,8 @@
 package com.dragonminez.common.quest.objectives;
 
 import com.dragonminez.common.quest.QuestObjective;
-import lombok.Getter;
 import net.minecraft.world.level.Level;
 
-@Getter
 public class DimensionObjective extends QuestObjective {
     private final String dimensionId;
 
@@ -22,5 +20,9 @@ public class DimensionObjective extends QuestObjective {
             }
         }
         return false;
+    }
+
+    public String getDimensionId() {
+        return this.dimensionId;
     }
 }

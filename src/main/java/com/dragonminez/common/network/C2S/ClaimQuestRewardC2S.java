@@ -1,6 +1,7 @@
 package com.dragonminez.common.network.C2S;
 
 import com.dragonminez.common.quest.QuestService;
+import com.dragonminez.server.storage.StorageManager;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.server.level.ServerPlayer;
 import com.dragonminez.compat.network.NetworkEvent;
@@ -15,18 +16,18 @@ public class ClaimQuestRewardC2S {
 	}
 
 	public ClaimQuestRewardC2S(FriendlyByteBuf buffer) {
-		this.questId = buffer.readUtf();
+		this.questId = buffer.readUtf(256);
 	}
 
 	public void encode(FriendlyByteBuf buffer) {
-		buffer.writeUtf(questId);
+		buffer.writeUtf(questId, 256);
 	}
 
 	public void handle(Supplier<NetworkEvent.Context> contextSupplier) {
 		NetworkEvent.Context context = contextSupplier.get();
 		context.enqueueWork(() -> {
 			ServerPlayer player = context.getSender();
-			if (player != null) {
+			if (player != null && !StorageManager.isLoadPending(player)) {
 				QuestService.claimRewards(player, questId);
 			}
 		});

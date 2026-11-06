@@ -1,0 +1,319 @@
+{
+  "configVersion": "2.2.0",
+  "classes": {
+    "cleric": {
+      "baseStats": {
+        "STR": 0,
+        "SKP": 0,
+        "RES": 5,
+        "VIT": 0,
+        "PWR": 0,
+        "ENE": 15
+      },
+      "statScaling": {
+        "STR_scaling": 0.5,
+        "SKP_scaling": 0.5,
+        "STM_scaling": 2.6,
+        "DEF_scaling": 0.168,
+        "DEF_scaling_max": 0.672,
+        "VIT_scaling": 1.2,
+        "VIT_scaling_max": 4.8,
+        "PWR_scaling": 0.8,
+        "ENE_scaling": 3.0
+      },
+      "baseHp5": 0.5,
+      "hp5VitScaling": 0.015,
+      "baseEp5": 12.0,
+      "ep5EneScaling": 0.24,
+      "baseSp5": 16.0,
+      "sp5StmScaling": 0.045,
+      "sp5ResScaling": 0.06,
+      "tpCostMultiplier": 0.9,
+      "tpGainMultiplier": 1.25,
+      "passive": {
+        "enabled": true,
+        "values": {
+          "cdPrimary": 0.2,
+          "cdSecondary": 0.15,
+          "durationBonus": 0.25
+        }
+      }
+    },
+    "warrior": {
+      "baseStats": {
+        "STR": 10,
+        "SKP": 0,
+        "RES": 5,
+        "VIT": 5,
+        "PWR": 0,
+        "ENE": 0
+      },
+      "statScaling": {
+        "STR_scaling": 1.4,
+        "SKP_scaling": 1.0,
+        "STM_scaling": 1.6,
+        "DEF_scaling": 0.24,
+        "DEF_scaling_max": 0.96,
+        "VIT_scaling": 1.8,
+        "VIT_scaling_max": 7.2,
+        "PWR_scaling": 0.5,
+        "ENE_scaling": 1.5
+      },
+      "baseHp5": 1.75,
+      "hp5VitScaling": 0.06,
+      "baseEp5": 4.0,
+      "ep5EneScaling": 0.08,
+      "baseSp5": 12.0,
+      "sp5StmScaling": 0.045,
+      "sp5ResScaling": 0.06,
+      "tpCostMultiplier": 1.0,
+      "tpGainMultiplier": 1.0,
+      "passive": {
+        "enabled": true,
+        "values": {
+          "armorPenAtMax": 0.1,
+          "comboHits": 3.0,
+          "stmRegenPerStack": 0.1,
+          "comboResetTicks": 60.0,
+          "maxStacks": 5.0,
+          "stackDurationTicks": 100.0
+        }
+      }
+    },
+    "berserker": {
+      "baseStats": {
+        "STR": 10,
+        "SKP": 0,
+        "RES": 0,
+        "VIT": 10,
+        "PWR": 0,
+        "ENE": 0
+      },
+      "statScaling": {
+        "STR_scaling": 1.7,
+        "SKP_scaling": 0.8,
+        "STM_scaling": 1.1,
+        "DEF_scaling": 0.18,
+        "DEF_scaling_max": 0.72,
+        "VIT_scaling": 3.0,
+        "VIT_scaling_max": 12.0,
+        "PWR_scaling": 0.4,
+        "ENE_scaling": 1.3
+      },
+      "baseHp5": 1.0,
+      "hp5VitScaling": 0.0375,
+      "baseEp5": 2.0,
+      "ep5EneScaling": 0.04,
+      "baseSp5": 14.0,
+      "sp5StmScaling": 0.04875,
+      "sp5ResScaling": 0.065,
+      "tpCostMultiplier": 1.0,
+      "tpGainMultiplier": 1.0,
+      "passive": {
+        "enabled": true,
+        "values": {
+          "critHigh": 0.1,
+          "hpThreshHigh": 0.66,
+          "critLow": 0.25,
+          "hpThreshLow": 0.33,
+          "hpRegenLow": 0.75,
+          "hpRegenHigh": 0.25
+        }
+      }
+    },
+    "spiritualist": {
+      "baseStats": {
+        "STR": 0,
+        "SKP": 0,
+        "RES": 0,
+        "VIT": 0,
+        "PWR": 10,
+        "ENE": 10
+      },
+      "statScaling": {
+        "STR_scaling": 0.3,
+        "SKP_scaling": 0.5,
+        "STM_scaling": 0.7,
+        "DEF_scaling": 0.156,
+        "DEF_scaling_max": 0.624,
+        "VIT_scaling": 1.4,
+        "VIT_scaling_max": 5.6,
+        "PWR_scaling": 1.9,
+        "ENE_scaling": 3.7
+      },
+      "baseHp5": 0.5,
+      "hp5VitScaling": 0.015,
+      "baseEp5": 8.0,
+      "ep5EneScaling": 0.2,
+      "baseSp5": 5.0,
+      "sp5StmScaling": 0.01875,
+      "sp5ResScaling": 0.025,
+      "tpCostMultiplier": 1.0,
+      "tpGainMultiplier": 1.0,
+      "passive": {
+        "enabled": true,
+        "values": {
+          "cdPrimary": 0.2,
+          "cdSecondary": 0.15,
+          "durationBonus": 0.25
+        }
+      }
+    },
+    "martialartist": {
+      "baseStats": {
+        "STR": 0,
+        "SKP": 10,
+        "RES": 0,
+        "VIT": 10,
+        "PWR": 0,
+        "ENE": 0
+      },
+      "statScaling": {
+        "STR_scaling": 0.8,
+        "SKP_scaling": 1.8,
+        "STM_scaling": 1.3,
+        "DEF_scaling": 0.18,
+        "DEF_scaling_max": 0.72,
+        "VIT_scaling": 2.2,
+        "VIT_scaling_max": 8.8,
+        "PWR_scaling": 0.6,
+        "ENE_scaling": 1.6
+      },
+      "baseHp5": 1.5,
+      "hp5VitScaling": 0.0525,
+      "baseEp5": 4.0,
+      "ep5EneScaling": 0.08,
+      "baseSp5": 9.0,
+      "sp5StmScaling": 0.03375,
+      "sp5ResScaling": 0.045,
+      "tpCostMultiplier": 1.0,
+      "tpGainMultiplier": 1.0,
+      "passive": {
+        "enabled": true,
+        "values": {
+          "hpLow": 0.25,
+          "maxBonus": 0.25,
+          "hpHigh": 0.75
+        }
+      }
+    },
+    "tank": {
+      "baseStats": {
+        "STR": 0,
+        "SKP": 0,
+        "RES": 10,
+        "VIT": 10,
+        "PWR": 0,
+        "ENE": 0
+      },
+      "statScaling": {
+        "STR_scaling": 0.6,
+        "SKP_scaling": 0.7,
+        "STM_scaling": 1.5,
+        "DEF_scaling": 0.384,
+        "DEF_scaling_max": 1.536,
+        "VIT_scaling": 2.5,
+        "VIT_scaling_max": 10.0,
+        "PWR_scaling": 0.5,
+        "ENE_scaling": 0.8
+      },
+      "baseHp5": 2.25,
+      "hp5VitScaling": 0.075,
+      "baseEp5": 5.0,
+      "ep5EneScaling": 0.1,
+      "baseSp5": 9.0,
+      "sp5StmScaling": 0.03375,
+      "sp5ResScaling": 0.045,
+      "tpCostMultiplier": 1.0,
+      "tpGainMultiplier": 1.25,
+      "passive": {
+        "enabled": true,
+        "values": {
+          "lowHpThreshold": 0.3,
+          "stmToHpRegenRatio": 0.5,
+          "lowHpMultiplier": 2.0,
+          "healingBonus": 0.25
+        }
+      }
+    },
+    "paladin": {
+      "baseStats": {
+        "STR": 0,
+        "SKP": 5,
+        "RES": 10,
+        "VIT": 5,
+        "PWR": 0,
+        "ENE": 0
+      },
+      "statScaling": {
+        "STR_scaling": 0.8,
+        "SKP_scaling": 1.2,
+        "STM_scaling": 1.2,
+        "DEF_scaling": 0.336,
+        "DEF_scaling_max": 1.344,
+        "VIT_scaling": 2.0,
+        "VIT_scaling_max": 8.0,
+        "PWR_scaling": 0.6,
+        "ENE_scaling": 1.2
+      },
+      "baseHp5": 2.0,
+      "hp5VitScaling": 0.0675,
+      "baseEp5": 4.0,
+      "ep5EneScaling": 0.08,
+      "baseSp5": 8.0,
+      "sp5StmScaling": 0.03,
+      "sp5ResScaling": 0.04,
+      "tpCostMultiplier": 1.0,
+      "tpGainMultiplier": 1.0,
+      "passive": {
+        "enabled": true,
+        "values": {
+          "lifestealPct": 0.15,
+          "redirectPct": 0.15
+        }
+      }
+    },
+    "unversed": {
+      "baseStats": {
+        "STR": 4,
+        "SKP": 3,
+        "RES": 3,
+        "VIT": 4,
+        "PWR": 3,
+        "ENE": 3
+      },
+      "statScaling": {
+        "STR_scaling": 0.9,
+        "SKP_scaling": 0.9,
+        "STM_scaling": 1.35,
+        "DEF_scaling": 0.22,
+        "DEF_scaling_max": 0.88,
+        "VIT_scaling": 1.9,
+        "VIT_scaling_max": 7.6,
+        "PWR_scaling": 0.85,
+        "ENE_scaling": 1.75
+      },
+      "baseHp5": 1.4,
+      "hp5VitScaling": 0.048,
+      "baseEp5": 5.0,
+      "ep5EneScaling": 0.1,
+      "baseSp5": 10.0,
+      "sp5StmScaling": 0.0375,
+      "sp5ResScaling": 0.05,
+      "tpCostMultiplier": 1.0,
+      "tpGainMultiplier": 1.0,
+      "passive": {
+        "enabled": true,
+        "values": {
+          "physicalBonus": 0.15,
+          "physicalCharges": 3.0,
+          "meleeHitsToPrime": 3.0,
+          "comboResetTicks": 100.0,
+          "kiBonus": 0.15,
+          "strikeWindowTicks": 60.0,
+          "chargeDurationTicks": 160.0
+        }
+      }
+    }
+  }
+}

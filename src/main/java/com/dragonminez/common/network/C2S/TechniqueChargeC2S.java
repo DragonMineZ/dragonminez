@@ -2,22 +2,29 @@ package com.dragonminez.common.network.C2S;
 
 import com.dragonminez.common.network.NetworkHandler;
 import com.dragonminez.common.compat.CameraAimHelper;
-import com.dragonminez.common.network.S2C.ProgressionSyncS2C;
+import com.dragonminez.common.network.PacketRateLimiter;
+import com.dragonminez.common.network.StatsDeltaSync;
 import com.dragonminez.common.stats.StatsCapability;
+import com.dragonminez.common.stats.StatsData;
 import com.dragonminez.common.stats.StatsProvider;
 import com.dragonminez.common.stats.techniques.KiAttackData;
 import com.dragonminez.common.stats.techniques.TechniqueData;
 import com.dragonminez.common.stats.techniques.TechniqueDispatcher;
 import com.dragonminez.common.stats.techniques.Techniques;
+import com.dragonminez.common.training.MinigameSessionManager;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.phys.Vec3;
 import com.dragonminez.compat.network.NetworkEvent;
+import net.minecraft.world.entity.Entity;
 
 import java.util.function.Supplier;
 
 public class TechniqueChargeC2S {
 	public enum Action { START, SET_HOLDING, UPDATE_AIM }
+
+	private static final double LOCK_RANGE_MARGIN = 8.0;
+	private static final long START_MIN_INTERVAL_TICKS = 2L;
 
 	private final Action action;
 	private final int slot;
@@ -79,12 +86,14 @@ public class TechniqueChargeC2S {
 			StatsProvider.get(StatsCapability.INSTANCE, player).ifPresent(data -> {
 				if (!data.getStatus().isHasCreatedCharacter() || data.getStatus().isStunned()) {
 					data.getTechniques().clearTechniqueCharge();
-					NetworkHandler.sendToTrackingEntityAndSelf(new ProgressionSyncS2C(player), player);
+					StatsDeltaSync.markDirty(player, StatsDeltaSync.TECHNIQUES);
 					return;
 				}
 
 				switch (msg.action) {
 					case START -> {
+						MinigameSessionManager.onPlayerAction(player, "technique");
+						if (!PacketRateLimiter.allow(player.getUUID(), "technique_charge_start", player.level().getGameTime(), START_MIN_INTERVAL_TICKS)) break;
 						if (player.isSpectator()
 								|| (data.getStatus().isFused() && !data.getStatus().isFusionLeader())) {
 							data.getTechniques().clearTechniqueCharge();
@@ -106,9 +115,14 @@ public class TechniqueChargeC2S {
 								data.getTechniques().clearTechniqueCharge();
 								break;
 							}
+							int lockTarget = validLockTarget(player, data, msg.targetId);
+							if (!TechniqueDispatcher.canStartCharge(player, kiAttack, lockTarget)) {
+								data.getTechniques().clearTechniqueCharge();
+								break;
+							}
 							data.getTechniques().selectSlot(msg.slot);
 							data.getTechniques().startTechniqueCharge(kiAttack.getId());
-							data.getTechniques().setHomingTargetId(msg.targetId);
+							data.getTechniques().setHomingTargetId(lockTarget);
 							net.neoforged.neoforge.common.NeoForge.EVENT_BUS.post(
 									new com.dragonminez.common.events.DMZEvent.KiAttackCastEvent(player, data, kiAttack));
 						} else {
@@ -121,13 +135,23 @@ public class TechniqueChargeC2S {
 						}
 					}
 				}
-
 				if (msg.action != Action.UPDATE_AIM) {
-					NetworkHandler.sendToTrackingEntityAndSelf(new ProgressionSyncS2C(player), player);
+					StatsDeltaSync.markDirty(player, StatsDeltaSync.TECHNIQUES);
 				}
 			});
 		});
 
 		ctx.get().setPacketHandled(true);
+	}
+
+	private static int validLockTarget(ServerPlayer player, StatsData data, int targetId) {
+		if (targetId < 0) return -1;
+		int kiSense = data.getSkills().getSkillLevel("kisense");
+		if (kiSense <= 0) return -1;
+		Entity target = player.serverLevel().getEntity(targetId);
+		if (target == null || target == player) return -1;
+		double maxRange = 15.0 + 5.0 * kiSense + LOCK_RANGE_MARGIN;
+		if (data.getStatus().isAndroidUpgraded()) maxRange += 25.0;
+		return player.distanceToSqr(target) <= maxRange * maxRange ? targetId : -1;
 	}
 }
