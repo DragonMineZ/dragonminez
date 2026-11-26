@@ -33,4 +33,9 @@ public class SagaFriezaSoldier02Entity extends DBSagasEntity{
                 .add(Attributes.KNOCKBACK_RESISTANCE, 0.6D);
     }
 
+    @Override
+    public boolean usesRandomTextureVariant() {
+        return true;
+    }
+
 }

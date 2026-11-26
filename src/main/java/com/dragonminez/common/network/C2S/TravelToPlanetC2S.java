@@ -2,10 +2,9 @@ package com.dragonminez.common.network.C2S;
 
 import com.dragonminez.common.init.MainEntities;
 import com.dragonminez.common.init.entities.SpacePodEntity;
+import com.dragonminez.common.network.PacketRateLimiter;
 import com.dragonminez.common.spacepod.SpacePodDestinationDefinition;
 import com.dragonminez.common.spacepod.SpacePodDestinationRegistry;
-import com.dragonminez.common.stats.StatsCapability;
-import com.dragonminez.common.stats.StatsProvider;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.resources.ResourceLocation;
@@ -26,22 +25,19 @@ public class TravelToPlanetC2S {
 	}
 
 	public static void encode(TravelToPlanetC2S msg, FriendlyByteBuf buf) {
-		buf.writeUtf(msg.destinationId);
+		buf.writeUtf(msg.destinationId, 256);
 	}
 
 	public static TravelToPlanetC2S decode(FriendlyByteBuf buf) {
-		return new TravelToPlanetC2S(buf.readUtf(32767));
+		return new TravelToPlanetC2S(buf.readUtf(256));
 	}
 
 	public void handle(Supplier<NetworkEvent.Context> context) {
 		context.get().enqueueWork(() -> {
 			ServerPlayer player = context.get().getSender();
-			if (player == null) return;
-
-			boolean dead = StatsProvider.get(StatsCapability.INSTANCE, player)
-					.map(data -> !data.getStatus().isAlive())
-					.orElse(false);
-			if (dead) return;
+			if (player == null || !player.isAlive()) return;
+			if (!(player.getVehicle() instanceof SpacePodEntity)) return;
+			if (!PacketRateLimiter.allow(player.getUUID(), "space_pod_travel", player.level().getGameTime(), 20L)) return;
 
 			ServerLevel currentLevel = player.serverLevel();
 			SpacePodDestinationDefinition destination = SpacePodDestinationRegistry.getServerDestination(destinationId);

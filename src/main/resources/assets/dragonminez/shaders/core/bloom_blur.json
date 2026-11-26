@@ -1,0 +1,13 @@
+{
+  "vertex": "dragonminez:bloom_quad",
+  "fragment": "dragonminez:bloom_blur",
+  "attributes": [ "Position" ],
+  "samplers": [
+    { "name": "Source" }
+  ],
+  "uniforms": [
+    { "name": "Texel", "type": "float", "count": 2, "values": [ 1.0, 1.0 ] },
+    { "name": "Direction", "type": "float", "count": 2, "values": [ 1.0, 0.0 ] },
+    { "name": "Radius", "type": "float", "count": 1, "values": [ 6.0 ] }
+  ]
+}

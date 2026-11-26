@@ -4,22 +4,24 @@ import com.dragonminez.Reference;
 import com.dragonminez.client.gui.buttons.CustomTextureButton;
 import com.dragonminez.client.gui.buttons.TexturedTextButton;
 import com.dragonminez.client.gui.character.util.ScaledScreen;
+import com.dragonminez.client.gui.hud.HudRender;
+import com.dragonminez.client.util.ScrollbarState;
 import com.dragonminez.client.util.TextUtil;
 import com.dragonminez.common.init.MainSounds;
-import com.dragonminez.common.network.ITTargetEntry;
 import com.dragonminez.common.network.C2S.DeleteMasterC2S;
 import com.dragonminez.common.network.C2S.InstantTransmissionTravelC2S;
 import com.dragonminez.common.network.C2S.InstantTransmissionTravelToPlayerC2S;
+import com.dragonminez.common.network.ITTargetEntry;
 import com.dragonminez.common.network.NetworkHandler;
+import com.dragonminez.common.stats.StatsCapability;
+import com.dragonminez.common.stats.StatsProvider;
 import com.mojang.blaze3d.systems.RenderSystem;
-import net.minecraft.ChatFormatting;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.resources.sounds.SimpleSoundInstance;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.Style;
 import net.minecraft.resources.ResourceLocation;
-import net.minecraft.util.Mth;
 import net.neoforged.api.distmarker.Dist;
 import net.neoforged.api.distmarker.OnlyIn;
 import org.jetbrains.annotations.NotNull;
@@ -34,36 +36,33 @@ public class InstantTransmissionScreen extends ScaledScreen {
 
 	private static final ResourceLocation MENU_TEXTURE = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "textures/gui/menu/menubig.png");
 	private static final ResourceLocation BUTTON_TEXTURE = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "textures/gui/buttons/characterbuttons.png");
-
+	private static final ResourceLocation ICONS_TEXTURE = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "textures/gui/spaceshipicons.png");
 	private static final int PANEL_WIDTH = 141;
 	private static final int PANEL_HEIGHT = 213;
 	private static final int ITEM_HEIGHT = 24;
-	private static final int MAX_VISIBLE_ITEMS = 7;
+	private static final int MAX_VISIBLE_ITEMS = 5;
+	private static final int ICON_SIZE = 11;
+	private static final int ICON_Y_START = 3;
+	private static final int ICON_Y_STEP = 14;
 
 	private final List<MasterEntry> destinations = new ArrayList<>();
 	private int selectedIndex = -1;
 	private final int skillLevel;
-	private final String currentDimension;
-
+	private boolean playersTab;
 	private int guiLeft, guiTop;
-	private float targetScroll = 0;
-	private float currentScroll = 0;
-	private float maxScroll = 0;
-	private boolean isScrolling = false;
-
+	private final ScrollbarState listScroll = new ScrollbarState().minThumb(20).step(ITEM_HEIGHT * 2);
 	private TexturedTextButton travelButton;
 	private CustomTextureButton deleteButton;
 
 	public InstantTransmissionScreen(List<ITTargetEntry> entries, int skillLevel) {
 		super(Component.literal("Instant Transmission").withStyle(Style.EMPTY.withFont(ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "smooth"))));
 		this.skillLevel = skillLevel;
-		this.currentDimension = Minecraft.getInstance().player != null ? Minecraft.getInstance().player.level().dimension().location().toString() : "";
 		loadDestinations(entries);
 	}
 
 	private void loadDestinations(List<ITTargetEntry> entries) {
 		destinations.clear();
-		for (ITTargetEntry entry : entries) destinations.add(new MasterEntry(entry.getType(), entry.getId(), entry.getName(), entry.getDimension(), entry.isReachable()));
+		for (ITTargetEntry entry : entries) destinations.add(new MasterEntry(entry));
 		destinations.sort(Comparator.comparingInt((MasterEntry e) -> e.priority()).thenComparing(e -> e.name, String.CASE_INSENSITIVE_ORDER));
 	}
 
@@ -82,7 +81,6 @@ public class InstantTransmissionScreen extends ScaledScreen {
 				.message(tr("gui.dragonminez.travel"))
 				.onPress(btn -> initiateTravel())
 				.build();
-
 		this.travelButton.visible = false;
 		this.addRenderableWidget(travelButton);
 
@@ -94,150 +92,158 @@ public class InstantTransmissionScreen extends ScaledScreen {
 				.textureSize(10, 10)
 				.onPress(btn -> deleteSelectedMaster())
 				.build();
-
 		this.deleteButton.visible = false;
 		this.addRenderableWidget(deleteButton);
 	}
 
+	private List<MasterEntry> visibleDestinations() {
+		return destinations.stream().filter(entry -> (entry.type == ITTargetEntry.Type.MASTER) != playersTab).toList();
+	}
+
+	private MasterEntry selectedDestination() {
+		List<MasterEntry> visible = visibleDestinations();
+		return selectedIndex >= 0 && selectedIndex < visible.size() ? visible.get(selectedIndex) : null;
+	}
+
 	private void deleteSelectedMaster() {
-		if (selectedIndex < 0 || selectedIndex >= destinations.size()) return;
-		MasterEntry dest = destinations.get(selectedIndex);
-		if (dest.type != ITTargetEntry.Type.MASTER) return;
+		MasterEntry dest = selectedDestination();
+		if (dest == null || dest.type != ITTargetEntry.Type.MASTER) return;
 
 		NetworkHandler.sendToServer(new DeleteMasterC2S(dest.id));
-		destinations.remove(selectedIndex);
-		selectedIndex = -1;
-		this.travelButton.visible = false;
-		this.deleteButton.visible = false;
+		destinations.remove(dest);
+		clearSelection();
 	}
 
 	private void initiateTravel() {
-		if (selectedIndex >= 0 && selectedIndex < destinations.size()) {
-			MasterEntry dest = destinations.get(selectedIndex);
-			if (dest.reachable) {
-				if (dest.type == ITTargetEntry.Type.MASTER) NetworkHandler.sendToServer(new InstantTransmissionTravelC2S(dest.id));
-				else NetworkHandler.sendToServer(new InstantTransmissionTravelToPlayerC2S(UUID.fromString(dest.id)));
-				this.onClose();
-			}
-		}
+		MasterEntry dest = selectedDestination();
+		if (dest == null || !dest.reachable || !hasEnoughKi(dest)) return;
+		if (dest.type == ITTargetEntry.Type.MASTER) NetworkHandler.sendToServer(new InstantTransmissionTravelC2S(dest.id));
+		else NetworkHandler.sendToServer(new InstantTransmissionTravelToPlayerC2S(UUID.fromString(dest.id)));
+		this.onClose();
 	}
 
 	@Override
-	public void render(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
+	public void render(@NotNull GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
 		this.renderBackground(graphics, mouseX, mouseY, partialTick);
-
 		int uiMouseX = (int) toUiX(mouseX);
 		int uiMouseY = (int) toUiY(mouseY);
-
 		beginUiScale(graphics);
 
 		RenderSystem.setShaderColor(1.0F, 1.0F, 1.0F, 1.0F);
-		graphics.blit(MENU_TEXTURE, guiLeft, guiTop, 0, 0, PANEL_WIDTH, PANEL_HEIGHT, 256, 256);
+		HudRender.blit(graphics, MENU_TEXTURE, guiLeft, guiTop, 0, 0, PANEL_WIDTH, PANEL_HEIGHT, 256, 256);
+		TextUtil.drawCenteredStringWithBorder(graphics, this.font, tr("gui.dragonminez.transmission.title"), getUiWidth() / 2, guiTop + 18, 0xFFFFD700);
+		renderTabs(graphics);
+		renderDestinationList(graphics, uiMouseX, uiMouseY);
+		renderKiRequired(graphics);
 
-		TextUtil.drawCenteredStringWithBorder(graphics, this.font,
-				tr("gui.dragonminez.transmission.title"),
-				getUiWidth() / 2, guiTop + 18, 0xFFFFD700);
-
-		renderMasterList(graphics, uiMouseX, uiMouseY);
+		MasterEntry selected = selectedDestination();
+		if (travelButton != null) travelButton.active = selected != null && selected.reachable && hasEnoughKi(selected);
 		super.render(graphics, uiMouseX, uiMouseY, partialTick);
-
 		endUiScale(graphics);
 	}
 
-	private void renderMasterList(GuiGraphics graphics, int uiMouseX, int uiMouseY) {
+	private void renderTabs(GuiGraphics graphics) {
+		int left = guiLeft + 10;
+		int top = guiTop + 29;
+		renderTab(graphics, left, top, 59, tr("gui.dragonminez.transmission.npcs"), !playersTab);
+		if (skillLevel >= 5) renderTab(graphics, left + 61, top, 59, tr("gui.dragonminez.transmission.players"), playersTab);
+	}
+
+	private void renderTab(GuiGraphics graphics, int x, int y, int width, Component label, boolean selected) {
+		graphics.fill(x, y, x + width, y + 15, selected ? 0x80555555 : 0x40000000);
+		if (selected) graphics.renderOutline(x, y, width, 15, 0xFFFFD700);
+		graphics.drawCenteredString(font, label, x + width / 2, y + 4, selected ? 0xFFFFD700 : 0xFFB0B0B0);
+	}
+
+	private void renderDestinationList(GuiGraphics graphics, int uiMouseX, int uiMouseY) {
+		List<MasterEntry> visible = visibleDestinations();
 		int listLeft = guiLeft + 10;
-		int listTop = guiTop + 35;
+		int listTop = guiTop + 49;
 		int listWidth = PANEL_WIDTH - 25;
 		int viewHeight = MAX_VISIBLE_ITEMS * ITEM_HEIGHT;
-		int totalHeight = destinations.size() * ITEM_HEIGHT;
+		listScroll.layout(listLeft, listTop, listWidth, viewHeight, visible.size() * ITEM_HEIGHT).barAt(guiLeft + PANEL_WIDTH - 12);
+		boolean overList = listScroll.isInView(uiMouseX, uiMouseY);
+		double contentMouseY = listScroll.toContent(uiMouseY);
+		listScroll.beginClip(graphics);
 
-		maxScroll = Math.max(0, totalHeight - viewHeight);
-		targetScroll = Mth.clamp(targetScroll, 0, maxScroll);
-		float tickDelta = Minecraft.getInstance().getTimer().getRealtimeDeltaTicks();
-		currentScroll = Mth.lerp(tickDelta * 0.4f, currentScroll, targetScroll);
+		for (int i = 0; i < visible.size(); i++) {
+			int itemY = listTop + i * ITEM_HEIGHT;
+			if (!listScroll.isVisible(itemY, ITEM_HEIGHT)) continue;
+			MasterEntry dest = visible.get(i);
+			boolean isSelected = i == selectedIndex;
+			boolean isHovered = overList && contentMouseY >= itemY && contentMouseY < itemY + ITEM_HEIGHT;
+			if (!dest.reachable) graphics.fill(listLeft, itemY, listLeft + listWidth, itemY + ITEM_HEIGHT, 0x30000000);
+			else if (isSelected || isHovered) graphics.fill(listLeft, itemY, listLeft + listWidth, itemY + ITEM_HEIGHT, isSelected ? 0x80D4AF37 : 0x80555555);
+			if (isSelected) graphics.renderOutline(listLeft, itemY, listWidth, ITEM_HEIGHT, 0xFFFFD700);
 
-		int scLeft = toScreenCoord(listLeft);
-		int scTop = toScreenCoord(listTop);
-		int scRight = toScreenCoord(listLeft + listWidth);
-		int scBottom = toScreenCoord(listTop + viewHeight);
-
-		graphics.enableScissor(scLeft, scTop, scRight, scBottom);
-		graphics.pose().pushPose();
-		graphics.pose().translate(0, -currentScroll, 0);
-
-		for (int i = 0; i < destinations.size(); i++) {
-			int itemY = listTop + (i * ITEM_HEIGHT);
-
-			if (itemY + ITEM_HEIGHT >= listTop + currentScroll && itemY <= listTop + viewHeight + currentScroll) {
-				MasterEntry dest = destinations.get(i);
-				boolean isSelected = (i == selectedIndex);
-
-				if (dest.reachable) {
-					boolean isHovered = uiMouseX >= listLeft && uiMouseX < listLeft + listWidth &&
-							uiMouseY >= itemY - currentScroll && uiMouseY < itemY + ITEM_HEIGHT - currentScroll;
-
-					int color = isSelected ? 0x80D4AF37 : (isHovered ? 0x80555555 : 0x00000000);
-					graphics.fill(listLeft, itemY, listLeft + listWidth, itemY + ITEM_HEIGHT, color);
-					if (isSelected) graphics.renderOutline(listLeft, itemY, listWidth, ITEM_HEIGHT, 0xFFFFD700);
-				} else {
-					graphics.fill(listLeft, itemY, listLeft + listWidth, itemY + ITEM_HEIGHT, 0x30000000);
-				}
-
-				Component textToDraw = txt(dest.name).copy().withStyle(ChatFormatting.BOLD);
-				int textColor = dest.reachable ? colorForType(dest.type) : 0x747678;
-				TextUtil.drawStringWithBorder(graphics, this.font, textToDraw, listLeft + 10, itemY + 8, textColor);
-			}
+			int iconIndex = iconIndexForDimension(dest.dimension);
+			HudRender.blit(graphics, ICONS_TEXTURE, listLeft + 5, itemY + (ITEM_HEIGHT - ICON_SIZE) / 2,
+					3, ICON_Y_START + iconIndex * ICON_Y_STEP, ICON_SIZE, ICON_SIZE, 256, 256);
+			Component name = fitName(dest.name, listWidth - 31).copy().withStyle(net.minecraft.ChatFormatting.BOLD);
+			TextUtil.drawStringWithBorder(graphics, font, name, listLeft + 21, itemY + 8, dest.reachable ? colorForType(dest.type) : 0x747678);
 		}
 
-		graphics.pose().popPose();
-		graphics.disableScissor();
-
-		if (maxScroll > 0) renderScrollbar(graphics, listTop, viewHeight, totalHeight);
+		listScroll.endClip(graphics);
+		listScroll.renderBar(graphics, uiMouseX, uiMouseY);
 	}
 
-	private void renderScrollbar(GuiGraphics graphics, int listTop, int viewHeight, int totalHeight) {
-		int scrollBarX = guiLeft + PANEL_WIDTH - 12;
-		graphics.fill(scrollBarX, listTop, scrollBarX + 3, listTop + viewHeight, 0xFF333333);
-
-		float scrollPercent = currentScroll / maxScroll;
-		float visiblePercent = (float) viewHeight / totalHeight;
-		int indicatorHeight = Math.max(20, (int) (viewHeight * visiblePercent));
-		int indicatorY = listTop + (int) ((viewHeight - indicatorHeight) * scrollPercent);
-
-		graphics.fill(scrollBarX, indicatorY, scrollBarX + 3, indicatorY + indicatorHeight, 0xFFAAAAAA);
+	private Component fitName(String name, int maxWidth) {
+		if (font.width(name) <= maxWidth) return txt(name);
+		return txt(font.plainSubstrByWidth(name, Math.max(0, maxWidth - font.width("…"))) + "…");
 	}
 
-	private float calculateScrollPercent(double uiY, int startY, int viewHeight) {
-		return Mth.clamp((float)(uiY - startY) / viewHeight, 0.0f, 1.0f);
+	private void renderKiRequired(GuiGraphics graphics) {
+		MasterEntry selected = selectedDestination();
+		if (selected == null) return;
+		int color = hasEnoughKi(selected) ? 0xFFFFFFFF : 0xFFFF5555;
+		TextUtil.drawCenteredStringWithBorder(graphics, font,
+				tr("gui.dragonminez.transmission.ki_required", selected.kiCost), getUiWidth() / 2, guiTop + 171, color);
+	}
+
+	private boolean hasEnoughKi(MasterEntry entry) {
+		var player = Minecraft.getInstance().player;
+		if (player == null) return false;
+		if (player.isCreative() || player.isSpectator()) return true;
+		return StatsProvider.get(StatsCapability.INSTANCE, player)
+				.map(data -> data.getResources().getCurrentEnergy() >= entry.kiCost).orElse(false);
+	}
+
+	private void clearSelection() {
+		selectedIndex = -1;
+		listScroll.reset();
+		travelButton.visible = false;
+		deleteButton.visible = false;
 	}
 
 	@Override
 	public boolean mouseClicked(double mouseX, double mouseY, int button) {
 		if (super.mouseClicked(mouseX, mouseY, button)) return true;
-
 		double uiX = toUiX(mouseX);
 		double uiY = toUiY(mouseY);
-
-		int listLeft = guiLeft + 10;
-		int listTop = guiTop + 35;
-		int listWidth = PANEL_WIDTH - 25;
-		int viewHeight = MAX_VISIBLE_ITEMS * ITEM_HEIGHT;
-
-		if (maxScroll > 0 && uiX >= listLeft + listWidth && uiX <= guiLeft + PANEL_WIDTH &&
-				uiY >= listTop && uiY <= listTop + viewHeight) {
-			this.isScrolling = true;
-			targetScroll = calculateScrollPercent(uiY, listTop, viewHeight) * maxScroll;
+		int tabsTop = guiTop + 29;
+		int tabsLeft = guiLeft + 10;
+		if (uiY >= tabsTop && uiY < tabsTop + 15 && uiX >= tabsLeft && uiX < tabsLeft + 120) {
+			boolean nextPlayersTab = uiX >= tabsLeft + 60;
+			if (nextPlayersTab && skillLevel < 5) return true;
+			if (nextPlayersTab != playersTab) {
+				playersTab = nextPlayersTab;
+				clearSelection();
+			}
 			return true;
 		}
 
-		if (uiX >= listLeft && uiX < listLeft + listWidth && uiY >= listTop && uiY <= listTop + viewHeight) {
-			int index = (int) (uiY - listTop + currentScroll) / ITEM_HEIGHT;
-			if (index >= 0 && index < destinations.size()) {
-				MasterEntry dest = destinations.get(index);
-				if (dest.reachable) {
-					selectDestination(index);
-					Minecraft.getInstance().getSoundManager().play(SimpleSoundInstance.forUI(MainSounds.UI_MENU_SWITCH.get(), 1.0F));
-				}
+		int listLeft = guiLeft + 10;
+		int listTop = guiTop + 49;
+		int listWidth = PANEL_WIDTH - 25;
+		int viewHeight = MAX_VISIBLE_ITEMS * ITEM_HEIGHT;
+		if (listScroll.mouseClicked(uiX, uiY, button)) return true;
+		if (uiX >= listLeft && uiX < listLeft + listWidth && uiY >= listTop && uiY < listTop + viewHeight) {
+			int index = (int) (uiY - listTop + listScroll.scroll()) / ITEM_HEIGHT;
+			List<MasterEntry> visible = visibleDestinations();
+			if (index >= 0 && index < visible.size()) {
+				if (!visible.get(index).reachable) return true;
+				selectDestination(index);
+				Minecraft.getInstance().getSoundManager().play(SimpleSoundInstance.forUI(MainSounds.UI_MENU_SWITCH.get(), 1.0F));
 				return true;
 			}
 		}
@@ -245,39 +251,45 @@ public class InstantTransmissionScreen extends ScaledScreen {
 	}
 
 	private void selectDestination(int index) {
-		if (this.selectedIndex == index) return;
-		this.selectedIndex = index;
-		this.travelButton.visible = true;
-		this.deleteButton.visible = destinations.get(index).type == ITTargetEntry.Type.MASTER;
+		if (selectedIndex == index) return;
+		selectedIndex = index;
+		MasterEntry selected = selectedDestination();
+		travelButton.visible = true;
+		deleteButton.visible = selected != null && selected.type == ITTargetEntry.Type.MASTER;
 	}
 
 	@Override
 	public boolean mouseScrolled(double mouseX, double mouseY, double scrollX, double scrollY) {
-		if (maxScroll > 0) {
-			targetScroll = (float) Mth.clamp(targetScroll - (Math.signum(scrollY) * ITEM_HEIGHT * 2), 0, maxScroll);
-			return true;
-		}
+		if (listScroll.scrollWheel(scrollY)) return true;
 		return super.mouseScrolled(mouseX, mouseY, scrollX, scrollY);
 	}
 
 	@Override
 	public boolean mouseReleased(double mouseX, double mouseY, int button) {
-		this.isScrolling = false;
+		listScroll.mouseReleased();
 		return super.mouseReleased(mouseX, mouseY, button);
 	}
 
 	@Override
 	public boolean mouseDragged(double mouseX, double mouseY, int button, double dragX, double dragY) {
-		if (isScrolling && maxScroll > 0) {
-			double uiY = toUiY(mouseY);
-			targetScroll = calculateScrollPercent(uiY, guiTop + 35, MAX_VISIBLE_ITEMS * ITEM_HEIGHT) * maxScroll;
-			return true;
-		}
+		if (listScroll.mouseDragged(toUiX(mouseX), toUiY(mouseY))) return true;
 		return super.mouseDragged(mouseX, mouseY, button, dragX, dragY);
 	}
 
 	@Override
 	public boolean isPauseScreen() { return false; }
+
+	private static int iconIndexForDimension(String dimension) {
+		return switch (dimension) {
+			case "dragonminez:namek" -> 1;
+			case "dragonminez:otherworld", "dragonminez:time_chamber", "minecraft:the_end" -> 2;
+			case "dragonminez:sacredkaiplanet" -> 3;
+			case "dragonminez:cereal_planet" -> 4;
+			case "dmzsuper:beerus_planet" -> 5;
+			case "dragonminez:demon_realm", "minecraft:the_nether" -> 6;
+			default -> 0;
+		};
+	}
 
 	private static int colorForType(ITTargetEntry.Type type) {
 		return switch (type) {
@@ -293,13 +305,15 @@ public class InstantTransmissionScreen extends ScaledScreen {
 		String name;
 		String dimension;
 		boolean reachable;
+		int kiCost;
 
-		public MasterEntry(ITTargetEntry.Type type, String id, String name, String dimension, boolean reachable) {
-			this.type = type;
-			this.id = id;
-			this.name = name;
-			this.dimension = dimension;
-			this.reachable = reachable;
+		MasterEntry(ITTargetEntry entry) {
+			type = entry.getType();
+			id = entry.getId();
+			name = entry.getName();
+			dimension = entry.getDimension();
+			reachable = entry.isReachable();
+			kiCost = entry.getKiCost();
 		}
 
 		int priority() {

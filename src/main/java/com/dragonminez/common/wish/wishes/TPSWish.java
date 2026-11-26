@@ -3,7 +3,6 @@ package com.dragonminez.common.wish.wishes;
 import com.dragonminez.common.stats.StatsCapability;
 import com.dragonminez.common.stats.StatsProvider;
 import com.dragonminez.common.wish.Wish;
-import com.google.gson.GsonBuilder;
 import net.minecraft.server.level.ServerPlayer;
 
 public class TPSWish extends Wish {
@@ -19,8 +18,4 @@ public class TPSWish extends Wish {
 		StatsProvider.get(StatsCapability.INSTANCE, player).ifPresent(data -> data.getResources().addTrainingPoints(amount));
 	}
 
-	@Override
-	public String toJson() {
-		return new GsonBuilder().setPrettyPrinting().create().toJson(this, TPSWish.class);
-	}
 }

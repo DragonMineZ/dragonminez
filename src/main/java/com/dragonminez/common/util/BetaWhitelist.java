@@ -28,7 +28,7 @@ public class BetaWhitelist {
 				String line;
 				while ((line = in.readLine()) != null) {
 					String name = line.trim();
-					if (!name.isEmpty()) {
+					if (!name.isEmpty() && !name.startsWith("#")) {
 						downloadedList.add(name.toLowerCase());
 					}
 				}

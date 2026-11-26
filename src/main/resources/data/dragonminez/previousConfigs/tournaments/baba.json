@@ -1,0 +1,74 @@
+{
+  "configVersion": "2.2.0",
+  "enabled": true,
+  "displayName": "tournament.dragonminez.baba",
+  "format": "GAUNTLET",
+  "difficultyStars": 1,
+  "reentryCooldownSeconds": 1200,
+  "matchTimeoutSeconds": 300,
+  "nextRoundSeconds": 30,
+  "rulesAcceptSeconds": 60,
+  "returnSeconds": 15,
+  "arrivalSeconds": 60,
+  "ring": {
+    "x": 70,
+    "y": 4,
+    "z": 61,
+    "radius": 4
+  },
+  "champion": {
+    "entityId": "dragonminez:saga_kid_goku",
+    "health": 400.0,
+    "meleeDamage": 34.0,
+    "kiDamage": 30.0,
+    "aiTier": 3,
+    "perRoundScaling": 1.0
+  },
+  "semifinalist": {
+    "entityId": "dragonminez:saga_masked_warrior",
+    "health": 280.0,
+    "meleeDamage": 26.0,
+    "kiDamage": 20.0,
+    "aiTier": 2,
+    "perRoundScaling": 1.0
+  },
+  "contenders": [
+    {
+      "entityId": "dragonminez:saga_dracula",
+      "health": 130.0,
+      "meleeDamage": 13.0,
+      "kiDamage": 8.0,
+      "aiTier": 1,
+      "perRoundScaling": 1.1
+    },
+    {
+      "entityId": "dragonminez:saga_invisible_man",
+      "health": 140.0,
+      "meleeDamage": 14.0,
+      "kiDamage": 10.0,
+      "aiTier": 1,
+      "perRoundScaling": 1.1
+    },
+    {
+      "entityId": "dragonminez:saga_akkuman",
+      "health": 155.0,
+      "meleeDamage": 15.0,
+      "kiDamage": 14.0,
+      "aiTier": 1,
+      "perRoundScaling": 1.1
+    },
+    {
+      "entityId": "dragonminez:saga_mummy",
+      "health": 175.0,
+      "meleeDamage": 17.0,
+      "kiDamage": 6.0,
+      "aiTier": 1,
+      "perRoundScaling": 1.1
+    }
+  ],
+  "rewards": {
+    "trainingPoints": 10000,
+    "alignment": 5,
+    "commands": []
+  }
+}

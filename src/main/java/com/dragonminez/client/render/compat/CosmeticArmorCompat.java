@@ -44,13 +44,18 @@ public final class CosmeticArmorCompat {
 
 			Object cosInv = getCAStacksClient.invoke(null, player.getUUID());
 
-			boolean active = (boolean) isSkinArmor.invoke(cosInv, cosSlot);
-			if (!active) return null;
+			if ((boolean) isSkinArmor.invoke(cosInv, cosSlot)) return ItemStack.EMPTY;
 
-			return (ItemStack) getStackInSlot.invoke(cosInv, cosSlot);
+			ItemStack cosmetic = (ItemStack) getStackInSlot.invoke(cosInv, cosSlot);
+			return cosmetic == null || cosmetic.isEmpty() ? null : cosmetic;
 		} catch (Exception e) {
 			return null;
 		}
+	}
+
+	public static ItemStack getVisibleStack(Player player, EquipmentSlot slot) {
+		ItemStack cosmetic = getCosmeticStack(player, slot);
+		return cosmetic != null ? cosmetic : player.getItemBySlot(slot);
 	}
 
 	private static int getCosSlotIndex(EquipmentSlot slot) {

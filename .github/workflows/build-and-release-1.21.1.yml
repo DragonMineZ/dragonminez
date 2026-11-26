@@ -1,0 +1,74 @@
+name: Build And Release 1.21.1
+
+on:
+  push:
+    tags:
+      - 'v*.*.*'
+      - '1.21.1-v*'
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      packages: write
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 21
+        uses: actions/setup-java@v4
+        with:
+          java-version: '21'
+          distribution: temurin
+          cache: gradle
+
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v4
+
+      - name: Grant execute permission for gradlew
+        run: chmod +x gradlew
+
+      - name: Build with Gradle
+        run: ./gradlew build jarJar --no-daemon
+
+      - name: Resolve release artifact
+        id: artifact
+        shell: bash
+        run: |
+          set -euo pipefail
+          version="$(sed -n 's/^mod_version=//p' gradle.properties | tr -d '\r')"
+          jar="build/libs/dragonminez-${version}.jar"
+          if [[ -z "$version" || ! -f "$jar" ]]; then
+            echo "Expected DragonMineZ jar was not produced: $jar"
+            ls -la build/libs || true
+            exit 1
+          fi
+          echo "path=$jar" >> "$GITHUB_OUTPUT"
+          echo "name=$(basename "$jar")" >> "$GITHUB_OUTPUT"
+
+      - name: Upload build artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: dragonminez-1.21.1-jars
+          path: ${{ steps.artifact.outputs.path }}
+          if-no-files-found: error
+
+      - name: Publish GitHub Release
+        if: startsWith(github.ref, 'refs/tags/')
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          RELEASE_JAR: ${{ steps.artifact.outputs.path }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          if gh release view "${{ github.ref_name }}" >/dev/null 2>&1; then
+            echo "Release ${{ github.ref_name }} already exists; replacing the jar"
+            gh release upload "${{ github.ref_name }}" "$RELEASE_JAR" --clobber
+          else
+            gh release create "${{ github.ref_name }}" "$RELEASE_JAR" \
+              --title "DragonMineZ ${{ github.ref_name }}" \
+              --generate-notes
+          fi

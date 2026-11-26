@@ -18,6 +18,12 @@
 		},
 		{
 			"name": "GlowSampler"
+		},
+		{
+			"name": "OuterSampler"
+		},
+		{
+			"name": "BloomSampler"
 		}
 	],
 	"uniforms": [
@@ -52,6 +58,54 @@
 			"count": 1,
 			"values": [
 				2.2
+			]
+		},
+		{
+			"name": "OutlineBloomStrength",
+			"type": "float",
+			"count": 1,
+			"values": [
+				2.5
+			]
+		},
+		{
+			"name": "AnimationTime",
+			"type": "float",
+			"count": 1,
+			"values": [
+				0.0
+			]
+		},
+		{
+			"name": "OutlineRadius",
+			"type": "float",
+			"count": 1,
+			"values": [
+				10.5
+			]
+		},
+		{
+			"name": "FireIntensity",
+			"type": "float",
+			"count": 1,
+			"values": [
+				0.0
+			]
+		},
+		{
+			"name": "ColorMode",
+			"type": "float",
+			"count": 1,
+			"values": [
+				0.0
+			]
+		},
+		{
+			"name": "BodyGlow",
+			"type": "float",
+			"count": 1,
+			"values": [
+				0.0
 			]
 		}
 	]

@@ -3,16 +3,11 @@ package com.dragonminez.common.stats.techniques;
 import com.dragonminez.common.stats.StatsData;
 import com.dragonminez.common.config.ConfigManager;
 import com.dragonminez.common.config.TechniqueConfig;
-import lombok.Getter;
-import lombok.Setter;
 import net.minecraft.nbt.CompoundTag;
 
-@Getter
-@Setter
 public class StrikeAttackData extends TechniqueData {
-	public static final float LEVEL_MODIFIER_STEP = 0.025f;
-	public static final float MAX_MODIFIER_LIMIT = 0.5f;
-
+	public static final float LEVEL_MODIFIER_STEP = 0.025F;
+	public static final float MAX_MODIFIER_LIMIT = 0.5F;
 	private float damageMultiplier;
 	private int damageLevel;
 	private int cooldownLevel;
@@ -26,11 +21,11 @@ public class StrikeAttackData extends TechniqueData {
 	}
 
 	public float getDamageLevelMultiplier() {
-		return 1.0f + Math.min(MAX_MODIFIER_LIMIT, Math.max(0, damageLevel) * LEVEL_MODIFIER_STEP);
+		return 1.0F + Math.min(MAX_MODIFIER_LIMIT, Math.max(0, damageLevel) * LEVEL_MODIFIER_STEP);
 	}
 
 	public float getReductionLevelMultiplier(int level) {
-		return Math.max(1.0f - MAX_MODIFIER_LIMIT, 1.0f - Math.max(0, level) * LEVEL_MODIFIER_STEP);
+		return Math.max(1.0F - MAX_MODIFIER_LIMIT, 1.0F - Math.max(0, level) * LEVEL_MODIFIER_STEP);
 	}
 
 	public float getActualDamageMultiplier() {
@@ -76,10 +71,14 @@ public class StrikeAttackData extends TechniqueData {
 		return "damage".equals(statName) || "cooldown".equals(statName);
 	}
 
-	public StrikeAttackData() { super(); }
+	public StrikeAttackData() {
+		super();
+	}
 
 	@Override
-	public TechniqueType getType() { return TechniqueType.STRIKE_ATTACK; }
+	public TechniqueType getType() {
+		return TechniqueType.STRIKE_ATTACK;
+	}
 
 	@Override
 	public CompoundTag save() {
@@ -116,13 +115,59 @@ public class StrikeAttackData extends TechniqueData {
 		if (this.durationTicks <= 0) this.durationTicks = 60;
 		this.castTime = tag.getInt("CastTime");
 		this.cooldown = tag.getInt("Cooldown");
+		StrikeAttackData template = PredefinedTechniques.STRIKE_REGISTRY.get(this.id);
+		if (template != null && template != this) {
+			this.damageMultiplier = template.damageMultiplier + Math.max(0, this.damageLevel) * 0.075F;
+			this.animationId = template.animationId;
+			this.durationTicks = template.durationTicks;
+		}
 	}
 
 	@Override
 	public double getCalculatedCost(StatsData statsData) {
 		TechniqueConfig.StrikeAttackConfig cfg = ConfigManager.getTechniqueConfig().getStrikeConfig(this.id);
-		double baseDamage = statsData.getStrikeDamageNoForms() * getActualDamageMultiplier() * Math.max(0.0, cfg.getDamageMultiplier());
+		double baseDamage = statsData.getStrikeDamageNoForms() * this.damageMultiplier * Math.max(0.0, cfg.getDamageMultiplier());
 		double costMult = Math.max(0.0, cfg.getKiCostMultiplier());
 		return Math.max(5.0, (baseDamage * 0.35 * costMult) / 2);
+	}
+
+	public float getDamageMultiplier() {
+		return this.damageMultiplier;
+	}
+
+	public int getDamageLevel() {
+		return this.damageLevel;
+	}
+
+	public int getCooldownLevel() {
+		return this.cooldownLevel;
+	}
+
+	public String getAnimationId() {
+		return this.animationId;
+	}
+
+	public int getDurationTicks() {
+		return this.durationTicks;
+	}
+
+	public void setDamageMultiplier(final float damageMultiplier) {
+		this.damageMultiplier = damageMultiplier;
+	}
+
+	public void setDamageLevel(final int damageLevel) {
+		this.damageLevel = damageLevel;
+	}
+
+	public void setCooldownLevel(final int cooldownLevel) {
+		this.cooldownLevel = cooldownLevel;
+	}
+
+	public void setAnimationId(final String animationId) {
+		this.animationId = animationId;
+	}
+
+	public void setDurationTicks(final int durationTicks) {
+		this.durationTicks = durationTicks;
 	}
 }

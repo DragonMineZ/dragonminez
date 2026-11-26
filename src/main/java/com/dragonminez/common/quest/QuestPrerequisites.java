@@ -1,7 +1,5 @@
 package com.dragonminez.common.quest;
 
-import lombok.Getter;
-
 import java.util.ArrayList;
 import java.util.List;
 
@@ -42,65 +40,57 @@ public record QuestPrerequisites(Operator operator, List<Condition> conditions) 
 		this.conditions = conditions != null ? conditions : new ArrayList<>();
 	}
 
+
 	public enum Operator {
-		AND, OR
+		AND, OR;
 	}
+
 
 	public enum ConditionType {
 		/**
 		 * A specific saga quest must be completed
 		 */
-		SAGA_QUEST,
-		/**
+		SAGA_QUEST, /**
 		 * Another quest (by string ID) must be completed
 		 */
-		QUEST,
-		/**
+		QUEST, /**
 		 * A player stat must meet a minimum threshold
 		 */
-		STAT,
-		/**
+		STAT, /**
 		 * Player level must meet a minimum threshold
 		 */
-		LEVEL,
-		/**
+		LEVEL, /**
 		 * Player must currently be in a specific biome.
 		 */
-		BIOME,
-		/**
+		BIOME, /**
 		 * Player must currently be inside a specific structure.
 		 */
-		STRUCTURE,
-		/**
+		STRUCTURE, /**
 		 * Player must currently be inside a specific dimension.
 		 */
-		DIMENSION,
-		/**
+		DIMENSION, /**
 		 * A duration must have elapsed since this quest first became start-eligible.
 		 */
-		TIME,
-		/**
+		TIME, /**
 		 * Player alignment must be within an inclusive numeric range.
 		 */
-		ALIGNMENT,
-		/**
+		ALIGNMENT, /**
 		 * A player skill must meet a minimum level.
 		 */
-		SKILL,
-		/**
+		SKILL, /**
 		 * Player must be of a specific race.
 		 */
-		RACE,
-		/**
+		RACE, /**
 		 * Player must be of a specific class.
 		 */
-		CLASS
+		CLASS;
 	}
 
+
 	public enum TimeMode {
-		GAME_TIME,
-		REAL_TIME
+		GAME_TIME, REAL_TIME;
 	}
+
 
 	public record StructureHint(String dimensionId, Integer x, Integer y, Integer z) {
 		public boolean hasCoordinates() {
@@ -108,23 +98,20 @@ public record QuestPrerequisites(Operator operator, List<Condition> conditions) 
 		}
 	}
 
+
 	/**
 	 * A prerequisite condition. Can be either a leaf (type-based check) or a nested group.
 	 * <p>
 	 * If {@code type} is non-null, this is a leaf condition and the relevant fields for that type are used.
 	 * If {@code type} is null and {@code nested} is non-null, this is a nested AND/OR group.
 	 */
-	@Getter
 	public static class Condition {
 		private final ConditionType type;
-
 		// SAGA_QUEST fields
 		private final String sagaId;
 		private final Integer questId;
-
 		// QUEST fields
 		private final String requiredQuestId;
-
 		private final String stat;
 		private final Integer minValue;
 		private final Integer minLevel;
@@ -140,16 +127,10 @@ public record QuestPrerequisites(Operator operator, List<Condition> conditions) 
 		private final Integer skillLevel;
 		private final String race;
 		private final String characterClass;
-
 		// Nested group
 		private final QuestPrerequisites nested;
 
-		private Condition(ConditionType type, String sagaId, Integer questId, String requiredQuestId,
-						  String stat, Integer minValue, Integer minLevel, String biomeId,
-						  String structureId, StructureHint structureHint, String dimensionId,
-						  TimeMode timeMode, Long duration, Integer minAlignment, Integer maxAlignment,
-						  String skill, Integer skillLevel, String race, String characterClass,
-						  QuestPrerequisites nested) {
+		private Condition(ConditionType type, String sagaId, Integer questId, String requiredQuestId, String stat, Integer minValue, Integer minLevel, String biomeId, String structureId, StructureHint structureHint, String dimensionId, TimeMode timeMode, Long duration, Integer minAlignment, Integer maxAlignment, String skill, Integer skillLevel, String race, String characterClass, QuestPrerequisites nested) {
 			this.type = type;
 			this.sagaId = sagaId;
 			this.questId = questId;
@@ -177,110 +158,138 @@ public record QuestPrerequisites(Operator operator, List<Condition> conditions) 
 		}
 
 		public static Condition sagaQuest(String sagaId, int questId) {
-			return new Condition(ConditionType.SAGA_QUEST, sagaId, questId, null,
-					null, null, null, null,
-					null, null, null, null, null,
-					null, null, null, null, null, null,
-					null);
+			return new Condition(ConditionType.SAGA_QUEST, sagaId, questId, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null);
 		}
 
 		/**
 		 * Requires another quest (by string ID) to be completed.
 		 */
 		public static Condition quest(String requiredQuestId) {
-			return new Condition(ConditionType.QUEST, null, null, requiredQuestId,
-					null, null, null, null,
-					null, null, null, null, null,
-					null, null, null, null, null, null,
-					null);
+			return new Condition(ConditionType.QUEST, null, null, requiredQuestId, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null);
 		}
 
 		public static Condition stat(String stat, int minValue) {
-			return new Condition(ConditionType.STAT, null, null, null,
-					stat, minValue, null, null,
-					null, null, null, null, null,
-					null, null, null, null, null, null,
-					null);
+			return new Condition(ConditionType.STAT, null, null, null, stat, minValue, null, null, null, null, null, null, null, null, null, null, null, null, null, null);
 		}
 
 		public static Condition level(int minLevel) {
-			return new Condition(ConditionType.LEVEL, null, null, null,
-					null, null, minLevel, null,
-					null, null, null, null, null,
-					null, null, null, null, null, null,
-					null);
+			return new Condition(ConditionType.LEVEL, null, null, null, null, null, minLevel, null, null, null, null, null, null, null, null, null, null, null, null, null);
 		}
 
 		public static Condition biome(String biomeId) {
-			return new Condition(ConditionType.BIOME, null, null, null,
-					null, null, null, biomeId,
-					null, null, null, null, null,
-					null, null, null, null, null, null,
-					null);
+			return new Condition(ConditionType.BIOME, null, null, null, null, null, null, biomeId, null, null, null, null, null, null, null, null, null, null, null, null);
 		}
 
 		public static Condition structure(String structureId, StructureHint structureHint) {
-			return new Condition(ConditionType.STRUCTURE, null, null, null,
-					null, null, null, null,
-					structureId, structureHint, null, null, null,
-					null, null, null, null, null, null,
-					null);
+			return new Condition(ConditionType.STRUCTURE, null, null, null, null, null, null, null, structureId, structureHint, null, null, null, null, null, null, null, null, null, null);
 		}
 
 		public static Condition dimension(String dimensionId) {
-			return new Condition(ConditionType.DIMENSION, null, null, null,
-					null, null, null, null,
-					null, null, dimensionId, null, null,
-					null, null, null, null, null, null,
-					null);
+			return new Condition(ConditionType.DIMENSION, null, null, null, null, null, null, null, null, null, dimensionId, null, null, null, null, null, null, null, null, null);
 		}
 
 		public static Condition time(TimeMode timeMode, long duration) {
-			return new Condition(ConditionType.TIME, null, null, null,
-					null, null, null, null,
-					null, null, null, timeMode, duration,
-					null, null, null, null, null, null,
-					null);
+			return new Condition(ConditionType.TIME, null, null, null, null, null, null, null, null, null, null, timeMode, duration, null, null, null, null, null, null, null);
 		}
 
 		public static Condition alignment(Integer minAlignment, Integer maxAlignment) {
-			return new Condition(ConditionType.ALIGNMENT, null, null, null,
-					null, null, null, null,
-					null, null, null, null, null,
-					minAlignment, maxAlignment, null, null, null, null,
-					null);
+			return new Condition(ConditionType.ALIGNMENT, null, null, null, null, null, null, null, null, null, null, null, null, minAlignment, maxAlignment, null, null, null, null, null);
 		}
 
 		public static Condition skill(String skill, int skillLevel) {
-			return new Condition(ConditionType.SKILL, null, null, null,
-					null, null, null, null,
-					null, null, null, null, null,
-					null, null, skill, Math.max(1, skillLevel), null, null,
-					null);
+			return new Condition(ConditionType.SKILL, null, null, null, null, null, null, null, null, null, null, null, null, null, null, skill, Math.max(1, skillLevel), null, null, null);
 		}
 
 		public static Condition race(String raceName) {
-			return new Condition(ConditionType.RACE, null, null, null,
-					null, null, null, null,
-					null, null, null, null, null,
-					null, null, null, null, raceName, null,
-					null);
+			return new Condition(ConditionType.RACE, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, raceName, null, null);
 		}
 
 		public static Condition characterClass(String className) {
-			return new Condition(ConditionType.CLASS, null, null, null,
-					null, null, null, null,
-					null, null, null, null, null,
-					null, null, null, null, null, className,
-					null);
+			return new Condition(ConditionType.CLASS, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, className, null);
 		}
 
 		public static Condition nestedGroup(QuestPrerequisites nested) {
-			return new Condition(null, null, null, null,
-					null, null, null, null,
-					null, null, null, null, null,
-					null, null, null, null, null, null,
-					nested);
+			return new Condition(null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, nested);
+		}
+
+		public ConditionType getType() {
+			return this.type;
+		}
+
+		public String getSagaId() {
+			return this.sagaId;
+		}
+
+		public Integer getQuestId() {
+			return this.questId;
+		}
+
+		public String getRequiredQuestId() {
+			return this.requiredQuestId;
+		}
+
+		public String getStat() {
+			return this.stat;
+		}
+
+		public Integer getMinValue() {
+			return this.minValue;
+		}
+
+		public Integer getMinLevel() {
+			return this.minLevel;
+		}
+
+		public String getBiomeId() {
+			return this.biomeId;
+		}
+
+		public String getStructureId() {
+			return this.structureId;
+		}
+
+		public StructureHint getStructureHint() {
+			return this.structureHint;
+		}
+
+		public String getDimensionId() {
+			return this.dimensionId;
+		}
+
+		public TimeMode getTimeMode() {
+			return this.timeMode;
+		}
+
+		public Long getDuration() {
+			return this.duration;
+		}
+
+		public Integer getMinAlignment() {
+			return this.minAlignment;
+		}
+
+		public Integer getMaxAlignment() {
+			return this.maxAlignment;
+		}
+
+		public String getSkill() {
+			return this.skill;
+		}
+
+		public Integer getSkillLevel() {
+			return this.skillLevel;
+		}
+
+		public String getRace() {
+			return this.race;
+		}
+
+		public String getCharacterClass() {
+			return this.characterClass;
+		}
+
+		public QuestPrerequisites getNested() {
+			return this.nested;
 		}
 	}
 }

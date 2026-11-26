@@ -1,218 +1,140 @@
 package com.dragonminez.client.gui.hud;
 
-import com.dragonminez.Reference;
-import com.dragonminez.client.util.ColorUtils;
-import com.dragonminez.client.util.TextUtil;
-import com.dragonminez.common.config.ConfigManager;
-import com.dragonminez.common.config.FormConfig;
-import com.dragonminez.common.stats.*;
-import com.dragonminez.common.stats.character.Character;
-import com.dragonminez.common.stats.character.Resources;
-import com.dragonminez.common.stats.character.Status;
+import com.dragonminez.client.gui.hud.layout.HudElement;
+import com.dragonminez.client.gui.hud.layout.HudLayout;
+import com.dragonminez.common.stats.StatsCapability;
+import com.dragonminez.common.stats.StatsProvider;
 import com.mojang.blaze3d.systems.RenderSystem;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
-import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.Mth;
-import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.client.gui.LayeredDraw;
 
-import java.text.NumberFormat;
-import java.util.List;
-import java.util.Locale;
-
 public class XenoverseHUD {
-	private static final ResourceLocation hud = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "textures/gui/hud/xenoversehud.png");
-	private static final ResourceLocation racialIcons = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "textures/gui/hud/racial_icons.png");
+	private static final float HP_FRAME_X = 31.0f, HP_FRAME_Y = 13.0f;
+	private static final float HP_X = 32.0f, HP_Y = 15.0f;
+	private static final float KI_FRAME_X = 28.0f, KI_FRAME_Y = 21.0f;
+	private static final float KI_X = 29.0f, KI_Y = 23.0f;
+	private static final float STM_FRAME_X = 28.0f, STM_FRAME_Y = 28.0f;
+	private static final float STM_X = 43.0f, STM_Y = 29.0f;
+	private static final float RADAR_X = 8.0f, RADAR_Y = 8.0f;
+	private static final float ICON_Y = 5.0f;
+	private static final float SURGE_TOP = 0.55f;
+	private static final int STAMINA_COLOR = 0xF5A623;
+	private static final int RELEASE_TEXT_COLOR = 0xFACAF7;
+	private static final int ALERT_COLOR = 0xFF3B3B;
 
-	private static final HudBarAnimator HP_BAR = new HudBarAnimator();
-	private static final HudBarAnimator KI_BAR = new HudBarAnimator();
-	private static final HudBarAnimator STM_BAR = new HudBarAnimator();
-	private static volatile float displayPowerRelease = 0;
-	private static volatile float lastSeenMaxHP = -1.0f;
-	private static volatile float lastSeenMaxKi = -1;
-	private static volatile float lastSeenMaxStm = -1;
-	private static final float LERP_SPEED = 0.25f;
-	private static final float HP_BAR_MAX_WIDTH = 137.0f;
-	private static final float KI_BAR_MAX_WIDTH = 114.0f;
-	private static final float STM_BAR_MAX_WIDTH = 85.0f;
-	private static final HudStatNumberAnimator HP_NUMBER = new HudStatNumberAnimator(HudStatNumberAnimator.StatKind.HEALTH);
-	private static final HudStatNumberAnimator KI_NUMBER = new HudStatNumberAnimator(HudStatNumberAnimator.StatKind.KI);
-	private static final HudStatNumberAnimator STM_NUMBER = new HudStatNumberAnimator(HudStatNumberAnimator.StatKind.STAMINA);
-
-	static NumberFormat numberFormat = NumberFormat.getInstance(Locale.US);
+	private static final HudBar HP_BAR = new HudBar(HudStatNumberAnimator.StatKind.HEALTH);
+	private static final HudBar KI_BAR = new HudBar(HudStatNumberAnimator.StatKind.KI).flowing();
+	private static final HudBar STM_BAR = new HudBar(HudStatNumberAnimator.StatKind.STAMINA);
+	private static final HudSmoother RELEASE = new HudSmoother(0.10f, 0.05f);
+	private static final HudSmoother FORM_CHARGE = new HudSmoother(0.08f);
+	private static final HudSmoother CHARGE_GLOW = new HudSmoother(0.15f);
+	private static final HudSmoother SHAKE = new HudSmoother(0.12f);
+	private static float lastHealth = -1.0f;
+	private static float mirrorWidth = -1.0f;
 
 	public static final LayeredDraw.Layer HUD_XENOVERSE = (guiGraphics, deltaTracker) -> {
-		float partialTicks = deltaTracker.getGameTimeDeltaPartialTick(false);
-		int width = guiGraphics.guiWidth();
-		int height = guiGraphics.guiHeight();
-		Minecraft mc = Minecraft.getInstance();
-		if (mc.getDebugOverlay().showDebugScreen() || mc.player == null) return;
-		if (ConfigManager.getUserConfig().getAlternativeHud()) return;
-
-		StatsProvider.get(StatsCapability.INSTANCE, mc.player).ifPresent(data -> {
-			Character character = data.getCharacter();
-			Status status = data.getStatus();
-			Resources resources = data.getResources();
-
-			if (status.isHasCreatedCharacter()) {
-				float maxHP = Math.max(1.0f, (float) mc.player.getAttributeValue(Attributes.MAX_HEALTH));
-				float maxKi = Math.max(1, data.getMaxEnergy());
-				float maxStm = Math.max(1, data.getMaxStamina());
-
-				int powerRelease = resources.getPowerRelease();
-				int formRelease = resources.getActionCharge() < 10 ? 10 + resources.getActionCharge() : resources.getActionCharge();
-				String raceName = character.getRaceName();
-				String auraColor = character.getAuraColor();
-
-				FormConfig.FormData formData = character.getActiveStackForm() != null && !character.getActiveStackForm().isEmpty() ? character.getActiveStackFormData() :
-						character.getActiveForm() != null && !character.getActiveForm().isEmpty() ? character.getActiveFormData() : null;
-
-				if (formData != null && formData.getAuraColor() != null && !formData.getAuraColor().isEmpty()) auraColor = formData.getAuraColor();
-
-				float currentHP = mc.player.getHealth();
-				float currentKi = resources.getCurrentEnergy();
-				float currentStm = resources.getCurrentStamina();
-
-				float hpFraction = Mth.clamp(currentHP / maxHP, 0.0f, 1.0f);
-				float kiFraction = Mth.clamp(currentKi / (float) maxKi, 0.0f, 1.0f);
-				float stmFraction = Mth.clamp(currentStm / (float) maxStm, 0.0f, 1.0f);
-
-				if (lastSeenMaxHP != maxHP) { HP_BAR.reset(hpFraction); lastSeenMaxHP = maxHP; }
-				if (lastSeenMaxKi != maxKi) { KI_BAR.reset(kiFraction); lastSeenMaxKi = maxKi; }
-				if (lastSeenMaxStm != maxStm) { STM_BAR.reset(stmFraction); lastSeenMaxStm = maxStm; }
-
-				HP_BAR.update(hpFraction);
-				KI_BAR.update(kiFraction);
-				STM_BAR.update(stmFraction);
-				displayPowerRelease += (powerRelease - displayPowerRelease) * LERP_SPEED * partialTicks;
-				if (Math.abs(displayPowerRelease - powerRelease) <= 1) displayPowerRelease = powerRelease;
-
-				float currentHPBarWidth = HP_BAR.frontFraction() * HP_BAR_MAX_WIDTH;
-				float currentKiBarWidth = KI_BAR.frontFraction() * KI_BAR_MAX_WIDTH;
-				float currentStmBarWidth = STM_BAR.frontFraction() * STM_BAR_MAX_WIDTH;
-
-				RenderSystem.enableBlend();
-				RenderSystem.setShaderColor(1.0f, 1.0f, 1.0f, 1.0f);
-
-				float baseScale = 2.25f;
-				float baseWidth = 184.0f;
-				float maxAllowedWidth = width * 0.50f;
-				float userScale = ConfigManager.getUserConfig().getXenoverseHudScale();
-				float finalScale = Math.min(baseScale * userScale, maxAllowedWidth / baseWidth);
-
-				int anchorX = ConfigManager.getUserConfig().getXenoverseHudPosX();
-				int anchorY = ConfigManager.getUserConfig().getXenoverseHudPosY();
-
-				guiGraphics.pose().pushPose();
-				guiGraphics.pose().translate(anchorX, anchorY, 0);
-				guiGraphics.pose().scale(finalScale, finalScale, 1.0f);
-
-				guiGraphics.blit(hud, 0, 0, 184, 10, 56, 25, 256, 256);
-
-				guiGraphics.blit(hud, 31, 13, 14, 2, 141, 9, 256, 256);
-				int hpV = (currentHP < maxHP * 0.33) ? 48 : (currentHP < maxHP * 0.66) ? 35 : 21;
-				drawHpChip(guiGraphics, 32, 15, 15, hpV, currentHPBarWidth, HP_BAR.ghostFraction() * HP_BAR_MAX_WIDTH, HP_BAR.gapType(), 5);
-				guiGraphics.blit(hud, 32, 15, 15, hpV, (int) currentHPBarWidth, 5, 256, 256);
-
-				guiGraphics.blit(hud, 28, 21, 8, 65, 118, 8, 256, 256);
-				float[] auraRgb = ColorUtils.hexToRgb(auraColor);
-				RenderSystem.setShaderColor(auraRgb[0], auraRgb[1], auraRgb[2], 1.0f);
-				guiGraphics.blit(hud, 29, 23, 9, 81, (int) currentKiBarWidth, 4, 256, 256);
-				RenderSystem.setShaderColor(1.0f, 1.0f, 1.0f, 1.0f);
-
-				guiGraphics.blit(hud, 28, 28, 9, 105, 100, 7, 256, 256);
-				guiGraphics.blit(hud, 43, 29, 24, 121, (int) currentStmBarWidth, 5, 256, 256);
-
-				List<String> loadedRaces = ConfigManager.getDefaultRaces();
-				int raceIndex = Math.max(0, loadedRaces.indexOf(raceName.toLowerCase()));
-				int iconU = 1 + (raceIndex * 17);
-				boolean isMajin = raceName.equalsIgnoreCase("majin");
-				boolean isCustomRace = !loadedRaces.contains(raceName.toLowerCase());
-
-				int raceY = isMajin ? 12 : 13;
-				guiGraphics.blit(racialIcons, 15, raceY, isCustomRace ? 103 : iconU, 1, 16, 16, 256, 256);
-
-				int fillHeight = (int) (16 * (Math.min(displayPowerRelease, 100.0f) / 100.0f));
-				if (fillHeight > 0) guiGraphics.blit(racialIcons, 15, raceY + (16 - fillHeight), isCustomRace ? 103 : iconU, 18 + (16 - fillHeight), 16, fillHeight, 256, 256);
-
-				guiGraphics.blit(hud, 8, 8, 218, 100, 26, 27, 256, 256);
-				int fillFormHeight = (int) (17 * (formRelease / 100.0f));
-				if (fillFormHeight > 0) guiGraphics.blit(hud, 10, 20 + (17 - fillFormHeight), 220, 130 + (17 - fillFormHeight), 26, fillFormHeight, 256, 256);
-
-				drawScaledText(guiGraphics, Math.round(displayPowerRelease) + "%", 7, 32, 0.5f, ColorUtils.hexToInt("#FACAF7"));
-
-				if (ConfigManager.getUserConfig().getAdvancedDescription()) {
-					boolean showPercent = ConfigManager.getUserConfig().getAdvancedDescriptionPercentage();
-					float tickTime = mc.player.tickCount + partialTicks;
-
-					String hpText = showPercent ? String.format("%.0f%%", (currentHP / maxHP) * 100) : numberFormat.format(Math.round((double) currentHP)) + " / " + numberFormat.format(Math.round((double) maxHP));
-					drawAnimatedScaledText(guiGraphics, HP_NUMBER, hpText, displayValue(currentHP, maxHP, showPercent), tickTime, 100, 15, 0.5f);
-
-					String kiText = showPercent ? String.format("%.0f%%", (currentKi / (float) maxKi) * 100) : numberFormat.format(Math.round((double) currentKi)) + " / " + numberFormat.format(Math.round((double) maxKi));
-					drawAnimatedScaledText(guiGraphics, KI_NUMBER, kiText, displayValue(currentKi, maxKi, showPercent), tickTime, 90, 23, 0.5f);
-
-					String stmText = showPercent ? String.format("%.0f%%", (currentStm / (float) maxStm) * 100) : numberFormat.format(Math.round((double) currentStm)) + " / " + numberFormat.format(Math.round((double) maxStm));
-					drawAnimatedScaledText(guiGraphics, STM_NUMBER, stmText, displayValue(currentStm, maxStm, showPercent), tickTime, 80, 30, 0.5f);
-				}
-
-				guiGraphics.pose().popPose();
-			}
-		});
+		if (!HudLayout.isPreview()) render(guiGraphics, deltaTracker.getGameTimeDeltaPartialTick(false), guiGraphics.guiWidth(), guiGraphics.guiHeight());
 	};
 
-	private static void drawHpChip(GuiGraphics guiGraphics, int x, int y, int u, int v, float front, float ghost, HudBarAnimator.GapType gap, int height) {
-		if (gap == HudBarAnimator.GapType.NONE) return;
-		int start = Math.round(Math.min(front, ghost));
-		int end = Math.round(Math.max(front, ghost));
-		int chipWidth = end - start;
-		if (chipWidth <= 0) return;
+	public static void render(GuiGraphics guiGraphics, float partialTicks, int width, int height) {
+		Minecraft mc = Minecraft.getInstance();
+		if (mc.getDebugOverlay().showDebugScreen() || mc.player == null) return;
+		if (HudStyle.current() != HudStyle.XENOVERSE) return;
+		HudLayout.Box box = HudLayout.resolve(HudElement.MAIN, width, height);
+		if (!box.visible() && !HudLayout.isPreview()) return;
+		HudSprites.XenoverseSkin skin = HudSprites.XENOVERSE;
 
-		if (gap == HudBarAnimator.GapType.DAMAGE) RenderSystem.setShaderColor(1.0f, 0.24f, 0.24f, 1.0f);
-		else RenderSystem.setShaderColor(0.34f, 1.0f, 0.42f, 1.0f);
-		guiGraphics.blit(hud, x + start, y, u + start, v, chipWidth, height, 256, 256);
-		RenderSystem.setShaderColor(1.0f, 1.0f, 1.0f, 1.0f);
+		StatsProvider.get(StatsCapability.INSTANCE, mc.player).ifPresent(data -> {
+			if (!data.getStatus().isHasCreatedCharacter()) return;
+
+			HudPlayerState state = HudPlayerState.of(mc.player, data);
+			HP_BAR.update(state.health(), state.maxHealth());
+			KI_BAR.update(state.energy(), state.maxEnergy());
+			STM_BAR.update(state.stamina(), state.maxStamina());
+			float release = RELEASE.update(state.powerRelease());
+			float formCharge = FORM_CHARGE.update(state.formCharge());
+			float chargeGlow = CHARGE_GLOW.update(state.chargingKi() ? 1.0f : 0.0f);
+			float surge = SurgeBarState.fraction(data);
+
+			if (lastHealth >= 0.0f && state.health() < lastHealth) {
+				float lost = (lastHealth - state.health()) / state.maxHealth();
+				if (lost >= 0.02f) SHAKE.snap(Math.min(1.0f, SHAKE.value() + lost * 6.0f));
+			}
+			lastHealth = state.health();
+			float shake = HudLayout.isPreview() ? 0.0f : SHAKE.update(0.0f);
+
+			float seconds = HudBar.time();
+			float tickTime = mc.player.tickCount + partialTicks;
+			float lowHealth = HudBar.heartbeat(HP_BAR.targetFraction());
+			KI_BAR.setFlowBoost(chargeGlow);
+
+			float scale = box.scale();
+			mirrorWidth = box.mirrored() ? box.width() / scale : -1.0f;
+			boolean mirrored = mirrorWidth >= 0.0f;
+			HP_BAR.setMirrored(mirrored);
+			KI_BAR.setMirrored(mirrored);
+			STM_BAR.setMirrored(mirrored);
+
+			RenderSystem.enableBlend();
+			RenderSystem.setShaderColor(1.0f, 1.0f, 1.0f, 1.0f);
+			HudRender.setAlphaScale(box.visible() ? 1.0f : 0.35f);
+			guiGraphics.pose().pushPose();
+			guiGraphics.pose().translate(box.x() + Mth.sin(seconds * 61.0f) * 1.6f * shake, box.y() + Mth.cos(seconds * 47.0f) * 1.0f * shake, 0.0f);
+			guiGraphics.pose().scale(scale, scale, 1.0f);
+			try {
+				part(guiGraphics, skin.cloud(), 0.0f, 0.0f, 0xFFFFFF, 1.0f);
+
+				part(guiGraphics, skin.hpFrame(), HP_FRAME_X, HP_FRAME_Y, 0xFFFFFF, 1.0f);
+				if (lowHealth > 0.0f) part(guiGraphics, skin.hpFrame(), HP_FRAME_X, HP_FRAME_Y, ALERT_COLOR, lowHealth * 0.6f);
+				drawBar(guiGraphics, HP_BAR, skin.hpFill(), HP_X, HP_Y, HudPlayerState.healthColor(HP_BAR.fraction()), lowHealth);
+
+				part(guiGraphics, skin.kiFrame(), KI_FRAME_X, KI_FRAME_Y, 0xFFFFFF, 1.0f);
+				drawBar(guiGraphics, KI_BAR, skin.kiFill(), KI_X, KI_Y, state.auraColor(), 0.0f);
+				HudSprites.Sprite kiFill = skin.kiFill();
+				float kiX = mx(KI_X, kiFill.guiWidth());
+				KI_BAR.drawFillSweep(guiGraphics, kiFill, kiX, KI_Y, kiFill.guiWidth(), kiFill.guiHeight(), seconds * 1.1f, chargeGlow);
+				if (surge > 0.0f) {
+					HudRender.spritePart(guiGraphics, kiFill, kiX, KI_Y, kiFill.guiWidth(), kiFill.guiHeight(), 0.0f, SURGE_TOP, surge, 1.0f,
+							HudRender.mix(state.auraColor(), 0xFFFFFF, 0.75f), 0.95f, mirrored);
+				}
+
+				HudSprites.Sprite label = skin.stmLabel();
+				HudRender.sprite(guiGraphics, label, mx(STM_FRAME_X, label.guiWidth()), STM_FRAME_Y, label.guiWidth(), label.guiHeight(), 0xFFFFFF, 1.0f, false);
+				part(guiGraphics, skin.stmFrame(), STM_FRAME_X + label.guiWidth(), STM_FRAME_Y, 0xFFFFFF, 1.0f);
+				drawBar(guiGraphics, STM_BAR, skin.stmFill(), STM_X, STM_Y, STAMINA_COLOR, 0.0f);
+
+				HudRadar.draw(guiGraphics, HudSprites.RADAR, RADAR_X, RADAR_Y, mirrorWidth, data.getCharacter().getRaceName(),
+						"majin".equalsIgnoreCase(data.getCharacter().getRaceName()) ? ICON_Y - 1.0f : ICON_Y, release, formCharge);
+				HudRender.text(guiGraphics, Math.round(release) + "%", mirrorX(7.0f), 32.0f, 0.5f, 0.5f, RELEASE_TEXT_COLOR, 1.0f);
+
+				HP_BAR.drawValue(guiGraphics, mirrorX(100.0f), 15.5f, 0.5f, 0.5f, tickTime);
+				KI_BAR.drawValue(guiGraphics, mirrorX(90.0f), 23.0f, 0.5f, 0.5f, tickTime);
+				STM_BAR.drawValue(guiGraphics, mirrorX(85.0f), 29.5f, 0.5f, 0.5f, tickTime);
+			} finally {
+				guiGraphics.pose().popPose();
+				HudRender.setAlphaScale(1.0f);
+				RenderSystem.setShaderColor(1.0f, 1.0f, 1.0f, 1.0f);
+				mirrorWidth = -1.0f;
+			}
+		});
 	}
 
-	private static void drawScaledText(GuiGraphics guiGraphics, String text, int x, int y, float scale, int color) {
-		guiGraphics.pose().pushPose();
-		guiGraphics.pose().translate(x, y, 0);
-		guiGraphics.pose().scale(scale, scale, 1.0f);
-		TextUtil.drawCenteredStringWithBorder(guiGraphics, Minecraft.getInstance().font, text, 0, 0, color);
-		guiGraphics.pose().popPose();
+	private static void drawBar(GuiGraphics guiGraphics, HudBar bar, HudSprites.Sprite fill, float x, float y, int rgb, float pulse) {
+		bar.drawFill(guiGraphics, fill, null, mx(x, fill.guiWidth()), y, fill.guiWidth(), fill.guiHeight(), rgb, pulse);
 	}
 
-	private static void drawAnimatedScaledText(GuiGraphics guiGraphics, HudStatNumberAnimator animator, String text, float value, float tickTime, int x, int y, float scale) {
-		HudStatNumberAnimator.RenderState state = animator.update(text, value, tickTime);
-		if (state.isHidden()) return;
-
-		guiGraphics.pose().pushPose();
-		guiGraphics.pose().translate(x + state.offsetX(), y + state.offsetY(), 0);
-		guiGraphics.pose().scale(scale, scale, 1.0f);
-		drawFadingString(guiGraphics, text, 0, 0, withAlpha(state.rgbColor(), state.alpha()), true);
-		guiGraphics.pose().popPose();
+	private static void part(GuiGraphics guiGraphics, HudSprites.Sprite sprite, float x, float y, int rgb, float alpha) {
+		float width = sprite.guiWidth();
+		HudRender.sprite(guiGraphics, sprite, mx(x, width), y, width, sprite.guiHeight(), rgb, alpha, mirrorWidth >= 0.0f);
 	}
 
-	private static void drawFadingString(GuiGraphics guiGraphics, String text, int x, int y, int color, boolean centered) {
-		int alpha = (color >>> 24) & 0xFF;
-		if (alpha <= 2) return;
-		int borderCol = alpha << 24;
-		var font = Minecraft.getInstance().font;
-		int dx = centered ? -font.width(text) / 2 : 0;
-
-		guiGraphics.drawString(font, text, x + dx - 1, y, borderCol, false);
-		guiGraphics.drawString(font, text, x + dx + 1, y, borderCol, false);
-		guiGraphics.drawString(font, text, x + dx, y - 1, borderCol, false);
-		guiGraphics.drawString(font, text, x + dx, y + 1, borderCol, false);
-		guiGraphics.drawString(font, text, x + dx, y, color, false);
+	private static float mx(float x, float width) {
+		return mirrorWidth < 0.0f ? x : mirrorWidth - x - width;
 	}
 
-	private static float displayValue(float current, float max, boolean showPercent) {
-		return showPercent ? Math.round((current / max) * 100.0f) : Math.round(current);
-	}
-
-	private static int withAlpha(int rgb, float alpha) {
-		int alphaChannel = Math.round(Mth.clamp(alpha, 0.0f, 1.0f) * 255.0f);
-		return (alphaChannel << 24) | (rgb & 0xFFFFFF);
+	private static float mirrorX(float x) {
+		return mirrorWidth < 0.0f ? x : mirrorWidth - x;
 	}
 }

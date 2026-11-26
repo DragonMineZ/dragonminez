@@ -1,7 +1,7 @@
 package com.dragonminez.common.network.C2S;
 
+import com.dragonminez.common.network.PacketRateLimiter;
 import com.dragonminez.common.network.NetworkHandler;
-import com.dragonminez.common.network.TrainingSessionTracker;
 import com.dragonminez.common.network.S2C.TriggerAnimationS2C;
 import com.dragonminez.common.stats.StatsCapability;
 import com.dragonminez.common.stats.StatsProvider;
@@ -34,18 +34,16 @@ public class TrainingAnimationC2S {
 			if (player == null) return;
 
 			if (active) {
+				if (!PacketRateLimiter.allow(player.getUUID(), "training_animation", player.level().getGameTime(), 10L)) return;
 				boolean canTrain = StatsProvider.get(StatsCapability.INSTANCE, player)
 						.map(data -> data.getStatus().isHasCreatedCharacter())
 						.orElse(false);
 				if (!canTrain) return;
 
-				TrainingSessionTracker.begin(player.getUUID(), player.level().getGameTime());
-
 				String animation = TRAINING_ANIMATIONS[player.getRandom().nextInt(TRAINING_ANIMATIONS.length)];
 				NetworkHandler.sendToTrackingEntityAndSelf(
 						new TriggerAnimationS2C(player.getUUID(), TriggerAnimationS2C.AnimationType.KI_ANIMATION, 1, -1, animation), player);
 			} else {
-				TrainingSessionTracker.end(player.getUUID());
 				NetworkHandler.sendToTrackingEntityAndSelf(
 						new TriggerAnimationS2C(player.getUUID(), TriggerAnimationS2C.AnimationType.KI_ANIMATION_STOP, 0, -1, ""), player);
 			}

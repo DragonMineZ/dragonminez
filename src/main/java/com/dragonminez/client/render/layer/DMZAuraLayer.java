@@ -1,5 +1,6 @@
 package com.dragonminez.client.render.layer;
 
+import com.dragonminez.client.render.effects.AuraFxState;
 import com.dragonminez.client.render.util.PlayerEffectQueue;
 import com.dragonminez.common.stats.extras.ActionMode;
 import com.dragonminez.common.stats.StatsCapability;
@@ -22,20 +23,14 @@ public class DMZAuraLayer<T extends AbstractClientPlayer & GeoAnimatable> extend
 	@Override
 	public void render(PoseStack poseStack, T animatable, BakedGeoModel playerModel, RenderType renderType, MultiBufferSource bufferSource, VertexConsumer buffer, float partialTick, int packedLight, int packedOverlay) {
 		if (animatable.isSpectator()) return;
+		if (com.dragonminez.client.render.effects.AfterimageEffect.isRendering()) return;
 		var stats = StatsProvider.get(StatsCapability.INSTANCE, animatable).orElse(null);
 		if (stats == null) return;
 
-		boolean isAuraActive = stats.getStatus().isAuraActive() || stats.getStatus().isPermanentAura();
+		boolean isAuraActive = stats.getStatus().isAuraActive() || stats.getStatus().isPermanentAura() || stats.getStatus().isForcedAura();
 		boolean isAndroidChargingForm = stats.getStatus().isAndroidUpgraded() && stats.getStatus().isActionCharging() && stats.getStatus().getSelectedAction() == ActionMode.FORM;
 
-		var character = stats.getCharacter();
-		boolean hasLightning = false;
-
-		if (character.hasActiveStackForm() && character.getActiveStackFormData() != null) {
-			hasLightning = character.getActiveStackFormData().getHasLightnings();
-		} else if (character.hasActiveForm() && character.getActiveFormData() != null) {
-			hasLightning = character.getActiveFormData().getHasLightnings();
-		}
+		boolean hasLightning = AuraFxState.hasLightning(stats);
 
 		if (stats.getStatus().isAndroidUpgraded() && !isAndroidChargingForm && !hasLightning) return;
 

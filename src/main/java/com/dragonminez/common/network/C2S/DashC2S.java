@@ -35,9 +35,10 @@ public class DashC2S {
 		NetworkEvent.Context context = contextSupplier.get();
 		context.enqueueWork(() -> {
 			ServerPlayer player = context.getSender();
-			if (player != null) {
-				DashHandler.handleDash(player, xInput, zInput, isDoubleDash);
-			}
+			if (player == null) return;
+			if (player.isDeadOrDying() || player.isSpectator()) return;
+			if (!Float.isFinite(xInput) || !Float.isFinite(zInput)) return;
+			DashHandler.handleDash(player, xInput, zInput, isDoubleDash);
 		});
 		context.setPacketHandled(true);
 	}

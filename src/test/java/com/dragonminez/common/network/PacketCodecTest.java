@@ -29,19 +29,23 @@ class PacketCodecTest {
 
     @Test
     void beamClashStateRoundTrips() {
-        BeamClashStateS2C original = new BeamClashStateS2C(true, 0.25F, 0.4F, 0.6F, 0.75F, 0x12ABEF, 81);
+		BeamClashStateS2C original = new BeamClashStateS2C(true, 12345L, 98765L, 0.75F, 0x12ABEF, 0x34CDEF, 81, 1.25, -64.0, 9.5, 12);
         FriendlyByteBuf buffer = new FriendlyByteBuf(Unpooled.buffer());
         try {
             BeamClashStateS2C.encode(original, buffer);
             BeamClashStateS2C decoded = BeamClashStateS2C.decode(buffer);
 
             assertTrue(decoded.isActive());
-            assertEquals(0.25F, decoded.getMeterPhase());
-            assertEquals(0.4F, decoded.getSweetLow());
-            assertEquals(0.6F, decoded.getSweetHigh());
+			assertEquals(12345L, decoded.getStartGameTime());
+			assertEquals(98765L, decoded.getMeterSeed());
             assertEquals(0.75F, decoded.getAdvantage());
-            assertEquals(0x12ABEF, decoded.getBeamColor());
+			assertEquals(0x12ABEF, decoded.getSelfColor());
+			assertEquals(0x34CDEF, decoded.getFoeColor());
             assertEquals(81, decoded.getOpponentEntityId());
+			assertEquals(1.25, decoded.getClashX());
+			assertEquals(-64.0, decoded.getClashY());
+			assertEquals(9.5, decoded.getClashZ());
+			assertEquals(12, decoded.getExhaustTicks());
             assertEquals(0, buffer.readableBytes());
         } finally {
             buffer.release();

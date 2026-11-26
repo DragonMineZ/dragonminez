@@ -1,0 +1,13 @@
+{
+  "vertex": "dragonminez:bloom_quad",
+  "fragment": "dragonminez:aura_border_field",
+  "attributes": [ "Position" ],
+  "samplers": [
+    { "name": "Mask" }
+  ],
+  "uniforms": [
+    { "name": "MaskTexel", "type": "float", "count": 2, "values": [ 1.0, 1.0 ] },
+    { "name": "Footprint", "type": "float", "count": 1, "values": [ 2.0 ] },
+    { "name": "Id", "type": "float", "count": 1, "values": [ 0.0 ] }
+  ]
+}

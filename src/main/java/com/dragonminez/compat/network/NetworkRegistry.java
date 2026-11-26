@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: GPL-3.0-only
 package com.dragonminez.compat.network;
 
 import net.minecraft.resources.ResourceLocation;
@@ -13,12 +14,17 @@ import java.util.Objects;
 public final class NetworkRegistry {
 	private NetworkRegistry() {}
 
-	public static ChannelBuilder newSimpleChannel(ResourceLocation name, Supplier<String> networkProtocolVersion,
+	/** Forge's standard compatibility predicate: exact protocol, absent channel, or vanilla peer. */
+	public static Predicate<String> acceptMissingOr(String version) {
+		return peer -> version.equals(peer) || "ABSENT".equals(peer) || "ACCEPTVANILLA".equals(peer);
+	}
+
+	public static SimpleChannel newSimpleChannel(ResourceLocation name, Supplier<String> networkProtocolVersion,
 												  Predicate<String> clientAcceptedVersions, Predicate<String> serverAcceptedVersions) {
 		return ChannelBuilder.named(name)
 				.networkProtocolVersion(networkProtocolVersion)
 				.clientAcceptedVersions(clientAcceptedVersions)
-				.serverAcceptedVersions(serverAcceptedVersions);
+				.serverAcceptedVersions(serverAcceptedVersions).simpleChannel();
 	}
 
 	public static final class ChannelBuilder {

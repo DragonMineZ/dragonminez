@@ -1,0 +1,358 @@
+package com.dragonminez.client.gui.hair;
+
+import com.dragonminez.common.hair.CustomHair;
+import com.dragonminez.common.hair.HairStrand;
+import com.dragonminez.common.hair.HairStyleSlot;
+import com.dragonminez.client.util.PanelSkin;
+import com.dragonminez.client.util.ScrollbarState;
+import com.dragonminez.client.util.TextUtil;
+import net.minecraft.client.gui.Font;
+import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.network.chat.Component;
+
+final class HairOutlinerPanel {
+	private static final int HEADER_HEIGHT = 27;
+	private static final int INSET = 9;
+	private static final int TAB_HEIGHT = 14;
+	private static final int TAB_GAP = 2;
+	private static final int CELL_SIZE = 20;
+	private static final int CELL_GAP = 3;
+	private static final int ROW_HEIGHT = 12;
+	private static final int BUTTON_HEIGHT = 14;
+	private static final int CODE_HEADER_HEIGHT = 11;
+	private static final int CODE_BUTTON = 20;
+	private static final int CODE_AREA_HEIGHT = CODE_HEADER_HEIGHT + 2 * CODE_BUTTON + TAB_GAP;
+
+	interface Listener {
+		void onSelectionChanged();
+
+		void onCodeAction(CodeAction action);
+	}
+
+	enum CodeAction {
+		PASTE_STYLE(0, false),
+		COPY_STYLE(0, true),
+		PASTE_FULL(1, false),
+		COPY_FULL(1, true);
+
+		final int column;
+		final boolean export;
+
+		CodeAction(int column, boolean export) {
+			this.column = column;
+			this.export = export;
+		}
+	}
+
+	private final HairEditorState state;
+	private final Font font;
+	private final Listener listener;
+	private int x;
+	private int y;
+	private int width;
+	private int height;
+	private final ScrollbarState segmentScroll = new ScrollbarState().barWidth(4).minThumb(12).step(ROW_HEIGHT)
+			.colors(0x60000000, HairEditorUi.DIVIDER, HairEditorUi.HOVER_TEXT);
+
+	HairOutlinerPanel(HairEditorState state, Font font, Listener listener) {
+		this.state = state;
+		this.font = font;
+		this.listener = listener;
+	}
+
+	void setBounds(int x, int y, int width, int height) {
+		this.x = x;
+		this.y = y;
+		this.width = width;
+		this.height = height;
+	}
+
+	int right() {
+		return x + width;
+	}
+
+	boolean contains(double mouseX, double mouseY) {
+		return HairEditorUi.inside(mouseX, mouseY, x, y, width, height);
+	}
+
+	void render(GuiGraphics graphics, int mouseX, int mouseY) {
+		HairEditorUi.panel(graphics, x, y, width, height);
+		HairEditorUi.header(graphics, font, HairEditorUi.tr("gui.dragonminez.hair_editor.outliner"), x, y, width);
+
+		int cursor = y + HEADER_HEIGHT + 2;
+		renderStyleTabs(graphics, mouseX, mouseY, cursor);
+		cursor += TAB_HEIGHT + 3;
+		renderFaceTabs(graphics, mouseX, mouseY, cursor);
+		cursor += TAB_HEIGHT + 4;
+		cursor = renderGrid(graphics, mouseX, mouseY, cursor);
+		cursor = renderStrandToolbar(graphics, mouseX, mouseY, cursor + 4);
+		renderSegmentList(graphics, mouseX, mouseY, cursor + 3, codeAreaTop() - 3);
+		renderCodeButtons(graphics, mouseX, mouseY);
+	}
+
+	boolean mouseClicked(double mouseX, double mouseY, int button) {
+		if (!contains(mouseX, mouseY)) return false;
+		if (button != 0) return true;
+
+		int cursor = y + HEADER_HEIGHT + 2;
+		HairStyleSlot slot = tabHit(mouseX, mouseY, cursor, HairStyleSlot.count()) >= 0 ? HairStyleSlot.byIndex(tabHit(mouseX, mouseY, cursor, HairStyleSlot.count())) : null;
+		if (slot != null) {
+			state.setSlot(slot);
+			HairEditorSounds.click();
+			listener.onSelectionChanged();
+			return true;
+		}
+		cursor += TAB_HEIGHT + 3;
+		int faceIndex = tabHit(mouseX, mouseY, cursor, CustomHair.HairFace.values().length);
+		if (faceIndex >= 0) {
+			state.setFace(CustomHair.HairFace.values()[faceIndex]);
+			HairEditorSounds.click();
+			return true;
+		}
+		cursor += TAB_HEIGHT + 4;
+
+		CustomHair.HairFace face = state.face();
+		int gridX = gridX(face);
+		for (int index = 0; index < face.maxStrands; index++) {
+			int cellX = gridX + (index % face.cols) * (CELL_SIZE + CELL_GAP);
+			int cellY = cursor + (index / face.cols) * (CELL_SIZE + CELL_GAP);
+			if (HairEditorUi.inside(mouseX, mouseY, cellX, cellY, CELL_SIZE, CELL_SIZE)) {
+				boolean alreadySelected = state.selectedFace() == face && state.selectedIndex() == index;
+				if (alreadySelected) {
+					state.clearSelection();
+					HairEditorSounds.deselect();
+				} else {
+					state.select(face, index);
+					HairEditorSounds.select();
+				}
+				listener.onSelectionChanged();
+				return true;
+			}
+		}
+		cursor += gridHeight(face) + 4;
+
+		if (state.hasSelection()) {
+			int buttonWidth = (width - INSET * 2 - TAB_GAP) / 2;
+			if (HairEditorUi.inside(mouseX, mouseY, x + INSET, cursor, buttonWidth, BUTTON_HEIGHT)) {
+				state.toggleHidden(state.selectedFace(), state.selectedIndex());
+				HairEditorSounds.toggle(state.isHidden(state.selectedFace(), state.selectedIndex()));
+				return true;
+			}
+			if (HairEditorUi.inside(mouseX, mouseY, x + INSET + buttonWidth + TAB_GAP, cursor, buttonWidth, BUTTON_HEIGHT)) {
+				state.toggleLocked(state.selectedFace(), state.selectedIndex());
+				HairEditorSounds.toggle(state.isLocked(state.selectedFace(), state.selectedIndex()));
+				return true;
+			}
+			cursor += BUTTON_HEIGHT + 3;
+
+			HairStrand strand = state.selectedStrand();
+			if (strand != null && strand.isVisible()) {
+				if (segmentScroll.mouseClicked(mouseX, mouseY, button)) return true;
+				int listTop = cursor;
+				int listBottom = codeAreaTop() - 3;
+				if (mouseY >= listTop && mouseY < listBottom) {
+					int row = (int) ((mouseY - listTop + segmentScroll.scroll()) / ROW_HEIGHT);
+					if (row == 0) {
+						state.selectSegment(-1);
+						HairEditorSounds.select();
+					} else if (row - 1 < strand.getSegments()) {
+						state.selectSegment(row - 1);
+						HairEditorSounds.select();
+					}
+					listener.onSelectionChanged();
+					return true;
+				}
+			}
+		}
+
+		CodeAction action = codeActionAt(mouseX, mouseY);
+		if (action != null) {
+			HairEditorSounds.click();
+			listener.onCodeAction(action);
+		}
+		return true;
+	}
+
+	Component tooltip(double mouseX, double mouseY) {
+		CodeAction action = codeActionAt(mouseX, mouseY);
+		return action != null ? HairEditorUi.tr("gui.dragonminez.hair_editor.code.tooltip." + action.name().toLowerCase()) : null;
+	}
+
+	boolean mouseScrolled(double mouseX, double mouseY, double delta) {
+		if (!contains(mouseX, mouseY)) return false;
+		segmentScroll.scrollWheel(delta);
+		return true;
+	}
+
+	boolean mouseDragged(double mouseX, double mouseY) {
+		return segmentScroll.mouseDragged(mouseX, mouseY);
+	}
+
+	boolean mouseReleased() {
+		return segmentScroll.mouseReleased();
+	}
+
+	private void renderStyleTabs(GuiGraphics graphics, int mouseX, int mouseY, int top) {
+		int count = HairStyleSlot.count();
+		int tabWidth = tabWidth(count);
+		for (int i = 0; i < count; i++) {
+			HairStyleSlot slot = HairStyleSlot.byIndex(i);
+			int tabX = x + INSET + i * (tabWidth + TAB_GAP);
+			Component label = HairEditorUi.tr("gui.dragonminez.hair_editor.style.short." + i);
+			boolean empty = state.styles().get(slot).isEmpty();
+			HairEditorUi.button(graphics, font, label, tabX, top, tabWidth, TAB_HEIGHT, HairEditorUi.inside(mouseX, mouseY, tabX, top, tabWidth, TAB_HEIGHT), state.slot() == slot, true);
+			if (!empty) graphics.fill(tabX + tabWidth - 4, top + 2, tabX + tabWidth - 2, top + 4, HairEditorUi.TITLE);
+		}
+	}
+
+	private void renderFaceTabs(GuiGraphics graphics, int mouseX, int mouseY, int top) {
+		CustomHair.HairFace[] faces = CustomHair.HairFace.values();
+		int tabWidth = tabWidth(faces.length);
+		for (int i = 0; i < faces.length; i++) {
+			int tabX = x + INSET + i * (tabWidth + TAB_GAP);
+			Component label = HairEditorUi.tr("gui.dragonminez.hair_editor.face." + faces[i].name().toLowerCase());
+			HairEditorUi.button(graphics, font, label, tabX, top, tabWidth, TAB_HEIGHT, HairEditorUi.inside(mouseX, mouseY, tabX, top, tabWidth, TAB_HEIGHT), state.face() == faces[i], true);
+		}
+	}
+
+	private int renderGrid(GuiGraphics graphics, int mouseX, int mouseY, int top) {
+		CustomHair.HairFace face = state.face();
+		CustomHair style = state.style();
+		int gridX = gridX(face);
+		for (int index = 0; index < face.maxStrands; index++) {
+			int cellX = gridX + (index % face.cols) * (CELL_SIZE + CELL_GAP);
+			int cellY = top + (index / face.cols) * (CELL_SIZE + CELL_GAP);
+			HairStrand strand = style.getStrand(face, index);
+			boolean visible = strand != null && strand.isVisible();
+			boolean selected = state.selectedFace() == face && state.selectedIndex() == index;
+			boolean hovered = HairEditorUi.inside(mouseX, mouseY, cellX, cellY, CELL_SIZE, CELL_SIZE);
+			boolean hidden = state.isHidden(face, index);
+
+			PanelSkin sprite = selected ? HairEditorTextures.BUTTON_ACTIVE
+					: (hovered ? HairEditorTextures.BUTTON_HOVER : (visible ? HairEditorTextures.BUTTON_ACCENT : HairEditorTextures.BUTTON));
+			float tint = hidden ? 0.55f : 1.0f;
+			HairEditorTextures.draw(graphics, sprite, cellX, cellY, CELL_SIZE, CELL_SIZE, tint, tint, tint, 1.0f);
+
+			String number = Integer.toString(index + 1);
+			int color = hidden ? HairEditorUi.DISABLED : (visible || selected ? HairEditorUi.TEXT : HairEditorUi.MUTED);
+			TextUtil.drawStringWithBorder(graphics, font, number, cellX + (CELL_SIZE - font.width(number)) / 2 + 1, cellY + (CELL_SIZE - 8) / 2 + 1, color);
+			if (hidden) graphics.fill(cellX + 3, cellY + CELL_SIZE / 2, cellX + CELL_SIZE - 3, cellY + CELL_SIZE / 2 + 1, HairEditorUi.WARNING);
+			if (state.isLocked(face, index)) graphics.fill(cellX + CELL_SIZE - 5, cellY + 2, cellX + CELL_SIZE - 2, cellY + 5, HairEditorUi.SECTION);
+		}
+		return top + gridHeight(face);
+	}
+
+	private int renderStrandToolbar(GuiGraphics graphics, int mouseX, int mouseY, int top) {
+		if (!state.hasSelection()) {
+			TextUtil.drawStringWithBorder(graphics, font, HairEditorUi.tr("gui.dragonminez.hair_editor.no_selection"), x + INSET, top + 3, HairEditorUi.MUTED);
+			return top + BUTTON_HEIGHT;
+		}
+		int buttonWidth = (width - INSET * 2 - TAB_GAP) / 2;
+		boolean hidden = state.isHidden(state.selectedFace(), state.selectedIndex());
+		boolean locked = state.isLocked(state.selectedFace(), state.selectedIndex());
+		HairEditorUi.button(graphics, font, HairEditorUi.tr(hidden ? "gui.dragonminez.hair_editor.show" : "gui.dragonminez.hair_editor.hide"),
+				x + INSET, top, buttonWidth, BUTTON_HEIGHT, HairEditorUi.inside(mouseX, mouseY, x + INSET, top, buttonWidth, BUTTON_HEIGHT), hidden, true);
+		int lockX = x + INSET + buttonWidth + TAB_GAP;
+		HairEditorUi.button(graphics, font, HairEditorUi.tr(locked ? "gui.dragonminez.hair_editor.unlock" : "gui.dragonminez.hair_editor.lock"),
+				lockX, top, buttonWidth, BUTTON_HEIGHT, HairEditorUi.inside(mouseX, mouseY, lockX, top, buttonWidth, BUTTON_HEIGHT), locked, true);
+		return top + BUTTON_HEIGHT;
+	}
+
+	private void renderSegmentList(GuiGraphics graphics, int mouseX, int mouseY, int top, int bottom) {
+		HairStrand strand = state.selectedStrand();
+		if (strand == null || !strand.isVisible() || bottom - top < ROW_HEIGHT) {
+			segmentScroll.clear();
+			return;
+		}
+		int rows = strand.getSegments() + 1;
+		segmentScroll.layout(x + INSET, top, width - INSET * 2 + 2, bottom - top, rows * ROW_HEIGHT);
+		int rowWidth = width - INSET * 2 - (segmentScroll.canScroll() ? segmentScroll.reserve() : 0);
+		boolean mouseInList = segmentScroll.isInView(mouseX, mouseY);
+		double contentMouseY = segmentScroll.toContent(mouseY);
+		segmentScroll.beginClip(graphics);
+		for (int row = 0; row < rows; row++) {
+			int rowY = top + row * ROW_HEIGHT;
+			if (!segmentScroll.isVisible(rowY, ROW_HEIGHT)) continue;
+			boolean selected = row == 0 ? state.selectedSegment() < 0 : state.selectedSegment() == row - 1;
+			boolean hovered = mouseInList && HairEditorUi.inside(mouseX, contentMouseY, x + INSET, rowY, rowWidth, ROW_HEIGHT);
+			if (selected) HairEditorTextures.draw(graphics, HairEditorTextures.BUTTON_ACTIVE, x + INSET, rowY, rowWidth, ROW_HEIGHT);
+			else if (hovered) graphics.fill(x + INSET, rowY, x + INSET + rowWidth, rowY + ROW_HEIGHT, HairEditorUi.ROW_HOVER);
+			Component label = row == 0
+					? HairEditorUi.tr("gui.dragonminez.hair_editor.strand", state.selectedFace().key, state.selectedIndex() + 1)
+					: HairEditorUi.tr("gui.dragonminez.hair_editor.segment", row);
+			int indent = row == 0 ? 8 : 18;
+			boolean overridden = row > 0 && strand.getOverride(row - 1) != null && !strand.getOverride(row - 1).isIdentity();
+			TextUtil.drawStringWithBorder(graphics, font, label, x + INSET + indent - 4, rowY + 2, HairEditorUi.TEXT);
+			int markerX = x + INSET + rowWidth - 1;
+			if (overridden) graphics.fill(markerX, rowY + 4, markerX + 3, rowY + 7, HairEditorUi.SECTION);
+		}
+		segmentScroll.endClip(graphics);
+		segmentScroll.renderBar(graphics, mouseX, mouseY);
+	}
+
+	private void renderCodeButtons(GuiGraphics graphics, int mouseX, int mouseY) {
+		int top = codeAreaTop();
+		HairEditorUi.divider(graphics, x + INSET, x + width - INSET, top - 3);
+		int columnWidth = codeColumnWidth();
+		for (int column = 0; column < 2; column++) {
+			int columnX = x + INSET + column * (columnWidth + TAB_GAP);
+			Component header = HairEditorUi.tr(column == 0 ? "gui.dragonminez.hair_editor.code.style" : "gui.dragonminez.hair_editor.code.full");
+			TextUtil.drawStringWithBorder(graphics, font, header, columnX + (columnWidth - font.width(header)) / 2, top + 1, HairEditorUi.SECTION);
+		}
+		for (CodeAction action : CodeAction.values()) {
+			int buttonX = codeButtonX(action);
+			int buttonY = codeButtonY(action);
+			boolean hovered = HairEditorUi.inside(mouseX, mouseY, buttonX, buttonY, CODE_BUTTON, CODE_BUTTON);
+			HairEditorTextures.Sprite sprite = action.export
+					? (hovered ? HairEditorTextures.EXPORT_HOVER : HairEditorTextures.EXPORT)
+					: (hovered ? HairEditorTextures.IMPORT_HOVER : HairEditorTextures.IMPORT);
+			HairEditorTextures.draw(graphics, sprite, buttonX, buttonY);
+		}
+	}
+
+	private CodeAction codeActionAt(double mouseX, double mouseY) {
+		for (CodeAction action : CodeAction.values()) {
+			if (HairEditorUi.inside(mouseX, mouseY, codeButtonX(action), codeButtonY(action), CODE_BUTTON, CODE_BUTTON)) return action;
+		}
+		return null;
+	}
+
+	private int codeColumnWidth() {
+		return (width - INSET * 2 - TAB_GAP) / 2;
+	}
+
+	private int codeButtonX(CodeAction action) {
+		int columnWidth = codeColumnWidth();
+		return x + INSET + action.column * (columnWidth + TAB_GAP) + (columnWidth - CODE_BUTTON) / 2;
+	}
+
+	private int codeButtonY(CodeAction action) {
+		return codeAreaTop() + CODE_HEADER_HEIGHT + (action.export ? CODE_BUTTON + TAB_GAP : 0);
+	}
+
+	private int tabHit(double mouseX, double mouseY, int top, int count) {
+		int tabWidth = tabWidth(count);
+		for (int i = 0; i < count; i++) {
+			int tabX = x + INSET + i * (tabWidth + TAB_GAP);
+			if (HairEditorUi.inside(mouseX, mouseY, tabX, top, tabWidth, TAB_HEIGHT)) return i;
+		}
+		return -1;
+	}
+
+	private int tabWidth(int count) {
+		return (width - INSET * 2 - TAB_GAP * (count - 1)) / count;
+	}
+
+	private int gridX(CustomHair.HairFace face) {
+		int gridWidth = face.cols * CELL_SIZE + (face.cols - 1) * CELL_GAP;
+		return x + (width - gridWidth) / 2;
+	}
+
+	private static int gridHeight(CustomHair.HairFace face) {
+		return face.rows * CELL_SIZE + (face.rows - 1) * CELL_GAP;
+	}
+
+	private int codeAreaTop() {
+		return y + height - CODE_AREA_HEIGHT - INSET;
+	}
+}

@@ -4,6 +4,7 @@ import com.dragonminez.client.render.util.ModRenderTypes;
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.BufferBuilder;
 import com.mojang.blaze3d.vertex.ByteBufferBuilder;
+import com.mojang.blaze3d.vertex.DefaultVertexFormat;
 import com.mojang.blaze3d.vertex.MeshData;
 import com.mojang.blaze3d.vertex.VertexConsumer;
 import com.mojang.blaze3d.vertex.VertexMultiConsumer;
@@ -35,6 +36,30 @@ public final class TransformationMaskBufferSource implements MultiBufferSource {
 		return this;
 	}
 
+	public void setMaskCaptureEnabled(boolean enabled) {
+		this.maskCaptureEnabled = enabled;
+		if (this.delegate instanceof TransformationMaskBufferSource inner) inner.setMaskCaptureEnabled(enabled);
+	}
+
+	public void setMaskCaptureBlocked(boolean blocked) {
+		this.maskCaptureBlocked = blocked;
+		if (this.delegate instanceof TransformationMaskBufferSource inner) inner.setMaskCaptureBlocked(blocked);
+	}
+
+	public void setRawColor(int r, int g, int b) {
+		this.packedR = r;
+		this.packedG = g;
+		this.packedB = b;
+	}
+
+	public void detach() {
+		this.delegate = null;
+		this.maskCaptureEnabled = true;
+		this.includeOriginal = true;
+		this.forceCaptureAll = false;
+		this.maskCaptureBlocked = false;
+	}
+
 	public void setEntityColors(float primaryR, float primaryG, float primaryB, float secondaryR, float secondaryG, float secondaryB) {
 		this.packedR = packChannel(primaryR, secondaryR);
 		this.packedG = packChannel(primaryG, secondaryG);
@@ -43,7 +68,9 @@ public final class TransformationMaskBufferSource implements MultiBufferSource {
 
 	@Override
 	public VertexConsumer getBuffer(RenderType renderType) {
-		if (this.maskCaptureBlocked || (!this.maskCaptureEnabled && !this.forceCaptureAll)) {
+		boolean capture = !this.maskCaptureBlocked && (this.maskCaptureEnabled || this.forceCaptureAll);
+		RenderType maskRenderType = capture ? ModRenderTypes.transformationMask(renderType) : null;
+		if (maskRenderType == null) {
 			if (this.delegate == null || !this.includeOriginal) {
 				return EmptyVertexConsumer.INSTANCE;
 			}
@@ -57,7 +84,6 @@ public final class TransformationMaskBufferSource implements MultiBufferSource {
 			}
 			return this.delegate.getBuffer(renderType);
 		}
-		RenderType maskRenderType = ModRenderTypes.transformationMask(renderType);
 		if (this.delegate == null) {
 			VertexConsumer maskDelegate = this.getMaskBuffer(maskRenderType);
 			return new TransformationMaskVertexConsumer(maskDelegate, this.packedR, this.packedG, this.packedB, 255);
@@ -105,20 +131,12 @@ public final class TransformationMaskBufferSource implements MultiBufferSource {
 		return maskBuffer.builder;
 	}
 
-	public void setMaskCaptureEnabled(boolean enabled) {
-		this.maskCaptureEnabled = enabled;
-	}
-
 	public void setIncludeOriginal(boolean includeOriginal) {
 		this.includeOriginal = includeOriginal;
 	}
 
 	public void setForceCaptureAll(boolean forceCaptureAll) {
 		this.forceCaptureAll = forceCaptureAll;
-	}
-
-	public void setMaskCaptureBlocked(boolean blocked) {
-		this.maskCaptureBlocked = blocked;
 	}
 
 	private static int packChannel(float primary, float secondary) {
@@ -132,18 +150,9 @@ public final class TransformationMaskBufferSource implements MultiBufferSource {
 	 * into the transformation mask NEW_ENTITY format.
 	 */
 	private static boolean isNonGeometryRenderType(RenderType renderType) {
-		if (renderType == null) return true;
-		String name = renderType.toString();
-		// RenderType.toString() typically includes the debug name (e.g. "text", "text_see_through").
-		return name.contains("text")
-				|| name.contains("Text")
-				|| name.contains("lines")
-				|| name.contains("line_strip")
-				|| name.contains("particle")
-				|| name.contains("lightning")
-				|| name.contains("leash")
-				|| name.contains("water_mask")
-				|| name.contains("gui");
+		// The debug string includes texture state, so searching for "text" also
+		// rejects textured entity geometry. Only entity vertices fit the mask.
+		return renderType == null || renderType.format() != DefaultVertexFormat.NEW_ENTITY;
 	}
 
 	private static final class MaskBuffer {

@@ -1,12 +1,18 @@
 package com.dragonminez.common.init.entities.sagas.helper;
 
 import com.dragonminez.common.init.MainEffects;
+import com.dragonminez.common.network.NetworkHandler;
+import com.dragonminez.common.network.S2C.ClawSlashVfxS2C;
+import com.dragonminez.common.network.S2C.RageScreamVfxS2C;
+import com.dragonminez.server.events.players.combat.EvasionAttackHandler;
+import com.dragonminez.common.network.S2C.ShockwaveVfxS2C;
 import com.dragonminez.common.init.MainSounds;
 import com.dragonminez.common.init.entities.ki.*;
 import com.dragonminez.common.init.entities.sagas.DBSagasEntity;
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.effect.MobEffectInstance;
+import net.minecraft.sounds.SoundEvent;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.phys.AABB;
@@ -22,43 +28,69 @@ public class SkillManager {
         void execute(DBSagasEntity user, LivingEntity target, float damage);
     }
 
+    public static final int KAMEHAMEHA_CAST_TICKS = 37;
+    public static final int ASSAULT_RAIN_CAST_TICKS = 30;
+    public static final int ASSAULT_RAIN_FIRE_TICKS = 40;
+    public static final int BLASTER_METEOR_CAST_TICKS = 30;
+    public static final int BLASTER_METEOR_FIRE_TICKS = 50;
+    public static final int DRAGON_FIST_WINDUP = 5;
+    public static final int DRAGON_FIST_RUSH_TICKS = 20;
+    public static final int SOUL_PUNISHER_CAST_TICKS = 40;
+    public static final int MEDIUM_BALL_CAST_TICKS = 24;
+    private static final int SOUL_PUNISHER_RECOVERY_TICKS = 20;
+    private static final float SOUL_PUNISHER_SPEED_FACTOR = 0.6F;
+    private static final int KAMEHAMEHA_X10_MAIN = 0xFFE3E3;
+    private static final int KAMEHAMEHA_X10_BORDER = 0xFF2A2A;
+    private static final int KAMEHAMEHA_X10_OUTLINE = 0xB00020;
+
     private static final Map<Integer, KiAction> REGISTRY = new HashMap<>();
+    private static boolean guardSafeHit = false;
+
+    public static boolean isGuardSafeHit() {
+        return guardSafeHit;
+    }
 
     static {
         // 1. KAMEHAMEHA
         REGISTRY.put(1, (user, target, dmg) -> {
             KiWaveEntity kame = new KiWaveEntity(user.level(), user);
-            kame.setupKiHame(user, dmg, user.getKiBlastSpeed(), user.getCurrentPoolSkillSize(), 37);
+            kame.setupKiHame(user, dmg, user.getKiBlastSpeed(), user.getCurrentPoolSkillSize(), KAMEHAMEHA_CAST_TICKS);
+            applyColors(user, kame);
         });
 
         // 2. GALICK GUN
         REGISTRY.put(2, (user, target, dmg) -> {
             KiWaveEntity galick = new KiWaveEntity(user.level(), user);
             galick.setupKiGalickGun(user, dmg, user.getKiBlastSpeed(), user.getCurrentPoolSkillSize(), 37);
+            applyColors(user, galick);
         });
 
         // 3. MAKANKOSAPPO
         REGISTRY.put(3, (user, target, dmg) -> {
             KiLaserEntity makkanko = new KiLaserEntity(user.level(), user);
             makkanko.setupKiMakkankosanpo(user, dmg, user.getKiBlastSpeed() * 2.0F, 37);
+            applyColors(user, makkanko);
         });
 
         // 4. KI LASER
         REGISTRY.put(4, (user, target, dmg) -> {
             KiLaserEntity laser = new KiLaserEntity(user.level(), user);
             laser.setupKiLaser(user, dmg, user.getKiBlastSpeed() * 3.0F, user.getCurrentPoolColorMain(), user.getCurrentPoolColorBorder(), 0);
+            applyColors(user, laser);
         });
 
         // 5. KI EXPLOSION
         REGISTRY.put(5, (user, target, dmg) -> {
             KiExplosionEntity explosion = new KiExplosionEntity(user.level(), user);
             explosion.setupKiExplosion(user, dmg, user.getCurrentPoolColorMain(), user.getCurrentPoolColorBorder(), 37);
+            applyColors(user, explosion);
         });
 
         // 6. KI BARRIER
         REGISTRY.put(6, (user, target, dmg) -> {
             KiBarrierEntity barrier = new KiBarrierEntity(user.level(), user);
             barrier.setupKiBarrier(user, user.getCurrentPoolColorMain(), user.getCurrentPoolColorBorder(), 37);
+            applyColors(user, barrier);
             barrier.setKiDamage(dmg);
         });
 
@@ -92,18 +124,22 @@ public class SkillManager {
         REGISTRY.put(9, (user, target, dmg) -> {
             KiWaveEntity oozaru = new KiWaveEntity(user.level(), user);
             oozaru.setupKiOozaru(user, dmg, user.getKiBlastSpeed(), user.getCurrentPoolColorMain(), user.getCurrentPoolColorBorder(), user.getCurrentPoolSkillSize(), 37);
+            applyColors(user, oozaru);
         });
 
         // 10. KI VOLLEY
         REGISTRY.put(10, (user, target, dmg) -> {
             KiBlastEntity volley = new KiBlastEntity(user.level(), user);
             volley.setupKiVolley(user, dmg, user.getKiBlastSpeed(), user.getCurrentPoolColorMain(), 37);
+            applyColors(user, volley);
+            volley.setVolleyFullPalette(user.usesFullVolleyPalette());
         });
 
         // 11. KI SMALL
         REGISTRY.put(11, (user, target, dmg) -> {
             KiBlastEntity small = new KiBlastEntity(user.level(), user);
             small.setupKiSmall(user, dmg, user.getKiBlastSpeed(), user.getCurrentPoolColorMain());
+            applyColors(user, small);
             small.shootFromRotation(user, user.getXRot(), user.getYRot(), 0.0F, user.getKiBlastSpeed(), 1.0F);
             user.playSound(MainSounds.KIBLAST_ATTACK.get(), 1.0F, 1.0F + (user.getRandom().nextFloat() * 0.2F));
         });
@@ -118,36 +154,42 @@ public class SkillManager {
         REGISTRY.put(13, (user, target, dmg) -> {
             KiLaserEntity triple = new KiLaserEntity(user.level(), user);
             triple.setupKiLaser(user, dmg, user.getKiBlastSpeed() * 3.0F, user.getCurrentPoolColorMain(), user.getCurrentPoolColorBorder(), 0);
+            applyColors(user, triple);
         });
 
         // 14. KIENZAN
         REGISTRY.put(14, (user, target, dmg) -> {
             KiDiskEntity disk = new KiDiskEntity(user.level(), user);
             disk.setupKiDisk(user, dmg, user.getKiBlastSpeed() * 1.2F, user.getCurrentPoolColorMain(), user.getCurrentPoolSkillSize(), 30);
+            applyColors(user, disk);
         });
 
         // 15. DEATH BALL
         REGISTRY.put(15, (user, target, dmg) -> {
             KiBlastEntity ball = new KiBlastEntity(user.level(), user);
             ball.setupKiDeathBall(user, dmg, user.getKiBlastSpeed() * 0.7F, user.getCurrentPoolColorMain(), user.getCurrentPoolColorBorder(), 60);
+            applyColors(user, ball);
         });
 
         // 16. MASENKO
         REGISTRY.put(16, (user, target, dmg) -> {
             KiWaveEntity masenko = new KiWaveEntity(user.level(), user);
             masenko.setupKiMasenko(user, dmg, user.getKiBlastSpeed(), user.getCurrentPoolSkillSize(), 40);
+            applyColors(user, masenko);
         });
 
         // 17. BIG BANG
         REGISTRY.put(17, (user, target, dmg) -> {
             KiBlastEntity bigbang = new KiBlastEntity(user.level(), user);
             bigbang.setupKiBlast(user, dmg, user.getKiBlastSpeed(), user.getCurrentPoolColorMain(), user.getCurrentPoolSkillSize(), 30);
+            applyColors(user, bigbang);
         });
 
         // 18. FINAL FLASH
         REGISTRY.put(18, (user, target, dmg) -> {
             KiWaveEntity ff = new KiWaveEntity(user.level(), user);
             ff.setupFinalFlash(user, dmg, user.getKiBlastSpeed(), user.getCurrentPoolSkillSize(), 40);
+            applyColors(user, ff);
         });
 
         // 19. MAJIN CANDY
@@ -159,13 +201,82 @@ public class SkillManager {
         REGISTRY.put(20, (user, target, dmg) -> {
             KiBlastEntity airVolley = new KiBlastEntity(user.level(), user);
             airVolley.setupKiAirVolley(user, dmg, user.getKiBlastSpeed(), user.getCurrentPoolColorMain(), user.getCurrentPoolColorOutline(), 30);
+            applyColors(user, airVolley);
         });
 
         // 21. DOUBLE SUNDAY (Raditz)
         REGISTRY.put(21, (user, target, dmg) -> {
             KiWaveEntity doubleSunday = new KiWaveEntity(user.level(), user);
             doubleSunday.setupDoubleSunday(user, dmg, user.getKiBlastSpeed(), user.getCurrentPoolColorMain(), user.getCurrentPoolColorBorder(), user.getCurrentPoolColorOutline(), user.getCurrentPoolSkillSize(), 40);
+            applyColors(user, doubleSunday);
         });
+
+        // 23. DRAGON FIST
+        REGISTRY.put(23, (user, target, dmg) -> {
+            SPDragonFistEntity dragonFist = new SPDragonFistEntity(user.level(), user);
+            dragonFist.setupDragonFist(user, dmg, 1.0F, DRAGON_FIST_RUSH_TICKS);
+        });
+
+        // 26. DODONPA
+        REGISTRY.put(26, (user, target, dmg) -> {
+            KiLaserEntity dodonpa = new KiLaserEntity(user.level(), user);
+            dodonpa.setupKiDodonpa(user, dmg, user.getKiBlastSpeed() * 3.0F, 0);
+            applyColors(user, dodonpa);
+        });
+
+        // 27. BURNING ATTACK
+        REGISTRY.put(27, (user, target, dmg) -> {
+            KiBlastEntity burning = new KiBlastEntity(user.level(), user);
+            burning.setupKiBlast(user, dmg, user.getKiBlastSpeed(), user.getCurrentPoolColorMain(), user.getCurrentPoolColorBorder(),
+                    user.getCurrentPoolColorOutline(), user.getCurrentPoolSkillSize(), 30);
+        });
+
+        // 28. SUPERNOVA (COOLER)
+        REGISTRY.put(28, (user, target, dmg) -> {
+            KiBlastEntity supernova = new KiBlastEntity(user.level(), user);
+            supernova.setupKiDeathBall(user, dmg, user.getKiBlastSpeed() * 0.7F, user.getCurrentPoolColorMain(), user.getCurrentPoolColorBorder(), 60);
+            applyColors(user, supernova);
+        });
+
+        // 29. ASSAULT RAIN
+        REGISTRY.put(29, (user, target, dmg) -> {
+            KiBlastEntity rain = new KiBlastEntity(user.level(), user);
+            rain.setupAssaultRain(user, dmg, user.getKiBlastSpeed(), user.getCurrentPoolColorMain(), user.getCurrentPoolColorBorder(),
+                    user.getCurrentPoolColorOutline(), 0.8F * user.getCurrentPoolSkillSize(), ASSAULT_RAIN_CAST_TICKS, ASSAULT_RAIN_FIRE_TICKS);
+        });
+
+        // 30. BLASTER METEOR
+        REGISTRY.put(30, (user, target, dmg) -> {
+            KiBlastEntity meteor = new KiBlastEntity(user.level(), user);
+            meteor.setupBlasterMeteor(user, dmg, user.getKiBlastSpeed(), user.getCurrentPoolColorMain(), user.getCurrentPoolColorBorder(),
+                    user.getCurrentPoolColorOutline(), user.getBlasterMeteorCastTicks(), BLASTER_METEOR_FIRE_TICKS);
+        });
+
+        // 24. KAMEHAMEHA X10
+        REGISTRY.put(24, (user, target, dmg) -> {
+            KiWaveEntity kame = new KiWaveEntity(user.level(), user);
+            kame.setupKiHame(user, dmg, user.getKiBlastSpeed(), user.getCurrentPoolSkillSize(),
+                    KAMEHAMEHA_X10_MAIN, KAMEHAMEHA_X10_BORDER, KAMEHAMEHA_X10_OUTLINE, KAMEHAMEHA_CAST_TICKS);
+        });
+
+        // 33. SOUL PUNISHER (Gogeta)
+        REGISTRY.put(33, (user, target, dmg) -> {
+            KiBlastEntity soul = new KiBlastEntity(user.level(), user);
+            soul.setupSoulPunisher(user, dmg, user.getKiBlastSpeed() * SOUL_PUNISHER_SPEED_FACTOR, user.getCurrentPoolSkillSize(),
+                    SOUL_PUNISHER_CAST_TICKS, target.getId());
+        });
+
+        // 34. KI MEDIUM BALL
+        REGISTRY.put(34, (user, target, dmg) -> {
+            KiBlastEntity ball = new KiBlastEntity(user.level(), user);
+            ball.setupKiBlast(user, dmg, user.getKiBlastSpeed(), user.getCurrentPoolColorMain(), user.getCurrentPoolColorBorder(),
+                    user.getCurrentPoolColorOutline(), user.getCurrentPoolSkillSize(), MEDIUM_BALL_CAST_TICKS);
+        });
+    }
+
+    private static void applyColors(DBSagasEntity user, AbstractKiProjectile projectile) {
+        projectile.setColors(user.getCurrentPoolColorMain(), user.getCurrentPoolColorBorder(),
+                user.getCurrentPoolColorOutline());
     }
 
     public static void execute(int id, DBSagasEntity user, LivingEntity target) {
@@ -188,12 +299,39 @@ public class SkillManager {
         float mult = type != null ? type.getTier().getDamageMultiplier() : DBSagasEntity.Tier.MEDIUM.getDamageMultiplier();
 
         return switch (id) {
-            case 6 -> 0.0F;                             // Ki Barrier: defensive, no damage
-            case 7, 12, 19 -> meleeDmg * mult;          // Oozaru Roar / Blue Hurricane / Majin Candy: melee-scaled
+            case 6, 25, 37 -> 0.0F;                       // Ki Barrier / Taiyoken: no damage
+            case 7, 12, 19, 22, 23, 35, 36 -> meleeDmg * mult;  // Oozaru Roar / Blue Hurricane / Majin Candy / Wolf Fang / Dragon Fist / Oozaru Fist / Oozaru Slam: melee-scaled
             case 13 -> kiDmg * mult / 3.0F;             // Triple Laser: 3 instances (ticks 10/20/30)
-            case 10, 20 -> kiDmg * mult / VOLLEY_HIT_DIVISOR; // Ki Volley / Air Volley: random spray, per-bullet
+            case 10, 20, 29, 30 -> kiDmg * mult / VOLLEY_HIT_DIVISOR; // Ki Volley / Air Volley / Assault Rain / Blaster Meteor: random spray, per-bullet
             case 11 -> kiDmg * mult / SINGLE_IMPACT_HIT_DIVISOR; // Basic ki blast: single concentrated impact
             default -> kiDmg * mult;                    // every other ki skill: single ki-scaled hit
+        };
+    }
+
+    public static int getFireTick(DBSagasEntity user, int id) {
+        if (id == 30) return user.getBlasterMeteorCastTicks();
+        return getFireTick(id);
+    }
+
+    public static int getCastDuration(DBSagasEntity user, int id) {
+        if (id == 30) return user.getBlasterMeteorCastTicks() + BLASTER_METEOR_FIRE_TICKS;
+        return getCastDuration(id);
+    }
+
+    public static int getFireTick(int id) {
+        return switch (id) {
+            case 14 -> 22;
+            case 17, 27 -> 24;
+            case 34 -> MEDIUM_BALL_CAST_TICKS;
+            case 35 -> OOZARU_FIST_LAUNCH_TICK;
+            case 36 -> OOZARU_SLAM_IMPACT_TICK;
+            case 26 -> 0;
+            case 16, 18, 21 -> 32;
+            case 15, 28 -> 50;
+            case 29 -> ASSAULT_RAIN_CAST_TICKS;
+            case 30 -> BLASTER_METEOR_CAST_TICKS;
+            case 33 -> SOUL_PUNISHER_CAST_TICKS;
+            default -> KAMEHAMEHA_CAST_TICKS;
         };
     }
 
@@ -201,11 +339,437 @@ public class SkillManager {
         return switch (id) {
             case 4 -> 10;
             case 11 -> 12;
-            case 12, 14, 17 -> 30;
+            case 12, 14, 17, 27, 34 -> 30;
+            case 35 -> OOZARU_FIST_DURATION;
+            case 36 -> OOZARU_SLAM_DURATION;
+            case 26 -> 18;
             case 13, 16, 18, 21 -> 40;
             case 19 -> 35;
-            case 15 -> 60;
+            case 22 -> WOLF_FANG_DURATION;
+            case 23 -> DRAGON_FIST_WINDUP + DRAGON_FIST_RUSH_TICKS + 2;
+            case 7 -> ROAR_DURATION;
+            case 25 -> TAIYOKEN_DURATION;
+            case 37 -> GUM_BIND_DURATION;
+            case 15, 28 -> 60;
+            case 29 -> ASSAULT_RAIN_CAST_TICKS + ASSAULT_RAIN_FIRE_TICKS + KiBlastEntity.ASSAULT_RAIN_DELAY;
+            case 30 -> BLASTER_METEOR_CAST_TICKS + BLASTER_METEOR_FIRE_TICKS;
+            case 31 -> DIM_PUNCH_DURATION;
+            case 32 -> DESTRUCTION_DURATION;
+            case 33 -> SOUL_PUNISHER_CAST_TICKS + SOUL_PUNISHER_RECOVERY_TICKS;
             default -> 60;
         };
+    }
+
+    /* ---------------------------------------------------------------------
+     * WOLF FANG (id 22)
+     *
+     * Melee flurry instead of a one-shot projectile, so it is driven per cast
+     * tick from DBSagasEntity#tick rather than through the REGISTRY above.
+     * It only borrows the presentation of the player-side technique in
+     * StrikeAttackHandler (jab rhythm, particles, sounds, closing blow): the
+     * user never grabs the target, so the victim keeps full control and is
+     * only hit while it stays inside the caster's reach.
+     * ------------------------------------------------------------------ */
+
+    public static final int WOLF_FANG_DURATION = 35;
+    private static final int WOLF_FANG_HIT_INTERVAL = 10;
+    private static final float WOLF_FANG_FINAL_HIT_RATIO = 0.35F;
+    private static final int WOLF_FANG_JAB_INTERVAL = 4;
+    private static final double WOLF_FANG_REACH = 4.0D;
+    private static final double WOLF_FANG_KNOCKBACK_FORCE = 1.8D;
+    private static final int WOLF_FANG_VFX_COLOR = 0x2F5BFF;
+    private static final int WOLF_FANG_WAVE_COLOR = 0x4D9EFF;
+    private static final float WOLF_FANG_JAB_CLAW_SCALE = 1.7F;
+    private static final int WOLF_FANG_JAB_CLAW_TICKS = 8;
+    private static final float WOLF_FANG_FINAL_CLAW_SCALE = 3.4F;
+    private static final int WOLF_FANG_FINAL_CLAW_TICKS = 16;
+    private static final int WOLF_FANG_FINAL_CLAWS = 6;
+    private static final float WOLF_FANG_HIT_WAVE_SCALE = 1.8F;
+    private static final int WOLF_FANG_HIT_WAVE_TICKS = 7;
+    private static final float WOLF_FANG_FINAL_WAVE_SCALE = 4.5F;
+    private static final int WOLF_FANG_FINAL_WAVE_TICKS = 13;
+
+    public static void tickWolfFang(DBSagasEntity user, LivingEntity target, int timer) {
+        if (user.level().isClientSide) return;
+
+        float total = getCalculatedDamage(DBSagasEntity.KiSkillType.WOLF_FANG.getId(), user);
+        int hitCount = Math.max(1, (int) Math.ceil(WOLF_FANG_DURATION / (double) WOLF_FANG_HIT_INTERVAL));
+        float perHit = total * (1.0F - WOLF_FANG_FINAL_HIT_RATIO) / hitCount;
+        float finalHit = total * WOLF_FANG_FINAL_HIT_RATIO;
+
+        Vec3 impact = wolfFangImpactPos(user, target);
+
+        if (timer < WOLF_FANG_DURATION && timer % WOLF_FANG_HIT_INTERVAL == 0) {
+            wolfFangHit(user, target, perHit, false);
+        }
+
+        if (timer < WOLF_FANG_DURATION - 3 && timer % WOLF_FANG_JAB_INTERVAL == 0) {
+            wolfFangJab(user, impact, timer);
+        }
+
+        if (timer >= WOLF_FANG_DURATION) {
+            wolfFangFinish(user, target, impact, finalHit);
+        }
+    }
+
+    /** Whether the flurry can actually connect; nothing holds the target in place, so it may walk out. */
+    private static boolean wolfFangInReach(DBSagasEntity user, LivingEntity target) {
+        return target != null && target.isAlive() && user.distanceTo(target) <= WOLF_FANG_REACH;
+    }
+
+    /** Where the punch effects play: on the target while it is in reach, on the caster's fists otherwise. */
+    private static Vec3 wolfFangImpactPos(DBSagasEntity user, LivingEntity target) {
+        if (wolfFangInReach(user, target)) {
+            return new Vec3(target.getX(), target.getY() + target.getBbHeight() * 0.6, target.getZ());
+        }
+
+        Vec3 front = user.position().add(user.getLookAngle().normalize().scale(1.2));
+        return new Vec3(front.x, user.getY() + user.getBbHeight() * 0.6, front.z);
+    }
+
+    private static void wolfFangHit(DBSagasEntity user, LivingEntity target, float damage, boolean finalHit) {
+        if (damage <= 0.0F || !wolfFangInReach(user, target)) return;
+
+        // Chip hits never finish the target; the closing blow is what kills.
+        float applied = damage;
+        if (!finalHit && target.getHealth() - applied <= 1.0F) applied = Math.max(0.01F, target.getHealth() - 1.0F);
+
+        if (!finalHit) {
+            NetworkHandler.sendToTrackingEntity(new ShockwaveVfxS2C(target.getX(), target.getY() + target.getBbHeight() * 0.6, target.getZ(),
+                    WOLF_FANG_HIT_WAVE_SCALE * wolfFangSizeFactor(user), WOLF_FANG_WAVE_COLOR, WOLF_FANG_HIT_WAVE_TICKS), user);
+        }
+
+        target.invulnerableTime = 0;
+        guardSafeHit = true;
+        try {
+            target.hurt(user.damageSources().mobAttack(user), applied);
+        } finally {
+            guardSafeHit = false;
+        }
+    }
+
+    private static void wolfFangJab(DBSagasEntity user, Vec3 impact, int beat) {
+        if (!(user.level() instanceof ServerLevel level)) return;
+
+        SoundEvent[] punches = {
+                MainSounds.GOLPE1.get(), MainSounds.GOLPE2.get(), MainSounds.GOLPE3.get(),
+                MainSounds.GOLPE4.get(), MainSounds.GOLPE5.get(), MainSounds.GOLPE6.get()
+        };
+        SoundEvent punch = punches[Math.floorMod(beat / WOLF_FANG_JAB_INTERVAL, punches.length)];
+        level.playSound(null, impact.x, impact.y, impact.z, punch, net.minecraft.sounds.SoundSource.HOSTILE,
+                1.0F, 1.1F + (level.random.nextFloat() * 0.3F));
+
+        NetworkHandler.sendToTrackingEntity(new ClawSlashVfxS2C(impact.x, impact.y, impact.z,
+                WOLF_FANG_JAB_CLAW_SCALE * wolfFangSizeFactor(user), WOLF_FANG_VFX_COLOR, WOLF_FANG_JAB_CLAW_TICKS, 1, false), user);
+    }
+
+    private static float wolfFangSizeFactor(DBSagasEntity user) {
+        return Math.max(1.0F, user.getBbHeight() / 1.8F);
+    }
+
+    private static void wolfFangFinish(DBSagasEntity user, LivingEntity target, Vec3 impact, float damage) {
+        wolfFangHit(user, target, damage, true);
+
+        user.level().playSound(null, impact.x, impact.y, impact.z, MainSounds.CRITICO2.get(), net.minecraft.sounds.SoundSource.HOSTILE, 2.0F, 0.7F);
+        user.level().playSound(null, impact.x, impact.y, impact.z, MainSounds.KI_EXPLOSION_IMPACT.get(), net.minecraft.sounds.SoundSource.HOSTILE, 2.5F, 1.0F);
+        user.level().playSound(null, impact.x, impact.y, impact.z, MainSounds.OOZARU_GROWL_PLAYER.get(), net.minecraft.sounds.SoundSource.HOSTILE, 3.0F, 1.15F);
+
+        float sizeFactor = wolfFangSizeFactor(user);
+        NetworkHandler.sendToTrackingEntity(new ClawSlashVfxS2C(impact.x, impact.y, impact.z,
+                WOLF_FANG_FINAL_CLAW_SCALE * sizeFactor, WOLF_FANG_VFX_COLOR, WOLF_FANG_FINAL_CLAW_TICKS, WOLF_FANG_FINAL_CLAWS, true), user);
+        NetworkHandler.sendToTrackingEntity(new ShockwaveVfxS2C(impact.x, impact.y, impact.z,
+                WOLF_FANG_FINAL_WAVE_SCALE * sizeFactor, WOLF_FANG_WAVE_COLOR, WOLF_FANG_FINAL_WAVE_TICKS), user);
+
+        if (!wolfFangInReach(user, target)) return;
+
+        Vec3 push = target.position().subtract(user.position()).normalize();
+        if (push.lengthSqr() < 1.0E-6) push = user.getLookAngle();
+        target.setDeltaMovement(push.x * WOLF_FANG_KNOCKBACK_FORCE, 0.5D, push.z * WOLF_FANG_KNOCKBACK_FORCE);
+        target.hasImpulse = true;
+        target.hurtMarked = true;
+    }
+
+    /* ---------------------------------------------------------------------
+     * ROAR (id 7) and TAIYOKEN (id 25)
+     *
+     * NPC versions of the player evasion techniques rage_scream / taiyoken:
+     * same animation clips (evs.*), same VFX packet and the same pulse
+     * rhythm, driven per cast tick from DBSagasEntity#tick.
+     * ------------------------------------------------------------------ */
+
+    public static final int ROAR_DURATION = 60;
+    public static final int TAIYOKEN_DURATION = 40;
+    public static final int TAIYOKEN_FLASH_TICK = 8;
+    public static final int GUM_BIND_DURATION = 26;
+    public static final int GUM_BIND_FIRE_TICK = 10;
+    private static final int GUM_BIND_COLOR = 0xF4A0B6;
+    private static final int ROAR_PULSE_INTERVAL = 5;
+    private static final double ROAR_BASE_RANGE = 5.0D;
+    private static final double ROAR_MIN_RANGE = 8.0D;
+    private static final double ROAR_MAX_RANGE = 16.0D;
+    private static final double ROAR_PULSE_KNOCKBACK = 0.35D;
+    private static final double ROAR_VERTICAL_LIFT = 0.12D;
+
+    public static void tickRoar(DBSagasEntity user, int timer) {
+        if (user.level().isClientSide) return;
+
+        if (timer == 1) {
+            user.playSound(MainSounds.OOZARU_GROWL_PLAYER.get(), 2.0F, 0.8F + user.getRandom().nextFloat() * 0.4F);
+            NetworkHandler.sendToTrackingEntity(new RageScreamVfxS2C(user.getId(), ROAR_DURATION), user);
+        }
+
+        if (timer % ROAR_PULSE_INTERVAL != 0 || timer > ROAR_DURATION) return;
+
+        int pulses = ROAR_DURATION / ROAR_PULSE_INTERVAL;
+        float pulseDamage = getCalculatedDamage(DBSagasEntity.KiSkillType.OOZARU_ROAR.getId(), user) / pulses;
+        float hitbox = Math.max(user.getBbWidth(), user.getBbHeight());
+        double range = Math.min(ROAR_MAX_RANGE, Math.max(ROAR_MIN_RANGE, ROAR_BASE_RANGE * (hitbox / 1.8F)));
+
+        AABB roarBox = user.getBoundingBox().inflate(range);
+        for (LivingEntity victim : user.level().getEntitiesOfClass(LivingEntity.class, roarBox)) {
+            if (victim == user || !victim.isAlive() || user.isAlliedTo(victim)) continue;
+            if (victim instanceof DBSagasEntity && victim != user.getTarget()) continue;
+
+            double distance = user.distanceTo(victim);
+            if (distance > range) continue;
+
+            if (pulseDamage > 0.0F) {
+                victim.invulnerableTime = 0;
+                victim.hurt(user.damageSources().mobAttack(user), pulseDamage);
+            }
+
+            Vec3 dir = victim.position().subtract(user.position());
+            if (dir.lengthSqr() < 1.0E-6) dir = new Vec3(1, 0, 0);
+            dir = dir.normalize();
+            double falloff = 1.0 - Math.min(1.0, distance / range) * 0.5;
+            victim.setDeltaMovement(victim.getDeltaMovement().add(dir.x * ROAR_PULSE_KNOCKBACK * falloff, ROAR_VERTICAL_LIFT, dir.z * ROAR_PULSE_KNOCKBACK * falloff));
+            victim.hasImpulse = true;
+            victim.hurtMarked = true;
+        }
+    }
+
+    public static void castTaiyoken(DBSagasEntity user) {
+        if (user.level().isClientSide) return;
+        user.level().playSound(null, user.getX(), user.getY(), user.getZ(),
+                MainSounds.KI_EXPLOSION_CHARGE.get(), net.minecraft.sounds.SoundSource.HOSTILE, 1.2F, 1.6F);
+        EvasionAttackHandler.applyTaiyokenBlind(user);
+    }
+
+    public static void castGumBind(DBSagasEntity user, LivingEntity target) {
+        if (!(user.level() instanceof ServerLevel level)) return;
+        Vec3 from = GumBindEntity.hand(user.position(), user.getYRot(), user.getBbHeight() / 1.8F);
+        Vec3 aim = target != null && target.isAlive() && target.level() == level
+                ? target.position().add(0.0D, target.getBbHeight() * 0.55D, 0.0D)
+                : from.add(user.getLookAngle().scale(8.0D));
+        GumBindEntity.Ball.launch(level, user, GUM_BIND_COLOR, from, aim.subtract(from));
+        level.playSound(null, user.getX(), user.getY(), user.getZ(), net.minecraft.sounds.SoundEvents.SLIME_ATTACK,
+                net.minecraft.sounds.SoundSource.HOSTILE, 1.6F, 0.7F);
+    }
+
+    public static final int DIM_PUNCH_DURATION = 70;
+    private static final int[] DIM_PUNCH_MARK_TICKS = {3, 18, 33};
+    private static final int[] DIM_PUNCH_HIT_TICKS = {15, 30, 45};
+    private static final float DIM_PUNCH_DEFAULT_RADIUS = 3.5F;
+    private static final float DIM_PUNCH_DAMAGE_RATIO = 0.8F;
+    private static final int DIM_PUNCH_COLOR = 0xC451FF;
+
+    public static final int DESTRUCTION_DURATION = 55;
+    private static final int DESTRUCTION_FIRE_TICK = 8;
+    private static final int DESTRUCTION_COUNT = 3;
+    private static final float DESTRUCTION_START_RATIO = 1.0F / 3.0F;
+    private static final float DESTRUCTION_SPEED = 0.34F;
+    private static final float DESTRUCTION_SPREAD = 4.0F;
+
+    private static final Map<DBSagasEntity, Vec3> DIM_PUNCH_MARKS = new java.util.WeakHashMap<>();
+
+    public static void tickDimensionalPunch(DBSagasEntity user, LivingEntity target, int timer) {
+        if (!(user.level() instanceof ServerLevel serverLevel)) return;
+
+        float radius = user.getCurrentPoolSkillSize() > 1.5F ? user.getCurrentPoolSkillSize() : DIM_PUNCH_DEFAULT_RADIUS;
+
+        for (int i = 0; i < DIM_PUNCH_MARK_TICKS.length; i++) {
+            if (timer != DIM_PUNCH_MARK_TICKS[i] || target == null) continue;
+
+            Vec3 mark = target.position();
+            DIM_PUNCH_MARKS.put(user, mark);
+
+            int openTicks = DIM_PUNCH_HIT_TICKS[i] - DIM_PUNCH_MARK_TICKS[i];
+            boolean fromAbove = user.getRandom().nextInt(3) == 0;
+            float fistYaw = user.getRandom().nextFloat() * 360.0F;
+            float fistPitch = fromAbove ? 90.0F : -5.0F + user.getRandom().nextFloat() * 25.0F;
+            double reach = Math.max(target.getBbHeight() * 0.55D, 0.19D * user.getScale());
+            double fistY = mark.y + (fromAbove ? 0.4D : reach);
+
+            NetworkHandler.sendToTrackingEntity(new com.dragonminez.common.network.S2C.BossTelegraphS2C(
+                    mark.x, mark.y, mark.z, radius, DIM_PUNCH_COLOR, openTicks, -1), user);
+            NetworkHandler.sendToTrackingEntity(new com.dragonminez.common.network.S2C.DimensionalFistS2C(
+                    user.getId(), mark.x, fistY, mark.z, fistYaw, fistPitch, i == 1, openTicks), user);
+            return;
+        }
+
+        for (int hit : DIM_PUNCH_HIT_TICKS) {
+            if (timer != hit) continue;
+
+            Vec3 mark = DIM_PUNCH_MARKS.get(user);
+            if (mark == null) return;
+
+            float damage = (float) user.getAttributeValue(Attributes.ATTACK_DAMAGE) * DIM_PUNCH_DAMAGE_RATIO;
+            AABB area = new AABB(mark.x - radius, mark.y - 2.0D, mark.z - radius,
+                    mark.x + radius, mark.y + 4.0D, mark.z + radius);
+
+            for (LivingEntity victim : serverLevel.getEntitiesOfClass(LivingEntity.class, area)) {
+                if (victim == user || victim.isAlliedTo(user)) continue;
+                if (victim instanceof DBSagasEntity && victim != user.getTarget()) continue;
+
+                double dx = victim.getX() - mark.x;
+                double dz = victim.getZ() - mark.z;
+                if (Math.sqrt(dx * dx + dz * dz) > radius) continue;
+
+                victim.invulnerableTime = 0;
+                victim.hurt(user.damageSources().mobAttack(user), damage);
+                victim.setDeltaMovement(victim.getDeltaMovement().add(0.0D, 0.45D, 0.0D));
+                victim.hasImpulse = true;
+                victim.hurtMarked = true;
+            }
+
+            Vec3 center = mark.add(0.0D, 1.0D, 0.0D);
+            Vec3 dir = center.subtract(user.position()).normalize();
+
+            NetworkHandler.sendToTrackingEntity(new com.dragonminez.common.network.S2C.ImpactBurstVfxS2C(
+                    center, dir, radius * 1.5F, DIM_PUNCH_COLOR, 0xFFD700, true, 14), user);
+            NetworkHandler.sendToTrackingEntity(new ShockwaveVfxS2C(center.x, center.y, center.z,
+                    radius * 1.2F, DIM_PUNCH_COLOR, 12), user);
+            serverLevel.playSound(null, center.x, center.y, center.z,
+                    MainSounds.KI_EXPLOSION_IMPACT.get(), net.minecraft.sounds.SoundSource.HOSTILE, 2.5F, 1.3F);
+            return;
+        }
+    }
+
+    public static void tickDestructionBalls(DBSagasEntity user, LivingEntity target, int timer) {
+        if (timer != DESTRUCTION_FIRE_TICK || target == null) return;
+        if (!(user.level() instanceof ServerLevel serverLevel)) return;
+
+        Vec3 origin = new Vec3(user.getX(), user.getY() + user.getBbHeight() * 0.6D, user.getZ());
+        Vec3 aim = new Vec3(target.getX(), target.getY() + target.getBbHeight() * 0.5D, target.getZ())
+                .subtract(origin).normalize();
+        Vec3 right = new Vec3(-aim.z, 0.0D, aim.x);
+        if (right.lengthSqr() < 1.0E-4D) right = new Vec3(1.0D, 0.0D, 0.0D);
+        right = right.normalize();
+
+        float finalSize = Math.max(1.0F, user.getCurrentPoolSkillSize());
+        float damage = user.getKiBlastDamage() * 0.9F;
+
+        for (int i = 0; i < DESTRUCTION_COUNT; i++) {
+            float side = i - (DESTRUCTION_COUNT - 1) * 0.5F;
+            double rad = Math.toRadians(side * DESTRUCTION_SPREAD);
+            Vec3 dir = new Vec3(aim.x * Math.cos(rad) - aim.z * Math.sin(rad), aim.y,
+                    aim.x * Math.sin(rad) + aim.z * Math.cos(rad)).normalize();
+
+            KiBlastEntity ball = new KiBlastEntity(com.dragonminez.common.init.MainEntities.KI_BLAST.get(), serverLevel);
+            ball.setupDestructionBall(user, damage, DESTRUCTION_SPEED, finalSize * DESTRUCTION_START_RATIO,
+                    user.getCurrentPoolColorMain(), user.getCurrentPoolColorBorder(), user.getCurrentPoolColorOutline());
+
+            Vec3 spread = side == 0.0F ? new Vec3(0.0D, 1.0D, 0.0D) : right.scale(side).add(0.0D, 0.25D, 0.0D).normalize();
+            ball.configureDestructionGrowth(finalSize, spread);
+
+            Vec3 spawn = origin.add(dir.scale(user.getBbWidth() * 0.6D + 1.5D));
+            ball.moveTo(spawn.x, spawn.y, spawn.z, user.getYRot(), 0.0F);
+            ball.setDeltaMovement(dir.scale(DESTRUCTION_SPEED));
+            serverLevel.addFreshEntity(ball);
+        }
+
+        serverLevel.playSound(null, user.getX(), user.getY(), user.getZ(),
+                MainSounds.KI_EXPLOSION_CHARGE.get(), net.minecraft.sounds.SoundSource.HOSTILE, 2.5F, 0.6F);
+    }
+
+    public static final int OOZARU_FIST_LAUNCH_TICK = 14;
+    public static final int OOZARU_FIST_DURATION = 26;
+    private static final int OOZARU_FIST_LIFT_TICKS = 10;
+
+    public static final int OOZARU_SLAM_IMPACT_TICK = 14;
+    public static final int OOZARU_SLAM_DURATION = 32;
+    private static final int OOZARU_SLAM_RING_DELAY = 5;
+    private static final float OOZARU_SLAM_RING_RATIO = 0.5F;
+    private static final double OOZARU_SLAM_MIN_RADIUS = 6.0D;
+    private static final int OOZARU_SLAM_COLOR = 0xC8A878;
+
+    public static double oozaruFistReach(DBSagasEntity user) {
+        return Math.max(5.0D, user.getBbWidth() + 3.0D);
+    }
+
+    public static double oozaruSlamRadius(DBSagasEntity user) {
+        return Math.max(OOZARU_SLAM_MIN_RADIUS, user.getBbWidth() * 2.5D);
+    }
+
+    public static void tickOozaruFist(DBSagasEntity user, LivingEntity target, int timer) {
+        if (user.level().isClientSide) return;
+
+        if (target != null && timer <= OOZARU_FIST_LAUNCH_TICK) user.rotateBodyToTarget(target);
+        if (timer == 1) user.playSound(MainSounds.OOZARU_GROWL_PLAYER.get(), 2.0F, 0.8F);
+        if (timer != OOZARU_FIST_LAUNCH_TICK) return;
+
+        OzaruFistEntity fist = new OzaruFistEntity(user.level(), user);
+        fist.setupOzaruFist(user, getCalculatedDamage(DBSagasEntity.KiSkillType.OOZARU_FIST.getId(), user), 1.0F);
+        fist.setMaxLife(OOZARU_FIST_LIFT_TICKS);
+    }
+
+    public static void tickOozaruSlam(DBSagasEntity user, int timer) {
+        if (!(user.level() instanceof ServerLevel level)) return;
+
+        if (timer == 1) user.playSound(MainSounds.OOZARU_GROWL_PLAYER.get(), 2.5F, 0.7F);
+
+        double radius = oozaruSlamRadius(user);
+        float damage = getCalculatedDamage(DBSagasEntity.KiSkillType.OOZARU_SLAM.getId(), user);
+
+        if (timer == OOZARU_SLAM_IMPACT_TICK) {
+            slamPulse(user, level, 0.0D, radius, damage);
+        } else if (timer == OOZARU_SLAM_IMPACT_TICK + OOZARU_SLAM_RING_DELAY) {
+            slamPulse(user, level, radius, radius * 1.8D, damage * OOZARU_SLAM_RING_RATIO);
+        }
+    }
+
+    private static Vec3 slamCenter(DBSagasEntity user) {
+        Vec3 forward = Vec3.directionFromRotation(0.0F, user.yBodyRot).normalize();
+        double reach = user.getBbWidth() * 0.8D;
+        return new Vec3(user.getX() + forward.x * reach, user.getY(), user.getZ() + forward.z * reach);
+    }
+
+    private static void slamPulse(DBSagasEntity user, ServerLevel level, double innerRadius, double outerRadius, float damage) {
+        Vec3 center = slamCenter(user);
+        AABB area = new AABB(center.x - outerRadius, center.y - 2.0D, center.z - outerRadius,
+                center.x + outerRadius, center.y + 4.0D, center.z + outerRadius);
+
+        for (LivingEntity victim : level.getEntitiesOfClass(LivingEntity.class, area)) {
+            if (victim == user || !victim.isAlive() || victim.isSpectator() || user.isAlliedTo(victim)) continue;
+            if (victim instanceof DBSagasEntity && victim != user.getTarget()) continue;
+
+            double dx = victim.getX() - center.x;
+            double dz = victim.getZ() - center.z;
+            double distance = Math.sqrt(dx * dx + dz * dz);
+            if (distance < innerRadius || distance > outerRadius) continue;
+
+            if (damage > 0.0F) {
+                victim.invulnerableTime = 0;
+                victim.hurt(user.damageSources().mobAttack(user), damage);
+            }
+
+            Vec3 push = distance > 1.0E-3D ? new Vec3(dx / distance, 0.0D, dz / distance) : user.getLookAngle();
+            victim.setDeltaMovement(victim.getDeltaMovement().add(push.x * 0.8D, 0.65D, push.z * 0.8D));
+            victim.hasImpulse = true;
+            victim.hurtMarked = true;
+        }
+
+        net.minecraft.core.BlockPos ground = net.minecraft.core.BlockPos.containing(center.x, center.y - 0.5D, center.z);
+        net.minecraft.world.level.block.state.BlockState groundState = level.getBlockState(ground);
+        if (!groundState.isAir()) {
+            level.sendParticles(new net.minecraft.core.particles.BlockParticleOption(ParticleTypes.BLOCK, groundState),
+                    center.x, center.y + 0.2D, center.z, 80, outerRadius * 0.45D, 0.3D, outerRadius * 0.45D, 0.25D);
+        }
+        level.sendParticles(ParticleTypes.EXPLOSION, center.x, center.y + 0.5D, center.z, 6, outerRadius * 0.3D, 0.2D, outerRadius * 0.3D, 0.0D);
+
+        NetworkHandler.sendToTrackingEntity(new ShockwaveVfxS2C(center.x, center.y + 0.2D, center.z,
+                (float) outerRadius, OOZARU_SLAM_COLOR, 14), user);
+        level.playSound(null, center.x, center.y, center.z, MainSounds.KI_EXPLOSION_IMPACT.get(),
+                net.minecraft.sounds.SoundSource.HOSTILE, 3.0F, 0.6F);
     }
 }

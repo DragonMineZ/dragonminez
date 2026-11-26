@@ -5,7 +5,6 @@ import com.dragonminez.LogUtil;
 import com.dragonminez.common.config.ConfigManager;
 import com.dragonminez.common.network.NetworkHandler;
 import com.dragonminez.common.network.S2C.ProgressionSyncS2C;
-import com.dragonminez.common.network.S2C.SyncServerConfigS2C;
 import com.dragonminez.common.stats.StatsCapability;
 import com.dragonminez.common.stats.StatsProvider;
 import com.mojang.brigadier.CommandDispatcher;
@@ -103,12 +102,9 @@ public class ConfigCommand {
 	private static void syncSingleConfig(MinecraftServer server, String configFile) {
 		try {
 			ConfigManager.reloadSpecificConfig(configFile);
-			if (configFile.equals(ConfigManager.CLIENT_ONLY_CONFIG)) return;
-			String jsonPayload = ConfigManager.getSpecificConfigJson(configFile);
-			if (jsonPayload == null || jsonPayload.isBlank()) return;
-
+			if (ConfigManager.isClientOnlyConfig(configFile)) return;
 			for (ServerPlayer player : server.getPlayerList().getPlayers()) {
-				NetworkHandler.sendToPlayer(new SyncServerConfigS2C(configFile, jsonPayload, false), player);
+				ConfigManager.sendConfigSync(player);
 
 				StatsProvider.get(StatsCapability.INSTANCE, player).ifPresent(data -> {
 					String raceName = data.getCharacter().getRaceName();

@@ -1,5 +1,6 @@
 package com.dragonminez.client.gui.buttons;
 
+import com.dragonminez.client.gui.hud.HudRender;
 import com.dragonminez.common.init.MainSounds;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.Button;
@@ -71,7 +72,7 @@ public class ClippableTextureButton extends Button {
 
         int u = this.isHoveredOrFocused() ? this.hoverU : this.normalU;
         int v = this.isHoveredOrFocused() ? this.hoverV : this.normalV;
-        graphics.blit(this.texture, this.getX(), this.getY(), u, v, this.width, this.height);
+        HudRender.blit(graphics, this.texture, this.getX(), this.getY(), u, v, this.width, this.height, 256, 256);
 
         if (this.clipping) {
             graphics.disableScissor();

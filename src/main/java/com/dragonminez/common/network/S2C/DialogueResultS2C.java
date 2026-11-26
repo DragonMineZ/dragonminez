@@ -1,0 +1,80 @@
+package com.dragonminez.common.network.S2C;
+
+import com.dragonminez.common.network.ClientPacketHandler;
+import net.minecraft.network.FriendlyByteBuf;
+import net.minecraft.network.chat.Component;
+import net.minecraft.network.chat.ComponentSerialization;
+import net.neoforged.api.distmarker.Dist;
+import com.dragonminez.compat.DistExecutor;
+import com.dragonminez.compat.network.NetworkEvent;
+import org.jetbrains.annotations.Nullable;
+import java.util.function.Supplier;
+
+public class DialogueResultS2C {
+	private final String npcId;
+	private final String action;
+	private final boolean success;
+	@Nullable
+	private final Component reason;
+
+	public DialogueResultS2C(String npcId, String action, boolean success) {
+		this(npcId, action, success, null);
+	}
+
+	public DialogueResultS2C(String npcId, String action, boolean success, @Nullable Component reason) {
+		this.npcId = npcId == null ? "" : npcId;
+		this.action = action == null ? "" : action;
+		this.success = success;
+		this.reason = reason;
+	}
+
+	public DialogueResultS2C(FriendlyByteBuf buf) {
+		this.npcId = buf.readUtf(64);
+		this.action = buf.readUtf(320);
+		this.success = buf.readBoolean();
+		this.reason = buf.readBoolean() ? buf.readJsonWithCodec(ComponentSerialization.CODEC) : null;
+	}
+
+	public static String npcAction(int actionId) {
+		return "action:" + actionId;
+	}
+
+	public static String questStart(String questId) {
+		return "quest_start:" + questId;
+	}
+
+	public static String questTurnIn(String questId) {
+		return "quest_turn_in:" + questId;
+	}
+
+	public void encode(FriendlyByteBuf buf) {
+		buf.writeUtf(npcId, 64);
+		buf.writeUtf(action, 320);
+		buf.writeBoolean(success);
+		buf.writeBoolean(reason != null);
+		if (reason != null) buf.writeJsonWithCodec(ComponentSerialization.CODEC, reason);
+	}
+
+	public void handle(Supplier<NetworkEvent.Context> contextSupplier) {
+		NetworkEvent.Context context = contextSupplier.get();
+		context.enqueueWork(() -> DistExecutor.unsafeRunWhenOn(Dist.CLIENT, () -> () -> ClientPacketHandler.handleDialogueResult(this)));
+		context.setPacketHandled(true);
+	}
+
+	public String getNpcId() {
+		return this.npcId;
+	}
+
+	public String getAction() {
+		return this.action;
+	}
+
+	public boolean isSuccess() {
+		return this.success;
+	}
+
+	@Nullable
+	public Component getReason() {
+		return this.reason;
+	}
+}

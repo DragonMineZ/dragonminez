@@ -561,6 +561,14 @@
 					]
 				},
 				{
+					"name": "evil_eye",
+					"parent": "head",
+					"pivot": [0, 30.5, -4.15],
+					"locators": {
+						"locator": [0, 30.5, -4.15]
+					}
+				},
+				{
 					"name": "body",
 					"parent": "waist",
 					"pivot": [0, 24, 0]

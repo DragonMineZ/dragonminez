@@ -1,5 +1,6 @@
 package com.dragonminez.common.passives;
 
+import com.dragonminez.common.events.DMZEvent;
 import com.dragonminez.common.stats.StatsData;
 import com.dragonminez.common.stats.techniques.KiAttackData;
 import net.minecraft.server.level.ServerPlayer;
@@ -32,4 +33,12 @@ public interface IClassPassive {
 	default double kiCooldownMultiplier(StatsData data, KiAttackData ki) { return 1.0; }
 
 	default double secondaryDurationMultiplier(StatsData data, KiAttackData ki) { return 1.0; }
+
+	default double kiDamageMultiplier(StatsData data, KiAttackData ki) { return 1.0; }
+
+	default void onKiAttackFired(ServerPlayer player, StatsData data, KiAttackData ki) {}
+
+	default void onStrikeCast(ServerPlayer player, StatsData data) {}
+
+	default double outgoingDamageMultiplier(ServerPlayer attacker, StatsData data, LivingEntity target, DMZEvent.DamageSourceType type) { return 1.0; }
 }

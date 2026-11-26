@@ -1,6 +1,7 @@
 package com.dragonminez.mixin.client;
 
 import com.dragonminez.client.render.DMZRenderHand;
+import com.dragonminez.client.render.effects.KiWeaponRenderer;
 import com.dragonminez.client.render.firstperson.dto.FirstPersonManager;
 import com.dragonminez.common.combat.util.Minecraft_DMZ;
 import com.dragonminez.common.config.ConfigManager;
@@ -31,6 +32,11 @@ public class HeldItemRendererMixin {
 	@Inject(method = "renderHandsWithItems", at = @At("HEAD"), cancellable = true)
 	private void dmz$cancelGlobalHandRendering(float pPartialTicks, PoseStack pPoseStack, MultiBufferSource.BufferSource pBufferSource, LocalPlayer pPlayerEntity, int pCombinedLight, CallbackInfo ci) {
 		if (FirstPersonManager.shouldRenderFirstPerson(pPlayerEntity)) ci.cancel();
+	}
+
+	@Inject(method = "renderHandsWithItems", at = @At("TAIL"))
+	private void dmz$bloomFirstPersonWeapons(float pPartialTicks, PoseStack pPoseStack, MultiBufferSource.BufferSource pBufferSource, LocalPlayer pPlayerEntity, int pCombinedLight, CallbackInfo ci) {
+		KiWeaponRenderer.renderFirstPersonBloom();
 	}
 
     @Unique

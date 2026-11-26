@@ -1,14 +1,18 @@
 package com.dragonminez.server.commands;
 
+import com.dragonminez.Env;
+import com.dragonminez.LogUtil;
 import com.dragonminez.common.config.ConfigManager;
 import com.dragonminez.common.alignment.NpcAlignmentRules;
 import com.dragonminez.common.network.NetworkHandler;
 import com.dragonminez.common.network.S2C.*;
+import com.dragonminez.common.dialogue.DialogueRegistry;
 import com.dragonminez.common.quest.QuestRegistry;
 import com.dragonminez.common.stats.StatsCapability;
 import com.dragonminez.common.stats.StatsProvider;
 import com.dragonminez.common.wish.WishManager;
 import com.dragonminez.server.storage.StorageManager;
+import com.dragonminez.server.world.raid.RaidTypes;
 import com.dragonminez.server.world.npc.NPCPlacementManager;
 import com.mojang.brigadier.CommandDispatcher;
 import com.mojang.brigadier.arguments.StringArgumentType;
@@ -50,8 +54,8 @@ public class ReloadCommand {
 
 		try {
 			if (scope.includesConfig()) {
-				ConfigManager.clearServerSync();
 				ConfigManager.reload();
+				RaidTypes.reload(ConfigManager.getRaids());
 				StorageManager.reload();
 				NpcAlignmentRules.load(server);
 				NPCPlacementManager.load(server);
@@ -60,48 +64,39 @@ public class ReloadCommand {
 
 			if (scope.includesStory()) {
 				QuestRegistry.loadAll(server);
+				DialogueRegistry.loadAll(server);
 			}
 
 			if (scope.includesWishes()) {
 				WishManager.loadWishes(server);
 			}
 
-			List<String> availableConfigs = null;
-			if (scope.includesConfig()) {
-				availableConfigs = ConfigManager.getAvailableConfigFiles();
-			}
-
+			SyncQuestRegistryS2C questSync = scope.includesStory() ? SyncQuestRegistryS2C.fromRegistry() : null;
 			int syncedPlayers = 0;
 			for (ServerPlayer player : server.getPlayerList().getPlayers()) {
-				if (scope.includesConfig()) {
-					boolean resetBatch = true;
-					for (String file : availableConfigs) {
-						if (file.equals(ConfigManager.CLIENT_ONLY_CONFIG)) continue;
-						String jsonPayload = ConfigManager.getSpecificConfigJson(file);
-						if (jsonPayload == null || jsonPayload.isBlank()) continue;
-						NetworkHandler.sendToPlayer(new SyncServerConfigS2C(file, jsonPayload, resetBatch), player);
-						resetBatch = false;
+				try {
+					if (scope.includesConfig()) {
+						ConfigManager.sendConfigSync(player);
+
+						StatsProvider.get(StatsCapability.INSTANCE, player).ifPresent(data -> {
+							String raceName = data.getCharacter().getRaceName();
+							if (raceName != null && !raceName.isEmpty()) data.updateTransformationSkillLimits(raceName);
+							else data.getSkills().refreshNonFormSkillMaxLevels();
+							NetworkHandler.sendToTrackingEntityAndSelf(new ProgressionSyncS2C(player), player);
+						});
 					}
 
-					StatsProvider.get(StatsCapability.INSTANCE, player).ifPresent(data -> {
-						String raceName = data.getCharacter().getRaceName();
-						if (raceName != null && !raceName.isEmpty()) data.updateTransformationSkillLimits(raceName);
-						else data.getSkills().refreshNonFormSkillMaxLevels();
-						NetworkHandler.sendToTrackingEntityAndSelf(new ProgressionSyncS2C(player), player);
-					});
-				}
+					if (scope.includesStory()) {
+						SyncQuestRegistryS2C.sendTo(questSync, player);
+					}
 
-				if (scope.includesStory()) {
-					NetworkHandler.sendToPlayer(
-							new SyncQuestRegistryS2C(QuestRegistry.getAllSagas(), QuestRegistry.getAllQuests()),
-							player
-					);
+					if (scope.includesWishes()) {
+						NetworkHandler.sendToPlayer(new SyncWishesS2C(WishManager.getAllWishes()), player);
+					}
+					syncedPlayers++;
+				} catch (Exception e) {
+					LogUtil.error(Env.SERVER, "Failed to resync {} after /dmzreload: {}", player.getGameProfile().getName(), e.toString());
 				}
-
-				if (scope.includesWishes()) {
-					NetworkHandler.sendToPlayer(new SyncWishesS2C(WishManager.getAllWishes()), player);
-				}
-				syncedPlayers++;
 			}
 
 			logConsoleReport();

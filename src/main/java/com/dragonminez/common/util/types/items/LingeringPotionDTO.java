@@ -1,22 +1,16 @@
 package com.dragonminez.common.util.types.items;
 
-import com.google.gson.GsonBuilder;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
+import net.minecraft.resources.ResourceLocation;
+import java.util.List;
 
-import java.util.Map;
-
-@Getter
-@Setter
-@NoArgsConstructor
 public class LingeringPotionDTO extends PotionDTO {
-    public LingeringPotionDTO(String potion, Map<String, Integer> mobEffects) {
-        super("lingering_potion", "minecraft:lingering_potion", 1, potion, mobEffects);
-    }
+	public static final String ITEM_TYPE = "lingering_potion";
+	private static final ResourceLocation LINGERING_POTION_ID = ResourceLocation.withDefaultNamespace("lingering_potion");
 
-    @Override
-    public String toJson() {
-        return new GsonBuilder().setPrettyPrinting().create().toJson(this, LingeringPotionDTO.class);
-    }
+	public LingeringPotionDTO(ResourceLocation potion, int count, List<PotionEffectDTO> mobEffects) {
+		super(ITEM_TYPE, LINGERING_POTION_ID, count, potion, mobEffects);
+	}
+
+	public LingeringPotionDTO() {
+	}
 }

@@ -347,7 +347,7 @@ public class SagaGohanEntity {
             this.setDBZStyle(0);
             this.setEvade(true, 30);
             this.setWildSense(true, 60);
-            this.setZanzoken(true,100);
+            this.setZanzoken(3, 100);
 
             this.setAllowedCombos(120, ComboType.BASIC, ComboType.KI_CHARGE_ATTACK, ComboType.METEOR_COMBINATION);
 

@@ -1,6 +1,7 @@
 package com.dragonminez.common.init.entities.sagas;
 
 import com.dragonminez.common.init.entities.IBattlePower;
+import com.dragonminez.common.init.entities.sagas.helper.DBSagasAnimationHandler;
 import com.dragonminez.common.init.entities.sagas.helper.DBSagasAnimations;
 import net.minecraft.commands.arguments.EntityAnchorArgument;
 import net.minecraft.network.syncher.EntityDataAccessor;
@@ -61,7 +62,7 @@ public class SagaSaibamanEntity extends DBSagasEntity{
 
         float healthThreshold = this.getMaxHealth() * 0.25f;
 
-        if (this.getHealth() <= healthThreshold && !this.hasCheckedExplosionChance && !isExploding()) {
+        if (this.canSelfDestruct() && this.getHealth() <= healthThreshold && !this.hasCheckedExplosionChance && !isExploding()) {
             this.hasCheckedExplosionChance = true;
 
             if (this.random.nextFloat() < 0.05F) {
@@ -116,6 +117,15 @@ public class SagaSaibamanEntity extends DBSagasEntity{
     public void registerControllers(AnimatableManager.ControllerRegistrar controllers) {
         controllers.add(new AnimationController<>(this, "base_controller", 5, this::walkPredicate));
         controllers.add(new AnimationController<>(this, "attack_controller", 0, this::attackPredicate));
+        controllers.add(new AnimationController<>(this, HURT_CONTROLLER, 0, DBSagasAnimationHandler::hurtPredicate)
+                .triggerableAnim(HURT_ANIM_LEFT, DBSagasAnimations.ANIM_HURT_LEFT)
+                .triggerableAnim(HURT_ANIM_RIGHT, DBSagasAnimations.ANIM_HURT_RIGHT)
+                .triggerableAnim(HURT_ANIM_GODFIST, DBSagasAnimations.ANIM_HURT_GODFIST)
+                .triggerableAnim(HURT_ANIM_TOP, DBSagasAnimations.ANIM_HURT_TOP)
+                .triggerableAnim(HURT_ANIM_TOP2, DBSagasAnimations.ANIM_HURT_TOP2)
+                .triggerableAnim(HURT_ANIM_DOWN, DBSagasAnimations.ANIM_HURT_DOWN)
+                .triggerableAnim(HURT_ANIM_PARRIED, DBSagasAnimations.ANIM_HURT_PARRIED)
+                .receiveTriggeredAnimations());
         controllers.add(new AnimationController<>(this, "explode_controller", 0, this::explodePredicate));
     }
 
@@ -211,6 +221,44 @@ public class SagaSaibamanEntity extends DBSagasEntity{
 
     public boolean isExploding() {
         return this.entityData.get(IS_EXPLODING);
+    }
+
+    protected boolean canSelfDestruct() {
+        return true;
+    }
+
+    @Override
+    public String getGeckolibModelName() {
+        return "saga_saibaman";
+    }
+
+    public static class BiomanEntity extends SagaSaibamanEntity {
+
+        public BiomanEntity(EntityType<? extends Monster> pEntityType, Level pLevel) {
+            super(pEntityType, pLevel);
+            if (this instanceof IBattlePower bp) {
+                bp.setBattlePower(1100);
+            }
+        }
+
+        public static AttributeSupplier.Builder createAttributes() {
+            return Monster.createMonsterAttributes()
+                    .add(Attributes.MAX_HEALTH, 70.0D)
+                    .add(Attributes.MOVEMENT_SPEED, 0.31D)
+                    .add(Attributes.ATTACK_DAMAGE, 13.0D)
+                    .add(Attributes.FOLLOW_RANGE, 32.0D)
+                    .add(Attributes.KNOCKBACK_RESISTANCE, 0.5D);
+        }
+
+        @Override
+        protected boolean canSelfDestruct() {
+            return false;
+        }
+
+        @Override
+        public String getGeckolibModelName() {
+            return "saga_bioman";
+        }
     }
 }
 

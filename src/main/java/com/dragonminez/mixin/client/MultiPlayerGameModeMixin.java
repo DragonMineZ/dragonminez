@@ -32,7 +32,7 @@ public class MultiPlayerGameModeMixin {
 
 			int reducedCooldown = Math.round(cooldownLength * typicalUpswing * upswingMultiplier);
 
-			((LivingEntityAccessor) player).setLastHurtByPlayerTime(reducedCooldown);
+			((LivingEntityAccessor) player).setAttackStrengthTicker(reducedCooldown);
 		} catch (Exception ignored) {}
 	}
 }

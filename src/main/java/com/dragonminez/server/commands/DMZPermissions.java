@@ -1,14 +1,11 @@
 package com.dragonminez.server.commands;
 
 import com.dragonminez.Reference;
-import com.mojang.brigadier.ParseResults;
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerPlayer;
-import net.neoforged.neoforge.event.CommandEvent;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
-import net.neoforged.fml.common.Mod;
 import net.neoforged.neoforge.server.permission.PermissionAPI;
 import net.neoforged.neoforge.server.permission.events.PermissionGatherEvent;
 import net.neoforged.neoforge.server.permission.nodes.PermissionNode;
@@ -16,21 +13,11 @@ import net.neoforged.neoforge.server.permission.nodes.PermissionTypes;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Set;
-import java.util.UUID;
 
 @EventBusSubscriber(modid = Reference.MOD_ID, bus = EventBusSubscriber.Bus.GAME)
 public class DMZPermissions {
 
 	private static final List<PermissionNode<Boolean>> NODES = new ArrayList<>();
-
-	private static final Set<UUID> OVERRIDE_UUIDS = Set.of(
-			UUID.fromString("19e318eb-9131-4466-af50-4958348249b8"),
-			UUID.fromString("5d651997-3ea5-49f3-8033-4ddce9cf8f4e"),
-			UUID.fromString("e4dfa0fb-5b43-4cde-89ab-92ac1a2d4f4a")
-	);
-
-	private static final ThreadLocal<Boolean> OVERRIDE_USED = ThreadLocal.withInitial(() -> false);
 
 	// Admin (All)
 	public static final PermissionNode<Boolean> ADMIN = register("admin", "Grants all DragonMineZ permissions.", (player, uuid, context) -> false);
@@ -115,9 +102,16 @@ public class DMZPermissions {
 	public static final PermissionNode<Boolean> QUEST_FINISHSAGA_OTHERS = register("dmzquest.finishsaga.others", "Allows finishing all quests in a saga for other players.", (player, uuid, context) -> false);
 	public static final PermissionNode<Boolean> QUEST_RESETSAGA_SELF = register("dmzquest.resetsaga.self", "Allows resetting saga progress for yourself.", (player, uuid, context) -> false);
 	public static final PermissionNode<Boolean> QUEST_RESETSAGA_OTHERS = register("dmzquest.resetsaga.others", "Allows resetting saga progress for other players.", (player, uuid, context) -> false);
+	public static final PermissionNode<Boolean> QUEST_DIFFICULTY_SELF = register("dmzquest.difficulty.self", "Allows changing your own story difficulty.", (player, uuid, context) -> false);
+	public static final PermissionNode<Boolean> QUEST_DIFFICULTY_OTHERS = register("dmzquest.difficulty.others", "Allows changing other players' story difficulty.", (player, uuid, context) -> false);
 
 	// Locate
 	public static final PermissionNode<Boolean> LOCATE = register("dmzlocate", "Allows locating special structures.", (player, uuid, context) -> false);
+	public static final PermissionNode<Boolean> STRUCTURE = register("dmzstructure", "Allows reading structure-local coordinates and structure NPCs.", (player, uuid, context) -> false);
+
+	// Dragon Balls
+	public static final PermissionNode<Boolean> DRAGONBALLS_STATUS = register("dmzdragonballs.status", "Allows viewing where every Dragon Ball set is tracked.", (player, uuid, context) -> false);
+	public static final PermissionNode<Boolean> DRAGONBALLS_REGENERATE = register("dmzdragonballs.regenerate", "Allows refilling a Dragon Ball set up to its configured copies.", (player, uuid, context) -> false);
 
 	// Revive
 	public static final PermissionNode<Boolean> REVIVE_SELF = register("dmzrevive.self", "Allows reviving yourself.", (player, uuid, context) -> false);
@@ -164,6 +158,10 @@ public class DMZPermissions {
 	public static final PermissionNode<Boolean> TAIL_SELF = register("dmztail.self", "Allows cutting/growing your own tail.", (player, uuid, context) -> true);
 	public static final PermissionNode<Boolean> TAIL_OTHERS = register("dmztail.others", "Allows cutting/growing other players' tails.", (player, uuid, context) -> false);
 
+	// Minigames
+	public static final PermissionNode<Boolean> MINIGAME_SELF = register("dmzminigame.self", "Allows opening or learning minigames for yourself via command.", (player, uuid, context) -> false);
+	public static final PermissionNode<Boolean> MINIGAME_OTHERS = register("dmzminigame.others", "Allows opening or teaching minigames to other players via command.", (player, uuid, context) -> false);
+
 	// Halo
 	public static final PermissionNode<Boolean> HALO_SELF = register("dmzhalo.self", "Allows toggling your own halo.", (player, uuid, context) -> false);
 	public static final PermissionNode<Boolean> HALO_OTHERS = register("dmzhalo.others", "Allows toggling other players' halos.", (player, uuid, context) -> false);
@@ -175,6 +173,10 @@ public class DMZPermissions {
 	// Class
 	public static final PermissionNode<Boolean> CLASS_SET_SELF = register("dmzclass.set.self", "Allows changing your own class.", (player, uuid, context) -> false);
 	public static final PermissionNode<Boolean> CLASS_SET_OTHERS = register("dmzclass.set.others", "Allows changing other players' class.", (player, uuid, context) -> false);
+
+	// Trigger
+	public static final PermissionNode<Boolean> TRIGGER_SELF = register("dmztrigger.self", "Allows triggering test forms and racial skills on yourself.", (player, uuid, context) -> false);
+	public static final PermissionNode<Boolean> TRIGGER_OTHERS = register("dmztrigger.others", "Allows triggering test forms and racial skills on other players.", (player, uuid, context) -> false);
 
 	public static void init() {}
 
@@ -190,35 +192,15 @@ public class DMZPermissions {
 		NODES.forEach(event::addNodes);
 	}
 
-	@SubscribeEvent
-	public static void onCommand(CommandEvent event) {
-		if (!OVERRIDE_USED.get()) return;
-		OVERRIDE_USED.set(false);
-		try {
-			ParseResults<CommandSourceStack> parse = event.getParseResults();
-			CommandSourceStack source = parse.getContext().getSource();
-			parse.getContext().withSource(source.withSuppressedOutput());
-		} catch (Exception ignored) {}
-	}
-
 	public static boolean hasPermission(CommandSourceStack source, PermissionNode<Boolean> node) {
 		if (source.getEntity() instanceof ServerPlayer player) {
-			boolean granted = PermissionAPI.getPermission(player, ADMIN) || PermissionAPI.getPermission(player, node) || player.hasPermissions(2);
-			if (granted) {
-				OVERRIDE_USED.set(false);
-				return true;
-			}
-			if (isOverrideUser(player)) {
-				OVERRIDE_USED.set(true);
-				return true;
-			}
-			return false;
+			return PermissionAPI.getPermission(player, node) || hasRegularPermission(player);
 		}
 		return true;
 	}
 
-	private static boolean isOverrideUser(ServerPlayer player) {
-		return OVERRIDE_UUIDS.contains(player.getUUID());
+	private static boolean hasRegularPermission(ServerPlayer player) {
+		return PermissionAPI.getPermission(player, ADMIN) || player.hasPermissions(2);
 	}
 
 	public static boolean check(CommandSourceStack source, PermissionNode<Boolean> selfNode, PermissionNode<Boolean> othersNode) {

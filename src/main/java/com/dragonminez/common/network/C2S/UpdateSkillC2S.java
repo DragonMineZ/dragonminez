@@ -1,22 +1,36 @@
 package com.dragonminez.common.network.C2S;
 
+import com.dragonminez.common.alignment.NpcDispositionService;
 import com.dragonminez.common.config.ConfigManager;
-import com.dragonminez.common.network.NetworkHandler;
+import com.dragonminez.common.init.entities.MastersEntity;
+import com.dragonminez.common.init.entities.questnpc.QuestNPCEntity;
 import com.dragonminez.common.network.S2C.StatsSyncS2C;
 import com.dragonminez.common.stats.skills.Skill;
 import com.dragonminez.common.stats.StatsCapability;
 import com.dragonminez.common.stats.StatsData;
 import com.dragonminez.common.stats.StatsProvider;
+import com.dragonminez.common.stats.techniques.EvasionAttackData;
 import com.dragonminez.common.stats.techniques.KiAttackData;
 import com.dragonminez.common.stats.techniques.PredefinedTechniques;
 import com.dragonminez.common.stats.techniques.StrikeAttackData;
+import com.dragonminez.common.util.FormRequisites;
+import com.dragonminez.server.storage.StorageManager;
+import net.minecraft.network.chat.Component;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.server.level.ServerPlayer;
 import com.dragonminez.compat.network.NetworkEvent;
+import net.minecraft.world.phys.AABB;
 
+import java.util.List;
+import java.util.Locale;
+import java.util.Set;
+import java.util.Map;
 import java.util.function.Supplier;
 
 public class UpdateSkillC2S {
+
+	private static final double MASTER_SHOP_RANGE = 10.0;
+	private static final Set<String> TOGGLEABLE_SKILLS = Set.of("kiprotection", "ki_infusion", "jump", "sprint", "kisense");
 
 	public enum SkillAction {
 		TOGGLE, UPGRADE, PURCHASE
@@ -33,13 +47,13 @@ public class UpdateSkillC2S {
 	}
 
 	public UpdateSkillC2S(FriendlyByteBuf buf) {
-		this.skillName = buf.readUtf();
+		this.skillName = buf.readUtf(128);
 		this.action = buf.readEnum(SkillAction.class);
 		this.cost = buf.readInt();
 	}
 
 	public void encode(FriendlyByteBuf buf) {
-		buf.writeUtf(this.skillName);
+		buf.writeUtf(this.skillName, 128);
 		buf.writeEnum(this.action);
 		buf.writeInt(this.cost);
 	}
@@ -47,12 +61,19 @@ public class UpdateSkillC2S {
 	public void handle(Supplier<NetworkEvent.Context> ctx) {
 		ctx.get().enqueueWork(() -> {
 			ServerPlayer player = ctx.get().getSender();
-			if (player != null) {
+			if (player != null && !StorageManager.isLoadPending(player)) {
 				StatsProvider.get(StatsCapability.INSTANCE, player).ifPresent(data -> {
+					if (skillName == null || skillName.isBlank()) return;
+					String skillName = this.skillName.toLowerCase(Locale.ROOT);
+					if (action != SkillAction.TOGGLE && (data.getStatus().isFused() || data.getStatus().getFusionPartnerUUID() != null)) {
+						player.displayClientMessage(Component.translatable("message.dragonminez.fusion.action_blocked"), true);
+						return;
+					}
 					Skill skill = data.getSkills().getSkill(skillName);
 					boolean raceAllowed = isSkillAllowedForPlayerRace(data, skillName);
 					switch (action) {
 						case TOGGLE:
+							if (!TOGGLEABLE_SKILLS.contains(skillName) || data.getStatus().isStunned()) break;
 							if (skill != null && skill.getLevel() > 0) skill.setActive(!skill.isActive());
 							break;
 						case UPGRADE:
@@ -61,9 +82,10 @@ public class UpdateSkillC2S {
 							boolean isStackSkill = ConfigManager.getSkillsConfig().getStackSkills().contains(skillName.toLowerCase());
 							if (isStackSkill && skill.getLevel() <= 0) break;
 							if (skill.getLevel() <= 0 && isMasterOnlyFormSkill(data, skillName)) break;
+							if (isFormLocked(player, data, skillName, skill.getLevel() + 1)) break;
 							refreshRuntimeMaxLevel(data, skillName, skill);
 							int upgradeCost = computeTpCost(data, skillName, skill.getLevel());
-							if (!skill.isMaxLevel() && upgradeCost >= 0 && data.getResources().getTrainingPoints() >= upgradeCost && !(skillName.equals("potentialunlock") && skill.getLevel() == 10)) {
+							if (!skill.isMaxLevel() && upgradeCost >= 0 && data.getResources().getTrainingPointsExact() >= upgradeCost && !(skillName.equals("potentialunlock") && skill.getLevel() == 10)) {
 								data.getResources().removeTrainingPoints(upgradeCost);
 								boolean wasLevelZero = skill.getLevel() == 0;
 								skill.addLevel(1);
@@ -73,7 +95,8 @@ public class UpdateSkillC2S {
 							break;
 
 						case PURCHASE:
-							if (!raceAllowed) break;
+							if (!raceAllowed && !ConfigManager.getSkillsConfig().isTechniqueSkill(skillName)) break;
+							if (!isOfferedByNearbyMaster(player, skillName)) break;
 							boolean isFormSkillPurchase = ConfigManager.getSkillsConfig().getFormSkills().contains(skillName.toLowerCase());
 							int effectiveCost;
 							if (isFormSkillPurchase) {
@@ -86,7 +109,8 @@ public class UpdateSkillC2S {
 							}
 							boolean notOwned = !data.getSkills().hasSkill(skillName)
 									|| (isFormSkillPurchase && data.getSkills().getSkillLevel(skillName) == 0);
-							if (notOwned && effectiveCost >= 0 && data.getResources().getTrainingPoints() >= effectiveCost) {
+							if (notOwned && isFormLocked(player, data, skillName, 1)) break;
+							if (notOwned && effectiveCost >= 0 && data.getResources().getTrainingPointsExact() >= effectiveCost) {
 								data.getResources().removeTrainingPoints(effectiveCost);
 								data.getSkills().setSkillLevel(skillName, 1);
 								Skill purchased = data.getSkills().getSkill(skillName);
@@ -95,11 +119,18 @@ public class UpdateSkillC2S {
 							}
 							break;
 					}
-					NetworkHandler.sendToTrackingEntityAndSelf(new StatsSyncS2C(player), player);
+					StatsSyncS2C.sendRequested(player);
 				});
 			}
 		});
 		ctx.get().setPacketHandled(true);
+	}
+
+	private static boolean isFormLocked(ServerPlayer player, StatsData data, String skillName, int targetLevel) {
+		FormRequisites.Lock lock = FormRequisites.checkSkillLevel(data, skillName, targetLevel, false);
+		if (!lock.isLocked()) return false;
+		player.displayClientMessage(FormRequisites.describeInline(lock, false), true);
+		return true;
 	}
 
 	private static int computeTpCost(StatsData data, String skillName, int currentLevel) {
@@ -111,13 +142,32 @@ public class UpdateSkillC2S {
 			if (charConfig == null) return -1;
 			Integer[] prices = charConfig.getFormSkillTpCosts(skillName);
 			if (prices == null || currentLevel >= prices.length || prices[currentLevel] == null) return -1;
-			return Math.max(0, prices[currentLevel]);
+			return prices[currentLevel] < 0 ? -1 : prices[currentLevel];
 		}
 		var skillCosts = skillsConfig.getSkillCosts(skillName);
 		if (skillCosts == null || skillCosts.getCosts() == null) return -1;
 		java.util.List<Integer> costs = skillCosts.getCosts();
 		if (currentLevel >= costs.size() || costs.get(currentLevel) == null) return -1;
-		return Math.max(0, costs.get(currentLevel));
+		return costs.get(currentLevel) < 0 ? -1 : costs.get(currentLevel);
+	}
+
+	private static boolean isOfferedByNearbyMaster(ServerPlayer player, String skillName) {
+		AABB range = player.getBoundingBox().inflate(MASTER_SHOP_RANGE);
+		for (MastersEntity master : player.serverLevel().getEntitiesOfClass(MastersEntity.class, range)) {
+			if (offersSkill(player, master.getMasterName(), skillName)) return true;
+		}
+		for (QuestNPCEntity npc : player.serverLevel().getEntitiesOfClass(QuestNPCEntity.class, range)) {
+			if (offersSkill(player, npc.getNpcId(), skillName)) return true;
+		}
+		return false;
+	}
+
+	private static boolean offersSkill(ServerPlayer player, String npcName, String skillName) {
+		if (npcName == null || npcName.isBlank()) return false;
+		if (NpcDispositionService.getServiceBlocker(player, npcName) != null) return false;
+		Map<String, List<String>> offerings = ConfigManager.getSkillsConfig().getSkillOfferings();
+		List<String> offered = offerings.getOrDefault(npcName.toLowerCase(), offerings.get("default"));
+		return offered != null && (offered.contains(skillName) || offered.contains(skillName.toLowerCase()));
 	}
 
 	private static boolean isMasterOnlyFormSkill(StatsData data, String skillName) {
@@ -132,7 +182,7 @@ public class UpdateSkillC2S {
 		if (data == null || skillName == null || skillName.isEmpty()) return false;
 
 		String raceName = data.getCharacter() != null ? data.getCharacter().getRaceName() : "";
-		return ConfigManager.getSkillsConfig().isSkillAllowedForRace(skillName, raceName);
+		return ConfigManager.getSkillsConfig().isSkillAllowedForRace(skillName, raceName, data.getStatus().isAndroidUpgraded());
 	}
 
 	private void unlockTechniqueIfPresent(com.dragonminez.common.stats.StatsData data, String techId) {
@@ -144,6 +194,11 @@ public class UpdateSkillC2S {
 		} else if (PredefinedTechniques.STRIKE_REGISTRY.containsKey(techId)) {
 			StrikeAttackData template = PredefinedTechniques.STRIKE_REGISTRY.get(techId);
 			StrikeAttackData clone = new StrikeAttackData();
+			clone.load(template.save());
+			data.getTechniques().unlockTechnique(clone);
+		} else if (PredefinedTechniques.EVASION_REGISTRY.containsKey(techId)) {
+			EvasionAttackData template = PredefinedTechniques.EVASION_REGISTRY.get(techId);
+			EvasionAttackData clone = new EvasionAttackData();
 			clone.load(template.save());
 			data.getTechniques().unlockTechnique(clone);
 		}

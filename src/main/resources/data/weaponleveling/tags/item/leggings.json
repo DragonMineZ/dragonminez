@@ -274,6 +274,10 @@
       "required": false
     },
     {
+      "id": "dragonminez:scarletblaze_armor_leggings",
+      "required": false
+    },
+    {
       "id": "dragonminez:tien_armor_leggings",
       "required": false
     },
@@ -359,6 +363,18 @@
     },
     {
       "id": "dragonminez:zamasu_armor_leggings",
+      "required": false
+    },
+    {
+      "id": "dragonminez:taiyou_gi_armor_leggings",
+      "required": false
+    },
+    {
+      "id": "dragonminez:brightlys_regular_wear_armor_leggings",
+      "required": false
+    },
+    {
+      "id": "dragonminez:trunks_xeno_armor_leggings",
       "required": false
     }
   ]

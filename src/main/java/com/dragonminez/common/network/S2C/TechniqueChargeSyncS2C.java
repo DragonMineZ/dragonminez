@@ -19,6 +19,18 @@ public class TechniqueChargeSyncS2C {
 		this.charging = charging;
 	}
 
+	public int playerId() {
+		return this.playerId;
+	}
+
+	public float percent() {
+		return this.percent;
+	}
+
+	public boolean charging() {
+		return this.charging;
+	}
+
 	public static void encode(TechniqueChargeSyncS2C msg, FriendlyByteBuf buf) {
 		buf.writeInt(msg.playerId);
 		buf.writeFloat(msg.percent);

@@ -23,6 +23,7 @@ public class SagaBuuEntity {
             this.addKiSkill(KiSkillType.KI_SMALL, 40, 1.5F, 0xFF82F3, 0xFF1AEC);
             this.addKiSkill(KiSkillType.KI_VOLLEY, 120, 1.0F, 0xFF82F3, 0xFF1AEC);
             this.addKiSkill(KiSkillType.MAJIN_CANDY, 200, 1.0F, 0xFF82F3, 0xFF1AEC);
+            this.addKiSkill(KiSkillType.GUM_BIND, 300, 1.0F, 0xFF82F3, 0xFF1AEC);
 
             this.setEvade(true, 60);
             this.setWildSense(true, 100);
@@ -58,9 +59,10 @@ public class SagaBuuEntity {
 
             this.setEvade(true, 60);
             this.setWildSense(true, 100);
-            this.setZanzoken(true, 250);
+            this.setZanzoken(3, 250);
 
             this.getAttribute(Attributes.MOVEMENT_SPEED).setBaseValue(0.3D);
+            this.setDefaultMovementSpeed(0.3D);
             this.getAttribute(Attributes.KNOCKBACK_RESISTANCE).setBaseValue(0.30D);
 
         }
@@ -83,13 +85,12 @@ public class SagaBuuEntity {
             this.addKiSkill(KiSkillType.KI_SMALL, 40, 1.5F, 0xFF82F3, 0xFF1AEC);
             this.addKiSkill(KiSkillType.GENERIC_KI_WAVE, 120, 2.0F, 0xFF82F3, 0xFF1AEC, 0xDE0BCD);
 
-            this.addKiSkill(KiSkillType.KI_AIR_VOLLEY, 300 //uff
-                    , 1.5F, 0xFF82F3, 0xFF1AEC);
+            this.addKiSkill(KiSkillType.ASSAULT_RAIN, 300, 1.5F, 0xFFB8F4, 0x8A2BE2, 0xFF38D4);
 
 
             this.setEvade(true, 60);
             this.setWildSense(true, 100);
-            this.setZanzoken(true, 250);
+            this.setZanzoken(3, 250);
 
             this.getAttribute(Attributes.MOVEMENT_SPEED).setBaseValue(0.35D);
             this.setDefaultMovementSpeed(0.35D);
@@ -131,7 +132,7 @@ public class SagaBuuEntity {
 
             this.setEvade(true, 60);
             this.setWildSense(true, 100);
-            this.setZanzoken(true, 250);
+            this.setZanzoken(3, 250);
 
             this.getAttribute(Attributes.MOVEMENT_SPEED).setBaseValue(0.35D);
             this.setDefaultMovementSpeed(0.35D);
@@ -171,7 +172,7 @@ public class SagaBuuEntity {
 
             this.setEvade(true, 60);
             this.setWildSense(true, 100);
-            this.setZanzoken(true, 250);
+            this.setZanzoken(3, 250);
 
             this.getAttribute(Attributes.MOVEMENT_SPEED).setBaseValue(0.35D);
             this.setDefaultMovementSpeed(0.35D);
@@ -215,7 +216,7 @@ public class SagaBuuEntity {
 
             this.setEvade(true, 60);
             this.setWildSense(true, 100);
-            this.setZanzoken(true, 200);
+            this.setZanzoken(3, 200);
 
             this.getAttribute(Attributes.MOVEMENT_SPEED).setBaseValue(0.35D);
             this.setDefaultMovementSpeed(0.35D);
@@ -229,7 +230,7 @@ public class SagaBuuEntity {
 
         @Override
         public String getGeckolibModelName() {
-            return "saga_superbuu";
+            return "saga_superbuugohan";
         }
     }
 
@@ -243,7 +244,8 @@ public class SagaBuuEntity {
             this.setAuraColor(0xFF82F3);
             this.setKiBlastSpeed(2.2f);
 
-            this.setAllowedCombos(60, ComboType.GUM_PUNCH, ComboType.AIR, ComboType.BASIC, ComboType.GUM_EXPAND, ComboType.RAPID_KICKS, ComboType.SLEEP_RECOVERY);
+            this.setAllowedCombos(60, ComboType.GUM_PUNCH, ComboType.AIR, ComboType.BASIC, ComboType.GUM_EXPAND, ComboType.RAPID_KICKS, ComboType.SLEEP_RECOVERY,
+                    ComboType.MYSTIC_BALL);
 
             this.addKiSkill(KiSkillType.KI_SMALL, 40, 1.5F, 0xFF82F3, 0xFF1AEC);
             this.addKiSkill(KiSkillType.GENERIC_KI_WAVE, 400, 2.0F, 0xFF82F3, 0xFF1AEC, 0xDE0BCD);
@@ -252,7 +254,7 @@ public class SagaBuuEntity {
 
 
             this.setWildSense(true, 100);
-            this.setZanzoken(true, 200);
+            this.setZanzoken(3, 200);
 
             this.setisKid(true);
 

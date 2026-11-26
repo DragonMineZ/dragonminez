@@ -305,28 +305,7 @@ public class KiExplosionEntity extends AbstractKiProjectile {
     }
 
     private void createCrater(float radius) {
-        if (this.level().isClientSide) return;
-
-        radius = this.scaledDestructionRadius(radius);
-        BlockPos center = this.blockPosition();
-
-        int r = (int) Math.ceil(radius);
-
-        for (int x = -r; x <= r; x++) {
-            for (int y = -r; y <= r; y++) {
-                for (int z = -r; z <= r; z++) {
-                    BlockPos pos = center.offset(x, y, z);
-
-                    if (pos.distToCenterSqr(this.position()) <= radius * radius) {
-                        BlockState state = this.level().getBlockState(pos);
-
-                        if (!state.isAir() && state.getDestroySpeed(this.level(), pos) >= 0) {
-                            this.setKiBlockToAir(pos, 3);
-                        }
-                    }
-                }
-            }
-        }
+        this.carveKiSphere(this.blockPosition(), this.scaledDestructionRadius(radius), 2);
     }
 
     public void setMaxRadius(float radius) { this.entityData.set(MAX_RADIUS, radius); }

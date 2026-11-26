@@ -1,5 +1,6 @@
 package com.dragonminez.server.world.structure.helper;
 
+import com.dragonminez.server.world.structure.fitted.FittedTemplateStructure;
 import com.dragonminez.server.world.structure.placement.BiomeAwareUniquePlacement;
 import com.dragonminez.server.world.structure.placement.FixedStructurePlacement;
 import com.dragonminez.server.world.structure.placement.UniqueNearSpawnPlacement;
@@ -9,18 +10,36 @@ import net.minecraft.core.Holder;
 import net.minecraft.core.HolderSet;
 import net.minecraft.core.Registry;
 import net.minecraft.core.registries.Registries;
+import net.minecraft.network.chat.Component;
+import net.minecraft.network.chat.ComponentUtils;
+import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.resources.ResourceKey;
+import net.minecraft.resources.ResourceLocation;
+import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.level.ChunkPos;
+import net.minecraft.world.level.biome.Biome;
+import net.minecraft.world.level.chunk.ChunkGenerator;
+import net.minecraft.world.level.chunk.LevelChunk;
+import net.minecraft.world.level.levelgen.Heightmap;
+import net.minecraft.world.level.levelgen.structure.BoundingBox;
 import net.minecraft.world.level.levelgen.structure.Structure;
 import net.minecraft.world.level.levelgen.structure.StructureSet;
+import net.minecraft.world.level.levelgen.structure.StructureStart;
 import net.minecraft.world.level.levelgen.structure.placement.StructurePlacement;
 
 import javax.annotation.Nullable;
 import java.util.ArrayList;
+import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 
 public class StructureLocator {
+
+	private static final int MAX_HINT_BIOMES = 8;
+	private static final Map<String, BlockPos> PREDICTED_CENTERS = new ConcurrentHashMap<>();
 
 	@Nullable
 	public static BlockPos locateStructure(ServerLevel level, ResourceKey<Structure> structureKey, BlockPos searchFrom) {
@@ -72,30 +91,113 @@ public class StructureLocator {
 	private static BlockPos getPositionFromPlacement(ServerLevel level, ResourceKey<Structure> structureKey,
 													 Registry<Structure> structureRegistry,
 													 StructurePlacement placement) {
+		ChunkPos chunkPos = null;
+		int fallbackY = 90;
 		if (placement instanceof BiomeAwareUniquePlacement uniquePlacement) {
-			ChunkPos chunkPos = uniquePlacement.getStructureChunk(
+			chunkPos = uniquePlacement.getStructureChunk(
 					level.getSeed(),
 					level.getChunkSource().getGenerator().getBiomeSource(),
 					level.getChunkSource().randomState(),
 					level.getChunkSource().getGeneratorState()
 			);
-			if (chunkPos != null) {
-				return new BlockPos(chunkPos.getMiddleBlockX(), 90, chunkPos.getMiddleBlockZ());
-			}
 		} else if (placement instanceof FixedStructurePlacement fixedPlacement) {
-			int x = (fixedPlacement.getFixedX() << 4) + 8;
-			int z = (fixedPlacement.getFixedZ() << 4) + 8;
-			return new BlockPos(x, 30, z);
+			chunkPos = new ChunkPos(fixedPlacement.getFixedX(), fixedPlacement.getFixedZ());
+			fallbackY = 30;
 		} else if (placement instanceof UniqueNearSpawnPlacement spawnPlacement) {
-			ChunkPos chunkPos = spawnPlacement.getStructureChunk(level.getSeed());
-			return new BlockPos(chunkPos.getMiddleBlockX(), 90, chunkPos.getMiddleBlockZ());
+			chunkPos = spawnPlacement.getStructureChunk(level.getSeed());
+		}
+		if (chunkPos == null) return null;
+
+		BlockPos center = structureCenter(level, structureRegistry.get(structureKey), chunkPos);
+		return center != null ? center : new BlockPos(chunkPos.getMiddleBlockX(), fallbackY, chunkPos.getMiddleBlockZ());
+	}
+
+	@Nullable
+	public static BlockPos structureCenter(ServerLevel level, @Nullable Structure structure, ChunkPos chunkPos) {
+		if (structure == null) return null;
+		LevelChunk loaded = level.getChunkSource().getChunkNow(chunkPos.x, chunkPos.z);
+		if (loaded != null) {
+			StructureStart start = loaded.getStartForStructure(structure);
+			if (start != null && start.isValid()) {
+				BoundingBox box = StructureFrame.core(start).map(StructureFrame::box).orElseGet(start::getBoundingBox);
+				return new BlockPos(box.getCenter().getX(), box.minY(), box.getCenter().getZ());
+			}
 		}
 
-		return null;
+		String key = level.dimension().location() + "|" + level.getSeed() + "|" + chunkPos.toLong() + "|" + System.identityHashCode(structure);
+		BlockPos cached = PREDICTED_CENTERS.get(key);
+		if (cached != null) return cached;
+		try {
+			BlockPos predicted = predictCenter(level, structure, chunkPos);
+			if (predicted != null) PREDICTED_CENTERS.put(key, predicted);
+			return predicted;
+		} catch (RuntimeException e) {
+			return null;
+		}
+	}
+
+	@Nullable
+	private static BlockPos predictCenter(ServerLevel level, Structure structure, ChunkPos chunkPos) {
+		ChunkGenerator generator = level.getChunkSource().getGenerator();
+		if (structure instanceof FittedTemplateStructure) {
+			int x = chunkPos.getMiddleBlockX();
+			int z = chunkPos.getMiddleBlockZ();
+			int y = generator.getBaseHeight(x, z, Heightmap.Types.WORLD_SURFACE_WG, level, level.getChunkSource().randomState());
+			return new BlockPos(x, y, z);
+		}
+		Structure.GenerationContext context = new Structure.GenerationContext(level.registryAccess(), generator,
+				generator.getBiomeSource(), level.getChunkSource().randomState(), level.getStructureManager(),
+				level.getSeed(), chunkPos, level, biome -> true);
+		return structure.findValidGenerationPoint(context).map(Structure.GenerationStub::position).orElse(null);
 	}
 
 	public static int getDistanceTo(BlockPos from, BlockPos to) {
 		return (int) Math.sqrt(from.distSqr(to));
+	}
+
+	public record SpawnHint(Component dimensions, Component biomes) {
+	}
+
+	@Nullable
+	public static SpawnHint spawnHint(MinecraftServer server, ResourceKey<Structure> structureKey) {
+		var structureRegistry = server.registryAccess().registryOrThrow(Registries.STRUCTURE);
+		var structureSetRegistry = server.registryAccess().registryOrThrow(Registries.STRUCTURE_SET);
+		Holder<Structure> holder = structureRegistry.getHolder(structureKey).orElse(null);
+		if (holder == null) return null;
+
+		Set<Holder<Biome>> candidates = new LinkedHashSet<>();
+		for (StructureSet set : structureSetRegistry) {
+			if (set.structures().stream().noneMatch(entry -> entry.structure().is(structureKey))) continue;
+			if (set.placement() instanceof BiomeAwareUniquePlacement unique) {
+				unique.getValidBiomes().forEach(candidates::add);
+			} else {
+				holder.value().biomes().forEach(candidates::add);
+			}
+		}
+		if (candidates.isEmpty()) holder.value().biomes().forEach(candidates::add);
+
+		List<Component> dimensions = new ArrayList<>();
+		Set<Holder<Biome>> biomes = new LinkedHashSet<>();
+		for (ServerLevel level : server.getAllLevels()) {
+			if (level.getChunkSource().getGeneratorState().getPlacementsForStructure(holder).isEmpty()) continue;
+			Set<Holder<Biome>> possible = level.getChunkSource().getGenerator().getBiomeSource().possibleBiomes();
+			List<Holder<Biome>> matching = candidates.stream().filter(possible::contains).toList();
+			if (matching.isEmpty()) continue;
+			ResourceLocation dim = level.dimension().location();
+			dimensions.add(Component.translatableWithFallback("dimension." + dim.getNamespace() + "." + dim.getPath(), dim.toString()));
+			biomes.addAll(matching);
+		}
+		if (dimensions.isEmpty() || biomes.isEmpty()) return null;
+
+		List<Component> biomeNames = new ArrayList<>();
+		for (Holder<Biome> biome : biomes) {
+			biome.unwrapKey().ifPresent(key -> biomeNames.add(Component.translatableWithFallback(
+					"biome." + key.location().getNamespace() + "." + key.location().getPath(), key.location().toString())));
+			if (biomeNames.size() >= MAX_HINT_BIOMES) break;
+		}
+		MutableComponent biomeList = ComponentUtils.formatList(biomeNames, Component.literal(", ")).copy();
+		if (biomes.size() > biomeNames.size()) biomeList.append(Component.literal(", ..."));
+		return new SpawnHint(ComponentUtils.formatList(dimensions, Component.literal(", ")), biomeList);
 	}
 
 	public static boolean usesCustomPlacement(ServerLevel level, ResourceKey<Structure> structureKey) {

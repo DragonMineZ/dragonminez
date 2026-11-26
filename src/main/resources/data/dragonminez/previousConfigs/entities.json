@@ -1,6 +1,16 @@
 {
-  "configVersion": "2.1.2",
+  "configVersion": "2.2.0",
   "defaultEntityStats": {
+    "dragonminez:bandit": {
+      "health": 75.0,
+      "meleeDamage": 10.0,
+      "kiDamage": 0.0
+    },
+    "dragonminez:saga_ogre_blue": {
+      "health": 200.0,
+      "meleeDamage": 20.0,
+      "kiDamage": 0.0
+    },
     "dragonminez:dino1": {
       "health": 100.0,
       "meleeDamage": 8.0,
@@ -21,14 +31,19 @@
       "meleeDamage": 8.0,
       "kiDamage": 6.0
     },
+    "dragonminez:mini_janemba_stampede": {
+      "health": 20.0,
+      "meleeDamage": 2.0,
+      "kiDamage": 0.0
+    },
     "dragonminez:dino2": {
       "health": 150.0,
       "meleeDamage": 12.0,
       "kiDamage": 0.0
     },
-    "dragonminez:bandit": {
-      "health": 75.0,
-      "meleeDamage": 10.0,
+    "dragonminez:giant_turtle": {
+      "health": 40.0,
+      "meleeDamage": 0.0,
       "kiDamage": 0.0
     },
     "dragonminez:red_ribbon_soldier": {
@@ -39,6 +54,16 @@
     "dragonminez:dinokid": {
       "health": 30.0,
       "meleeDamage": 4.0,
+      "kiDamage": 0.0
+    },
+    "dragonminez:giant_fish": {
+      "health": 80.0,
+      "meleeDamage": 8.0,
+      "kiDamage": 0.0
+    },
+    "dragonminez:saga_ogre_red": {
+      "health": 200.0,
+      "meleeDamage": 20.0,
       "kiDamage": 0.0
     },
     "dragonminez:robot1": {

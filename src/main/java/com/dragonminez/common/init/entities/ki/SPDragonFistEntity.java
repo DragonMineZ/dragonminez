@@ -59,9 +59,13 @@ public class SPDragonFistEntity extends AbstractKiProjectile implements GeoEntit
     }
 
     public void setupDragonFist(LivingEntity owner, float damage, float speed) {
+        this.setupDragonFist(owner, damage, speed, 40);
+    }
+
+    public void setupDragonFist(LivingEntity owner, float damage, float speed, int maxLife) {
         this.setup(owner, damage, 1.5F, speed, 0xFFD700, 0xFF8C00);
         this.setFiring(true);
-        this.setMaxLife(40);
+        this.setMaxLife(maxLife);
 
         float yaw = owner.getYHeadRot();
         float pitch = owner.getXRot();
@@ -221,7 +225,7 @@ public class SPDragonFistEntity extends AbstractKiProjectile implements GeoEntit
     }
 
     private PlayState predicate(AnimationState<SPDragonFistEntity> event) {
-        return event.setAndContinue(RawAnimation.begin().thenLoop("idle"));
+        return event.setAndContinue(RawAnimation.begin().thenLoop("rush"));
     }
 
     @Override

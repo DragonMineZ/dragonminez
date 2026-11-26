@@ -1,5 +1,5 @@
 {
-  "configVersion": "2.1.2",
+  "configVersion": "2.2.0",
   "KiAttacks": {
     "area": {
       "minXPCost": 100,
@@ -11,7 +11,12 @@
       "kiCostMultiplier": 1.0,
       "damageMultiplier": 1.0,
       "destructionMultiplier": 1.0,
-      "castTimeTicks": 40
+      "castTimeTicks": 40,
+      "baseSizeCap": 0.0,
+      "transformedSizeCap": 0.0,
+      "sizePowerFloor": 100.0,
+      "sizePowerCeiling": 1000000.0,
+      "maxDestructionRadius": 12.0
     },
     "giant_ball": {
       "minXPCost": 100,
@@ -23,7 +28,12 @@
       "kiCostMultiplier": 1.0,
       "damageMultiplier": 1.0,
       "destructionMultiplier": 1.0,
-      "castTimeTicks": 60
+      "castTimeTicks": 60,
+      "baseSizeCap": 15.0,
+      "transformedSizeCap": 25.0,
+      "sizePowerFloor": 100.0,
+      "sizePowerCeiling": 1000000.0,
+      "maxDestructionRadius": 32.0
     },
     "beam": {
       "minXPCost": 100,
@@ -35,7 +45,12 @@
       "kiCostMultiplier": 1.0,
       "damageMultiplier": 1.0,
       "destructionMultiplier": 1.0,
-      "castTimeTicks": 50
+      "castTimeTicks": 50,
+      "baseSizeCap": 1.2,
+      "transformedSizeCap": 2.3,
+      "sizePowerFloor": 100.0,
+      "sizePowerCeiling": 1000000.0,
+      "maxDestructionRadius": 12.0
     },
     "explosion": {
       "minXPCost": 100,
@@ -47,7 +62,12 @@
       "kiCostMultiplier": 1.0,
       "damageMultiplier": 1.0,
       "destructionMultiplier": 1.0,
-      "castTimeTicks": 60
+      "castTimeTicks": 60,
+      "baseSizeCap": 12.0,
+      "transformedSizeCap": 25.0,
+      "sizePowerFloor": 100.0,
+      "sizePowerCeiling": 1000000.0,
+      "maxDestructionRadius": 32.0
     },
     "shield": {
       "minXPCost": 100,
@@ -59,7 +79,12 @@
       "kiCostMultiplier": 1.0,
       "damageMultiplier": 1.0,
       "destructionMultiplier": 1.0,
-      "castTimeTicks": 40
+      "castTimeTicks": 40,
+      "baseSizeCap": 0.0,
+      "transformedSizeCap": 0.0,
+      "sizePowerFloor": 100.0,
+      "sizePowerCeiling": 1000000.0,
+      "maxDestructionRadius": 6.0
     },
     "disk": {
       "minXPCost": 100,
@@ -71,7 +96,12 @@
       "kiCostMultiplier": 1.0,
       "damageMultiplier": 1.0,
       "destructionMultiplier": 1.0,
-      "castTimeTicks": 30
+      "castTimeTicks": 30,
+      "baseSizeCap": 1.2,
+      "transformedSizeCap": 2.3,
+      "sizePowerFloor": 100.0,
+      "sizePowerCeiling": 1000000.0,
+      "maxDestructionRadius": 6.0
     },
     "laser": {
       "minXPCost": 100,
@@ -83,7 +113,12 @@
       "kiCostMultiplier": 1.0,
       "damageMultiplier": 1.0,
       "destructionMultiplier": 1.0,
-      "castTimeTicks": 0
+      "castTimeTicks": 0,
+      "baseSizeCap": 0.0,
+      "transformedSizeCap": 0.0,
+      "sizePowerFloor": 100.0,
+      "sizePowerCeiling": 1000000.0,
+      "maxDestructionRadius": 6.0
     },
     "barrage": {
       "minXPCost": 100,
@@ -95,7 +130,12 @@
       "kiCostMultiplier": 1.0,
       "damageMultiplier": 1.0,
       "destructionMultiplier": 1.0,
-      "castTimeTicks": 40
+      "castTimeTicks": 40,
+      "baseSizeCap": 1.5,
+      "transformedSizeCap": 2.5,
+      "sizePowerFloor": 100.0,
+      "sizePowerCeiling": 1000000.0,
+      "maxDestructionRadius": 6.0
     },
     "medium_ball": {
       "minXPCost": 100,
@@ -107,7 +147,12 @@
       "kiCostMultiplier": 1.0,
       "damageMultiplier": 1.0,
       "destructionMultiplier": 1.0,
-      "castTimeTicks": 30
+      "castTimeTicks": 30,
+      "baseSizeCap": 4.5,
+      "transformedSizeCap": 7.0,
+      "sizePowerFloor": 100.0,
+      "sizePowerCeiling": 1000000.0,
+      "maxDestructionRadius": 6.0
     },
     "wave": {
       "minXPCost": 100,
@@ -119,7 +164,12 @@
       "kiCostMultiplier": 1.0,
       "damageMultiplier": 1.0,
       "destructionMultiplier": 1.0,
-      "castTimeTicks": 50
+      "castTimeTicks": 50,
+      "baseSizeCap": 2.0,
+      "transformedSizeCap": 5.0,
+      "sizePowerFloor": 100.0,
+      "sizePowerCeiling": 1000000.0,
+      "maxDestructionRadius": 12.0
     },
     "small_ball": {
       "minXPCost": 100,
@@ -131,11 +181,16 @@
       "kiCostMultiplier": 1.0,
       "damageMultiplier": 1.0,
       "destructionMultiplier": 1.0,
-      "castTimeTicks": 0
+      "castTimeTicks": 0,
+      "baseSizeCap": 0.0,
+      "transformedSizeCap": 0.0,
+      "sizePowerFloor": 100.0,
+      "sizePowerCeiling": 1000000.0,
+      "maxDestructionRadius": 6.0
     }
   },
   "StrikeAttacks": {
-    "oozaru_fist": {
+    "android_combo": {
       "minXPCost": 100,
       "maxXPCost": -1,
       "xpCostMultiplier": 1.0,
@@ -145,7 +200,7 @@
       "kiCostMultiplier": 1.0,
       "damageMultiplier": 1.0,
       "castTimeTicks": 0,
-      "cooldownTicks": 280
+      "cooldownTicks": 380
     },
     "deadly_dance_vegetto": {
       "minXPCost": 100,
@@ -159,18 +214,6 @@
       "castTimeTicks": 0,
       "cooldownTicks": 200
     },
-    "dragon_fist": {
-      "minXPCost": 100,
-      "maxXPCost": -1,
-      "xpCostMultiplier": 1.0,
-      "xpGainMultiplier": 1.0,
-      "xpGainPerHit": 1,
-      "xpGainPerKill": 3,
-      "kiCostMultiplier": 1.0,
-      "damageMultiplier": 1.0,
-      "castTimeTicks": 0,
-      "cooldownTicks": 320
-    },
     "super_god_fist": {
       "minXPCost": 100,
       "maxXPCost": -1,
@@ -181,19 +224,7 @@
       "kiCostMultiplier": 1.0,
       "damageMultiplier": 1.0,
       "castTimeTicks": 0,
-      "cooldownTicks": 240
-    },
-    "meteor": {
-      "minXPCost": 100,
-      "maxXPCost": -1,
-      "xpCostMultiplier": 1.0,
-      "xpGainMultiplier": 1.0,
-      "xpGainPerHit": 1,
-      "xpGainPerKill": 3,
-      "kiCostMultiplier": 1.0,
-      "damageMultiplier": 1.0,
-      "castTimeTicks": 0,
-      "cooldownTicks": 160
+      "cooldownTicks": 300
     },
     "wolf_fang": {
       "minXPCost": 100,
@@ -207,6 +238,150 @@
       "castTimeTicks": 0,
       "cooldownTicks": 140
     },
+    "meteor_burst": {
+      "minXPCost": 100,
+      "maxXPCost": -1,
+      "xpCostMultiplier": 1.0,
+      "xpGainMultiplier": 1.0,
+      "xpGainPerHit": 1,
+      "xpGainPerKill": 3,
+      "kiCostMultiplier": 1.0,
+      "damageMultiplier": 1.0,
+      "castTimeTicks": 0,
+      "cooldownTicks": 600
+    },
+    "combo_meteor": {
+      "minXPCost": 100,
+      "maxXPCost": -1,
+      "xpCostMultiplier": 1.0,
+      "xpGainMultiplier": 1.0,
+      "xpGainPerHit": 1,
+      "xpGainPerKill": 3,
+      "kiCostMultiplier": 1.0,
+      "damageMultiplier": 1.0,
+      "castTimeTicks": 0,
+      "cooldownTicks": 290
+    },
+    "dragon_fist": {
+      "minXPCost": 100,
+      "maxXPCost": -1,
+      "xpCostMultiplier": 1.0,
+      "xpGainMultiplier": 1.0,
+      "xpGainPerHit": 1,
+      "xpGainPerKill": 3,
+      "kiCostMultiplier": 1.0,
+      "damageMultiplier": 1.0,
+      "castTimeTicks": 0,
+      "cooldownTicks": 320
+    },
+    "oozaru_slam": {
+      "minXPCost": 100,
+      "maxXPCost": -1,
+      "xpCostMultiplier": 1.0,
+      "xpGainMultiplier": 1.0,
+      "xpGainPerHit": 1,
+      "xpGainPerKill": 3,
+      "kiCostMultiplier": 1.0,
+      "damageMultiplier": 1.0,
+      "castTimeTicks": 0,
+      "cooldownTicks": 180
+    },
+    "gum_punch": {
+      "minXPCost": 100,
+      "maxXPCost": -1,
+      "xpCostMultiplier": 1.0,
+      "xpGainMultiplier": 1.0,
+      "xpGainPerHit": 1,
+      "xpGainPerKill": 3,
+      "kiCostMultiplier": 1.0,
+      "damageMultiplier": 1.0,
+      "castTimeTicks": 0,
+      "cooldownTicks": 260
+    },
+    "death_chaser": {
+      "minXPCost": 100,
+      "maxXPCost": -1,
+      "xpCostMultiplier": 1.0,
+      "xpGainMultiplier": 1.0,
+      "xpGainPerHit": 1,
+      "xpGainPerKill": 3,
+      "kiCostMultiplier": 1.0,
+      "damageMultiplier": 1.0,
+      "castTimeTicks": 0,
+      "cooldownTicks": 320
+    },
+    "darkness_eye_beam": {
+      "minXPCost": 100,
+      "maxXPCost": -1,
+      "xpCostMultiplier": 1.0,
+      "xpGainMultiplier": 1.0,
+      "xpGainPerHit": 1,
+      "xpGainPerKill": 3,
+      "kiCostMultiplier": 1.0,
+      "damageMultiplier": 1.0,
+      "castTimeTicks": 0,
+      "cooldownTicks": 410
+    },
+    "spirit_breaker": {
+      "minXPCost": 100,
+      "maxXPCost": -1,
+      "xpCostMultiplier": 1.0,
+      "xpGainMultiplier": 1.0,
+      "xpGainPerHit": 1,
+      "xpGainPerKill": 3,
+      "kiCostMultiplier": 1.0,
+      "damageMultiplier": 1.0,
+      "castTimeTicks": 0,
+      "cooldownTicks": 370
+    },
+    "shining_sword_attack": {
+      "minXPCost": 100,
+      "maxXPCost": -1,
+      "xpCostMultiplier": 1.0,
+      "xpGainMultiplier": 1.0,
+      "xpGainPerHit": 1,
+      "xpGainPerKill": 3,
+      "kiCostMultiplier": 1.0,
+      "damageMultiplier": 1.0,
+      "castTimeTicks": 0,
+      "cooldownTicks": 320
+    },
+    "beam_sword_slash": {
+      "minXPCost": 100,
+      "maxXPCost": -1,
+      "xpCostMultiplier": 1.0,
+      "xpGainMultiplier": 1.0,
+      "xpGainPerHit": 1,
+      "xpGainPerKill": 3,
+      "kiCostMultiplier": 1.0,
+      "damageMultiplier": 1.0,
+      "castTimeTicks": 0,
+      "cooldownTicks": 350
+    },
+    "perfect_rush": {
+      "minXPCost": 100,
+      "maxXPCost": -1,
+      "xpCostMultiplier": 1.0,
+      "xpGainMultiplier": 1.0,
+      "xpGainPerHit": 1,
+      "xpGainPerKill": 3,
+      "kiCostMultiplier": 1.0,
+      "damageMultiplier": 1.0,
+      "castTimeTicks": 0,
+      "cooldownTicks": 330
+    },
+    "meteor": {
+      "minXPCost": 100,
+      "maxXPCost": -1,
+      "xpCostMultiplier": 1.0,
+      "xpGainMultiplier": 1.0,
+      "xpGainPerHit": 1,
+      "xpGainPerKill": 3,
+      "kiCostMultiplier": 1.0,
+      "damageMultiplier": 1.0,
+      "castTimeTicks": 0,
+      "cooldownTicks": 160
+    },
     "kaioken_attack": {
       "minXPCost": 100,
       "maxXPCost": -1,
@@ -217,7 +392,7 @@
       "kiCostMultiplier": 1.0,
       "damageMultiplier": 1.0,
       "castTimeTicks": 0,
-      "cooldownTicks": 240
+      "cooldownTicks": 180
     },
     "deadly_dance": {
       "minXPCost": 100,
@@ -230,6 +405,162 @@
       "damageMultiplier": 1.0,
       "castTimeTicks": 0,
       "cooldownTicks": 160
+    },
+    "oozaru_fist": {
+      "minXPCost": 100,
+      "maxXPCost": -1,
+      "xpCostMultiplier": 1.0,
+      "xpGainMultiplier": 1.0,
+      "xpGainPerHit": 1,
+      "xpGainPerKill": 3,
+      "kiCostMultiplier": 1.0,
+      "damageMultiplier": 1.0,
+      "castTimeTicks": 0,
+      "cooldownTicks": 280
+    },
+    "dimensional_punch": {
+      "minXPCost": 100,
+      "maxXPCost": -1,
+      "xpCostMultiplier": 1.0,
+      "xpGainMultiplier": 1.0,
+      "xpGainPerHit": 1,
+      "xpGainPerKill": 3,
+      "kiCostMultiplier": 1.0,
+      "damageMultiplier": 1.0,
+      "castTimeTicks": 0,
+      "cooldownTicks": 340
+    },
+    "mystic_ball": {
+      "minXPCost": 100,
+      "maxXPCost": -1,
+      "xpCostMultiplier": 1.0,
+      "xpGainMultiplier": 1.0,
+      "xpGainPerHit": 1,
+      "xpGainPerKill": 3,
+      "kiCostMultiplier": 1.0,
+      "damageMultiplier": 1.0,
+      "castTimeTicks": 0,
+      "cooldownTicks": 320
+    },
+    "spirit_breaking_cannon": {
+      "minXPCost": 100,
+      "maxXPCost": -1,
+      "xpCostMultiplier": 1.0,
+      "xpGainMultiplier": 1.0,
+      "xpGainPerHit": 1,
+      "xpGainPerKill": 3,
+      "kiCostMultiplier": 1.0,
+      "damageMultiplier": 1.0,
+      "castTimeTicks": 0,
+      "cooldownTicks": 330
+    },
+    "blue_hurricane": {
+      "minXPCost": 100,
+      "maxXPCost": -1,
+      "xpCostMultiplier": 1.0,
+      "xpGainMultiplier": 1.0,
+      "xpGainPerHit": 1,
+      "xpGainPerKill": 3,
+      "kiCostMultiplier": 1.0,
+      "damageMultiplier": 1.0,
+      "castTimeTicks": 0,
+      "cooldownTicks": 260
+    },
+    "dimensional_sword_attack": {
+      "minXPCost": 100,
+      "maxXPCost": -1,
+      "xpCostMultiplier": 1.0,
+      "xpGainMultiplier": 1.0,
+      "xpGainPerHit": 1,
+      "xpGainPerKill": 3,
+      "kiCostMultiplier": 1.0,
+      "damageMultiplier": 1.0,
+      "castTimeTicks": 0,
+      "cooldownTicks": 380
+    },
+    "grab": {
+      "minXPCost": 100,
+      "maxXPCost": -1,
+      "xpCostMultiplier": 1.0,
+      "xpGainMultiplier": 1.0,
+      "xpGainPerHit": 1,
+      "xpGainPerKill": 3,
+      "kiCostMultiplier": 1.0,
+      "damageMultiplier": 1.0,
+      "castTimeTicks": 0,
+      "cooldownTicks": 210
+    }
+  },
+  "EvasionAttacks": {
+    "rage_scream": {
+      "minXPCost": 100,
+      "maxXPCost": -1,
+      "xpCostMultiplier": 1.0,
+      "xpGainMultiplier": 1.0,
+      "xpGainPerHit": 2,
+      "kiCostMultiplier": 1.0,
+      "damageMultiplier": 1.0,
+      "cooldownTicks": 80
+    },
+    "candy_beam": {
+      "minXPCost": 100,
+      "maxXPCost": -1,
+      "xpCostMultiplier": 1.0,
+      "xpGainMultiplier": 1.0,
+      "xpGainPerHit": 2,
+      "kiCostMultiplier": 1.0,
+      "damageMultiplier": 1.0,
+      "cooldownTicks": 600
+    },
+    "dimensional_teleport": {
+      "minXPCost": 100,
+      "maxXPCost": -1,
+      "xpCostMultiplier": 1.0,
+      "xpGainMultiplier": 1.0,
+      "xpGainPerHit": 2,
+      "kiCostMultiplier": 1.0,
+      "damageMultiplier": 1.0,
+      "cooldownTicks": 80
+    },
+    "sleep_recovery": {
+      "minXPCost": 100,
+      "maxXPCost": -1,
+      "xpCostMultiplier": 1.0,
+      "xpGainMultiplier": 1.0,
+      "xpGainPerHit": 2,
+      "kiCostMultiplier": 1.0,
+      "damageMultiplier": 1.0,
+      "cooldownTicks": 1200
+    },
+    "gum_bind": {
+      "minXPCost": 100,
+      "maxXPCost": -1,
+      "xpCostMultiplier": 1.0,
+      "xpGainMultiplier": 1.0,
+      "xpGainPerHit": 2,
+      "kiCostMultiplier": 1.0,
+      "damageMultiplier": 1.0,
+      "cooldownTicks": 900
+    },
+    "afterimage": {
+      "minXPCost": 100,
+      "maxXPCost": -1,
+      "xpCostMultiplier": 1.0,
+      "xpGainMultiplier": 1.0,
+      "xpGainPerHit": 2,
+      "kiCostMultiplier": 1.0,
+      "damageMultiplier": 1.0,
+      "cooldownTicks": 200
+    },
+    "taiyoken": {
+      "minXPCost": 100,
+      "maxXPCost": -1,
+      "xpCostMultiplier": 1.0,
+      "xpGainMultiplier": 1.0,
+      "xpGainPerHit": 2,
+      "kiCostMultiplier": 1.0,
+      "damageMultiplier": 1.0,
+      "cooldownTicks": 900
     }
   }
 }

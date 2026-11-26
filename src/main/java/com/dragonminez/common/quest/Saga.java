@@ -1,14 +1,9 @@
 package com.dragonminez.common.quest;
 
-import lombok.AllArgsConstructor;
-import lombok.Getter;
-import lombok.Setter;
 
 import java.util.ArrayList;
 import java.util.List;
 
-@Setter
-@Getter
 public class Saga {
     private final String id;
     private final String name;
@@ -42,18 +37,46 @@ public class Saga {
     }
 
     public boolean isCompleted() {
-        return currentQuestIndex >= quests.size() - 1 &&
-               (getCurrentQuest() == null || getCurrentQuest().isCompleted());
+        return currentQuestIndex >= quests.size() - 1 && (getCurrentQuest() == null || getCurrentQuest().isCompleted());
     }
 
     public Quest getQuestById(int questId) {
-        return quests.stream()
-                .filter(q -> q.getId() == questId)
-                .findFirst()
-                .orElse(null);
+        return quests.stream().filter(q -> q.getId() == questId).findFirst().orElse(null);
     }
-    
+
+
     public record SagaRequirements(String previousSagaId) {
     }
-}
 
+    public void setUnlocked(final boolean unlocked) {
+        this.unlocked = unlocked;
+    }
+
+    public void setCurrentQuestIndex(final int currentQuestIndex) {
+        this.currentQuestIndex = currentQuestIndex;
+    }
+
+    public String getId() {
+        return this.id;
+    }
+
+    public String getName() {
+        return this.name;
+    }
+
+    public List<Quest> getQuests() {
+        return this.quests;
+    }
+
+    public SagaRequirements getRequirements() {
+        return this.requirements;
+    }
+
+    public boolean isUnlocked() {
+        return this.unlocked;
+    }
+
+    public int getCurrentQuestIndex() {
+        return this.currentQuestIndex;
+    }
+}

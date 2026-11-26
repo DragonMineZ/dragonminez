@@ -17,6 +17,7 @@ public class MasterEntityRenderer <T extends MastersEntity> extends GeoEntityRen
     public MasterEntityRenderer(EntityRendererProvider.Context renderManager) {
         super(renderManager, new MasterGlobalModel<>());
         this.shadowRadius = 0.4f;
+        this.addRenderLayer(new HalloweenPumpkinLayer<>(this));
     }
 
     @Override

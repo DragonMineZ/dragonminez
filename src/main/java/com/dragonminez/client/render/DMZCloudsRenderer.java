@@ -22,14 +22,8 @@ public class DMZCloudsRenderer {
 	private CloudStatus prevCloudsType;
 	private boolean generateClouds = true;
 
-	/**
-	 * Renders colored clouds fixed at the dimension cloud height (not stuck to the camera).
-	 * Matches vanilla 1.21 LevelRenderer: apply {@code modelViewMatrix} (frustum/view) before
-	 * cloud scale/translate so Y is {@code cloudHeight - camY}.
-	 */
-	public void render(PoseStack poseStack, Matrix4f modelViewMatrix, Matrix4f projectionMatrix, float partialTick, double camX, double camY, double camZ, Vec3 customColor) {
+	public void render(PoseStack poseStack, Matrix4f modelViewMatrix, Matrix4f projectionMatrix, float partialTick, double camX, double camY, double camZ, Vec3 customColor, float cloudHeight, float cloudTicks) {
 		Minecraft mc = Minecraft.getInstance();
-		float cloudHeight = mc.level.effects().getCloudHeight();
 
 		if (Float.isNaN(cloudHeight)) {
 			return;
@@ -47,7 +41,7 @@ public class DMZCloudsRenderer {
 		RenderSystem.depthMask(true);
 
 		// World-fixed cloud plane: relative Y so clouds sit at cloudHeight, not at player Y.
-		double time = (double) ((float) mc.level.getGameTime() + partialTick) * 0.03F;
+		double time = (double) (cloudTicks * 0.03F);
 		double viewX = (camX + time) / 12.0D;
 		double viewY = (double) (cloudHeight - (float) camY + 0.33F);
 		double viewZ = camZ / 12.0D + 0.33D;

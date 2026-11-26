@@ -4,6 +4,7 @@ import com.dragonminez.Reference;
 import com.dragonminez.common.init.menu.menutypes.FuelGeneratorMenu;
 import com.dragonminez.common.init.menu.menutypes.GravityDeviceMenu;
 import com.dragonminez.common.init.menu.menutypes.KikonoStationMenu;
+import com.dragonminez.common.init.menu.menutypes.PatternStationMenu;
 import net.minecraft.world.inventory.AbstractContainerMenu;
 import net.minecraft.world.inventory.MenuType;
 import net.neoforged.neoforge.common.extensions.IMenuTypeExtension;
@@ -25,6 +26,9 @@ public class MainMenus {
 
 	public static final DeferredHolder<MenuType<?>, MenuType<GravityDeviceMenu>> GRAVITY_DEVICE_MENU =
 			registerMenuType("gravity_device_menu", GravityDeviceMenu::new);
+
+	public static final DeferredHolder<MenuType<?>, MenuType<PatternStationMenu>> PATTERN_STATION_MENU =
+			registerMenuType("pattern_station_menu", PatternStationMenu::new);
 
 	private static <T extends AbstractContainerMenu> DeferredHolder<MenuType<?>, MenuType<T>> registerMenuType(String name, IContainerFactory<T> factory) {
 		return MENUS.register(name, () -> IMenuTypeExtension.create(factory));

@@ -52,10 +52,10 @@ public class KeyBinds {
 			TECHNIQUE_SLOT_5, TECHNIQUE_SLOT_6, TECHNIQUE_SLOT_7, TECHNIQUE_SLOT_8
 	};
 
-	public static final KeyMapping RHYTHM_LEFT = registerKey("rhythm_left", GLFW.GLFW_KEY_LEFT, true);
-	public static final KeyMapping RHYTHM_DOWN = registerKey("rhythm_down", GLFW.GLFW_KEY_DOWN, true);
-	public static final KeyMapping RHYTHM_UP = registerKey("rhythm_up", GLFW.GLFW_KEY_UP, true);
-	public static final KeyMapping RHYTHM_RIGHT = registerKey("rhythm_right", GLFW.GLFW_KEY_RIGHT, true);
+	public static final KeyMapping RHYTHM_LEFT = registerKey("rhythm_left", GLFW.GLFW_KEY_A, true);
+	public static final KeyMapping RHYTHM_DOWN = registerKey("rhythm_down", GLFW.GLFW_KEY_S, true);
+	public static final KeyMapping RHYTHM_UP = registerKey("rhythm_up", GLFW.GLFW_KEY_K, true);
+	public static final KeyMapping RHYTHM_RIGHT = registerKey("rhythm_right", GLFW.GLFW_KEY_L, true);
 
 	private static KeyMapping registerKey(String name, int keyCode) {
 		return registerKey(name, keyCode, false);
@@ -64,7 +64,7 @@ public class KeyBinds {
     private static KeyMapping registerKey(String name, int keyCode, boolean minigame) {
         return new KeyMapping(
                 "key." + Reference.MOD_ID + "." + name,
-                KeyConflictContext.IN_GAME,
+                minigame ? KeyConflictContext.GUI : KeyConflictContext.IN_GAME,
                 InputConstants.Type.KEYSYM,
                 keyCode,
 				minigame ? MINIGAMES_CATEGORY : DMZ_CATEGORY

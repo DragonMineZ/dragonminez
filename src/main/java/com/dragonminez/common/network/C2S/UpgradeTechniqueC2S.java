@@ -1,9 +1,11 @@
 package com.dragonminez.common.network.C2S;
 
+import com.dragonminez.common.config.ConfigManager;
 import com.dragonminez.common.stats.StatsCapability;
 import com.dragonminez.common.stats.StatsProvider;
 import com.dragonminez.common.network.NetworkHandler;
 import com.dragonminez.common.network.S2C.ProgressionSyncS2C;
+import com.dragonminez.common.stats.techniques.EvasionAttackData;
 import com.dragonminez.common.stats.techniques.KiAttackData;
 import com.dragonminez.common.stats.techniques.StrikeAttackData;
 import com.dragonminez.common.stats.techniques.TechniqueData;
@@ -38,12 +40,15 @@ public class UpgradeTechniqueC2S {
 			if (player != null) {
 				StatsProvider.get(StatsCapability.INSTANCE, player).ifPresent(data -> {
 					TechniqueData tech = data.getTechniques().getUnlockedTechniques().get(techniqueId);
-					if (tech != null) {
+					boolean raceLocked = !ConfigManager.getSkillsConfig().isSkillAllowedForRace(techniqueId, data.getCharacter().getRaceName(), data.getStatus().isAndroidUpgraded());
+					if (tech != null && !raceLocked) {
 						int cost = tech instanceof KiAttackData ki ? ki.getUpgradeXpCost(statType)
-								: tech instanceof StrikeAttackData st ? st.getUpgradeXpCost(statType) : 100;
+								: tech instanceof StrikeAttackData st ? st.getUpgradeXpCost(statType)
+								: tech instanceof EvasionAttackData ev ? ev.getUpgradeXpCost(statType) : 100;
 						if (tech.getExperience() >= cost) {
 							if (tech instanceof KiAttackData ki && !ki.canUpgradeStat(statType)) return;
 							if (tech instanceof StrikeAttackData st && !st.canUpgradeStat(statType)) return;
+							if (tech instanceof EvasionAttackData ev && !ev.canUpgradeStat(statType)) return;
 							tech.setExperience(tech.getExperience() - cost);
 							switch (statType) {
 								case "damage" -> {
@@ -76,9 +81,13 @@ public class UpgradeTechniqueC2S {
 								case "cooldown" -> {
 									if (tech instanceof KiAttackData ki) ki.setCooldownLevel(ki.getCooldownLevel() + 1);
 									else if (tech instanceof StrikeAttackData st) st.setCooldownLevel(st.getCooldownLevel() + 1);
+									else if (tech instanceof EvasionAttackData ev) ev.setCooldownLevel(ev.getCooldownLevel() + 1);
 								}
 								case "cast" -> {
 									if (tech instanceof KiAttackData ki) ki.setCastTimeLevel(ki.getCastTimeLevel() + 1);
+								}
+								case "duration" -> {
+									if (tech instanceof EvasionAttackData ev) ev.setDurationLevel(ev.getDurationLevel() + 1);
 								}
 							}
 							if (tech instanceof KiAttackData ki) ki.calculateDerivedValues();

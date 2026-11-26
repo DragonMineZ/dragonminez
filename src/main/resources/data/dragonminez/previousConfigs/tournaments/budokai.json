@@ -1,0 +1,124 @@
+{
+  "configVersion": "2.2.0",
+  "enabled": true,
+  "displayName": "tournament.dragonminez.budokai",
+  "format": "BRACKET",
+  "difficultyStars": 4,
+  "qualifierSlots": 8,
+  "reentryCooldownSeconds": 4500,
+  "matchTimeoutSeconds": 420,
+  "nextRoundSeconds": 30,
+  "rulesAcceptSeconds": 60,
+  "returnSeconds": 15,
+  "arrivalSeconds": 60,
+  "lethal": false,
+  "ring": {
+    "x": 86,
+    "y": 27,
+    "z": 258,
+    "radius": 8
+  },
+  "champion": {
+    "entityId": "dragonminez:saga_mr_satan",
+    "health": 96000.0,
+    "meleeDamage": 4200.0,
+    "kiDamage": 1500.0,
+    "aiTier": 2,
+    "perRoundScaling": 1.0
+  },
+  "semifinalist": {
+    "entityId": "dragonminez:saga_gohan_end_base",
+    "health": 462000.0,
+    "meleeDamage": 19200.0,
+    "kiDamage": 17400.0,
+    "aiTier": 3,
+    "perRoundScaling": 1.0
+  },
+  "finalist": {
+    "entityId": "dragonminez:saga_vegeta_majin",
+    "health": 640000.0,
+    "meleeDamage": 26700.0,
+    "kiDamage": 24300.0,
+    "aiTier": 3,
+    "perRoundScaling": 1.0
+  },
+  "contenders": [
+    {
+      "entityId": "#dragonminez:npc_budokai",
+      "health": 147000.0,
+      "meleeDamage": 6100.0,
+      "kiDamage": 5500.0,
+      "aiTier": 2,
+      "perRoundScaling": 1.08
+    },
+    {
+      "entityId": "#dragonminez:npc_budokai",
+      "health": 168000.0,
+      "meleeDamage": 7000.0,
+      "kiDamage": 6300.0,
+      "aiTier": 2,
+      "perRoundScaling": 1.08
+    },
+    {
+      "entityId": "#dragonminez:npc_budokai",
+      "health": 189000.0,
+      "meleeDamage": 7900.0,
+      "kiDamage": 7100.0,
+      "aiTier": 2,
+      "perRoundScaling": 1.08
+    },
+    {
+      "entityId": "#dragonminez:npc_budokai",
+      "health": 213500.0,
+      "meleeDamage": 8900.0,
+      "kiDamage": 8000.0,
+      "aiTier": 2,
+      "perRoundScaling": 1.08
+    },
+    {
+      "entityId": "#dragonminez:npc_budokai",
+      "health": 245000.0,
+      "meleeDamage": 10200.0,
+      "kiDamage": 9200.0,
+      "aiTier": 3,
+      "perRoundScaling": 1.08
+    },
+    {
+      "entityId": "#dragonminez:npc_budokai",
+      "health": 280000.0,
+      "meleeDamage": 11700.0,
+      "kiDamage": 10500.0,
+      "aiTier": 3,
+      "perRoundScaling": 1.08
+    },
+    {
+      "entityId": "#dragonminez:npc_budokai",
+      "health": 315000.0,
+      "meleeDamage": 13100.0,
+      "kiDamage": 11800.0,
+      "aiTier": 3,
+      "perRoundScaling": 1.08
+    },
+    {
+      "entityId": "#dragonminez:npc_budokai",
+      "health": 350000.0,
+      "meleeDamage": 14600.0,
+      "kiDamage": 13100.0,
+      "aiTier": 3,
+      "perRoundScaling": 1.08
+    },
+    {
+      "entityId": "#dragonminez:npc_budokai",
+      "health": 392000.0,
+      "meleeDamage": 16300.0,
+      "kiDamage": 14700.0,
+      "aiTier": 3,
+      "perRoundScaling": 1.08
+    }
+  ],
+  "rewards": {
+    "trainingPoints": 1800000,
+    "alignment": 5,
+    "commands": []
+  }
+}

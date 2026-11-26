@@ -1,7 +1,9 @@
 package com.dragonminez.client.systems.kisense;
 
+import com.dragonminez.common.init.MainItems;
 import com.dragonminez.common.init.MainSounds;
 import com.dragonminez.common.init.entities.IBattlePower;
+import com.dragonminez.common.racial.impl.GlindDivinity;
 import com.dragonminez.common.stats.StatsCapability;
 import com.dragonminez.common.stats.StatsData;
 import com.dragonminez.common.stats.StatsProvider;
@@ -63,8 +65,9 @@ public final class KiSenseScan {
 		StatsData targetData = StatsProvider.get(StatsCapability.INSTANCE, targetPlayer).orElse(null);
 		if (targetData == null) return true;
 		if (isCloaked(targetPlayer)) return false;
+		if (isKiSuppressed(targetData)) return false;
 		if (targetData.getStatus().isAndroidUpgraded()) return false;
-		if (TransformationsHelper.hasGodFormActive(targetData) && myData.getSkills().getSkillLevel("godforms") <= 0) return false;
+		if (TransformationsHelper.hasGodFormActive(targetData) && !TransformationsHelper.hasGodKi(myData)) return false;
 		return true;
 	}
 
@@ -131,6 +134,7 @@ public final class KiSenseScan {
 			boolean visible = !entity.isInvisible() || !entity.isInvisibleTo(player);
 			if (!visible) continue;
 			if (!canTarget(entity, data)) continue;
+			if (GlindDivinity.isHiddenFrom(entity, player)) continue;
 
 			double dist = player.distanceTo(entity);
 			float bp = getEntityBP(entity);
@@ -187,15 +191,18 @@ public final class KiSenseScan {
 	}
 
 	public static boolean isCloaked(Player target) {
-		return TransformationsHelper.hasAntiKiCloak(target);
+		return CuriosUtil.getFirstStackForItem(target, "head_tech", "anti_ki_cloak").getItem() == MainItems.ANTI_KI_CLOAK.get();
+	}
+
+	public static boolean isKiSuppressed(StatsData targetData) {
+		return targetData != null && targetData.getResources().getPowerRelease() <= 0;
 	}
 
 	public static boolean hasScouter(Player player) {
-		ItemStack stack = CuriosUtil.getFirstStack(player, "head_tech");
-		return !stack.isEmpty() && stack.getItem().getDescriptionId().contains("scouter");
+		return !scouterStack(player).isEmpty();
 	}
 
 	public static ItemStack scouterStack(Player player) {
-		return CuriosUtil.getFirstStack(player, "head_tech");
+		return CuriosUtil.getFirstStackForItem(player, "head_tech", "scouter");
 	}
 }

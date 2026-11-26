@@ -6,6 +6,7 @@ out vec4 fragColor;
 uniform sampler2D Sampler0;
 uniform float speed;
 uniform float alp1;
+uniform float bloomMode;
 
 uniform vec4 color1;
 uniform vec4 color2;
@@ -47,14 +48,27 @@ void main() {
     vec2 nextUV = vec2((v_texCoord.x * frameWidth) + (nextFrameIdx * frameWidth), v_texCoord.y);
 
     // Mapear gradientes
-    vec4 currentFrameColor = adjustColor(texture(Sampler0, currentUV));
-    vec4 nextFrameColor = adjustColor(texture(Sampler0, nextUV));
+    vec4 currentTex = texture(Sampler0, currentUV);
+    vec4 nextTex = texture(Sampler0, nextUV);
+
+    vec4 currentFrameColor = adjustColor(currentTex);
+    vec4 nextFrameColor = adjustColor(nextTex);
 
     // Interpolación suave tipo DBKakarot
     vec4 finalColor = mix(currentFrameColor, nextFrameColor, fract(speed));
 
     if (finalColor.a < 0.01 || alp1 < 0.01) {
         discard;
+    }
+
+    // Pasada de bloom: solo escribe el brillo que la cadena de post va a desenfocar. El calor de
+    // la banda manda, asi el nucleo casi blanco brilla y los hilos exteriores casi no, de modo
+    // que el aura conserva su silueta en vez de volverse una mancha.
+    if (bloomMode > 0.5) {
+        float intensity = mix(currentTex.r, nextTex.r, fract(speed));
+        float heat = smoothstep(thresholds[1], thresholds[3], intensity);
+        fragColor = vec4(finalColor.rgb, finalColor.a * alp1 * (0.30 + 0.70 * heat));
+        return;
     }
 
     fragColor = vec4(finalColor.rgb, finalColor.a * alp1);

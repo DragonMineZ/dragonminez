@@ -6,6 +6,7 @@ import com.dragonminez.client.model.DMZPlayerModel;
 import com.dragonminez.client.model.KiWeaponModelLoader;
 import com.dragonminez.client.render.firstperson.DMZPOVPlayerRenderer;
 import com.dragonminez.client.render.firstperson.dto.FirstPersonManager;
+import com.dragonminez.client.render.shader.TransformationPostShaderManager;
 import com.dragonminez.common.config.ConfigManager;
 import com.dragonminez.common.config.RaceCharacterConfig;
 import com.dragonminez.common.stats.StatsCapability;
@@ -13,6 +14,7 @@ import com.dragonminez.common.stats.StatsProvider;
 import net.minecraft.client.player.AbstractClientPlayer;
 import net.minecraft.client.renderer.entity.EntityRendererProvider;
 import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.item.ItemStack;
 import software.bernie.geckolib.renderer.GeoEntityRenderer;
 
 import javax.annotation.Nullable;
@@ -22,6 +24,11 @@ import java.util.UUID;
 
 public final class DMZRendererCache {
 	private DMZRendererCache() {}
+
+	public interface NpcPuppet {
+		ItemStack getScouter();
+	}
+
 	private static final Map<UUID, CachedRendererEntry> TP_RENDERERS = new HashMap<>();
 	private static final Map<UUID, CachedRendererEntry> POV_RENDERERS = new HashMap<>();
 
@@ -32,12 +39,20 @@ public final class DMZRendererCache {
 		context = ctx;
 		clear();
 		KiWeaponModelLoader.clear();
+		TransformationPostShaderManager.onResourceReload();
+		com.dragonminez.client.render.shader.KnockoutShaderManager.onResourceReload();
+		com.dragonminez.client.render.effects.BeamClashScreenRenderer.onResourceReload();
 		LogUtil.info(Env.CLIENT, "DMZRendererCache cleared on resource reload");
 	}
 
 	public static void clear() {
 		TP_RENDERERS.clear();
 		POV_RENDERERS.clear();
+	}
+
+	public static void evict(UUID playerId) {
+		TP_RENDERERS.remove(playerId);
+		POV_RENDERERS.remove(playerId);
 	}
 
 	@Nullable

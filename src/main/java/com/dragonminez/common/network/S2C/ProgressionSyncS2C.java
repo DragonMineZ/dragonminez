@@ -1,6 +1,8 @@
 package com.dragonminez.common.network.S2C;
 
 import com.dragonminez.common.network.ClientPacketHandler;
+import com.dragonminez.common.network.StatsGroupsPacket;
+import com.dragonminez.common.stats.FusedData;
 import com.dragonminez.common.stats.StatsCapability;
 import com.dragonminez.common.stats.StatsProvider;
 import net.minecraft.nbt.CompoundTag;
@@ -12,7 +14,7 @@ import com.dragonminez.compat.network.NetworkEvent;
 
 import java.util.function.Supplier;
 
-public class ProgressionSyncS2C {
+public class ProgressionSyncS2C implements StatsGroupsPacket {
 	private final int playerId;
 	private final CompoundTag nbt;
 
@@ -23,8 +25,9 @@ public class ProgressionSyncS2C {
 			this.nbt.put("Stats", data.getStats().save());
 			this.nbt.put("BonusStats", data.getBonusStats().save());
 			this.nbt.put("Resources", data.getResources().save());
-			this.nbt.put("Skills", data.getSkills().save());
-			this.nbt.put("Techniques", data.getTechniques().save());
+			this.nbt.put("Skills", data.getBaseSkills().save());
+			this.nbt.put("Techniques", data.getBaseTechniques().save());
+			if (data.getFusedData() != null) this.nbt.put(FusedData.NBT_KEY, data.getFusedData().save());
 			this.nbt.put("PlayerQuestData", data.getPlayerQuestData().serializeNBT());
 		});
 	}
@@ -32,6 +35,20 @@ public class ProgressionSyncS2C {
 	public ProgressionSyncS2C(int playerId, CompoundTag nbt) {
 		this.playerId = playerId;
 		this.nbt = nbt;
+	}
+
+	@Override
+	public int playerId() {
+		return this.playerId;
+	}
+
+	@Override
+	public CompoundTag groups() {
+		return this.nbt;
+	}
+
+	public ProgressionSyncS2C forTrackers() {
+		return new ProgressionSyncS2C(this.playerId, StatsSyncS2C.withoutQuestHistory(this.nbt));
 	}
 
 	public static void encode(ProgressionSyncS2C msg, FriendlyByteBuf buf) {

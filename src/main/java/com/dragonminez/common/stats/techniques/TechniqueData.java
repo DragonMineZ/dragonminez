@@ -1,14 +1,10 @@
 package com.dragonminez.common.stats.techniques;
 
 import com.dragonminez.common.stats.StatsData;
-import lombok.Getter;
-import lombok.Setter;
 import net.minecraft.nbt.CompoundTag;
 import java.util.Locale;
 import java.util.UUID;
 
-@Getter
-@Setter
 public abstract class TechniqueData {
 	protected String id;
 	protected String name;
@@ -28,11 +24,16 @@ public abstract class TechniqueData {
 	}
 
 	public abstract CompoundTag save();
+
 	public abstract void load(CompoundTag tag);
+
 	public abstract TechniqueType getType();
+
 	public abstract double getCalculatedCost(StatsData statsData);
 
-	public void addExperience(int amount) { this.experience += amount; }
+	public void addExperience(int amount) {
+		this.experience += amount;
+	}
 
 	public static String generateId(String author, String name) {
 		String a = sanitizeIdPart(author);
@@ -45,5 +46,69 @@ public abstract class TechniqueData {
 	private static String sanitizeIdPart(String value) {
 		if (value == null) return "";
 		return value.toLowerCase(Locale.ROOT).replaceAll("\\s+", "");
+	}
+
+	public String getId() {
+		return this.id;
+	}
+
+	public String getName() {
+		return this.name;
+	}
+
+	public String getAuthor() {
+		return this.author;
+	}
+
+	public int getExperience() {
+		return this.experience;
+	}
+
+	public double getBaseCost() {
+		return this.baseCost;
+	}
+
+	public int getCastTime() {
+		return this.castTime;
+	}
+
+	public int getCooldown() {
+		return this.cooldown;
+	}
+
+	public float getTpCost() {
+		return this.tpCost;
+	}
+
+	public void setId(final String id) {
+		this.id = id;
+	}
+
+	public void setName(final String name) {
+		this.name = name;
+	}
+
+	public void setAuthor(final String author) {
+		this.author = author;
+	}
+
+	public void setExperience(final int experience) {
+		this.experience = experience;
+	}
+
+	public void setBaseCost(final double baseCost) {
+		this.baseCost = baseCost;
+	}
+
+	public void setCastTime(final int castTime) {
+		this.castTime = castTime;
+	}
+
+	public void setCooldown(final int cooldown) {
+		this.cooldown = cooldown;
+	}
+
+	public void setTpCost(final float tpCost) {
+		this.tpCost = tpCost;
 	}
 }

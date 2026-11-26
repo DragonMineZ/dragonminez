@@ -1,127 +1,113 @@
 package com.dragonminez.client.gui.character.minigames;
 
-import com.dragonminez.client.util.KeyBinds;
-import com.dragonminez.client.util.TextUtil;
+import com.dragonminez.Reference;
 import com.dragonminez.common.config.ConfigManager;
-import com.dragonminez.common.config.TrainingConfig;
-import net.minecraft.client.Minecraft;
+import com.dragonminez.common.training.KiControlLogic;
+import com.dragonminez.common.training.MinigameEvent;
+import com.dragonminez.common.training.MinigameOrigin;
 import net.minecraft.client.gui.GuiGraphics;
-import org.lwjgl.glfw.GLFW;
-
-import java.util.Random;
+import net.minecraft.resources.ResourceLocation;
 
 public class ControlGameScreen extends BaseMinigameScreen {
+	private static final ResourceLocation SHEET = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "textures/gui/minigame/control.png");
+	private static final float FIELD_WIDTH = 140f;
+	private static final float TRACK_X = 36f;
+	private static final int TRACK_W = 40;
+	private static final int TRACK_CAP = 6;
+	private static final int TRACK_TILE = 8;
+	private static final int KI_BAR_W = 26;
+	private static final int ORB_SIZE = 16;
+	private static final float METER_X = 94f;
+	private static final float ICON_X = 12f;
 
-	private static final int DIR_CHANGE_INTERVAL_TICKS = 30;
-
-	private final Random random = new Random();
-
-	private TrainingConfig.ControlConfig cfg;
-
-	private int barLeft, barRight, barY;
-	private float cursorX;
-	private float zoneMid;
-	private int zoneDir = 1;
-	private int dirChangeTimer = DIR_CHANGE_INTERVAL_TICKS;
-	private int zoneWidth;
-	private double holdProgress;
-	private int levelTicksLeft;
+	private final SmoothValue meter = new SmoothValue();
+	private final SmoothValue insideGlow = new SmoothValue();
+	private int heldCount;
+	private int shownLevel;
 
 	public ControlGameScreen() {
-		super("control", "gui.dragonminez.minigame.control");
+		this(MinigameOrigin.MENU);
+	}
+
+	public ControlGameScreen(MinigameOrigin origin) {
+		super(KiControlLogic.ID, "gui.dragonminez.minigame.control", origin);
+	}
+
+	private KiControlLogic control() {
+		return (KiControlLogic) logic;
 	}
 
 	@Override
 	protected void init() {
 		super.init();
-		this.cfg = ConfigManager.getTrainingConfig().getControl();
-		int cx = this.width / 2;
-		this.barLeft = cx - cfg.getBarWidth() / 2;
-		this.barRight = cx + cfg.getBarWidth() / 2;
-		this.barY = this.height / 2;
-		this.cursorX = cx;
-		this.zoneMid = cx;
-		this.zoneWidth = cfg.getBaseZoneWidth();
-		this.holdProgress = 0;
-		this.levelTicksLeft = cfg.getLevelTimeLimitTicks();
-	}
-
-	private double zoneSpeed() {
-		return cfg.getBaseZoneSpeed() + (levelsCleared * cfg.getZoneSpeedPerLevel());
+		float trackHeight = ConfigManager.getTrainingConfig().getControl().getTrackHeight();
+		layoutField(FIELD_WIDTH, Math.max(60, trackHeight) + 8, HUD_RESERVE + 10, 26, 1.4f);
 	}
 
 	@Override
-	protected void tickGame() {
-		levelTicksLeft--;
-		if (levelTicksLeft <= 0) {
-			endGame();
-			return;
-		}
-
-		if (--dirChangeTimer <= 0) {
-			dirChangeTimer = DIR_CHANGE_INTERVAL_TICKS;
-			if (random.nextBoolean()) zoneDir = -zoneDir;
-		}
-
-		float half = zoneWidth / 2.0f;
-		zoneMid += (float) (zoneDir * zoneSpeed());
-		if (zoneMid - half <= barLeft) {
-			zoneMid = barLeft + half;
-			zoneDir = 1;
-		} else if (zoneMid + half >= barRight) {
-			zoneMid = barRight - half;
-			zoneDir = -1;
-		}
-
-		long window = Minecraft.getInstance().getWindow().getWindow();
-		boolean left = isHeld(window, GLFW.GLFW_KEY_LEFT) || isHeld(window, GLFW.GLFW_KEY_A) || isHeld(window, KeyBinds.RHYTHM_LEFT.getKey().getValue());
-		boolean right = isHeld(window, GLFW.GLFW_KEY_RIGHT) || isHeld(window, GLFW.GLFW_KEY_D) || isHeld(window, KeyBinds.RHYTHM_RIGHT.getKey().getValue());
-		if (left) cursorX -= (float) cfg.getMarkerSpeed();
-		if (right) cursorX += (float) cfg.getMarkerSpeed();
-		cursorX = Math.max(barLeft, Math.min(barRight, cursorX));
-
-		boolean inside = Math.abs(cursorX - zoneMid) <= half;
-		if (inside) {
-			holdProgress++;
-			if (holdProgress >= cfg.getHoldDurationTicks()) levelCleared();
-		} else {
-			double loss = cfg.getBaseProgressLossPerTick() + (levelsCleared * cfg.getProgressLossPerLevel());
-			holdProgress = Math.max(0, holdProgress - loss);
-		}
-	}
-
-	private boolean isHeld(long window, int keyCode) {
-		return keyCode > 0 && GLFW.glfwGetKey(window, keyCode) == GLFW.GLFW_PRESS;
+	protected int remapLogicalKey(int logical) {
+		return logical == MinigameEvent.UP || logical == MinigameEvent.ACTION ? MinigameEvent.ACTION : -1;
 	}
 
 	@Override
-	protected void onLevelCleared() {
-		zoneWidth = Math.max(cfg.getMinZoneWidth(), cfg.getBaseZoneWidth() - levelsCleared * cfg.getZoneWidthDecreasePerLevel());
-		holdProgress = 0;
-		levelTicksLeft = cfg.getLevelTimeLimitTicks();
-		zoneMid = this.width / 2.0f;
-		dirChangeTimer = DIR_CHANGE_INTERVAL_TICKS;
+	protected void onLogicStarted() {
+		meter.snap((float) control().progress());
+		shownLevel = 0;
 	}
 
 	@Override
-	protected void renderGame(GuiGraphics graphics) {
-		int cx = this.width / 2;
-		TextUtil.drawCenteredStringWithBorder(graphics, this.font, tr("gui.dragonminez.training.level", level()), cx, barY - 50, 0xFFFFD700);
-		TextUtil.drawCenteredStringWithBorder(graphics, this.font, tr("gui.dragonminez.training.time", Math.max(0, levelTicksLeft) / 20 + 1), cx, barY - 38, 0xFFFFFFFF);
+	protected void onInputApplied(MinigameEvent event) {
+		if (event.key != MinigameEvent.ACTION) return;
+		heldCount = event.type == MinigameEvent.KEY_DOWN ? 1 : 0;
+	}
 
-		graphics.fill(barLeft, barY - 8, barRight, barY + 8, 0xFF202020);
-		graphics.renderOutline(barLeft - 1, barY - 9, (barRight - barLeft) + 2, 18, 0xFFFFFFFF);
+	@Override
+	protected void renderGame(GuiGraphics graphics, float partialTick) {
+		KiControlLogic c = control();
+		float h = (float) c.trackHeight();
+		float barH = (float) c.barHeight();
+		float barY = (float) Math.max(0, Math.min(h - barH, c.barY() + (isPlaying() ? c.barVelocity() * partialTick : 0)));
+		float orbY = (float) Math.max(0, Math.min(h, c.orbY() + (isPlaying() ? c.orbVelocity() * partialTick : 0)));
+		float glow = insideGlow.update(c.isInside() ? 1f : 0f, 10f);
 
-		float half = zoneWidth / 2.0f;
-		graphics.fill((int) (zoneMid - half), barY - 8, (int) (zoneMid + half), barY + 8, 0x9033FF55);
+		pushField(graphics);
+		graphics.pose().translate(0, 4, 0);
+		blitRegion(graphics, SHEET, TRACK_X, -4, TRACK_W, TRACK_CAP, 0, 0, TRACK_W, TRACK_CAP);
+		for (float y = -4 + TRACK_CAP; y < h + 4 - TRACK_CAP; y += TRACK_TILE) {
+			float tile = Math.min(TRACK_TILE, h + 4 - TRACK_CAP - y);
+			blitRegion(graphics, SHEET, TRACK_X, y, TRACK_W, tile, 0, TRACK_CAP, TRACK_W, tile);
+		}
+		blitRegion(graphics, SHEET, TRACK_X, h + 4 - TRACK_CAP, TRACK_W, TRACK_CAP, 0, TRACK_CAP + TRACK_TILE, TRACK_W, TRACK_CAP);
 
-		boolean inside = Math.abs(cursorX - zoneMid) <= half;
-		int markerColor = inside ? 0xFFFFFFFF : 0xFFFF5555;
-		graphics.fill((int) cursorX - 2, barY - 14, (int) cursorX + 2, barY + 14, markerColor);
+		float barX = TRACK_X + (TRACK_W - KI_BAR_W) / 2f;
+		float barTop = h - barY - barH;
+		int u = glow > 0.5f ? 0 : 28;
+		if (glow > 0.05f) {
+			rectF(graphics, barX - 2, barTop - 2, KI_BAR_W + 4, barH + 4, withAlpha(0x7CFDD6, 0.25f * glow));
+			graphics.flush();
+		}
+		blitRegion(graphics, SHEET, barX, barTop, KI_BAR_W, 4, u, 24, KI_BAR_W, 4);
+		blitRegion(graphics, SHEET, barX, barTop + 4, KI_BAR_W, barH - 8, u, 28, KI_BAR_W, 4);
+		blitRegion(graphics, SHEET, barX, barTop + barH - 4, KI_BAR_W, 4, u, 32, KI_BAR_W, 4);
 
-		int pbLeft = cx - 60, pbRight = cx + 60, pbY = barY + 30;
-		graphics.fill(pbLeft, pbY, pbRight, pbY + 6, 0xFF333333);
-		float pct = Math.min(1.0f, (float) holdProgress / cfg.getHoldDurationTicks());
-		graphics.fill(pbLeft, pbY, pbLeft + (int) ((pbRight - pbLeft) * pct), pbY + 6, 0xFF55FF55);
+		float orbScreenY = h - orbY;
+		float pulse = 1f + 0.08f * (float) Math.sin(System.nanoTime() / 90_000_000.0);
+		float orbSize = ORB_SIZE * pulse;
+		float orbCx = TRACK_X + TRACK_W / 2f;
+		blitRegion(graphics, SHEET, orbCx - orbSize / 2f, orbScreenY - orbSize / 2f, orbSize, orbSize, c.isDarting() ? 16 : 0, 40, ORB_SIZE, ORB_SIZE);
+
+		boolean held = heldCount > 0;
+		float iconScale = held ? 1.6f : 1.4f;
+		blitRegion(graphics, SHEET, ICON_X - 11 * iconScale / 2f + 5, h / 2f - 11 * iconScale / 2f + (held ? -2 : 0), 11 * iconScale, 11 * iconScale, held ? 14 : 0, 60, 11, 11);
+
+		if (c.levelsCleared() != shownLevel) {
+			shownLevel = c.levelsCleared();
+			meter.snap(1f);
+		}
+		float shown = meter.update((float) Math.max(0, Math.min(1, c.progress())), 9f);
+		int fill = shown > 0.6f ? FILL_GREEN : shown > 0.3f ? FILL_GOLD : FILL_RED;
+		drawBarV(graphics, SHEET, METER_X, -4, h + 8, shown, fill);
+		popField(graphics);
+		drawLegend(graphics, "gui.dragonminez.minigame.legend.focus", fieldLeft + (METER_X + 4.5f) * fieldScale, fieldTop - 6);
 	}
 }

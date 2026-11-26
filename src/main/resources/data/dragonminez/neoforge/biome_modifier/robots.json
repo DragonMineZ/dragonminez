@@ -3,19 +3,19 @@
   "biomes": "#dragonminez:has_robots",
   "spawners": [{
     "type": "dragonminez:red_ribbon_soldier",
-    "weight": 45,
-    "minCount": 2,
-    "maxCount": 4
+    "weight": 30,
+    "minCount": 1,
+    "maxCount": 3
   },{
     "type": "dragonminez:robot3",
     "weight": 10,
     "minCount": 1,
-    "maxCount": 2
+    "maxCount": 1
   },{
     "type": "dragonminez:robot2",
     "weight": 10,
     "minCount": 1,
-    "maxCount": 2
+    "maxCount": 1
   },{
     "type": "dragonminez:robot1",
     "weight": 5,

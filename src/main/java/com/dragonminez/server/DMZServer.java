@@ -25,6 +25,8 @@ public class DMZServer {
 		DebugCommand.register(dispatcher);
 		MasteryCommand.register(dispatcher);
 		LocateCommand.register(dispatcher);
+		StructureCommand.register(dispatcher);
+		DragonBallsCommand.register(dispatcher);
 		PartyCommand.register(dispatcher);
 		StoryCommand.register(dispatcher);
 		ReviveCommand.register(dispatcher);
@@ -32,12 +34,16 @@ public class DMZServer {
 		ConfigCommand.register(dispatcher);
 		WeightCommand.register(dispatcher);
 		RaidCommand.register(dispatcher);
+		WorldBossCommand.register(dispatcher);
+		TournamentCommand.register(dispatcher);
 		AlignmentCommand.register(dispatcher);
 		TailCommand.register(dispatcher);
 		HaloCommand.register(dispatcher);
 		RestoreCommand.register(dispatcher);
 		HairCommand.register(dispatcher);
 		ClassCommand.register(dispatcher);
+		MinigameCommand.register(dispatcher);
+		TriggerCommand.register(dispatcher);
 
 		LogUtil.info(Env.SERVER, "DragonMineZ Commands Registered");
 	}

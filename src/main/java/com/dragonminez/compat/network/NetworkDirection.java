@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: GPL-3.0-only
 package com.dragonminez.compat.network;
 
 /**
@@ -5,5 +6,10 @@ package com.dragonminez.compat.network;
  */
 public enum NetworkDirection {
 	PLAY_TO_SERVER,
-	PLAY_TO_CLIENT
+	PLAY_TO_CLIENT;
+
+	public net.neoforged.fml.LogicalSide getReceptionSide() {
+		return this == PLAY_TO_SERVER ? net.neoforged.fml.LogicalSide.SERVER
+				: net.neoforged.fml.LogicalSide.CLIENT;
+	}
 }

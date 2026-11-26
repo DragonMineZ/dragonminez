@@ -5,6 +5,7 @@ issueTrackerURL="https://discord.dragonminez.com"
 
 [[mods]]
 modId="${mod_id}"
+enumExtensions="META-INF/enumextensions.json"
 version="${mod_version}"
 displayName="${mod_name}"
 logoFile="dmz_logo.png"

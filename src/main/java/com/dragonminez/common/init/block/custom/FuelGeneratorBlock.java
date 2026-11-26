@@ -4,7 +4,6 @@ import com.mojang.serialization.MapCodec;
 
 import com.dragonminez.common.init.MainBlockEntities;
 import com.dragonminez.common.init.block.entity.FuelGeneratorBlockEntity;
-import com.dragonminez.common.init.block.entity.KikonoStationBlockEntity;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.server.level.ServerPlayer;
@@ -86,8 +85,8 @@ public class FuelGeneratorBlock extends BaseEntityBlock {
 	public void onRemove(BlockState pState, Level pLevel, BlockPos pPos, BlockState pNewState, boolean pMovedByPiston) {
 		if (pState.getBlock() != pNewState.getBlock()) {
 			BlockEntity blockEntity = pLevel.getBlockEntity(pPos);
-			if (blockEntity instanceof KikonoStationBlockEntity station) {
-				station.drops();
+			if (blockEntity instanceof FuelGeneratorBlockEntity generator) {
+				generator.drops();
 			}
 		}
 		super.onRemove(pState, pLevel, pPos, pNewState, pMovedByPiston);

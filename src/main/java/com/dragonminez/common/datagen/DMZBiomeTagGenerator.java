@@ -60,6 +60,17 @@ public class DMZBiomeTagGenerator extends BiomeTagsProvider {
 				.addTag(BiomeTags.HAS_WOODLAND_MANSION)
 				.addTag(BiomeTags.IS_JUNGLE);
 
+		this.tag(MainTags.Biomes.HAS_GIANT_FISH)
+				.replace(false)
+				.addTag(BiomeTags.IS_DEEP_OCEAN)
+				.addTag(BiomeTags.IS_OCEAN)
+				.addTag(BiomeTags.IS_BEACH)
+				.add(NamekBiomes.NAMEKIAN_RIVERS);
+
+		this.tag(MainTags.Biomes.HAS_GIANT_TURTLE)
+				.replace(false)
+				.addTag(BiomeTags.IS_BEACH);
+
 		this.tag(MainTags.Biomes.HAS_ROBOTS)
 				.replace(false)
 				.addTag(BiomeTags.HAS_VILLAGE_SAVANNA)
@@ -67,6 +78,10 @@ public class DMZBiomeTagGenerator extends BiomeTagsProvider {
 				.addTag(BiomeTags.HAS_VILLAGE_SNOWY);
 
 		this.tag(MainTags.Biomes.IS_ROCKYBIOME)
+				.replace(false)
+				.add(OverworldBiomes.ROCKY);
+
+		this.tag(BiomeTags.IS_OVERWORLD)
 				.replace(false)
 				.add(OverworldBiomes.ROCKY);
 
@@ -111,10 +126,27 @@ public class DMZBiomeTagGenerator extends BiomeTagsProvider {
 				.addTag(BiomeTags.IS_MOUNTAIN)
 				.addTag(Tags.Biomes.IS_MOUNTAIN);
 
+        this.tag(MainTags.Biomes.IS_GEROLAB)
+				.replace(false)
+				.addTag(MainTags.Biomes.IS_ROCKYBIOME)
+				.addTag(MainTags.Biomes.IS_MOUNTAINLIKE);
+
 		this.tag(MainTags.Biomes.IS_PLAINSLIKE)
 				.replace(false)
 				.addTag(BiomeTags.HAS_VILLAGE_PLAINS)
 				.addTag(Tags.Biomes.IS_PLAINS);
+
+		this.tag(MainTags.Biomes.IS_PLAINS)
+				.replace(false)
+				.add(Biomes.PLAINS)
+				.add(Biomes.SUNFLOWER_PLAINS)
+				.addTag(BiomeTags.HAS_VILLAGE_PLAINS);
+
+		this.tag(MainTags.Biomes.IS_SWAMPLIKE)
+				.replace(false)
+				.add(Biomes.SWAMP)
+				.add(Biomes.MANGROVE_SWAMP)
+				.addTag(Tags.Biomes.IS_SWAMP);
 
 		this.tag(MainTags.Biomes.IS_DESERTLIKE)
 				.replace(false)
