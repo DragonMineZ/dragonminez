@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: GPL-3.0-only
 package com.dragonminez.compat.network;
 
 import net.minecraft.server.level.ServerPlayer;
@@ -43,6 +44,12 @@ public final class NetworkEvent {
 
 		public IPayloadContext getPayloadContext() {
 			return payloadContext;
+		}
+
+		public NetworkDirection getDirection() {
+			if (payloadContext == null) return null;
+			return payloadContext.flow() == net.minecraft.network.protocol.PacketFlow.SERVERBOUND
+					? NetworkDirection.PLAY_TO_SERVER : NetworkDirection.PLAY_TO_CLIENT;
 		}
 	}
 

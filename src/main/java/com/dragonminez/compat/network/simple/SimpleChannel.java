@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: GPL-3.0-only
 package com.dragonminez.compat.network.simple;
 
 import net.minecraft.network.FriendlyByteBuf;
@@ -11,6 +12,7 @@ import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
 import com.dragonminez.compat.network.NetworkDirection;
 import com.dragonminez.compat.network.NetworkEvent;
+import com.dragonminez.compat.network.PacketDistributor.PacketTarget;
 import net.neoforged.neoforge.network.PacketDistributor;
 import net.neoforged.neoforge.network.event.RegisterPayloadHandlersEvent;
 import net.neoforged.neoforge.network.handling.IPayloadContext;
@@ -20,6 +22,7 @@ import net.neoforged.neoforge.network.registration.PayloadRegistrar;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.BiConsumer;
 import java.util.function.Function;
@@ -38,7 +41,7 @@ public final class SimpleChannel {
 	private final Predicate<String> clientAcceptedVersions;
 	private final Predicate<String> serverAcceptedVersions;
 	private final List<PendingRegistration<?>> pending = new ArrayList<>();
-	private final Map<Class<?>, PayloadBinding<?>> bindings = new ConcurrentHashMap<>();
+	private final Map<Class<?>, Map<NetworkDirection, PayloadBinding<?>>> bindings = new ConcurrentHashMap<>();
 	private boolean registered;
 
 	public SimpleChannel(ResourceLocation name, Supplier<String> protocolVersion,
@@ -69,52 +72,116 @@ public final class SimpleChannel {
 	}
 
 	public <MSG> MessageBuilder<MSG> messageBuilder(Class<MSG> type, int id, NetworkDirection direction) {
-		return new MessageBuilder<>(type, id, direction);
+		return new MessageBuilder<>(type, id, direction, false);
+	}
+
+	/** Forge 1.20's direction-less builder registers a packet in both play directions. */
+	public <MSG> MessageBuilder<MSG> messageBuilder(Class<MSG> type, int id) {
+		return new MessageBuilder<>(type, id, null, true);
+	}
+
+	/**
+	 * Forge 1.20's direction-less registration accepted a packet on either play connection. Preserve that
+	 * contract while NeoForge requires a direction for every custom payload registration.
+	 */
+	public <MSG> void registerMessage(int id, Class<MSG> type,
+			BiConsumer<MSG, FriendlyByteBuf> encoder,
+			Function<FriendlyByteBuf, MSG> decoder,
+			BiConsumer<MSG, Supplier<NetworkEvent.Context>> consumer) {
+		messageBuilder(type, id)
+				.encoder(encoder)
+				.decoder(decoder)
+				.consumerMainThread(consumer)
+				.add();
+	}
+
+	public <MSG> void registerMessage(int id, Class<MSG> type,
+			BiConsumer<MSG, FriendlyByteBuf> encoder,
+			Function<FriendlyByteBuf, MSG> decoder,
+			BiConsumer<MSG, Supplier<NetworkEvent.Context>> consumer,
+			Optional<NetworkDirection> direction) {
+		if (direction.isPresent()) {
+			registerMessage(id, type, encoder, decoder, consumer, direction.get());
+		} else {
+			registerMessage(id, type, encoder, decoder, consumer);
+		}
+	}
+
+	public <MSG> void registerMessage(int id, Class<MSG> type,
+			BiConsumer<MSG, FriendlyByteBuf> encoder,
+			Function<FriendlyByteBuf, MSG> decoder,
+			BiConsumer<MSG, Supplier<NetworkEvent.Context>> consumer,
+			NetworkDirection direction) {
+		messageBuilder(type, id, direction)
+				.encoder(encoder)
+				.decoder(decoder)
+				.consumerMainThread(consumer)
+				.add();
 	}
 
 	@SuppressWarnings("unchecked")
 	public <MSG> void sendToServer(MSG message) {
-		PayloadBinding<MSG> binding = (PayloadBinding<MSG>) bindings.get(message.getClass());
+		PayloadBinding<MSG> binding = binding(message, NetworkDirection.PLAY_TO_SERVER);
 		if (binding == null) {
-			throw new IllegalStateException("No payload binding for " + message.getClass().getName());
+			throw new IllegalStateException("No serverbound payload binding for " + message.getClass().getName());
 		}
 		PacketDistributor.sendToServer(binding.wrap(message));
 	}
 
 	@SuppressWarnings("unchecked")
 	public <MSG> void sendToPlayer(MSG message, ServerPlayer player) {
-		PayloadBinding<MSG> binding = (PayloadBinding<MSG>) bindings.get(message.getClass());
+		PayloadBinding<MSG> binding = binding(message, NetworkDirection.PLAY_TO_CLIENT);
 		if (binding == null) {
-			throw new IllegalStateException("No payload binding for " + message.getClass().getName());
+			throw new IllegalStateException("No clientbound payload binding for " + message.getClass().getName());
 		}
 		PacketDistributor.sendToPlayer(player, binding.wrap(message));
 	}
 
 	@SuppressWarnings("unchecked")
 	public <MSG> void sendToAllPlayers(MSG message) {
-		PayloadBinding<MSG> binding = (PayloadBinding<MSG>) bindings.get(message.getClass());
+		PayloadBinding<MSG> binding = binding(message, NetworkDirection.PLAY_TO_CLIENT);
 		if (binding == null) {
-			throw new IllegalStateException("No payload binding for " + message.getClass().getName());
+			throw new IllegalStateException("No clientbound payload binding for " + message.getClass().getName());
 		}
 		PacketDistributor.sendToAllPlayers(binding.wrap(message));
 	}
 
 	@SuppressWarnings("unchecked")
 	public <MSG> void sendToTrackingEntityAndSelf(MSG message, Entity entity) {
-		PayloadBinding<MSG> binding = (PayloadBinding<MSG>) bindings.get(message.getClass());
+		PayloadBinding<MSG> binding = binding(message, NetworkDirection.PLAY_TO_CLIENT);
 		if (binding == null) {
-			throw new IllegalStateException("No payload binding for " + message.getClass().getName());
+			throw new IllegalStateException("No clientbound payload binding for " + message.getClass().getName());
 		}
 		PacketDistributor.sendToPlayersTrackingEntityAndSelf(entity, binding.wrap(message));
 	}
 
 	@SuppressWarnings("unchecked")
 	public <MSG> void sendToTrackingEntity(MSG message, Entity entity) {
-		PayloadBinding<MSG> binding = (PayloadBinding<MSG>) bindings.get(message.getClass());
+		PayloadBinding<MSG> binding = binding(message, NetworkDirection.PLAY_TO_CLIENT);
 		if (binding == null) {
-			throw new IllegalStateException("No payload binding for " + message.getClass().getName());
+			throw new IllegalStateException("No clientbound payload binding for " + message.getClass().getName());
 		}
 		PacketDistributor.sendToPlayersTrackingEntity(entity, binding.wrap(message));
+	}
+
+	@SuppressWarnings("unchecked")
+	public <MSG> void send(PacketTarget target, MSG message) {
+		PayloadBinding<MSG> binding = binding(message, NetworkDirection.PLAY_TO_CLIENT);
+		if (binding == null) {
+			throw new IllegalStateException("No clientbound payload binding for " + message.getClass().getName());
+		}
+		switch (target.kind()) {
+			case PLAYER -> PacketDistributor.sendToPlayer((ServerPlayer) target.target().get(), binding.wrap(message));
+			case ALL -> PacketDistributor.sendToAllPlayers(binding.wrap(message));
+			case TRACKING_ENTITY -> PacketDistributor.sendToPlayersTrackingEntity((Entity) target.target().get(), binding.wrap(message));
+			case TRACKING_ENTITY_AND_SELF -> PacketDistributor.sendToPlayersTrackingEntityAndSelf((Entity) target.target().get(), binding.wrap(message));
+		}
+	}
+
+	@SuppressWarnings("unchecked")
+	private <MSG> PayloadBinding<MSG> binding(MSG message, NetworkDirection direction) {
+		Map<NetworkDirection, PayloadBinding<?>> byDirection = bindings.get(message.getClass());
+		return byDirection == null ? null : (PayloadBinding<MSG>) byDirection.get(direction);
 	}
 
 	@SubscribeEvent
@@ -139,11 +206,13 @@ public final class SimpleChannel {
 		private BiConsumer<MSG, FriendlyByteBuf> encoder;
 		private Function<FriendlyByteBuf, MSG> decoder;
 		private BiConsumer<MSG, Supplier<NetworkEvent.Context>> consumer;
+		private final boolean bidirectional;
 
-		MessageBuilder(Class<MSG> type, int id, NetworkDirection direction) {
+		MessageBuilder(Class<MSG> type, int id, NetworkDirection direction, boolean bidirectional) {
 			this.type = type;
 			this.id = id;
 			this.direction = direction;
+			this.bidirectional = bidirectional;
 		}
 
 		public MessageBuilder<MSG> encoder(BiConsumer<MSG, FriendlyByteBuf> encoder) {
@@ -161,8 +230,18 @@ public final class SimpleChannel {
 			return this;
 		}
 
+		public MessageBuilder<MSG> consumerNetworkThread(BiConsumer<MSG, Supplier<NetworkEvent.Context>> consumer) {
+			this.consumer = consumer;
+			return this;
+		}
+
 		public void add() {
-			pending.add(new PendingRegistration<>(type, id, direction, encoder, decoder, consumer));
+			if (bidirectional) {
+				pending.add(new PendingRegistration<>(type, id, NetworkDirection.PLAY_TO_SERVER, encoder, decoder, consumer, true));
+				pending.add(new PendingRegistration<>(type, id, NetworkDirection.PLAY_TO_CLIENT, encoder, decoder, consumer, true));
+			} else {
+				pending.add(new PendingRegistration<>(type, id, direction, encoder, decoder, consumer, false));
+			}
 		}
 	}
 
@@ -172,12 +251,15 @@ public final class SimpleChannel {
 			NetworkDirection direction,
 			BiConsumer<MSG, FriendlyByteBuf> encoder,
 			Function<FriendlyByteBuf, MSG> decoder,
-			BiConsumer<MSG, Supplier<NetworkEvent.Context>> consumer
+			BiConsumer<MSG, Supplier<NetworkEvent.Context>> consumer,
+			boolean bidirectional
 	) {
-		void register(PayloadRegistrar registrar, ResourceLocation channelName, Map<Class<?>, PayloadBinding<?>> bindings) {
+		void register(PayloadRegistrar registrar, ResourceLocation channelName,
+				Map<Class<?>, Map<NetworkDirection, PayloadBinding<?>>> bindings) {
 			ResourceLocation payloadId = ResourceLocation.fromNamespaceAndPath(
 					channelName.getNamespace(),
 					channelName.getPath() + "/" + id + "_" + type.getSimpleName().toLowerCase()
+							+ (bidirectional ? (direction == NetworkDirection.PLAY_TO_SERVER ? "_c2s" : "_s2c") : "")
 			);
 			CustomPacketPayload.Type<WrappedPayload<MSG>> payloadType = new CustomPacketPayload.Type<>(payloadId);
 			StreamCodec<RegistryFriendlyByteBuf, WrappedPayload<MSG>> codec = StreamCodec.of(
@@ -193,7 +275,8 @@ public final class SimpleChannel {
 			} else {
 				registrar.playToClient(payloadType, codec, handler);
 			}
-			bindings.put(type, new PayloadBinding<>(payloadType));
+			bindings.computeIfAbsent(type, ignored -> new ConcurrentHashMap<>())
+					.put(direction, new PayloadBinding<>(payloadType));
 		}
 	}
 

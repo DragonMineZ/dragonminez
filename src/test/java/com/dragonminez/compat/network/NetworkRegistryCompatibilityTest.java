@@ -8,6 +8,17 @@ import static org.junit.jupiter.api.Assertions.*;
 
 class NetworkRegistryCompatibilityTest {
     @Test
+    void legacyFactoryReturnsAReadyChannel() {
+        Object result = NetworkRegistry.newSimpleChannel(
+                ResourceLocation.fromNamespaceAndPath("dragonminez", "legacy_factory_test"),
+                () -> "1.0", "1.0"::equals, "1.0"::equals);
+
+        SimpleChannel channel = assertInstanceOf(SimpleChannel.class, result);
+        assertEquals("1.0", channel.protocolVersion());
+        assertFalse(channel.acceptsClientVersion("2.0"));
+    }
+
+    @Test
     void channelRetainsStrictCompatibilityPredicates() {
         SimpleChannel channel = NetworkRegistry.ChannelBuilder
                 .named(ResourceLocation.fromNamespaceAndPath("dragonminez", "compatibility_test"))
